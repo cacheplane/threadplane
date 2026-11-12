@@ -36,13 +36,13 @@ test('switching away disposes pending browser decisions and returning starts emp
   await selectFramework(page, 'angular');
   await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
   await selectFramework(page, 'react');
-  await expect(frame.locator('footer').getByRole('status')).toHaveText('Ready.');
+  await expect(frame.locator('.tp-chat-input__footer > [role="status"]')).toHaveText('Ready.');
   await expect(frame.getByRole('button', { name: 'Confirm booking' })).toHaveCount(0);
   const before = await (await request.get('http://127.0.0.1:4603/__requests')).json();
   expect(before.filter((entry: { path: string }) => entry.path.endsWith('/runs/stream'))).toHaveLength(1);
   await frame.getByLabel('Message', { exact: true }).fill('Weather');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
-  await expect(frame.locator('footer').getByRole('status')).toHaveText('Response complete.');
+  await expect(frame.locator('.tp-chat-input__footer > [role="status"]')).toHaveText('Response complete.');
   const proof = await (await request.get('http://127.0.0.1:4603/__requests')).json();
   expect(proof.filter((entry: { path: string }) => entry.path === '/api/threads')).toHaveLength(2);
   expect(proof.filter((entry: { path: string }) => entry.path.endsWith('/runs/stream'))).toHaveLength(3);

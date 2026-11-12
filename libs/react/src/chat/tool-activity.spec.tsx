@@ -86,6 +86,14 @@ describe('ToolActivity', () => {
       ).toBe(expected);
     }
   );
+  it('keeps a running call running after a successful message only while the session runs', () => {
+    const success = { phase: 'complete', outcome: 'success' } as const;
+    expect(toolActivityPhase('running', success, true)).toBe('running');
+    expect(toolActivityPhase('running', success, false)).toBe('unknown');
+    expect(toolActivityPhase('pending', success, true)).toBe('pending');
+    expect(toolActivityPhase('running', { phase: 'complete', outcome: 'aborted' }, true)).toBe('stopped');
+    expect(toolActivityPhase('running', { phase: 'complete', outcome: 'error' }, true)).toBe('unknown');
+  });
   it('separates a human label, explicit phase and literal technical evidence', () => {
     const view = render(
       <ToolActivity

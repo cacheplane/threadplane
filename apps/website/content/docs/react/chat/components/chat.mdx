@@ -35,6 +35,7 @@ export function Conversation({ session }: { readonly session: AgentSession }) {
 | `content`                                       | Optional app-owned `MessageContent` projection.        |
 | `renderMessage`                                 | Stable callback replacing default row presentation.    |
 | `label`, `placeholder`, `hint`, `submitOnEnter` | Composer presentation and input behavior.              |
+| `disabled`                                      | Turns the composer off while your application cannot accept a message. Stop stays available. |
 | `className`                                     | Additional root styling.                               |
 | `onRetry`                                       | Optional application-owned zero-argument retry intent. |
 

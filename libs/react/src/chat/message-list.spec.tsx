@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { StrictMode } from 'react';
+import { subagentsFromEvidence } from './subagent-evidence.js';
 import { renderToString } from 'react-dom/server';
 import {
   streamingDelivery,
@@ -460,6 +461,28 @@ describe('MessageList', () => {
     expect(groups[1].textContent).toContain('Write the note');
     content.dispose();
   });
+  it('shows a call still running after its message completed as running only while the session runs', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [msg('a', '', { toolCallIds: ['w', 'b'], delivery: { generation: 'g', phase: 'complete', outcome: 'success' } } as Partial<Message>)],
+        [
+          { id: 'w', name: 'get_weather', args: {}, status: 'complete', result: 'ok' },
+          { id: 'b', name: 'confirm_booking', args: {}, status: 'running' },
+        ] as AgentSnapshot['toolCalls']
+      )
+    );
+    const group = (container: HTMLElement) => container.querySelector('.tp-tool-activity-group')!;
+    // A browser client tool runs after the model message finished; the session is still working.
+    const view = render(<MessageList rows={rows} running onStop={() => undefined} />);
+    expect(group(view.container).getAttribute('data-active')).toBe('true');
+    expect(view.getByRole('button', { name: 'Stop' })).toBeTruthy();
+    // Once the session settles, the same evidence is unknown again, never a perpetual shimmer.
+    view.rerender(<MessageList rows={rows} />);
+    expect(group(view.container).getAttribute('data-active')).toBe('false');
+    expect(view.container.textContent).toContain('status unavailable');
+    content.dispose();
+  });
   it('passes each call its arguments so repeated calls get their own labels', () => {
     const content = createMessageContent();
     const rows = content.project(
@@ -680,6 +703,51 @@ describe('MessageList', () => {
       <MessageList rows={rows} subagents={subagents} renderMessage={(row) => <p>{row.id}</p>} />
     );
     expect(view.container.querySelector('.tp-subagent-card')).toBeNull();
+  });
+
+  it('keeps a finished child card when the next turn starts, given the earlier children', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [
+          msg('a', 'First answer', { toolCallIds: ['delegate'] }),
+          msg('b', 'Second answer', { toolCallIds: ['again'] }),
+        ],
+        [
+          { id: 'delegate', name: 'delegate', args: {}, status: 'complete', result: 'ok' },
+          { id: 'again', name: 'delegate', args: {}, status: 'running' },
+        ] as AgentSnapshot['toolCalls']
+      )
+    );
+    const first = {
+      started: { subagentRunId: 'one', name: 'reader', parentToolCallId: 'delegate' },
+      terminal: { type: 'SUBAGENT_FINISHED' },
+    };
+    const second = { started: { subagentRunId: 'two', name: 'writer', parentToolCallId: 'again' } };
+    const transcript = [
+      { id: 'r', role: 'assistant', content: 'Read it', subagentRunId: 'one' },
+    ];
+    const cards = (root: ParentNode) =>
+      [...root.querySelectorAll('.tp-subagent-card')].map((node) => [
+        node.getAttribute('data-subagent-id'),
+        node.getAttribute('data-status'),
+      ]);
+    // The second turn's snapshot lists only its own child as current.
+    const turn = (earlierSubagents?: readonly (typeof first)[]) =>
+      subagentsFromEvidence({ subagents: [second], earlierSubagents, transcript, running: true })
+        .subagents;
+    const view = render(<MessageList rows={rows} subagents={turn([first])} />);
+    expect(cards(view.container)).toEqual([
+      ['one', 'complete'],
+      ['two', 'running'],
+    ]);
+    expect(view.container.querySelector('[data-subagent-id="one"]')!.textContent).toContain('Read it');
+    // Without the earlier list the first card is gone and its call is a plain tool row again.
+    view.rerender(<MessageList rows={rows} subagents={turn()} />);
+    expect(cards(view.container)).toEqual([['two', 'running']]);
+    expect(
+      view.container.querySelector('.tp-tool-activity[data-tool-id="delegate"]')
+    ).not.toBeNull();
   });
 
   describe('app-declared tool failures', () => {

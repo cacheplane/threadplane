@@ -615,6 +615,30 @@ describe('Chat approval slot', () => {
     expect(textbox.placeholder).toBe('Ask anything');
     expect(document.activeElement).toBe(textbox);
   });
+  it('waits for an app-disabled composer before returning focus to it', () => {
+    const { session } = fakeSession();
+    const view = render(<Chat session={session} approval={card} disabled />);
+    const textbox = view.getByRole('textbox') as HTMLTextAreaElement;
+    expect(textbox.disabled).toBe(true);
+    view.rerender(<Chat session={session} disabled />);
+    expect(document.activeElement).not.toBe(textbox);
+    view.rerender(<Chat session={session} />);
+    expect(textbox.disabled).toBe(false);
+    expect(document.activeElement).toBe(textbox);
+    // Focus is owed once: later enable changes do not move it again.
+    (document.activeElement as HTMLElement).blur();
+    view.rerender(<Chat session={session} disabled />);
+    view.rerender(<Chat session={session} />);
+    expect(document.activeElement).not.toBe(textbox);
+  });
+  it('forgets owed focus when another approval arrives first', () => {
+    const { session } = fakeSession();
+    const view = render(<Chat session={session} approval={card} disabled />);
+    view.rerender(<Chat session={session} disabled />);
+    view.rerender(<Chat session={session} approval={card} disabled />);
+    view.rerender(<Chat session={session} approval={card} />);
+    expect(document.activeElement).not.toBe(view.getByRole('textbox'));
+  });
   it('renders answered approval records in the transcript', () => {
     const { session } = fakeSession({ messages: [assistant('a', 'Saving.')] });
     const view = render(

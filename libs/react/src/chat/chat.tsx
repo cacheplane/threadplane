@@ -22,7 +22,7 @@ import { ScrollBubble } from './scroll-bubble.js';
 export interface ChatProps
   extends Pick<
     ChatInputProps,
-    'label' | 'placeholder' | 'hint' | 'submitOnEnter'
+    'label' | 'placeholder' | 'hint' | 'submitOnEnter' | 'disabled'
   > {
   /** App-owned session. Chat observes and dispatches; it never disposes it. */
   readonly session: AgentSession;
@@ -95,15 +95,24 @@ export function Chat({
   const stop = useCallback(() => {
     session.stop().catch(ignore);
   }, [session]);
-  // Answering removes the approval and its focused button; continue in the composer.
+  // Answering removes the approval and its focused button; continue in the
+  // composer. An app that disables the composer while the answered run goes on
+  // gets focus there as soon as it is enabled again.
   const composer = useRef<ChatInputHandle>(null);
   const pending =
     approval !== undefined && approval !== null && approval !== false;
+  const disabled = input.disabled ?? false;
   const hadApproval = useRef(pending);
+  const focusOwed = useRef(false);
   useEffect(() => {
-    if (hadApproval.current && !pending) composer.current?.focus();
+    if (hadApproval.current && !pending) focusOwed.current = true;
+    if (pending) focusOwed.current = false;
     hadApproval.current = pending;
-  }, [pending]);
+    if (focusOwed.current && !disabled) {
+      focusOwed.current = false;
+      composer.current?.focus();
+    }
+  }, [pending, disabled]);
   const rows = useMessageContent(snapshot, session, content);
   // A failed call already shows these words, and the notice would add no action or detail of its own.
   // A custom renderMessage owns that display, so the notice stays whenever one is in use.
@@ -133,6 +142,7 @@ export function Chat({
         onToolRetry={onToolRetry}
         plan={snapshot.plan}
         onStop={snapshot.status === 'running' ? stop : undefined}
+        running={snapshot.status === 'running'}
         approvalRecords={approvalRecords}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (

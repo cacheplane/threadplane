@@ -150,6 +150,7 @@ export function useNativeSession(session: ReturnType<typeof createSession>) {
   // The chat projection borrows the native snapshot without conversion.
   const cards: readonly SubagentInfo[] = subagentsFromEvidence({
     subagents: snapshot.subagents,
+    earlierSubagents: snapshot.earlierSubagents,
     transcript: snapshot.transcript,
     running: snapshot.status === 'running',
   }).subagents;
