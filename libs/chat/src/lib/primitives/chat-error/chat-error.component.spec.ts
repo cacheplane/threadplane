@@ -125,9 +125,9 @@ describe('ChatErrorComponent — interruption recovery', () => {
       detail,
     });
 
-  it('renders Retry when recovery is retry', () => {
+  it('renders Retry response when recovery is retry', () => {
     const { el } = render(interrupted('retry'));
-    expect(el.querySelector('.chat-error__retry')?.textContent).toContain('Retry');
+    expect(el.querySelector('.chat-error__retry')?.textContent?.trim()).toBe('Retry response');
     expect(el.querySelector('.chat-error__check')).toBeNull();
   });
 

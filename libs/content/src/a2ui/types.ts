@@ -28,10 +28,17 @@ export interface A2uiSurfacesSnapshot {
   readonly surfaces: readonly A2uiSurfaceSnapshot[];
 }
 
-/** Application-owned accumulator that applies parsed A2UI envelopes and publishes immutable live-surface snapshots. */
+/** Application-owned accumulator that applies parsed A2UI envelopes and local edits, and publishes immutable live-surface snapshots. */
 export interface A2uiSurfaces {
   readonly getSnapshot: () => A2uiSurfacesSnapshot;
   readonly subscribe: (notify: () => void) => () => void;
   readonly apply: (message: A2uiMessage) => void;
+  /**
+   * Writes one local edit into a live surface's data model, with the same
+   * replace semantics as an agent `updateDataModel`. Nothing is sent anywhere.
+   * Returns false, and publishes nothing, for a surface that is not live or a
+   * value that is already there. `path` names one value below the root.
+   */
+  readonly setValue: (surfaceId: string, path: string, value: A2uiValue) => boolean;
   readonly dispose: () => void;
 }

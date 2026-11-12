@@ -11,6 +11,7 @@ import type { AgentInterrupt } from '../../agent/agent-interrupt';
   template: `
     <chat-approval-card
       [agent]="agent"
+      presentation="dialog"
       [matchKind]="matchKind"
       [showEdit]="showEdit"
       (action)="lastAction = $event"
@@ -265,5 +266,25 @@ describe('ChatApprovalCardComponent — inline', () => {
     const fixture = TestBed.createComponent(InlineHost);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.chat-approval-card--inline')).toBeNull();
+  });
+});
+
+@Component({
+  standalone: true,
+  imports: [ChatApprovalCardComponent],
+  template: `<chat-approval-card [agent]="agent"><ng-template #body><span class="body">Save note</span></ng-template></chat-approval-card>`,
+})
+class DefaultHost {
+  agent = mockAgent({ withInterrupt: true });
+}
+
+describe('ChatApprovalCardComponent — default presentation', () => {
+  it('renders inline and never opens the dialog unless asked', () => {
+    const fixture = TestBed.createComponent(DefaultHost);
+    fixture.componentInstance.agent.interrupt!.set({ id: 'i1', value: {}, resumable: true });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.chat-approval-card--inline .body')).not.toBeNull();
+    expect(root.querySelector('dialog')!.open).toBe(false);
   });
 });

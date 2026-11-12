@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 for (const height of [450, 812]) {
-  for (const action of ['Confirm', 'Cancel']) {
+  for (const action of ['Book flight', "Don't book"]) {
     test(`mobile approval remains in transcript and completes: ${height}px ${action}`, async ({
       page,
       request,
@@ -51,7 +51,7 @@ for (const height of [450, 812]) {
             (r: { body: { command?: { resume?: string } } }) =>
               r.body.command?.resume
           )
-      ).toEqual([undefined, action === 'Confirm' ? 'confirm' : 'cancel']);
+      ).toEqual([undefined, action === 'Book flight' ? 'confirm' : 'cancel']);
     });
   }
 }

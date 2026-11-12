@@ -43,7 +43,43 @@ const snap = (
 ): AgentSnapshot =>
   Object.freeze({ status: 'idle', messages, toolCalls }) as AgentSnapshot;
 
+// Default rows keep Sources closed until opened; open every panel to read its entries.
+const openSources = (view: { container: HTMLElement }) =>
+  view.container
+    .querySelectorAll<HTMLButtonElement>(
+      '.tp-citations__toggle[aria-expanded="false"]'
+    )
+    .forEach((toggle) => fireEvent.click(toggle));
 describe('MessageList', () => {
+  it('renders answered approval records after their anchor row, and unanchored ones after the last row', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap([msg('a', 'Asking.'), msg('b', 'Refund issued.')])
+    );
+    const view = render(
+      <MessageList
+        rows={rows}
+        approvalRecords={[
+          { afterId: 'a', verdict: 'approved', label: 'Issue refund' },
+          { afterId: 'gone', verdict: 'declined' },
+        ]}
+      />
+    );
+    const order = Array.from(
+      view.container.querySelectorAll('article, .tp-approval-record')
+    ).map((node) =>
+      node.classList.contains('tp-approval-record')
+        ? node.textContent
+        : node.textContent?.trim()
+    );
+    expect(order).toEqual([
+      'Assistant:Asking.',
+      'Approved: Issue refund',
+      'Assistant:Refund issued.',
+      'Declined',
+    ]);
+    content.dispose();
+  });
   it('derives default previous-role attributes from supplied projected rows, including mismatched payload roles', () => {
     const content = createMessageContent();
     const base = content.project(
@@ -392,6 +428,39 @@ describe('MessageList', () => {
       }
     });
   });
+  it('gives the declared plan and Stop only to the current turn', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [
+          msg('a', 'Earlier', { toolCallIds: ['r1'] }),
+          msg('b', '', { toolCallIds: ['r2'] }),
+        ],
+        [
+          { id: 'r1', name: 'read', args: {}, status: 'running' },
+          { id: 'r2', name: 'read', args: { n: 2 }, status: 'running' },
+        ] as AgentSnapshot['toolCalls']
+      )
+    );
+    const view = render(
+      <MessageList
+        rows={rows}
+        plan={[{ label: 'Write the note', status: 'pending' }]}
+        onStop={() => undefined}
+      />
+    );
+    for (const details of view.container.querySelectorAll<HTMLDetailsElement>('.tp-tool-activity-group__details')) {
+      act(() => {
+        details.open = true;
+        details.dispatchEvent(new Event('toggle'));
+      });
+    }
+    expect(view.getAllByText('Write the note')).toHaveLength(1);
+    expect(view.getAllByRole('button', { name: 'Stop' })).toHaveLength(1);
+    const groups = view.container.querySelectorAll('.tp-tool-activity-group');
+    expect(groups[1].textContent).toContain('Write the note');
+    content.dispose();
+  });
   it('passes each call its arguments so repeated calls get their own labels', () => {
     const content = createMessageContent();
     const rows = content.project(
@@ -538,14 +607,21 @@ describe('MessageList', () => {
       <MessageList rows={rows} groupRelatedTools toolOutcome={toolOutcome} />
     );
     expect(view.getByText('Reference verified').closest('details')).toBeNull();
-    expect(view.getByRole('link', { name: 'Signals' })).toBeTruthy();
+    // The declared source joins the message's one Sources panel, closed until
+    // opened, and is not repeated as a link under the activity.
+    expect(view.queryByRole('link', { name: /Signals/ })).toBeNull();
+    expect(view.container.querySelector('.tp-tool-outcomes a')).toBeNull();
+    openSources(view);
+    const source = view.getByRole('link', { name: /Signals/ });
+    expect(source.getAttribute('href')).toBe(
+      'https://angular.dev/guide/signals'
+    );
+    expect(source.closest('.tp-citations')).toBeTruthy();
+    expect(view.getAllByRole('link', { name: /Signals/ })).toHaveLength(1);
     const article = view.getByRole('article', { name: 'assistant message' });
     const body = article.querySelector('.tp-chat-message__body');
     expect(body?.textContent).toBe('Answer');
-    for (const chrome of [
-      view.getByText('Reference verified'),
-      view.getByRole('link', { name: 'Signals' }),
-    ]) {
+    for (const chrome of [view.getByText('Reference verified'), source]) {
       expect(article.contains(chrome)).toBe(true);
       expect(body?.contains(chrome)).toBe(false);
     }
@@ -1119,6 +1195,66 @@ describe('MessageList', () => {
     expect(focus).not.toHaveBeenCalled();
     expect(contexts.at(-1)!.scrollToLatest).not.toBe(old.scrollToLatest);
   });
+  it('lists tool-declared sources once in the message Sources panel, numbered after its own citations and Markdown definitions', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [
+          msg(
+            'a',
+            'Read [^m].\n\n[^m]: Markdown source [link](https://example.com/md)\n',
+            {
+              toolCallIds: ['c', 'd'],
+              delivery: completeDelivery('g', 'success'),
+              citations: [
+                {
+                  id: 'own',
+                  index: 3,
+                  title: 'Signals guide',
+                  url: 'https://angular.dev/guide/signals',
+                },
+              ],
+            }
+          ),
+        ],
+        ['c', 'd'].map((id) => ({
+          id,
+          name: 'lookup',
+          args: {},
+          status: 'complete' as const,
+          result: 'ok',
+        }))
+      )
+    );
+    const view = render(
+      <MessageList
+        rows={rows}
+        toolOutcome={() => ({
+          text: 'Checked',
+          sources: [
+            { title: 'Same page', url: 'https://angular.dev/guide/signals' },
+            {
+              title: 'toSorted',
+              url: 'https://developer.mozilla.org/toSorted',
+            },
+          ],
+        })}
+      />
+    );
+    expect(view.container.querySelector('.tp-tool-outcomes a')).toBeNull();
+    openSources(view);
+    expect(
+      [...view.container.querySelectorAll('.tp-citations__title')].map(
+        (node) => node.textContent
+      )
+    ).toEqual(['Markdown source', 'Signals guide', 'toSorted']);
+    expect(
+      view.getByRole('link', { name: /toSorted/ }).getAttribute('href')
+    ).toBe('https://developer.mozilla.org/toSorted');
+    expect(view.queryByText('Same page')).toBeNull();
+    content.dispose();
+  });
+
   it('resolves provider-only inline references and Markdown-only Sources from projected rows', () => {
     const content = createMessageContent();
     const rows = content.project(
@@ -1136,6 +1272,7 @@ describe('MessageList', () => {
       ])
     );
     const view = render(<MessageList rows={rows} />);
+    openSources(view);
     expect(
       view
         .getByRole('link', { name: 'Citation 7: Provider (opens in new tab)' })
@@ -1177,6 +1314,7 @@ describe('MessageList', () => {
       ])
     );
     const view = render(<MessageList rows={rows} />);
+    openSources(view);
     expect(
       [
         ...view
@@ -1473,6 +1611,7 @@ describe('MessageList', () => {
       )
     );
     const view = render(<MessageList rows={rows} />);
+    openSources(view);
     expect(view.getAllByRole('region', { name: 'Sources' })).toHaveLength(1);
     expect(view.getAllByText('Owned source')).toHaveLength(1);
     view.rerender(

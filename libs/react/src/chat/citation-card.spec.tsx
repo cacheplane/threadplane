@@ -71,7 +71,7 @@ describe('CitationCard', () => {
     const color = visual?.style.backgroundColor;
     expect(
       view.container.querySelector('.tp-citations__index')?.textContent
-    ).toBe('[7] ');
+    ).toBe('7');
     expect(
       view.container.querySelector('.tp-citations__type')?.textContent
     ).toBe('Web');

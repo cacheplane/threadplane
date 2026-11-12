@@ -161,29 +161,52 @@ it('seeds a demo booking draft without creating or submitting a conversation', (
   expect(h.app.submit).toHaveBeenCalledExactlyOnceWith('Book flight UA123.');
   expect(h.box().value).toBe('');
 });
-it.each(['Confirm', 'Cancel'] as const)(
+it.each([
+  ['Book flight', 'confirm', 'Approved: Book flight'],
+  ["Don't book", 'cancel', 'Declined: Book flight'],
+] as const)(
   'renders literal approval details and captures only the fixed %s decision',
-  (label) => {
+  (label, value, record) => {
     const h = composition();
     act(() => h.update({ canSubmit: false, outcome: 'paused', decision }));
     expect(h.view.getByText('<button>untrusted</button>')).toBeTruthy();
     expect(h.view.queryByRole('button', { name: 'untrusted' })).toBeNull();
     expect(h.view.getByText('Boeing 787')).toBeTruthy();
     expect(h.box().disabled).toBe(true);
+    const transcript = h.view.getByRole('region', { name: 'Conversation' });
+    // The pending approval renders at the end of the transcript.
+    expect(
+      transcript.contains(h.view.getByRole('button', { name: label }))
+    ).toBe(true);
     fireEvent.click(h.view.getByRole('button', { name: label }));
-    expect(h.app.decide).toHaveBeenCalledExactlyOnceWith(
-      decision,
-      label.toLowerCase()
-    );
+    expect(h.app.decide).toHaveBeenCalledExactlyOnceWith(decision, value);
     expect(h.view.queryByRole('button', { name: label })).toBeNull();
     expect(h.app.submit).not.toHaveBeenCalled();
+    expect(transcript.querySelector('.tp-approval-record')?.textContent).toBe(
+      record
+    );
+    // Focus returns to the composer once it is enabled.
+    expect(document.activeElement).toBe(h.box());
   }
 );
+it('clears approval records on New conversation', () => {
+  const h = composition();
+  act(() => h.update({ canSubmit: false, outcome: 'paused', decision }));
+  fireEvent.click(h.view.getByRole('button', { name: 'Book flight' }));
+  expect(h.view.container.querySelectorAll('.tp-approval-record')).toHaveLength(
+    1
+  );
+  act(() => h.update({ busy: false, canSubmit: true, activity: 'idle' }));
+  fireEvent.click(h.view.getByRole('button', { name: 'New conversation' }));
+  expect(h.view.container.querySelectorAll('.tp-approval-record')).toHaveLength(
+    0
+  );
+});
 it('guards captured approval callbacks against a newer owner snapshot before React renders it', () => {
   const h = composition();
   act(() => h.update({ canSubmit: false, decision }));
   h.update({ decision: { ...decision, checkpoint: 'new-checkpoint' } }, false);
-  fireEvent.click(h.view.getByRole('button', { name: 'Confirm' }));
+  fireEvent.click(h.view.getByRole('button', { name: 'Book flight' }));
   expect(h.app.decide).not.toHaveBeenCalled();
 });
 it('preserves the draft when the owner rejects submit and keeps Stop available during confirmation', () => {

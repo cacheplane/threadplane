@@ -873,9 +873,11 @@ test('selected public protocol package enumerates its actual legacy ESM root wit
   for (const fields of [{ main: './src/../outside.js' }, { types: './src/../index.d.ts' }, { main: './src\\index.js' }, { main: 'index.js' }, { types: './src/index.ts' }]) assert.throws(() => packageVerifier.consumerSpecifiers({ ...protocol, ...fields }));
 });
 test('A2UI feature exposes exactly its owned factory', () => {
-  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', {}), /createA2uiSurfaces/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {} }));
-  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createOwner() {} }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', {}), /createA2uiActionMessage/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiActionMessage() {} }), /createA2uiSurfaces/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {} }), /createA2uiActionMessage/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, createOwner() {} }), /unexpected/);
 });
 test('optional local peers require explicit selection and validate selected artifacts independent of traversal order', () => {
   const manifests = {
@@ -1035,6 +1037,7 @@ test('React chat requires its real supported export', () => {
   supported.toolActivityPhase = component;
   supported.resolveToolOutcome = component;
   supported.toolOutcomes = component;
+  supported.citationsWithToolSources = component;
   supported.SubagentCard = component;
   supported.subagentsFromEvidence = component;
   supported.StatusPanel = component;
@@ -1043,6 +1046,7 @@ test('React chat requires its real supported export', () => {
   supported.ScrollBubble = component;
   supported.ChatMessage = component;
   supported.isTyping = component;
+  supported.ApprovalRecord = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
@@ -1062,6 +1066,11 @@ test('React chat requires its real supported export', () => {
 });
 test('React render requires exactly the pure RenderSpec runtime export', () => {
   const RenderSpec = () => null;
+  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', {}), /A2uiSurface/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {} }), /a2uiBasicCatalog/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {} }), /useA2uiSurfaceWriter/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, surfaceToSpec() {} }), /unexpected/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', {}), /RenderSpec/);
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec }));
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createStateStore: () => ({}) }), /unexpected/);

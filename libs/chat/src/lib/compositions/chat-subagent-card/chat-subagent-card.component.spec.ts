@@ -56,6 +56,17 @@ describe('ChatSubagentCardComponent', () => {
     expect(msgEls.length).toBe(2);
 
     const text = host.textContent ?? '';
+    // The header names the subagent and counts its messages; the raw call ID stays out.
+    expect(text).toContain('Research');
+    expect(text).toContain('2 messages');
+    expect(text).not.toContain('tc-root');
+    // Without app labels the call shows its technical name.
+    expect(host.querySelector('.tcc__name')?.textContent).toBe('search');
+    fixture.componentRef.setInput('toolLabel', (name: string) => (name === 'search' ? 'Searching the web' : undefined));
+    fixture.detectChanges();
+    const name = host.querySelector('.tcc__name');
+    expect(name?.textContent).toBe('Searching the web');
+    expect(name?.classList.contains('tcc__name--label')).toBe(true);
     expect(text).toContain('searching');
     expect(text).toContain('done');
     expect(text).toContain('plan');

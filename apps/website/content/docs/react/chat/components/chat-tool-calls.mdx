@@ -57,6 +57,8 @@ import { ToolActivityGroup } from '@threadplane/react/chat';
 
 While a tool is running, its provided label has a subtle text shimmer; the fallback is **Running tools…**. Settled activity reads **Used 4 tools**, with the appropriate count, without an additional completion-count line. When some calls failed it reads **Used 4 tools · 1 failed**. This describes tool activity, not a confirmed business outcome. Opening the row reveals individual calls and their technical Details. Your expansion choice is retained as calls arrive or settle.
 
+While the group runs, the elapsed time and a **Stop** button sit on its line; in `Chat`, **Stop** stops the run like the composer's Stop. Open the running group and the heading reads **Working · 1 of 3 done**: finished calls show a tick, the running call carries the shimmer and pending calls are dimmed. When the session declares a plan (`snapshot.plan`), its pending steps follow the calls, dimmed. The LangGraph session reads that plan from a `todos` list in graph state, the shape a deep-agents style to-do tool writes. The AG-UI session reads the same `todos` list from its shared state, so pass its `snapshot.plan` to `MessageList` or `ToolActivityGroup` the same way. `MessageList` takes `plan` and `onStop` and hands them to the current turn only; `ToolActivityGroup` takes the same two props.
+
 An explicit `ToolActivityGroup` `label` overrides the automatic summary wording. Omit it to follow the active call's human label.
 
 Queued, paused, stopped and unavailable states keep static wording. **Tool activity paused** does not imply approval; the application owns approval-specific wording and controls. A failed call can coexist with running work, so the row retains a static failure cue while the active label shimmers. Reduced motion and forced colors use readable static text. A polite status region preserves meaningful state updates without announcing raw payloads or timer ticks.
@@ -78,7 +80,19 @@ Supply `ToolActivityInfo.outcome` to preview a validated result without opening 
 }]} />
 ```
 
-Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries and sources outside the collapsed technical subtree, with the first three visible and the rest in **More results** or **More sources**. A collapsed group lists every source below it. Open the group and each source moves under the call that produced it, while the result text stays below the group. Links accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups retain meaningful activity and failure or pause cues in their status sentence. Raw payload streaming stays out of that region.
+Only explicitly complete activities expose outcome previews. Related groups show deduplicated result summaries outside the collapsed technical subtree, with the first three visible and the rest in **More results**. An outcome may declare sources alone by leaving `text` empty.
+
+Inside `MessageList` and `Chat`, declared sources join the message's one **Sources** panel, which is closed until opened and lists each source once beside the message's own citations. A source whose URL the message already cites is not added again. `ToolActivity` and `ToolActivityGroup` used on their own have no message panel, so they keep the sources as links, with the first three visible and the rest in **More sources**. A collapsed group lists every source below it. Open the group and each source moves under the call that produced it, while the result text stays below the group. An application that composes its own message can send them to its own panel instead: pass `sources="panel"` to the activity and render `Citations` with `citationsWithToolSources`.
+
+```tsx
+<ToolActivityGroup activities={activities} sources="panel" />
+<Citations
+  citations={citationsWithToolSources(message.citations ?? [], activities)}
+  collapsible
+/>
+```
+
+A source may also carry a `snippet` and an `iconUrl`, which the panel shows on its card. The library never fetches an icon itself. Sources accept absolute HTTP(S) URLs without credentials; unsupported links are omitted. Mixed groups retain meaningful activity and failure or pause cues in their status sentence. Raw payload streaming stays out of that region.
 
 Pass a stable `toolOutcome(activity)` callback to `MessageList` or `Chat` to supply the same metadata for default rows. Validate your tool's result schema and author the summary in your application; the library does not infer business success from arbitrary payloads. Custom message renderers retain ownership. Keep approval actions in the persistent rich-content slot, and route explicit retry through the session owner. A failed write with uncertain acknowledgment needs reconciliation before another attempt.
 
@@ -250,7 +264,7 @@ A running, stopped or already failed call never reaches a decoder, and neither d
 
 Each call keeps its own outcome.
 The successful read keeps its summary and source link beside the failed one, and the group reads **Used 2 tools · 1 failed**.
-Sources render as links outside **Details**, and the literal JSON stays inside it.
+Sources appear in the message's **Sources** panel, and the literal JSON stays inside **Details**.
 
 ### Declare a retry
 

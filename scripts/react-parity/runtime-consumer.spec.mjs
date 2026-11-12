@@ -28,6 +28,15 @@ test('shared view preparation copies the complete views without composing a priv
   runtime.prepareRuntimeViews(process.cwd(), consumer, 'react');
   for (const name of ['main.tsx', 'react-app.tsx', 'react-threads.tsx', 'react-checkpoints.tsx', 'react-overflow-menu.tsx', 'scenarios.ts', 'thread-owner.ts', 'tools.ts', 'review.css', 'vite.config.mts'])
     assert.equal(existsSync(join(consumer, name)), true, `shared ${name}`);
+  // The A2UI surface fixture needs an optional package, so it is copied and routed only on request.
+  assert.equal(existsSync(join(consumer, 'react-a2ui-surface.tsx')), false, 'no A2UI fixture by default');
+  assert.doesNotMatch(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /a2ui/);
+  assert.doesNotMatch(readFileSync(join(consumer, 'react-overflow-menu.tsx'), 'utf8'), /a2ui/i);
+  const withA2ui = mkdtempSync(join(tmpdir(), 'candidate-view-a2ui-'));
+  t.after(() => rmSync(withA2ui, { recursive: true, force: true }));
+  runtime.prepareRuntimeViews(process.cwd(), withA2ui, 'react', { a2ui: true });
+  assert.equal(readFileSync(join(withA2ui, 'react-a2ui-surface.tsx'), 'utf8'), readFileSync('fixtures/react-parity/runtime/react-a2ui-surface.tsx', 'utf8'));
+  assert.match(readFileSync(join(withA2ui, 'main.tsx'), 'utf8'), /^if \(new URLSearchParams\(location\.search\)\.has\('a2ui'\)\) \{\n  void import\('\.\/react-a2ui-surface'\);/);
   assert.equal(existsSync(join(consumer, 'runtime-entry.js')), false, 'no private bundle');
   assert.equal(existsSync(join(consumer, 'runtime-entry.d.ts')), false, 'no surrogate declarations');
   assert.match(readFileSync(join(consumer, 'main.tsx'), 'utf8'), /checkpoints/);

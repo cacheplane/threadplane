@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { signal, computed, Component, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { mockAgent } from '../../testing/mock-agent';
-import type { Agent, Message, ToolCall } from '../../agent';
+import type { Agent, AgentPlan, Message, ToolCall } from '../../agent';
 import { staticDelivery } from '../../agent';
 import { ChatToolCallsComponent } from './chat-tool-calls.component';
 import { ChatToolCallTemplateDirective } from './chat-tool-call-template.directive';
@@ -1211,5 +1211,110 @@ describe('ChatToolCallsComponent — progress view', () => {
   it('offers no Stop when the agent is idle', () => {
     const { root } = render(running(), false);
     expect(root.querySelector('.ctc__group-stop')).toBeNull();
+  });
+});
+
+describe('ChatToolCallsComponent — sources under their call', () => {
+  const reads: ToolCall[] = ['signals', 'effects'].map((topic, i) => ({
+    id: `c${i}`,
+    name: 'read_reference',
+    args: { topic },
+    status: 'complete' as const,
+    result: 'ok',
+  }));
+  const outcome = (activity: ToolActivityInfo): ToolActivityOutcome => ({
+    text: `Read ${activity.id}`,
+    sources: [{ title: `Guide ${activity.id}`, url: `https://angular.dev/guide/${activity.id}` }],
+  });
+  function render() {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    fixture.componentRef.setInput('agent', mockAgent({ toolCalls: reads }));
+    fixture.componentRef.setInput('groupRelated', true);
+    fixture.componentRef.setInput('toolOutcome', outcome);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const expand = () => {
+      (root.querySelector('.ctc__group-header') as HTMLButtonElement).click();
+      fixture.detectChanges();
+    };
+    return { root, expand };
+  }
+  const linksIn = (el: Element | null) => [...(el?.querySelectorAll('a') ?? [])].map((a) => a.getAttribute('href'));
+  const belowGroup = (root: HTMLElement) => root.querySelector('.ctc__group-body')!.parentElement!.parentElement!.querySelector(':scope > chat-tool-outcomes');
+
+  it('lists every source below a collapsed group', () => {
+    const { root } = render();
+    expect(linksIn(belowGroup(root))).toEqual(['https://angular.dev/guide/c0', 'https://angular.dev/guide/c1']);
+  });
+
+  it('moves each source under the row that produced it once the group is open', () => {
+    const { root, expand } = render();
+    expand();
+    expect(linksIn(root.querySelector('chat-tool-activity[data-tool-id="c0"], [data-tool-id="c0"]'))).toEqual(['https://angular.dev/guide/c0']);
+    expect(linksIn(root.querySelector('[data-tool-id="c1"]'))).toEqual(['https://angular.dev/guide/c1']);
+    // The result text stays below the group; its sources do not repeat there.
+    const below = belowGroup(root);
+    expect(linksIn(below)).toEqual([]);
+    expect(below!.textContent).toContain('Read c0');
+  });
+
+  it('keeps result text out of the rows', () => {
+    const { root, expand } = render();
+    expand();
+    expect(root.querySelector('[data-tool-id="c0"]')!.textContent).not.toContain('Read c0');
+  });
+});
+
+describe('ChatToolCallsComponent — upcoming steps from a declared plan', () => {
+  const calls: ToolCall[] = [
+    { id: 'a', name: 'read', args: { ref: 'toSorted' }, status: 'complete', result: 'ok' },
+    { id: 'b', name: 'read', args: { ref: 'toReversed' }, status: 'running' },
+  ];
+  const plan = signal<AgentPlan | undefined>([
+    { label: 'Read toSorted', status: 'completed' },
+    { label: 'Read toReversed', status: 'in_progress' },
+    { label: 'Compare the two', status: 'pending' },
+    { label: 'Write the note', status: 'pending' },
+  ]);
+  function render(toolCalls = calls, isLoading = true) {
+    TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    fixture.componentRef.setInput('agent', Object.assign(mockAgent({ toolCalls, isLoading }), { plan }));
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    (root.querySelector('.ctc__group-header') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    return { fixture, root };
+  }
+  const steps = (root: HTMLElement) => [...root.querySelectorAll('.ctc__plan-step')].map((p) => p.textContent!.trim());
+
+  it('lists the pending steps after the calls while the group runs', () => {
+    const { root } = render();
+    expect(steps(root)).toEqual(['Compare the two', 'Write the note']);
+    const step = root.querySelector('.ctc__plan-step')!;
+    expect(step.closest('.ctc__group-body')).toBeTruthy();
+    expect(step.previousElementSibling?.tagName.toLowerCase()).toBe('chat-tool-activity');
+  });
+
+  it('follows the plan as steps finish', () => {
+    const { fixture, root } = render();
+    plan.update((p) => p!.map((s) => (s.label === 'Compare the two' ? { ...s, status: 'in_progress' as const } : s)));
+    fixture.detectChanges();
+    expect(steps(root)).toEqual(['Write the note']);
+    plan.set(undefined);
+  });
+
+  it('shows no upcoming steps without a plan', () => {
+    plan.set(undefined);
+    const { root } = render();
+    expect(steps(root)).toEqual([]);
+  });
+
+  it('shows no upcoming steps once the group has finished', () => {
+    plan.set([{ label: 'Compare the two', status: 'pending' }]);
+    const done: ToolCall[] = calls.map((c) => ({ ...c, status: 'complete' as const, result: 'ok' }));
+    const { root } = render(done, false);
+    expect(steps(root)).toEqual([]);
   });
 });

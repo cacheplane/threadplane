@@ -479,6 +479,39 @@
 .tp-approval-card__action:disabled {
   cursor: not-allowed;
 }
+/* The approval reads as a status panel: warning, or danger for a destructive action. */
+.tp-approval-card.tp-status-panel {
+  border-color: color-mix(in srgb, var(--tp-status-tone) 40%, transparent);
+  background: color-mix(in srgb, var(--tp-status-tone) 8%, var(--tp-chat-surface, Canvas));
+}
+.tp-approval-card .tp-status-panel__lead {
+  margin: 0 0 0.25rem;
+}
+.tp-approval-card .tp-approval-card__action--primary {
+  border-color: var(--tp-chat-text, CanvasText);
+  background: var(--tp-chat-text, CanvasText);
+  color: var(--tp-chat-surface, Canvas);
+}
+.tp-approval-card .tp-approval-card__action--danger {
+  border-color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  background: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  color: light-dark(#ffffff, #1c1c1c);
+}
+@media (pointer: coarse) {
+  .tp-approval-card__action { min-height: 44px; }
+}
+@media (forced-colors: active) {
+  .tp-approval-card .tp-approval-card__action--primary,
+  .tp-approval-card .tp-approval-card__action--danger { border: 1px solid ButtonText; }
+}
+.tp-approval-record {
+  margin: 0;
+  color: var(--tp-chat-muted, GrayText);
+  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+}
+.tp-approval-record[data-verdict='approved']::before {
+  content: '✓ ' / '';
+}
 .tp-chat-list {
   flex: 1 1 auto;
   min-height: 0;
@@ -976,7 +1009,10 @@
   opacity: 0.6;
 }
 .tp-citations {
-  margin-block: 0.75rem;
+  margin-block: 1.25rem 0.75rem;
+  padding-block-start: 0.5rem;
+  border-block-start: 1px solid
+    var(--tp-chat-border, var(--ds-border, GrayText));
   overflow-wrap: anywhere;
 }
 .tp-citations__heading,
@@ -986,7 +1022,10 @@
 .tp-citations__list {
   display: grid;
   gap: 0.5rem;
-  padding-inline-start: 1.25rem;
+  /* Each source is numbered in its own row, so list markers would repeat that. */
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .tp-citations__title {
   white-space: pre-wrap;
@@ -1001,7 +1040,7 @@
 .tp-citation-card {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 0.5rem;
   min-width: 0;
   max-inline-size: 100%;
   box-sizing: border-box;
@@ -1011,20 +1050,49 @@
   background: var(--tp-chat-surface, var(--ds-surface, Canvas));
   border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
   border-radius: var(--tp-chat-radius-card, 0.5rem);
+  /* The title link covers the card, so the whole card opens the source. */
+  position: relative;
+}
+.tp-citation-card a.tp-citations__title::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.tp-citation-card:has(a.tp-citations__title:hover) {
+  border-color: var(--tp-chat-accent, var(--ds-accent, currentColor));
+}
+.tp-citation-card__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-inline-size: 1.125rem;
+  block-size: 1.125rem;
+  margin-block-start: 0.0625rem;
+  padding-inline: 0.1875rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: var(--tp-chat-radius-sm, 0.25rem);
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-weight: 600;
+  line-height: 1;
 }
 .tp-citation-card__visual {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 2.25rem;
-  inline-size: 2.25rem;
-  block-size: 2.25rem;
+  flex: 0 0 0.875rem;
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
   border-radius: var(--tp-chat-radius-sm, 0.25rem);
+  font-size: 0.5rem;
   font-weight: 600;
+  line-height: 1;
 }
 .tp-citation-card__visual svg {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
 }
 .tp-citations__marker--web,
 .tp-citation-card__visual--web {
@@ -1062,37 +1130,48 @@
 }
 .tp-citation-card__body {
   display: grid;
-  gap: 0.375rem;
+  gap: 0.25rem;
   min-width: 0;
   flex: 1;
 }
 .tp-citation-card__heading {
   min-width: 0;
+  font-size: var(--tp-chat-font-size-sm, 0.875rem);
   font-weight: 600;
+  line-height: 1.35;
 }
 .tp-citation-card__snippet {
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  color: var(--tp-chat-muted, var(--ds-text-secondary, inherit));
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  line-height: 1.45;
 }
 .tp-citation-card__metadata {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.375rem 0.625rem;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
   min-width: 0;
   font-size: var(--tp-chat-font-size-xs, 0.75rem);
+}
+.tp-citation-card__domain,
+.tp-citation-card__published {
+  color: var(--tp-chat-muted, var(--ds-text-secondary, inherit));
 }
 .tp-citation-card__metadata > * {
   min-width: 0;
   max-inline-size: 100%;
 }
 .tp-citation-card__badge {
-  margin-inline-start: 0;
+  /* The type sits at the far edge of the source line. */
+  order: 1;
+  margin-inline-start: auto;
   padding-inline: 0.375rem;
   border: 1px solid currentColor;
-  border-radius: var(--tp-chat-radius-sm, 0.25rem);
+  border-radius: 999px;
 }
 .tp-citation-card .tp-citation-card__badge {
   /* Text follows scoped card themes; category colors remain decorative. */
@@ -2006,15 +2085,34 @@
   outline-offset: -3px;
 }
 
-/* The disclosure uses the resolved source order and local decorative markers. */
+/* The disclosure uses the resolved source order and local decorative markers.
+   It reads as a quiet full-width row under the answer, not a boxed button. The
+   surface stays painted so a theme scoped to Sources keeps its own contrast. */
+.tp-citations__toggle,
+.tp-citations__toggle:hover:not(:disabled) {
+  border-color: transparent;
+}
 .tp-citations__toggle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
+  inline-size: 100%;
+  padding-inline: 0.25rem;
 }
 .tp-citations__label {
   min-inline-size: 0;
   overflow-wrap: anywhere;
+  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+  font-weight: 600;
+}
+.tp-citations__count {
+  display: inline-block;
+  padding: 0.0625rem 0.5rem;
+  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-radius: 999px;
+  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-weight: 600;
+  line-height: 1.35;
 }
 .tp-citations__markers {
   display: inline-flex;
@@ -2044,6 +2142,7 @@
   flex: 0 0 16px;
   inline-size: 16px;
   block-size: 16px;
+  margin-inline-start: auto;
 }
 .tp-citations__toggle[aria-expanded='true'] .tp-citations__chevron {
   transform: rotate(180deg);
@@ -2121,6 +2220,61 @@
   list-style: none;
 }
 .tp-tool-activity-group__details > summary::-webkit-details-marker { display:none; }
+/* Progress view: elapsed time and Stop sit on the summary's line while work runs. */
+.tp-tool-activity-group[data-active='true'] {
+  position: relative;
+}
+.tp-tool-activity-group[data-active='true'] > .tp-tool-activity-group__details > summary {
+  padding-inline-end: 8rem;
+}
+.tp-tool-activity-group__progress {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+.tp-tool-activity-group__elapsed {
+  color: var(--tp-chat-muted, GrayText);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.tp-tool-activity-group__stop {
+  min-height: 28px;
+  padding: 2px 10px;
+  border: 1px solid var(--tp-chat-border, CanvasText);
+  border-radius: var(--tp-chat-radius-sm);
+  background: transparent;
+  color: var(--tp-chat-text, CanvasText);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tp-tool-activity-group__stop:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.tp-tool-activity__heading > .tp-tool-activity__label {
+  white-space: normal;
+}
+.tp-tool-activity-group__items .tp-tool-activity[data-phase='complete'] > .tp-tool-activity__heading > .tp-tool-activity__label::before {
+  content: '✓' / '';
+  margin-inline-end: 6px;
+  color: var(--tp-chat-success, light-dark(#15803d, #4ade80));
+}
+.tp-tool-activity-group__items .tp-tool-activity[data-phase='pending'] > .tp-tool-activity__heading > .tp-tool-activity__label,
+.tp-tool-activity-group__plan-step {
+  color: var(--tp-chat-muted, GrayText);
+}
+.tp-tool-activity-group__plan-step {
+  margin: 12px 0 0;
+  font-weight: 500;
+}
+@media (pointer: coarse) {
+  .tp-tool-activity-group__stop { min-height: 44px; }
+}
 .tp-tool-activity-group__details > summary::before { content:''; width:6px; height:6px; flex:none; border-inline-end:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(-45deg); margin-inline-end:2px; }
 .tp-tool-activity-group__details[open] > summary::before { transform:rotate(45deg); }
 .tp-tool-activity-group__details > summary > span + span {

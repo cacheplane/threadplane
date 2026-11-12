@@ -1,5 +1,28 @@
 # React parity foundations
 
+`@threadplane/react/a2ui` renders one A2UI surface read-only. Its fixture lives in
+`runtime/react-a2ui-surface.tsx` and is copied only into the plain-package
+consumer, which installs the optional `@threadplane/a2ui` package; the LangGraph
+candidate and review consumers do not install it. The installed browser fixture
+accumulates a surface from wire messages with the installed
+content package, then checks heading semantics, column and row order, row
+distribution, both divider axes, the opt-in stylesheet's card tokens in light and
+dark schemes, a path prop following a new snapshot without remounting, an
+unsupported component keeping its child as literal text, a horizontal list
+holding a decoded avatar image named by its description, a decorative path icon
+and a caption, tabs with a bound title selected by click and arrow keys in both
+directions, a native modal dialog opened and dismissed by pointer and keyboard
+with focus returned to its trigger, right-to-left order and a 320px viewport. A
+second surface is a form on a long-lived store: typing (including mid-string, with
+the caret kept), a multi-line field, a checkbox and a slider by keyboard write to
+that store and update a sibling bound to the same path; a literal value is
+fixed; edits survive unmounting the surface; an agent update replaces an edited
+value; and without the store the same controls change nothing. A Button hands
+the page one action per press, with context and the attached data model read from
+the store at that moment, and is disabled without a handler or an event action.
+The modal's trigger is a Button, which is then the only control that opens it. Validation, function
+calls and child templates are not part of this slice.
+
 The shared menu engine gives `Select` and `OverflowMenu` label typeahead. The
 installed browser fixture types into a real open list and menu: a character moves
 focus to the matching label without selecting, a pause starts a new search, and

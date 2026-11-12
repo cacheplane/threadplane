@@ -44,7 +44,6 @@ function statusToTraceState(s: SubagentStatus): TraceState {
   styles: [CHAT_HOST_TOKENS, `
     :host { display: block; }
     .sac__name { color: var(--tplane-chat-text); font-weight: 500; font-size: var(--tplane-chat-font-size-sm); }
-    .sac__id { font-family: var(--tplane-chat-font-mono); font-size: var(--tplane-chat-font-size-xs); color: var(--tplane-chat-text-muted); margin-left: 4px; }
     .sac__pill {
       padding: 1px 8px;
       border-radius: var(--tplane-chat-radius-launcher);
@@ -70,10 +69,9 @@ function statusToTraceState(s: SubagentStatus): TraceState {
     <chat-trace [state]="state()">
       <span traceLabel>
         <span class="sac__name">{{ subagent().name ?? 'Subagent' }}</span>
-        <span class="sac__id">{{ subagent().toolCallId }}</span>
         <span class="sac__pill" [attr.data-status]="subagent().status()">{{ subagent().status() }}</span>
       </span>
-      <div class="sac__count" traceMeta>{{ subagent().messages().length }} message(s)</div>
+      <div class="sac__count" traceMeta>{{ messageCount() }}</div>
       @for (m of subagent().messages(); track m.id) {
         <div class="sac__msg" [attr.data-role]="m.role">
           @if (m.reasoning) {
@@ -92,7 +90,14 @@ function statusToTraceState(s: SubagentStatus): TraceState {
 })
 export class ChatSubagentCardComponent {
   readonly subagent = input.required<Subagent>();
+  /** App-owned readable labels for the subagent's own tool calls. Technical names stay inside each opened call. */
+  readonly toolLabel = input<((name: string) => string | undefined) | undefined>(undefined);
   readonly state = computed<TraceState>(() => statusToTraceState(this.subagent().status()));
+  /** "1 message" / "3 messages". The spawning call's ID is not shown: it means nothing to a reader. */
+  protected readonly messageCount = computed(() => {
+    const count = this.subagent().messages().length;
+    return `${count} ${count === 1 ? 'message' : 'messages'}`;
+  });
   private readonly markdownDocuments = new Map<string, StreamingMarkdownDocument>();
 
   constructor() {
@@ -140,6 +145,13 @@ export class ChatSubagentCardComponent {
   }
 
   protected toToolCallInfo(tc: ToolCall): ToolCallInfo {
-    return { id: tc.id, name: tc.name, args: tc.args, result: tc.result, status: tc.status };
+    return {
+      id: tc.id,
+      name: tc.name,
+      label: this.toolLabel()?.(tc.name),
+      args: tc.args,
+      result: tc.result,
+      status: tc.status,
+    };
   }
 }
