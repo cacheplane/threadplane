@@ -28,6 +28,8 @@ export type ExactPropsContract = Assert<
       readonly selectedId?: string | null;
       readonly label?: string;
       readonly className?: string;
+      readonly onReplay?: (id: string) => void;
+      readonly onFork?: (id: string) => void;
       readonly renderItem?: (
         item: TimelineItem,
         isSelected: boolean,
@@ -71,6 +73,20 @@ const props: TimelineProps = {
     );
   }}
 />;
+<Timeline
+  {...props}
+  onReplay={(id) => {
+    const exact: string = id;
+    void exact;
+  }}
+  onFork={(id) => void id.length}
+/>;
+// @ts-expect-error Replay requests receive string IDs.
+<Timeline {...props} onReplay={(id: number) => void id} />;
+// @ts-expect-error Fork requests receive an ID, not the item.
+<Timeline {...props} onFork={(row: TimelineItem) => void row} />;
+// @ts-expect-error Action props are readonly.
+props.onReplay = () => undefined;
 <Timeline {...props} renderItem={() => null} />;
 <Timeline {...props} renderItem={() => false} />;
 <Timeline {...props} renderItem={() => undefined} />;

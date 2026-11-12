@@ -1997,9 +1997,9 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/timeline-slider.tsx",
-      "reason": "Native component. Checkpoint slider, replay/fork commands, history capabilities and keyboard values."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/timeline.tsx",
+      "reason": "Covered by the controlled Timeline: optional onReplay and onFork add named native row buttons that request with the row id and start no work. The Angular header count, empty message and select-on-fork are left to the application; wiring to a runtime's checkpoint commands remains open."
     },
     {
       "id": "component:libs/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts#ChatToolCallCardComponent",
@@ -5931,9 +5931,9 @@
         "T29"
       ],
       "treatment": "react",
-      "status": "planned",
-      "target": "libs/react/src/chat/timeline-slider.tsx",
-      "reason": "Native component. Checkpoint slider, replay/fork commands, history capabilities and keyboard values."
+      "status": "in-progress",
+      "target": "libs/react/src/chat/timeline.tsx",
+      "reason": "Covered by the controlled Timeline: optional onReplay and onFork add named native row buttons that request with the row id and start no work. The Angular header count, empty message and select-on-fork are left to the application; wiring to a runtime's checkpoint commands remains open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatToolCallCardComponent",

@@ -1506,6 +1506,13 @@ The labelled ordered list preserves supplied order and original objects; default
 rows use native selection buttons and disable only strict `true`. Import chat
 styles for wrapping, focus and selected-state presentation.
 
+Optional `onReplay(id)` and `onFork(id)` each add a native button to every
+default row, after its selection button, named "Replay from <label>" and "Fork
+from <label>". A press calls the callback once with the row's `id`; it does not
+select the row, and the primitive starts no run and reads no checkpoint. A
+disabled item disables its actions. The visible "Replay" and "Fork" text is
+English.
+
 Optional `renderItem(item, isSelected, index)` replaces the complete row, retaining
 the keyed list item while bypassing all default controls/content. The callback
 owns accessibility and actions; null/false/undefined produces an empty row.
