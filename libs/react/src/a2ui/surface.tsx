@@ -16,8 +16,8 @@ export interface A2uiSurfaceProps {
 }
 
 /**
- * Renders one A2UI surface read-only. Text, Row, Column, Card and Divider come
- * from the basic catalog; a component the catalog lacks keeps its children.
+ * Renders one A2UI surface read-only with the basic catalog's display and
+ * disclosure components; a component the catalog lacks keeps its children.
  * Actions, inputs, function calls and child templates are not handled yet.
  */
 export function A2uiSurface({ surface, catalog, className }: A2uiSurfaceProps) {

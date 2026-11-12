@@ -30,12 +30,43 @@ const record = (
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 function childIds(component: A2uiComponentSnapshot): readonly string[] {
-  const { child, children } = component;
+  const { child, children, tabs, trigger, content } = component;
+  const strings = (ids: readonly unknown[]) =>
+    ids.filter((id): id is string => typeof id === 'string');
+  if (component.component === 'Modal') return strings([trigger, content]);
+  if (component.component === 'Tabs')
+    return strings(
+      Array.isArray(tabs) ? tabs.map((tab) => (record(tab) ? tab['child'] : 0)) : []
+    );
   if (typeof child === 'string') return [child];
   // A template ({ path, componentId }) is not expanded by this static slice.
-  return Array.isArray(children)
-    ? children.filter((id): id is string => typeof id === 'string')
-    : [];
+  return Array.isArray(children) ? strings(children) : [];
+}
+
+/** Reads one JSON Pointer from the data model; anything missing is undefined. */
+function read(model: A2uiValue, path: string): A2uiValue | undefined {
+  let value: A2uiValue | undefined = model;
+  for (const part of path.split('/').slice(1)) {
+    const key = part.replace(/~1/g, '/').replace(/~0/g, '~');
+    if (Array.isArray(value)) value = /^\d+$/.test(key) ? value[Number(key)] : undefined;
+    else if (value !== undefined && record(value) && Object.hasOwn(value, key))
+      value = value[key];
+    else return undefined;
+  }
+  return value;
+}
+
+/** A tab title as literal text: a string, or a `{ path }` read from the data model. */
+function title(value: A2uiValue | undefined, model: A2uiValue): string {
+  const resolved =
+    value !== undefined && record(value) && typeof value['path'] === 'string'
+      ? read(model, value['path'])
+      : value;
+  return typeof resolved === 'string'
+    ? resolved
+    : typeof resolved === 'number' || typeof resolved === 'boolean'
+    ? String(resolved)
+    : '';
 }
 
 /** A render tree and read-only state for one published surface, or null when it has no components. */
@@ -47,7 +78,8 @@ export interface A2uiSurfaceSpec {
 /**
  * Projects a surface snapshot onto the render tree. Literal props pass through,
  * `{ path }` props read the surface data model, and function-call props are left
- * out. Only components reachable from the root are kept, each at its first
+ * out. Modal children are its trigger then its content; Tabs children are its
+ * tab bodies, with their titles resolved to text. Only components reachable from the root are kept, each at its first
  * position, so a malformed cycle or shared child cannot recurse.
  */
 export function a2uiSurfaceSpec(surface: A2uiSurfaceSnapshot): A2uiSurfaceSpec {
@@ -76,6 +108,16 @@ export function a2uiSurfaceSpec(surface: A2uiSurfaceSnapshot): A2uiSurfaceSpec {
       queue.push(id);
       return true;
     });
+    if (component.component === 'Tabs') {
+      // One title per kept child, so a dropped tab never shifts the others.
+      const tabs = Array.isArray(component['tabs']) ? component['tabs'] : [];
+      props['tabTitles'] = children.map((id) =>
+        title(
+          tabs.find((tab) => record(tab) && tab['child'] === id)?.['title' as never],
+          surface.dataModel
+        )
+      );
+    }
     elements[component.id] = {
       type: component.component,
       props,

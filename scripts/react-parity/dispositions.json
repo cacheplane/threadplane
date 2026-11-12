@@ -1857,9 +1857,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/modal.tsx",
-      "reason": "Native component. Portal/dialog behavior, trigger children, focus trap/restore and scoped theme."
+      "reason": "Native read-only view. Inline trigger opening a native modal dialog named by the trigger; Escape, Close and backdrop dismissal with native focus return. Localized Close label and controlled open state remain open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/row.component.ts#A2uiRowComponent",
@@ -1887,9 +1887,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/tabs.tsx",
-      "reason": "Native component. Selected index/key policy, tab/panel ARIA and keyboard navigation."
+      "reason": "Native read-only view. Tab list with one labelled panel, local selection, arrow/Home/End keys following reading direction, bound titles resolved to literal text. Only the selected tab is mounted; controlled selection remains open."
     },
     {
       "id": "component:libs/chat/src/lib/a2ui/catalog/text-field.component.ts#A2uiTextFieldComponent",
@@ -5027,9 +5027,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/modal.tsx",
-      "reason": "Native component. Portal/dialog behavior, trigger children, focus trap/restore and scoped theme."
+      "reason": "Native read-only view. Inline trigger opening a native modal dialog named by the trigger; Escape, Close and backdrop dismissal with native focus return. Localized Close label and controlled open state remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiPathRef",
@@ -5101,9 +5101,9 @@
         "T27"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/a2ui/catalog/tabs.tsx",
-      "reason": "Native component. Selected index/key policy, tab/panel ARIA and keyboard navigation."
+      "reason": "Native read-only view. Tab list with one labelled panel, local selection, arrow/Home/End keys following reading direction, bound titles resolved to literal text. Only the selected tab is mounted; controlled selection remains open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#A2uiTextComponent",
@@ -16129,6 +16129,20 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Read-only List view for static children, vertical or horizontal."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/modal.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Modal view: inline trigger and a native modal dialog with local open state."
+    },
+    {
+      "id": "source:libs/react/src/a2ui/catalog/tabs.tsx",
+      "taskIds": ["T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Tabs view: tab list and one panel with local selection and keyboard movement."
     },
     {
       "id": "source:libs/react/src/a2ui/catalog/media-url.ts",

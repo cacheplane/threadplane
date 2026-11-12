@@ -747,7 +747,8 @@ export async function runA2uiSurfaceScenarios(page, url) {
   // A component this slice lacks keeps its child as literal text and adds no control.
   const unsupported = surface.locator('[data-a2ui-unsupported="extra"]');
   await expect(unsupported).toHaveText('Book <b>now</b>');
-  await expect(surface.getByRole('button')).toHaveCount(0);
+  // The only button is the modal trigger; the unsupported Button adds none.
+  await expect(surface.getByRole('button')).toHaveCount(1);
   assert.equal(await unsupported.locator('b').count(), 0);
   // Media: the image carries its description and avatar preset, the path icon is decorative, and the list runs inline.
   const photo = surface.getByRole('img', { name: 'Lyon skyline' });
@@ -765,6 +766,52 @@ export async function runA2uiSurfaceScenarios(page, url) {
   const middle = (box) => (box.top + box.bottom) / 2;
   assert.ok(Math.abs(middle(gallery.photo) - middle(gallery.pin)) < 1 && Math.abs(middle(gallery.photo) - middle(gallery.caption)) < 1, `list centred ${JSON.stringify(gallery)}`);
   assert.ok(ltr.row.bottom <= gallery.list.top, `list after row ${JSON.stringify(gallery)}`);
+  // Tabs: a bound title, one labelled panel, click and arrow selection with wrapping.
+  const tab = (name) => surface.getByRole('tab', { name, exact: true });
+  const panel = surface.getByRole('tabpanel');
+  await expect(surface.getByRole('tab')).toHaveText(['Outbound', 'Return']);
+  await expect(tab('Outbound')).toHaveAttribute('aria-selected', 'true');
+  await expect(panel).toHaveText('Train 6601');
+  assert.equal(await panel.getAttribute('aria-labelledby'), await tab('Outbound').getAttribute('id'));
+  const underline = (locator) => locator.evaluate((node) => getComputedStyle(node).borderBottomColor);
+  assert.notEqual(await underline(tab('Outbound')), await underline(tab('Return')));
+  await tab('Return').click();
+  await expect(panel).toHaveText('Train 6624');
+  await expect(tab('Outbound')).toHaveAttribute('tabindex', '-1');
+  await page.keyboard.press('ArrowRight');
+  await expect(tab('Outbound')).toBeFocused();
+  await expect(panel).toHaveText('Train 6601');
+  // Modal: a native modal dialog named by its trigger and styled by the surface tokens.
+  const rulesTrigger = surface.getByRole('button', { name: 'Fare rules' });
+  const rulesDialog = surface.locator('dialog.a2ui-modal');
+  await expect(rulesTrigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(rulesDialog).toHaveCount(0);
+  await rulesTrigger.click();
+  await expect(page.getByRole('dialog', { name: 'Fare rules' })).toBeVisible();
+  await expect(rulesDialog).toContainText('Refundable until departure');
+  assert.equal(await rulesDialog.evaluate((node) => node.matches(':modal')), true);
+  assert.equal(await rulesDialog.evaluate((node) => getComputedStyle(node).backgroundColor), cardStyle.background);
+  assert.equal(await rulesDialog.evaluate((node) => node.contains(document.activeElement)), true);
+  const dialogBox = await rect(rulesDialog);
+  const view = page.viewportSize();
+  assert.ok(dialogBox.width <= 512 && dialogBox.left >= 0 && view && dialogBox.right <= view.width, `dialog fits ${JSON.stringify(dialogBox)}`);
+  // A press inside the panel keeps it open.
+  await rulesDialog.getByText('Refundable until departure').click();
+  await expect(rulesDialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(rulesDialog).toHaveCount(0);
+  await expect(rulesTrigger).toBeFocused();
+  await expect(rulesTrigger).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('Enter');
+  await expect(rulesDialog).toBeVisible();
+  await rulesDialog.getByRole('button', { name: 'Close' }).click();
+  await expect(rulesDialog).toHaveCount(0);
+  await rulesTrigger.focus();
+  await page.keyboard.press('Space');
+  await expect(rulesDialog).toBeVisible();
+  // A press on the backdrop dismisses it.
+  await page.mouse.click(4, 4);
+  await expect(rulesDialog).toHaveCount(0);
   // A new snapshot replaces the bound text without remounting the card.
   const retained = await card.elementHandle();
   await page.getByRole('checkbox', { name: 'Long summary' }).check();
@@ -774,6 +821,11 @@ export async function runA2uiSurfaceScenarios(page, url) {
   await page.getByRole('checkbox', { name: 'Right to left' }).check();
   const rtl = await layout();
   assert.ok(rtl.depart.left >= rtl.bar.right && rtl.bar.left >= rtl.time.right, `rtl row order ${JSON.stringify(rtl)}`);
+  // Right to left also reverses the tab arrow keys.
+  await tab('Outbound').focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(tab('Return')).toBeFocused();
+  await expect(panel).toHaveText('Train 6624');
   await page.getByRole('checkbox', { name: 'Right to left' }).uncheck();
   // A narrow viewport wraps the long text inside the card without page overflow.
   const size = page.viewportSize();

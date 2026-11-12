@@ -11,7 +11,7 @@ function tripSurface(summary: string) {
   const messages = [
     { version: 'v0.9', createSurface: { surfaceId: 'trip', catalogId: 'basic' } },
     { version: 'v0.9', updateComponents: { surfaceId: 'trip', components: [
-      { id: 'root', component: 'Column', children: ['title', 'card', 'rule', 'row', 'gallery', 'extra'] },
+      { id: 'root', component: 'Column', children: ['title', 'card', 'rule', 'row', 'gallery', 'legs', 'rules', 'extra'] },
       { id: 'title', component: 'Text', text: 'Lyon trip', variant: 'h2' },
       { id: 'card', component: 'Card', child: 'summary' },
       { id: 'summary', component: 'Text', text: { path: '/summary' } },
@@ -24,10 +24,17 @@ function tripSurface(summary: string) {
       { id: 'photo', component: 'Image', url: PHOTO, description: 'Lyon skyline', variant: 'avatar', fit: 'cover' },
       { id: 'pin', component: 'Icon', name: { svgPath: 'M480-80 160-400l320-480 320 480L480-80Z' } },
       { id: 'caption', component: 'Text', text: 'Old town', variant: 'caption' },
+      { id: 'legs', component: 'Tabs', tabs: [{ title: 'Outbound', child: 'out' }, { title: { path: '/returnTitle' }, child: 'back' }] },
+      { id: 'out', component: 'Text', text: 'Train 6601' },
+      { id: 'back', component: 'Text', text: 'Train 6624' },
+      { id: 'rules', component: 'Modal', trigger: 'rulesLabel', content: 'rulesBody' },
+      { id: 'rulesLabel', component: 'Text', text: 'Fare rules' },
+      { id: 'rulesBody', component: 'Text', text: 'Refundable until departure' },
       { id: 'extra', component: 'Button', child: 'label', action: { event: { name: 'book' } } },
       { id: 'label', component: 'Text', text: 'Book <b>now</b>' },
     ] } },
     { version: 'v0.9', updateDataModel: { surfaceId: 'trip', path: '/summary', value: summary } },
+    { version: 'v0.9', updateDataModel: { surfaceId: 'trip', path: '/returnTitle', value: 'Return' } },
   ] as unknown as Parameters<A2uiSurfaces['apply']>[0][];
   for (const message of messages) surfaces.apply(message);
   const [surface] = surfaces.getSnapshot().surfaces;

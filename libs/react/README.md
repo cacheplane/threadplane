@@ -1566,12 +1566,13 @@ export function Surfaces({ snapshot }: { readonly snapshot: A2uiSurfacesSnapshot
 }
 ```
 
-`a2uiBasicCatalog()` returns the display components: `Text`, `Image`, `Icon`,
-`Video`, `AudioPlayer`, `Row`, `Column`, `List`, `Card` and `Divider`. Spread it
-into your own registry and pass that as `catalog` to add or replace components;
-keep the registry stable. Literal props pass through and `{ path }` props read
-the surface data model, so a new snapshot updates bound text. A component the
-catalog lacks keeps its children and renders no control.
+`a2uiBasicCatalog()` returns the display and disclosure components: `Text`,
+`Image`, `Icon`, `Video`, `AudioPlayer`, `Row`, `Column`, `List`, `Card`,
+`Divider`, `Tabs` and `Modal`. Spread it into your own registry and pass that as
+`catalog` to add or replace components; keep the registry stable. Literal props
+pass through and `{ path }` props read the surface data model, so a new snapshot
+updates bound text. A component the catalog lacks keeps its children and renders
+no control.
 
 Media loads only from relative, `http(s)` and `blob` URLs and from `data:` URLs
 of the element's own kind; any other URL renders nothing. `Video` and
@@ -1579,6 +1580,12 @@ of the element's own kind; any other URL renders nothing. `Video` and
 `Icon` is a Material Symbols ligature, so load that font in your application; an
 `Icon` given `{ svgPath }` needs no font.
 
+`Tabs` and `Modal` keep their own state while the surface stays mounted and send
+nothing to the agent. `Tabs` renders only the selected tab's content, so content
+in another tab is unmounted; arrow keys, Home and End move and select. `Modal`
+shows its content in a native modal dialog named by its trigger; Escape, its
+Close button and a press on the backdrop dismiss it. The Close label is English.
+
 Controls (`Button`, `TextField`, `CheckBox`, `ChoicePicker`, `Slider`,
-`DateTimeInput`), `Tabs`, `Modal`, actions, validation, function-call props,
-child templates and surface themes are not handled yet.
+`DateTimeInput`), actions, validation, function-call props, child templates and
+surface themes are not handled yet.
