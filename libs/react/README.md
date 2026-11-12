@@ -989,6 +989,15 @@ control visibility and focus. Opening focuses Close; closing returns focus to th
 launcher unless another page control already has focus. `launcherLabel`,
 `closeLabel`, `closeOnEscape` and `className` customize the shell.
 
+Optional `toggleShortcut` takes one key, such as `"k"`, and requests a toggle
+through `onOpenChange` on Ctrl or Command with that key, from anywhere on the
+page. It is off unless set. A draft inside the popup may close it, while a text
+field elsewhere on the page keeps the key for itself. Repeats, composition,
+extra Alt or Shift, and events another handler already claimed are ignored. The
+launcher announces the combination with `aria-keyshortcuts`. `ChatSidebar`
+takes the same prop. If you also enable `ChatSidenav`'s search shortcut, which
+uses Ctrl or Command with K, pick a different key here.
+
 Closed children remain mounted, hidden and inert. Drafts and borrowed subscriptions
 survive closing; a running response continues. Closing never stops or disposes the
 session or app-owned content. The application still owns Stop and final disposal.
@@ -997,8 +1006,8 @@ Changing the selected conversation can independently reset its composer.
 The dialog has a generated title relationship, ordinary non-modal Tab order and
 viewport-bounded scrolling. It uses the same scoped chat stylesheet and tokens.
 Mount it outside transformed or clipping ancestors: this first slice uses fixed
-positioning in its existing DOM location, with no portal, backdrop, focus trap,
-global shortcut or persisted open state.
+positioning in its existing DOM location, with no portal, backdrop, focus trap
+or persisted open state.
 
 `ChatSidebar` uses the same controlled props and retained-child behavior as
 `ChatPopup`. Import it from the same `/chat` entry and replace `ChatPopup` in the

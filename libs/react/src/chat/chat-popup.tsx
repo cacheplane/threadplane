@@ -1,5 +1,6 @@
 'use client';
 import { useId, useRef, type ReactNode } from 'react';
+import { shortcutTargetIsEditable } from './chat-sidenav.js';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 
 /** Controlled popup visibility, accessible labels, Escape dismissal policy, and persistent panel content. */
@@ -10,6 +11,12 @@ export interface ChatPopupProps {
   readonly launcherLabel?: string;
   readonly closeLabel?: string;
   readonly closeOnEscape?: boolean;
+  /**
+   * One key, such as `k`, that requests a toggle with Ctrl or Command from
+   * anywhere on the page. Typing in a field outside the popup is left alone.
+   * Off unless set.
+   */
+  readonly toggleShortcut?: string;
   readonly className?: string;
   readonly children?: ReactNode;
 }
@@ -22,6 +29,7 @@ export function ChatPopup({
   launcherLabel = 'Chat',
   closeLabel = 'Close chat',
   closeOnEscape = true,
+  toggleShortcut,
   className,
   children,
 }: ChatPopupProps) {
@@ -58,6 +66,47 @@ export function ChatPopup({
     };
   }, []);
 
+  // One printable character; anything else leaves the shortcut off.
+  const shortcutKey =
+    typeof toggleShortcut === 'string' && [...toggleShortcut].length === 1
+      ? toggleShortcut.toLowerCase()
+      : undefined;
+  const committed = useRef({ open, onOpenChange });
+  useIsomorphicLayoutEffect(() => {
+    committed.current = { open, onOpenChange };
+  }, [open, onOpenChange]);
+
+  useIsomorphicLayoutEffect(() => {
+    const element = root.current;
+    const owner = element?.ownerDocument.defaultView;
+    if (shortcutKey === undefined || !element || !owner) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key.toLowerCase() !== shortcutKey ||
+        !element.isConnected ||
+        !event.cancelable ||
+        event.defaultPrevented ||
+        event.repeat ||
+        event.isComposing ||
+        event.keyCode === 229 ||
+        event.altKey ||
+        event.shiftKey ||
+        !(event.ctrlKey || event.metaKey)
+      )
+        return;
+      // A draft inside the popup may toggle it; a field elsewhere keeps the key.
+      const inside = event
+        .composedPath()
+        .includes(panel.current as EventTarget);
+      if (!inside && shortcutTargetIsEditable(event)) return;
+      // Claim before calling the owner so later window listeners cannot also win.
+      event.preventDefault();
+      committed.current.onOpenChange(!committed.current.open);
+    };
+    owner.addEventListener('keydown', handleKeyDown);
+    return () => owner.removeEventListener('keydown', handleKeyDown);
+  }, [shortcutKey]);
+
   useIsomorphicLayoutEffect(() => {
     if (open === wasOpen.current) return;
     wasOpen.current = open;
@@ -89,6 +138,11 @@ export function ChatPopup({
         aria-controls={panelId}
         aria-expanded={open}
         aria-haspopup="dialog"
+        aria-keyshortcuts={
+          shortcutKey === undefined
+            ? undefined
+            : `Control+${shortcutKey.toUpperCase()} Meta+${shortcutKey.toUpperCase()}`
+        }
         onClick={() => onOpenChange(!open)}
       >
         {launcherLabel}

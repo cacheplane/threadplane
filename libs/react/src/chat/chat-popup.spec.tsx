@@ -315,4 +315,119 @@ describe('ChatPopup', () => {
     });
     expect(change).not.toHaveBeenCalled();
   });
+
+  describe('toggle shortcut', () => {
+    const press = (target: EventTarget, init: KeyboardEventInit) => {
+      const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, composed: true, ...init });
+      target.dispatchEvent(event);
+      return event;
+    };
+    const mount = (open: boolean, toggleShortcut?: string) => {
+      const onOpenChange = vi.fn();
+      const view = render(
+        <>
+          <input aria-label="Page search" />
+          <button type="button">Page button</button>
+          <ChatPopup open={open} title="Support" onOpenChange={onOpenChange} toggleShortcut={toggleShortcut}>
+            <textarea aria-label="Draft" />
+          </ChatPopup>
+        </>
+      );
+      return { view, onOpenChange, launcher: view.getByRole('button', { name: 'Chat' }) };
+    };
+
+    it('is off unless a single key is given, and says nothing on the launcher', () => {
+      for (const value of [undefined, '', 'kk', 'Escape']) {
+        const { onOpenChange, launcher } = mount(false, value);
+        expect(press(window, { key: 'k', ctrlKey: true }).defaultPrevented).toBe(false);
+        expect(press(window, { key: 'Escape', ctrlKey: true }).defaultPrevented).toBe(false);
+        expect(onOpenChange).not.toHaveBeenCalled();
+        expect(launcher.hasAttribute('aria-keyshortcuts')).toBe(false);
+        cleanup();
+      }
+    });
+
+    it('requests a toggle with Ctrl or Command and the key, in either case, and claims the event', () => {
+      const { onOpenChange, launcher } = mount(false, 'K');
+      expect(launcher.getAttribute('aria-keyshortcuts')).toBe('Control+K Meta+K');
+      expect(press(window, { key: 'k', ctrlKey: true }).defaultPrevented).toBe(true);
+      expect(press(document.body, { key: 'K', metaKey: true }).defaultPrevented).toBe(true);
+      expect(onOpenChange.mock.calls).toEqual([[true], [true]]);
+    });
+
+    it('requests closing when open, including from the draft inside the popup', () => {
+      const { view, onOpenChange } = mount(true, 'k');
+      expect(press(view.getByRole('textbox', { name: 'Draft' }), { key: 'k', metaKey: true }).defaultPrevented).toBe(true);
+      expect(onOpenChange.mock.calls).toEqual([[false]]);
+    });
+
+    it('leaves the key to a field elsewhere on the page, but not to a button', () => {
+      const { view, onOpenChange } = mount(false, 'k');
+      expect(press(view.getByRole('textbox', { name: 'Page search' }), { key: 'k', ctrlKey: true }).defaultPrevented).toBe(false);
+      expect(onOpenChange).not.toHaveBeenCalled();
+      expect(press(view.getByRole('button', { name: 'Page button' }), { key: 'k', ctrlKey: true }).defaultPrevented).toBe(true);
+      expect(onOpenChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores other keys, missing or extra modifiers, repeats, composition and claimed events', () => {
+      const { onOpenChange } = mount(false, 'k');
+      for (const init of [
+        { key: 'j', ctrlKey: true },
+        { key: 'k' },
+        { key: 'k', ctrlKey: true, shiftKey: true },
+        { key: 'k', ctrlKey: true, altKey: true },
+        { key: 'k', ctrlKey: true, repeat: true },
+        { key: 'k', ctrlKey: true, isComposing: true },
+      ] satisfies KeyboardEventInit[])
+        expect(press(window, init).defaultPrevented, JSON.stringify(init)).toBe(false);
+      const claim = (event: Event) => event.preventDefault();
+      document.body.addEventListener('keydown', claim);
+      press(document.body, { key: 'k', ctrlKey: true });
+      document.body.removeEventListener('keydown', claim);
+      expect(onOpenChange).not.toHaveBeenCalled();
+    });
+
+    it('uses the latest open state and handler, follows the prop, and stops listening on unmount', () => {
+      const first = vi.fn();
+      const second = vi.fn();
+      const view = render(<ChatPopup open={false} title="Support" onOpenChange={first} toggleShortcut="k" />);
+      view.rerender(<ChatPopup open title="Support" onOpenChange={second} toggleShortcut="k" />);
+      press(window, { key: 'k', ctrlKey: true });
+      expect(first).not.toHaveBeenCalled();
+      expect(second.mock.calls).toEqual([[false]]);
+      view.rerender(<ChatPopup open title="Support" onOpenChange={second} toggleShortcut="j" />);
+      press(window, { key: 'k', ctrlKey: true });
+      press(window, { key: 'j', ctrlKey: true });
+      expect(second).toHaveBeenCalledTimes(2);
+      view.rerender(<ChatPopup open title="Support" onOpenChange={second} />);
+      press(window, { key: 'j', ctrlKey: true });
+      view.unmount();
+      expect(press(window, { key: 'j', ctrlKey: true }).defaultPrevented).toBe(false);
+      expect(second).toHaveBeenCalledTimes(2);
+    });
+
+    it('works through ChatSidebar and leaves the key to fields in the page content', () => {
+      const onOpenChange = vi.fn();
+      const view = render(
+        <ChatSidebar open={false} title="Support" onOpenChange={onOpenChange} toggleShortcut="k" pageContent={<input aria-label="Page field" />}>
+          <textarea aria-label="Draft" />
+        </ChatSidebar>
+      );
+      press(view.getByRole('textbox', { name: 'Page field' }), { key: 'k', ctrlKey: true });
+      expect(onOpenChange).not.toHaveBeenCalled();
+      press(window, { key: 'k', ctrlKey: true });
+      expect(onOpenChange.mock.calls).toEqual([[true]]);
+    });
+
+    it('requests once per press under StrictMode', () => {
+      const onOpenChange = vi.fn();
+      render(
+        <StrictMode>
+          <ChatPopup open={false} title="Support" onOpenChange={onOpenChange} toggleShortcut="k" />
+        </StrictMode>
+      );
+      press(window, { key: 'k', ctrlKey: true });
+      expect(onOpenChange).toHaveBeenCalledTimes(1);
+    });
+  });
 });

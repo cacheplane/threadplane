@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChatInput, ChatWindow, GenerativeUiSkeleton, LauncherButton, MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, Timeline, Trace, type MessageRatingValue, type TimelineItem, type TraceState } from '@threadplane/react/chat';
+import { ChatInput, ChatPopup, ChatWindow, GenerativeUiSkeleton, LauncherButton, MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, Timeline, Trace, type MessageRatingValue, type TimelineItem, type TraceState } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
 import { ConfirmDialogFixture } from './react-confirm-dialog';
 
@@ -18,6 +18,8 @@ export function OverflowMenuFixture() {
     return <PrimitivesFixture />;
   if (new URLSearchParams(window.location.search).has('shell'))
     return <ShellFixture />;
+  if (new URLSearchParams(window.location.search).has('popup'))
+    return <PopupFixture />;
   if (new URLSearchParams(window.location.search).has('rating'))
     return <RatingFixture />;
   if (new URLSearchParams(window.location.search).has('slots'))
@@ -423,6 +425,31 @@ function ShellFixture() {
           </div>
         </ChatWindow>
       </div>
+    </main>
+  );
+}
+
+/** Installed ChatPopup toggle shortcut; no backend or session commands. */
+function PopupFixture() {
+  const [open, setOpen] = useState(false);
+  const [requests, setRequests] = useState(0);
+  return (
+    <main>
+      <h1>Installed popup</h1>
+      <input aria-label="Page search" />
+      <button type="button">Page button</button>
+      <output data-testid="popup-requests">{requests}</output>
+      <ChatPopup
+        open={open}
+        title="Support"
+        toggleShortcut="k"
+        onOpenChange={(next) => {
+          setRequests((value) => value + 1);
+          setOpen(next);
+        }}
+      >
+        <textarea aria-label="Draft" />
+      </ChatPopup>
     </main>
   );
 }
