@@ -86,7 +86,9 @@ The ledger records each child call with its `parent` call and `subagentRunId`, s
 For this scenario each target consumer keeps its thread ID in `sessionStorage` and restores the thread on reload. The server keeps every delivered AG-UI event per thread, with the user turn recorded in the stored `RUN_STARTED.input` because a live stream never sends it:
 
 - `GET /threads/<participant>/<threadId>/events` returns `{ events }`. The Angular consumer passes it to `provideAgent` through `httpReplay`.
-- `GET /threads/<participant>/<threadId>/messages` returns `{ messages }`, the parent transcript folded into native AG-UI messages. The React consumer passes it to its session as initial messages. Child events are not part of this projection.
+- `GET /threads/<participant>/<threadId>/messages` returns `{ messages, subagents }`. `messages` is the transcript folded into native AG-UI messages; a child's messages keep its `subagentRunId`. `subagents` is each child's start and terminal evidence. The React consumer passes both to its session, which publishes the restored children as `earlierSubagents`.
+
+The React consumer renders each child with `subagentsFromEvidence` and `SubagentCard`. The card stands in for the delegating call's row, as it does in the Angular `chat` composition, and it is still there after a reload.
 
 Reading history is not a run. `GET /restores` lists the history requests and `GET /notes` returns the saved-note count, so a driver can show that a reload ran no tool and wrote nothing. "New conversation" forgets the kept thread, and a participant reset deletes its history.
 
