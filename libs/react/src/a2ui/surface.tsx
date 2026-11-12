@@ -3,11 +3,13 @@ import { useMemo, useRef, useState } from 'react';
 import {
   createA2uiActionMessage,
   evaluateA2uiChecks,
+  resolveA2uiValue,
   type A2uiActionMessage,
   type A2uiCheckFailure,
   type A2uiValidationErrorMessage,
   type A2uiSurfaces,
   type A2uiSurfaceSnapshot,
+  type A2uiValue,
 } from '@threadplane/content/a2ui';
 import { RenderSpec, type ReactRenderRegistry } from '../render/index.js';
 import { a2uiBasicCatalog } from './catalog/index.js';
@@ -33,6 +35,59 @@ function split(surface: A2uiSurfaceSnapshot) {
   return { buttons, inputs };
 }
 
+type Args = { readonly [name: string]: A2uiValue };
+type Functions = NonNullable<A2uiSurfaceProps['functions']>;
+
+/** A component's `action.functionCall`, with its arguments resolved now. */
+function localCall(surface: A2uiSurfaceSnapshot, id: string) {
+  const action = surface.components.find((item) => item.id === id)?.['action'];
+  const call = (action as { functionCall?: A2uiValue } | null | undefined)
+    ?.functionCall as { call?: A2uiValue; args?: A2uiValue } | null | undefined;
+  if (typeof call?.call !== 'string') return null;
+  const authored = call.args;
+  // No prototype, so an argument named `__proto__` is only a key.
+  const args: Record<string, A2uiValue> = Object.create(null);
+  if (typeof authored === 'object' && authored !== null && !Array.isArray(authored))
+    for (const key of Object.keys(authored))
+      args[key] = resolveA2uiValue(surface, (authored as Args)[key]);
+  return { name: call.call, args: Object.freeze(args) as Args };
+}
+
+const OPENABLE = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+
+/** The address `openUrl` may open: web, mail and phone links only. */
+function openable(url: A2uiValue): string | null {
+  if (typeof url !== 'string' || url.trim() === '') return null;
+  try {
+    // The server has no page address; any base gives the same answer there.
+    const parsed = new URL(
+      url,
+      typeof window === 'undefined' ? 'http://localhost' : window.location.href
+    );
+    return OPENABLE.has(parsed.protocol) ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/** What a press runs for a function-call action, or null when nothing can. */
+function runner(
+  call: ReturnType<typeof localCall>,
+  functions: Functions | undefined
+): (() => void) | null {
+  if (call === null) return null;
+  const own =
+    functions !== undefined && Object.hasOwn(functions, call.name)
+      ? functions[call.name]
+      : undefined;
+  if (typeof own === 'function') return () => own(call.args);
+  if (call.name !== 'openUrl') return null;
+  const href = openable(call.args['url']);
+  return href === null
+    ? null
+    : () => void window.open(href, '_blank', 'noopener,noreferrer');
+}
+
 /** Supplies one published surface snapshot and, optionally, the components that render it. */
 export interface A2uiSurfaceProps {
   /** A surface from `createA2uiSurfaces().getSnapshot().surfaces`. Snapshots are immutable; pass the current one. */
@@ -56,6 +111,18 @@ export interface A2uiSurfaceProps {
    * `onAction` is not called for that press.
    */
   readonly onValidationError?: (error: A2uiValidationErrorMessage) => void;
+  /**
+   * Runs a Button's function-call action, by function name, with its
+   * arguments resolved from this surface's current data model. Nothing is
+   * sent to the agent. A function named here replaces the built-in one.
+   * `openUrl` is built in: it opens an http, https, mailto or tel `url` in a
+   * new tab. A Button whose function nothing can run is disabled.
+   */
+  readonly functions?: {
+    readonly [name: string]: (args: {
+      readonly [name: string]: A2uiValue;
+    }) => void;
+  };
   /** Components by A2UI name. Defaults to `a2uiBasicCatalog()`; keep it stable. */
   readonly catalog?: ReactRenderRegistry;
   readonly className?: string;
@@ -68,14 +135,17 @@ export interface A2uiSurfaceProps {
  * resolved action message to `onAction`, and the application transports it.
  * A press is blocked while any input's `checks` fail; the failing inputs then
  * show their messages until they pass. A Button whose own `checks` fail is
- * disabled. A component the catalog lacks keeps its children. Function calls
- * outside checks and child templates are not handled yet.
+ * disabled. A Button with a function-call action runs it here, through
+ * `functions` or the built-in `openUrl`, without consulting `checks` on
+ * inputs. Function-call props show their current value. A component the
+ * catalog lacks keeps its children. Child templates are not handled yet.
  */
 export function A2uiSurface({
   surface,
   surfaces,
   onAction,
   onValidationError,
+  functions,
   catalog,
   className,
 }: A2uiSurfaceProps) {
@@ -92,8 +162,8 @@ export function A2uiSurface({
     [surfaces, surfaceId]
   );
   // A press reads the snapshot and handler of the latest render, not of the render that mounted the button.
-  const latest = useRef({ surface, onAction, onValidationError });
-  latest.current = { surface, onAction, onValidationError };
+  const latest = useRef({ surface, onAction, onValidationError, functions });
+  latest.current = { surface, onAction, onValidationError, functions };
   // Messages stay hidden until a press was blocked, then follow the data model.
   const [blocked, setBlocked] = useState<string | null>(null);
   const failures = useMemo(() => split(surface), [surface]);
@@ -107,15 +177,27 @@ export function A2uiSurface({
       ),
     [surface]
   );
+  const runnable = useMemo(
+    () =>
+      new Set(
+        surface.components
+          .filter((item) => runner(localCall(surface, item.id), functions) !== null)
+          .map((item) => item.id)
+      ),
+    [surface, functions]
+  );
   const handled = onAction !== undefined;
   const actions = useMemo<A2uiSurfaceActions>(
     () => ({
       actionable: (id) =>
-        handled && sendable.has(id) && !failures.buttons.has(id),
+        ((handled && sendable.has(id)) || runnable.has(id)) &&
+        !failures.buttons.has(id),
       act: (id) => {
         const current = latest.current;
         const now = split(current.surface);
         if (now.buttons.has(id)) return;
+        const local = localCall(current.surface, id);
+        if (local !== null) return runner(local, current.functions)?.();
         const [first] = now.inputs.values();
         if (first !== undefined) {
           setBlocked(current.surface.surfaceId);
@@ -136,7 +218,7 @@ export function A2uiSurface({
       },
       error: (id) => shown.get(id)?.message ?? '',
     }),
-    [handled, sendable, failures, shown]
+    [handled, sendable, runnable, failures, shown]
   );
   return (
     <div

@@ -29,6 +29,11 @@ export type PropsContract = Assert<
       readonly onValidationError?: (
         error: A2uiValidationErrorMessage
       ) => void;
+      readonly functions?: {
+        readonly [name: string]: (args: {
+          readonly [name: string]: A2uiValue;
+        }) => void;
+      };
       readonly catalog?: ReactRenderRegistry;
       readonly className?: string;
     }
@@ -74,6 +79,21 @@ props.surface = surface;
 />;
 // @ts-expect-error The handler receives an error message, not text.
 <A2uiSurface surface={surface} onValidationError={(text: string) => undefined} />;
+<A2uiSurface
+  surface={surface}
+  functions={{
+    share: (args) => {
+      const guest: A2uiValue = args['guest'];
+      void guest;
+      // @ts-expect-error Arguments are immutable.
+      args['guest'] = 'other';
+    },
+  }}
+/>;
+// @ts-expect-error Functions are named handlers, not one callback.
+<A2uiSurface surface={surface} functions={(name: string) => undefined} />;
+// @ts-expect-error A function receives named arguments, not a URL.
+<A2uiSurface surface={surface} functions={{ openUrl: (url: string) => undefined }} />;
 // @ts-expect-error The catalog is readonly.
 a2uiBasicCatalog()['Text'] = () => null;
 export type WriterContract = Assert<

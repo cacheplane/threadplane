@@ -877,8 +877,9 @@ test('A2UI feature exposes exactly its owned factory', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiActionMessage() {} }), /createA2uiSurfaces/);
   assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {} }), /createA2uiActionMessage/);
   assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {} }), /evaluateA2uiChecks/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, evaluateA2uiChecks() {} }));
-  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, evaluateA2uiChecks() {}, createOwner() {} }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, evaluateA2uiChecks() {} }), /resolveA2uiValue/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, evaluateA2uiChecks() {}, resolveA2uiValue() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('content/a2ui', { createA2uiSurfaces() {}, createA2uiActionMessage() {}, evaluateA2uiChecks() {}, resolveA2uiValue() {}, createOwner() {} }), /unexpected/);
 });
 test('optional local peers require explicit selection and validate selected artifacts independent of traversal order', () => {
   const manifests = {

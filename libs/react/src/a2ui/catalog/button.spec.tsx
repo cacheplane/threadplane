@@ -110,7 +110,7 @@ describe('A2UI Button', () => {
     expect(onAction).toHaveBeenCalledTimes(2);
   });
 
-  it('is disabled without a handler, without an event action, or when disabled', () => {
+  it('is disabled without a handler, without an action it can perform, or when disabled', () => {
     const none = render(<Host surfaces={store(form, { name: 'Ada' })} />);
     expect((none.getByRole('button') as HTMLButtonElement).disabled).toBe(true);
     cleanup();
@@ -123,7 +123,7 @@ describe('A2UI Button', () => {
             { id: 'root', component: 'Column', children: ['plain', 'local', 'off', 'bound'] },
             { id: 'plain', component: 'Button', child: 'a' },
             { id: 'a', component: 'Text', text: 'No action' },
-            { id: 'local', component: 'Button', child: 'b', action: { functionCall: { call: 'openUrl', args: { url: 'https://example.test' } } } },
+            { id: 'local', component: 'Button', child: 'b', action: { functionCall: { call: 'launch', args: { url: 'https://example.test' } } } },
             { id: 'b', component: 'Text', text: 'Local' },
             { id: 'off', component: 'Button', child: 'c', disabled: true, action: { event: { name: 'x' } } },
             { id: 'c', component: 'Text', text: 'Off' },

@@ -1637,15 +1637,51 @@ retries and what the conversation shows are your application's decisions.
 `createA2uiActionMessage(surface, componentId)` from
 `@threadplane/content/a2ui` builds the same message outside React.
 
-A Button is disabled when there is no `onAction`, when it has no event action,
-or when its `disabled` prop is true. A Button used as a `Modal` trigger opens
-the modal and needs no action. A `functionCall` action is not run.
+A Button with an event action is disabled when there is no `onAction`. A
+Button with no action, or whose `disabled` prop is true, is disabled too. A
+Button used as a `Modal` trigger opens the modal and needs no action.
+
+### Function calls
+
+A prop written as `{ call, args }` shows the function's current value and
+follows the data model like a bound prop. It is a computed value, so an input
+whose `value` is a call cannot be edited. The functions are the basic
+catalog's: `formatString`, `formatNumber`, `formatCurrency`, `formatDate` and
+`pluralize`, plus the validators and logic functions listed under Validation.
+`formatString` replaces each `${...}` with a data model path or a nested call,
+for example
+`"${/party} ${pluralize(value:${/party}, one:'seat', other:'seats')}"`.
+Numbers, currency and plural forms use the viewer's locale; `formatDate` reads
+a pattern such as `MMM d, yyyy` in local time with English month and day
+names. A call to an unknown function, or with arguments it cannot use, has no
+value and the prop is left out. Event action context values and check
+conditions are resolved the same way, and `resolveA2uiValue(surface, value)`
+from `@threadplane/content/a2ui` does it for any value.
+
+A Button whose action is a `functionCall` runs in the page and sends nothing
+to the agent. Pass `functions` to handle them by name:
+
+```tsx
+<A2uiSurface
+  surface={surface}
+  functions={{ share: (args) => navigator.share({ title: String(args.title) }) }}
+/>
+```
+
+Each function receives the call's arguments resolved from the data model at
+the moment of the press. `openUrl` is built in: it opens an `http(s)`,
+`mailto` or `tel` address from its `url` argument in a new tab with no opener,
+and ignores every other kind of address; a function you name `openUrl`
+replaces it and receives the address unchecked. A Button whose function
+nothing can run is disabled. A function-call press is not held back by failing
+checks on inputs, because nothing is submitted; a Button's own failing checks
+still disable it. Keep the `functions` object stable between renders.
 
 ### Validation
 
 A component's `checks` are evaluated against the surface's current data model.
-Conditions may use `required`, `regex`, `length`, `numeric`, `email`, `and`,
-`or` and `not`; a condition that calls any other function does not pass. A `TextField` with `validationRegexp` and a bound
+Conditions usually call `required`, `regex`, `length`, `numeric`, `email`,
+`and`, `or` and `not`; a check passes only when its condition is `true`. A `TextField` with `validationRegexp` and a bound
 value has one more check, with the message "Invalid format".
 
 Pressing a Button while any input's checks fail sends nothing: `onAction` is
@@ -1680,5 +1716,5 @@ in another tab is unmounted; arrow keys, Home and End move and select. `Modal`
 shows its content in a native modal dialog named by its trigger; Escape, its
 Close button and a press on the backdrop dismiss it. The Close label is English.
 
-`functionCall` actions, function-call props outside checks, child templates
-and surface themes are not handled yet.
+Child templates, surface themes and functions of your own inside props are not
+handled yet.

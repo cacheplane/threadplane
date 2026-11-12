@@ -931,6 +931,28 @@ export async function runA2uiSurfaceScenarios(page, url) {
   await guest.fill('');
   await expect(form.getByRole('alert')).toHaveCount(0);
   await guest.fill('Grace Hopper');
+  // Function calls: computed text follows the data model.
+  await expect(form.getByText('Grace Hopper: 8 seats', { exact: true })).toBeVisible();
+  // A function-call Button runs in the page with resolved arguments, sends nothing, and is not held back by a failing input.
+  const formCalls = async () => JSON.parse(await page.getByTestId('form-calls').textContent());
+  const share = form.getByRole('button', { name: 'Share trip' });
+  await guest.fill('');
+  await expect(form.getByText(': 8 seats', { exact: true })).toBeVisible();
+  await share.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('form-calls')).toContainText('Party of 8');
+  assert.deepEqual(await formCalls(), [{ guest: '', line: 'Party of 8' }]);
+  await expect(share).toBeFocused();
+  await expect(form.getByRole('alert')).toHaveCount(0);
+  assert.equal((await formActions()).length, 3);
+  assert.equal((await formErrors()).length, 1);
+  await guest.fill('Grace Hopper');
+  // openUrl is built in: a web address opens in a new tab without an opener; a script address never runs.
+  await page.evaluate(() => { window.__opened = []; window.open = (...args) => { window.__opened.push(args); return null; }; });
+  await form.getByRole('button', { name: 'Open site' }).click();
+  assert.deepEqual(await page.evaluate(() => window.__opened), [['https://example.test/trips/8', '_blank', 'noopener,noreferrer']]);
+  await expect(form.getByRole('button', { name: 'Unsafe link' })).toBeDisabled();
+  assert.notEqual(await page.title(), 'opened');
   // Without a handler the same Button is disabled.
   await page.getByRole('button', { name: 'Toggle editing' }).click();
   await expect(bookTrip).toBeDisabled();
