@@ -584,12 +584,43 @@ test('deep workflow approval saves once and its history restores the whole threa
   );
   assert.equal(runs[0].input.messages[0].id, 'user-deep');
 
-  const { messages } = await (await history(server, 'deep', 'messages')).json();
+  const restored = await (await history(server, 'deep', 'messages')).json();
+  // The child's message and its two read results keep the child's run ID.
+  const childRows = restored.messages.filter(
+    (message) => typeof message.subagentRunId === 'string'
+  );
+  assert.deepEqual(
+    childRows.map((message) => message.role),
+    ['assistant', 'tool', 'tool']
+  );
+  assert.equal(childRows[0].content, 'Both references were read.');
+  assert.deepEqual(
+    childRows[0].toolCalls.map((call) => call.function.name),
+    ['read_reference', 'read_reference']
+  );
+  // One child with start and terminal evidence, started by the delegating call.
+  assert.equal(restored.subagents.length, 1);
+  const [{ started, terminal }] = restored.subagents;
+  assert.equal(started.type, 'SUBAGENT_STARTED');
+  assert.equal(started.name, 'reference-reader');
+  assert.equal(terminal.type, 'SUBAGENT_FINISHED');
+  assert.equal(terminal.subagentRunId, started.subagentRunId);
+  assert.ok(
+    childRows.every((row) => row.subagentRunId === started.subagentRunId)
+  );
+  const messages = restored.messages.filter(
+    (message) => message.subagentRunId === undefined
+  );
+  assert.equal(
+    messages[1].toolCalls[1].id,
+    started.parentToolCallId,
+    'the child names the delegating call'
+  );
   assert.deepEqual(
     messages.map((message) => message.role),
     ['user', 'assistant', 'tool', 'tool', 'tool', 'tool', 'assistant']
   );
-  // Parent transcript only: the child reads stay with the subagent.
+  // The parent message keeps only its own calls: the child reads stay with the subagent.
   assert.deepEqual(
     messages[1].toolCalls.map((call) => call.function.name),
     ['plan_workflow', 'delegate_research', 'read_reference', 'save_note']

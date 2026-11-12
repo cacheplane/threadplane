@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ChatApprovalCardComponent } from './chat-approval-card.component';
 import { mockAgent } from '../../testing/mock-agent';
 import type { AgentInterrupt } from '../../agent/agent-interrupt';
+import { staticDelivery } from '../../agent';
+import { CHAT_APPROVAL_RECORDS, ChatApprovalRecords } from './approval-records';
 
 @Component({
   standalone: true,
@@ -286,5 +288,73 @@ describe('ChatApprovalCardComponent — default presentation', () => {
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('.chat-approval-card--inline .body')).not.toBeNull();
     expect(root.querySelector('dialog')!.open).toBe(false);
+  });
+});
+
+@Component({
+  standalone: true,
+  imports: [ChatApprovalCardComponent],
+  providers: [{ provide: CHAT_APPROVAL_RECORDS, useFactory: () => new ChatApprovalRecords() }],
+  template: `
+    <chat-approval-card
+      [agent]="agent"
+      [request]="request()"
+      matchKind="refund"
+      title="Confirm this fictional booking?"
+      approveLabel="Confirm booking"
+      cancelLabel="Don't book"
+      recordLabel="Booking"
+      (action)="lastAction = $event"
+    >
+      <ng-template #body let-payload><p class="summary">{{ payload.summary }}</p></ng-template>
+    </chat-approval-card>
+  `,
+})
+class RequestHost {
+  agent = mockAgent({
+    withInterrupt: true,
+    messages: [{ id: 'm1', role: 'assistant', content: '', delivery: staticDelivery('m1') }],
+  });
+  readonly request = signal<unknown>(undefined);
+  lastAction: string | undefined = undefined;
+  readonly records = inject(CHAT_APPROVAL_RECORDS);
+}
+
+describe('ChatApprovalCardComponent — a request that is not an interrupt', () => {
+  function render(request: unknown) {
+    const fixture = TestBed.createComponent(RequestHost);
+    fixture.componentInstance.request.set(request);
+    document.body.appendChild(fixture.nativeElement);
+    fixture.detectChanges();
+    TestBed.tick();
+    return { fixture, root: fixture.nativeElement as HTMLElement };
+  }
+
+  it('shows the request without an interrupt and ignores matchKind', () => {
+    const { root } = render({ summary: 'Fictional trip to Portland' });
+    const panel = root.querySelector<HTMLElement>('.chat-approval-card--inline')!;
+    expect(panel.textContent).toContain('Confirm this fictional booking?');
+    expect(panel.querySelector('.summary')!.textContent).toBe('Fictional trip to Portland');
+    expect(document.activeElement?.textContent?.trim()).toBe('Confirm booking');
+  });
+
+  it('records the answer after the latest assistant message', () => {
+    const { fixture, root } = render({ summary: 'Fictional trip' });
+    root.querySelector<HTMLButtonElement>('.chat-approval-card--inline button')!.click();
+    expect(fixture.componentInstance.lastAction).toBe('approve');
+    expect(fixture.componentInstance.records.records()).toEqual([
+      { id: 0, verdict: 'approved', label: 'Booking', afterMessageId: 'm1' },
+    ]);
+  });
+
+  it('shows the request over a pending interrupt, and nothing once the request is answered', () => {
+    const { fixture, root } = render({ summary: 'Fictional trip' });
+    fixture.componentInstance.agent.interrupt!.set({ id: 'i1', value: { kind: 'refund', amount: 5 }, resumable: true });
+    fixture.detectChanges();
+    expect(root.querySelector('.summary')!.textContent).toBe('Fictional trip');
+    fixture.componentInstance.request.set(undefined);
+    fixture.componentInstance.agent.interrupt!.set(undefined);
+    fixture.detectChanges();
+    expect(root.querySelector('.chat-approval-card--inline')).toBeNull();
   });
 });
