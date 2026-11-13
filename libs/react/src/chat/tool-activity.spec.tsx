@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { activitySummary } from './activity-summary';
+import { activitySummary, humanizeToolName, toolActivityHeading } from './activity-summary';
 import {
   ToolActivity,
   ToolActivityGroup,
@@ -664,5 +664,34 @@ describe('ToolActivityGroup — progress view', () => {
     const view = render(<ToolActivityGroup activities={running()} label="Checking references" />);
     openGroup(view.container);
     expect(summaryLabel(view.container).textContent).toBe('Checking references');
+  });
+});
+
+describe('default tool heading', () => {
+  it.each([
+    ['search_documents', 'Search documents'],
+    ['searchDocuments', 'Search documents'],
+    ['search-documents', 'Search documents'],
+    ['get_airport_info', 'Get airport info'],
+    ['fetchURL', 'Fetch URL'],
+    ['HTTPRequest', 'HTTP request'],
+    ['v2_lookup', 'V2 lookup'],
+    ['__', ''],
+  ])('reads %s as "%s"', (name, words) => {
+    expect(humanizeToolName(name)).toBe(words);
+  });
+
+  it('prefers the label, then the name as words, then a generic fallback', () => {
+    expect(toolActivityHeading({ name: 'search_documents', label: 'Searching the archive' })).toBe('Searching the archive');
+    expect(toolActivityHeading({ name: 'search_documents', label: '  ' })).toBe('Search documents');
+    expect(toolActivityHeading({ name: '__' })).toBe('Tool activity');
+  });
+
+  it('heads an unlabelled row with the tool name as words and keeps the raw name in Details', () => {
+    const { container } = render(
+      <ToolActivity activity={{ id: 'c1', name: 'search_documents', phase: 'complete' }} />
+    );
+    expect(container.querySelector('.tp-tool-activity__heading span')!.textContent).toBe('Search documents');
+    expect(container.querySelector('.tp-tool-activity__details code')!.textContent).toBe('search_documents');
   });
 });

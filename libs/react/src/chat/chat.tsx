@@ -67,6 +67,8 @@ export interface ChatProps
   readonly approval?: ReactNode;
   /** Answered approvals as one-line records in the transcript; see `MessageListProps.approvalRecords`. */
   readonly approvalRecords?: MessageListProps['approvalRecords'];
+  /** Built-in Copy and rating under finished assistant messages; see `MessageListProps.messageActions`. Keep stable. */
+  readonly messageActions?: MessageListProps['messageActions'];
   /** App-owned content before the draft; see `ChatInputProps.leading`. */
   readonly inputLeading?: ChatInputProps['leading'];
   /** App-owned controls before Stop and Send; see `ChatInputProps.trailing`. */
@@ -117,6 +119,7 @@ export function Chat({
   inputFooter,
   approval,
   approvalRecords,
+  messageActions,
   welcome,
   runStatus = false,
   ...input
@@ -252,6 +255,7 @@ export function Chat({
         onStop={snapshot.status === 'running' ? stop : undefined}
         running={snapshot.status === 'running'}
         approvalRecords={approvalRecords}
+        messageActions={messageActions}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
             <ScrollBubble

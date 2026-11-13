@@ -101,3 +101,33 @@ export function failureSummaries(
     ),
   ];
 }
+
+/**
+ * Heading for one tool row: the app's label, else the tool name read as words
+ * (`search_documents` → "Search documents"), else a generic fallback. The
+ * technical name itself stays in Details.
+ */
+export function toolActivityHeading(activity: {
+  readonly name?: string;
+  readonly label?: string;
+}): string {
+  return (
+    activity.label?.trim() ||
+    humanizeToolName(activity.name ?? '') ||
+    'Tool activity'
+  );
+}
+
+/** `search_documents`, `searchDocuments` and `search-documents` all read "Search documents"; acronyms keep their case. */
+export function humanizeToolName(name: string): string {
+  const text = name
+    .replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, '$1 $2')
+    .replace(/(\p{Lu}+)(\p{Lu}\p{Ll})/gu, '$1 $2')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)
+    .map((word) =>
+      word.length > 1 && /^[\p{Lu}\p{N}]+$/u.test(word) ? word : word.toLowerCase()
+    )
+    .join(' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}

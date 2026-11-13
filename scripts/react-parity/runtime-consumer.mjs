@@ -1536,6 +1536,72 @@ export async function runWelcomeScenarios(page, url) {
   assert.ok((await rect(frame.getByText('Echo: Plan a weekend in Lyon'))).bottom <= after.top + 0.5, 'the transcript sits above the composer');
 }
 
+/** Installed built-in message actions: Copy with its Copied state, and the rating. */
+export async function runMessageActionScenarios(page, url) {
+  await page.goto(`${url}/?menu&actions`);
+  await expect(page.getByRole('heading', { name: 'Installed message actions' })).toBeVisible();
+  const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }; });
+  const frame = page.getByTestId('actions-frame');
+  const log = page.getByTestId('actions-log');
+  const draft = frame.getByRole('textbox', { name: 'Message' });
+  await expect(frame.locator('.tp-message-actions--built-in')).toHaveCount(0);
+  await draft.fill('Say **hello**');
+  await page.keyboard.press('Enter');
+  await expect(frame.getByText('Echo: Say hello')).toBeVisible();
+  // One group, under the reply only; the prompt has none.
+  const group = frame.getByRole('group', { name: 'Message actions' });
+  await expect(group).toHaveCount(1);
+  const copy = group.getByRole('button', { name: 'Copy', exact: true });
+  const up = group.getByRole('button', { name: 'Good response' });
+  const down = group.getByRole('button', { name: 'Poor response' });
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `message actions do not widen the page at ${width}px`);
+    const reply = await rect(frame.getByText('Echo: Say hello')), row = await rect(group), composer = await rect(frame.locator('.tp-chat-input'));
+    assert.ok(row.top >= reply.bottom && row.bottom <= composer.top + 0.5, 'the actions sit under the reply and above the composer');
+    assert.ok(Math.abs(row.left - reply.left) <= 1, 'the actions start at the reply\'s edge');
+    const boxes = [];
+    for (const button of [copy, up, down]) {
+      const box = await rect(button);
+      assert.ok(box.width >= 36 && box.height >= 36, 'each action is at least 36px');
+      boxes.push(box);
+    }
+    assert.ok(boxes[0].right <= boxes[1].left && boxes[1].right <= boxes[2].left, 'Copy, up and down sit in one row without overlap');
+    assert.ok(Math.abs(boxes[0].top - boxes[2].top) <= 0.5, 'the actions share one line');
+  }
+  // Keyboard: Copy takes focus with a visible ring, and Enter copies the message source.
+  await copy.focus();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift+Tab');
+  await expect(copy).toBeFocused();
+  assert.notEqual(await copy.evaluate((node) => getComputedStyle(node).outlineStyle), 'none', 'Copy shows a focus ring');
+  await page.keyboard.press('Enter');
+  const copied = group.getByRole('button', { name: 'Copied', exact: true });
+  await expect(copied).toBeVisible();
+  await expect(copied).toBeFocused();
+  await expect(copied).toHaveAttribute('title', 'Copied');
+  await expect(log).toHaveText('copy:a1:Echo: Say **hello**');
+  assert.ok((await rect(copied)).width >= 36, 'the button keeps its size while it reads Copied');
+  await expect(copy).toBeVisible({ timeout: 4000 });
+  await expect(copy).toBeFocused();
+  // Rating: pressed state follows each press, pressing again clears, and every change is reported.
+  await up.click();
+  await expect(up).toHaveAttribute('aria-pressed', 'true');
+  assert.notEqual(await up.evaluate((node) => getComputedStyle(node).color), await down.evaluate((node) => getComputedStyle(node).color), 'the chosen rating looks different');
+  await down.click();
+  await expect(up).toHaveAttribute('aria-pressed', 'false');
+  await expect(down).toHaveAttribute('aria-pressed', 'true');
+  await down.click();
+  await expect(down).toHaveAttribute('aria-pressed', 'false');
+  await expect(log).toHaveText('copy:a1:Echo: Say **hello**|rate:a1:up|rate:a1:down|rate:a1:null');
+  // A second reply gets its own actions and its own rating.
+  await draft.fill('Again');
+  await page.keyboard.press('Enter');
+  await expect(frame.getByText('Echo: Again')).toBeVisible();
+  await expect(group).toHaveCount(2);
+  await expect(frame.locator('.tp-message-rating [aria-pressed="true"]')).toHaveCount(0);
+}
+
 /** Installed Chat run status: the running hint, the stopped line and the end-of-run announcement. */
 export async function runRunStatusScenarios(page, url) {
   await page.goto(`${url}/?menu&runstatus`);
@@ -2729,6 +2795,7 @@ export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}
       await runShellScenarios(page, server.url);
       await runWelcomeScenarios(page, server.url);
       await runRunStatusScenarios(page, server.url);
+      await runMessageActionScenarios(page, server.url);
       await runPopupShortcutScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);
