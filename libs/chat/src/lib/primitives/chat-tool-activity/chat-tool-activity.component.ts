@@ -25,7 +25,7 @@ import {
   resolveToolOutcome,
   type ToolActivityOutcome,
 } from './tool-outcome';
-import { activitySummary, formatElapsed, workingLabel } from './activity-summary';
+import { activitySummary, formatElapsed, toolActivityHeading, workingLabel } from './activity-summary';
 import { ACTIVITY_SUMMARY_STYLES } from './activity-summary-styles';
 export type {
   ToolActivityOutcome,
@@ -233,7 +233,7 @@ export class ChatToolReceiptsComponent {
       <span
         [class.tp-tool-activity__label]="grouped()"
         [attr.data-active]="grouped() ? phase() === 'running' : null"
-        >{{ resolved().label ?? 'Tool activity' }}</span
+        >{{ heading() }}</span
       ><span class="tp-tool-activity__phase">{{ phaseLabel() }}</span
       >@if (duration() !== undefined) {
       <span class="tp-tool-activity__duration">{{ duration() }}ms</span> }
@@ -292,6 +292,8 @@ export class ChatToolActivityComponent {
   });
   readonly phase = computed(() => this.resolved().phase ?? 'unknown');
   readonly phaseLabel = computed(() => labels[this.phase()]);
+  /** The app's label, else the tool name read as words. */
+  protected readonly heading = computed(() => toolActivityHeading(this.resolved()));
   /** Emits the failed activity when its declared retry is activated. The application owns what a retry does. */
   readonly toolRetry = output<ToolActivityInfo>();
   protected readonly retry = computed(

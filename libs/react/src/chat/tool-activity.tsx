@@ -9,7 +9,12 @@ import {
   resolveToolOutcome,
   type ToolActivityOutcome,
 } from './tool-outcome.js';
-import { activitySummary, formatElapsed, workingLabel } from './activity-summary.js';
+import {
+  activitySummary,
+  formatElapsed,
+  toolActivityHeading,
+  workingLabel,
+} from './activity-summary.js';
 import { StatusPanel } from './status-panel.js';
 export type {
   ToolActivityOutcome,
@@ -131,7 +136,7 @@ export function ToolActivity({
           className={grouped ? 'tp-tool-activity__label' : undefined}
           data-active={grouped ? phase === 'running' : undefined}
         >
-          {activity.label ?? 'Tool activity'}
+          {toolActivityHeading(activity)}
         </span>
         <span className="tp-tool-activity__phase">{labels[phase]}</span>
         {activity.durationMs !== undefined &&

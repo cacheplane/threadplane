@@ -11,7 +11,7 @@ import {
 } from './chat-tool-activity.component';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Shared readonly Angular/React test conformance data, excluded from production packages.
 import { phases } from '../../../../../../fixtures/tool-activity/phases';
-import { activitySummary } from './activity-summary';
+import { activitySummary, humanizeToolName, toolActivityHeading } from './activity-summary';
 import { confirmedOutcomes, outcomeSources, resolveToolOutcome } from './tool-outcome';
 @Component({
   standalone: true,
@@ -664,5 +664,35 @@ describe('group progress', () => {
   it('lists no steps without a plan', () => {
     const fixture = render(running);
     expect(fixture.nativeElement.querySelectorAll('.tp-tool-activity-group__plan-step')).toHaveLength(0);
+  });
+});
+
+describe('default tool heading', () => {
+  it.each([
+    ['search_documents', 'Search documents'],
+    ['searchDocuments', 'Search documents'],
+    ['search-documents', 'Search documents'],
+    ['get_airport_info', 'Get airport info'],
+    ['fetchURL', 'Fetch URL'],
+    ['HTTPRequest', 'HTTP request'],
+    ['v2_lookup', 'V2 lookup'],
+    ['__', ''],
+  ])('reads %s as "%s"', (name, words) => {
+    expect(humanizeToolName(name)).toBe(words);
+  });
+
+  it('prefers the label, then the name as words, then a generic fallback', () => {
+    expect(toolActivityHeading({ name: 'search_documents', label: 'Searching the archive' })).toBe('Searching the archive');
+    expect(toolActivityHeading({ name: 'search_documents', label: '  ' })).toBe('Search documents');
+    expect(toolActivityHeading({ name: '__' })).toBe('Tool activity');
+  });
+
+  it('heads an unlabelled row with the tool name as words and keeps the raw name in Details', () => {
+    const fixture = TestBed.createComponent(ChatToolActivityComponent);
+    fixture.componentRef.setInput('activity', { id: 'c1', name: 'search_documents', phase: 'complete' });
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('.tp-tool-activity__heading span')!.textContent!.trim()).toBe('Search documents');
+    expect(root.querySelector('.tp-tool-activity__details code')!.textContent).toBe('search_documents');
   });
 });
