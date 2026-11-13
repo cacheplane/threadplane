@@ -12,6 +12,12 @@ export const CHAT_MESSAGE_ACTIONS_STYLES = `
     transition: opacity var(--tplane-chat-motion-duration-slow) var(--tplane-chat-motion-ease);
     pointer-events: none;
   }
+  /* Earlier answers keep a compact row. It stays in the layout so revealing
+     it on hover moves nothing, but only the latest answer gets the full
+     breathing room; otherwise every past turn carried a 52px blank band. */
+  :host-context(chat-message[data-role="assistant"]:not([data-current="true"])) {
+    padding: 4px 0 0 0;
+  }
   :host-context(chat-message[data-role="assistant"]:hover),
   :host-context(chat-message[data-role="assistant"]:focus-within),
   :host-context(chat-message[data-role="assistant"][data-current="true"]) {
