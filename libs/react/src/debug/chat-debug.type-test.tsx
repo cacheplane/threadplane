@@ -69,6 +69,27 @@ const dispose: ChatDebugProps = { ...props, dispose: () => undefined };
 const stop: ChatDebugProps = { ...props, stop: () => undefined };
 // @ts-expect-error No fork capability.
 const fork: ChatDebugProps = { ...props, fork: () => undefined };
+const requests: ChatDebugProps = {
+  ...props,
+  onReplay: (token) => {
+    const key: string = token.rowKey;
+    void key;
+  },
+  onFork: (token) => {
+    const generation: number = token.pageGeneration;
+    void generation;
+  },
+};
+const replayReader: ChatDebugProps = {
+  ...props,
+  // @ts-expect-error Replay is a notification, not an async command.
+  onReplay: async () => undefined,
+};
+const forkReader: ChatDebugProps = {
+  ...props,
+  // @ts-expect-error Fork is a notification and returns no new thread.
+  onFork: () => ({ threadId: 'new' }),
+};
 const reader: ChatDebugProps = {
   ...props,
   // @ts-expect-error Requests cannot be promise-returning readers.
@@ -96,6 +117,9 @@ void [
   dispose,
   stop,
   fork,
+  requests,
+  replayReader,
+  forkReader,
   reader,
   refreshReader,
   sdkValue,

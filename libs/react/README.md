@@ -1323,8 +1323,12 @@ validates it and starts any separately owned read. Rendering, mounting, opening,
 tabs, docking, closing and unmounting issue no reads, runs or disposal. The app
 owns network access, stale-result validation, selection and resource lifetime.
 History order is as supplied, with no automatic paging or live branch-tree claim.
-Fork, replay, comparison between historical checkpoints and full T29 parity
-remain outside this private slice. When the selected inspection and current
+Optional `onReplay` and `onFork` each add a button to every row of the Timeline
+tab, beside Inspect. They are notifications of the same kind: a press hands the
+application the row's ownership token and starts nothing, and the buttons are
+disabled while `activity.busy` and for rows that are not inspectable. Running
+anything from a checkpoint is the application's job. Comparison between
+historical checkpoints and full T29 parity remain outside this private slice. When the selected inspection and current
 observation are both ready and match the panel's ownership tokens, the State tab
 offers **Compare selected checkpoint with current state**. The inspected
 checkpoint is the before state; the current observation is the after state.

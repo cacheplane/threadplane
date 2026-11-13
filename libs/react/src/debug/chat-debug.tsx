@@ -259,6 +259,29 @@ function DebugContent(props: ChatDebugProps & { readonly tab: DebugTab }) {
                 >
                   Inspect {row.label}
                 </button>
+                {(
+                  [
+                    ['Replay', props.onReplay],
+                    ['Fork', props.onFork],
+                  ] as const
+                ).map(([name, request]) =>
+                  request === undefined ? null : (
+                    <button
+                      key={name}
+                      type="button"
+                      disabled={!row.inspectable || props.activity?.busy}
+                      onClick={() => {
+                        request({
+                          contextKey: props.contextKey,
+                          pageGeneration: page.pageGeneration,
+                          rowKey: row.rowKey,
+                        });
+                      }}
+                    >
+                      {name} {row.label}
+                    </button>
+                  )
+                )}
               </li>
             ))}
           </ol>
