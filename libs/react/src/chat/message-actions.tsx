@@ -1,6 +1,7 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { MessageRating, type MessageRatingValue } from './message-rating.js';
 
 /** An explicitly authored action; IDs must be unique within the group. */
 export interface MessageAction {
@@ -64,6 +65,131 @@ export function MessageActions({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** What `MessageList` and `Chat` accept as `messageActions`. */
+export type BuiltInMessageActions =
+  | boolean
+  | {
+      /** Called with the copied text after the clipboard accepted it. */
+      readonly onCopy?: (content: string, messageId: string) => void;
+      /** Adds thumbs up and down; called with the new rating, or null when it is cleared. */
+      readonly onRate?: (
+        rating: MessageRatingValue | null,
+        messageId: string
+      ) => void;
+    };
+
+/** Writes text to the clipboard, falling back to a selection copy where the async API is absent or refuses. */
+async function writeClipboard(document: Document, text: string): Promise<boolean> {
+  const clipboard = document.defaultView?.navigator.clipboard;
+  if (clipboard?.writeText) {
+    try {
+      await clipboard.writeText(text);
+      return true;
+    } catch {
+      // Permissions, an insecure context or an unfocused document: try the selection copy.
+    }
+  }
+  // Selecting the helper takes focus; hand it back so a keyboard user stays on the button.
+  const focused = document.activeElement;
+  const area = document.createElement('textarea');
+  try {
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    return document.execCommand?.('copy') === true;
+  } catch {
+    return false;
+  } finally {
+    area.remove();
+    if (focused instanceof HTMLElement && focused.isConnected) focused.focus();
+  }
+}
+
+/** Built-in Copy, and rating when asked, under one finished assistant message. Not part of the public entry. */
+export function BuiltInActions({
+  messageId,
+  content,
+  options,
+}: {
+  readonly messageId: string;
+  readonly content: string;
+  readonly options: Exclude<BuiltInMessageActions, false>;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [rating, setRating] = useState<MessageRatingValue | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      clearTimeout(timer.current);
+    };
+  }, []);
+  const onCopy = options === true ? undefined : options.onCopy;
+  const onRate = options === true ? undefined : options.onRate;
+  const copyLabel = copied ? 'Copied' : 'Copy';
+  return (
+    <div role="group" aria-label="Message actions" className="tp-message-actions tp-message-actions--built-in">
+      <button
+        type="button"
+        className="tp-message-actions__action tp-message-actions__action--icon-only"
+        data-copied={copied ? '' : undefined}
+        title={copyLabel}
+        onClick={(event) => {
+          writeClipboard(event.currentTarget.ownerDocument, content).then(
+            (written) => {
+              if (!written || !mounted.current) return;
+              setCopied(true);
+              clearTimeout(timer.current);
+              timer.current = setTimeout(() => setCopied(false), 2000);
+              onCopy?.(content, messageId);
+            },
+            () => undefined
+          );
+        }}
+      >
+        <span className="tp-message-actions__icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            focusable="false"
+          >
+            {copied ? (
+              <path d="M5 12.5l4.5 4.5L19 7.5" />
+            ) : (
+              <>
+                <rect x="9" y="9" width="11" height="11" rx="2" />
+                <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+              </>
+            )}
+          </svg>
+        </span>
+        <span className="tp-message-actions__label">{copyLabel}</span>
+      </button>
+      {onRate && (
+        <MessageRating
+          messageId={messageId}
+          value={rating}
+          onValueChange={(next, id) => {
+            setRating(next);
+            onRate(next, id);
+          }}
+        />
+      )}
     </div>
   );
 }
