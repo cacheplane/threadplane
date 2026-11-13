@@ -63,6 +63,17 @@ export interface ChatProps
   readonly inputTrailing?: ChatInputProps['trailing'];
   /** App-owned content below the composer; see `ChatInputProps.footer`. */
   readonly inputFooter?: ChatInputProps['footer'];
+  /**
+   * A greeting shown while the conversation is empty: a centred title above the
+   * composer and optional suggestions below it. `true` uses the default title;
+   * an object replaces the title (null omits it) and adds `suggestions`, such as
+   * `WelcomeSuggestion` buttons the application handles. It leaves when the
+   * first message, a run, an error or a pending approval appears, and the
+   * composer keeps its draft and focus through that change. Off unless set.
+   */
+  readonly welcome?:
+    | boolean
+    | { readonly title?: ReactNode; readonly suggestions?: ReactNode };
 }
 
 const ignore = () => undefined;
@@ -88,6 +99,7 @@ export function Chat({
   inputFooter,
   approval,
   approvalRecords,
+  welcome,
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
@@ -128,8 +140,42 @@ export function Chat({
       (error.recovery === 'retry' || error.recovery === undefined)
     ) &&
     repeatsToolFailure(error.message, rows, toolOutcome);
+  const greeting =
+    welcome !== undefined &&
+    welcome !== false &&
+    rows.length === 0 &&
+    snapshot.status !== 'running' &&
+    !error &&
+    !pending
+      ? welcome === true
+        ? {}
+        : welcome
+      : null;
+  const suggestions = greeting?.suggestions;
+  // Choosing a suggestion removes the button that had focus; continue in the composer.
+  const greeted = greeting !== null;
+  const suggestionFocus = useRef(false);
+  useEffect(() => {
+    if (greeted || !suggestionFocus.current) return;
+    suggestionFocus.current = false;
+    composer.current?.focus();
+  }, [greeted]);
   return (
-    <div className={['tp-chat', className].filter(Boolean).join(' ')}>
+    <div
+      className={['tp-chat', greeting && 'tp-chat--welcome', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {/* The composer below keeps its place and key, so it is never remounted. */}
+      {greeting === null || greeting.title === null ? null : (
+        <div className="tp-chat__welcome-title">
+          {greeting.title === undefined ? (
+            <h2>How can I help?</h2>
+          ) : (
+            greeting.title
+          )}
+        </div>
+      )}
       <MessageList
         rows={rows}
         renderMessage={renderMessage}
@@ -198,6 +244,22 @@ export function Chat({
           session.stop().catch(ignore);
         }}
       />
+      {suggestions === undefined ||
+      suggestions === null ||
+      suggestions === false ? null : (
+        <div
+          className="tp-chat__welcome-suggestions"
+          onFocus={() => {
+            suggestionFocus.current = true;
+          }}
+          onBlur={(event) => {
+            // Focus that moves elsewhere on purpose is no longer ours to return.
+            if (event.relatedTarget !== null) suggestionFocus.current = false;
+          }}
+        >
+          {suggestions}
+        </div>
+      )}
     </div>
   );
 }

@@ -648,3 +648,114 @@ describe('Chat approval slot', () => {
     expect(record.closest('.tp-chat-list')).toBeTruthy();
   });
 });
+
+describe('Chat welcome', () => {
+  const user = (id: string, content: string) =>
+    Object.freeze({ id, role: 'user' as const, content, delivery: streamingDelivery('g') });
+  const root = (view: ReturnType<typeof render>) => view.container.querySelector('.tp-chat') as HTMLElement;
+
+  it('shows nothing extra unless asked', () => {
+    for (const welcome of [undefined, false] as const) {
+      const view = render(<Chat session={fakeSession().session} welcome={welcome} />);
+      expect(root(view).className).toBe('tp-chat');
+      expect(view.queryByRole('heading')).toBeNull();
+      expect(root(view).querySelector('.tp-chat__welcome-suggestions')).toBeNull();
+      cleanup();
+    }
+  });
+
+  it('greets an empty conversation with the default title before the composer', () => {
+    const view = render(<Chat session={fakeSession().session} welcome className="mine" />);
+    expect(root(view).className).toBe('tp-chat tp-chat--welcome mine');
+    const title = view.getByRole('heading', { level: 2, name: 'How can I help?' });
+    const draft = view.getByRole('textbox');
+    expect(title.compareDocumentPosition(draft) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(root(view).querySelector('.tp-chat__welcome-suggestions')).toBeNull();
+  });
+
+  it('takes a custom or omitted title and renders suggestions after the composer', () => {
+    const view = render(
+      <Chat
+        session={fakeSession().session}
+        welcome={{ title: <h1>Plan a trip</h1>, suggestions: <button type="button">Lyon weekend</button> }}
+      />
+    );
+    expect(view.getByRole('heading', { level: 1, name: 'Plan a trip' })).toBeTruthy();
+    expect(view.queryByText('How can I help?')).toBeNull();
+    const draft = view.getByRole('textbox');
+    const suggestion = view.getByRole('button', { name: 'Lyon weekend' });
+    expect(draft.compareDocumentPosition(suggestion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(suggestion.parentElement?.className).toBe('tp-chat__welcome-suggestions');
+    view.rerender(<Chat session={fakeSession().session} welcome={{ title: null }} />);
+    expect(view.queryByRole('heading')).toBeNull();
+    expect(root(view).querySelector('.tp-chat__welcome-title')).toBeNull();
+    expect(root(view).classList.contains('tp-chat--welcome')).toBe(true);
+  });
+
+  it('leaves when the first message arrives and keeps the same composer, draft and focus', () => {
+    const { session, set } = fakeSession();
+    const view = render(<Chat session={session} welcome={{ suggestions: <button type="button">Lyon weekend</button> }} />);
+    const draft = view.getByRole('textbox') as HTMLTextAreaElement;
+    fireEvent.change(draft, { target: { value: 'kept draft' } });
+    draft.focus();
+    set({ messages: [user('u1', 'Hello')] });
+    expect(root(view).className).toBe('tp-chat');
+    expect(view.queryByRole('heading', { name: 'How can I help?' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Lyon weekend' })).toBeNull();
+    expect(view.getByRole('textbox')).toBe(draft);
+    expect(draft.value).toBe('kept draft');
+    expect(document.activeElement).toBe(draft);
+    // It returns if the conversation is empty again.
+    set({ messages: [] });
+    expect(view.getByRole('heading', { name: 'How can I help?' })).toBeTruthy();
+    expect(view.getByRole('textbox')).toBe(draft);
+  });
+
+  it('moves focus to the composer when a focused suggestion leaves with the greeting', () => {
+    const { session, set } = fakeSession();
+    const view = render(
+      <>
+        <button type="button">Elsewhere</button>
+        <Chat session={session} welcome={{ suggestions: <button type="button">Lyon weekend</button> }} />
+      </>
+    );
+    view.getByRole('button', { name: 'Lyon weekend' }).focus();
+    set({ messages: [user('u1', 'Lyon weekend')] });
+    expect(document.activeElement).toBe(view.getByRole('textbox'));
+    // Focus the reader moved elsewhere on purpose is left alone.
+    set({ messages: [] });
+    const suggestion = view.getByRole('button', { name: 'Lyon weekend' });
+    suggestion.focus();
+    fireEvent.blur(suggestion, { relatedTarget: view.getByRole('button', { name: 'Elsewhere' }) });
+    view.getByRole('button', { name: 'Elsewhere' }).focus();
+    set({ messages: [user('u2', 'Hello')] });
+    expect(document.activeElement).toBe(view.getByRole('button', { name: 'Elsewhere' }));
+  });
+
+  it('steps aside for a run, an error and a pending approval', () => {
+    const { session, set } = fakeSession();
+    const view = render(<Chat session={session} welcome />);
+    const shown = () => view.queryByRole('heading', { name: 'How can I help?' }) !== null;
+    expect(shown()).toBe(true);
+    set({ status: 'running' });
+    expect(shown()).toBe(false);
+    set({ status: 'idle' });
+    expect(shown()).toBe(true);
+    set({ status: 'error', error: { message: 'Failed' } as AgentError });
+    expect(shown()).toBe(false);
+    set({ status: 'idle', error: undefined });
+    view.rerender(<Chat session={session} welcome approval={<button type="button">Approve</button>} />);
+    expect(shown()).toBe(false);
+    view.rerender(<Chat session={session} welcome />);
+    expect(shown()).toBe(true);
+  });
+
+  it('submits from the greeting exactly as from the transcript', () => {
+    const { session, raw } = fakeSession();
+    const view = render(<Chat session={session} welcome />);
+    const draft = view.getByRole('textbox');
+    fireEvent.change(draft, { target: { value: ' Hello ' } });
+    fireEvent.keyDown(draft, { key: 'Enter' });
+    expect(raw.submit.mock.calls).toEqual([['Hello']]);
+  });
+});
