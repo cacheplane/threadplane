@@ -599,6 +599,17 @@ help?</h2>`; `null` or `false` omits title content. Absent, null or false
 suggestions omit suggestion content. The children slot retains mounted identity
 when the title or suggestions change, so a composed `ChatInput` keeps its textarea.
 
+`Chat` can show the greeting itself. Pass `welcome` (or
+`welcome={{ title, suggestions }}`) and an empty conversation shows a centred
+title above the composer and the suggestions below it, at most 36rem wide. The
+default title is `<h2>How can I help?</h2>`; `title: null` omits it. Suggestions
+are yours, usually `WelcomeSuggestion` buttons that call your own submit. The
+greeting leaves when the first message, a run, an error or a pending approval
+appears. The composer is the same element before and after, so a draft and
+focus survive, and when a chosen suggestion disappears with the greeting, focus
+moves to the composer. It is off unless set, and `--tp-welcome-max-width`,
+`--tp-welcome-gap` and `--tp-welcome-padding` adjust it.
+
 `WelcomeSuggestion` requires literal `label`, exact string `value` and
 `onSelect(value)`. Its native `type="button"` never submits a surrounding form;
 an enabled, unclaimed click emits the value without trimming or transformation.

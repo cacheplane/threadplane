@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ChatInput, ChatPopup, ChatWindow, GenerativeUiSkeleton, LauncherButton, MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, Timeline, Trace, type MessageRatingValue, type TimelineItem, type TraceState } from '@threadplane/react/chat';
+import { Chat, ChatInput, ChatPopup, ChatWindow, GenerativeUiSkeleton, LauncherButton, MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, Timeline, Trace, WelcomeSuggestion, type MessageRatingValue, type TimelineItem, type TraceState } from '@threadplane/react/chat';
+import { completeDelivery, type AgentSession, type AgentSnapshot, type Message } from '@threadplane/core';
 import '@threadplane/react/chat/styles.css';
 import { ConfirmDialogFixture } from './react-confirm-dialog';
 
@@ -18,6 +19,8 @@ export function OverflowMenuFixture() {
     return <PrimitivesFixture />;
   if (new URLSearchParams(window.location.search).has('shell'))
     return <ShellFixture />;
+  if (new URLSearchParams(window.location.search).has('welcome'))
+    return <WelcomeFixture />;
   if (new URLSearchParams(window.location.search).has('popup'))
     return <PopupFixture />;
   if (new URLSearchParams(window.location.search).has('rating'))
@@ -450,6 +453,61 @@ function PopupFixture() {
       >
         <textarea aria-label="Draft" />
       </ChatPopup>
+    </main>
+  );
+}
+
+/** A local session that echoes each submission; no backend. */
+function echoSession(): AgentSession {
+  let snapshot = Object.freeze({ status: 'idle', messages: [] as Message[], toolCalls: [] }) as unknown as AgentSnapshot;
+  const listeners = new Set<() => void>();
+  let next = 0;
+  return {
+    getSnapshot: () => snapshot,
+    subscribe(notify: () => void) {
+      listeners.add(notify);
+      return () => listeners.delete(notify);
+    },
+    async submit(text: string) {
+      const turn = (next += 1);
+      const delivery = completeDelivery(`welcome-${turn}`, 'success');
+      const added = [
+        { id: `u${turn}`, role: 'user', content: text, delivery },
+        { id: `a${turn}`, role: 'assistant', content: `Echo: ${text}`, delivery },
+      ] as unknown as Message[];
+      snapshot = Object.freeze({ ...snapshot, messages: [...snapshot.messages, ...added] }) as AgentSnapshot;
+      for (const notify of listeners) notify();
+      return 'success';
+    },
+    async stop() {},
+    async dispose() {},
+  } as unknown as AgentSession;
+}
+const welcomeSession = echoSession();
+
+/** Installed Chat welcome greeting; the session is local and echoes. */
+function WelcomeFixture() {
+  return (
+    <main>
+      <h1>Installed welcome</h1>
+      <div data-testid="welcome-frame" style={{ display: 'flex', blockSize: 520, border: '1px solid gray' }}>
+        <Chat
+          session={welcomeSession}
+          label="Message"
+          welcome={{
+            suggestions: (
+              <>
+                <WelcomeSuggestion label="Plan a weekend in Lyon" value="Plan a weekend in Lyon" onSelect={(value) => void welcomeSession.submit(value)} />
+                <WelcomeSuggestion
+                  label="A-suggestion-with-an-unbroken-label-that-must-wrap-inside-the-greeting-and-never-widen-the-page"
+                  value="Long"
+                  onSelect={(value) => void welcomeSession.submit(value)}
+                />
+              </>
+            ),
+          }}
+        />
+      </div>
     </main>
   );
 }

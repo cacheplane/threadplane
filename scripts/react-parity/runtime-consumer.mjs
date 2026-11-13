@@ -1484,6 +1484,58 @@ export async function runPopupShortcutScenarios(page, url) {
   await expect(page.getByRole('textbox', { name: 'Page search' })).toHaveValue('k');
 }
 
+/** Installed Chat welcome greeting: centred layout, wrapping, and the hand-off to the transcript. */
+export async function runWelcomeScenarios(page, url) {
+  await page.goto(`${url}/?menu&welcome`);
+  await expect(page.getByRole('heading', { name: 'Installed welcome' })).toBeVisible();
+  const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }; });
+  const frame = page.getByTestId('welcome-frame');
+  const chat = frame.locator('.tp-chat');
+  const title = frame.getByRole('heading', { name: 'How can I help?' });
+  const draft = frame.getByRole('textbox', { name: 'Message' });
+  const composer = frame.locator('.tp-chat-input');
+  const suggestions = frame.locator('.tp-chat__welcome-suggestions');
+  const first = frame.getByRole('button', { name: 'Plan a weekend in Lyon' });
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `welcome does not widen the page at ${width}px`);
+    await expect(title).toBeVisible();
+    await expect(chat).toHaveClass(/tp-chat--welcome/);
+    // Title, composer and suggestions stack in that order, centred in the frame.
+    const outer = await rect(frame), head = await rect(title), box = await rect(composer), list = await rect(suggestions);
+    assert.ok(head.bottom <= box.top && box.bottom <= list.top, 'title, composer and suggestions stack in order');
+    assert.ok(head.top - outer.top > 20 && outer.bottom - list.bottom > 20, 'the greeting sits inside the frame with room above and below');
+    assert.ok(Math.abs((head.top - outer.top) - (outer.bottom - list.bottom)) <= 2, 'the greeting is vertically centred');
+    for (const [name, part] of [['composer', box], ['suggestions', list]]) {
+      assert.ok(part.width <= 576.5, `${name} is at most 36rem wide`);
+      assert.ok(part.left >= outer.left - 0.5 && part.right <= outer.right + 0.5, `${name} stays inside the frame`);
+      assert.ok(Math.abs((part.left - outer.left) - (outer.right - part.right)) <= 2, `${name} is horizontally centred`);
+    }
+    for (const button of await suggestions.getByRole('button').all()) assert.ok((await rect(button)).right <= list.right + 0.5, 'a long suggestion wraps inside the greeting');
+    await expect(frame.locator('.tp-chat-list')).toBeHidden();
+  }
+  // Tab order is composer first, then suggestions.
+  await draft.focus();
+  await draft.fill('kept draft');
+  await draft.evaluate((node) => { node.dataset.kept = 'yes'; });
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await expect(first).toBeFocused();
+  // Choosing a suggestion sends it; the greeting leaves, the same composer keeps its draft and takes focus, and sits at the bottom.
+  await page.keyboard.press('Enter');
+  await expect(frame.getByText('Echo: Plan a weekend in Lyon')).toBeVisible();
+  await expect(title).toHaveCount(0);
+  await expect(suggestions).toHaveCount(0);
+  await expect(chat).not.toHaveClass(/tp-chat--welcome/);
+  await expect(draft).toHaveAttribute('data-kept', 'yes');
+  await expect(draft).toHaveValue('kept draft');
+  await expect(draft).toBeFocused();
+  await expect(frame.locator('.tp-chat-list')).toBeVisible();
+  const after = await rect(composer), outer = await rect(frame);
+  assert.ok(outer.bottom - after.bottom < 24, 'the composer returns to the bottom of the frame');
+  assert.ok((await rect(frame.getByText('Echo: Plan a weekend in Lyon'))).bottom <= after.top + 0.5, 'the transcript sits above the composer');
+}
+
 /** Installed LauncherButton and ChatWindow: size, regions, scrolling, wrapping, keyboard and motion. */
 export async function runShellScenarios(page, url) {
   await page.goto(`${url}/?menu&shell`);
@@ -2607,6 +2659,7 @@ export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}
       await runSelectScenarios(page, server.url);
       await runPrimitiveScenarios(page, server.url);
       await runShellScenarios(page, server.url);
+      await runWelcomeScenarios(page, server.url);
       await runPopupShortcutScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);

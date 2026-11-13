@@ -2095,6 +2095,40 @@
   outline-offset: 3px;
 }
 
+.tp-chat--welcome {
+  justify-content: center;
+  gap: var(--tp-welcome-gap, 1.25rem);
+  box-sizing: border-box;
+  padding: var(--tp-welcome-padding, 24px);
+}
+/* The empty transcript steps aside so the greeting and composer can centre. */
+.tp-chat--welcome > .tp-chat-list {
+  display: none;
+}
+.tp-chat--welcome > .tp-chat__welcome-title,
+.tp-chat--welcome > .tp-chat__welcome-suggestions,
+.tp-chat--welcome > .tp-chat-input {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: var(--tp-welcome-max-width, 36rem);
+  min-inline-size: 0;
+  margin-inline: auto;
+}
+.tp-chat__welcome-title {
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.tp-chat__welcome-title h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.tp-chat__welcome-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 .tp-welcome {
   display: flex;
   flex: 1 1 auto;
