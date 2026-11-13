@@ -134,7 +134,7 @@
     "@angular/router": "~21.1.0",
     "@cacheplane/json-stream": "0.1.1",
     "@cacheplane/partial-json": "^0.1.1",
-    "@cacheplane/partial-markdown": "0.5.8",
+    "@cacheplane/partial-markdown": "0.5.13",
     "@langchain/core": "^1.2.9",
     "@langchain/langgraph-sdk": "^1.7.4",
     "@neondatabase/serverless": "^0.10.0",
