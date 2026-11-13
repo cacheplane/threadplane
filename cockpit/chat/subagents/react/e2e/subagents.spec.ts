@@ -10,6 +10,9 @@ test('a held real tool call exposes complete arguments before its result', async
   expect((await request.post('/__hold-tool')).status()).toBe(200);
   await page.goto(base);
   await submit(page, 'delegate sequential');
+  // The transcript shows progress while the run is held, not just the footer status.
+  const typing = conversation(page).locator('.tp-typing-indicator');
+  await expect(typing).toContainText('Assistant is typing');
   const pending = page.getByRole('region', {
     name: 'Observed specialist request',
     exact: true,
@@ -23,6 +26,7 @@ test('a held real tool call exposes complete arguments before its result', async
   await request.post('/__release');
   await saved(page);
   await expect(cards(page)).toHaveCount(3);
+  await expect(typing).toHaveCount(0);
 });
 test('worker failure is generic and never retried', async ({
   page,

@@ -254,6 +254,8 @@ describe('Chat', () => {
     expect(view.getByRole('status').textContent).toContain(
       'Assistant is typing'
     );
+    // It follows the rows inside the scrolling transcript, so pinning keeps it in view.
+    expect(view.getByRole('status').closest('.tp-chat-list')).toBeTruthy();
     expect(subscribe).toHaveBeenCalledTimes(1);
     one.set({ messages: [assistant('a', '')] });
     expect(view.getByRole('status')).toBeTruthy();

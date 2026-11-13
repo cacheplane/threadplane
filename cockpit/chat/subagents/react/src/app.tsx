@@ -155,6 +155,11 @@ export function SubagentsDemo({
         rows={snapshot.rows}
         renderMessage={renderRow}
         label="Conversation"
+        running={
+          snapshot.activity === 'creating' || snapshot.activity === 'running'
+        }
+        // The footer status already announces "Receiving response…".
+        typingIndicator={{ announce: false }}
       />
       {snapshot.childObservations.length > 0 && (
         <details className="child-observations">

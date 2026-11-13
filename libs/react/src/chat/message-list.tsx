@@ -26,6 +26,7 @@ import {
   withoutStaleRetry,
 } from './tool-outcome.js';
 import { Reasoning } from './reasoning.js';
+import { isTyping, TypingIndicator } from './typing-indicator.js';
 import { Citations } from './citations.js';
 import { SubagentCard, type SubagentInfo } from './subagent-card.js';
 import { ChatMessage, type ChatMessageRole } from './chat-message.js';
@@ -129,6 +130,14 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * the run continues below.
    */
   readonly approvalRecords?: readonly ApprovalRecordEntry[];
+  /**
+   * While `running`, a typing indicator follows the rows until the last row has assistant text (see `isTyping`).
+   * Pass `false` to render your own, or `{ label, announce }` to change its wording or keep it out of the polite
+   * status region when the application already announces progress.
+   */
+  readonly typingIndicator?:
+    | boolean
+    | { readonly label?: string; readonly announce?: boolean };
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -504,9 +513,17 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   running = false,
   subagents,
   approvalRecords,
+  typingIndicator = true,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
+  const last = rows.at(-1);
+  const typing =
+    running &&
+    typingIndicator !== false &&
+    isTyping({ status: 'running', messages: last ? [last.message] : [] });
+  const typingOptions =
+    typeof typingIndicator === 'object' ? typingIndicator : undefined;
   const recordsAfter = useMemo(
     () =>
       approvalRecordsByRow(
@@ -601,7 +618,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
       el.scrollTop = el.scrollHeight;
       lastScrollTop.current = el.scrollTop;
     }
-  }, [rows, children, approvalRecords]);
+  }, [rows, children, approvalRecords, typing]);
   return (
     <>
       <div
@@ -639,6 +656,11 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
             </Fragment>
           ))}
           {renderApprovalRecords(recordsAfter, undefined)}
+          <TypingIndicator
+            active={typing}
+            label={typingOptions?.label}
+            announce={typingOptions?.announce}
+          />
           {children}
         </div>
       </div>
