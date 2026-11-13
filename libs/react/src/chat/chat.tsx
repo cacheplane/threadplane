@@ -70,6 +70,8 @@ export interface ChatProps
   readonly approvalRecords?: MessageListProps['approvalRecords'];
   /** Built-in Copy and rating under finished assistant messages; see `MessageListProps.messageActions`. Keep stable. */
   readonly messageActions?: MessageListProps['messageActions'];
+  /** Typesets math in message text; see `MessageListProps.math`. Keep stable. */
+  readonly math?: MessageListProps['math'];
   /** App-owned content before the draft; see `ChatInputProps.leading`. */
   readonly inputLeading?: ChatInputProps['leading'];
   /** App-owned controls before Stop and Send; see `ChatInputProps.trailing`. */
@@ -121,6 +123,7 @@ export function Chat({
   approval,
   approvalRecords,
   messageActions,
+  math,
   welcome,
   runStatus = false,
   ...input
@@ -257,6 +260,7 @@ export function Chat({
         running={snapshot.status === 'running'}
         approvalRecords={approvalRecords}
         messageActions={messageActions}
+        math={math}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
             <ScrollBubble

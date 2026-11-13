@@ -1536,6 +1536,52 @@ export async function runWelcomeScenarios(page, url) {
   assert.ok((await rect(frame.getByText('Echo: Plan a weekend in Lyon'))).bottom <= after.top + 0.5, 'the transcript sits above the composer');
 }
 
+/** Installed math renderer option: inline and display placement, overflow, fallback and switching off. */
+export async function runMathScenarios(page, url) {
+  await page.goto(`${url}/?menu&math`);
+  await expect(page.getByRole('heading', { name: 'Installed math' })).toBeVisible();
+  const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }; });
+  const frame = page.getByTestId('math-frame');
+  const draft = frame.getByRole('textbox', { name: 'Message' });
+  await draft.fill('Inline $x^2$ then $bad$ end.');
+  await page.keyboard.press('Shift+Enter');
+  await page.keyboard.press('Shift+Enter');
+  await draft.pressSequentially('$$');
+  await page.keyboard.press('Shift+Enter');
+  await draft.pressSequentially('a+b');
+  await page.keyboard.press('Shift+Enter');
+  await draft.pressSequentially('$$');
+  await page.keyboard.press('Enter');
+  const reply = frame.locator('.tp-chat-message--assistant').last();
+  await expect(reply).toContainText('Echo: Inline');
+  const inline = reply.locator('span.tp-markdown__math:not(.tp-markdown__math--display)');
+  const display = reply.locator('div.tp-markdown__math--display');
+  await expect(inline).toHaveCount(1);
+  await expect(inline.locator('[data-set="inline"]')).toHaveText('x^2');
+  await expect(display).toHaveCount(1);
+  await expect(display.locator('[data-set="display"]')).toHaveText('a+b');
+  // The formula that failed shows its source; the rest of the message is still typeset.
+  await expect(reply).toContainText('then $bad$ end.');
+  assert.equal((await reply.textContent()).includes('$x^2$'), false, 'typeset math replaces its source');
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `wide display math does not widen the page at ${width}px`);
+    const list = await rect(frame.locator('.tp-chat-list')), block = await rect(display), word = await rect(inline), line = await rect(reply.getByText('Echo: Inline'));
+    assert.ok(block.left >= list.left - 0.5 && block.right <= list.right + 0.5, 'display math stays inside the transcript');
+    assert.equal(await display.evaluate((node) => node.scrollWidth > node.clientWidth), true, 'a wide formula scrolls inside its own block');
+    assert.ok(block.top >= line.bottom - 1, 'display math is a block below the paragraph');
+    assert.ok(word.top >= line.top - 1 && word.bottom <= line.bottom + 1, 'inline math sits in the line of text');
+    assert.equal(await frame.locator('.tp-chat-list').evaluate((node) => node.scrollWidth <= node.clientWidth), true, 'the transcript does not scroll sideways');
+  }
+  // Without a renderer the same message shows its source, and the option can come back.
+  await page.getByRole('button', { name: 'Toggle math' }).click();
+  await expect(frame.locator('.tp-markdown__math')).toHaveCount(0);
+  await expect(reply).toContainText('Inline $x^2$ then $bad$ end.');
+  await expect(reply).toContainText('a+b');
+  await page.getByRole('button', { name: 'Toggle math' }).click();
+  await expect(display.locator('[data-set="display"]')).toHaveText('a+b');
+}
+
 /** Installed built-in message actions: Copy with its Copied state, and the rating. */
 export async function runMessageActionScenarios(page, url) {
   await page.goto(`${url}/?menu&actions`);
@@ -2796,6 +2842,7 @@ export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}
       await runWelcomeScenarios(page, server.url);
       await runRunStatusScenarios(page, server.url);
       await runMessageActionScenarios(page, server.url);
+      await runMathScenarios(page, server.url);
       await runPopupShortcutScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);
