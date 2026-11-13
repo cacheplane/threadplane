@@ -1185,7 +1185,7 @@ test('Angular foundation keeps repository nested Vite placement and integrity wi
   const bytes = readFileSync(new URL('../../package-lock.json', import.meta.url));
   const root = JSON.parse(bytes);
   const input = angularFoundationFixture(t, { manifests: {
-    content: { dependencies: { '@cacheplane/partial-markdown': '0.5.8' } },
+    content: { dependencies: { '@cacheplane/partial-markdown': '0.5.13' } },
     angular: { peerDependencies: { '@angular/core': '^21.0.0' } },
   } });
   const derived = deriveAngularFoundation({ ...input, root });
@@ -1371,7 +1371,7 @@ test('selected Angular uses the repository-locked Angular toolchain and SDK clos
   const root = JSON.parse(bytes);
   const input = angularFixture(t, {
     manifests: {
-      content: { dependencies: { '@cacheplane/partial-markdown': '0.5.8' } },
+      content: { dependencies: { '@cacheplane/partial-markdown': '0.5.13' } },
       angular: { peerDependencies: { '@angular/core': '^21.0.0' } },
       langgraph: {
         dependencies: {
@@ -1639,7 +1639,7 @@ test('selected React profile uses actual repository-locked Vite and SDK closure 
   );
   const input = reactFixture(t, {
     manifests: {
-      content: { dependencies: { '@cacheplane/partial-markdown': '0.5.8' } },
+      content: { dependencies: { '@cacheplane/partial-markdown': '0.5.13' } },
       langgraph: {
         dependencies: {
           '@threadplane/core': '0.0.1',
