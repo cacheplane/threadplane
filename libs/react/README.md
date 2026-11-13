@@ -814,6 +814,70 @@ An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Native Delete
 uses the existing action slot; shared project catalogs, broader drag interaction parity and live timestamp refresh remain future work. This is a bounded private T29 slice.
 
+### Built-in conversation and project actions
+
+`ThreadList` and `ProjectList` can own the row menu themselves. Pass `actions`
+with the commands your application implements, and each row gets a **More
+actions** menu offering exactly those commands:
+
+```tsx
+<ThreadList
+  threads={threads}
+  activeThreadId={selectedId}
+  onSelect={selectThread}
+  projects={projects}
+  actions={{
+    rename: (id, title) => api.renameThread(id, title).then(refresh),
+    pin: (id) => api.pinThread(id, true).then(refresh),
+    unpin: (id) => api.pinThread(id, false).then(refresh),
+    archive: (id) => api.archiveThread(id).then(refresh),
+    moveToProject: (id, projectId) => api.moveThread(id, projectId).then(refresh),
+    reorderPinned: (id, beforeId) => api.reorderPinned(id, beforeId).then(refresh),
+    delete: (id) => api.deleteThread(id).then(refresh),
+  }}
+/>
+<ThreadList threads={archived} onSelect={selectThread} mode="archived"
+  actions={{ unarchive: restore, delete: remove }} />
+<ProjectList
+  projects={projects}
+  activeProjectId={projectId}
+  onSelect={selectProject}
+  actions={{ create: createProject, rename: renameProject, delete: deleteProject }}
+/>
+```
+
+The lists stay controlled: your application still owns the rows, and a command
+is a function that performs the change and then updates the rows you pass in.
+While a command runs, the list shows its result at once. A renamed row shows
+the new name, a deleted or archived row is hidden, and a reordered pinned row
+moves. When the command settles the list goes back to showing the supplied
+rows, so a rejected promise (or a thrown error) puts the row back as it was.
+Report the failure from your command; the list does not show an error itself.
+
+- **Rename** replaces the row with an inline editor. Enter or **Save** calls
+  `rename` with the trimmed name, Escape or **Cancel** leaves without a call,
+  and a blank or unchanged name is not sent.
+- **Delete** asks for confirmation first, then hides the row and calls `delete`.
+- **Archive** and **Unarchive** run at once. `mode="archived"` offers only
+  **Unarchive** and **Delete**.
+- **Pin** or **Unpin** is offered according to the row's `pinned` value. With
+  `reorderPinned`, pinned rows also get **Move up** and **Move down**; the
+  command receives the ID of the pinned row to place it before, or `null` for
+  last. The list keeps your order and does not sort pinned rows itself.
+- **Move to project** is offered when you also pass `projects`. The open menu
+  swaps to **No project** and your projects, and `moveToProject` receives the
+  chosen project ID or `null`. The row stays in place until you update `threads`.
+- On `ProjectList`, `create` adds the **+ New project** button with an inline
+  name editor (`onNewProject` is still called if you pass it), and `rename` and
+  `delete` add the row menu.
+
+A right click, the Menu key, or Shift+F10 on a conversation row opens the same
+menu, unless you pass your own `onContextMenu`. Focus returns to the row's menu
+button after a rename or a cancelled dialog, and moves to the next row when the
+focused row is removed. Content from `renderActions` stays beside the built-in
+menu, and rows drawn by `renderItem` get no built-in menu. The command types
+are exported as `ThreadActionAdapter` and `ProjectActionAdapter`.
+
 ## Controlled conversation rename editor
 
 `ThreadRenameForm` is a private controlled inline editor from
