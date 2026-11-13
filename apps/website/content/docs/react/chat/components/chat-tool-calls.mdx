@@ -53,7 +53,7 @@ import { ToolActivityGroup } from '@threadplane/react/chat';
 />;
 ```
 
-`MessageList` and `Chat` group built-in tool activity within each assistant message by default, including a single call. Pass `toolLabel(name, args)` for app-authored activity wording that names what each call did, such as **Read toSorted**, so repeated calls to one tool get their own labels, or `groupRelatedTools={false}` to render separate activities. Inside a group, a failed row shows only its **Failed** status word; the failure message appears once, in the panel below the group. A custom `renderMessage` retains presentation ownership.
+`MessageList` and `Chat` group built-in tool activity within each assistant message by default, including a single call. Pass `toolLabel(name, args)` for app-authored activity wording that names what each call did, such as **Read toSorted**, so repeated calls to one tool get their own labels. Without a label, a row reads the tool name as words, so `search_documents` becomes **Search documents**. Pass `groupRelatedTools={false}` to render separate activities. Inside a group, a failed row shows only its **Failed** status word; the failure message appears once, in the panel below the group. A custom `renderMessage` retains presentation ownership.
 
 While a tool is running, its provided label has a subtle text shimmer; the fallback is **Running tools…**. Settled activity reads **Used 4 tools**, with the appropriate count, without an additional completion-count line. When some calls failed it reads **Used 4 tools · 1 failed**. This describes tool activity, not a confirmed business outcome. Opening the row reveals individual calls and their technical Details. Your expansion choice is retained as calls arrive or settle.
 
