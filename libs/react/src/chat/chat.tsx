@@ -21,7 +21,6 @@ import {
   repeatsToolFailure,
   type MessageListProps,
 } from './message-list.js';
-import { isTyping, TypingIndicator } from './typing-indicator.js';
 import { ScrollBubble } from './scroll-bubble.js';
 
 /** Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options. */
@@ -289,7 +288,6 @@ export function Chat({
           </p>
         ) : null}
       </MessageList>
-      <TypingIndicator active={isTyping(snapshot)} />
       <ChatError
         error={repeated ? undefined : snapshot.error}
         className="tp-chat__error"

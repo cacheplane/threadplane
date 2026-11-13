@@ -62,6 +62,8 @@ Provider metadata is supplied only to assistant rows. User and system rows retai
 
 Define the callback outside rendering or stabilize it with `useCallback`. Put hooks in a component returned by the callback. Recreating the callback on every token defeats row memoization.
 
+Pass `running` while the session works (`snapshot.status === 'running'`). The list then shows a [TypingIndicator](/docs/react/chat/components/typing-indicator) after the rows until the last row has assistant text, using the same rule as `isTyping`, so a run that is waiting on a tool or a subagent still shows progress in the transcript. This holds with a custom `renderMessage`, because the indicator follows the rows rather than rendering one. Pass `typingIndicator={false}` to render your own, or `typingIndicator={{ label, announce: false }}` to change the wording or keep it out of the polite status region when the application already announces progress.
+
 Optional `children` appear after the rows inside the same scrolling region, useful for application-owned approval controls. `label` names the region and defaults to “Conversation”; `className` customizes its root.
 
 ## Respect the reader's position

@@ -27,4 +27,4 @@ By default, the stable label appears in one polite, atomic status region. Token 
 
 The stylesheet uses optional CSS dot animation; reduced-motion preferences disable it. The label stays readable with forced colors or without CSS, and wraps in narrow and right-to-left layouts.
 
-Default [Chat](/docs/react/chat/components/chat) derives this indicator from its existing session snapshot after the message list and before its error notice and composer. This slice does not add general run-activity slots, legacy content-array support, or complete runtime/typing parity.
+[MessageList](/docs/react/chat/components/chat-message-list) renders this indicator after its rows whenever you pass `running`, and default [Chat](/docs/react/chat/components/chat) relies on that, so the indicator sits inside the scrolling transcript, before the error notice and composer. Set `typingIndicator={false}` on `MessageList` when you place your own. This slice does not add general run-activity slots, legacy content-array support, or complete runtime/typing parity.
