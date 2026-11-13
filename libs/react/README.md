@@ -590,6 +590,26 @@ Reading above the bottom preserves position. The observer disconnects on unmount
 without it, row-update following remains available. The list uses one unstyled
 content wrapper inside its existing scroll region.
 
+### Run status and the running hint
+
+Two opt-in props tell the person what a run did. Both are off unless set.
+
+`<Chat runStatus />` says how a run ended. After a run is stopped, by the Stop
+button or by an adapter that reports the reply as `aborted`, a muted "Response
+stopped" line stands at the end of the transcript where the reply would have
+been, so the prompt does not read as one nobody answered. It leaves when the
+next run starts. A visually hidden `role="status"` region also reads "Response
+stopped." or "Response complete." when a run ends, so a screen reader hears the
+end without the reply being announced token by token. A run that ends in an
+error or a pending `approval` is left to those to announce, and a reply that
+completes after Stop was pressed counts as complete.
+
+`runningHint` on `ChatInput` (and passed through by `Chat`) explains a send that
+did nothing. Pressing Enter with a draft while `busy` keeps the draft, and a
+`role="status"` region below the input reads "A response is still running. Stop
+it to send now, or send when it finishes." until the run ends or the draft is
+cleared. Pass a string to use your own sentence.
+
 ## Controlled welcome content (private React T22 slice)
 
 `@threadplane/react/chat` exports `Welcome`, `WelcomeSuggestion` and their readonly

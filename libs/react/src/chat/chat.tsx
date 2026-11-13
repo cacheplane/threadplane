@@ -1,5 +1,11 @@
 'use client';
-import { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import type { AgentSession } from '@threadplane/core';
 import type { MessageContent } from '@threadplane/content/messages';
 import { useAgent } from '../use-agent.js';
@@ -22,7 +28,12 @@ import { ScrollBubble } from './scroll-bubble.js';
 export interface ChatProps
   extends Pick<
     ChatInputProps,
-    'label' | 'placeholder' | 'hint' | 'submitOnEnter' | 'disabled'
+    | 'label'
+    | 'placeholder'
+    | 'hint'
+    | 'submitOnEnter'
+    | 'disabled'
+    | 'runningHint'
   > {
   /** App-owned session. Chat observes and dispatches; it never disposes it. */
   readonly session: AgentSession;
@@ -74,6 +85,14 @@ export interface ChatProps
   readonly welcome?:
     | boolean
     | { readonly title?: ReactNode; readonly suggestions?: ReactNode };
+  /**
+   * Says how a run ended. After a stopped run, "Response stopped" stands at the
+   * end of the transcript where the reply would have been, until the next run.
+   * A polite status region also reads "Response stopped." or "Response
+   * complete." when a run ends; a run that ends in an error or a pending
+   * `approval` is left to those to announce. Off unless set.
+   */
+  readonly runStatus?: boolean;
 }
 
 const ignore = () => undefined;
@@ -100,11 +119,31 @@ export function Chat({
   approval,
   approvalRecords,
   welcome,
+  runStatus = false,
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
   // Stable so the current transcript row keeps its memo while work runs.
+  const tracksStop = useRef(runStatus);
+  tracksStop.current = runStatus;
+  const [stopped, setStopped] = useState<StoppedTurn | null>(null);
+  const [announcement, setAnnouncement] = useState<{
+    readonly session: AgentSession;
+    readonly text: string;
+  } | null>(null);
   const stop = useCallback(() => {
+    if (tracksStop.current) {
+      // The prompt identifies the turn: message ids can change when history reloads after a stop.
+      const users = session
+        .getSnapshot()
+        .messages.filter((message) => message.role === 'user');
+      const prompt = users[users.length - 1];
+      setStopped(
+        prompt
+          ? { session, userCount: users.length, prompt: prompt.content }
+          : null
+      );
+    }
     session.stop().catch(ignore);
   }, [session]);
   // Answering removes the approval and its focused button; continue in the
@@ -151,6 +190,30 @@ export function Chat({
         ? {}
         : welcome
       : null;
+  const running = snapshot.status === 'running';
+  const showStopped = runStatus && !running && endedStopped(snapshot, session, stopped);
+  // A new run clears the stopped turn and the last announcement, so a repeat is read again.
+  const wasRunning = useRef(false);
+  useEffect(() => {
+    if (!runStatus) {
+      wasRunning.current = false;
+      return;
+    }
+    if (running) {
+      if (wasRunning.current) return;
+      wasRunning.current = true;
+      setStopped(null);
+      setAnnouncement(null);
+      return;
+    }
+    if (!wasRunning.current) return;
+    wasRunning.current = false;
+    if (error || pending) return;
+    setAnnouncement({
+      session,
+      text: showStopped ? 'Response stopped.' : 'Response complete.',
+    });
+  }, [runStatus, running, error, pending, showStopped, session]);
   const suggestions = greeting?.suggestions;
   // Choosing a suggestion removes the button that had focus; continue in the composer.
   const greeted = greeting !== null;
@@ -203,6 +266,20 @@ export function Chat({
         }
       >
         {pending ? approval : null}
+        {showStopped ? (
+          <p className="tp-chat__stopped">
+            <svg
+              viewBox="0 0 24 24"
+              width="12"
+              height="12"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" />
+            </svg>
+            Response stopped
+          </p>
+        ) : null}
       </MessageList>
       <TypingIndicator active={isTyping(snapshot)} />
       <ChatError
@@ -224,6 +301,11 @@ export function Chat({
           })
         }
       />
+      {runStatus ? (
+        <div className="tp-chat-sr-only" role="status">
+          {announcement?.session === session ? announcement.text : ''}
+        </div>
+      ) : null}
       <ChatInput
         ref={composer}
         key={sessionKey(session)}
@@ -240,9 +322,7 @@ export function Chat({
         onSubmit={(text) => {
           session.submit(text.trim()).catch(ignore);
         }}
-        onStop={() => {
-          session.stop().catch(ignore);
-        }}
+        onStop={stop}
       />
       {suggestions === undefined ||
       suggestions === null ||
@@ -261,6 +341,41 @@ export function Chat({
         </div>
       )}
     </div>
+  );
+}
+
+interface StoppedTurn {
+  readonly session: AgentSession;
+  readonly userCount: number;
+  readonly prompt: string;
+}
+
+/** True when the latest turn ended because it was stopped, by the person here or by the adapter. */
+function endedStopped(
+  snapshot: ReturnType<AgentSession['getSnapshot']>,
+  session: AgentSession,
+  stopped: StoppedTurn | null
+): boolean {
+  const messages = snapshot.messages;
+  const last = messages[messages.length - 1];
+  const delivery = last?.role === 'assistant' ? last.delivery : undefined;
+  if (delivery?.phase === 'complete' && delivery.outcome === 'aborted') {
+    return true;
+  }
+  // A reply that completed after the stop, or another conversation, is not a stopped turn.
+  if (
+    !stopped ||
+    stopped.session !== session ||
+    (delivery?.phase === 'complete' && delivery.outcome === 'success')
+  ) {
+    return false;
+  }
+  const users = messages.filter((message) => message.role === 'user');
+  const prompt = users[users.length - 1];
+  return (
+    users.length === stopped.userCount &&
+    prompt !== undefined &&
+    prompt.content === stopped.prompt
   );
 }
 

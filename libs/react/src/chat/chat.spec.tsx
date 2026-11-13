@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  completeDelivery,
   streamingDelivery,
   type AgentError,
   type AgentSession,
@@ -757,5 +758,107 @@ describe('Chat welcome', () => {
     fireEvent.change(draft, { target: { value: ' Hello ' } });
     fireEvent.keyDown(draft, { key: 'Enter' });
     expect(raw.submit.mock.calls).toEqual([['Hello']]);
+  });
+});
+
+describe('Chat run status', () => {
+  const user = (id: string, content: string) =>
+    Object.freeze({ id, role: 'user' as const, content, delivery: completeDelivery(id, 'success') });
+  const reply = (id: string, content: string, outcome: 'success' | 'aborted') =>
+    Object.freeze({ id, role: 'assistant' as const, content, delivery: completeDelivery('g', outcome) });
+  const status = (view: ReturnType<typeof render>) =>
+    view.container.querySelector('.tp-chat > [role="status"].tp-chat-sr-only');
+  const notice = (view: ReturnType<typeof render>) => view.container.querySelector('.tp-chat__stopped');
+
+  it('adds nothing unless asked', () => {
+    const { session, raw, set } = fakeSession({ status: 'running', messages: [user('u', 'Hi')] });
+    const view = render(<Chat session={session} />);
+    fireEvent.click(view.getByRole('button', { name: 'Stop' }));
+    expect(raw.stop).toHaveBeenCalledTimes(1);
+    set({ status: 'idle', messages: [user('u', 'Hi'), reply('a', 'Par', 'aborted')] });
+    expect(status(view)).toBeNull();
+    expect(notice(view)).toBeNull();
+  });
+
+  it('marks a run the person stopped, even when no reply was kept, until the next run', () => {
+    const { session, raw, set } = fakeSession({ status: 'running', messages: [user('u', 'Hi')] });
+    const view = render(<Chat session={session} runStatus />);
+    expect(status(view)?.textContent).toBe('');
+    expect(notice(view)).toBeNull();
+    fireEvent.click(view.getByRole('button', { name: 'Stop' }));
+    expect(raw.stop).toHaveBeenCalledTimes(1);
+    expect(notice(view)).toBeNull();
+    set({ status: 'idle' });
+    expect(notice(view)?.textContent).toBe('Response stopped');
+    expect(notice(view)?.closest('.tp-chat-list')).not.toBeNull();
+    expect(status(view)?.textContent).toBe('Response stopped.');
+    set({ status: 'running', messages: [user('u', 'Hi'), user('u2', 'Again')] });
+    expect(notice(view)).toBeNull();
+    expect(status(view)?.textContent).toBe('');
+    set({ status: 'idle', messages: [user('u', 'Hi'), user('u2', 'Again'), reply('a', 'Done', 'success')] });
+    expect(notice(view)).toBeNull();
+    expect(status(view)?.textContent).toBe('Response complete.');
+  });
+
+  it('marks a reply the adapter reports as aborted and not one that completed after the stop', () => {
+    const { session, set } = fakeSession({ status: 'running', messages: [user('u', 'Hi')] });
+    const view = render(<Chat session={session} runStatus />);
+    set({ status: 'idle', messages: [user('u', 'Hi'), reply('a', 'Par', 'aborted')] });
+    expect(notice(view)?.textContent).toBe('Response stopped');
+    expect(status(view)?.textContent).toBe('Response stopped.');
+    set({ status: 'running' });
+    fireEvent.click(view.getByRole('button', { name: 'Stop' }));
+    set({ status: 'idle', messages: [user('u', 'Hi'), reply('a', 'Whole answer', 'success')] });
+    expect(notice(view)).toBeNull();
+    expect(status(view)?.textContent).toBe('Response complete.');
+  });
+
+  it('does not carry a stopped turn to another conversation', () => {
+    const first = fakeSession({ status: 'running', messages: [user('u', 'Hi')] });
+    const second = fakeSession({ messages: [user('u', 'Hi')] });
+    const view = render(<Chat session={first.session} runStatus />);
+    fireEvent.click(view.getByRole('button', { name: 'Stop' }));
+    first.set({ status: 'idle' });
+    expect(notice(view)).not.toBeNull();
+    view.rerender(<Chat session={second.session} runStatus />);
+    expect(notice(view)).toBeNull();
+    expect(status(view)?.textContent).toBe('');
+  });
+
+  it('leaves a run that ends in an error or a pending approval to those', () => {
+    const failed = fakeSession({ status: 'running', messages: [user('u', 'Hi')] });
+    const view = render(<Chat session={failed.session} runStatus />);
+    failed.set({
+      status: 'error',
+      error: { kind: 'server', message: 'Failed', retryable: false } as AgentError,
+    });
+    expect(status(view)?.textContent).toBe('');
+    cleanup();
+    const paused = fakeSession({ status: 'running', messages: [user('u', 'Hi')] });
+    const next = render(<Chat session={paused.session} runStatus />);
+    next.rerender(<Chat session={paused.session} runStatus approval={<p>Approve?</p>} />);
+    paused.set({ status: 'idle' });
+    expect(status(next)?.textContent).toBe('');
+  });
+
+  it('says nothing for a conversation that was already finished when it mounted', () => {
+    const { session } = fakeSession({ messages: [user('u', 'Hi'), reply('a', 'Done', 'success')] });
+    const view = render(
+      <StrictMode>
+        <Chat session={session} runStatus />
+      </StrictMode>
+    );
+    expect(status(view)?.textContent).toBe('');
+    expect(notice(view)).toBeNull();
+  });
+
+  it('passes the running hint to the composer', () => {
+    const { session, raw } = fakeSession({ status: 'running', messages: [user('u', 'Hi')] });
+    const view = render(<Chat session={session} runningHint />);
+    const draft = view.getByRole('textbox');
+    fireEvent.change(draft, { target: { value: 'Next' } });
+    fireEvent.keyDown(draft, { key: 'Enter' });
+    expect(raw.submit).not.toHaveBeenCalled();
+    expect(view.container.querySelector('.tp-chat-input__running-hint')?.textContent).toContain('still running');
   });
 });
