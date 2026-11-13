@@ -25,6 +25,8 @@ export function OverflowMenuFixture() {
     return <RunStatusFixture />;
   if (new URLSearchParams(window.location.search).has('actions'))
     return <MessageActionsFixture />;
+  if (new URLSearchParams(window.location.search).has('math'))
+    return <MathFixture />;
   if (new URLSearchParams(window.location.search).has('popup'))
     return <PopupFixture />;
   if (new URLSearchParams(window.location.search).has('rating'))
@@ -488,6 +490,30 @@ function echoSession(): AgentSession {
   } as unknown as AgentSession;
 }
 const welcomeSession = echoSession();
+
+const mathSession = echoSession();
+/** A stand-in for a math engine: marks what it was given and makes display math very wide. */
+const fixtureMath = (latex: string, { display }: { display: boolean }) => {
+  if (latex.includes('bad')) throw new Error('invalid');
+  const escaped = latex.trim().replace(/[<&]/g, '');
+  return display
+    ? `<span data-set="display" style="display:inline-block;inline-size:1600px;white-space:nowrap">${escaped}</span>`
+    : `<span data-set="inline" style="font-style:italic">${escaped}</span>`;
+};
+
+/** Installed math renderer option on Chat. */
+function MathFixture() {
+  const [on, setOn] = useState(true);
+  return (
+    <main>
+      <h1>Installed math</h1>
+      <button type="button" onClick={() => setOn((value) => !value)}>Toggle math</button>
+      <div data-testid="math-frame" style={{ display: 'flex', blockSize: 520, border: '1px solid gray' }}>
+        <Chat session={mathSession} label="Message" math={on ? fixtureMath : undefined} />
+      </div>
+    </main>
+  );
+}
 
 const actionsSession = echoSession();
 

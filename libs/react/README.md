@@ -181,8 +181,8 @@ change resets local image state; replacing an image destination allows recovery
 after a failed load.
 
 The renderer preserves literal HTML as text, uses semantic lists/tables and
-disabled task checkboxes, and resolves references from the snapshot. Math remains
-delimited text. Optional readonly `citations` supplies per-message `Citation[]`:
+disabled task checkboxes, and resolves references from the snapshot. Math stays
+delimited text unless you pass `math` (see Math below). Optional readonly `citations` supplies per-message `Citation[]`:
 exact IDs override Markdown definitions, including sources with blocked or absent
 URLs. Duplicate supplied IDs throw `TypeError`. Otherwise definitions provide the
 index, literal title before their first immediate link/autolink, and destination.
@@ -195,7 +195,7 @@ classification is the fixed [`content/markdown` policy](../content/README.md),
 including exclusion of data images. A fenced code block's `<code>` carries the
 conventional `language-*` class from the first word of its info string when
 that is a plain identifier, so your own highlighter can find it; the binding
-does no highlighting itself. The root binding stays headless; rich math,
+does no highlighting itself. The root binding stays headless;
 custom node registries, legacy migration,
 SSR and hydration remain outside this private feature.
 
@@ -609,6 +609,34 @@ did nothing. Pressing Enter with a draft while `busy` keeps the draft, and a
 `role="status"` region below the input reads "A response is still running. Stop
 it to send now, or send when it finishes." until the run ends or the draft is
 cleared. Pass a string to use your own sentence.
+
+### Math
+
+`Markdown`, `MessageList` and `Chat` take an opt-in `math` renderer. Without
+it, math is shown as its source with its delimiters (`$x$`, `\(x\)`, `$$x$$`,
+`\[x\]`). The package does not depend on a math engine; you supply one, such
+as KaTeX:
+
+```tsx
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+const math = (latex: string, { display }: { display: boolean }) =>
+  katex.renderToString(latex, { displayMode: display, throwOnError: true });
+
+<Chat session={session} math={math} />;
+```
+
+The function receives the LaTeX between the delimiters and returns an HTML
+string. That string is inserted as markup, so return only your renderer's own
+output, never text built from the message. When the function throws (keep
+`throwOnError: true` so invalid LaTeX does) or returns nothing, that formula
+falls back to its source while the rest of the message is typeset. Display math
+is a block that scrolls sideways when it is wider than the message. Each
+formula is typeset once while the text around it streams. Define the function
+outside the component or memoize it; a new function typesets every formula
+again. To load the engine lazily, pass `math` only once your import resolves.
+The stylesheet and fonts are yours to load.
 
 ### Built-in message actions
 

@@ -268,7 +268,7 @@ export type DebugValueContract = DebugAssert<DebugEqual<DebugValue, null | boole
   const markdown = specifiers.includes('@threadplane/react/markdown') ? `
 type MarkdownEqual<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type MarkdownAssert<T extends true> = T;
-export type MarkdownContract = MarkdownAssert<MarkdownEqual<import('@threadplane/react/markdown').MarkdownProps, { readonly snapshot: import('@threadplane/content/markdown').MarkdownSnapshot; readonly citations?: readonly import('@threadplane/core').Citation[]; readonly citationPreview?: boolean }>>;
+export type MarkdownContract = MarkdownAssert<MarkdownEqual<import('@threadplane/react/markdown').MarkdownProps, { readonly snapshot: import('@threadplane/content/markdown').MarkdownSnapshot; readonly citations?: readonly import('@threadplane/core').Citation[]; readonly citationPreview?: boolean; readonly math?: (latex: string, options: { readonly display: boolean }) => string | null | undefined }>>;
 export type MarkdownParameterContract = MarkdownAssert<MarkdownEqual<Parameters<typeof import('@threadplane/react/markdown').Markdown>[0], import('@threadplane/react/markdown').MarkdownProps>>;
 ` : '';
   const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n') + debug + a2ui + markdown + citationDisplay;

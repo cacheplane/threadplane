@@ -11,7 +11,7 @@ import {
 } from 'react';
 import type { MessageRow } from '@threadplane/content/messages';
 import type { AgentPlanStep } from '@threadplane/core';
-import { Markdown } from '../markdown/markdown.js';
+import { Markdown, type MarkdownProps } from '../markdown/markdown.js';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 import {
   ToolActivity,
@@ -138,6 +138,8 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * ownership. Off unless set.
    */
   readonly messageActions?: BuiltInMessageActions;
+  /** Typesets math in message text; see `MarkdownProps.math`. Keep stable; custom renderMessage retains full ownership. */
+  readonly math?: MarkdownProps['math'];
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -300,7 +302,9 @@ function RowView<TRow extends MessageRow>({
   onStop,
   running,
   messageActions,
+  math,
 }: {
+  readonly math?: MarkdownProps['math'];
   readonly messageActions?: BuiltInMessageActions;
   readonly row: TRow;
   readonly current: boolean;
@@ -500,6 +504,7 @@ function RowView<TRow extends MessageRow>({
           citations={
             row.role === 'assistant' ? row.message.citations : undefined
           }
+          math={math}
         />
       )}
     </ChatMessage>
@@ -527,6 +532,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   subagents,
   approvalRecords,
   messageActions,
+  math,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
@@ -658,6 +664,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   row.toolCalls.some((call) => call.status === 'running')
                 }
                 messageActions={messageActions}
+                math={math}
               />
               {renderApprovalRecords(recordsAfter, row.id)}
             </Fragment>
