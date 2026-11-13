@@ -1536,6 +1536,74 @@ export async function runWelcomeScenarios(page, url) {
   assert.ok((await rect(frame.getByText('Echo: Plan a weekend in Lyon'))).bottom <= after.top + 0.5, 'the transcript sits above the composer');
 }
 
+/** Installed Chat run status: the running hint, the stopped line and the end-of-run announcement. */
+export async function runRunStatusScenarios(page, url) {
+  await page.goto(`${url}/?menu&runstatus`);
+  await expect(page.getByRole('heading', { name: 'Installed run status' })).toBeVisible();
+  const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }; });
+  const fits = async (message) => assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, message);
+  const frame = page.getByTestId('run-status-frame');
+  const draft = frame.getByRole('textbox', { name: 'Message' });
+  const composer = frame.locator('.tp-chat-input');
+  const hint = frame.locator('.tp-chat-input__running-hint');
+  const announced = frame.locator('.tp-chat > [role="status"].tp-chat-sr-only');
+  const notice = frame.locator('.tp-chat__stopped');
+  await expect(hint).toHaveAttribute('role', 'status');
+  await expect(hint).toHaveText('');
+  await expect(announced).toHaveText('');
+  const idle = await rect(composer);
+  await draft.fill('First question');
+  await page.keyboard.press('Enter');
+  await expect(frame.getByText('First question')).toBeVisible();
+  await expect(frame.getByRole('button', { name: 'Stop' })).toBeVisible();
+  // Enter during the run keeps the draft and says why, without widening the page at either width.
+  await draft.fill('Second question');
+  await page.keyboard.press('Enter');
+  await expect(hint).toHaveText('A response is still running. Stop it to send now, or send when it finishes.');
+  await expect(draft).toHaveValue('Second question');
+  await expect(frame.locator('.tp-chat-list').getByText('Second question', { exact: true })).toHaveCount(0);
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    await fits(`the running hint does not widen the page at ${width}px`);
+    const outer = await rect(frame), line = await rect(hint.locator('span')), box = await rect(composer);
+    assert.ok(line.height > 0 && line.left >= outer.left && line.right <= outer.right + 0.5, 'the hint stays inside the frame');
+    assert.ok(line.top >= (await rect(frame.locator('.tp-chat-input__pill'))).bottom && line.bottom <= box.bottom + 0.5, 'the hint sits below the input surface, inside the composer');
+    assert.ok(outer.bottom - box.bottom < 24, 'the composer stays at the bottom of the frame');
+  }
+  assert.notEqual(await hint.locator('span').evaluate((node) => getComputedStyle(node).color), await draft.evaluate((node) => getComputedStyle(node).color), 'the hint is muted');
+  // Stop: the line stands where the reply would have been, the hint leaves, the end is announced, focus continues in the composer.
+  await frame.getByRole('button', { name: 'Stop' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(notice).toBeVisible();
+  await expect(notice).toHaveText('Response stopped');
+  await expect(announced).toHaveText('Response stopped.');
+  await expect(hint).toHaveText('');
+  await expect(draft).toBeFocused();
+  await expect(draft).toHaveValue('Second question');
+  const sr = await rect(announced);
+  assert.ok(sr.width <= 1 && sr.height <= 1, 'the announcement is visually hidden');
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    await fits(`the stopped line does not widen the page at ${width}px`);
+    const line = await rect(notice), prompt = await rect(frame.getByText('First question')), box = await rect(composer), list = await rect(frame.locator('.tp-chat-list'));
+    assert.ok(line.top >= prompt.bottom, 'the stopped line follows the prompt');
+    assert.ok(line.bottom <= box.top + 0.5, 'the stopped line sits above the composer');
+    assert.ok(line.left >= list.left && line.right <= list.right + 0.5, 'the stopped line stays inside the transcript');
+    const icon = await rect(notice.locator('svg'));
+    assert.ok(icon.width === 12 && icon.height === 12 && Math.abs((icon.top + icon.bottom) / 2 - (line.top + line.bottom) / 2) <= 1.5, 'the stop mark is 12px and centred on the line');
+  }
+  assert.ok(Math.abs((await rect(composer)).height - idle.height) <= 1, 'the composer returns to its idle height once the hint leaves');
+  // The next run clears the line and the announcement; a completed run is announced as complete.
+  await page.keyboard.press('Enter');
+  await expect(frame.locator('.tp-chat-list').getByText('Second question', { exact: true })).toBeVisible();
+  await expect(notice).toHaveCount(0);
+  await expect(announced).toHaveText('');
+  await page.getByRole('button', { name: 'Finish' }).click();
+  await expect(frame.getByText('Reply 2')).toBeVisible();
+  await expect(announced).toHaveText('Response complete.');
+  await expect(notice).toHaveCount(0);
+}
+
 /** Installed LauncherButton and ChatWindow: size, regions, scrolling, wrapping, keyboard and motion. */
 export async function runShellScenarios(page, url) {
   await page.goto(`${url}/?menu&shell`);
@@ -2660,6 +2728,7 @@ export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}
       await runPrimitiveScenarios(page, server.url);
       await runShellScenarios(page, server.url);
       await runWelcomeScenarios(page, server.url);
+      await runRunStatusScenarios(page, server.url);
       await runPopupShortcutScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);

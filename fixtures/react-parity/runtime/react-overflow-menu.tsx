@@ -21,6 +21,8 @@ export function OverflowMenuFixture() {
     return <ShellFixture />;
   if (new URLSearchParams(window.location.search).has('welcome'))
     return <WelcomeFixture />;
+  if (new URLSearchParams(window.location.search).has('runstatus'))
+    return <RunStatusFixture />;
   if (new URLSearchParams(window.location.search).has('popup'))
     return <PopupFixture />;
   if (new URLSearchParams(window.location.search).has('rating'))
@@ -484,6 +486,53 @@ function echoSession(): AgentSession {
   } as unknown as AgentSession;
 }
 const welcomeSession = echoSession();
+
+/** A session whose runs last until Stop (no reply kept) or the fixture's Finish (a reply). */
+function heldSession() {
+  let snapshot = Object.freeze({ status: 'idle', messages: [] as Message[], toolCalls: [] }) as unknown as AgentSnapshot;
+  const listeners = new Set<() => void>();
+  let turn = 0;
+  const set = (next: Partial<AgentSnapshot>) => {
+    snapshot = Object.freeze({ ...snapshot, ...next }) as AgentSnapshot;
+    for (const notify of listeners) notify();
+  };
+  const session = {
+    getSnapshot: () => snapshot,
+    subscribe(notify: () => void) {
+      listeners.add(notify);
+      return () => listeners.delete(notify);
+    },
+    async submit(text: string) {
+      turn += 1;
+      const user = { id: `u${turn}`, role: 'user', content: text, delivery: completeDelivery(`u${turn}`, 'success') } as unknown as Message;
+      set({ status: 'running', messages: [...snapshot.messages, user] });
+      return 'success';
+    },
+    async stop() {
+      set({ status: 'idle' });
+    },
+    async dispose() {},
+  } as unknown as AgentSession;
+  const finish = () => {
+    const reply = { id: `a${turn}`, role: 'assistant', content: `Reply ${turn}`, delivery: completeDelivery(`a${turn}`, 'success') } as unknown as Message;
+    set({ status: 'idle', messages: [...snapshot.messages, reply] });
+  };
+  return { session, finish };
+}
+const held = heldSession();
+
+/** Installed Chat run status and composer running hint. */
+function RunStatusFixture() {
+  return (
+    <main>
+      <h1>Installed run status</h1>
+      <button type="button" onClick={held.finish}>Finish</button>
+      <div data-testid="run-status-frame" style={{ display: 'flex', blockSize: 520, border: '1px solid gray' }}>
+        <Chat session={held.session} label="Message" runStatus runningHint />
+      </div>
+    </main>
+  );
+}
 
 /** Installed Chat welcome greeting; the session is local and echoes. */
 function WelcomeFixture() {

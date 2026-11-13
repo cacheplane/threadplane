@@ -4,6 +4,7 @@ import {
   useCallback,
   useId,
   useImperativeHandle,
+  useEffect,
   useRef,
   useState,
   type ReactNode,
@@ -25,6 +26,13 @@ export interface ChatInputProps {
   readonly label?: string;
   readonly placeholder?: string;
   readonly hint?: ReactNode;
+  /**
+   * Explains a send that did nothing: pressing Enter with a draft while `busy`
+   * keeps the draft, and a status region below the input says a response is
+   * still running until it ends or the draft is cleared. `true` uses the
+   * default sentence and a string replaces it. Off unless set.
+   */
+  readonly runningHint?: boolean | string;
   /**
    * App-owned notice above the input surface, such as a paused or read-only
    * state. Announce it yourself when it should be spoken, for example with
@@ -71,6 +79,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
       label = 'Message',
       placeholder = 'Write a message…',
       hint,
+      runningHint = false,
       banner,
       attachments,
       leading,
@@ -98,7 +107,12 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     }, []);
     const [own, setOwn] = useState(defaultValue);
     const draft = value ?? own;
+    const [blocked, setBlocked] = useState(false);
+    useEffect(() => {
+      if (!busy) setBlocked(false);
+    }, [busy]);
     const setDraft = (next: string) => {
+      if (next.trim().length === 0) setBlocked(false);
       if (value === undefined) setOwn(next);
       onValueChange?.(next);
     };
@@ -167,7 +181,11 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
     }, [resize]);
     const canSend = !busy && !disabled && draft.trim().length > 0;
     const send = () => {
-      if (!canSend) return;
+      if (!canSend) {
+        // The draft stays put; say why nothing was sent.
+        if (busy && !disabled && draft.trim().length > 0) setBlocked(true);
+        return;
+      }
       const input = textarea.current;
       const form = input?.form;
       const document = input?.ownerDocument;
@@ -298,6 +316,18 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
           <p id={hintId} className="tp-chat-input__hint">
             {hint}
           </p>
+        )}
+        {runningHint !== false && (
+          // Always mounted, so the sentence is announced when it appears.
+          <div className="tp-chat-input__running-hint" role="status">
+            {blocked && busy && (
+              <span>
+                {runningHint === true
+                  ? 'A response is still running. Stop it to send now, or send when it finishes.'
+                  : runningHint}
+              </span>
+            )}
+          </div>
         )}
         {present(footer) && (
           <div className="tp-chat-input__footer">{footer}</div>

@@ -423,3 +423,49 @@ describe('ChatInput', () => {
     expect(box(view).value).toBe('q');
   });
 });
+
+describe('ChatInput running hint', () => {
+  const region = (view: ReturnType<typeof render>) =>
+    view.container.querySelector('.tp-chat-input__running-hint');
+  const sentence = 'A response is still running. Stop it to send now, or send when it finishes.';
+
+  it('renders no region unless asked', () => {
+    const view = render(<ChatInput busy defaultValue="Next" onSubmit={() => undefined} />);
+    fireEvent.keyDown(box(view), { key: 'Enter' });
+    expect(region(view)).toBeNull();
+  });
+
+  it('explains Enter during a run, keeps the draft and clears when the run ends', () => {
+    const onSubmit = vi.fn();
+    const view = render(<ChatInput runningHint busy onSubmit={onSubmit} />);
+    expect(region(view)?.getAttribute('role')).toBe('status');
+    expect(region(view)?.textContent).toBe('');
+    fireEvent.keyDown(box(view), { key: 'Enter' });
+    expect(region(view)?.textContent).toBe('');
+    type(box(view), 'Next');
+    fireEvent.keyDown(box(view), { key: 'Enter', shiftKey: true });
+    expect(region(view)?.textContent).toBe('');
+    fireEvent.keyDown(box(view), { key: 'Enter' });
+    expect(region(view)?.textContent).toBe(sentence);
+    expect(box(view).value).toBe('Next');
+    expect(onSubmit).not.toHaveBeenCalled();
+    view.rerender(<ChatInput runningHint onSubmit={onSubmit} />);
+    expect(region(view)?.textContent).toBe('');
+    view.rerender(<ChatInput runningHint busy onSubmit={onSubmit} />);
+    expect(region(view)?.textContent).toBe('');
+    fireEvent.keyDown(box(view), { key: 'Enter' });
+    expect(region(view)?.textContent).toBe(sentence);
+    type(box(view), '');
+    expect(region(view)?.textContent).toBe('');
+  });
+
+  it('takes its own sentence and stays quiet while disabled', () => {
+    const view = render(<ChatInput runningHint="Wait for the reply." busy defaultValue="Next" onSubmit={() => undefined} />);
+    fireEvent.keyDown(box(view), { key: 'Enter' });
+    expect(region(view)?.textContent).toBe('Wait for the reply.');
+    cleanup();
+    const off = render(<ChatInput runningHint busy disabled defaultValue="Next" onSubmit={() => undefined} />);
+    fireEvent.keyDown(box(off), { key: 'Enter' });
+    expect(region(off)?.textContent).toBe('');
+  });
+});
