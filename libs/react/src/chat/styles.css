@@ -581,6 +581,14 @@
   white-space: nowrap;
   border: 0;
 }
+.tp-message-actions--built-in {
+  align-items: center;
+  gap: 0.25rem;
+}
+.tp-message-actions--built-in > .tp-message-actions {
+  gap: 0.25rem;
+  margin: 0;
+}
 .tp-message-actions__action:disabled {
   cursor: not-allowed;
 }

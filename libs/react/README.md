@@ -610,6 +610,37 @@ did nothing. Pressing Enter with a draft while `busy` keeps the draft, and a
 it to send now, or send when it finishes." until the run ends or the draft is
 cleared. Pass a string to use your own sentence.
 
+### Built-in message actions
+
+`messageActions` on `Chat` and `MessageList` adds actions under each finished
+assistant message that has text. It is off unless set.
+
+`messageActions` alone adds Copy. It writes the message source (the Markdown as
+the agent wrote it) to the clipboard, falls back to a selection copy where the
+clipboard API is absent or refuses, and reads "Copied" for two seconds. When
+neither path works the button stays as it was.
+
+Pass an object to hear about a copy or to add a rating. Keep the object stable,
+for example with `useMemo`:
+
+```tsx
+const actions = useMemo(
+  () => ({
+    onCopy: (content: string, messageId: string) => track('copy', messageId),
+    onRate: (rating: 'up' | 'down' | null, messageId: string) => save(messageId, rating),
+  }),
+  []
+);
+<Chat session={session} messageActions={actions} />;
+```
+
+`onRate` adds thumbs up and down. The row keeps the rating while it is mounted
+and reports each change, with `null` when the current rating is pressed again.
+Storing ratings and restoring them after a reload is yours; for a rating you
+control, render `MessageRating` from `renderMessage`. A message that is still
+streaming, a user message, and a row drawn by `renderMessage` get no actions.
+Regenerate is not included because `AgentSession` has no command for it.
+
 ## Controlled welcome content (private React T22 slice)
 
 `@threadplane/react/chat` exports `Welcome`, `WelcomeSuggestion` and their readonly

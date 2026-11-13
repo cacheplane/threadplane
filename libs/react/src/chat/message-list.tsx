@@ -26,6 +26,7 @@ import {
   withoutStaleRetry,
 } from './tool-outcome.js';
 import { Reasoning } from './reasoning.js';
+import { BuiltInActions, type BuiltInMessageActions } from './message-actions.js';
 import { Citations } from './citations.js';
 import { SubagentCard, type SubagentInfo } from './subagent-card.js';
 import { ChatMessage, type ChatMessageRole } from './chat-message.js';
@@ -129,6 +130,14 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * the run continues below.
    */
   readonly approvalRecords?: readonly ApprovalRecordEntry[];
+  /**
+   * Built-in actions under each finished assistant message that has text. `true` adds Copy, which
+   * writes the message source to the clipboard and reads "Copied" for two seconds. An object can add
+   * `onCopy`, and `onRate` to show thumbs up and down; the row keeps the rating and reports each
+   * change, with null when it is cleared. Keep the object stable; custom renderMessage retains full
+   * ownership. Off unless set.
+   */
+  readonly messageActions?: BuiltInMessageActions;
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -290,7 +299,9 @@ function RowView<TRow extends MessageRow>({
   plan,
   onStop,
   running,
+  messageActions,
 }: {
+  readonly messageActions?: BuiltInMessageActions;
   readonly row: TRow;
   readonly current: boolean;
   readonly prevRole?: ChatMessageRole;
@@ -467,6 +478,17 @@ function RowView<TRow extends MessageRow>({
                 ))
               )
             )}
+          {assistant &&
+            messageActions !== undefined &&
+            messageActions !== false &&
+            row.message.delivery.phase === 'complete' &&
+            row.message.content.trim().length > 0 && (
+              <BuiltInActions
+                messageId={row.message.id}
+                content={row.message.content}
+                options={messageActions}
+              />
+            )}
         </>
       }
     >
@@ -504,6 +526,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   running = false,
   subagents,
   approvalRecords,
+  messageActions,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
@@ -634,6 +657,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   running &&
                   row.toolCalls.some((call) => call.status === 'running')
                 }
+                messageActions={messageActions}
               />
               {renderApprovalRecords(recordsAfter, row.id)}
             </Fragment>

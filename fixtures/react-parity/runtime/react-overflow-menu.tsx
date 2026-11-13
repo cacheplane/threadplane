@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Chat, ChatInput, ChatPopup, ChatWindow, GenerativeUiSkeleton, LauncherButton, MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, Timeline, Trace, WelcomeSuggestion, type MessageRatingValue, type TimelineItem, type TraceState } from '@threadplane/react/chat';
 import { completeDelivery, type AgentSession, type AgentSnapshot, type Message } from '@threadplane/core';
 import '@threadplane/react/chat/styles.css';
@@ -23,6 +23,8 @@ export function OverflowMenuFixture() {
     return <WelcomeFixture />;
   if (new URLSearchParams(window.location.search).has('runstatus'))
     return <RunStatusFixture />;
+  if (new URLSearchParams(window.location.search).has('actions'))
+    return <MessageActionsFixture />;
   if (new URLSearchParams(window.location.search).has('popup'))
     return <PopupFixture />;
   if (new URLSearchParams(window.location.search).has('rating'))
@@ -486,6 +488,29 @@ function echoSession(): AgentSession {
   } as unknown as AgentSession;
 }
 const welcomeSession = echoSession();
+
+const actionsSession = echoSession();
+
+/** Installed built-in Copy and rating under a finished reply. */
+function MessageActionsFixture() {
+  const [log, setLog] = useState<readonly string[]>([]);
+  const options = useMemo(
+    () => ({
+      onCopy: (content: string, id: string) => setLog((all) => [...all, `copy:${id}:${content}`]),
+      onRate: (rating: 'up' | 'down' | null, id: string) => setLog((all) => [...all, `rate:${id}:${rating}`]),
+    }),
+    []
+  );
+  return (
+    <main>
+      <h1>Installed message actions</h1>
+      <output data-testid="actions-log">{log.join('|')}</output>
+      <div data-testid="actions-frame" style={{ display: 'flex', blockSize: 520, border: '1px solid gray' }}>
+        <Chat session={actionsSession} label="Message" messageActions={options} />
+      </div>
+    </main>
+  );
+}
 
 /** A session whose runs last until Stop (no reply kept) or the fixture's Finish (a reply). */
 function heldSession() {
