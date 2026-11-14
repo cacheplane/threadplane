@@ -87,7 +87,12 @@ export function StreamingDemo({
         </button>
       </header>
       <p>Watch an answer arrive as the agent writes it.</p>
-      <MessageList rows={snapshot.rows} label="Conversation" />
+      <MessageList
+        running={snapshot.busy}
+        typingIndicator={{ announce: false }}
+        rows={snapshot.rows}
+        label="Conversation"
+      />
       <ExampleFooter>
         {snapshot.error && <p role="alert">{snapshot.error}</p>}
         <ChatInput

@@ -61,7 +61,14 @@ export function TimeTravelDemo({
         Load saved checkpoints, select a completed source, then fork with your
         message. Send continues the conversation shown above.
       </p>
-      <MessageList rows={snapshot.rows} label="Conversation" />
+      <MessageList
+        running={
+          snapshot.activity === 'creating' || snapshot.activity === 'running'
+        }
+        typingIndicator={{ announce: false }}
+        rows={snapshot.rows}
+        label="Conversation"
+      />
       <section aria-label="Last loaded checkpoint page">
         <header>
           <h2>Last loaded checkpoint page</h2>

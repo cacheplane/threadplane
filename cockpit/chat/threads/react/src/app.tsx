@@ -143,6 +143,11 @@ function ThreadsOwner({ connection, onReady }: Props) {
           aria-label="Selected conversation"
         >
           <MessageList
+            running={
+              snapshot.activity === 'creating' ||
+              snapshot.activity === 'running'
+            }
+            typingIndicator={{ announce: false }}
             rows={snapshot.rows}
             renderMessage={renderMessage}
             label="Conversation"

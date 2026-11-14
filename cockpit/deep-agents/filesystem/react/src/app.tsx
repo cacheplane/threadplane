@@ -184,6 +184,8 @@ function FilesystemOwner({ connection, onReady }: Props) {
             </div>
           )}
           <MessageList
+            running={snapshot.busy && snapshot.phase !== 'confirming'}
+            typingIndicator={{ announce: false }}
             key={`messages:${snapshot.viewGeneration}`}
             rows={snapshot.rows}
             renderMessage={renderRow}

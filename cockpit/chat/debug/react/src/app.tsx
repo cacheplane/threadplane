@@ -105,6 +105,10 @@ export function DebugDemo({
         summary arrive, then inspect the observed saved state.
       </p>
       <MessageList
+        running={
+          snapshot.activity === 'creating' || snapshot.activity === 'running'
+        }
+        typingIndicator={{ announce: false }}
         rows={snapshot.rows}
         renderMessage={renderMessage}
         label="Conversation"

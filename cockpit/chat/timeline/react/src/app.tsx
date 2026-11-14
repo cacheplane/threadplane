@@ -101,6 +101,11 @@ function TimelineOwner({ connection, onReady }: Props) {
         <section className="current-panel" aria-label="Current conversation">
           <h2>Current conversation</h2>
           <MessageList
+            running={
+              snapshot.activity === 'creating' ||
+              snapshot.activity === 'running'
+            }
+            typingIndicator={{ announce: false }}
             key={`current:${snapshot.viewGeneration}`}
             rows={snapshot.rows}
             renderMessage={renderMessage}
