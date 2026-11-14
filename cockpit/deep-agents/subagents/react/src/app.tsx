@@ -180,6 +180,10 @@ export function SubagentsDemo({
           : `${snapshot.taskCount} observed task dispatches`}
       </p>
       <MessageList
+        running={
+          snapshot.activity === 'creating' || snapshot.activity === 'running'
+        }
+        typingIndicator={{ announce: false }}
         rows={snapshot.rows}
         renderMessage={renderRow}
         label="Conversation"

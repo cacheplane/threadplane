@@ -224,6 +224,8 @@ export function InterruptsDemo({
         </div>
       )}
       <MessageList
+        running={snapshot.busy}
+        typingIndicator={{ announce: false }}
         rows={snapshot.rows}
         approvalRecords={records}
         label="Conversation"

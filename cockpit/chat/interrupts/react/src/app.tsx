@@ -161,6 +161,10 @@ export function InterruptsDemo({
         ))}
       </div>
       <MessageList
+        running={
+          snapshot.activity === 'creating' || snapshot.activity === 'running'
+        }
+        typingIndicator={{ announce: false }}
         rows={snapshot.rows}
         renderMessage={renderMessage}
         approvalRecords={records}

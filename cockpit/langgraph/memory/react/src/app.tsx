@@ -76,7 +76,12 @@ export function MemoryDemo({
         conversation. Each reply is followed by a memory extraction pass. A new
         conversation starts empty.
       </p>
-      <MessageList rows={snapshot.rows} label="Conversation" />
+      <MessageList
+        running={snapshot.busy}
+        typingIndicator={{ announce: false }}
+        rows={snapshot.rows}
+        label="Conversation"
+      />
       <section aria-label="Learned facts" className="learned-facts">
         <h2>Learned facts</h2>
         <p>Confirmed facts for this thread.</p>

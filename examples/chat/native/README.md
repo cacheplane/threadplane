@@ -573,11 +573,12 @@ React placement keeps the sibling action within the conversation viewport;
 shared styles and composer/submission behavior are unchanged. This bounded T23
 slice adds no application commands, unread counts, or history loading.
 
-React derives `TypingIndicator` from the ready selected runtime with `isTyping`:
-running with no messages, last user, or empty last assistant content waits for
-text. First assistant text (including whitespace), tool/system last messages,
+React passes `running` from the ready selected runtime to `MessageList`, which
+renders the typing indicator inside the conversation scroll region with
+`isTyping`: running with no messages, last user, or empty last assistant content
+waits for text. First assistant text (including whitespace), tool/system last messages,
 idle/error, or replacing the selection clears that presentation. It uses
-`announce={false}` because the existing composer submission status owns the live
+`typingIndicator={{ announce: false }}` because the existing composer submission status owns the live
 announcement. The indicator adds no commands, subscriptions, focus changes, or
 draft/lifetime ownership. This is bounded text-only waiting presentation, not
 complete typing or runtime parity.

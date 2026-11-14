@@ -307,6 +307,11 @@ export function SkillsDemo({
       <div className="skills-workspace">
         <div className="skills-chat">
           <MessageList
+            running={
+              snapshot.activity === 'creating' ||
+              snapshot.activity === 'running'
+            }
+            typingIndicator={{ announce: false }}
             rows={snapshot.rows}
             renderMessage={renderRow}
             label="Conversation"

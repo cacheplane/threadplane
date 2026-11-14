@@ -56,7 +56,14 @@ export function SubgraphsDemo({
         A factual question enters a research child graph. A greeting answers
         directly. The child receives a topic, not the parent conversation.
       </p>
-      <MessageList rows={snapshot.rows} label="Conversation" />
+      <MessageList
+        running={
+          snapshot.activity === 'creating' || snapshot.activity === 'running'
+        }
+        typingIndicator={{ announce: false }}
+        rows={snapshot.rows}
+        label="Conversation"
+      />
       <section aria-label="Research boundary">
         <h2>Research boundary</h2>
         <p>

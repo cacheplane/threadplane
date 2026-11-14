@@ -123,6 +123,10 @@ export function ThemingDemo({
         ))}
       </div>
       <MessageList
+        running={
+          snapshot.activity === 'creating' || snapshot.activity === 'running'
+        }
+        typingIndicator={{ announce: false }}
         rows={snapshot.rows}
         renderMessage={renderMessage}
         label="Conversation"

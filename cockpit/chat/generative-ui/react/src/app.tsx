@@ -215,6 +215,10 @@ function GenerativeUiOwner({ connection, onReady }: Props) {
         </div>
       )}
       <MessageList
+        running={
+          snapshot.activity === 'creating' || snapshot.activity === 'running'
+        }
+        typingIndicator={{ announce: false }}
         key={`messages:${snapshot.viewGeneration}`}
         rows={snapshot.rows}
         renderMessage={renderRow}

@@ -66,7 +66,14 @@ export function DeploymentDemo({
           Assistant: <code>deployment-runtime</code>
         </p>
       </section>
-      <MessageList rows={snapshot.rows} label="Conversation" />
+      <MessageList
+        running={
+          snapshot.activity === 'creating' || snapshot.activity === 'running'
+        }
+        typingIndicator={{ announce: false }}
+        rows={snapshot.rows}
+        label="Conversation"
+      />
       <ExampleFooter>
         {snapshot.error && <p role="alert">{snapshot.error}</p>}
         <ChatInput

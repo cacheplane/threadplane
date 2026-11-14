@@ -14,14 +14,19 @@ it('shows only ready selected runtime waiting without duplicating the submission
       expect(application.getSnapshot().selection.status).toBe('ready')
     );
     const source = application.getSnapshot();
+    // MessageList reads the prepared rows, so the waiting view empties both.
     const waiting = {
       ...source,
+      messages: [],
       runtime: { ...source.runtime!, status: 'running' as const, messages: [] },
     };
     const snapshot = vi.fn(() => source);
     const observed = { ...application, getSnapshot: snapshot };
     const work = { ...fixture.counters };
     const view = render(<App application={observed} />);
+    // Count announcements on the same empty rows while idle, so running is the only change.
+    snapshot.mockReturnValue({ ...source, messages: [] });
+    view.rerender(<App application={observed} />);
     const announcements = view.getAllByRole('status').length;
     snapshot.mockReturnValue(waiting);
     view.rerender(<App application={observed} />);
@@ -42,6 +47,8 @@ it('shows only ready selected runtime waiting without duplicating the submission
       { ...waiting, runtime: { ...waiting.runtime, status: 'error' as const } },
       {
         ...waiting,
+        // The fixture's prepared rows end with assistant text.
+        messages: source.messages,
         runtime: {
           ...waiting.runtime,
           messages: [{ id: 'a', role: 'assistant' as const, content: 'First' }],

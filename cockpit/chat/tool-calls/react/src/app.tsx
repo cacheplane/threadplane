@@ -155,6 +155,10 @@ export function ToolCallsDemo({
         ))}
       </div>
       <MessageList
+        running={
+          snapshot.activity === 'creating' || snapshot.activity === 'running'
+        }
+        typingIndicator={{ announce: false }}
         rows={snapshot.rows}
         renderMessage={renderRow}
         label="Conversation"

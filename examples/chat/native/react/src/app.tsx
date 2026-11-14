@@ -21,8 +21,6 @@ import {
   Reasoning,
   ThreadList,
   ToolObservation,
-  TypingIndicator,
-  isTyping,
   type MessageListRowContext,
 } from '@threadplane/react/chat';
 import type {
@@ -903,6 +901,9 @@ function Conversation({
                     renderMessage={renderMessage}
                     label="Conversation messages"
                     className="transcript"
+                    running={snapshot.runtime?.status === 'running'}
+                    // The composer submission status owns the live announcement.
+                    typingIndicator={{ announce: false }}
                     renderScrollControl={(controls) =>
                       controls.pinned ? null : (
                         <ScrollBubble
@@ -921,12 +922,6 @@ function Conversation({
                     }
                   />
                 </AnswerRatingScope>
-                {snapshot.runtime && (
-                  <TypingIndicator
-                    active={isTyping(snapshot.runtime)}
-                    announce={false}
-                  />
-                )}
                 {snapshot.messages.length === 0 && (
                   <p className="empty-state">
                     This conversation has no messages yet.

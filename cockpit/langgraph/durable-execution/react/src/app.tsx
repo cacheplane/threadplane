@@ -85,7 +85,14 @@ export function DurableDemo({
           intermediate drafts.
         </p>
       </section>
-      <MessageList rows={snapshot.rows} label="Conversation" />
+      <MessageList
+        running={
+          snapshot.activity === 'creating' || snapshot.activity === 'running'
+        }
+        typingIndicator={{ announce: false }}
+        rows={snapshot.rows}
+        label="Conversation"
+      />
       {snapshot.canCheck && !snapshot.busy && (
         <button type="button" onClick={() => void application.checkStatus()}>
           Check status
