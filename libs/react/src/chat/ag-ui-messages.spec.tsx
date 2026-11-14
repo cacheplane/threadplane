@@ -4,7 +4,10 @@ import type { AgentSnapshot } from '@threadplane/core';
 import { createMessageContent } from '@threadplane/content/messages';
 import { MessageList } from './index';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
-import { projectMessages } from '../../../ag-ui/src/runtime/message-projection';
+import {
+  projectMessages,
+  projectToolCalls,
+} from '../../../ag-ui/src/runtime/message-projection';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
 import {
   initialObservation,
@@ -25,7 +28,7 @@ const native = (extra: Partial<SessionSnapshot> = {}): SessionSnapshot =>
           {
             id: 'call',
             type: 'function',
-            function: { name: 'search', arguments: '{}' },
+            function: { name: 'search', arguments: '{"q":"tea"}' },
           },
         ],
       },
@@ -40,7 +43,7 @@ function rows(snapshot: SessionSnapshot) {
   const core: AgentSnapshot = {
     status: snapshot.status,
     messages: projectMessages(snapshot),
-    toolCalls: [],
+    toolCalls: projectToolCalls(snapshot),
   };
   return { content, rows: content.project(core) };
 }
@@ -72,6 +75,48 @@ describe('MessageList over projected AG-UI messages', () => {
     expect(
       second.container.querySelector('.tp-reasoning__toggle')?.textContent
     ).toMatch(/Thinking…$/);
+    running.content.dispose();
+  });
+
+  it('gives the step that called a tool its call, arguments and result', () => {
+    const seen: unknown[] = [];
+    const view = rows(native());
+    const { container } = render(
+      <MessageList
+        rows={view.rows}
+        renderToolCall={(call) => {
+          seen.push(call);
+          return <span data-testid="call">{call.name}</span>;
+        }}
+      />
+    );
+    expect(seen[0]).toEqual({
+      id: 'call',
+      name: 'search',
+      args: { q: 'tea' },
+      status: 'complete',
+      result: 'Result',
+    });
+    expect(
+      container.querySelectorAll('[data-testid="call"]').length
+    ).toBeGreaterThan(0);
+    // The tool record is a row of its own, linked to the same call.
+    expect(view.rows.map((row) => row.role)).toEqual([
+      'user',
+      'assistant',
+      'tool',
+      'assistant',
+    ]);
+    expect(view.rows[2].toolCalls).toEqual(view.rows[1].toolCalls);
+    view.content.dispose();
+    // A call still waiting for its result while the session runs.
+    const waiting = native({ status: 'running' });
+    const running = rows(
+      Object.freeze({ ...waiting, transcript: waiting.transcript.slice(0, 3) })
+    );
+    expect(running.rows[1].toolCalls).toEqual([
+      { id: 'call', name: 'search', args: { q: 'tea' }, status: 'running' },
+    ]);
     running.content.dispose();
   });
 });

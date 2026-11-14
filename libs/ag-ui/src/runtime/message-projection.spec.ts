@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AGUIEvent } from '@ag-ui/client';
-import { projectMessages } from './message-projection';
+import { projectMessages, projectToolCalls } from './message-projection';
 import { createReasoningClock } from './reasoning-clock';
 import {
   initialObservation,
@@ -53,7 +53,15 @@ describe('projectMessages', () => {
         content: '',
         reasoning: 'Plan the search.',
         reasoningDurationMs: 1_200,
+        toolCallIds: ['call'],
         delivery: { generation: 'a1', phase: 'complete', outcome: 'success' },
+      },
+      {
+        id: 't',
+        role: 'tool',
+        content: 'Result',
+        toolCallId: 'call',
+        delivery: { generation: 't', phase: 'complete', outcome: 'success' },
       },
       {
         id: 'a2',
@@ -69,7 +77,7 @@ describe('projectMessages', () => {
   });
 
   it('reports no time for unmeasured reasoning and sums only measured records', () => {
-    expect(projectMessages(observed(turn))[2]).not.toHaveProperty(
+    expect(projectMessages(observed(turn))[3]).not.toHaveProperty(
       'reasoningDurationMs'
     );
     expect(
@@ -78,7 +86,7 @@ describe('projectMessages', () => {
           reasoningDurations: { r3: 900, r2: Number.NaN, other: 5 },
         })
       ).map((message) => message.reasoningDurationMs)
-    ).toEqual([undefined, undefined, 900]);
+    ).toEqual([undefined, undefined, undefined, 900]);
   });
 
   it('shows reasoning that has no answer record yet under its own identifier', () => {
@@ -161,12 +169,19 @@ describe('projectMessages', () => {
     expect(phases(turn, { status: 'running' })).toEqual([
       'success',
       'success',
+      'success',
       'streaming',
     ]);
     // A tool result after the step means that step has finished.
     expect(phases(turn.slice(0, 5), { status: 'running' })).toEqual([
       'success',
       'success',
+      'success',
+    ]);
+    // A step that is still calling its tool is the one streaming.
+    expect(phases(turn.slice(0, 4), { status: 'running' })).toEqual([
+      'success',
+      'streaming',
     ]);
     // Activity and child records after it do not end the step.
     expect(
@@ -185,13 +200,17 @@ describe('projectMessages', () => {
     ).toBe('streaming');
     expect(
       phases(turn, { run: { id: 'run', outcome: 'aborted' } })
-    ).toEqual(['success', 'success', 'aborted']);
+    ).toEqual(['success', 'success', 'success', 'aborted']);
+    // A tool record after the last step does not take the outcome from it.
+    expect(
+      phases(turn.slice(0, 5), { run: { id: 'run', outcome: 'interrupted' } })
+    ).toEqual(['success', 'interrupted', 'success']);
     // The outcome belongs to the latest turn, not to an earlier answer.
     expect(
       phases([...turn, { id: 'u2', role: 'user', content: 'Again' }], {
         run: { id: 'run', outcome: 'error' },
       })
-    ).toEqual(['success', 'success', 'success', 'success']);
+    ).toEqual(['success', 'success', 'success', 'success', 'success']);
   });
 
   it('keeps unchanged messages and an unchanged list', () => {
@@ -203,8 +222,270 @@ describe('projectMessages', () => {
     expect(done).not.toBe(first);
     expect(done[0]).toBe(first[0]);
     expect(done[1]).toBe(first[1]);
-    expect(done[2]).not.toBe(first[2]);
+    expect(done[2]).toBe(first[2]);
+    expect(done[3]).not.toBe(first[3]);
     expect(projectMessages(observed([]))).toEqual([]);
+  });
+});
+
+describe('projectToolCalls', () => {
+  const call = (id: string, name: string, args: string) => ({
+    id,
+    type: 'function' as const,
+    function: { name, arguments: args },
+  });
+  const step = (...calls: ReturnType<typeof call>[]): Records => [
+    { id: 'u', role: 'user', content: 'Ask' },
+    { id: 'a', role: 'assistant', toolCalls: calls },
+  ];
+
+  it('completes a call from its tool record and links it to both messages', () => {
+    const snapshot = observed([
+      ...step(call('c1', 'search', '{"q":"tea"}'), call('c2', 'clock', '')),
+      { id: 't1', role: 'tool', toolCallId: 'c1', content: '{"hits":2}' },
+      { id: 't2', role: 'tool', toolCallId: 'c2', content: 'Noon' },
+    ]);
+    const calls = projectToolCalls(snapshot);
+    expect(calls).toEqual([
+      {
+        id: 'c1',
+        name: 'search',
+        args: { q: 'tea' },
+        status: 'complete',
+        result: { hits: 2 },
+      },
+      {
+        id: 'c2',
+        name: 'clock',
+        args: undefined,
+        status: 'complete',
+        result: 'Noon',
+      },
+    ]);
+    expect(Object.isFrozen(calls)).toBe(true);
+    expect(Object.isFrozen(calls[0])).toBe(true);
+    expect(Object.isFrozen(calls[0].args)).toBe(true);
+    const messages = projectMessages(snapshot);
+    expect(
+      messages.map(({ id, role, content, toolCallId, toolCallIds }) => ({
+        id,
+        role,
+        content,
+        toolCallId,
+        toolCallIds,
+      }))
+    ).toEqual([
+      { id: 'u', role: 'user', content: 'Ask' },
+      { id: 'a', role: 'assistant', content: '', toolCallIds: ['c1', 'c2'] },
+      { id: 't1', role: 'tool', content: '{"hits":2}', toolCallId: 'c1' },
+      { id: 't2', role: 'tool', content: 'Noon', toolCallId: 'c2' },
+    ]);
+    expect(Object.isFrozen(messages[1].toolCallIds)).toBe(true);
+  });
+
+  it('reports a failed tool record and final arguments that are not JSON as errors', () => {
+    expect(
+      projectToolCalls(
+        observed([
+          ...step(call('c1', 'search', '{}'), call('c2', 'clock', '{"zone"')),
+          {
+            id: 't1',
+            role: 'tool',
+            toolCallId: 'c1',
+            content: 'partial',
+            error: 'Timed out',
+          },
+        ])
+      )
+    ).toEqual([
+      { id: 'c1', name: 'search', args: {}, status: 'error', error: 'Timed out' },
+      {
+        id: 'c2',
+        name: 'clock',
+        args: undefined,
+        status: 'error',
+        error: 'Invalid JSON arguments',
+      },
+    ]);
+  });
+
+  it('withholds a call while its arguments may still be arriving', () => {
+    const shown = (records: Records, status: 'running' | 'idle' = 'running') => {
+      const snapshot = observed(records, { status });
+      const calls = projectToolCalls(snapshot);
+      // The messages never name a call the tool calls leave out.
+      expect(
+        projectMessages(snapshot).flatMap((message) => message.toolCallIds ?? [])
+      ).toEqual(calls.map((item) => item.id));
+      return calls.map((item) => [item.id, item.status]);
+    };
+    // Half an argument object, and empty arguments that may be about to start.
+    expect(shown(step(call('c1', 'search', '{"q":"te')))).toEqual([]);
+    expect(shown(step(call('c1', 'clock', '')))).toEqual([]);
+    // A scalar could still grow; an object that parses cannot.
+    expect(shown(step(call('c1', 'count', '1')))).toEqual([]);
+    expect(shown(step(call('c1', 'search', '{"q":"tea"}')))).toEqual([
+      ['c1', 'running'],
+    ]);
+    // A later call, a later record or a result means the earlier one ended.
+    expect(
+      shown(step(call('c1', 'clock', ''), call('c2', 'search', '{"q')))
+    ).toEqual([['c1', 'running']]);
+    expect(
+      shown([
+        ...step(call('c1', 'clock', '')),
+        { id: 'a2', role: 'assistant', content: 'Checking' },
+      ])
+    ).toEqual([['c1', 'running']]);
+    expect(
+      shown([
+        ...step(call('c1', 'clock', '')),
+        { id: 't', role: 'tool', toolCallId: 'c1', content: 'Noon' },
+      ])
+    ).toEqual([['c1', 'complete']]);
+    // Child and activity records after the call say nothing about it.
+    expect(
+      shown([
+        ...step(call('c1', 'clock', '')),
+        { id: 'child', role: 'assistant', content: 'Child', subagentRunId: 'w' },
+      ])
+    ).toEqual([]);
+    // Once the session stops, a call without a result is waiting.
+    expect(shown(step(call('c1', 'clock', '')), 'idle')).toEqual([
+      ['c1', 'pending'],
+    ]);
+  });
+
+  it('leaves out calls owned by a child record', () => {
+    const snapshot = observed([
+      { id: 'u', role: 'user', content: 'Ask' },
+      {
+        id: 'child',
+        role: 'assistant',
+        subagentRunId: 'w',
+        toolCalls: [call('c1', 'search', '{}')],
+      },
+      {
+        id: 'child-result',
+        role: 'tool',
+        toolCallId: 'c1',
+        content: 'Hit',
+        subagentRunId: 'w',
+      } as Records[number],
+    ]);
+    expect(projectToolCalls(snapshot)).toEqual([]);
+    expect(projectMessages(snapshot).map((message) => message.id)).toEqual([
+      'u',
+    ]);
+  });
+
+  it('keeps unchanged calls and an unchanged list', () => {
+    const records = step(
+      call('c1', 'search', '{"q":"tea"}'),
+      call('c2', 'clock', '{}')
+    );
+    const waiting = observed(records, { status: 'running' });
+    const first = projectToolCalls(waiting);
+    expect(projectToolCalls(waiting, first)).toBe(first);
+    const answered = Object.freeze({
+      ...waiting,
+      transcript: Object.freeze([
+        ...waiting.transcript,
+        Object.freeze({
+          id: 't',
+          role: 'tool' as const,
+          toolCallId: 'c2',
+          content: 'Noon',
+        }),
+      ]),
+    });
+    const next = projectToolCalls(answered, first);
+    expect(next[0]).toBe(first[0]);
+    expect(next[1]).toMatchObject({ status: 'complete', result: 'Noon' });
+    // Stopping changes a call that is still waiting, not one that finished.
+    const stopped = projectToolCalls({ ...answered, status: 'idle' }, next);
+    expect(stopped[0]).toMatchObject({ status: 'pending' });
+    expect(stopped[1]).toBe(next[1]);
+    expect(projectToolCalls(observed([]))).toEqual([]);
+  });
+});
+
+describe('tool calls through the session', () => {
+  it('shows a streamed call when its arguments close and completes it with the result', async () => {
+    const fixture = bindingFixture();
+    const calls = () => projectToolCalls(fixture.session.getSnapshot());
+    const owner = () =>
+      fixture.session
+        .getSnapshot()
+        .transcript.find((record) => record.id === 'a1');
+    const args = () =>
+      owner()?.role === 'assistant'
+        ? (owner() as { toolCalls?: { function: { arguments: string } }[] })
+            .toolCalls?.[0]?.function.arguments
+        : undefined;
+    try {
+      const run = fixture.session.submit('Go');
+      const exchange = await fixture.started();
+      exchange.emit({
+        type: 'TOOL_CALL_START',
+        toolCallId: 'c1',
+        toolCallName: 'search',
+        parentMessageId: 'a1',
+      });
+      exchange.emit({ type: 'TOOL_CALL_ARGS', toolCallId: 'c1', delta: '{"q":' });
+      await fixture.changed(() => args() === '{"q":');
+      expect(calls()).toEqual([]);
+      expect(projectMessages(fixture.session.getSnapshot())).toHaveLength(1);
+      exchange.emit({ type: 'TOOL_CALL_ARGS', toolCallId: 'c1', delta: '"tea"}' });
+      await fixture.changed(() => args() === '{"q":"tea"}');
+      expect(calls()).toEqual([
+        { id: 'c1', name: 'search', args: { q: 'tea' }, status: 'running' },
+      ]);
+      expect(projectMessages(fixture.session.getSnapshot()).at(-1)).toEqual({
+        id: 'a1',
+        role: 'assistant',
+        content: '',
+        toolCallIds: ['c1'],
+        delivery: { generation: 'a1', phase: 'streaming' },
+      });
+      exchange.emit({ type: 'TOOL_CALL_END', toolCallId: 'c1' });
+      exchange.emit({
+        type: 'TOOL_CALL_RESULT',
+        toolCallId: 'c1',
+        messageId: 't1',
+        content: '{"hits":2}',
+      });
+      await fixture.changed((snapshot) =>
+        snapshot.transcript.some((record) => record.id === 't1')
+      );
+      expect(calls()).toEqual([
+        {
+          id: 'c1',
+          name: 'search',
+          args: { q: 'tea' },
+          status: 'complete',
+          result: { hits: 2 },
+        },
+      ]);
+      exchange.emit({
+        type: 'RUN_FINISHED',
+        threadId: exchange.body.threadId,
+        runId: exchange.body.runId,
+      });
+      expect(await run).toBe('success');
+      expect(
+        projectMessages(fixture.session.getSnapshot()).map((message) => [
+          message.role,
+          message.delivery.phase,
+        ])
+      ).toEqual([
+        ['user', 'complete'],
+        ['assistant', 'complete'],
+        ['tool', 'complete'],
+      ]);
+    } finally {
+      await fixture.cleanup();
+    }
   });
 });
 

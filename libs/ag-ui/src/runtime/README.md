@@ -53,18 +53,24 @@ no second store or forwarding bag is introduced.
 
 ## Core messages and reasoning time
 
-`projectMessages(snapshot, previous?)` is a private, display-only selector from
-the native snapshot to core `Message` values, so views written for core
-snapshots can render an AG-UI conversation:
+`projectMessages(snapshot, previous?)` and `projectToolCalls(snapshot,
+previous?)` are private, display-only selectors from the native snapshot to core
+`Message` and `ToolCall` values, so views written for core snapshots can render
+an AG-UI conversation:
 
 ```ts
-const messages = projectMessages(session.getSnapshot(), previousMessages);
-const rows = content.project({ status, messages, toolCalls: [] });
+const snapshot = session.getSnapshot();
+const messages = projectMessages(snapshot, previousMessages);
+const toolCalls = projectToolCalls(snapshot, previousToolCalls);
+const rows = content.project({ status: snapshot.status, messages, toolCalls });
 ```
 
-- Root user and assistant text become messages. System, developer, tool and
-  activity records, child-attributed records and tool calls are not projected in
-  this slice, and an assistant record with neither text nor reasoning is left out.
+- Root user and assistant text become messages. An assistant record lists its
+  shown calls as `toolCallIds` and is a message even without text. A root tool
+  record becomes a `tool` message with its text and `toolCallId`. System,
+  developer and activity records and child-attributed records are not projected
+  in this slice, and an assistant record with no text, reasoning or shown call
+  is left out.
 - The protocol sends reasoning as its own records. Each is attached to the next
   assistant record as that message's `reasoning`; several before one assistant
   are joined by blank lines. Reasoning with no assistant record after it yet is
@@ -72,8 +78,8 @@ const rows = content.project({ status, messages, toolCalls: [] });
   ID changes when the answer record arrives.
 - While the session runs, the message built from the last root record is
   streaming. Every other message is complete, with the run's outcome for the
-  last message of the latest turn and success otherwise. Each message uses its
-  own ID as its delivery generation.
+  last assistant message of the latest turn and success otherwise. Each message
+  uses its own ID as its delivery generation.
 - Unchanged messages, and an unchanged list, keep their references when the
   previous result is passed.
 
@@ -87,8 +93,28 @@ counts as reasoning time. Child reasoning is not timed. The native transcript
 and the request history are unchanged; reasoning records are still sent back as
 the protocol requires.
 
-This selector is not exported from the candidate package entry and does not make
-the owner a core `AgentSession`.
+Tool calls follow these rules:
+
+- The transcript keeps argument fragments as they arrive and does not record the
+  end event, so a call is shown only once its arguments are final: the session
+  is not running, the call has a result, something follows the call in the root
+  transcript, or the text already parses as a JSON object or array. Until then
+  neither selector mentions the call. A call with no arguments, or scalar
+  arguments, that is the last thing in the transcript therefore appears when its
+  result or the next record arrives.
+- Empty argument text is a call without input: `args` is undefined.
+- A call with a root tool record is `complete`. Its `result` is the record's
+  text parsed as JSON when it is JSON, and the text otherwise. A record with an
+  `error` makes the call an `error` with that text.
+- A call without a record is `running` while the session runs and `pending` once
+  it stops, which is where a call waiting for a decision or a client tool sits.
+  A backend that never sends results leaves its calls `pending`.
+- Final arguments that are not JSON make the call an `error`.
+- Calls owned by a child-attributed record, media parts of a tool result and the
+  session's own client-tool statuses are not projected.
+
+These selectors are not exported from the candidate package entry and do not
+make the owner a core `AgentSession`.
 
 ## Interruption evidence
 
