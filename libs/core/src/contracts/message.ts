@@ -11,6 +11,11 @@ export interface Message {
   readonly content: string;
   /** Backend-supplied reasoning display text. */
   readonly reasoning?: string;
+  /**
+   * How long the reasoning took, in milliseconds, when the backend or runtime
+   * measured it. Absent means unknown, not zero.
+   */
+  readonly reasoningDurationMs?: number;
   readonly citations?: readonly Citation[];
   readonly delivery: MessageDelivery;
   readonly toolCallId?: string;

@@ -97,19 +97,23 @@ describe('createMessageContent', () => {
   it('preserves answer and sibling identities through reasoning append and correction', () => {
     const content = createMessageContent();
     const stable = message('a', 'Stable', { reasoning: 'Saved' });
+    // A user message between them keeps the two in separate turns; steps of
+    // one turn share a reasoning run, which reasoning-run.spec.ts covers.
+    const ask = message('u', 'Ask', { role: 'user' });
     const first = content.project(
-      snapshot([stable, message('b', 'Answer', { reasoning: 'Plan' })])
+      snapshot([stable, ask, message('b', 'Answer', { reasoning: 'Plan' })])
     );
     for (const reasoning of ['Plan more', 'Corrected']) {
       const rows = content.project(
-        snapshot([stable, message('b', 'Answer', { reasoning })])
+        snapshot([stable, ask, message('b', 'Answer', { reasoning })])
       );
       expect(rows[0]).toBe(first[0]);
-      expect(rows[1].markdown).toBe(first[1].markdown);
-      expect(rows[1].reasoning?.document.content).toBe(reasoning);
-      expect(rows[1].reasoning).not.toBe(first[1].reasoning);
+      expect(rows[1]).toBe(first[1]);
+      expect(rows[2].markdown).toBe(first[2].markdown);
+      expect(rows[2].reasoning?.document.content).toBe(reasoning);
+      expect(rows[2].reasoning).not.toBe(first[2].reasoning);
     }
-    expect(first[1].reasoning?.document.content).toBe('Plan');
+    expect(first[2].reasoning?.document.content).toBe('Plan');
     content.dispose();
   });
 

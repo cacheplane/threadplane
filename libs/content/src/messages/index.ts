@@ -3,6 +3,7 @@ export {
   type MessageContent,
   type MessageContentOptions,
   type MessageRow,
+  type ReasoningRun,
 } from './create-message-content.js';
 export {
   deriveDomain,

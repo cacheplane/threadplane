@@ -71,6 +71,8 @@ export interface ChatProps
   readonly messageActions?: MessageListProps['messageActions'];
   /** Typesets math in message text; see `MessageListProps.math`. Keep stable. */
   readonly math?: MessageListProps['math'];
+  /** One reasoning disclosure per multi-step turn; see `MessageListProps.mergeReasoning`. Defaults to true. */
+  readonly mergeReasoning?: MessageListProps['mergeReasoning'];
   /** App-owned content before the draft; see `ChatInputProps.leading`. */
   readonly inputLeading?: ChatInputProps['leading'];
   /** App-owned controls before Stop and Send; see `ChatInputProps.trailing`. */
@@ -123,6 +125,7 @@ export function Chat({
   approvalRecords,
   messageActions,
   math,
+  mergeReasoning,
   welcome,
   runStatus = false,
   ...input
@@ -196,7 +199,8 @@ export function Chat({
         : welcome
       : null;
   const running = snapshot.status === 'running';
-  const showStopped = runStatus && !running && endedStopped(snapshot, session, stopped);
+  const showStopped =
+    runStatus && !running && endedStopped(snapshot, session, stopped);
   // A new run clears the stopped turn and the last announcement, so a repeat is read again.
   const wasRunning = useRef(false);
   useEffect(() => {
@@ -260,6 +264,7 @@ export function Chat({
         approvalRecords={approvalRecords}
         messageActions={messageActions}
         math={math}
+        mergeReasoning={mergeReasoning}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
             <ScrollBubble
@@ -282,7 +287,14 @@ export function Chat({
               aria-hidden="true"
               focusable="false"
             >
-              <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" />
+              <rect
+                x="6"
+                y="6"
+                width="12"
+                height="12"
+                rx="2"
+                fill="currentColor"
+              />
             </svg>
             Response stopped
           </p>
