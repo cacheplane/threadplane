@@ -18932,6 +18932,17 @@
       "treatment": "shared",
       "status": "in-progress",
       "reason": "Framework-neutral reasoning of one agent turn on its first reasoning row: the Markdown snapshot to show, the number of assistant steps joined across tool messages, and the sum of the steps' measured durations when any was reported. No rendering; the runtimes do not yet measure durations."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/reasoning-timing.ts",
+      "taskIds": [
+        "T09",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private arrival-time measurement of root assistant reasoning at publication: from the first publication with reasoning and nothing else to the first with text, a tool call or a completed delivery, published as Message.reasoningDurationMs.",
+      "note": "Reasoning first seen already settled (saved history, or delivered whole) stays unmeasured. Nothing is stored, so a new session knows no durations. Subgraph messages are not timed. Rich blocks, event-only retention and full T09/T15 parity remain open."
     }
   ]
 }

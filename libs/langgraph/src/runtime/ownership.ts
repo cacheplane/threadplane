@@ -171,6 +171,7 @@ export function sameMessage(a: Message, b: Message): boolean {
       a.role === b.role &&
       a.content === b.content &&
       a.reasoning === b.reasoning &&
+      a.reasoningDurationMs === b.reasoningDurationMs &&
       sameOwnedValue(
         a.citations as unknown as PlainValue,
         b.citations as unknown as PlainValue
@@ -197,6 +198,12 @@ export function ownMessage(message: Message, previous?: Message): Message {
     role: message.role,
     content: message.content,
     reasoning: message.reasoning,
+    // Present only when measured, so unmeasured messages keep their shape.
+    ...(typeof message.reasoningDurationMs === 'number' &&
+    Number.isFinite(message.reasoningDurationMs) &&
+    message.reasoningDurationMs >= 0
+      ? { reasoningDurationMs: message.reasoningDurationMs }
+      : {}),
     citations,
     delivery:
       message.delivery.phase === 'complete'

@@ -53,8 +53,8 @@ optional fields, and reject instances/cycles in extras at the ownership boundary
 Exact checkpoint ingress remains stricter: it captures the complete plain state
 before projection and rejects Date instances even in otherwise optional metadata.
 Citation changes never authorize tools, change execution positions, or reopen
-delivery. Rich blocks, reasoning timing, event render state and citation components
-remain separate future capabilities.
+delivery. Rich blocks, event render state and citation components remain separate
+future capabilities.
 
 ## Owned reasoning
 
@@ -77,10 +77,25 @@ Captured terminal candidates and published strings cannot change with wire mutat
 
 This bounded normalization duplicates part of the legacy Angular extractor until
 backend cutover. It uses explicit event modes, not that adapter's prefix heuristics
-or clock map. No timing, rich-block, renderer, event-only retention, provider-version
+or clock map. No rich-block, renderer, event-only retention, provider-version
 conformance or complete T09/T15 parity is claimed. Strict checkpoint capture still
 rejects non-plain/cyclic data before display normalization. Reasoning never changes
 tool admission, checkpoint authority, transport requests or lifecycle scheduling.
+
+### Reasoning time
+
+The backend sends no duration, so the session measures arrival time on its own
+clock and publishes it as `Message.reasoningDurationMs`, in milliseconds. A root
+assistant step is timed from the first publication in which it has reasoning and
+nothing else, to the first in which it has answer text, a finalized tool call or a
+completed delivery. Each step of a turn is timed on its own.
+
+Reasoning that is first seen already settled has no duration: saved history, and a
+step delivered whole with its answer, were never observed arriving. The field is
+then absent, never zero. A correction that removes the reasoning removes its time.
+The measurement lives outside the deterministic reducer, is not stored or sent, and
+is lost with the session, so a reloaded conversation shows no durations. A network
+stall counts as reasoning time. Subgraph messages are not timed.
 
 ## Completed checkpoint forks
 

@@ -620,9 +620,11 @@ label reads **Thinking…** while any step streams, then **Thought for 4s · 3
 steps** when it is done.
 
 - A step's duration comes from `reasoningDurationMs` on the message, in
-  milliseconds. The durations of a turn are added up. When no step reports
-  one, the label leaves the time out (**Thought in 3 steps**, or **Show
-  reasoning** for a single step) and never shows a guessed time.
+  milliseconds. The framework-neutral LangGraph session measures it while a
+  response streams; saved history carries none. The durations of a turn are
+  added up. When no step reports one, the label leaves the time out
+  (**Thought in 3 steps**, or **Show reasoning** for a single step) and never
+  shows a guessed time.
 - Steps belong to one turn when only tool messages sit between them. A user
   message, or an assistant message without reasoning, ends the turn.
 - Pass `mergeReasoning={false}` to show each step's reasoning on its own
