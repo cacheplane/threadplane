@@ -1,5 +1,10 @@
 import type { ReactNode, MouseEvent, KeyboardEvent } from 'react';
-import { ThreadList, type ThreadListItem, type ThreadListProps } from './index';
+import {
+  ThreadList,
+  type ThreadActionAdapter,
+  type ThreadListItem,
+  type ThreadListProps,
+} from './index';
 
 const item: ThreadListItem = { id: 'a' };
 const timestamped: ThreadListItem = { id: 'time', updatedAt: 0 };
@@ -156,9 +161,32 @@ export type CompletePropsContract = Assert<
         threadId: string,
         event: MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLButtonElement>
       ) => void;
+      readonly actions?: ThreadActionAdapter | null;
+      readonly mode?: 'active' | 'archived';
+      readonly projects?:
+        | readonly { readonly id: string; readonly name: string }[]
+        | null;
     }
   >
 >;
+const adapter: ThreadActionAdapter = {
+  rename: async (id, title) => void [id.length, title.length],
+  delete: (id) => void id,
+  moveToProject: (id, projectId) => {
+    const target: string | null = projectId;
+    void [id, target];
+  },
+};
+<ThreadList {...props} actions={adapter} mode="archived" projects={[]} />;
+<ThreadList {...props} actions={null} projects={null} />;
+// @ts-expect-error Commands are readonly.
+adapter.rename = undefined;
+// @ts-expect-error Modes are the two literals.
+<ThreadList {...props} mode="trash" />;
+// @ts-expect-error Unknown commands are rejected.
+<ThreadList {...props} actions={{ duplicate: () => undefined }} />;
+// @ts-expect-error Command IDs are strings.
+<ThreadList {...props} actions={{ pin: (id: number) => void id }} />;
 <ThreadList
   {...props}
   onContextMenu={(id, event) => {
