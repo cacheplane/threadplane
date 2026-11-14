@@ -17,6 +17,7 @@ import type {
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport.js';
 import { initialMessageState, reduceMessages } from './message-reducer.js';
+import { createReasoningTimer } from './reasoning-timing.js';
 import { createPublication } from './publication.js';
 import {
   observeHistoryInvocations,
@@ -327,6 +328,7 @@ export function createSession(
   let historyPage: LangGraphSnapshot['history'];
   let subgraphs = initialSubgraphs(publication.getSnapshot().subgraphs);
   let state = initialMessageState();
+  const reasoningTimer = createReasoningTimer();
   let values: LangGraphValues | undefined;
   let interrupts: readonly LangGraphInterrupt[] =
     publication.getSnapshot().interrupts;
@@ -434,7 +436,7 @@ export function createSession(
       ...(retained?.run.evidence.runId
         ? { reconnect: { runId: retained.run.evidence.runId } }
         : {}),
-      messages: state.messages,
+      messages: reasoningTimer.observe(state.messages),
       toolCalls: typedTools
         ? state.toolCalls.filter(
             (call) =>
