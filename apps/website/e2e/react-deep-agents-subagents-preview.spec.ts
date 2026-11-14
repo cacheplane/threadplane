@@ -222,24 +222,39 @@ test('reload clears an unsent React draft without runtime requests', async ({
   expect(observations.get(page)?.requests).toEqual(before);
 });
 
-test('the aviation suggestion fills an exact inert draft', async ({ page }) => {
+test('the aviation suggestion sends its exact prompt', async ({ page }) => {
+  // Sending starts a model run; deployed targets (preview and production)
+  // keep previews request-free, so the send is verified locally only.
+  test.skip(
+    Boolean(process.env['BASE_URL']),
+    'Welcome suggestion sends are verified against the local agents suite'
+  );
   await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
   const frame = page.frameLocator('iframe');
+  const prompt =
+    'Brief me on KASE and KDEN: I need field data for both and the current weather at both.';
   await frame
     .getByRole('button', { name: 'Brief KASE and KDEN', exact: true })
     .click();
-  await expect(frame.getByLabel('Message', { exact: true })).toHaveValue(
-    'Brief me on KASE and KDEN: I need field data for both and the current weather at both.'
-  );
-  await frame.getByRole('button', { name: 'Field data for KSFO', exact: true }).click();
-  await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('What is the field data for KSFO?');
-  await frame
-    .getByRole('button', { name: 'New conversation', exact: true })
-    .click();
-  await emptyRun(page);
+  // Welcome suggestions send, like the Angular twin; the composer stays empty.
+  await expect(
+    frame
+      .getByRole('region', { name: 'Conversation', exact: true })
+      .getByText(prompt, { exact: true })
+  ).toBeVisible();
+  await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');
+  const observed = observations.get(page);
+  await expect.poll(() => observed?.requests.includes('POST')).toBe(true);
+  // Wait for the run to settle so no late thread request lands after the
+  // expected ones are cleared. Chat's tool rows carry their own status roles,
+  // so match the example's response status by its exact settled text.
+  await expect(
+    frame.getByText('Response saved.', { exact: true })
+  ).toBeVisible({ timeout: 30_000 });
+  if (observed) observed.requests.length = 0;
 });
 
 test('frontend changes release the old React frame and return to an empty inert owner', async ({ page }) => {
