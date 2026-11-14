@@ -9482,7 +9482,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private immutable AG-UI snapshot reconciliation only; excluded from public exports and legacy Angular reachability.",
-      "note": "Captures complete replacement records, preserves existing ID order and omitted reasoning/activity roles, and rejects duplicate IDs atomically. Seeded HTTP coverage proves reconciliation and request egress; stream reduction, session integration and public parity remain separate migration work."
+      "note": "Captures complete replacement records in the snapshot's own order (a deliberate difference from the client, which keeps surviving IDs in place), keeps omitted reasoning/activity roles after their earlier neighbour, and rejects duplicate IDs atomically. Seeded HTTP coverage proves reconciliation and request egress; stream reduction, session integration and public parity remain separate migration work."
     },
     {
       "id": "source:libs/ag-ui/src/runtime/session-attribution.ts",
@@ -18965,7 +18965,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private arrival-time measurement of root reasoning messages between their start and end events, published as the session snapshot's reasoningDurations by message ID.",
-      "note": "Restored reasoning, reasoning without an end event and child reasoning stay unmeasured. Nothing is stored or sent."
+      "note": "Restored reasoning, reasoning without an end event and child reasoning stay unmeasured. A messages snapshot carries each run of reasoning's measured total onto the records that replace it when the runs line up. Nothing is stored or sent."
     }
   ]
 }

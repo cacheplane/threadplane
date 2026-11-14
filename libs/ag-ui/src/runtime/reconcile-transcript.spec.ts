@@ -112,7 +112,7 @@ function expectFrozen(value: unknown): void {
 }
 
 describe('private snapshot reconciliation', () => {
-  it('retains old positions and omitted event-only references while replacing values', () => {
+  it('follows snapshot order and keeps omitted event-only references after their earlier neighbour', () => {
     const previous = ownTranscript([
       user('b', 'old b'),
       reasoning,
@@ -122,27 +122,71 @@ describe('private snapshot reconciliation', () => {
     const snapshot = [user('a', 'new a'), user('b', 'new b')];
     const result = reconcileTranscript(previous, snapshot);
     expect(result).toStrictEqual([
-      snapshot[1],
-      reasoning,
       snapshot[0],
       activity,
+      snapshot[1],
+      reasoning,
     ]);
-    expect(result[0]).not.toBe(previous[0]);
-    expect(result[0]).not.toBe(snapshot[1]);
-    expect(result[1]).toBe(previous[1]);
-    expect(result[3]).toBe(previous[3]);
+    expect(result[2]).not.toBe(previous[0]);
+    expect(result[2]).not.toBe(snapshot[1]);
+    expect(result[1]).toBe(previous[3]);
+    expect(result[3]).toBe(previous[1]);
     expectFrozen(result);
   });
 
-  it('drops missing ordinary records and appends new IDs in snapshot order once', () => {
+  it('drops missing ordinary records and places new IDs where the snapshot has them', () => {
     const previous = ownTranscript([user('gone'), user('b'), reasoning]);
     const snapshot = [user('new-2'), user('b', 'corrected'), user('new-1')];
     expect(reconcileTranscript(previous, snapshot)).toStrictEqual([
+      snapshot[0],
       snapshot[1],
       reasoning,
-      snapshot[0],
       snapshot[2],
     ]);
+  });
+
+  it('keeps event-only records at the front when nothing before them survives', () => {
+    const previous = ownTranscript([reasoning, user('gone'), activity, user('b')]);
+    const snapshot = [user('new'), user('b', 'corrected')];
+    expect(reconcileTranscript(previous, snapshot)).toStrictEqual([
+      reasoning,
+      activity,
+      snapshot[0],
+      snapshot[1],
+    ]);
+  });
+
+  it('puts a renamed step and its tool result back in conversation order', () => {
+    // The stream named the steps one way; the final snapshot renames them.
+    const previous = ownTranscript([
+      user('u'),
+      { id: 'r1', role: 'reasoning', content: 'plan' },
+      {
+        id: 'stream-1',
+        role: 'assistant',
+        toolCalls: [
+          {
+            id: 'call',
+            type: 'function',
+            function: { name: 'search', arguments: '{}' },
+          },
+        ],
+      },
+      { id: 'call', role: 'tool', toolCallId: 'call', content: 'hit' },
+      { id: 'r2', role: 'reasoning', content: 'compare' },
+      { id: 'stream-2', role: 'assistant', content: 'answer' },
+    ]);
+    const snapshot: Message[] = [
+      user('u'),
+      { id: 'r1', role: 'reasoning', content: 'plan' },
+      { ...previous[2], id: 'saved-1' } as Message,
+      { id: 'saved-tool', role: 'tool', toolCallId: 'call', content: 'hit' },
+      { id: 'r2', role: 'reasoning', content: 'compare' },
+      { id: 'saved-2', role: 'assistant', content: 'answer' },
+    ];
+    expect(
+      reconcileTranscript(previous, snapshot).map((message) => message.id)
+    ).toEqual(['u', 'r1', 'saved-1', 'saved-tool', 'r2', 'saved-2']);
   });
 
   it.each(['activity', 'reasoning'] as const)(
@@ -301,9 +345,9 @@ describe('private snapshot reconciliation', () => {
       user('constructor', 'new 2'),
     ];
     expect(reconcileTranscript(previous, snapshot)).toStrictEqual([
+      snapshot[0],
       snapshot[1],
       snapshot[2],
-      snapshot[0],
     ]);
   });
 
