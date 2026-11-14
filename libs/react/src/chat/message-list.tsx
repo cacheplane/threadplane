@@ -26,7 +26,10 @@ import {
   withoutStaleRetry,
 } from './tool-outcome.js';
 import { Reasoning } from './reasoning.js';
-import { BuiltInActions, type BuiltInMessageActions } from './message-actions.js';
+import {
+  BuiltInActions,
+  type BuiltInMessageActions,
+} from './message-actions.js';
 import { Citations } from './citations.js';
 import { SubagentCard, type SubagentInfo } from './subagent-card.js';
 import { ChatMessage, type ChatMessageRole } from './chat-message.js';
@@ -138,6 +141,12 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * ownership. Off unless set.
    */
   readonly messageActions?: BuiltInMessageActions;
+  /**
+   * Shows the reasoning of a multi-step turn once, on its first step, with the
+   * step count and total duration. Defaults to true; false shows each step's
+   * reasoning on its own message. Custom renderMessage retains full row ownership.
+   */
+  readonly mergeReasoning?: boolean;
   /** Typesets math in message text; see `MarkdownProps.math`. Keep stable; custom renderMessage retains full ownership. */
   readonly math?: MarkdownProps['math'];
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
@@ -303,8 +312,10 @@ function RowView<TRow extends MessageRow>({
   running,
   messageActions,
   math,
+  mergeReasoning,
 }: {
   readonly math?: MarkdownProps['math'];
+  readonly mergeReasoning: boolean;
   readonly messageActions?: BuiltInMessageActions;
   readonly row: TRow;
   readonly current: boolean;
@@ -419,7 +430,20 @@ function RowView<TRow extends MessageRow>({
       streaming={row.message.delivery.phase === 'streaming'}
       beforeContent={
         row.role === 'assistant' &&
-        row.reasoning && <Reasoning snapshot={row.reasoning} />
+        (mergeReasoning
+          ? row.reasoningRun && (
+              <Reasoning
+                snapshot={row.reasoningRun.snapshot}
+                durationMs={row.reasoningRun.durationMs}
+                steps={row.reasoningRun.steps}
+              />
+            )
+          : row.reasoning && (
+              <Reasoning
+                snapshot={row.reasoning}
+                durationMs={row.message.reasoningDurationMs}
+              />
+            ))
       }
       afterContent={
         <>
@@ -533,6 +557,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   approvalRecords,
   messageActions,
   math,
+  mergeReasoning,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
@@ -665,6 +690,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                 }
                 messageActions={messageActions}
                 math={math}
+                mergeReasoning={mergeReasoning !== false}
               />
               {renderApprovalRecords(recordsAfter, row.id)}
             </Fragment>

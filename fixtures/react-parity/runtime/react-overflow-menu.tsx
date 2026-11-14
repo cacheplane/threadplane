@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Chat, ChatInput, ChatPopup, ChatWindow, GenerativeUiSkeleton, LauncherButton, MessageRating, OverflowMenu, ProjectList, Select, ThreadList, ThreadRenameForm, Timeline, Trace, WelcomeSuggestion, type MessageRatingValue, type ProjectActionAdapter, type ProjectListItem, type ThreadActionAdapter, type ThreadListItem, type TimelineItem, type TraceState } from '@threadplane/react/chat';
-import { completeDelivery, type AgentSession, type AgentSnapshot, type Message } from '@threadplane/core';
+import { completeDelivery, streamingDelivery, type AgentSession, type AgentSnapshot, type Message } from '@threadplane/core';
 import '@threadplane/react/chat/styles.css';
 import { ConfirmDialogFixture } from './react-confirm-dialog';
 
@@ -29,6 +29,8 @@ export function OverflowMenuFixture() {
     return <MathFixture />;
   if (new URLSearchParams(window.location.search).has('lists'))
     return <ListActionsFixture />;
+  if (new URLSearchParams(window.location.search).has('reasoning'))
+    return <ReasoningRunFixture />;
   if (new URLSearchParams(window.location.search).has('popup'))
     return <PopupFixture />;
   if (new URLSearchParams(window.location.search).has('rating'))
@@ -502,6 +504,59 @@ const fixtureMath = (latex: string, { display }: { display: boolean }) => {
     ? `<span data-set="display" style="display:inline-block;inline-size:1600px;white-space:nowrap">${escaped}</span>`
     : `<span data-set="inline" style="font-style:italic">${escaped}</span>`;
 };
+
+/** A session that plays one two-step reasoning turn, a stage per call to advance. */
+function reasoningSession() {
+  const done = (id: string) => completeDelivery(id, 'success');
+  const user = { id: 'u1', role: 'user', content: 'What is the answer?', delivery: done('u1') };
+  const first = { id: 'a1', role: 'assistant', content: '', reasoning: 'Plan the search.', reasoningDurationMs: 1200, delivery: done('a1') };
+  const tool = { id: 't1', role: 'tool', content: 'Search result', delivery: done('t1') };
+  const stages = [
+    [user, { ...first, reasoningDurationMs: undefined, delivery: streamingDelivery('a1') }],
+    [user, first, tool, { id: 'a2', role: 'assistant', content: '', reasoning: 'Compare the', delivery: streamingDelivery('a2') }],
+    [user, first, tool, { id: 'a2', role: 'assistant', content: 'The answer is 42.', reasoning: 'Compare the sources.', reasoningDurationMs: 3100, delivery: done('a2') }],
+  ] as unknown as Message[][];
+  let snapshot = Object.freeze({ status: 'idle', messages: [] as Message[], toolCalls: [] }) as unknown as AgentSnapshot;
+  const listeners = new Set<() => void>();
+  let stage = 0;
+  const session = {
+    getSnapshot: () => snapshot,
+    subscribe(notify: () => void) {
+      listeners.add(notify);
+      return () => listeners.delete(notify);
+    },
+    async submit() {
+      return 'success';
+    },
+    async stop() {},
+    async dispose() {},
+  } as unknown as AgentSession;
+  const advance = () => {
+    if (stage >= stages.length) return;
+    snapshot = Object.freeze({ ...snapshot, status: stage < stages.length - 1 ? 'running' : 'idle', messages: stages[stage] }) as AgentSnapshot;
+    stage += 1;
+    for (const notify of listeners) notify();
+  };
+  return { session, advance };
+}
+const reasoningTurn = reasoningSession();
+
+/** Installed merged reasoning: one disclosure for a multi-step turn, or one per step when merging is off. */
+function ReasoningRunFixture() {
+  const [merge, setMerge] = useState(true);
+  return (
+    <main>
+      <h1>Installed reasoning runs</h1>
+      <button type="button" onClick={reasoningTurn.advance}>Next stage</button>
+      <label>
+        <input type="checkbox" checked={merge} onChange={(event) => setMerge(event.target.checked)} /> Merge reasoning
+      </label>
+      <div data-testid="reasoning-frame" style={{ display: 'flex', blockSize: 520, border: '1px solid gray' }}>
+        <Chat session={reasoningTurn.session} label="Message" mergeReasoning={merge} />
+      </div>
+    </main>
+  );
+}
 
 /** Installed built-in conversation and project commands; the fixture owns the rows and can refuse a command. */
 function ListActionsFixture() {

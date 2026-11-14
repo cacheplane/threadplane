@@ -18923,6 +18923,15 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/internal/optimistic-rows.ts",
       "reason": "Private row overrides shared by the ThreadList and ProjectList built-in actions: hidden and renamed rows held while an application command runs and dropped when it settles, plus focus hand-off to a row control after the focused control leaves the document."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#ReasoningRun",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral reasoning of one agent turn on its first reasoning row: the Markdown snapshot to show, the number of assistant steps joined across tool messages, and the sum of the steps' measured durations when any was reported. No rendering; the runtimes do not yet measure durations."
     }
   ]
 }

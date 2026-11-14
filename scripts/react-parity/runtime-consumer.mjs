@@ -1583,6 +1583,57 @@ export async function runMathScenarios(page, url) {
 }
 
 /** Installed built-in message actions: Copy with its Copied state, and the rating. */
+/** Installed merged reasoning: one disclosure per multi-step turn with its step count and total duration. */
+export async function runReasoningRunScenarios(page, url) {
+  await page.goto(`${url}/?menu&reasoning`);
+  await expect(page.getByRole('heading', { name: 'Installed reasoning runs' })).toBeVisible();
+  const frame = page.getByTestId('reasoning-frame');
+  const next = page.getByRole('button', { name: 'Next stage' });
+  const toggles = frame.locator('.tp-reasoning__toggle');
+  const body = frame.getByRole('region', { name: 'Reasoning' });
+  await expect(toggles).toHaveCount(0);
+  // The first step streams: open, and labelled as in progress.
+  await next.click();
+  await expect(toggles).toHaveCount(1);
+  await expect(toggles).toHaveText(/Thinking…$/);
+  await expect(toggles).toHaveAttribute('aria-expanded', 'true');
+  await expect(body).toHaveText('Plan the search.');
+  // A second step after a tool message joins the same disclosure instead of adding one.
+  await next.click();
+  await expect(toggles).toHaveCount(1);
+  await expect(toggles).toHaveText(/Thinking…$/);
+  await expect(body.locator('p')).toHaveText(['Plan the search.', 'Compare the']);
+  // Finished: collapsed, with the total duration and the step count, above the first step.
+  await next.click();
+  await expect(frame.getByText('The answer is 42.')).toBeVisible();
+  await expect(toggles).toHaveCount(1);
+  const toggle = frame.getByRole('button', { name: 'Thought for 4s · 2 steps' });
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(body).toBeHidden();
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `the reasoning disclosure does not widen the page at ${width}px`);
+    const box = await toggle.boundingBox(), answer = await frame.getByText('The answer is 42.').boundingBox();
+    assert.ok(box.height >= 24, 'the disclosure button is at least 24px tall');
+    assert.ok(box.y + box.height <= answer.y, 'the disclosure sits above the answer');
+  }
+  // Keyboard: Enter opens it on both steps' reasoning and closes it again.
+  await toggle.focus();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift+Tab');
+  await expect(toggle).toBeFocused();
+  assert.notEqual(await toggle.evaluate((node) => getComputedStyle(node).outlineStyle), 'none', 'the disclosure shows a focus ring');
+  await page.keyboard.press('Enter');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(body.locator('p')).toHaveText(['Plan the search.', 'Compare the sources.']);
+  await page.keyboard.press('Enter');
+  await expect(body).toBeHidden();
+  // Merging off: each step keeps its own disclosure and its own duration.
+  await page.getByRole('checkbox', { name: 'Merge reasoning' }).uncheck();
+  await expect(toggles).toHaveCount(2);
+  await expect(toggles).toHaveText([/Thought for 1s$/, /Thought for 3s$/]);
+}
+
 /** Installed built-in conversation and project commands: menu, inline rename, confirmed delete, rollback and focus. */
 export async function runListActionScenarios(page, url) {
   await page.goto(`${url}/?menu&lists`);
@@ -3014,6 +3065,7 @@ export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}
       await runMessageActionScenarios(page, server.url);
       await runMathScenarios(page, server.url);
       await runListActionScenarios(page, server.url);
+      await runReasoningRunScenarios(page, server.url);
       await runPopupShortcutScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);

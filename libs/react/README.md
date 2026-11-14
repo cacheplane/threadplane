@@ -610,6 +610,30 @@ did nothing. Pressing Enter with a draft while `busy` keeps the draft, and a
 it to send now, or send when it finishes." until the run ends or the draft is
 cleared. Pass a string to use your own sentence.
 
+### Reasoning across the steps of a turn
+
+When a backend sends reasoning, each assistant message shows it in a collapsed
+disclosure above its text. A turn that reasons, calls a tool and reasons again
+produces several assistant messages; `Chat` and `MessageList` show that
+reasoning once, on the first step, instead of one disclosure per step. The
+label reads **Thinking…** while any step streams, then **Thought for 4s · 3
+steps** when it is done.
+
+- A step's duration comes from `reasoningDurationMs` on the message, in
+  milliseconds. The durations of a turn are added up. When no step reports
+  one, the label leaves the time out (**Thought in 3 steps**, or **Show
+  reasoning** for a single step) and never shows a guessed time.
+- Steps belong to one turn when only tool messages sit between them. A user
+  message, or an assistant message without reasoning, ends the turn.
+- Pass `mergeReasoning={false}` to show each step's reasoning on its own
+  message.
+
+Rows from `createMessageContent` carry this as `row.reasoningRun` (`snapshot`,
+`steps`, `durationMs`) on the first reasoning row of a turn, beside the
+per-message `row.reasoning`. A custom `renderMessage` chooses which to draw;
+the standalone `Reasoning` component takes `steps` and `durationMs` for the
+same label.
+
 ### Math
 
 `Markdown`, `MessageList` and `Chat` take an opt-in `math` renderer. Without
