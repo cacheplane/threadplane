@@ -208,20 +208,30 @@ test('reload clears an unsent React draft without runtime requests', async ({
   expect(observations.get(page)?.requests).toEqual(before);
 });
 
-test('the aviation suggestion fills an exact inert draft', async ({ page }) => {
+test('the aviation suggestion sends its exact prompt', async ({ page }) => {
   await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
   const frame = page.frameLocator('iframe');
+  const prompt =
+    'Plan a dispatch brief for a flight from KSFO to KASE: check field elevation, runway length, and weather at both ends, then tell me if there is anything the crew should know.';
   await frame
     .getByRole('button', { name: 'Dispatch brief: KSFO to KASE', exact: true })
     .click();
-  await expect(frame.getByLabel('Message', { exact: true })).toHaveValue(
-    'Plan a dispatch brief for a flight from KSFO to KASE: check field elevation, runway length, and weather at both ends, then tell me if there is anything the crew should know.'
-  );
-  await frame
-    .getByRole('button', { name: 'New conversation', exact: true })
-    .click();
-  await emptyRun(page);
+  // Welcome suggestions send, like the Angular twin; the composer stays empty.
+  await expect(
+    frame
+      .getByRole('region', { name: 'Conversation', exact: true })
+      .getByText(prompt, { exact: true })
+  ).toBeVisible();
+  await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');
+  const observed = observations.get(page);
+  await expect.poll(() => observed?.requests.includes('POST')).toBe(true);
+  // In-progress statuses end with an ellipsis; wait for the run to settle so
+  // no late thread request lands after the expected ones are cleared.
+  await expect(frame.getByRole('status')).not.toHaveText(/…$/, {
+    timeout: 30_000,
+  });
+  if (observed) observed.requests.length = 0;
 });
