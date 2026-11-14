@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createConnectedApplication } from './connection';
+import type { AgentSnapshot } from '@threadplane/core';
 import type { PlanningApplicationSnapshot } from './application';
 vi.mock('./connection', () => ({ createConnectedApplication: vi.fn() }));
 import { PlanningDemo, connectionFingerprint } from './app';
@@ -30,6 +31,12 @@ function harness() {
     snapshot = { ...snapshot, ...patch };
     listeners.forEach((fn) => fn());
   };
+  let observed: PlanningApplicationSnapshot | undefined;
+  let agentSnapshot: AgentSnapshot = {
+    status: 'idle',
+    messages: [],
+    toolCalls: [],
+  };
   const app = {
     getSnapshot: () => snapshot,
     subscribe: (fn: () => void) => {
@@ -52,6 +59,31 @@ function harness() {
       });
     }),
     dispose: vi.fn(async () => undefined),
+    agent: {
+      getSnapshot: () => {
+        if (observed !== snapshot) {
+          observed = snapshot;
+          agentSnapshot = {
+            status: snapshot.busy ? 'running' : 'idle',
+            messages: snapshot.messages,
+            toolCalls: snapshot.toolCalls,
+          };
+        }
+        return agentSnapshot;
+      },
+      subscribe: (fn: () => void) => {
+        listeners.add(fn);
+        return () => {
+          listeners.delete(fn);
+        };
+      },
+      submit: vi.fn(async (text: string) => {
+        await app.submit(text);
+        return 'success' as const;
+      }),
+      stop: vi.fn(async () => app.stop()),
+      dispose: vi.fn(async () => undefined),
+    },
   };
   vi.mocked(createConnectedApplication).mockReturnValue(app);
   const onReady = vi.fn();
@@ -61,25 +93,37 @@ function harness() {
   );
   return { app, update, view, onReady, connection };
 }
-it('inert mount and suggestion are draft-only; keyboard send and New remain available', () => {
+it('mount is inert; the welcome suggestion sends, Stop and New remain available', async () => {
   const h = harness();
   expect(h.onReady).toHaveBeenCalledOnce();
   expect(h.app.submit).not.toHaveBeenCalled();
-  fireEvent.click(
-    h.view.getByRole('button', { name: 'Dispatch brief: KSFO to KASE' })
-  );
-  const box = h.view.getByRole('textbox', {
-    name: 'Message',
-  }) as HTMLTextAreaElement;
-  expect(box.value).toMatch(/KSFO to KASE/);
-  expect(h.app.submit).not.toHaveBeenCalled();
-  fireEvent.keyDown(box, { key: 'Enter', code: 'Enter' });
+  expect(h.view.getByText('Start with what you want to do.')).toBeTruthy();
+  await act(async () => {
+    fireEvent.click(
+      h.view.getByRole('button', { name: 'Dispatch brief: KSFO to KASE' })
+    );
+  });
   expect(h.app.submit).toHaveBeenCalledOnce();
-  expect(box.value).toBe('');
+  expect(vi.mocked(h.app.submit).mock.calls[0][0]).toMatch(/KSFO to KASE/);
+  // A run hides the welcome greeting and its suggestion.
+  expect(h.view.queryByText('Start with what you want to do.')).toBeNull();
   fireEvent.click(h.view.getByRole('button', { name: 'Stop' }));
   expect(h.app.stop).toHaveBeenCalledOnce();
   fireEvent.click(h.view.getByRole('button', { name: 'New conversation' }));
   expect(h.app.newConversation).toHaveBeenCalledOnce();
+});
+it('a typed message goes through the application session', async () => {
+  const h = harness();
+  const box = h.view.getByRole('textbox', {
+    name: 'Message',
+  }) as HTMLTextAreaElement;
+  fireEvent.change(box, { target: { value: 'Brief me' } });
+  await act(async () => {
+    fireEvent.keyDown(box, { key: 'Enter', code: 'Enter' });
+  });
+  expect(h.app.agent.submit).toHaveBeenCalledWith('Brief me');
+  expect(h.app.submit).toHaveBeenCalledWith('Brief me');
+  expect(box.value).toBe('');
 });
 it('connection fingerprint normalizes header order and replaces/disposes old owner on value change', () => {
   expect(

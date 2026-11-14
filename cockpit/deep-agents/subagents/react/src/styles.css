@@ -65,18 +65,6 @@ body {
   }
 }
 
-.seed-prompts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-.tool-observation {
-  padding: 1rem;
-  margin-block: 0.75rem;
-  border: 1px solid var(--ds-border-default, light-dark(#cbd5e1, #9dc1ff));
-  border-radius: 0.75rem;
-  min-width: 0;
-}
 
 .child-observations {
   border: 1px solid var(--ds-border, light-dark(#cbd5e1, #9dc1ff));
@@ -84,6 +72,10 @@ body {
   padding: 1rem;
   margin: 1rem 0;
   min-width: 0;
+  /* Open observations scroll in place; the transcript and composer keep the rest. */
+  flex: none;
+  max-height: 30dvh;
+  overflow: auto;
 }
 .child-observations summary {
   cursor: pointer;
@@ -104,9 +96,6 @@ body {
   font-size: 0.85rem;
   color: var(--ds-text-secondary, light-dark(#475569, #b5b5b5));
 }
-.tool-observation h3 {
-  font-size: 0.95rem;
-}
 
 .subagents-demo,
 .subagents-demo * {
@@ -115,13 +104,9 @@ body {
 .subagents-demo {
   overflow-wrap: anywhere;
 }
-.namespace,
-.tool-observation pre:where(:not(.tp-markdown *)) {
+.namespace {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-}
-.tool-observation h3 {
-  font-family: monospace;
 }
 @media (max-width: 32rem) {
   .subagents-demo > header {

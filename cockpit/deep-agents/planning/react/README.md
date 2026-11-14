@@ -1,8 +1,10 @@
 # Deep Agents Planning · React
 
 Native React chat with a read-only projection of the existing `da-planning`
-graph's `todos`. The KSFO-to-KASE dispatch suggestion fills the draft; only Send
-creates a conversation. Aviation lookups use fixed example data.
+graph's `todos`. `Chat` renders the conversation with its default rows, tool
+activity and plan, observing the application as its session. The KSFO-to-KASE
+welcome suggestion sends its prompt; mounting sends nothing, and the first
+message creates the conversation. Aviation lookups use fixed example data.
 
 The full ordered list is replaced when valid root values arrive, including an
 explicit empty list. Duplicate rows keep their positions. The display accepts

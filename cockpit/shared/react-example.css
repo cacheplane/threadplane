@@ -32,16 +32,17 @@
 }
 .tp-example .tp-example__footer > [role='alert'] { color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80)); }
 .tp-example .tp-example__footer .tp-chat-input__textarea { max-height: min(320px, calc(var(--example-viewport-height, 100dvh) * 0.2)); }
-/* An example that renders the whole Chat composition keeps the footer's composer shape. */
-.tp-example .tp-example__content > .tp-chat { flex: 1; min-height: 0; gap: 0; }
-.tp-example .tp-example__content > .tp-chat > .tp-chat-list { flex: 1; min-height: 0; max-height: none; }
-.tp-example .tp-example__content > .tp-chat > .tp-chat-input {
+/* An example that renders the whole Chat composition, alone or inside its own
+   workspace panel, keeps the footer's composer shape. */
+.tp-example .tp-example__content .tp-chat { flex: 1; min-height: 0; gap: 0; }
+.tp-example .tp-example__content .tp-chat > .tp-chat-list { flex: 1; min-height: 0; max-height: none; }
+.tp-example .tp-example__content .tp-chat > .tp-chat-input {
   flex: none;
   width: calc(100% - 32px);
   max-width: var(--tp-chat-reading-width, 48rem);
   margin: 8px auto;
 }
-.tp-example .tp-example__content > .tp-chat .tp-chat-input__textarea { max-height: min(320px, calc(var(--example-viewport-height, 100dvh) * 0.2)); }
+.tp-example .tp-example__content .tp-chat .tp-chat-input__textarea { max-height: min(320px, calc(var(--example-viewport-height, 100dvh) * 0.2)); }
 .tp-example .tp-chat-input__footer > :is([role='status'], [role='alert']) {
   margin: 8px 0 0;
   font-size: 12px;

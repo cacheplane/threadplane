@@ -59,10 +59,16 @@ export function exampleVisualChecks(path: string, name: string) {
           expect(docsBox?.width).toBe(288);
         }
         // A composer sits in the example footer, or inside a whole Chat composition in the content.
-        const composers = page.locator('.tp-example__footer .tp-chat-input, .tp-example__content > .tp-chat > .tp-chat-input');
+        const composers = page.locator('.tp-example__footer .tp-chat-input, .tp-example__content .tp-chat > .tp-chat-input');
         await expect(composers).toHaveCount(await inputs.count());
         for (const composer of await composers.all()) {
-          const available = await composer.evaluate((element) => element.closest('.tp-example__footer, .tp-example__content')?.getBoundingClientRect().width ?? 0);
+          // Measured inside padding: a welcome Chat centres its composer within its own gutter.
+          const available = await composer.evaluate((element) => {
+            const container = element.closest('.tp-example__footer, .tp-chat, .tp-example__content');
+            if (!container) return 0;
+            const style = getComputedStyle(container);
+            return container.getBoundingClientRect().width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+          });
           const pill = await composer.locator('.tp-chat-input__pill').boundingBox();
           expect(pill?.width).toBeCloseTo(Math.min(768, available - 32), 1);
         }

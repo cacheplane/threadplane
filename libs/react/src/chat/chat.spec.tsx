@@ -247,6 +247,29 @@ describe('Chat', () => {
     expect(raw.stop).not.toHaveBeenCalled();
     expect(raw.dispose).not.toHaveBeenCalled();
   });
+  it('passes typingIndicator through, so an app that announces progress itself keeps one status', () => {
+    const { session } = fakeSession({ status: 'running' });
+    const view = render(
+      <Chat
+        session={session}
+        typingIndicator={{ announce: false, label: 'Working' }}
+        inputFooter={<p role="status">Receiving response…</p>}
+      />
+    );
+    const indicator = view.container.querySelector('.tp-typing-indicator');
+    expect(indicator?.textContent).toContain('Working');
+    expect(indicator?.getAttribute('role')).toBeNull();
+    expect(indicator?.closest('.tp-chat-list')).toBeTruthy();
+    expect(view.getAllByRole('status')).toHaveLength(1);
+    view.rerender(
+      <Chat
+        session={session}
+        typingIndicator={false}
+        inputFooter={<p role="status">Receiving response…</p>}
+      />
+    );
+    expect(view.container.querySelector('.tp-typing-indicator')).toBeNull();
+  });
   it('projects waiting from its existing subscription through first text, next turn, Stop and replacement', () => {
     const one = fakeSession({ status: 'running' });
     const subscribe = vi.spyOn(one.session, 'subscribe');

@@ -1,7 +1,10 @@
 import type {
   AgentSession,
+  AgentSnapshot,
   AgentStatus,
   CompleteOutcome,
+  Message,
+  ToolCall,
 } from '@threadplane/core';
 import {
   createMessageContent,
@@ -44,6 +47,9 @@ export interface SubagentsClient {
 export interface SubagentsSnapshot {
   readonly threadId: string | null;
   readonly rows: readonly MessageRow[];
+  /** The parent transcript behind `rows`, for `Chat`'s default rows. */
+  readonly messages: readonly Message[];
+  readonly toolCalls: readonly ToolCall[];
   readonly observations: ReadonlyMap<string, readonly ToolCard[]>;
   readonly taskCount: number | null;
   readonly childObservations: readonly ChildRow[];
@@ -63,6 +69,8 @@ const initial = (viewGeneration = 0): SubagentsSnapshot =>
   Object.freeze({
     threadId: null,
     rows: [],
+    messages: [],
+    toolCalls: [],
     observations: new Map(),
     taskCount: 0,
     childObservations: [],
@@ -105,9 +113,26 @@ export function createSubagentsApplication(client: SubagentsClient) {
   const listeners = new Set<() => void>(),
     cleanups = new Set<Promise<void>>();
   let disposal: Promise<void> | undefined;
+  /** The core session view `Chat` observes: run status from this owner, the parent transcript from the thread. */
+  let agentSnapshot: AgentSnapshot = Object.freeze({
+    status: 'idle',
+    messages: snapshot.messages,
+    toolCalls: snapshot.toolCalls,
+  });
   const publish = (update: Partial<SubagentsSnapshot>) => {
     if (disposed) return;
     snapshot = Object.freeze({ ...snapshot, ...update });
+    const status = snapshot.busy ? 'running' : 'idle';
+    if (
+      agentSnapshot.status !== status ||
+      agentSnapshot.messages !== snapshot.messages ||
+      agentSnapshot.toolCalls !== snapshot.toolCalls
+    )
+      agentSnapshot = Object.freeze({
+        status,
+        messages: snapshot.messages,
+        toolCalls: snapshot.toolCalls,
+      });
     for (const f of listeners) f();
   };
   function bounded(work: () => void | Promise<void>) {
@@ -153,6 +178,8 @@ export function createSubagentsApplication(client: SubagentsClient) {
             messages: o.confirmed.messages,
             toolCalls: o.confirmed.toolCalls,
           }),
+          messages: o.confirmed.messages,
+          toolCalls: o.confirmed.toolCalls,
           observations: projection.cards,
           taskCount: projection.taskCount,
         });
@@ -284,6 +311,8 @@ export function createSubagentsApplication(client: SubagentsClient) {
         o.projection = projection;
         publish({
           rows,
+          messages: s.messages,
+          toolCalls: s.toolCalls,
           observations: projection.cards,
           taskCount: projection.taskCount,
           childObservations: o.children.rows(),
@@ -457,6 +486,8 @@ export function createSubagentsApplication(client: SubagentsClient) {
       o.projection = projection;
       publish({
         rows,
+        messages: loaded.messages,
+        toolCalls: loaded.toolCalls,
         observations: projection.cards,
         taskCount: projection.taskCount,
         childObservations: o.children.rows(),
@@ -512,13 +543,28 @@ export function createSubagentsApplication(client: SubagentsClient) {
     listeners.clear();
     return (disposal = Promise.all([...cleanups]).then(() => undefined));
   }
+  const subscribe = (f: () => void) => {
+    if (disposed) return () => undefined;
+    listeners.add(f);
+    return () => {
+      listeners.delete(f);
+    };
+  };
+  /** This owner as a core session for `Chat`. Admission and authority stay here; `Chat` never disposes it. */
+  const agent: AgentSession = Object.freeze({
+    getSnapshot: () => agentSnapshot,
+    subscribe,
+    async submit(text: string) {
+      await submit(text);
+      return snapshot.outcome ?? 'aborted';
+    },
+    stop,
+    dispose: () => Promise.resolve(),
+  });
   return {
     getSnapshot: () => snapshot,
-    subscribe: (f: () => void) => {
-      if (disposed) return () => undefined;
-      listeners.add(f);
-      return () => listeners.delete(f);
-    },
+    subscribe,
+    agent,
     submit,
     stop,
     newConversation,

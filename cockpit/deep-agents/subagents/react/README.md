@@ -2,9 +2,9 @@
 
 Aviation lookups use fixed sample data, including weather.
 
-Explicit Send lazily creates an owned native LangGraph conversation using selector `subagents`. Suggestions fill the draft. Parent task cards preserve canonical call order and literal tool arguments/results; the roster is field-researcher and weather-analyst. Other tools and observed general-purpose dispatches remain literal observations.
+The first message, typed or from a welcome suggestion, lazily creates an owned native LangGraph conversation using selector `subagents`; mounting sends nothing. `Chat` renders the conversation with its defaults, observing the application as its session. Each parent task dispatch becomes a default subagent card in place of its call, in canonical call order, showing its literal result; the roster is field-researcher and weather-analyst. Other tools render as default tool rows.
 
-Root Response saved requires successful native delivery plus matching owned raw current state, fresh history head and exact checkpoint, followed by canonical native load before another Send. A resolved root tool error can still be saved, and its raw error label remains visible. Incomplete authority disables Send until New.
+Root Response saved requires successful native delivery plus matching owned raw current state, fresh history head and exact checkpoint, followed by canonical native load before another Send. A resolved root tool error can still be saved, and its card shows as failed. Incomplete authority disables Send until New.
 
 Child observations use full namespace arrays and retain their own user/assistant/tool transcripts through parent reload. They are local to this open conversation, are not restored child history, and are not associated with individual parent task cards. Reload and New clear them. Stop ends local delivery without promising backend rollback.
 
