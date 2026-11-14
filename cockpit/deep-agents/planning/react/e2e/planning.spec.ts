@@ -233,13 +233,13 @@ test('actual rejected write results remain received tool traces and recover with
     await expect(
       plan(page).getByText('Last saved plan', { exact: true })
     ).toBeVisible();
-    // Chat's default tool rows show the rejected calls and their literal results.
+    // Chat's default tool activity shows the rejected calls, and their results only there.
     expect(
       (await page.locator('.tp-tool-activity__heading').allTextContents()).some(
         (text) => text.startsWith('Write todos')
       )
     ).toBe(true);
-    await expect(page.locator('.tp-chat-message--tool').last()).not.toBeEmpty();
+    await expect(page.locator('.tp-chat-message--tool')).toHaveCount(0);
     expect(
       (await page.locator('.tp-tool-activity-group').allTextContents()).some(
         (text) => /applied|success/i.test(text)

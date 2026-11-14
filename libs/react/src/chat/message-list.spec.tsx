@@ -1729,13 +1729,79 @@ describe('MessageList', () => {
     content.dispose();
   });
 
+  it('skips a tool row whose call an earlier row shows; the activity, plan and records stay, and renderMessage still sees it', () => {
+    const calls = [
+      Object.freeze({
+        id: 'c',
+        name: 'lookup',
+        args: {},
+        status: 'complete',
+        result: 'KSFO elevation 13 ft',
+      }),
+      Object.freeze({ id: 'd', name: 'runways', args: {}, status: 'running' }),
+    ] as AgentSnapshot['toolCalls'];
+    const content = createMessageContent();
+    const rows = content.project(
+      snap(
+        [
+          msg('u', 'Field data?', { role: 'user' }),
+          msg('a', '', {
+            toolCallIds: ['c', 'd'],
+            delivery: completeDelivery('g', 'success'),
+          }),
+          msg('t', 'KSFO elevation 13 ft', { role: 'tool', toolCallId: 'c' }),
+          // No earlier row shows this call, so its result keeps the literal row.
+          msg('o', 'orphan result', { role: 'tool', toolCallId: 'gone' }),
+        ],
+        calls
+      )
+    );
+    const view = render(
+      <MessageList
+        rows={rows.slice(0, 3)}
+        running
+        plan={[{ label: 'Read field data', status: 'pending' }]}
+        approvalRecords={[
+          { afterId: 't', verdict: 'approved', label: 'Lookup' },
+        ]}
+      />
+    );
+    const messages = view.container.querySelectorAll('.tp-chat-message');
+    expect(messages).toHaveLength(2);
+    expect(view.container.querySelector('.tp-chat-message--tool')).toBeNull();
+    // The result shows once, inside the call's activity.
+    expect(
+      view.container.textContent?.split('KSFO elevation 13 ft')
+    ).toHaveLength(2);
+    // The assistant row is the last one shown, so it holds the plan.
+    expect(view.getByText('Read field data')).toBeTruthy();
+    // A record anchored to the skipped row still renders, after the row before it.
+    expect(view.getByText(/Approved/)).toBeTruthy();
+    view.rerender(<MessageList rows={rows} />);
+    expect(
+      view.container.querySelector('.tp-chat-message--tool pre')?.textContent
+    ).toBe('orphan result');
+    const seen: string[] = [];
+    view.rerender(
+      <MessageList
+        rows={rows}
+        renderMessage={(row, context) => {
+          seen.push(`${row.id}:${context.prevRole ?? '-'}`);
+          return <p>{row.id}</p>;
+        }}
+      />
+    );
+    expect(seen).toEqual(['u:-', 'a:user', 't:assistant', 'o:tool']);
+    content.dispose();
+  });
+
   it('renders Markdown for text roles, literal text for tool role and tool observations', () => {
     const rows = createMessageContent().project(
       snap(
         [
           msg('u', 'Hi **there**', { role: 'user' }),
           msg('a', '# Plan', { toolCallIds: ['c'] }),
-          msg('t', '<b>raw</b>', { role: 'tool', toolCallId: 'c' }),
+          msg('t', '<b>raw</b>', { role: 'tool', toolCallId: 'unshown' }),
         ],
         [
           Object.freeze({
