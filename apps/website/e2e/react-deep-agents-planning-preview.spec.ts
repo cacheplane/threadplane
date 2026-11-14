@@ -228,10 +228,11 @@ test('the aviation suggestion sends its exact prompt', async ({ page }) => {
   await expect(frame.getByLabel('Message', { exact: true })).toHaveValue('');
   const observed = observations.get(page);
   await expect.poll(() => observed?.requests.includes('POST')).toBe(true);
-  // In-progress statuses end with an ellipsis; wait for the run to settle so
-  // no late thread request lands after the expected ones are cleared.
-  await expect(frame.getByRole('status')).not.toHaveText(/…$/, {
-    timeout: 30_000,
-  });
+  // Wait for the run to settle so no late thread request lands after the
+  // expected ones are cleared. Chat's tool rows carry their own status roles,
+  // so match the example's response status by its exact settled text.
+  await expect(
+    frame.getByText('Response saved.', { exact: true })
+  ).toBeVisible({ timeout: 30_000 });
   if (observed) observed.requests.length = 0;
 });
