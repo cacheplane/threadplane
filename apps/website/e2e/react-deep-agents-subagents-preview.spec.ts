@@ -223,6 +223,12 @@ test('reload clears an unsent React draft without runtime requests', async ({
 });
 
 test('the aviation suggestion sends its exact prompt', async ({ page }) => {
+  // Sending starts a model run; deployed targets (preview and production)
+  // keep previews request-free, so the send is verified locally only.
+  test.skip(
+    Boolean(process.env['BASE_URL']),
+    'Welcome suggestion sends are verified against the local agents suite'
+  );
   await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
