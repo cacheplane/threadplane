@@ -980,7 +980,7 @@ describe('native client tool command ownership', () => {
     second.resolve(2);
     await owner.dispose();
   });
-  it('uses reconciled transcript order when a final raw snapshot reverses surviving assistant ids', async () => {
+  it('uses the final raw snapshot order when it reverses surviving assistant ids', async () => {
     const wire = held();
     const seen: number[] = [];
     const handler = vi.fn(
@@ -1005,10 +1005,10 @@ describe('native client tool command ownership', () => {
       lifecycle(first.input, 'RUN_FINISHED')
     );
     expect(await bounded(done)).toBe('success');
-    expect(seen).toEqual([1, 2]);
+    expect(seen).toEqual([2, 1]);
     expect(
       owner.getSnapshot().clientTools.calls.map((call) => call.args)
-    ).toEqual([{ value: 1 }, { value: 2 }]);
+    ).toEqual([{ value: 2 }, { value: 1 }]);
     await owner.dispose();
   });
   it('keeps all-false results unsent and carries them on the next explicit submit', async () => {

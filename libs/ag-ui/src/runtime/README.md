@@ -87,8 +87,9 @@ The session measures how long each root reasoning message took to arrive, from
 `REASONING_MESSAGE_START` to `REASONING_MESSAGE_END` on the local clock, and
 publishes it as `snapshot.reasoningDurations` by message ID. The selector adds
 up the times of the records it attaches into `Message.reasoningDurationMs`. The
-field is absent, never zero, when nothing was measured: restored history, a
-messages snapshot, and reasoning whose end event never arrived. A network stall
+field is absent, never zero, when nothing was measured: restored history, and
+reasoning whose end event never arrived. A messages snapshot keeps measured
+times (see "Messages snapshots" at the end). A network stall
 counts as reasoning time. Child reasoning is not timed. The native transcript
 and the request history are unchanged; reasoning records are still sent back as
 the protocol requires.
@@ -232,3 +233,27 @@ support are unproved. Literal false and native cancellation differ from the
 `{ approved: false }` application payload. Cancellation completion does not prove
 durable snapshot deletion. This local proof establishes neither hosted-model or
 remote-agent compatibility nor persistence, recovery or public backend exports.
+
+## Messages snapshots
+
+A `MESSAGES_SNAPSHOT` replaces the transcript in the snapshot's own order.
+`@ag-ui/client` instead keeps surviving IDs where they were and appends new
+ones. A backend that streams a step under one ID and saves it under another
+(the LangGraph adapter renames assistant, tool and some reasoning records in
+its final snapshot) then leaves a tool result before its call and reasoning
+before the wrong step, both on screen and in the next request's history. The
+session does not copy that.
+
+- A record with a surviving ID takes the snapshot's record and position.
+- An ordinary record the snapshot omits is dropped.
+- Local reasoning records are kept only when the snapshot carries no reasoning,
+  and local activity records only when it carries no activity. A kept record
+  stays directly after the closest earlier record that is still present, or at
+  the front when there is none.
+
+Measured reasoning time follows the reasoning through the snapshot. The
+transcript's root reasoning records form runs, one per stretch of consecutive
+reasoning. When the snapshot leaves as many runs as there were, each run keeps
+its measured total, moved onto the run's first record when its IDs changed.
+When the count differs, only records whose IDs survive keep their time, so the
+total can be lower than what was measured.

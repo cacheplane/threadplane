@@ -239,8 +239,8 @@ describe('private snapshot reconciliation over actual HTTP', () => {
     });
     try {
       const initial = await server.next();
-      // Snapshot order differs from retained order; repeat with reversed input
-      // to prove the existing transcript's positions survive another snapshot.
+      // Repeat with reversed input to prove the latest snapshot's order wins,
+      // with the retained event-only records still after the assistant.
       initial.send(
         lifecycle(initial, EventType.RUN_STARTED),
         { type: EventType.MESSAGES_SNAPSHOT, messages: richSnapshot },
@@ -260,13 +260,13 @@ describe('private snapshot reconciliation over actual HTTP', () => {
         [...richSnapshot].reverse(),
       ]);
       const expected = [
-        richSnapshot[2],
+        richSnapshot[4],
         corrected,
         previous[2],
         previous[3],
-        richSnapshot[0],
+        richSnapshot[2],
         richSnapshot[1],
-        richSnapshot[4],
+        richSnapshot[0],
       ];
       expect(transcript).toStrictEqual(expected);
       expect(transcript[2]).toBe(previous[2]);
@@ -277,7 +277,7 @@ describe('private snapshot reconciliation over actual HTTP', () => {
       expect(previous).toStrictEqual(seed());
       expect(Object.isFrozen(transcript)).toBe(true);
       const outgoing = [
-        richSnapshot[2],
+        richSnapshot[4],
         corrected,
         {
           id: 'reasoning',
@@ -286,9 +286,9 @@ describe('private snapshot reconciliation over actual HTTP', () => {
           encryptedValue: 'reasoning-encrypted',
           metadata: { subagentRunId: null },
         },
-        richSnapshot[0],
+        richSnapshot[2],
         richSnapshot[1],
-        richSnapshot[4],
+        richSnapshot[0],
       ] satisfies Message[];
       second = factory.start(
         input('continue', requestMessages(transcript)),
@@ -297,7 +297,7 @@ describe('private snapshot reconciliation over actual HTTP', () => {
       const continuation = await server.next(1);
       expect(continuation.body).toStrictEqual(input('continue', outgoing));
       expect(continuation.body.messages.map((message) => message.role)).toEqual(
-        ['user', 'assistant', 'reasoning', 'system', 'developer', 'tool']
+        ['tool', 'assistant', 'reasoning', 'user', 'developer', 'system']
       );
       expect(
         continuation.body.messages.find(

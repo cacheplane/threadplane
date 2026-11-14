@@ -237,7 +237,8 @@ export function createSession(
         const previous = publication.getSnapshot();
         let next = reasoningClock.observe(
           event as AGUIEvent,
-          applyObservation(previous, event as AGUIEvent, interruptMode)
+          applyObservation(previous, event as AGUIEvent, interruptMode),
+          previous
         );
         const terminal = next.run?.terminal;
         const notice = next.run?.legacyInterrupt;
@@ -950,7 +951,8 @@ function createToolsOwner(
           const previous = publication.getSnapshot();
           let next = reasoningClock.observe(
             event as AGUIEvent,
-            applyObservation(previous, event as AGUIEvent, interruptMode)
+            applyObservation(previous, event as AGUIEvent, interruptMode),
+            previous
           );
           ledger.observe(physical.token, event as AGUIEvent, next.transcript);
           const evidence =
