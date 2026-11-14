@@ -40,6 +40,7 @@ export const reviewedSources = [
     'decision',
     'encrypted-messages',
     'interrupt-mode',
+    'reasoning-clock',
     'reconcile-transcript',
     'session-attribution',
     'session-observation',
