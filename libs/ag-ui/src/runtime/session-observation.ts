@@ -56,6 +56,12 @@ export interface SessionSnapshot {
   /** Children with terminal evidence from earlier invocations, and children supplied at restore. Absent when there are none. */
   readonly earlierSubagents?: Subagents;
   readonly decision?: Decision;
+  /**
+   * Measured arrival time of root reasoning messages, in milliseconds, by
+   * message ID. Present once a reasoning message has both started and ended in
+   * this session; restored reasoning has none.
+   */
+  readonly reasoningDurations?: Readonly<Record<string, number>>;
   readonly run?: {
     readonly id: string;
     readonly outcome?: CompleteOutcome;
@@ -96,7 +102,7 @@ export function initialObservation(
 
 /** Input is a stable SDK-normalized event; this is selection, not validation.
  * RAW, STEP, REASONING_START/END and other CUSTOM events have no retained
- * projection in this slice. Child state still updates the one shared document. */
+ * projection in this slice. The session owner times reasoning messages itself. Child state still updates the one shared document. */
 export function applyObservation(
   previous: SessionSnapshot,
   event: AGUIEvent,

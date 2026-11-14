@@ -32,6 +32,7 @@ import {
 import { earlierSubagents, type Subagents } from './subagents.js';
 import { createRun, type RunHandle } from './create-run.js';
 import { createPublication } from './session-publication.js';
+import { createReasoningClock } from './reasoning-clock.js';
 import type { InterruptMode } from './interrupt-mode.js';
 import {
   assertResumeEligible,
@@ -138,6 +139,7 @@ export function createSession(
       catalog
     );
   const factory = createRun({ url, headers, fetch, interruptMode });
+  const reasoningClock = createReasoningClock();
   const initial = initialObservation(messages, state, subagents);
   const publication = createPublication(
     catalog === undefined
@@ -233,10 +235,9 @@ export function createSession(
         // createRun delivers the SDK's normalized/verified union through its
         // BaseEvent callback. No second schema parse or sequence verifier.
         const previous = publication.getSnapshot();
-        let next = applyObservation(
-          previous,
+        let next = reasoningClock.observe(
           event as AGUIEvent,
-          interruptMode
+          applyObservation(previous, event as AGUIEvent, interruptMode)
         );
         const terminal = next.run?.terminal;
         const notice = next.run?.legacyInterrupt;
@@ -509,6 +510,7 @@ function createToolsOwner(
 ): Session {
   const { threadId, interruptMode = 'native' } = options;
   const factory = createRun(options);
+  const reasoningClock = createReasoningClock();
   const initial = initialObservation(
     options.messages,
     options.state,
@@ -946,10 +948,9 @@ function createToolsOwner(
           )
             return;
           const previous = publication.getSnapshot();
-          let next = applyObservation(
-            previous,
+          let next = reasoningClock.observe(
             event as AGUIEvent,
-            interruptMode
+            applyObservation(previous, event as AGUIEvent, interruptMode)
           );
           ledger.observe(physical.token, event as AGUIEvent, next.transcript);
           const evidence =
