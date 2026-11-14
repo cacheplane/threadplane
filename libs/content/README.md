@@ -212,6 +212,17 @@ and the same delivery phase. Empty and omitted reasoning release its owner;
 whitespace stays intact. All roles preserve explicit reasoning; views decide
 which roles to display. No answer text or timing is inferred as reasoning.
 
+The first assistant reasoning row of a turn also carries `reasoningRun`: the
+`snapshot` to show for the whole turn, the number of `steps`, and `durationMs`,
+the sum of the steps' `Message.reasoningDurationMs` (absent when no step
+reported one). Later assistant reasoning rows join the same run when only tool
+messages separate them; a user message or an assistant message without
+reasoning ends it. A one-step run borrows the row's own `reasoning` snapshot. A
+longer run owns one document named `${delivery.generation}:reasoning-run` after
+its first step, holding the steps' reasoning separated by blank lines with the
+last step's delivery phase, so later steps extend it. A change to any step
+replaces the first row of its run.
+
 Unchanged documents and rows retain identity. Reasoning-only updates preserve
 the answer snapshot and unrelated rows. Removed messages release both owners;
 disposing the projection releases all owners once and makes later projections

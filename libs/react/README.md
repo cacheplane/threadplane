@@ -181,8 +181,8 @@ change resets local image state; replacing an image destination allows recovery
 after a failed load.
 
 The renderer preserves literal HTML as text, uses semantic lists/tables and
-disabled task checkboxes, and resolves references from the snapshot. Math remains
-delimited text. Optional readonly `citations` supplies per-message `Citation[]`:
+disabled task checkboxes, and resolves references from the snapshot. Math stays
+delimited text unless you pass `math` (see Math below). Optional readonly `citations` supplies per-message `Citation[]`:
 exact IDs override Markdown definitions, including sources with blocked or absent
 URLs. Duplicate supplied IDs throw `TypeError`. Otherwise definitions provide the
 index, literal title before their first immediate link/autolink, and destination.
@@ -195,7 +195,7 @@ classification is the fixed [`content/markdown` policy](../content/README.md),
 including exclusion of data images. A fenced code block's `<code>` carries the
 conventional `language-*` class from the first word of its info string when
 that is a plain identifier, so your own highlighter can find it; the binding
-does no highlighting itself. The root binding stays headless; rich math,
+does no highlighting itself. The root binding stays headless;
 custom node registries, legacy migration,
 SSR and hydration remain outside this private feature.
 
@@ -610,6 +610,58 @@ did nothing. Pressing Enter with a draft while `busy` keeps the draft, and a
 it to send now, or send when it finishes." until the run ends or the draft is
 cleared. Pass a string to use your own sentence.
 
+### Reasoning across the steps of a turn
+
+When a backend sends reasoning, each assistant message shows it in a collapsed
+disclosure above its text. A turn that reasons, calls a tool and reasons again
+produces several assistant messages; `Chat` and `MessageList` show that
+reasoning once, on the first step, instead of one disclosure per step. The
+label reads **Thinking…** while any step streams, then **Thought for 4s · 3
+steps** when it is done.
+
+- A step's duration comes from `reasoningDurationMs` on the message, in
+  milliseconds. The durations of a turn are added up. When no step reports
+  one, the label leaves the time out (**Thought in 3 steps**, or **Show
+  reasoning** for a single step) and never shows a guessed time.
+- Steps belong to one turn when only tool messages sit between them. A user
+  message, or an assistant message without reasoning, ends the turn.
+- Pass `mergeReasoning={false}` to show each step's reasoning on its own
+  message.
+
+Rows from `createMessageContent` carry this as `row.reasoningRun` (`snapshot`,
+`steps`, `durationMs`) on the first reasoning row of a turn, beside the
+per-message `row.reasoning`. A custom `renderMessage` chooses which to draw;
+the standalone `Reasoning` component takes `steps` and `durationMs` for the
+same label.
+
+### Math
+
+`Markdown`, `MessageList` and `Chat` take an opt-in `math` renderer. Without
+it, math is shown as its source with its delimiters (`$x$`, `\(x\)`, `$$x$$`,
+`\[x\]`). The package does not depend on a math engine; you supply one, such
+as KaTeX:
+
+```tsx
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
+
+const math = (latex: string, { display }: { display: boolean }) =>
+  katex.renderToString(latex, { displayMode: display, throwOnError: true });
+
+<Chat session={session} math={math} />;
+```
+
+The function receives the LaTeX between the delimiters and returns an HTML
+string. That string is inserted as markup, so return only your renderer's own
+output, never text built from the message. When the function throws (keep
+`throwOnError: true` so invalid LaTeX does) or returns nothing, that formula
+falls back to its source while the rest of the message is typeset. Display math
+is a block that scrolls sideways when it is wider than the message. Each
+formula is typeset once while the text around it streams. Define the function
+outside the component or memoize it; a new function typesets every formula
+again. To load the engine lazily, pass `math` only once your import resolves.
+The stylesheet and fonts are yours to load.
+
 ### Built-in message actions
 
 `messageActions` on `Chat` and `MessageList` adds actions under each finished
@@ -785,6 +837,70 @@ serve as the menu's invoking element.
 An empty collection renders an empty list. The application owns loaded-title
 filtering, loading/error/empty notices, data fetching and execution. Native Delete
 uses the existing action slot; shared project catalogs, broader drag interaction parity and live timestamp refresh remain future work. This is a bounded private T29 slice.
+
+### Built-in conversation and project actions
+
+`ThreadList` and `ProjectList` can own the row menu themselves. Pass `actions`
+with the commands your application implements, and each row gets a **More
+actions** menu offering exactly those commands:
+
+```tsx
+<ThreadList
+  threads={threads}
+  activeThreadId={selectedId}
+  onSelect={selectThread}
+  projects={projects}
+  actions={{
+    rename: (id, title) => api.renameThread(id, title).then(refresh),
+    pin: (id) => api.pinThread(id, true).then(refresh),
+    unpin: (id) => api.pinThread(id, false).then(refresh),
+    archive: (id) => api.archiveThread(id).then(refresh),
+    moveToProject: (id, projectId) => api.moveThread(id, projectId).then(refresh),
+    reorderPinned: (id, beforeId) => api.reorderPinned(id, beforeId).then(refresh),
+    delete: (id) => api.deleteThread(id).then(refresh),
+  }}
+/>
+<ThreadList threads={archived} onSelect={selectThread} mode="archived"
+  actions={{ unarchive: restore, delete: remove }} />
+<ProjectList
+  projects={projects}
+  activeProjectId={projectId}
+  onSelect={selectProject}
+  actions={{ create: createProject, rename: renameProject, delete: deleteProject }}
+/>
+```
+
+The lists stay controlled: your application still owns the rows, and a command
+is a function that performs the change and then updates the rows you pass in.
+While a command runs, the list shows its result at once. A renamed row shows
+the new name, a deleted or archived row is hidden, and a reordered pinned row
+moves. When the command settles the list goes back to showing the supplied
+rows, so a rejected promise (or a thrown error) puts the row back as it was.
+Report the failure from your command; the list does not show an error itself.
+
+- **Rename** replaces the row with an inline editor. Enter or **Save** calls
+  `rename` with the trimmed name, Escape or **Cancel** leaves without a call,
+  and a blank or unchanged name is not sent.
+- **Delete** asks for confirmation first, then hides the row and calls `delete`.
+- **Archive** and **Unarchive** run at once. `mode="archived"` offers only
+  **Unarchive** and **Delete**.
+- **Pin** or **Unpin** is offered according to the row's `pinned` value. With
+  `reorderPinned`, pinned rows also get **Move up** and **Move down**; the
+  command receives the ID of the pinned row to place it before, or `null` for
+  last. The list keeps your order and does not sort pinned rows itself.
+- **Move to project** is offered when you also pass `projects`. The open menu
+  swaps to **No project** and your projects, and `moveToProject` receives the
+  chosen project ID or `null`. The row stays in place until you update `threads`.
+- On `ProjectList`, `create` adds the **+ New project** button with an inline
+  name editor (`onNewProject` is still called if you pass it), and `rename` and
+  `delete` add the row menu.
+
+A right click, the Menu key, or Shift+F10 on a conversation row opens the same
+menu, unless you pass your own `onContextMenu`. Focus returns to the row's menu
+button after a rename or a cancelled dialog, and moves to the next row when the
+focused row is removed. Content from `renderActions` stays beside the built-in
+menu, and rows drawn by `renderItem` get no built-in menu. The command types
+are exported as `ThreadActionAdapter` and `ProjectActionAdapter`.
 
 ## Controlled conversation rename editor
 

@@ -1,5 +1,5 @@
 'use client';
-import { Fragment, createElement } from 'react';
+import { Fragment, createElement, useMemo } from 'react';
 import {
   markdownUrl,
   type CitationDefinition,
@@ -17,12 +17,24 @@ export interface MarkdownProps {
   readonly citations?: readonly Citation[];
   /** Show local, connected source details instead of direct citation links. */
   readonly citationPreview?: boolean;
+  /**
+   * Typesets math. Called with the LaTeX between the delimiters and whether it is display math, it
+   * returns an HTML string that is inserted as markup, so return only your renderer's own output,
+   * such as KaTeX's `renderToString` with `throwOnError: true`. When it throws or returns nothing,
+   * and when it is not set, the source is shown with its delimiters. Keep it stable; a new function
+   * typesets every formula again.
+   */
+  readonly math?: (
+    latex: string,
+    options: { readonly display: boolean }
+  ) => string | null | undefined;
 }
 /** Present an accepted snapshot. Its lifetime belongs to the application. */
 export function Markdown({
   snapshot,
   citations = [],
   citationPreview = false,
+  math,
 }: MarkdownProps) {
   const sources = new Map(citations.map((citation) => [citation.id, citation]));
   if (sources.size !== citations.length)
@@ -45,9 +57,66 @@ export function Markdown({
           citations={snapshot.root.citations}
           sources={sources}
           citationPreview={citationPreview}
+          math={math}
         />
       )}
     </div>
+  );
+}
+
+/** Typeset math, or null to show the source. Memoized so a streaming reply does not typeset each formula per token. */
+function useMath(
+  math: MarkdownProps['math'],
+  latex: string,
+  display: boolean
+): string | null {
+  return useMemo(() => {
+    if (!math) return null;
+    try {
+      const html = math(latex, { display });
+      return typeof html === 'string' && html.length > 0 ? html : null;
+    } catch {
+      return null;
+    }
+  }, [math, latex, display]);
+}
+
+interface MathProps {
+  readonly latex: string;
+  readonly math: MarkdownProps['math'];
+  readonly source: string;
+}
+
+function InlineMath({ latex, math, source }: MathProps) {
+  const html = useMath(math, latex, false);
+  return html === null ? (
+    <span>{source}</span>
+  ) : (
+    <span
+      className="tp-markdown__math"
+      style={{ whiteSpace: 'normal' }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+function DisplayMath({ latex, math, source }: MathProps) {
+  const html = useMath(math, latex, true);
+  return html === null ? (
+    <pre style={{ whiteSpace: 'pre-wrap' }}>{source}</pre>
+  ) : (
+    // A wide formula scrolls inside its own block instead of widening the message.
+    <div
+      className="tp-markdown__math tp-markdown__math--display"
+      style={{
+        whiteSpace: 'normal',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        maxInlineSize: '100%',
+        textAlign: 'center',
+      }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }
 
@@ -58,7 +127,9 @@ function NodeView({
   header = false,
   insideAnchor = false,
   citationPreview = false,
+  math,
 }: {
+  readonly math?: MarkdownProps['math'];
   readonly node: MarkdownNode;
   readonly citations: ReadonlyMap<string, CitationDefinition>;
   readonly sources: ReadonlyMap<string, Citation>;
@@ -82,6 +153,7 @@ function NodeView({
             citations={citations}
             sources={sources}
             citationPreview={citationPreview}
+            math={math}
             header={node.type === 'table-row' && node.isHeader}
             insideAnchor={insideAnchor || href !== undefined}
           />
@@ -206,6 +278,7 @@ function NodeView({
                     citations={citations}
                     sources={sources}
                     citationPreview={citationPreview}
+                    math={math}
                     insideAnchor={insideAnchor}
                   />
                 ))}
@@ -220,6 +293,7 @@ function NodeView({
                     citations={citations}
                     sources={sources}
                     citationPreview={citationPreview}
+                    math={math}
                     insideAnchor={insideAnchor}
                   />
                 ))}
@@ -268,17 +342,25 @@ function NodeView({
     }
     case 'math-inline':
       return (
-        <span>
-          {node.delimiter === '$' ? `$${node.text}$` : `\\(${node.text}\\)`}
-        </span>
+        <InlineMath
+          latex={node.text}
+          math={math}
+          source={
+            node.delimiter === '$' ? `$${node.text}$` : `\\(${node.text}\\)`
+          }
+        />
       );
     case 'math-display':
       return (
-        <pre style={{ whiteSpace: 'pre-wrap' }}>
-          {node.delimiter === '$$'
-            ? `$$\n${node.text}\n$$`
-            : `\\[${node.text}\\]`}
-        </pre>
+        <DisplayMath
+          latex={node.text}
+          math={math}
+          source={
+            node.delimiter === '$$'
+              ? `$$\n${node.text}\n$$`
+              : `\\[${node.text}\\]`
+          }
+        />
       );
     case 'html-inline':
       return node.raw;

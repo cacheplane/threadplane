@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { Chat, ChatInput, ChatPopup, ChatWindow, GenerativeUiSkeleton, LauncherButton, MessageRating, OverflowMenu, Select, ThreadList, ThreadRenameForm, Timeline, Trace, WelcomeSuggestion, type MessageRatingValue, type TimelineItem, type TraceState } from '@threadplane/react/chat';
-import { completeDelivery, type AgentSession, type AgentSnapshot, type Message } from '@threadplane/core';
+import { useMemo, useRef, useState } from 'react';
+import { Chat, ChatInput, ChatPopup, ChatWindow, GenerativeUiSkeleton, LauncherButton, MessageRating, OverflowMenu, ProjectList, Select, ThreadList, ThreadRenameForm, Timeline, Trace, WelcomeSuggestion, type MessageRatingValue, type ProjectActionAdapter, type ProjectListItem, type ThreadActionAdapter, type ThreadListItem, type TimelineItem, type TraceState } from '@threadplane/react/chat';
+import { completeDelivery, streamingDelivery, type AgentSession, type AgentSnapshot, type Message } from '@threadplane/core';
 import '@threadplane/react/chat/styles.css';
 import { ConfirmDialogFixture } from './react-confirm-dialog';
 
@@ -25,6 +25,12 @@ export function OverflowMenuFixture() {
     return <RunStatusFixture />;
   if (new URLSearchParams(window.location.search).has('actions'))
     return <MessageActionsFixture />;
+  if (new URLSearchParams(window.location.search).has('math'))
+    return <MathFixture />;
+  if (new URLSearchParams(window.location.search).has('lists'))
+    return <ListActionsFixture />;
+  if (new URLSearchParams(window.location.search).has('reasoning'))
+    return <ReasoningRunFixture />;
   if (new URLSearchParams(window.location.search).has('popup'))
     return <PopupFixture />;
   if (new URLSearchParams(window.location.search).has('rating'))
@@ -488,6 +494,187 @@ function echoSession(): AgentSession {
   } as unknown as AgentSession;
 }
 const welcomeSession = echoSession();
+
+const mathSession = echoSession();
+/** A stand-in for a math engine: marks what it was given and makes display math very wide. */
+const fixtureMath = (latex: string, { display }: { display: boolean }) => {
+  if (latex.includes('bad')) throw new Error('invalid');
+  const escaped = latex.trim().replace(/[<&]/g, '');
+  return display
+    ? `<span data-set="display" style="display:inline-block;inline-size:1600px;white-space:nowrap">${escaped}</span>`
+    : `<span data-set="inline" style="font-style:italic">${escaped}</span>`;
+};
+
+/** A session that plays one two-step reasoning turn, a stage per call to advance. */
+function reasoningSession() {
+  const done = (id: string) => completeDelivery(id, 'success');
+  const user = { id: 'u1', role: 'user', content: 'What is the answer?', delivery: done('u1') };
+  const first = { id: 'a1', role: 'assistant', content: '', reasoning: 'Plan the search.', reasoningDurationMs: 1200, delivery: done('a1') };
+  const tool = { id: 't1', role: 'tool', content: 'Search result', delivery: done('t1') };
+  const stages = [
+    [user, { ...first, reasoningDurationMs: undefined, delivery: streamingDelivery('a1') }],
+    [user, first, tool, { id: 'a2', role: 'assistant', content: '', reasoning: 'Compare the', delivery: streamingDelivery('a2') }],
+    [user, first, tool, { id: 'a2', role: 'assistant', content: 'The answer is 42.', reasoning: 'Compare the sources.', reasoningDurationMs: 3100, delivery: done('a2') }],
+  ] as unknown as Message[][];
+  let snapshot = Object.freeze({ status: 'idle', messages: [] as Message[], toolCalls: [] }) as unknown as AgentSnapshot;
+  const listeners = new Set<() => void>();
+  let stage = 0;
+  const session = {
+    getSnapshot: () => snapshot,
+    subscribe(notify: () => void) {
+      listeners.add(notify);
+      return () => listeners.delete(notify);
+    },
+    async submit() {
+      return 'success';
+    },
+    async stop() {},
+    async dispose() {},
+  } as unknown as AgentSession;
+  const advance = () => {
+    if (stage >= stages.length) return;
+    snapshot = Object.freeze({ ...snapshot, status: stage < stages.length - 1 ? 'running' : 'idle', messages: stages[stage] }) as AgentSnapshot;
+    stage += 1;
+    for (const notify of listeners) notify();
+  };
+  return { session, advance };
+}
+const reasoningTurn = reasoningSession();
+
+/** Installed merged reasoning: one disclosure for a multi-step turn, or one per step when merging is off. */
+function ReasoningRunFixture() {
+  const [merge, setMerge] = useState(true);
+  return (
+    <main>
+      <h1>Installed reasoning runs</h1>
+      <button type="button" onClick={reasoningTurn.advance}>Next stage</button>
+      <label>
+        <input type="checkbox" checked={merge} onChange={(event) => setMerge(event.target.checked)} /> Merge reasoning
+      </label>
+      <div data-testid="reasoning-frame" style={{ display: 'flex', blockSize: 520, border: '1px solid gray' }}>
+        <Chat session={reasoningTurn.session} label="Message" mergeReasoning={merge} />
+      </div>
+    </main>
+  );
+}
+
+/** Installed built-in conversation and project commands; the fixture owns the rows and can refuse a command. */
+function ListActionsFixture() {
+  const [threads, setThreads] = useState<readonly ThreadListItem[]>([
+    { id: 't1', title: 'Roadmap', pinned: true },
+    { id: 't2', title: 'Hiring', pinned: true },
+    { id: 't3', title: 'Draft plan' },
+    { id: 't4', title: 'A-conversation-with-an-unbroken-title-that-must-wrap-inside-its-row-and-never-widen-the-page' },
+  ]);
+  const [archived, setArchived] = useState<readonly ThreadListItem[]>([{ id: 't9', title: 'Old notes' }]);
+  const [projects, setProjects] = useState<readonly ProjectListItem[]>([
+    { id: 'p1', name: 'Research' },
+    { id: 'p2', name: 'Launch' },
+  ]);
+  const [log, setLog] = useState<readonly string[]>([]);
+  const [refuse, setRefuse] = useState(false);
+  const refusing = useRef(refuse);
+  refusing.current = refuse;
+  const created = useRef(2);
+  const run = (entry: string, apply: () => void) =>
+    new Promise<void>((resolve, reject) =>
+      setTimeout(() => {
+        if (refusing.current) {
+          setLog((all) => [...all, `refused:${entry}`]);
+          reject(new Error('refused'));
+          return;
+        }
+        setLog((all) => [...all, entry]);
+        apply();
+        resolve();
+      }, 250)
+    );
+  const pinnedFirst = (rows: readonly ThreadListItem[]) => [...rows.filter((row) => row.pinned), ...rows.filter((row) => !row.pinned)];
+  const actions = useMemo<ThreadActionAdapter>(
+    () => ({
+      rename: (id, title) => run(`rename:${id}:${title}`, () => setThreads((rows) => rows.map((row) => (row.id === id ? { ...row, title } : row)))),
+      delete: (id) =>
+        run(`delete:${id}`, () => {
+          setThreads((rows) => rows.filter((row) => row.id !== id));
+          setArchived((rows) => rows.filter((row) => row.id !== id));
+        }),
+      archive: (id) =>
+        run(`archive:${id}`, () =>
+          setThreads((rows) => {
+            const row = rows.find((item) => item.id === id);
+            if (row) setArchived((old) => [...old.filter((item) => item.id !== id), { ...row, pinned: false }]);
+            return rows.filter((item) => item.id !== id);
+          })
+        ),
+      unarchive: (id) =>
+        run(`unarchive:${id}`, () =>
+          setArchived((rows) => {
+            const row = rows.find((item) => item.id === id);
+            if (row) setThreads((old) => [...old.filter((item) => item.id !== id), row]);
+            return rows.filter((item) => item.id !== id);
+          })
+        ),
+      pin: (id) => run(`pin:${id}`, () => setThreads((rows) => pinnedFirst(rows.map((row) => (row.id === id ? { ...row, pinned: true } : row))))),
+      unpin: (id) => run(`unpin:${id}`, () => setThreads((rows) => pinnedFirst(rows.map((row) => (row.id === id ? { ...row, pinned: false } : row))))),
+      moveToProject: (id, projectId) => run(`move:${id}:${projectId}`, () => undefined),
+      reorderPinned: (id, beforeId) =>
+        run(`reorder:${id}:${beforeId}`, () =>
+          setThreads((rows) => {
+            const moved = rows.find((row) => row.id === id);
+            if (!moved) return rows;
+            const rest = rows.filter((row) => row.id !== id);
+            const pinned = rest.filter((row) => row.pinned);
+            const at = beforeId === null ? -1 : pinned.findIndex((row) => row.id === beforeId);
+            if (at < 0) pinned.push(moved);
+            else pinned.splice(at, 0, moved);
+            return [...pinned, ...rest.filter((row) => !row.pinned)];
+          })
+        ),
+    }),
+    []
+  );
+  const projectActions = useMemo<ProjectActionAdapter>(
+    () => ({
+      create: (name) =>
+        run(`create:${name}`, () => {
+          created.current += 1;
+          const id = `p${created.current}`;
+          setProjects((rows) => [...rows, { id, name }]);
+        }),
+      rename: (id, name) => run(`rename-project:${id}:${name}`, () => setProjects((rows) => rows.map((row) => (row.id === id ? { ...row, name } : row)))),
+      delete: (id) => run(`delete-project:${id}`, () => setProjects((rows) => rows.filter((row) => row.id !== id))),
+    }),
+    []
+  );
+  return (
+    <main>
+      <h1>Installed list actions</h1>
+      <label>
+        <input type="checkbox" checked={refuse} onChange={(event) => setRefuse(event.target.checked)} /> Refuse commands
+      </label>
+      <output data-testid="lists-log">{log.join('|')}</output>
+      <div data-testid="lists-frame" className="tp-chat" style={{ inlineSize: 'min(20rem, 100%)', border: '1px solid gray', padding: 8 }}>
+        <ThreadList label="Active conversations" threads={threads} onSelect={(id) => setLog((all) => [...all, `select:${id}`])} actions={actions} projects={projects} />
+        <ThreadList label="Archived conversations" threads={archived} onSelect={() => undefined} actions={actions} mode="archived" />
+        <ProjectList label="Projects" projects={projects} onSelect={(id) => setLog((all) => [...all, `select:${id}`])} actions={projectActions} />
+      </div>
+    </main>
+  );
+}
+
+/** Installed math renderer option on Chat. */
+function MathFixture() {
+  const [on, setOn] = useState(true);
+  return (
+    <main>
+      <h1>Installed math</h1>
+      <button type="button" onClick={() => setOn((value) => !value)}>Toggle math</button>
+      <div data-testid="math-frame" style={{ display: 'flex', blockSize: 520, border: '1px solid gray' }}>
+        <Chat session={mathSession} label="Message" math={on ? fixtureMath : undefined} />
+      </div>
+    </main>
+  );
+}
 
 const actionsSession = echoSession();
 

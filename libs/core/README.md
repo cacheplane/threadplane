@@ -27,6 +27,10 @@ portable contract.
 empty string is distinct from absent data. It is not inferred from answer text,
 an execution signal, a duration measurement, or a rich content block model.
 
+`Message.reasoningDurationMs` is the optional measured length of that reasoning in
+milliseconds. A session sets it only when it measured the reasoning; absent means
+unknown, and views must not show a time for it.
+
 Tool contracts pair authored TypeScript argument/result types by name, including
 ordinary interfaces. Pending calls have decoded, finalized arguments awaiting
 execution; partial streamed arguments are not exposed as authored types. `void`

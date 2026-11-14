@@ -86,6 +86,7 @@ export {
 export { Select, type SelectOption, type SelectProps } from './select.js';
 export {
   ThreadList,
+  type ThreadActionAdapter,
   type ThreadListItem,
   type ThreadListProps,
 } from './thread-list.js';
@@ -135,10 +136,7 @@ export {
 export { Chat, type ChatProps } from './chat.js';
 export { ChatError, type ChatErrorProps } from './error.js';
 export { ChatPopup, type ChatPopupProps } from './chat-popup.js';
-export {
-  LauncherButton,
-  type LauncherButtonProps,
-} from './launcher-button.js';
+export { LauncherButton, type LauncherButtonProps } from './launcher-button.js';
 export { ChatWindow, type ChatWindowProps } from './window.js';
 export { ChatSidebar, type ChatSidebarProps } from './chat-sidebar.js';
 export {
@@ -153,6 +151,7 @@ export {
 
 export {
   ProjectList,
+  type ProjectActionAdapter,
   type ProjectListItem,
   type ProjectListProps,
 } from './project-list.js';

@@ -1536,7 +1536,274 @@ export async function runWelcomeScenarios(page, url) {
   assert.ok((await rect(frame.getByText('Echo: Plan a weekend in Lyon'))).bottom <= after.top + 0.5, 'the transcript sits above the composer');
 }
 
+/** Installed math renderer option: inline and display placement, overflow, fallback and switching off. */
+export async function runMathScenarios(page, url) {
+  await page.goto(`${url}/?menu&math`);
+  await expect(page.getByRole('heading', { name: 'Installed math' })).toBeVisible();
+  const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }; });
+  const frame = page.getByTestId('math-frame');
+  const draft = frame.getByRole('textbox', { name: 'Message' });
+  await draft.fill('Inline $x^2$ then $bad$ end.');
+  await page.keyboard.press('Shift+Enter');
+  await page.keyboard.press('Shift+Enter');
+  await draft.pressSequentially('$$');
+  await page.keyboard.press('Shift+Enter');
+  await draft.pressSequentially('a+b');
+  await page.keyboard.press('Shift+Enter');
+  await draft.pressSequentially('$$');
+  await page.keyboard.press('Enter');
+  const reply = frame.locator('.tp-chat-message--assistant').last();
+  await expect(reply).toContainText('Echo: Inline');
+  const inline = reply.locator('span.tp-markdown__math:not(.tp-markdown__math--display)');
+  const display = reply.locator('div.tp-markdown__math--display');
+  await expect(inline).toHaveCount(1);
+  await expect(inline.locator('[data-set="inline"]')).toHaveText('x^2');
+  await expect(display).toHaveCount(1);
+  await expect(display.locator('[data-set="display"]')).toHaveText('a+b');
+  // The formula that failed shows its source; the rest of the message is still typeset.
+  await expect(reply).toContainText('then $bad$ end.');
+  assert.equal((await reply.textContent()).includes('$x^2$'), false, 'typeset math replaces its source');
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `wide display math does not widen the page at ${width}px`);
+    const list = await rect(frame.locator('.tp-chat-list')), block = await rect(display), word = await rect(inline), line = await rect(reply.getByText('Echo: Inline'));
+    assert.ok(block.left >= list.left - 0.5 && block.right <= list.right + 0.5, 'display math stays inside the transcript');
+    assert.equal(await display.evaluate((node) => node.scrollWidth > node.clientWidth), true, 'a wide formula scrolls inside its own block');
+    assert.ok(block.top >= line.bottom - 1, 'display math is a block below the paragraph');
+    assert.ok(word.top >= line.top - 1 && word.bottom <= line.bottom + 1, 'inline math sits in the line of text');
+    assert.equal(await frame.locator('.tp-chat-list').evaluate((node) => node.scrollWidth <= node.clientWidth), true, 'the transcript does not scroll sideways');
+  }
+  // Without a renderer the same message shows its source, and the option can come back.
+  await page.getByRole('button', { name: 'Toggle math' }).click();
+  await expect(frame.locator('.tp-markdown__math')).toHaveCount(0);
+  await expect(reply).toContainText('Inline $x^2$ then $bad$ end.');
+  await expect(reply).toContainText('a+b');
+  await page.getByRole('button', { name: 'Toggle math' }).click();
+  await expect(display.locator('[data-set="display"]')).toHaveText('a+b');
+}
+
 /** Installed built-in message actions: Copy with its Copied state, and the rating. */
+/** Installed merged reasoning: one disclosure per multi-step turn with its step count and total duration. */
+export async function runReasoningRunScenarios(page, url) {
+  await page.goto(`${url}/?menu&reasoning`);
+  await expect(page.getByRole('heading', { name: 'Installed reasoning runs' })).toBeVisible();
+  const frame = page.getByTestId('reasoning-frame');
+  const next = page.getByRole('button', { name: 'Next stage' });
+  const toggles = frame.locator('.tp-reasoning__toggle');
+  const body = frame.getByRole('region', { name: 'Reasoning' });
+  await expect(toggles).toHaveCount(0);
+  // The first step streams: open, and labelled as in progress.
+  await next.click();
+  await expect(toggles).toHaveCount(1);
+  await expect(toggles).toHaveText(/Thinking…$/);
+  await expect(toggles).toHaveAttribute('aria-expanded', 'true');
+  await expect(body).toHaveText('Plan the search.');
+  // A second step after a tool message joins the same disclosure instead of adding one.
+  await next.click();
+  await expect(toggles).toHaveCount(1);
+  await expect(toggles).toHaveText(/Thinking…$/);
+  await expect(body.locator('p')).toHaveText(['Plan the search.', 'Compare the']);
+  // Finished: collapsed, with the total duration and the step count, above the first step.
+  await next.click();
+  await expect(frame.getByText('The answer is 42.')).toBeVisible();
+  await expect(toggles).toHaveCount(1);
+  const toggle = frame.getByRole('button', { name: 'Thought for 4s · 2 steps' });
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(body).toBeHidden();
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `the reasoning disclosure does not widen the page at ${width}px`);
+    const box = await toggle.boundingBox(), answer = await frame.getByText('The answer is 42.').boundingBox();
+    assert.ok(box.height >= 24, 'the disclosure button is at least 24px tall');
+    assert.ok(box.y + box.height <= answer.y, 'the disclosure sits above the answer');
+  }
+  // Keyboard: Enter opens it on both steps' reasoning and closes it again.
+  await toggle.focus();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Shift+Tab');
+  await expect(toggle).toBeFocused();
+  assert.notEqual(await toggle.evaluate((node) => getComputedStyle(node).outlineStyle), 'none', 'the disclosure shows a focus ring');
+  await page.keyboard.press('Enter');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(body.locator('p')).toHaveText(['Plan the search.', 'Compare the sources.']);
+  await page.keyboard.press('Enter');
+  await expect(body).toBeHidden();
+  // Merging off: each step keeps its own disclosure and its own duration.
+  await page.getByRole('checkbox', { name: 'Merge reasoning' }).uncheck();
+  await expect(toggles).toHaveCount(2);
+  await expect(toggles).toHaveText([/Thought for 1s$/, /Thought for 3s$/]);
+}
+
+/** Installed built-in conversation and project commands: menu, inline rename, confirmed delete, rollback and focus. */
+export async function runListActionScenarios(page, url) {
+  await page.goto(`${url}/?menu&lists`);
+  await expect(page.getByRole('heading', { name: 'Installed list actions' })).toBeVisible();
+  const rect = (locator) => locator.evaluate((node) => { const box = node.getBoundingClientRect(); return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width, height: box.height }; });
+  const frame = page.getByTestId('lists-frame');
+  const log = page.getByTestId('lists-log');
+  const refuse = page.getByRole('checkbox', { name: 'Refuse commands' });
+  const active = frame.getByRole('list', { name: 'Active conversations' });
+  const archived = frame.getByRole('list', { name: 'Archived conversations' });
+  const projects = frame.getByRole('list', { name: 'Projects' });
+  const titles = (list, part) => list.locator(`.tp-${part}-list__button`).evaluateAll((nodes) => nodes.map((node) => node.getAttribute('title')));
+  const more = (list, name) => list.getByRole('button', { name: `More actions for ${name}`, exact: true });
+  const menu = page.getByRole('menu');
+  const entries = () => menu.getByRole('menuitem').allTextContents();
+  const long = 'A-conversation-with-an-unbroken-title-that-must-wrap-inside-its-row-and-never-widen-the-page';
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, `list actions do not widen the page at ${width}px`);
+    for (const name of ['Roadmap', long]) {
+      const row = await rect(active.getByRole('button', { name, exact: true })), trigger = await rect(more(active, name)), bounds = await rect(frame);
+      assert.ok(trigger.width >= 24 && trigger.height >= 24, 'the menu button is at least 24px');
+      assert.ok(row.right <= trigger.left + 0.5 && trigger.right <= bounds.right + 0.5, 'the menu button sits after the row inside the list');
+      assert.ok(trigger.top >= row.top - 0.5 && trigger.bottom <= row.bottom + 0.5, 'the menu button shares the row line');
+    }
+  }
+  // Keyboard: the menu opens on its first command and Escape returns to the button.
+  await more(active, 'Draft plan').focus();
+  await page.keyboard.press('Enter');
+  assert.deepEqual(await entries(), ['Rename', 'Pin', 'Move to project', 'Archive', 'Delete']);
+  await expect(menu.getByRole('menuitem', { name: 'Rename' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+  await expect(more(active, 'Draft plan')).toBeFocused();
+  await more(active, 'Roadmap').click();
+  assert.deepEqual(await entries(), ['Rename', 'Unpin', 'Move down', 'Move to project', 'Archive', 'Delete']);
+  await page.keyboard.press('Escape');
+  // Rename: an inline editor, the new title at once, then focus back on the row's menu button.
+  await more(active, 'Draft plan').click();
+  await menu.getByRole('menuitem', { name: 'Rename' }).click();
+  const title = active.getByRole('textbox', { name: 'Conversation title' });
+  await expect(title).toBeFocused();
+  await expect(title).toHaveValue('Draft plan');
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true, 'the rename editor does not widen the page');
+  await title.fill('Final plan');
+  await page.keyboard.press('Enter');
+  await expect(title).toHaveCount(0);
+  assert.deepEqual(await titles(active, 'thread'), ['Roadmap', 'Hiring', 'Final plan', long]);
+  await expect(more(active, 'Final plan')).toBeFocused();
+  await expect(log).toHaveText('rename:t3:Final plan');
+  // A refused rename shows the new title and then the supplied one again.
+  await refuse.check();
+  await more(active, 'Final plan').click();
+  await menu.getByRole('menuitem', { name: 'Rename' }).click();
+  await title.fill('Refused');
+  await page.keyboard.press('Enter');
+  await expect(active.getByRole('button', { name: 'Refused', exact: true })).toBeVisible();
+  await expect(log).toHaveText(/refused:rename:t3:Refused$/);
+  await expect(active.getByRole('button', { name: 'Final plan', exact: true })).toBeVisible();
+  // Escape leaves the editor without a command.
+  await more(active, 'Final plan').click();
+  await menu.getByRole('menuitem', { name: 'Rename' }).click();
+  await page.keyboard.press('Escape');
+  await expect(title).toHaveCount(0);
+  await expect(more(active, 'Final plan')).toBeFocused();
+  await expect(log).toHaveText(/refused:rename:t3:Refused$/);
+  // Delete asks first; Cancel returns to the button, a refused delete brings the row back.
+  await more(active, 'Hiring').click();
+  await menu.getByRole('menuitem', { name: 'Delete' }).click();
+  const dialog = page.getByRole('alertdialog').or(page.getByRole('dialog'));
+  await expect(dialog).toContainText('Delete conversation?');
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(more(active, 'Hiring')).toBeFocused();
+  await more(active, 'Hiring').click();
+  await menu.getByRole('menuitem', { name: 'Delete' }).click();
+  await dialog.getByRole('button', { name: 'Delete' }).click();
+  assert.deepEqual(await titles(active, 'thread'), ['Roadmap', 'Final plan', long]);
+  await expect(log).toHaveText(/refused:delete:t2$/);
+  assert.deepEqual(await titles(active, 'thread'), ['Roadmap', 'Hiring', 'Final plan', long]);
+  await refuse.uncheck();
+  await more(active, 'Hiring').click();
+  await menu.getByRole('menuitem', { name: 'Delete' }).click();
+  await dialog.getByRole('button', { name: 'Delete' }).click();
+  await expect(dialog).toHaveCount(0);
+  // Focus moves to the row after the deleted one.
+  await expect(active.getByRole('button', { name: 'Final plan', exact: true })).toBeFocused();
+  await expect(log).toHaveText(/\|delete:t2$/);
+  assert.deepEqual(await titles(active, 'thread'), ['Roadmap', 'Final plan', long]);
+  // Archive and restore move the row between the application's lists.
+  await more(active, 'Final plan').click();
+  await menu.getByRole('menuitem', { name: 'Archive' }).click();
+  assert.deepEqual(await titles(active, 'thread'), ['Roadmap', long]);
+  await expect(log).toHaveText(/\|archive:t3$/);
+  assert.deepEqual(await titles(archived, 'thread'), ['Old notes', 'Final plan']);
+  await more(archived, 'Final plan').click();
+  assert.deepEqual(await entries(), ['Unarchive', 'Delete']);
+  await menu.getByRole('menuitem', { name: 'Unarchive' }).click();
+  await expect(log).toHaveText(/\|unarchive:t3$/);
+  assert.deepEqual(await titles(active, 'thread'), ['Roadmap', long, 'Final plan']);
+  // Pin, then reorder the pinned rows from the menu.
+  await more(active, 'Final plan').click();
+  await menu.getByRole('menuitem', { name: 'Pin', exact: true }).click();
+  await expect(log).toHaveText(/\|pin:t3$/);
+  assert.deepEqual(await titles(active, 'thread'), ['Roadmap', 'Final plan', long]);
+  await expect(active.locator('.tp-thread-list__pin')).toHaveCount(2);
+  await more(active, 'Final plan').click();
+  assert.deepEqual(await entries(), ['Rename', 'Unpin', 'Move up', 'Move to project', 'Archive', 'Delete']);
+  await menu.getByRole('menuitem', { name: 'Move up' }).click();
+  assert.deepEqual(await titles(active, 'thread'), ['Final plan', 'Roadmap', long]);
+  await expect(log).toHaveText(/\|reorder:t3:t1$/);
+  assert.deepEqual(await titles(active, 'thread'), ['Final plan', 'Roadmap', long]);
+  // Move to project swaps the open menu to the destinations and keeps keyboard focus inside it.
+  await more(active, 'Roadmap').focus();
+  await page.keyboard.press('Enter');
+  await menu.getByRole('menuitem', { name: 'Move to project' }).focus();
+  await page.keyboard.press('Enter');
+  assert.deepEqual(await entries(), ['No project', 'Research', 'Launch']);
+  await expect(menu.getByRole('menuitem', { name: 'No project' })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(menu).toHaveCount(0);
+  await expect(more(active, 'Roadmap')).toBeFocused();
+  await expect(log).toHaveText(/\|move:t1:p1$/);
+  // A right click opens the same menu at the pointer; Escape returns to the row.
+  const row = active.getByRole('button', { name: 'Roadmap', exact: true });
+  const rowBox = await rect(row);
+  await row.click({ button: 'right', position: { x: 20, y: 10 } });
+  await expect(menu).toBeVisible();
+  const menuBox = await rect(menu);
+  assert.ok(Math.abs(menuBox.left - (rowBox.left + 20)) <= 2 && menuBox.top >= rowBox.top + 10 && menuBox.top <= rowBox.top + 20, 'the context menu opens at the pointer');
+  await page.keyboard.press('Escape');
+  await expect(row).toBeFocused();
+  // Projects: create from an inline editor, rename, and delete after confirmation.
+  const create = frame.getByRole('button', { name: '+ New project' });
+  await create.click();
+  const name = projects.getByRole('textbox', { name: 'New project name' });
+  await expect(name).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(name).toHaveCount(0);
+  await expect(create).toBeFocused();
+  await page.keyboard.press('Enter');
+  await name.fill('Field notes');
+  await page.keyboard.press('Enter');
+  await expect(log).toHaveText(/\|create:Field notes$/);
+  assert.deepEqual(await titles(projects, 'project'), ['Research', 'Launch', 'Field notes']);
+  await more(projects, 'Launch').click();
+  assert.deepEqual(await entries(), ['Rename', 'Delete']);
+  await menu.getByRole('menuitem', { name: 'Rename' }).click();
+  const projectName = projects.getByRole('textbox', { name: 'Project name' });
+  await expect(projectName).toHaveValue('Launch');
+  await projectName.fill('Launch week');
+  await page.keyboard.press('Enter');
+  assert.deepEqual(await titles(projects, 'project'), ['Research', 'Launch week', 'Field notes']);
+  await expect(more(projects, 'Launch week')).toBeFocused();
+  await expect(log).toHaveText(/\|rename-project:p2:Launch week$/);
+  await more(projects, 'Research').click();
+  await menu.getByRole('menuitem', { name: 'Delete' }).click();
+  await expect(dialog).toContainText('Delete project?');
+  await dialog.getByRole('button', { name: 'Delete' }).click();
+  await expect(log).toHaveText(/\|delete-project:p1$/);
+  assert.deepEqual(await titles(projects, 'project'), ['Launch week', 'Field notes']);
+  await expect(projects.getByRole('button', { name: 'Launch week', exact: true })).toBeFocused();
+  // The deleted project is no longer a destination.
+  await more(active, 'Roadmap').click();
+  await menu.getByRole('menuitem', { name: 'Move to project' }).click();
+  assert.deepEqual(await entries(), ['No project', 'Launch week', 'Field notes']);
+  await page.keyboard.press('Escape');
+}
+
 export async function runMessageActionScenarios(page, url) {
   await page.goto(`${url}/?menu&actions`);
   await expect(page.getByRole('heading', { name: 'Installed message actions' })).toBeVisible();
@@ -2796,6 +3063,9 @@ export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}
       await runWelcomeScenarios(page, server.url);
       await runRunStatusScenarios(page, server.url);
       await runMessageActionScenarios(page, server.url);
+      await runMathScenarios(page, server.url);
+      await runListActionScenarios(page, server.url);
+      await runReasoningRunScenarios(page, server.url);
       await runPopupShortcutScenarios(page, server.url);
       await runMessageRatingScenarios(page, server.url);
       await runMenuTypeaheadScenarios(page, server.url);

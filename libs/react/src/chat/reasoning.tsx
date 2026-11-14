@@ -7,6 +7,8 @@ import { Markdown } from '../markdown/markdown.js';
 export interface ReasoningProps {
   readonly snapshot: MarkdownSnapshot;
   readonly durationMs?: number;
+  /** How many reasoning steps the document joins; more than one is named in the label. */
+  readonly steps?: number;
   readonly label?: string;
   readonly defaultExpanded?: boolean;
   readonly className?: string;
@@ -16,6 +18,7 @@ export interface ReasoningProps {
 export function Reasoning({
   snapshot,
   durationMs,
+  steps,
   label,
   defaultExpanded = false,
   className,
@@ -41,13 +44,22 @@ export function Reasoning({
   }
   if (content.length === 0) return null;
   const expanded = current.expanded ?? (streaming || defaultExpanded);
+  const several =
+    steps !== undefined && Number.isFinite(steps) && steps > 1
+      ? `${Math.floor(steps)} steps`
+      : undefined;
+  // An unknown duration is left out: "<1s" would read as fast, not unknown.
   const text =
     label ||
     (streaming
       ? 'Thinking…'
       : durationMs === undefined
-      ? 'Show reasoning'
-      : `Thought for ${formatDuration(durationMs)}`);
+      ? several
+        ? `Thought in ${several}`
+        : 'Show reasoning'
+      : `Thought for ${formatDuration(durationMs)}${
+          several ? ` · ${several}` : ''
+        }`);
   return (
     <div className={['tp-reasoning', className].filter(Boolean).join(' ')}>
       <button

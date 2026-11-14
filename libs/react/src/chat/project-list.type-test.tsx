@@ -68,3 +68,18 @@ props.renderActions = () => null;
 <ProjectList {...props} renderActions={(id: string) => id} />;
 // @ts-expect-error Action renderer returns ReactNode.
 <ProjectList {...props} renderActions={() => ({ command: 'rename' })} />;
+
+import type { ProjectActionAdapter } from './index';
+const adapter: ProjectActionAdapter = {
+  create: async (name) => ({ id: name }),
+  rename: (id, name) => void [id.length, name.length],
+  delete: (id) => void id,
+};
+<ProjectList {...props} actions={adapter} />;
+<ProjectList {...props} actions={null} />;
+// @ts-expect-error Commands are readonly.
+adapter.create = undefined;
+// @ts-expect-error Unknown commands are rejected.
+<ProjectList {...props} actions={{ archive: () => undefined }} />;
+// @ts-expect-error Command IDs are strings.
+<ProjectList {...props} actions={{ delete: (id: number) => void id }} />;

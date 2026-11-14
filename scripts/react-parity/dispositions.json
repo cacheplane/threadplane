@@ -18893,6 +18893,45 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/subagent-evidence.ts",
       "reason": "React-only projection from borrowed native child evidence and attributed transcript messages into card data and a root-only transcript. Status follows evidence: a child with no terminal evidence is running only while the application says the root run is active. No session ownership or restore."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadActionAdapter",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-list.tsx",
+      "reason": "Optional readonly application commands for the ThreadList built-in row menu: rename, delete, archive, unarchive, pin, unpin, moveToProject and reorderPinned. Each returns a promise or nothing; the list shows the result while the command runs and returns to the supplied rows when it settles. Pointer drag reordering is not part of the built-in menu."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ProjectActionAdapter",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/project-list.tsx",
+      "reason": "Optional readonly application commands for the ProjectList built-in controls: create from an inline name editor, rename, and confirmed delete. Each returns a promise or nothing; the list shows the result while the command runs and returns to the supplied rows when it settles."
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/optimistic-rows.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/internal/optimistic-rows.ts",
+      "reason": "Private row overrides shared by the ThreadList and ProjectList built-in actions: hidden and renamed rows held while an application command runs and dropped when it settles, plus focus hand-off to a row control after the focused control leaves the document."
+    },
+    {
+      "id": "export:libs/content/src/messages/index.ts#ReasoningRun",
+      "taskIds": [
+        "T23"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral reasoning of one agent turn on its first reasoning row: the Markdown snapshot to show, the number of assistant steps joined across tool messages, and the sum of the steps' measured durations when any was reported. No rendering; the runtimes do not yet measure durations."
     }
   ]
 }
