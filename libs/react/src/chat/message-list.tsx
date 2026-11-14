@@ -78,7 +78,8 @@ export interface MessageListScrollControls {
 export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly rows: readonly TRow[];
   /**
-   * Replace the default row rendering. Must be referentially stable (define it
+   * Replace the default row rendering. The default skips a tool row whose call an earlier row already shows;
+   * a custom renderer receives every row, tool rows included. Must be referentially stable (define it
    * outside the component or wrap it in `useCallback`); a new function each
    * render defeats row memoization and re-renders every row.
    */
@@ -224,6 +225,27 @@ export function repeatsToolFailure(
   );
 }
 const NONE: ReadonlySet<string> = new Set();
+/**
+ * Tool rows whose call an earlier row already shows. That row's activity, or the subagent card in its place,
+ * carries the result, so the default rendering skips the literal tool row instead of printing it twice.
+ * A tool row whose call no earlier row shows keeps its literal row, so no result goes missing.
+ */
+function toolRowsShownElsewhere(
+  rows: readonly MessageRow[]
+): ReadonlySet<string> {
+  const shown = new Set<string>();
+  let hidden: Set<string> | undefined;
+  for (const row of rows) {
+    if (row.role !== 'tool') {
+      for (const call of row.toolCalls) shown.add(call.id);
+      continue;
+    }
+    const answered = row.message.toolCallId;
+    if (answered !== undefined && shown.has(answered))
+      (hidden ??= new Set()).add(row.id);
+  }
+  return hidden ?? NONE;
+}
 const NO_CITATIONS: readonly never[] = [];
 const NO_SUBAGENTS: readonly SubagentInfo[] = Object.freeze([]);
 /** Each row's children by spawning call. Rows without one share a constant so their memo stays stable. */
@@ -598,6 +620,15 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
     () => (toolOutcome ? retryingByRow(rows) : undefined),
     [toolOutcome, rows]
   );
+  // A custom renderMessage owns every row, tool results included.
+  const hidden = useMemo(
+    () => (renderMessage ? NONE : toolRowsShownElsewhere(rows)),
+    [renderMessage, rows]
+  );
+  // Position and the preceding role count only the rows that render.
+  let lastShown = rows.length - 1;
+  while (lastShown >= 0 && hidden.has(rows[lastShown].id)) lastShown--;
+  let prevShownRole: ChatMessageRole | undefined;
   const container = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
@@ -683,35 +714,45 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
         className={['tp-chat-list', className].filter(Boolean).join(' ')}
       >
         <div ref={content}>
-          {rows.map((row, index) => (
-            <Fragment key={row.id}>
-              <Row
-                row={row}
-                current={index === rows.length - 1}
-                prevRole={rows[index - 1]?.role}
-                renderMessage={renderMessage}
-                groupRelatedTools={groupRelatedTools}
-                toolLabel={toolLabel}
-                toolOutcome={toolOutcome}
-                renderToolCall={renderToolCall}
-                renderToolResult={renderToolResult}
-                onToolRetry={onToolRetry}
-                staleRetries={staleRetries?.[index]}
-                subagents={rowSubagents?.[index]}
-                retrying={retrying?.[index]}
-                plan={index === rows.length - 1 ? plan : undefined}
-                onStop={index === rows.length - 1 ? onStop : undefined}
-                running={
-                  running &&
-                  row.toolCalls.some((call) => call.status === 'running')
-                }
-                messageActions={messageActions}
-                math={math}
-                mergeReasoning={mergeReasoning !== false}
-              />
-              {renderApprovalRecords(recordsAfter, row.id)}
-            </Fragment>
-          ))}
+          {rows.map((row, index) => {
+            if (hidden.has(row.id))
+              return (
+                <Fragment key={row.id}>
+                  {renderApprovalRecords(recordsAfter, row.id)}
+                </Fragment>
+              );
+            const prevRole = prevShownRole;
+            prevShownRole = row.role;
+            return (
+              <Fragment key={row.id}>
+                <Row
+                  row={row}
+                  current={index === lastShown}
+                  prevRole={prevRole}
+                  renderMessage={renderMessage}
+                  groupRelatedTools={groupRelatedTools}
+                  toolLabel={toolLabel}
+                  toolOutcome={toolOutcome}
+                  renderToolCall={renderToolCall}
+                  renderToolResult={renderToolResult}
+                  onToolRetry={onToolRetry}
+                  staleRetries={staleRetries?.[index]}
+                  subagents={rowSubagents?.[index]}
+                  retrying={retrying?.[index]}
+                  plan={index === lastShown ? plan : undefined}
+                  onStop={index === lastShown ? onStop : undefined}
+                  running={
+                    running &&
+                    row.toolCalls.some((call) => call.status === 'running')
+                  }
+                  messageActions={messageActions}
+                  math={math}
+                  mergeReasoning={mergeReasoning !== false}
+                />
+                {renderApprovalRecords(recordsAfter, row.id)}
+              </Fragment>
+            );
+          })}
           {renderApprovalRecords(recordsAfter, undefined)}
           <TypingIndicator
             active={typing}
