@@ -1887,3 +1887,59 @@ describe('MessageList', () => {
     expect(scrollTop).toBe(1000);
   });
 });
+
+describe('MessageList typing indicator', () => {
+  const rowsOf = (messages: Message[]) =>
+    createMessageContent().project(snap(messages));
+  const user = msg('u', 'Plan a trip', { role: 'user' });
+  const indicator = (view: { container: HTMLElement }) =>
+    view.container.querySelector('.tp-chat-list .tp-typing-indicator');
+
+  it('follows a waiting last row inside the transcript while running', () => {
+    const view = render(<MessageList rows={rowsOf([user])} running />);
+    const typing = indicator(view);
+    expect(typing?.textContent).toContain('Assistant is typing');
+    expect(typing?.getAttribute('role')).toBe('status');
+    view.rerender(
+      <MessageList rows={rowsOf([user, msg('a', '')])} running />
+    );
+    expect(indicator(view)).not.toBeNull();
+  });
+
+  it('hides once the assistant has text, when not running, and when opted out', () => {
+    const view = render(
+      <MessageList rows={rowsOf([user, msg('a', 'Here is')])} running />
+    );
+    expect(indicator(view)).toBeNull();
+    view.rerender(<MessageList rows={rowsOf([user])} />);
+    expect(indicator(view)).toBeNull();
+    view.rerender(
+      <MessageList rows={rowsOf([user])} running typingIndicator={false} />
+    );
+    expect(indicator(view)).toBeNull();
+  });
+
+  it('takes a label and stays out of the status region when the app already announces progress', () => {
+    const view = render(
+      <MessageList
+        rows={rowsOf([user])}
+        running
+        typingIndicator={{ label: 'Planning', announce: false }}
+      />
+    );
+    const typing = indicator(view);
+    expect(typing?.textContent).toContain('Planning');
+    expect(typing?.getAttribute('role')).toBeNull();
+  });
+
+  it('shows with a custom renderMessage, since it follows the rows rather than rendering one', () => {
+    const view = render(
+      <MessageList
+        rows={rowsOf([user])}
+        running
+        renderMessage={() => <p>custom</p>}
+      />
+    );
+    expect(indicator(view)).not.toBeNull();
+  });
+});
