@@ -78,16 +78,6 @@ h1 {
   border-radius: 16px;
   padding: 24px;
 }
-.seed-prompts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.seed-prompts button {
-  font-size: 0.84rem;
-  background: var(--ds-surface-tinted, light-dark(#f4f7f2, #282828));
-}
 .conversation-empty {
   min-height: 210px;
   padding: 38px 12px;
@@ -107,29 +97,7 @@ h1 {
   font-size: 0.9rem;
   line-height: 1.6;
 }
-.tp-chat-message,
-.tp-chat-message pre:where(:not(.tp-markdown *)),
-.tool-inspection {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-pre:where(:not(.tp-markdown *)) {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  max-width: 100%;
-  font-size: 0.8rem;
-}
-.tp-chat-message--tool {
-  padding: 10px 12px;
-  background: var(--ds-surface-tinted, light-dark(#f4f5f0, #282828));
-  font-size: 0.82rem;
-  border-radius: 8px;
-}
-.tool-inspection {
-  font-size: 0.8rem;
-  margin-top: 10px;
-}
-summary {
+.plan-panel summary {
   cursor: pointer;
   padding: 6px 0;
   overflow-wrap: anywhere;
@@ -295,13 +263,7 @@ progress::-webkit-progress-value {
   min-height: 0;
   overflow: hidden;
 }
-.tp-example.planning-demo .conversation-panel > .tp-chat-list {
-  flex: 1;
-  min-height: 0;
-  max-height: none;
-}
-.tp-example.planning-demo .conversation-panel > :not(.tp-chat-list) { flex-shrink: 0; }
-.tp-example.planning-demo .conversation-empty { flex: 1 1 0; min-height: 0; overflow: auto; }
+
 .tp-example.planning-demo .plan-panel { min-height: 0; overflow: auto; }
 @media (max-width: 720px) {
   .tp-example.planning-demo .planning-layout {

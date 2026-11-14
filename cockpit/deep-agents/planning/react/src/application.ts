@@ -1,4 +1,5 @@
 import type {
+  AgentPlanStep,
   AgentSession,
   AgentSnapshot,
   CompleteOutcome,
@@ -101,6 +102,31 @@ export function createPlanningApplication(client: PlanningClient) {
     disposal: Promise<void> | undefined;
   const listeners = new Set<() => void>(),
     cleanups = new Set<Promise<void>>();
+  /** The core session view `Chat` observes: run status from this owner, messages, calls and the live plan from the thread. */
+  const none = Object.freeze([]) as readonly never[];
+  let livePlan: readonly AgentPlanStep[] | undefined;
+  let agentSnapshot: AgentSnapshot = Object.freeze({
+    status: 'idle',
+    messages: none,
+    toolCalls: none,
+  });
+  function observeAgent() {
+    const status = snapshot.busy ? 'running' : 'idle',
+      previous = agentSnapshot;
+    if (
+      previous.status === status &&
+      previous.messages === snapshot.messages &&
+      previous.toolCalls === snapshot.toolCalls &&
+      previous.plan === livePlan
+    )
+      return;
+    agentSnapshot = Object.freeze({
+      status,
+      messages: snapshot.messages,
+      toolCalls: snapshot.toolCalls,
+      ...(livePlan ? { plan: livePlan } : {}),
+    });
+  }
   const current = (run: Attempt, selected = run.owner) =>
     !disposed &&
     attempt === run &&
@@ -110,6 +136,7 @@ export function createPlanningApplication(client: PlanningClient) {
   function publish(update: Partial<PlanningApplicationSnapshot>) {
     if (disposed) return;
     snapshot = Object.freeze({ ...snapshot, ...update });
+    observeAgent();
     for (const notify of [...listeners]) notify();
   }
   function close(selected: Owner) {
@@ -170,6 +197,8 @@ export function createPlanningApplication(client: PlanningClient) {
     const plan = planState(state.values),
       rows = selected.content.project(state);
     if (!current(run)) return;
+    // Live observation only: the saved plan keeps its own confirmation below.
+    if (state.plan !== undefined) livePlan = state.plan;
     publish({
       rows,
       messages: state.messages,
@@ -399,6 +428,7 @@ export function createPlanningApplication(client: PlanningClient) {
     attempt = undefined;
     const previous = owner;
     owner = undefined;
+    livePlan = undefined;
     publish({ ...empty(), viewGeneration: snapshot.viewGeneration + 1 });
     if (previous) await close(previous);
   }
@@ -413,15 +443,28 @@ export function createPlanningApplication(client: PlanningClient) {
     listeners.clear();
     return (disposal = Promise.all([...cleanups]).then(() => undefined));
   }
+  function subscribe(notify: () => void) {
+    if (disposed) return () => undefined;
+    listeners.add(notify);
+    return () => {
+      listeners.delete(notify);
+    };
+  }
+  /** This owner as a core session for `Chat`. Admission stays here; `Chat` never disposes it. */
+  const agent: AgentSession = Object.freeze({
+    getSnapshot: () => agentSnapshot,
+    subscribe,
+    async submit(text: string) {
+      await submit(text);
+      return snapshot.outcome ?? 'aborted';
+    },
+    stop,
+    dispose: () => Promise.resolve(),
+  });
   return {
     getSnapshot: () => snapshot,
-    subscribe(notify: () => void) {
-      if (disposed) return () => undefined;
-      listeners.add(notify);
-      return () => {
-        listeners.delete(notify);
-      };
-    },
+    subscribe,
+    agent,
     submit,
     stop,
     newConversation,

@@ -36,7 +36,7 @@ for (const width of [375, 1280]) {
       `Dispatch question ${index + 1}: explain the runway, weather, and terrain considerations for this flight.`
     ).join('\n\n'));
     await expect(page.getByText('Response saved.', { exact: true })).toBeVisible();
-    const transcript = page.locator('.conversation-panel > .tp-chat-list');
+    const transcript = page.locator('.conversation-panel .tp-chat > .tp-chat-list');
     const input = page.getByRole('textbox', { name: 'Message' });
     await expect.poll(() => transcript.evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
     const inputBox = await input.boundingBox();
@@ -66,20 +66,21 @@ test.beforeEach(async ({ page, request }) => {
   await configure(request, {});
   await page.goto(base);
 });
-test('mount and suggestion are inert; native live replacement becomes saved with unfinished task', async ({
+test('mount is inert; the welcome suggestion sends and native live replacement becomes saved with unfinished task', async ({
   page,
   request,
 }) => {
   const before = (await (await request.get('/__requests')).json()).length;
   await page.reload();
   await expect(page.getByText('Ready.', { exact: true })).toBeVisible();
+  await expect(page.getByText('Start with what you want to do.')).toBeVisible();
   expect((await (await request.get('/__requests')).json()).length).toBe(before);
+  await configure(request, { holdCheckpoint: true });
   await page
     .getByRole('button', { name: 'Dispatch brief: KSFO to KASE' })
     .click();
-  expect((await (await request.get('/__requests')).json()).length).toBe(before);
-  await configure(request, { holdCheckpoint: true });
-  await page.getByRole('textbox', { name: 'Message' }).press('Enter');
+  // The run replaces the welcome greeting with Chat's default transcript.
+  await expect(page.getByText('Start with what you want to do.')).toHaveCount(0);
   await expect(page.getByText('Confirming saved plan…')).toBeVisible();
   await expect(plan(page).getByText('3 of 4 completed')).toBeVisible();
   await expect(
@@ -232,11 +233,15 @@ test('actual rejected write results remain received tool traces and recover with
     await expect(
       plan(page).getByText('Last saved plan', { exact: true })
     ).toBeVisible();
+    // Chat's default tool rows show the rejected calls and their literal results.
     expect(
-      await page.locator('.tool-inspection > summary').allTextContents()
-    ).toContain('write_todos · result received');
+      (await page.locator('.tp-tool-activity__heading').allTextContents()).some(
+        (text) => text.startsWith('Write todos')
+      )
+    ).toBe(true);
+    await expect(page.locator('.tp-chat-message--tool').last()).not.toBeEmpty();
     expect(
-      (await page.locator('.tool-inspection > summary').allTextContents()).some(
+      (await page.locator('.tp-tool-activity-group').allTextContents()).some(
         (text) => /applied|success/i.test(text)
       )
     ).toBe(false);
@@ -276,8 +281,6 @@ test('mobile, keyboard and reduced motion preserve readable literal plan without
   await page
     .getByRole('button', { name: 'Dispatch brief: KSFO to KASE' })
     .focus();
-  await page.keyboard.press('Enter');
-  await page.getByRole('textbox', { name: 'Message' }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByText('Response saved.')).toBeVisible();
   expect(

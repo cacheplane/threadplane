@@ -33,8 +33,11 @@ async function send(page: Page, text = 'What is the field data for KSFO?') {
   await page.getByRole('textbox', { name: 'Message' }).fill(text);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
 }
+/** The application's own status under the composer; Chat's tool rows keep their own. */
+const status = (page: Page) =>
+  page.locator('.tp-chat-input__footer').getByRole('status');
 async function saved(page: Page) {
-  await expect(page.getByRole('status')).toHaveText('Response saved.', {
+  await expect(status(page)).toHaveText('Response saved.', {
     timeout: 45000,
   });
 }
@@ -76,22 +79,31 @@ async function canonicalCards(page: Page, request: APIRequestContext) {
     .at(-1)?.[2].messages;
   if (!messages) throw Error('Missing actual root events');
   const calls = messages.flatMap((m) => m.tool_calls ?? []);
+  // Chat's default rows: a subagent card in place of each task call, a tool row for any other.
   expect(
     await page
-      .locator('.tool-observation')
-      .evaluateAll((cards) => cards.map((c) => c.getAttribute('data-call-id')))
+      .locator('.tp-subagent-card, .tp-tool-activity')
+      .evaluateAll((rows) =>
+        rows.map(
+          (row) =>
+            row.getAttribute('data-subagent-id') ??
+            row.getAttribute('data-tool-id')
+        )
+      )
   ).toEqual(calls.map((c) => c.id));
   for (const call of calls) {
     const result = messages.find(
       (m) => m.type === 'tool' && m.tool_call_id === call.id
     );
-    if (result)
+    if (result && call.name === 'task')
       await expect(
-        page.locator(`.tool-observation[data-call-id="${call.id}"] pre`).last()
+        page.locator(
+          `.tp-subagent-card[data-subagent-id="${call.id}"] .tp-subagent-card__text`
+        )
       ).toHaveText(result.content);
   }
 }
-test('actual compiled single dispatch and inert draft lifecycle', async ({
+test('actual compiled single dispatch from an inert mount and its welcome suggestion', async ({
   page,
   request,
 }, testInfo) => {
@@ -99,20 +111,18 @@ test('actual compiled single dispatch and inert draft lifecycle', async ({
   const before = await (await request.get('/__requests')).json();
   await page.goto(base);
   await expect(page.getByRole('textbox')).toBeEnabled();
-  await page.getByRole('button', { name: 'Field data for KSFO' }).click();
-  await expect(page.getByRole('textbox')).toHaveValue(
-    'What is the field data for KSFO?'
-  );
   expect(await (await request.get('/__requests')).json()).toEqual(before);
-  await page.reload();
-  await expect(page.getByRole('textbox')).toHaveValue('');
-  await send(page);
+  await page.getByRole('button', { name: 'Field data for KSFO' }).click();
   await saved(page);
+  // The suggestion left with the welcome state once the run began.
+  await expect(
+    page.getByRole('button', { name: 'Field data for KSFO' })
+  ).toHaveCount(0);
   await expect(page.getByLabel('Observed dispatch count')).toHaveText(
     '1 observed task dispatches'
   );
-  await expect(page.locator('.tool-observation')).toHaveCount(1);
-  await expect(page.locator('.tool-observation')).toContainText('KSFO');
+  await expect(page.locator('.tp-subagent-card')).toHaveCount(1);
+  await expect(page.locator('.tp-subagent-card')).toContainText('KSFO');
   await page.getByText('Child response observations', { exact: true }).click();
   await expect(page.locator('.child-observations section')).toHaveCount(1);
   await expect(page.locator('.child-observations')).toContainText('user');
@@ -138,7 +148,7 @@ test('parallel actual native observations survive canonical load and followup', 
   await expect(page.getByLabel('Observed dispatch count')).toHaveText(
     '4 observed task dispatches'
   );
-  await expect(page.locator('.tool-observation')).toHaveCount(4);
+  await expect(page.locator('.tp-subagent-card')).toHaveCount(4);
   await page.getByText('Child response observations', { exact: true }).click();
   await expect(page.locator('.child-observations section')).toHaveCount(4);
   await expect(page.locator('.child-observations')).toContainText(
@@ -191,11 +201,15 @@ for (const [scenario, count] of [
         path: testInfo.outputPath('root-tool-error-desktop.png'),
         fullPage: true,
       });
-      await expect(page.getByText('Tool result: error')).toBeVisible();
-      await expect(page.getByText('Task fields unavailable')).toBeVisible();
+      const failed = page.locator('.tp-subagent-card[data-status="error"]');
+      await expect(failed).toHaveCount(1);
+      await expect(failed).toContainText('Task fields unavailable');
+      await expect(
+        failed.getByText('The specialist returned an error.')
+      ).toBeVisible();
     }
     if (scenario === 'tool-error') {
-      await expect(page.locator('.tool-observation')).toContainText(
+      await expect(page.locator('.tp-subagent-card')).toContainText(
         "Error invoking tool 'lookup_field_elevation'"
       );
       await page
@@ -216,7 +230,7 @@ for (const [scenario, count] of [
       });
     }
     if (scenario === 'duplicates')
-      await expect(page.locator('.tool-observation')).toHaveCount(4);
+      await expect(page.locator('.tp-subagent-card')).toHaveCount(4);
     await canonicalCards(page, request);
     await proof(request, scenario, testInfo);
   });
@@ -233,11 +247,11 @@ test('Stop and New invalidate held delivery without hidden replay', async ({
     page.getByRole('button', { name: 'Stop', exact: true })
   ).toBeVisible();
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('stopped');
+  await expect(status(page)).toContainText('stopped');
   await page.getByRole('button', { name: 'New conversation' }).click();
   await expect(page.getByRole('textbox')).toBeEnabled();
   await request.post('/__release', { data: {} });
-  await expect(page.locator('.tool-observation')).toHaveCount(0);
+  await expect(page.locator('.tp-subagent-card')).toHaveCount(0);
   const requests = (await (await request.get('/__requests')).json()).slice(
     before
   );
@@ -265,14 +279,14 @@ test('active New isolates a held saved checkpoint and cannot resurrect it', asyn
   await configure(request, 'single', { holdCheckpoint: true });
   await page.goto(base);
   await send(page);
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(status(page)).toHaveText(
     'Confirming saved conversation…'
   );
   await page.getByRole('button', { name: 'New conversation' }).click();
   await expect(page.getByRole('textbox')).toBeEnabled();
   await request.post('/__release', { data: {} });
-  await expect(page.locator('.tool-observation')).toHaveCount(0);
-  await expect(page.getByRole('status')).toHaveText('Ready.');
+  await expect(page.locator('.tp-subagent-card')).toHaveCount(0);
+  await expect(status(page)).toHaveText('Ready.');
   await proof(request, 'new-pending-checkpoint', testInfo);
 });
 test('oversized literal draft is rejected without a backend thread', async ({

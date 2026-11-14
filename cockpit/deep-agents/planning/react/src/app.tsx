@@ -1,81 +1,20 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
-import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { ExampleLayout } from '../../../../shared/react-example';
+import { useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
-import {
-  ChatInput,
-  MessageList,
-  Reasoning,
-  ToolObservation,
-} from '@threadplane/react/chat';
-import { Markdown } from '@threadplane/react/markdown';
-import type { MessageRow } from '@threadplane/content/messages';
+import { Chat, WelcomeSuggestion } from '@threadplane/react/chat';
 import {
   createConnectedApplication,
   type PlanningConnection,
 } from './connection';
-import type { PlanningApplicationSnapshot } from './application';
 import { PlanPanel } from './plan-panel';
-const literal = (value: unknown) =>
-  typeof value === 'string' ? value : JSON.stringify(value, null, 2);
-export function renderMessage(
-  row: MessageRow,
-  snapshot: PlanningApplicationSnapshot
-) {
-  const label =
-    row.role === 'user'
-      ? 'You'
-      : row.role === 'assistant'
-      ? 'Assistant'
-      : row.role === 'tool'
-      ? 'Tool result'
-      : 'System';
-  return (
-    <article
-      aria-label={label}
-      className={`tp-chat-message tp-chat-message--${row.role}`}
-    >
-      <p className="tp-chat-message__role">{label}</p>
-      {row.role === 'assistant' && row.reasoning && (
-        <Reasoning snapshot={row.reasoning} />
-      )}
-      {row.role === 'tool' ? (
-        <details>
-          <summary>Tool result received</summary>
-          <pre>{row.message.content}</pre>
-        </details>
-      ) : (
-        <Markdown snapshot={row.markdown} />
-      )}
-      {snapshot.toolCalls
-        .filter((call) => row.message.toolCallIds?.includes(call.id))
-        .map((call) => (
-          <details key={call.id} className="tool-inspection">
-            <summary>
-              {call.name} ·{' '}
-              {call.status === 'complete' ? 'result received' : call.status}
-            </summary>
-            <ToolObservation
-              name={call.name}
-              argumentsText={literal(call.args) ?? ''}
-              resultText={
-                call.status === 'complete'
-                  ? literal(call.result)
-                  : call.status === 'error'
-                  ? call.error
-                  : undefined
-              }
-              label={
-                call.status === 'complete'
-                  ? 'Tool result received; plan confirmation is shown separately.'
-                  : `Observed tool: ${call.status}`
-              }
-            />
-          </details>
-        ))}
-    </article>
-  );
-}
+const SUGGESTIONS = [
+  {
+    label: 'Dispatch brief: KSFO to KASE',
+    value:
+      'Plan a dispatch brief for a flight from KSFO to KASE: check field elevation, runway length, and weather at both ends, then tell me if there is anything the crew should know.',
+  },
+] as const;
 export function connectionFingerprint(connection: PlanningConnection) {
   return JSON.stringify([
     connection.apiUrl,
@@ -95,7 +34,6 @@ export function PlanningDemo(props: Props) {
 }
 function PlanningOwner({ connection, onReady }: Props) {
   const [application] = useState(() => createConnectedApplication(connection)),
-    [draft, setDraft] = useState(''),
     snapshot = useAgent(application);
   useEffect(() => {
     onReady();
@@ -105,10 +43,6 @@ function PlanningOwner({ connection, onReady }: Props) {
       void application.dispose();
     },
     [application]
-  );
-  const renderRow = useCallback(
-    (row: MessageRow) => renderMessage(row, snapshot),
-    [snapshot]
   );
   const currentView = () =>
     application.getSnapshot().viewGeneration === snapshot.viewGeneration;
@@ -134,10 +68,7 @@ function PlanningOwner({ connection, onReady }: Props) {
         <button
           type="button"
           onClick={() => {
-            if (currentView()) {
-              setDraft('');
-              void application.newConversation();
-            }
+            if (currentView()) void application.newConversation();
           }}
         >
           New conversation
@@ -149,86 +80,57 @@ function PlanningOwner({ connection, onReady }: Props) {
       </p>
       <div className="planning-layout">
         <section className="conversation-panel" aria-label="Chat">
-          <div className="seed-prompts" aria-label="Example prompts">
-            {[
-              {
-                label: 'Dispatch brief: KSFO to KASE',
-                text: 'Plan a dispatch brief for a flight from KSFO to KASE: check field elevation, runway length, and weather at both ends, then tell me if there is anything the crew should know.',
-              },
-            ].map((prompt) => (
-              <button
-                key={prompt.label}
-                type="button"
-                disabled={snapshot.busy || !snapshot.canSubmit}
-                onClick={() => {
-                  const current = application.getSnapshot();
-                  if (currentView() && !current.busy && current.canSubmit)
-                    setDraft(prompt.text);
-                }}
-              >
-                {prompt.label}
-              </button>
-            ))}
-          </div>
-          {!snapshot.rows.length && (
-            <div className="conversation-empty">
-              <span aria-hidden="true">↗</span>
-              <h2>Start with what you want to do.</h2>
-              <p>
-                A message creates your conversation. Suggestions just fill the
-                draft.
-              </p>
-            </div>
-          )}
-          <MessageList
-            running={snapshot.busy && snapshot.phase !== 'confirming'}
+          {/*
+            Chat's defaults own the transcript: message rows, tool activity, the
+            plan the agent declared, the typing indicator and the composer. The
+            application is its session, so admission and saved-plan
+            confirmation stay here; a new conversation remounts it.
+          */}
+          <Chat
+            key={`chat:${snapshot.viewGeneration}`}
+            session={application.agent}
+            className="planning-chat"
+            label="Message"
+            placeholder="Ask for a dispatch brief…"
+            hint="Enter to send. Shift+Enter adds a new line."
+            disabled={!snapshot.busy && !snapshot.canSubmit}
+            // The footer status already announces progress.
             typingIndicator={{ announce: false }}
-            key={`messages:${snapshot.viewGeneration}`}
-            rows={snapshot.rows}
-            renderMessage={renderRow}
-            label="Conversation"
+            welcome={{
+              title: (
+                <div className="conversation-empty">
+                  <span aria-hidden="true">↗</span>
+                  <h2>Start with what you want to do.</h2>
+                  <p>A message creates your conversation.</p>
+                </div>
+              ),
+              suggestions: SUGGESTIONS.map((prompt) => (
+                <WelcomeSuggestion
+                  key={prompt.label}
+                  label={prompt.label}
+                  value={prompt.value}
+                  disabled={snapshot.busy || !snapshot.canSubmit}
+                  onSelect={(text) => {
+                    const current = application.getSnapshot();
+                    if (currentView() && !current.busy && current.canSubmit)
+                      void application.submit(text);
+                  }}
+                />
+              )),
+            }}
+            inputFooter={
+              <>
+                {snapshot.error && (
+                  <p role="alert" className="request-error">
+                    {snapshot.error}
+                  </p>
+                )}
+                <p role="status" className="response-status">
+                  {status}
+                </p>
+              </>
+            }
           />
-          <ExampleFooter>
-            {snapshot.error && (
-              <p role="alert" className="request-error">
-                {snapshot.error}
-              </p>
-            )}
-            <ChatInput
-              key={`composer:${snapshot.viewGeneration}`}
-              label="Message"
-              value={draft}
-              onValueChange={(text) => {
-                if (currentView()) setDraft(text);
-              }}
-              placeholder="Ask for a dispatch brief…"
-              hint="Enter to send. Shift+Enter adds a new line."
-              busy={snapshot.busy}
-              disabled={snapshot.busy || !snapshot.canSubmit}
-              onStop={
-                snapshot.busy
-                  ? () => {
-                      if (currentView()) void application.stop();
-                    }
-                  : undefined
-              }
-              onSubmit={(text) => {
-                const current = application.getSnapshot();
-                if (
-                  !currentView() ||
-                  current.busy ||
-                  !current.canSubmit ||
-                  !text.trim()
-                )
-                  return false;
-                void application.submit(text);
-                return currentView() && application.getSnapshot().busy;
-              }}
-            />
-            <p role="status" className="response-status">
-              {status}
-            </p>
-          </ExampleFooter>
         </section>
         <PlanPanel
           observed={snapshot.observedPlan}

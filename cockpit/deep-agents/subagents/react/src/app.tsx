@@ -1,87 +1,64 @@
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The isolated consumer copies this internal example layout.
-import { ExampleFooter, ExampleLayout } from '../../../../shared/react-example';
-import { useCallback, useEffect, useState } from 'react';
+import { ExampleLayout } from '../../../../shared/react-example';
+import { useEffect, useMemo, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
-  ChatInput,
-  ToolObservation,
-  MessageList,
-  Reasoning,
-  Citations,
+  Chat,
+  WelcomeSuggestion,
+  type SubagentInfo,
 } from '@threadplane/react/chat';
-import { Markdown } from '@threadplane/react/markdown';
-import type { MessageRow } from '@threadplane/content/messages';
 import {
   createConnectedApplication,
   type subagentsConnection,
 } from './connection';
 import type { ToolCard } from './projection';
 
-/** Stable row renderer; the application owns Markdown snapshot lifetimes. */
-export function renderMessage(
-  row: MessageRow,
-  cards: readonly ToolCard[] = []
-) {
-  if (row.role === 'tool') return null;
-  if (
-    row.role === 'assistant' &&
-    !row.message.content &&
-    !row.reasoning &&
-    !row.message.citations?.length &&
-    !cards.length &&
-    row.message.toolCallIds?.length
-  )
-    return null;
-  const label =
-    row.role === 'user'
-      ? 'You'
-      : row.role === 'assistant'
-      ? 'Assistant'
-      : 'System';
-  return (
-    <article
-      aria-label={label}
-      className={`tp-chat-message tp-chat-message--${row.role}`}
-    >
-      <p className="tp-chat-message__role">{label}</p>
-      {row.role === 'assistant' && row.reasoning && (
-        <Reasoning snapshot={row.reasoning} />
-      )}
-      <Markdown snapshot={row.markdown} />
-      {cards.map((card) => (
-        <div className="tool-observation" data-call-id={card.id} key={card.id}>
-          <h3>{card.subagentType ?? card.name}</h3>
-          {card.kind === 'task' && card.fields === 'unavailable' && (
-            <p>Task fields unavailable</p>
-          )}
-          {card.description !== undefined && <p>{card.description}</p>}
-          <p>
-            {card.resultStatus === 'error'
-              ? 'Tool result: error'
-              : `Observed delivery: ${card.status}`}
-          </p>
-          <ToolObservation
-            name={card.name}
-            argumentsText={card.argumentsText}
-            resultText={card.resultText}
-            label={
-              card.resultText === undefined
-                ? card.kind === 'task'
-                  ? 'Observed specialist request'
-                  : 'Observed tool request'
-                : card.resultStatus === 'error'
-                ? 'Observed tool error'
-                : card.kind === 'task'
-                ? 'Observed specialist result'
-                : 'Observed tool result'
-            }
-          />
-        </div>
-      ))}
-      {row.role === 'assistant' && row.message.citations && (
-        <Citations citations={row.message.citations} />
-      )}
-    </article>
+const SUGGESTIONS = [
+  {
+    label: 'Brief KASE and KDEN',
+    value:
+      'Brief me on KASE and KDEN: I need field data for both and the current weather at both.',
+  },
+  { label: 'Field data for KSFO', value: 'What is the field data for KSFO?' },
+] as const;
+
+/**
+ * Each observed `task` dispatch as a subagent card in place of its call. The
+ * card shows the parent's literal request and result; child streams are not
+ * linked to individual dispatches, so they stay in their own panel below.
+ */
+export function subagentCards(
+  observations: ReadonlyMap<string, readonly ToolCard[]>
+): readonly SubagentInfo[] {
+  return [...observations.values()].flatMap((cards) =>
+    cards
+      .filter((card) => card.kind === 'task')
+      .map(
+        (card): SubagentInfo => ({
+          id: card.id,
+          toolCallId: card.id,
+          name: card.subagentType ?? card.name,
+          description:
+            card.fields === 'unavailable'
+              ? 'Task fields unavailable'
+              : card.description,
+          status:
+            card.resultStatus === 'error'
+              ? 'error'
+              : card.status === 'complete' ||
+                card.status === 'running' ||
+                card.status === 'pending'
+              ? card.status
+              : 'unknown',
+          messages:
+            card.resultText === undefined
+              ? []
+              : [{ id: `${card.id}:result`, text: card.resultText }],
+          ...(card.resultStatus === 'error'
+            ? { errorSummary: 'The specialist returned an error.' }
+            : {}),
+        })
+      )
   );
 }
 export function SubagentsDemo({
@@ -92,10 +69,10 @@ export function SubagentsDemo({
   readonly onReady: () => void;
 }) {
   const [application] = useState(() => createConnectedApplication(connection));
-  const [draft, setDraft] = useState('');
   const snapshot = useAgent(application);
-  const renderRow = useCallback(
-    (row: MessageRow) => renderMessage(row, snapshot.observations.get(row.id)),
+  // Stable between observations, as MessageList asks of `subagents`.
+  const subagents = useMemo(
+    () => subagentCards(snapshot.observations),
     [snapshot.observations]
   );
   useEffect(() => {
@@ -131,7 +108,6 @@ export function SubagentsDemo({
         <button
           type="button"
           onClick={() => {
-            setDraft('');
             void application.newConversation();
           }}
         >
@@ -144,33 +120,6 @@ export function SubagentsDemo({
         weather. Stop cancels local delivery; it does not roll back backend
         work.
       </p>
-      <div className="seed-prompts" aria-label="Example prompts">
-        {[
-          {
-            label: 'Brief KASE and KDEN',
-            text: 'Brief me on KASE and KDEN: I need field data for both and the current weather at both.',
-          },
-          {
-            label: 'Field data for KSFO',
-            text: 'What is the field data for KSFO?',
-          },
-        ].map((prompt) => (
-          <button
-            key={prompt.label}
-            type="button"
-            disabled={!snapshot.canSubmit || snapshot.busy}
-            onClick={() => {
-              if (
-                application.getSnapshot().canSubmit &&
-                !application.getSnapshot().busy
-              )
-                setDraft(prompt.text);
-            }}
-          >
-            {prompt.label}
-          </button>
-        ))}
-      </div>
       <aside aria-label="Specialist roster">
         field-researcher · weather-analyst
       </aside>
@@ -179,15 +128,7 @@ export function SubagentsDemo({
           ? 'Dispatch observations incomplete'
           : `${snapshot.taskCount} observed task dispatches`}
       </p>
-      <MessageList
-        running={
-          snapshot.activity === 'creating' || snapshot.activity === 'running'
-        }
-        typingIndicator={{ announce: false }}
-        rows={snapshot.rows}
-        renderMessage={renderRow}
-        label="Conversation"
-      />
+      {/* Child streams are not linked to dispatches, so they stay beside the transcript. */}
       {snapshot.childObservations.length > 0 && (
         <details className="child-observations">
           <summary>Child response observations</summary>
@@ -209,35 +150,46 @@ export function SubagentsDemo({
           ))}
         </details>
       )}
-      <ExampleFooter>
-        {snapshot.error && <p role="alert">{snapshot.error}</p>}
-        <ChatInput
-          key={snapshot.viewGeneration}
-          label="Message"
-          value={draft}
-          onValueChange={setDraft}
-          placeholder="Ask about field data or weather…"
-          hint="Enter to send. Shift+Enter adds a new line."
-          busy={snapshot.busy}
-          disabled={!snapshot.canSubmit && !snapshot.busy}
-          onStop={
-            snapshot.busy && snapshot.activity !== 'replacing'
-              ? () => void application.stop()
-              : undefined
-          }
-          onSubmit={(text) => {
-            if (
-              !application.getSnapshot().canSubmit ||
-              application.getSnapshot().busy ||
-              !text.trim()
-            )
-              return false;
-            void application.submit(text);
-            return true;
-          }}
-        />
-        <p role="status">{status}</p>
-      </ExampleFooter>
+      {/*
+        Chat's defaults own the transcript: message rows, tool activity, a
+        subagent card in place of each task call, the typing indicator and the
+        composer. The application is its session, so admission and saved
+        authority stay here; a new conversation remounts it.
+      */}
+      <Chat
+        key={`chat:${snapshot.viewGeneration}`}
+        session={application.agent}
+        className="subagents-chat"
+        label="Message"
+        placeholder="Ask about field data or weather…"
+        hint="Enter to send. Shift+Enter adds a new line."
+        disabled={!snapshot.canSubmit && !snapshot.busy}
+        // The footer status already announces progress.
+        typingIndicator={{ announce: false }}
+        subagents={subagents}
+        welcome={{
+          title: null,
+          suggestions: SUGGESTIONS.map((prompt) => (
+            <WelcomeSuggestion
+              key={prompt.label}
+              label={prompt.label}
+              value={prompt.value}
+              disabled={!snapshot.canSubmit || snapshot.busy}
+              onSelect={(text) => {
+                const current = application.getSnapshot();
+                if (current.canSubmit && !current.busy)
+                  void application.submit(text);
+              }}
+            />
+          )),
+        }}
+        inputFooter={
+          <>
+            {snapshot.error && <p role="alert">{snapshot.error}</p>}
+            <p role="status">{status}</p>
+          </>
+        }
+      />
     </ExampleLayout>
   );
 }

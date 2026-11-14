@@ -73,6 +73,12 @@ export interface ChatProps
   readonly math?: MessageListProps['math'];
   /** One reasoning disclosure per multi-step turn; see `MessageListProps.mergeReasoning`. Defaults to true. */
   readonly mergeReasoning?: MessageListProps['mergeReasoning'];
+  /**
+   * The waiting indicator in the transcript; see `MessageListProps.typingIndicator`. Pass
+   * `{ announce: false }` when the app already announces progress, such as a status in
+   * `inputFooter`, so the run is not read twice.
+   */
+  readonly typingIndicator?: MessageListProps['typingIndicator'];
   /** App-owned content before the draft; see `ChatInputProps.leading`. */
   readonly inputLeading?: ChatInputProps['leading'];
   /** App-owned controls before Stop and Send; see `ChatInputProps.trailing`. */
@@ -126,6 +132,7 @@ export function Chat({
   messageActions,
   math,
   mergeReasoning,
+  typingIndicator,
   welcome,
   runStatus = false,
   ...input
@@ -265,6 +272,7 @@ export function Chat({
         messageActions={messageActions}
         math={math}
         mergeReasoning={mergeReasoning}
+        typingIndicator={typingIndicator}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
             <ScrollBubble
