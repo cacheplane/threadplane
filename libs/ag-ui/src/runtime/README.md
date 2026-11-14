@@ -51,6 +51,45 @@ This module is private source, not a public backend export or a core
 observers and transcript components continue to consume the same native owner;
 no second store or forwarding bag is introduced.
 
+## Core messages and reasoning time
+
+`projectMessages(snapshot, previous?)` is a private, display-only selector from
+the native snapshot to core `Message` values, so views written for core
+snapshots can render an AG-UI conversation:
+
+```ts
+const messages = projectMessages(session.getSnapshot(), previousMessages);
+const rows = content.project({ status, messages, toolCalls: [] });
+```
+
+- Root user and assistant text become messages. System, developer, tool and
+  activity records, child-attributed records and tool calls are not projected in
+  this slice, and an assistant record with neither text nor reasoning is left out.
+- The protocol sends reasoning as its own records. Each is attached to the next
+  assistant record as that message's `reasoning`; several before one assistant
+  are joined by blank lines. Reasoning with no assistant record after it yet is
+  shown as an assistant message under the reasoning record's ID, so that row's
+  ID changes when the answer record arrives.
+- While the session runs, the message built from the last root record is
+  streaming. Every other message is complete, with the run's outcome for the
+  last message of the latest turn and success otherwise. Each message uses its
+  own ID as its delivery generation.
+- Unchanged messages, and an unchanged list, keep their references when the
+  previous result is passed.
+
+The session measures how long each root reasoning message took to arrive, from
+`REASONING_MESSAGE_START` to `REASONING_MESSAGE_END` on the local clock, and
+publishes it as `snapshot.reasoningDurations` by message ID. The selector adds
+up the times of the records it attaches into `Message.reasoningDurationMs`. The
+field is absent, never zero, when nothing was measured: restored history, a
+messages snapshot, and reasoning whose end event never arrived. A network stall
+counts as reasoning time. Child reasoning is not timed. The native transcript
+and the request history are unchanged; reasoning records are still sent back as
+the protocol requires.
+
+This selector is not exported from the candidate package entry and does not make
+the owner a core `AgentSession`.
+
 ## Interruption evidence
 
 Both `createSession` and standalone `createRun` default to

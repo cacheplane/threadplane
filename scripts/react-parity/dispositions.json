@@ -18943,6 +18943,29 @@
       "status": "in-progress",
       "reason": "Private arrival-time measurement of root assistant reasoning at publication: from the first publication with reasoning and nothing else to the first with text, a tool call or a completed delivery, published as Message.reasoningDurationMs.",
       "note": "Reasoning first seen already settled (saved history, or delivered whole) stays unmeasured. Nothing is stored, so a new session knows no durations. Subgraph messages are not timed. Rich blocks, event-only retention and full T09/T15 parity remain open."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/message-projection.ts",
+      "taskIds": [
+        "T12",
+        "T14",
+        "T23"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private pure display selection of the root transcript into core messages: user and assistant text, reasoning records attached to the assistant record after them, measured reasoning time and a delivery phase; full native history and command ownership remain unchanged.",
+      "note": "Covered by runtime specs and a React MessageList integration spec. Not exported from the candidate package entry. Tool calls, tool and system records, child records, citations, a core AgentSession over the native owner and rich legacy migration remain incomplete."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/reasoning-clock.ts",
+      "taskIds": [
+        "T12",
+        "T14"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private arrival-time measurement of root reasoning messages between their start and end events, published as the session snapshot's reasoningDurations by message ID.",
+      "note": "Restored reasoning, reasoning without an end event and child reasoning stay unmeasured. Nothing is stored or sent."
     }
   ]
 }
