@@ -157,7 +157,6 @@ for (const mode of [
   'Unknown tool',
   'Malformed args',
   'Malformed weather',
-  'Unstable result identity',
   'Legacy notice',
   'Notice EOF',
   'EOF',
@@ -188,6 +187,47 @@ for (const mode of [
     await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
   });
 }
+test('a result saved under another identity keeps its card and its place in the next request', async ({
+  page,
+  request,
+}) => {
+  // The stream names the result after its call; the final snapshot saves it
+  // under another identifier, as graph backends do.
+  await page.goto('/ag-ui/tool-views/react/');
+  await send(page, 'Unstable result identity');
+  await expect(
+    page.getByRole('status', { name: 'Conversation status' })
+  ).toHaveText('Response complete.');
+  await expect(rows(page)).toHaveCount(3);
+  await expect(page.locator('[data-weather-tool]')).toHaveCount(1);
+  await expect(page.locator('.weather-card h3')).toHaveCount(1);
+  await expect(rows(page).last()).toContainText(
+    'Reply to Unstable result identity'
+  );
+  await send(page, 'Zero');
+  await expect(
+    page.getByRole('status', { name: 'Conversation status' })
+  ).toHaveText('Response complete.');
+  const requests = await (await request.get('/__requests')).json();
+  expect(requests).toHaveLength(2);
+  const history: {
+    id: string;
+    role: string;
+    toolCallId?: string;
+    toolCalls?: { id: string }[];
+  }[] = requests[1].body.messages;
+  expect(history.map((message) => message.role)).toEqual([
+    'user',
+    'assistant',
+    'tool',
+    'assistant',
+    'user',
+  ]);
+  expect(history[2].id).toBe(`graph-${history[2].toolCallId}`);
+  expect(history[1].toolCalls?.map((call) => call.id)).toEqual([
+    history[2].toolCallId,
+  ]);
+});
 test('mobile literal tool fields stay inert', async ({ page, request }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/ag-ui/tool-views/react/');
