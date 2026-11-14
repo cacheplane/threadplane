@@ -208,18 +208,19 @@ test('reload clears an unsent React draft without runtime requests', async ({
   expect(observations.get(page)?.requests).toEqual(before);
 });
 
-test('the aviation suggestion fills an exact inert draft', async ({ page }) => {
+test('the aviation suggestions are offered on an inert mount', async ({ page }) => {
   await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });
   await emptyRun(page);
   const frame = page.frameLocator('iframe');
-  await frame
-    .getByRole('button', { name: 'Dispatch brief: KSFO to KASE', exact: true })
-    .click();
-  await expect(frame.getByLabel('Message', { exact: true })).toHaveValue(
-    'Plan a dispatch brief for a flight from KSFO to KASE: check field elevation, runway length, and weather at both ends, then tell me if there is anything the crew should know.'
-  );
+  // Selecting a suggestion sends it; the example's own e2e covers that run.
+  await expect(
+    frame.getByRole('button', {
+      name: 'Dispatch brief: KSFO to KASE',
+      exact: true,
+    })
+  ).toBeVisible();
   await frame
     .getByRole('button', { name: 'New conversation', exact: true })
     .click();
