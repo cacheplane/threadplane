@@ -5,11 +5,16 @@ import type {
   A2uiValidationErrorMessage,
   A2uiValue,
 } from '@threadplane/content/a2ui';
+import type { ReactNode } from 'react';
+import type { MessageA2uiContent } from '../chat/index.js';
 import type { ReactRenderRegistry } from '../render/index.js';
 import {
+  A2uiMessageSurfaces,
   A2uiSurface,
   a2uiBasicCatalog,
   useA2uiSurfaceWriter,
+  type A2uiMessageContent,
+  type A2uiMessageSurfacesProps,
   type A2uiSurfaceProps,
   type A2uiSurfaceWriter,
 } from './index.js';
@@ -128,3 +133,45 @@ writer.write('/x', 1);
 writer.write(undefined, 'ignored');
 // @ts-expect-error The channel is readonly.
 writer.editable = true;
+
+export type MessageContentContract = Assert<
+  Equal<
+    A2uiMessageContent,
+    {
+      readonly messageId?: string;
+      readonly source: string;
+      readonly streaming: boolean;
+      readonly skeleton?: ReactNode;
+    }
+  >
+>;
+export type MessageSurfacesPropsContract = Assert<
+  Equal<
+    { [K in keyof A2uiMessageSurfacesProps]: A2uiMessageSurfacesProps[K] },
+    { readonly content: A2uiMessageContent } & Pick<
+      A2uiSurfaceProps,
+      'onAction' | 'onValidationError' | 'functions' | 'catalog' | 'className'
+    > extends infer T
+      ? { [K in keyof T]: T[K] }
+      : never
+  >
+>;
+declare const fromTranscript: MessageA2uiContent;
+// What `renderA2ui` receives is the content this component takes.
+<A2uiMessageSurfaces content={fromTranscript} />;
+<A2uiMessageSurfaces
+  content={{ source: '', streaming: false }}
+  onAction={(message) => void message.action.name}
+  onValidationError={(error) => void error.error.code}
+  functions={{ open: (args) => void args['url'] }}
+  catalog={a2uiBasicCatalog()}
+  className="mine"
+/>;
+// @ts-expect-error The content is required.
+<A2uiMessageSurfaces />;
+// @ts-expect-error The source is text, not parsed envelopes.
+<A2uiMessageSurfaces content={{ source: [], streaming: false }} />;
+// @ts-expect-error The component owns its store; it takes none.
+<A2uiMessageSurfaces content={fromTranscript} surfaces={undefined} />;
+// @ts-expect-error It renders every surface of the message; it takes no single one.
+<A2uiMessageSurfaces content={fromTranscript} surface={surface} />;
