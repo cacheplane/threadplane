@@ -1,4 +1,11 @@
-import { Fragment } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
 import {
   evaluateVisibility,
   getByPath,
@@ -13,15 +20,28 @@ import type { RenderSpecProps, RenderValue } from './types.js';
 import { ownRenderValue } from './values.js';
 import { ownRenderFunctions } from './functions.js';
 import { ReadinessGate } from './readiness.js';
-import type { RenderReadinessEntry, RenderViewProps } from './types.js';
+import type {
+  RenderReadinessEntry,
+  RenderStore,
+  RenderViewProps,
+} from './types.js';
+import {
+  checkRenderHandlers,
+  dispatchElementEvent,
+  type Interaction,
+} from './interaction.js';
 
 const EMPTY_STATE = Object.freeze({});
+const NO_STORE = Object.freeze({});
+const noSubscription = () => () => undefined;
 interface ElementProps
-  extends Omit<RenderSpecProps, 'spec' | 'state' | 'functions'> {
+  extends Pick<RenderSpecProps, 'registry' | 'loading' | 'fallback'> {
   readonly spec: NonNullable<RenderSpecProps['spec']>;
   readonly elementKey: string;
   readonly context: PropResolutionContext;
   readonly ancestors: ReadonlySet<string>;
+  readonly interaction: Interaction;
+  readonly writable: boolean;
 }
 function repeatKey(
   item: unknown,
@@ -48,6 +68,8 @@ function Element({
   fallback,
   context,
   ancestors,
+  interaction,
+  writable,
 }: ElementProps) {
   if (ancestors.has(elementKey) || !Object.hasOwn(spec.elements, elementKey))
     return null;
@@ -89,6 +111,8 @@ function Element({
         fallback={fallback}
         context={childContext}
         ancestors={nextAncestors}
+        interaction={interaction}
+        writable={writable}
       />
     ));
   let children;
@@ -121,12 +145,29 @@ function Element({
   } else {
     children = childrenFor(context);
   }
+  const on = element.on;
   const view: RenderViewProps = {
     props,
     bindings: bindings ? Object.freeze({ ...bindings }) : undefined,
     elementKey,
     loading,
     children,
+    emit: (event, payload) =>
+      dispatchElementEvent(interaction, on, event, context, payload),
+    set: writable
+      ? (path, value) => {
+          if (interaction.alive())
+            interaction.store()?.set(path, ownRenderValue(value));
+        }
+      : undefined,
+    result: (value) => {
+      if (interaction.alive())
+        interaction.report({
+          type: 'result',
+          value: ownRenderValue(value),
+          elementKey,
+        });
+    },
   };
   if (
     Object.hasOwn(entry, 'kind') &&
@@ -143,18 +184,63 @@ function Element({
   return <Component {...view} />;
 }
 
-/** Present a caller-prepared read-only tree; application code owns validation and state. */
+/**
+ * Present a caller-prepared tree. Application code owns validation, state and actions: the spec
+ * names actions in its `on` bindings, and only `handlers` the application supplies run. With a
+ * `store`, views can write state; with `state`, the tree is read-only.
+ */
 export function RenderSpec({
   spec,
   registry,
-  state = EMPTY_STATE,
+  state,
+  store,
   functions,
   loading,
   fallback,
+  handlers,
+  onEvent,
 }: RenderSpecProps) {
+  if (state !== undefined && store !== undefined)
+    throw new TypeError('RenderSpec takes state or a store, not both.');
+  checkRenderHandlers(handlers);
+  // Actions read the handlers, store and listener of the latest render.
+  const latest = useRef({ handlers, store, onEvent });
+  latest.current = { handlers, store, onEvent };
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const interaction = useMemo<Interaction>(
+    () => ({
+      handler: (action) => {
+        const map = latest.current.handlers;
+        return map && Object.hasOwn(map, action) ? map[action] : undefined;
+      },
+      store: () => latest.current.store,
+      report: (event) => latest.current.onEvent?.(event),
+      alive: () => mounted.current,
+    }),
+    []
+  );
+  const subscribe = useCallback(
+    (notify: () => void) =>
+      store ? store.subscribe(notify) : noSubscription(),
+    [store]
+  );
+  const read = useCallback(
+    () => (store ? store.getSnapshot() : NO_STORE),
+    [store]
+  );
+  const snapshot = useSyncExternalStore(subscribe, read, read);
+  useStateChangeEvents(store, interaction);
   if (!spec) return null;
   // Keep resolver reads on owned plain data, including absent prototype-named paths.
-  const stateModel = ownRenderValue(state) as Record<string, unknown>;
+  const stateModel = ownRenderValue(
+    store ? snapshot : state ?? EMPTY_STATE
+  ) as Record<string, unknown>;
   return (
     <Element
       spec={spec}
@@ -164,6 +250,29 @@ export function RenderSpec({
       fallback={fallback}
       context={{ stateModel, functions: ownRenderFunctions(functions) }}
       ancestors={new Set()}
+      interaction={interaction}
+      writable={store !== undefined}
     />
   );
+}
+
+/** Reports each store write as a `stateChange` event while the tree is mounted. */
+function useStateChangeEvents(
+  store: RenderStore | undefined,
+  interaction: Interaction
+) {
+  useEffect(() => {
+    if (!store) return;
+    return store.subscribe(() => {
+      if (!interaction.alive()) return;
+      const snapshot = store.getSnapshot();
+      const change = store.lastChange?.();
+      interaction.report({
+        type: 'stateChange',
+        path: change?.path ?? '/',
+        value: change ? change.value : snapshot,
+        snapshot,
+      });
+    });
+  }, [store, interaction]);
 }

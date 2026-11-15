@@ -472,7 +472,7 @@ describe('RenderSpec', () => {
         root: {
           type: 'Text',
           props: { text: { $state: '/text' } },
-          on: { press: { action: command } },
+          on: { press: { action: 'command' } },
           watch: { '/text': { action: command } },
         },
       },

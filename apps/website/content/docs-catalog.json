@@ -662,7 +662,7 @@
       },
       "react": {
         "source": "react/render/guides/events.mdx",
-        "description": "Handle React controls in application code while RenderSpec reads supplied state and prepared data."
+        "description": "Run application actions from a spec's on bindings, write bound inputs to a store, and observe what the rendered tree did."
       }
     }
   },

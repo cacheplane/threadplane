@@ -34,6 +34,8 @@ export function DestinationPreview() {
 
 The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
+To let controls inside the rendered tree edit values, pass a writable `store`, such as the owner from `createRenderState`, instead of `state`. [Events](/docs/react/render/guides/events) shows bound inputs writing through `set` and actions updating the store.
+
 ## Edit local state
 
 Choose **Run**, select **User Profile**, **Nested Paths** or **Form Display**, and press **Finish**. **Name**, **Age** and **Theme** sit outside the rendered tree and update its visible values. Age accepts whole numbers from 0 to 150; an invalid draft keeps the last valid value until you correct it. Theme changes the displayed preference. Reloading restores Alice, age 30, and Dark.

@@ -36,7 +36,7 @@ Changing registry mode does not rewrite the JSON or move playback. Your choice s
 
 The host owns two stable frozen maps: the complete Heading, Text, Card and Badge registry, and a map with Badge omitted. RenderSpec receives the selected registry and the optional fallback. React uses a plain map of view components; this preview does not require Angular registry helpers.
 
-A registered view receives read-only resolved props, elementKey, loading and children. Heading and Card display the children supplied by RenderSpec exactly once. Text and Badge are leaves. The authored fallback displays a literal label and uses the same loading flag. It is intentionally demonstrated only for the known Badge type omitted from the selected map.
+A registered view receives read-only resolved props, elementKey, loading and children. It also receives `emit` to fire the element's `on` bindings, `result` to report a value, and `set` when RenderSpec has a writable store; see [Events](/docs/react/render/guides/events). Heading and Card display the children supplied by RenderSpec exactly once. Text and Badge are leaves. The authored fallback displays a literal label and uses the same loading flag. It is intentionally demonstrated only for the known Badge type omitted from the selected map.
 
 <ExampleCode file="cockpit/render/registry/react/src/views.tsx" />
 

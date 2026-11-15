@@ -1,65 +1,175 @@
 ---
 title: Events
-description: Handle React controls in application code while RenderSpec reads supplied state and prepared data.
+description: Run application actions from a spec's on bindings, write bound inputs to a store, and observe what the rendered tree did.
 ---
 
 # Handle render interactions
 
-React Render currently has no specification-driven action dispatcher or `onAction` prop. Its supported interaction boundary is ordinary React event handling owned by the application.
+A spec names actions in an element's `on` property. A registered view calls `emit` when the user interacts, and `RenderSpec` runs the matching action from the `handlers` you supply. The spec can only name actions; nothing runs unless your application provides it.
 
-These APIs are experimental, private source-build packages. Do not translate Angular event-forwarding examples into an invented React render API.
+These APIs are experimental, private source-build packages.
 
-## Follow an actual state change
+## Name an action in the spec
 
-The [Element Rendering example](/docs/react/render/guides/element-rendering) places a **Show detail** checkbox outside the generated tree. In `app.tsx`, its `onChange` calls the supplied `onShowDetailChange` callback.
+The `on` property maps an event name to one action binding, or to a list that runs in order:
 
-The client composition in `main.tsx` handles that callback by calling the owned render state's `set('/showDetail', value)`. The view observes the state snapshot and passes it to `RenderSpec`. Visibility reads the next supplied value.
+```tsx
+import type { RenderSpecData } from '@threadplane/react/render';
 
-That path is explicit: user action, owner update, new snapshot, new rendering. Playback and sample changes do not overwrite the user's visibility choice.
-
-## Keep executable behavior in authored code
-
-This private source-build client component keeps the control outside the generated tree and supplies the next state explicitly:
-
-~~~tsx
-import { useState } from 'react';
-import {
-  RenderSpec,
-  type ReactRenderRegistry,
-  type RenderSpecData,
-} from '@threadplane/react/render';
-
-const registry: ReactRenderRegistry = {
-  Text: ({ props }) => <p>{String(props['text'] ?? '')}</p>,
-};
 const spec: RenderSpecData = {
-  root: 'destination',
+  root: 'save',
   elements: {
-    destination: { type: 'Text', props: { text: { $state: '/destination' } } },
+    save: {
+      type: 'Button',
+      props: { label: 'Save trip' },
+      on: {
+        press: { action: 'saveTrip', params: { destination: { $state: '/destination' } } },
+      },
+    },
+  },
+};
+```
+
+Each binding is an `ActionBinding` from `@json-render/core`:
+
+| Field | What it does |
+|-------|--------------|
+| `action` | The name looked up in `handlers`. A name you did not supply does nothing. |
+| `params` | Values resolved like element props, in the element's own repeat row, then passed to the action. |
+| `confirm` | Asks the user with the browser's confirmation dialog first; the action is skipped when they decline. |
+| `onSuccess` | After the action returns or its promise resolves: `set` values in the store, run another `action`, or `navigate` to an http, https or relative address. |
+| `onError` | After the action throws or rejects: `set` values (`'$error.message'` becomes the error's message) or run another `action`. Without `onError`, a thrown error reaches the view. |
+
+`preventDefault` is not applied for you. Event payloads are plain data, so a view that needs it calls `event.preventDefault()` itself.
+
+## Emit from a registered view
+
+Every registered view receives `emit`. Call it with the event name, and optionally a plain-data payload that is merged over the resolved params:
+
+```tsx
+import type { RenderViewProps } from '@threadplane/react/render';
+
+export function Button({ props, emit }: RenderViewProps) {
+  return (
+    <button type="button" onClick={() => emit?.('press')}>
+      {String(props['label'] ?? '')}
+    </button>
+  );
+}
+```
+
+`emit` is undefined for a readiness fallback, so a placeholder cannot act before the real view mounts. A payload that is not plain data, such as a DOM event or a function, is rejected with a `TypeError`.
+
+## Supply the actions
+
+Pass the actions as `handlers`. Each receives the resolved params as frozen plain data and may return a promise:
+
+```tsx
+import { RenderSpec, type ReactRenderHandlers } from '@threadplane/react/render';
+
+const handlers: ReactRenderHandlers = {
+  saveTrip: async ({ destination }) => {
+    await saveTrip(String(destination));
   },
 };
 
-export function DestinationControl() {
-  const [destination, setDestination] = useState('Portland');
+export function Trip() {
+  return <RenderSpec spec={spec} registry={registry} state={{ destination: 'Lisbon' }} handlers={handlers} />;
+}
+```
+
+A press always runs the handlers of the latest render, so you can pass a new map without remounting the views.
+
+## Let bound inputs write state
+
+With read-only `state`, views receive no `set` and the tree cannot change your data. Pass a `store` instead, such as the owner from `createRenderState`, and views receive `set`. An input bound with `$bindState` writes to the path in its `bindings`. This complete example saves the edited destination through an action:
+
+~~~tsx
+import { createRenderState } from '@threadplane/content/render-state';
+import {
+  RenderSpec,
+  type ReactRenderHandlers,
+  type ReactRenderRegistry,
+  type RenderSpecData,
+  type RenderViewProps,
+} from '@threadplane/react/render';
+
+function Field({ props, bindings, set }: RenderViewProps) {
   return (
-    <>
-      <input
-        aria-label="Destination"
-        value={destination}
-        onChange={(event) => setDestination(event.target.value)}
-      />
-      <RenderSpec spec={spec} registry={registry} state={{ destination }} />
-    </>
+    <input
+      aria-label={String(props['label'] ?? '')}
+      value={String(props['value'] ?? '')}
+      readOnly={set === undefined}
+      onChange={(event) => {
+        const path = bindings?.['value'];
+        if (path) set?.(path, event.target.value);
+      }}
+    />
   );
+}
+
+function Button({ props, emit }: RenderViewProps) {
+  return (
+    <button type="button" onClick={() => emit?.('press')}>
+      {String(props['label'] ?? '')}
+    </button>
+  );
+}
+
+function Form({ children }: RenderViewProps) {
+  return <form onSubmit={(event) => event.preventDefault()}>{children}</form>;
+}
+
+const registry: ReactRenderRegistry = { Button, Field, Form };
+const spec: RenderSpecData = {
+  root: 'form',
+  elements: {
+    form: { type: 'Form', props: {}, children: ['destination', 'save'] },
+    destination: {
+      type: 'Field',
+      props: { label: 'Destination', value: { $bindState: '/destination' } },
+    },
+    save: {
+      type: 'Button',
+      props: { label: 'Save trip' },
+      on: {
+        press: {
+          action: 'saveTrip',
+          params: { destination: { $state: '/destination' } },
+          onSuccess: { set: { '/saved': true } },
+        },
+      },
+    },
+  },
+};
+const store = createRenderState({ destination: 'Lisbon', saved: false });
+const handlers: ReactRenderHandlers = {
+  saveTrip: async ({ destination }) => {
+    await fetch('/api/trips', { method: 'POST', body: JSON.stringify({ destination }) });
+  },
+};
+
+export function TripEditor() {
+  return <RenderSpec spec={spec} registry={registry} store={store} handlers={handlers} />;
 }
 ~~~
 
-Your own registered React components can use ordinary React handlers and application context. Their commands remain your application's responsibility. RenderSpec supplies data props, binding paths, child views, element identity, and loading information; it supplies no automatic state writer or tool executor.
+`RenderSpec` reads the store's snapshot and renders again when it changes. `onSuccess` and `onError` `set` follow-ups write to the same store. Pass `state` or `store`, not both.
 
-Do not put callback functions in a specification's raw props. The renderer accepts plain data and rejects executable values. A `bindings` path tells an authored view where data came from; it does not write to that path automatically.
+## Observe what happened
 
-## Admit commands separately
+`onEvent` receives a notification when an action runs, when the store changes, and when a view reports a value through `result`:
 
-If a control eventually requests a tool, submission, or persistent change, validate the intent at the application owner. Rendering, visibility evaluation, and computed functions must remain free of those effects.
+| `type` | Fields |
+|--------|--------|
+| `'handler'` | `action`, `params`, and `result`: what the action returned, or what its promise resolved to |
+| `'stateChange'` | `path`, `value`, and the whole `snapshot` after the write |
+| `'result'` | `value` and the `elementKey` of the view that reported it |
 
-See [State Store](/docs/react/render/guides/state-store) for editable local values and [Lifecycle](/docs/react/render/guides/lifecycle) for retiring work. Forms, action providers, and watch effects are outside this private React entry.
+```tsx
+<RenderSpec spec={spec} registry={registry} store={store} handlers={handlers} onEvent={(event) => console.log(event)} />
+```
+
+Once the tree unmounts, a late promise no longer writes the store, runs follow-ups, or reports events.
+
+See [State Store](/docs/react/render/guides/state-store) for read-only state owned by React, and [Lifecycle](/docs/react/render/guides/lifecycle) for retiring work.

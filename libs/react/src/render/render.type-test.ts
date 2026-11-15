@@ -7,7 +7,12 @@ import type {
   ReactRenderFunctions,
   RenderComputedFunction,
   RenderValue,
+  ReactRenderHandlers,
+  RenderActionHandler,
+  RenderEvent,
+  RenderStore,
 } from './index.js';
+import type { RenderState } from '@threadplane/content/render-state';
 import { RenderSpec } from './index.js';
 import type { Json } from '@threadplane/content/json';
 
@@ -82,11 +87,44 @@ export function readonlyContracts(
     // @ts-expect-error raw props carry JSON data, not executable callbacks
     props: { callback: () => 1 },
   };
-  // @ts-expect-error actions are not automatic renderer capabilities
-  const handlers: RenderSpecProps = { spec, registry, handlers: {} };
+  // @ts-expect-error handlers are functions, not data
+  const handlers: RenderSpecProps = { spec, registry, handlers: { save: 1 } };
   // @ts-expect-error schema validation is caller owned
   const schema: RenderSpecProps = { spec, registry, schema: {} };
-  // @ts-expect-error view does not execute spec events
+  // @ts-expect-error a readiness fallback receives no emit, so views must check for it
   props.emit('press');
+  props.emit?.('press', { id: 'a' });
+  // @ts-expect-error event payloads are plain data
+  props.emit?.('press', { run: () => 1 });
+  // @ts-expect-error written values are plain data
+  props.set?.('/x', new Date());
   return { callback, handlers, schema };
+}
+
+export function interactionContracts(store: RenderStore, owner: RenderState) {
+  const actions: ReactRenderHandlers = {
+    save: (params) => String(params['name']),
+    load: async () => 1,
+  };
+  RenderSpec({
+    spec,
+    registry,
+    handlers: actions,
+    onEvent: (event: RenderEvent) => event.type,
+  });
+  RenderSpec({ spec, registry, store });
+  // The shared render-state owner is a store.
+  RenderSpec({ spec, registry, store: owner });
+  // @ts-expect-error state and store are alternatives
+  RenderSpec({ spec, registry, store, state: {} });
+  const action: RenderActionHandler = (params) => {
+    // @ts-expect-error action params are owned readonly data
+    params['changed'] = 1;
+  };
+  const element: RenderElementData = {
+    type: 'Button',
+    props: {},
+    on: { press: [{ action: 'save', params: { id: { $state: '/id' } } }] },
+  };
+  return { action, element };
 }

@@ -27,4 +27,4 @@ Continue with [registry](/docs/react/render/guides/registry), [state](/docs/reac
 
 The application validates untrusted data and owns parsing, asynchronous work, and disposal. RenderSpec's plain-data checks are not application-schema validation.
 
-This React entry has no specification action dispatcher, form provider, or watch-effect executor. [Events](/docs/react/render/guides/events) explains the supported application-owned controls. [Lifecycle](/docs/react/render/guides/lifecycle) follows parser and view lifetime. These client-side guides do not claim server rendering, hydration, or full Angular Render parity.
+A spec can name actions in its `on` bindings, and only the `handlers` your application supplies run; with a writable `store`, bound inputs can edit state. This React entry has no form provider or watch-effect executor. [Events](/docs/react/render/guides/events) explains actions, the store, and `onEvent`. [Lifecycle](/docs/react/render/guides/lifecycle) follows parser and view lifetime. These client-side guides do not claim server rendering, hydration, or full Angular Render parity.

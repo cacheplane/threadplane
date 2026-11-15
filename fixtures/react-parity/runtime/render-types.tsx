@@ -42,8 +42,20 @@ export function readonlyContracts(
 ) {
   // @ts-expect-error raw JSON is not prepared data
   const raw = <RenderSpec spec="{}" registry={registry} />;
-  // @ts-expect-error commands remain application owned
-  const handlers = <RenderSpec spec={spec} registry={registry} handlers={{}} />;
+  // @ts-expect-error installed actions are functions, not data
+  const handlers = <RenderSpec spec={spec} registry={registry} handlers={{ save: 1 }} />;
+  // Actions and events are application-supplied functions.
+  const actions = (
+    <RenderSpec
+      spec={spec}
+      registry={registry}
+      handlers={{ save: (params) => params['id'] }}
+      onEvent={(event) => event.type}
+    />
+  );
+  props.emit?.('press', { id: 'a' });
+  // @ts-expect-error installed event payloads are plain data
+  props.emit?.('press', { run: () => 1 });
   // @ts-expect-error source children are readonly
   element.children?.push('new');
   // @ts-expect-error source props are readonly
@@ -54,7 +66,7 @@ export function readonlyContracts(
   props.props['changed'] = 1;
   // @ts-expect-error schema validation is not a renderer capability
   const schema = <RenderSpec spec={spec} registry={registry} schema={{}} />;
-  return { raw, handlers, schema };
+  return { raw, handlers, actions, schema };
 }
 
 const InstalledView = ({ props }: RenderViewProps) => (
