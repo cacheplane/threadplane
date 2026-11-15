@@ -16147,6 +16147,34 @@
       "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Default rows compose passive CitationCard local icons/monograms, normalized type badges, hostname and formatted publication; native custom cards compose it beside the retained explicit preview. Provider icons are never fetched. The collapsible header visual gap is closed with the first three sources in exact resolved displayed order, private shared local markers and a decorative expansion chevron. Provider images remain deferred T26 work."
     },
     {
+      "id": "asset:libs/react/src/a2ui/themes/default-light.css",
+      "taskIds": ["T22", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Opt-in theme stylesheet that fixes the --a2ui-* colour and shadow tokens the React components read to the default light palette, whatever the system colour scheme. Scoped to .a2ui-surface and import-order independent; an agent's primaryColor still wins. Typography and spacing tokens are not themed."
+    },
+    {
+      "id": "asset:libs/react/src/a2ui/themes/default-dark.css",
+      "taskIds": ["T22", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Opt-in theme stylesheet that fixes the --a2ui-* colour and shadow tokens the React components read to the default dark palette, whatever the system colour scheme. Scoped to .a2ui-surface and import-order independent; an agent's primaryColor still wins. Typography and spacing tokens are not themed."
+    },
+    {
+      "id": "asset:libs/react/src/a2ui/themes/material-light.css",
+      "taskIds": ["T22", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Opt-in theme stylesheet that fixes the --a2ui-* colour and shadow tokens the React components read to the Material Design 3 light tokens, whatever the system colour scheme. Scoped to .a2ui-surface and import-order independent; an agent's primaryColor still wins. Typography and spacing tokens are not themed."
+    },
+    {
+      "id": "asset:libs/react/src/a2ui/themes/material-dark.css",
+      "taskIds": ["T22", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Opt-in theme stylesheet that fixes the --a2ui-* colour and shadow tokens the React components read to the Material Design 3 dark tokens, whatever the system colour scheme. Scoped to .a2ui-surface and import-order independent; an agent's primaryColor still wins. Typography and spacing tokens are not themed."
+    },
+    {
       "id": "asset:libs/react/src/a2ui/styles.css",
       "taskIds": ["T27"],
       "treatment": "react",
