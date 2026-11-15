@@ -693,7 +693,18 @@ and reports each change, with `null` when the current rating is pressed again.
 Storing ratings and restoring them after a reload is yours; for a rating you
 control, render `MessageRating` from `renderMessage`. A message that is still
 streaming, a user message, and a row drawn by `renderMessage` get no actions.
-Regenerate is not included because `AgentSession` has no command for it.
+
+Regenerate appears beside Copy when `messageActions` is set and the session has
+the optional `regenerate` command. `Chat` calls `session.regenerate(messageId)`
+and ignores a rejection; the button is disabled while a response is running. A
+session without the command gets no button. To handle the action yourself, on
+`Chat` or on `MessageList`, pass `onRegenerate`:
+
+```tsx
+const actions = {
+  onRegenerate: (messageId: string) => rerun(messageId),
+};
+```
 
 ## Controlled welcome content (private React T22 slice)
 

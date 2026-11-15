@@ -346,6 +346,7 @@ function RowView<TRow extends MessageRow>({
   plan,
   onStop,
   running,
+  busy,
   messageActions,
   math,
   markdownComponents,
@@ -383,6 +384,8 @@ function RowView<TRow extends MessageRow>({
   readonly onStop?: () => void;
   /** True only for a row holding a running call while the session runs, so other rows keep their memo. */
   readonly running?: boolean;
+  /** The session is running and the built-in actions include Regenerate, which a run disables. */
+  readonly busy?: boolean;
 }) {
   if (renderMessage) {
     const contexts = current ? CURRENT_ROW_CONTEXTS : HISTORICAL_ROW_CONTEXTS;
@@ -553,6 +556,7 @@ function RowView<TRow extends MessageRow>({
                 messageId={row.message.id}
                 content={row.message.content}
                 options={messageActions}
+                running={busy}
               />
             )}
         </>
@@ -753,6 +757,11 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   running={
                     running &&
                     row.toolCalls.some((call) => call.status === 'running')
+                  }
+                  busy={
+                    running &&
+                    typeof messageActions === 'object' &&
+                    messageActions.onRegenerate !== undefined
                   }
                   messageActions={messageActions}
                   math={math}
