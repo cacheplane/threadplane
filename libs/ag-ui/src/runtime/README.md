@@ -81,6 +81,15 @@ const rows = content.project({ status: snapshot.status, messages, toolCalls });
   streaming. Every other message is complete, with the run's outcome for the
   last assistant message of the latest turn and success otherwise. Each message
   uses its own ID as its delivery generation.
+- AG-UI has no citation event, so a backend sends sources as application
+  state. An assistant message carries the sources listed for it under
+  `state.citations[messageId]` as core citations. An entry may be a URL string
+  or a record; `id` or `refId`, `title` or `name`, `url`, `href` or `source`,
+  and `snippet`, `content` or `excerpt` are read, and a missing `id` or `index`
+  is filled from the entry's position. The key must be the message's current
+  identifier: a backend that saves a message under a new one lists its sources
+  under the saved identifier, so they appear once the messages snapshot
+  arrives.
 - Unchanged messages, and an unchanged list, keep their references when the
   previous result is passed.
 

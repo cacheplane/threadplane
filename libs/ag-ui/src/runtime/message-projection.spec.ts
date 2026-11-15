@@ -617,3 +617,106 @@ describe('reasoning through the session', () => {
     }
   });
 });
+
+describe('citations from application state', () => {
+  const answered: Records = [
+    { id: 'u', role: 'user', content: 'Ask' },
+    { id: 'a', role: 'assistant', content: 'Signals are reactive.[^doc]' },
+  ];
+  const withState = (state: unknown, records: Records = answered) =>
+    Object.freeze({ ...initialObservation(records, state) });
+
+  it('attaches the sources listed for an assistant message as core citations', () => {
+    const snapshot = withState({
+      citations: {
+        a: [
+          { id: 'doc', index: 4, title: 'Signals', url: 'https://x.test/s', snippet: 'Text', extra: { rank: 1 } },
+          { refId: 'other', name: 'Named', href: 'https://x.test/n', excerpt: 'Part', publishedAt: 2024, ignored: true },
+          'https://x.test/plain',
+          { content: 'Only a snippet', index: 'two', publishedAt: {} },
+        ],
+        u: [{ id: 'on-user' }],
+      },
+    });
+    const messages = projectMessages(snapshot);
+    expect(messages[1].citations).toEqual([
+      { id: 'doc', index: 4, title: 'Signals', url: 'https://x.test/s', snippet: 'Text', extra: { rank: 1 } },
+      { id: 'other', index: 2, title: 'Named', url: 'https://x.test/n', snippet: 'Part', publishedAt: 2024 },
+      { id: 'c3', index: 3, url: 'https://x.test/plain' },
+      { id: 'c4', index: 4, snippet: 'Only a snippet' },
+    ]);
+    expect(Object.isFrozen(messages[1].citations)).toBe(true);
+    expect(Object.isFrozen(messages[1].citations?.[0].extra)).toBe(true);
+    expect('citations' in messages[0]).toBe(false);
+  });
+
+  it('adds nothing for an empty, missing or malformed listing', () => {
+    for (const state of [
+      {},
+      null,
+      { citations: null },
+      { citations: [] },
+      { citations: { a: [] } },
+      { citations: { a: 'https://x.test' } },
+      { citations: { other: [{ id: 'x' }] } },
+      { citations: { constructor: [{ id: 'x' }] } },
+    ]) {
+      const [, assistant] = projectMessages(withState(state));
+      expect('citations' in assistant).toBe(false);
+    }
+  });
+
+  it('keeps the message when the list is unchanged or replaced by an equal one', () => {
+    const first = withState({ citations: { a: [{ id: 'doc', title: 'Signals' }] } });
+    const before = projectMessages(first);
+    const sameList = Object.freeze({ ...first, status: 'idle' as const });
+    expect(projectMessages(sameList, before)).toBe(before);
+    const equal = withState({ citations: { a: [{ id: 'doc', title: 'Signals' }] }, model: 'small' });
+    expect(projectMessages(equal, before)).toBe(before);
+    const changed = withState({ citations: { a: [{ id: 'doc', title: 'Signals 2' }] } });
+    const after = projectMessages(changed, before);
+    expect(after[0]).toBe(before[0]);
+    expect(after[1]).not.toBe(before[1]);
+    expect(after[1].citations?.[0].title).toBe('Signals 2');
+    const removed = projectMessages(withState({}), after);
+    expect('citations' in removed[1]).toBe(false);
+  });
+
+  it('follows a state delta from a real session to the saved message', async () => {
+    const fixture = bindingFixture();
+    const view = () => projectMessages(fixture.session.getSnapshot());
+    try {
+      const run = fixture.session.submit('Go');
+      const exchange = await fixture.started();
+      exchange.emit({ type: 'TEXT_MESSAGE_START', messageId: 'stream', role: 'assistant' });
+      exchange.emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'stream', delta: 'Cited.[^doc]' });
+      exchange.emit({ type: 'TEXT_MESSAGE_END', messageId: 'stream' });
+      exchange.emit({
+        type: 'STATE_DELTA',
+        delta: [{ op: 'add', path: '/citations', value: { saved: [{ id: 'doc', title: 'Doc' }] } }],
+      });
+      await fixture.changed((snapshot) => 'citations' in (snapshot.state as object));
+      // The listing is keyed by the saved identifier, which the stream has not used yet.
+      expect('citations' in view().at(-1)!).toBe(false);
+      exchange.emit({
+        type: 'MESSAGES_SNAPSHOT',
+        messages: [
+          { ...exchange.body.messages[0] },
+          { id: 'saved', role: 'assistant', content: 'Cited.[^doc]' },
+        ],
+      });
+      exchange.emit({
+        type: 'RUN_FINISHED',
+        threadId: exchange.body.threadId,
+        runId: exchange.body.runId,
+      });
+      expect(await run).toBe('success');
+      expect(view().at(-1)).toMatchObject({
+        id: 'saved',
+        citations: [{ id: 'doc', index: 1, title: 'Doc' }],
+      });
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+});

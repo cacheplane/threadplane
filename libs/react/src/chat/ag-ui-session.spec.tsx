@@ -84,4 +84,27 @@ describe('Chat over a native AG-UI session', () => {
       await act(() => fixture.cleanup());
     }
   });
+
+  it('shows the sources the state lists for a message and resolves its markers', async () => {
+    const fixture = bindingFixture({
+      messages: [
+        { id: 'u', role: 'user', content: 'Ask' },
+        { id: 'a', role: 'assistant', content: 'Signals are reactive.[^doc]' },
+      ],
+      state: {
+        citations: {
+          a: [{ id: 'doc', title: 'Signals guide', url: 'https://example.test/signals' }],
+        },
+      },
+    });
+    const view = render(<Chat session={createAgentSession(fixture.session)} />);
+    try {
+      const sources = view.container.querySelector('.tp-citations');
+      expect(sources?.textContent).toContain('1');
+      expect(view.container.textContent).toContain('Signals are reactive.');
+      expect(view.container.textContent).not.toContain('[^doc]');
+    } finally {
+      await act(() => fixture.cleanup());
+    }
+  });
 });
