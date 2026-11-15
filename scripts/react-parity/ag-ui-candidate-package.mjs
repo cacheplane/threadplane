@@ -25,6 +25,7 @@ export const entry = 'fixtures/react-parity/ag-ui-candidate/entry';
 export const factory = 'libs/ag-ui/src/runtime/create-session';
 export const projector = 'libs/ag-ui/src/runtime/text-transcript';
 export const messages = 'libs/ag-ui/src/runtime/message-projection';
+export const agent = 'libs/ag-ui/src/runtime/agent-session';
 export const clientTools = 'libs/ag-ui/src/runtime/client-tools';
 export const reviewedSources = [
   entry,
@@ -33,6 +34,7 @@ export const reviewedSources = [
   ),
   ...[
     'activity-messages',
+    'agent-session',
     'client-tool-ledger',
     'client-tools',
     'create-http-request',
@@ -119,6 +121,8 @@ function forwarding(source, declaration) {
         ? factory
         : ['projectMessages', 'projectToolCalls'].includes(name.name.text)
         ? messages
+        : name.name.text === 'createAgentSession'
+        ? agent
         : projector;
       if (statement.moduleSpecifier.text !== '../../../' + expected + '.js')
         return false;
@@ -155,8 +159,10 @@ function forwarding(source, declaration) {
             'TextTranscriptRow',
             'projectMessages',
             'projectToolCalls',
+            'createAgentSession',
           ]
         : [
+            'createAgentSession',
             'createSession',
             'projectTextTranscript',
             'projectMessages',
@@ -199,7 +205,7 @@ export function candidateViolations(directory) {
     manifest.optionalDependencies
   )
     errors.push('Unexpected candidate install metadata');
-  for (const path of [entry, factory, projector, messages])
+  for (const path of [entry, factory, projector, messages, agent])
     for (const suffix of ['.js', '.d.ts']) {
       const target = join(directory, path + suffix);
       if (!existsSync(target)) errors.push(`Missing emitted ${path}${suffix}`);

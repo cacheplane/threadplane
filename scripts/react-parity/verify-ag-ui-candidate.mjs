@@ -123,7 +123,7 @@ const original = globalThis.fetch; let attempts = 0;
 globalThis.fetch = () => { attempts++; throw new Error('Inert lifecycle must not fetch'); };
 try {
   const backend = await import('@threadplane/ag-ui');
-  assert.deepEqual(Object.keys(backend).sort(), ['createSession', 'projectMessages', 'projectTextTranscript', 'projectToolCalls']);
+  assert.deepEqual(Object.keys(backend).sort(), ['createAgentSession', 'createSession', 'projectMessages', 'projectTextTranscript', 'projectToolCalls']);
   const session = backend.createSession({ threadId: 'inert', url: 'http://127.0.0.1:1' });
   const snapshot = session.getSnapshot(); assert.ok(Object.isFrozen(snapshot));
   assert.equal(session.getSnapshot(), snapshot); let notifications = 0;
@@ -131,6 +131,9 @@ try {
   const rows = backend.projectTextTranscript(snapshot.transcript); assert.ok(Object.isFrozen(rows));
   const messages = backend.projectMessages(snapshot); assert.deepEqual(messages, []); assert.equal(backend.projectMessages(snapshot, messages), messages);
   const calls = backend.projectToolCalls(snapshot); assert.deepEqual(calls, []); assert.equal(backend.projectToolCalls(snapshot, calls), calls);
+  const agent = backend.createAgentSession(session); const core = agent.getSnapshot(); assert.ok(Object.isFrozen(core));
+  assert.deepEqual(core, { status: 'idle', messages: [], toolCalls: [] }); assert.equal(agent.getSnapshot(), core);
+  let coreNotifications = 0; agent.subscribe(() => coreNotifications++)(); assert.equal(coreNotifications, 0);
   await session.dispose(); await session.dispose();
   assert.equal(session.getSnapshot(), snapshot); assert.equal(notifications, 0); assert.equal(attempts, 0);
   console.log(JSON.stringify({ import: true, inertObservation: true, fetches: attempts }));
@@ -446,7 +449,7 @@ export async function verifyAgUiCandidate({ root = defaultRoot, retain } = {}) {
       absWorkingDir: node,
       stdin: {
         contents:
-          "export { createSession, projectMessages, projectTextTranscript, projectToolCalls } from '@threadplane/ag-ui';",
+          "export { createAgentSession, createSession, projectMessages, projectTextTranscript, projectToolCalls } from '@threadplane/ag-ui';",
         resolveDir: node,
       },
       bundle: true,

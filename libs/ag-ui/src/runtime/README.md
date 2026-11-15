@@ -1,8 +1,8 @@
 # Private native AG-UI session commands
 
 The test-only [candidate package proof](../../../../fixtures/react-parity/ag-ui-candidate/README.md)
-emits this actual owner, its text selector and its core message and tool-call
-selectors with complete declarations, then runs
+emits this actual owner, its text selector, its core message and tool-call
+selectors and its core session view with complete declarations, then runs
 the existing browser and local-provider oracles against installed tarballs. It
 does not change this private API's status or the current published Angular root.
 
@@ -117,7 +117,41 @@ Tool calls follow these rules:
 
 The test-only candidate package entry exports both selectors next to
 `createSession`. They are still private source: the published package root does
-not export them, and they do not make the owner a core `AgentSession`.
+not export them.
+
+## Core session view
+
+`createAgentSession(session)` wraps a native session, with or without a
+client-tool catalog, as a core `AgentSession`, so a component written for core
+sessions can observe and drive an AG-UI conversation:
+
+```tsx
+const native = createSession({ threadId, url });
+const session = createAgentSession(native);
+<Chat session={session} />;
+```
+
+- It is a view, not a second owner. `getSnapshot` derives
+  `{ status, messages, toolCalls, error?, plan? }` from the native snapshot with
+  the two selectors above and keeps its reference until one of those fields
+  changes. Subscribers hear about those changes only, so a native publication
+  that touches only state, child evidence or a decision is silent here.
+- `submit` takes text and goes straight to the native session, as do `stop` and
+  `dispose`. Disposing the view disposes the session.
+- A failed run becomes `snapshot.error`. A backend `RUN_ERROR` is a `server`
+  error carrying the backend's message. A stream that ended without a terminal
+  is `interrupted`. Any other failure is a generic `server` error, because the
+  native snapshot keeps the outcome and not the cause: an authentication
+  failure and an unreachable host are not told apart.
+- Every error has `retryable: false` and `recovery: 'none'`. Nothing in the
+  snapshot proves a request never reached the backend, and the owner has no
+  status check, so the view has no `checkStatus`.
+- A state patch, native resume and client-tool evidence have no core
+  equivalent. Keep the native session for those; both can be used together.
+  While a native decision is waiting, `submit` resolves `error` without sending,
+  and nothing in the core snapshot says why.
+
+The candidate package entry exports it. The published package root does not.
 
 ## Interruption evidence
 

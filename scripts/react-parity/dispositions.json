@@ -18945,6 +18945,18 @@
       "note": "Reasoning first seen already settled (saved history, or delivered whole) stays unmeasured. Nothing is stored, so a new session knows no durations. Subgraph messages are not timed. Rich blocks, event-only retention and full T09/T15 parity remain open."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/agent-session.ts",
+      "taskIds": [
+        "T12",
+        "T14",
+        "T23"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private core AgentSession view of the native owner: a snapshot derived from the native one with the message and tool-call selectors, change-only notification, a display error for a failed run, and text submit, stop and dispose forwarded to the owner.",
+      "note": "Covered by runtime specs and a React Chat integration spec over the real owner. Exported from the test-only candidate package entry and checked from installed tarballs; not exported from the published package root. State patches, native resume, client-tool evidence, a status check and failure causes (authentication, connection) are not represented."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/message-projection.ts",
       "taskIds": [
         "T12",
