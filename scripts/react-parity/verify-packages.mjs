@@ -268,7 +268,7 @@ export type DebugValueContract = DebugAssert<DebugEqual<DebugValue, null | boole
   const markdown = specifiers.includes('@threadplane/react/markdown') ? `
 type MarkdownEqual<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
 type MarkdownAssert<T extends true> = T;
-export type MarkdownContract = MarkdownAssert<MarkdownEqual<import('@threadplane/react/markdown').MarkdownProps, { readonly snapshot: import('@threadplane/content/markdown').MarkdownSnapshot; readonly citations?: readonly import('@threadplane/core').Citation[]; readonly citationPreview?: boolean; readonly math?: (latex: string, options: { readonly display: boolean }) => string | null | undefined }>>;
+export type MarkdownContract = MarkdownAssert<MarkdownEqual<import('@threadplane/react/markdown').MarkdownProps, { readonly snapshot: import('@threadplane/content/markdown').MarkdownSnapshot; readonly citations?: readonly import('@threadplane/core').Citation[]; readonly citationPreview?: boolean; readonly math?: (latex: string, options: { readonly display: boolean }) => string | null | undefined; readonly components?: import('@threadplane/react/markdown').MarkdownComponents }>>;
 export type MarkdownParameterContract = MarkdownAssert<MarkdownEqual<Parameters<typeof import('@threadplane/react/markdown').Markdown>[0], import('@threadplane/react/markdown').MarkdownProps>>;
 ` : '';
   const namespaces = specifiers.map((specifier, index) => `import * as entry${index} from ${JSON.stringify(specifier)};\nexport type Entry${index} = typeof entry${index};`).join('\n') + debug + a2ui + markdown + citationDisplay;
@@ -511,7 +511,7 @@ const SUPPORTED_EXPORTS = {
     'Suggestions',
   ],
   'react/debug': ['ChatDebug', 'StateDiff'],
-  'react/markdown': ['Markdown'],
+  'react/markdown': ['Markdown', 'MarkdownComponentsProvider', 'MarkdownCopyButton'],
   'react/render': ['RenderSpec'],
   'react/a2ui': ['A2uiSurface', 'a2uiBasicCatalog', 'useA2uiSurfaceWriter'],
   'content/messages': ['createMessageContent', 'deriveDomain', 'deriveSourceType', 'deriveMonogram', 'monogramHue', 'formatPublished', 'monogramColor', 'citationTypeMeta', 'citationTypeLabel', 'citationSourceVisual'],

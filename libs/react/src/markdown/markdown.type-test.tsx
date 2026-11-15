@@ -2,7 +2,13 @@ import {
   createMarkdown,
   type MarkdownSnapshot,
 } from '@threadplane/content/markdown';
-import { Markdown, type MarkdownProps } from './index.js';
+import {
+  Markdown,
+  MarkdownComponentsProvider,
+  type MarkdownComponentProps,
+  type MarkdownComponents,
+  type MarkdownProps,
+} from './index.js';
 import type { Citation } from '@threadplane/core';
 const snapshot = createMarkdown({
   generation: 'a',
@@ -32,6 +38,30 @@ sourced.citations = [];
 <Markdown snapshot={snapshot} owner={{}} />;
 // @ts-expect-error Props are readonly.
 props.snapshot = snapshot;
+function CodeBlock({ node, defaultView }: MarkdownComponentProps<'code-block'>) {
+  const text: string = node.text;
+  return (
+    <>
+      {text}
+      {defaultView}
+    </>
+  );
+}
+function Link({ node, url }: MarkdownComponentProps<'link'>) {
+  const safe: string | undefined = url;
+  return <a href={safe}>{node.title}</a>;
+}
+const components: MarkdownComponents = { 'code-block': CodeBlock, link: Link };
+<Markdown snapshot={snapshot} components={components} />;
+<MarkdownComponentsProvider components={components}>
+  <Markdown snapshot={snapshot} />
+</MarkdownComponentsProvider>;
+// @ts-expect-error A code-block replacement cannot stand in for a link.
+const mismatched: MarkdownComponents = { link: CodeBlock };
+// @ts-expect-error Only parser node types can be replaced.
+const unknownType: MarkdownComponents = { 'code-fence': CodeBlock };
+// @ts-expect-error The map is readonly.
+components.link = Link;
 export function readonlyInput(value: MarkdownSnapshot) {
   // @ts-expect-error Nested document is readonly.
   value.document.content = 'changed';
