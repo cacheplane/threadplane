@@ -952,7 +952,13 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
-      max-parallel: 5
+      # The fleet is the longest verification chain: 82 caps of ~2.5 min each.
+      # At the former width of 5 it alone took 42-87 minutes and was the last
+      # job to finish. The organization plan allows 20 concurrent hosted jobs;
+      # 12 leaves 8 for the rest of this run (some of it is still queued when
+      # the fleet is dispatched) and for sibling workflows. Replaying recorded
+      # runs, wider than 12 gains under 3 minutes and delays those jobs more.
+      max-parallel: 12
       matrix:
         cap: ${{ fromJson(needs.cockpit-e2e-dispatcher.outputs.caps) }}
     steps:

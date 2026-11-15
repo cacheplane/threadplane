@@ -45,7 +45,8 @@ it('reuses only same-run dependencies while preserving every isolated Cockpit pr
   assert.equal(restore.env.COCKPIT_DEPENDENCY_NODE, '${{ needs.cockpit-e2e-dispatcher.outputs.dependency_node }}');
   assert.equal(restore.if, undefined, 'a failed restore must prevent proofs from running');
   assert.equal(restore['continue-on-error'], undefined);
-  assert.equal(consumer.strategy['max-parallel'], 5);
+  assert.equal(consumer.strategy['max-parallel'], 12,
+    'the fleet may hold at most 12 of the 20 hosted-runner slots; the rest of the run and sibling workflows need the other 8');
   assert.equal(consumer.strategy['fail-fast'], false);
   assert.equal(consumer.steps.some(step => step.run === 'npm ci'), false);
   const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step))
