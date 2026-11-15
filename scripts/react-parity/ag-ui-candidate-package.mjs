@@ -26,6 +26,7 @@ export const factory = 'libs/ag-ui/src/runtime/create-session';
 export const projector = 'libs/ag-ui/src/runtime/text-transcript';
 export const messages = 'libs/ag-ui/src/runtime/message-projection';
 export const agent = 'libs/ag-ui/src/runtime/agent-session';
+export const decision = 'libs/ag-ui/src/runtime/decision';
 export const clientTools = 'libs/ag-ui/src/runtime/client-tools';
 export const reviewedSources = [
   entry,
@@ -123,6 +124,8 @@ function forwarding(source, declaration) {
         ? messages
         : name.name.text === 'createAgentSession'
         ? agent
+        : ['decisionState', 'DecisionState'].includes(name.name.text)
+        ? decision
         : projector;
       if (statement.moduleSpecifier.text !== '../../../' + expected + '.js')
         return false;
@@ -137,6 +140,7 @@ function forwarding(source, declaration) {
           'ClientToolCall',
           'ClientToolBlocker',
           'TextTranscriptRow',
+          'DecisionState',
         ].includes(name.name.text)
       )
         return false;
@@ -160,9 +164,12 @@ function forwarding(source, declaration) {
             'projectMessages',
             'projectToolCalls',
             'createAgentSession',
+            'decisionState',
+            'DecisionState',
           ]
         : [
             'createAgentSession',
+            'decisionState',
             'createSession',
             'projectTextTranscript',
             'projectMessages',
@@ -205,7 +212,7 @@ export function candidateViolations(directory) {
     manifest.optionalDependencies
   )
     errors.push('Unexpected candidate install metadata');
-  for (const path of [entry, factory, projector, messages, agent])
+  for (const path of [entry, factory, projector, messages, agent, decision])
     for (const suffix of ['.js', '.d.ts']) {
       const target = join(directory, path + suffix);
       if (!existsSync(target)) errors.push(`Missing emitted ${path}${suffix}`);

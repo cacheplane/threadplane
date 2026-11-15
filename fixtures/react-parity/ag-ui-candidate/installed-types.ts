@@ -1,5 +1,7 @@
 import {
   createAgentSession,
+  decisionState,
+  type DecisionState,
   createSession,
   projectTextTranscript,
   projectMessages,
@@ -88,6 +90,16 @@ export function checkCandidate(signal: AbortSignal) {
   void session.reconnect();
   // @ts-expect-error No client tool execution command is invented.
   void session.addToolResult('id', 'result');
+  const pending: DecisionState | undefined = decisionState(snapshot);
+  if (pending?.kind === 'native' && pending.phase === 'ready') {
+    void session.resume(pending.id, [
+      { interruptId: pending.interrupts[0].id, status: 'resolved' },
+    ]);
+    // @ts-expect-error The pending decision is readonly.
+    pending.phase = 'answering';
+  }
+  // @ts-expect-error An unsupported pause carries no token to answer.
+  if (pending?.kind === 'unsupported') void pending.id;
   const agent: AgentSession = createAgentSession(session);
   const core: AgentSnapshot = agent.getSnapshot();
   void agent.submit('Hello', { signal });
