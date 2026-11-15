@@ -82,11 +82,36 @@ export function readonlyContracts(
     // @ts-expect-error raw props carry JSON data, not executable callbacks
     props: { callback: () => 1 },
   };
-  // @ts-expect-error actions are not automatic renderer capabilities
-  const handlers: RenderSpecProps = { spec, registry, handlers: {} };
+  // Actions run only through handlers the app lists.
+  const handlers: RenderSpecProps = {
+    spec,
+    registry,
+    handlers: { save: (params) => params['id'] },
+    onStateChange: (path: string, value: RenderValue) => void [path, value],
+  };
+  // @ts-expect-error handlers are a named map, not one callback
+  const single: RenderSpecProps = { spec, registry, handlers: () => 1 };
+  const bound: RenderElementData = {
+    type: 'Button',
+    props: {},
+    on: { press: { action: 'save', params: { id: { $state: '/id' } } } },
+  };
+  const executable: RenderElementData = {
+    type: 'Button',
+    props: {},
+    // @ts-expect-error a binding names a handler; it cannot carry a function
+    on: { press: { action: () => 1 } },
+  };
   // @ts-expect-error schema validation is caller owned
   const schema: RenderSpecProps = { spec, registry, schema: {} };
-  // @ts-expect-error view does not execute spec events
   props.emit('press');
-  return { callback, handlers, schema };
+  props.emit('press', { id: 1, nested: { ok: true } });
+  props.setValue('value', 'next');
+  // @ts-expect-error a payload is plain data, not a DOM event or a callback
+  props.emit('press', { run: () => 1 });
+  // @ts-expect-error a written value is plain data
+  props.setValue('value', new Date());
+  // @ts-expect-error view capabilities are readonly
+  props.emit = () => undefined;
+  return { callback, handlers, single, bound, executable, schema };
 }

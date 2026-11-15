@@ -16004,6 +16004,24 @@
       "status": "in-progress"
     },
     {
+      "id": "export:libs/react/src/render/index.ts#ReactRenderHandlers",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderHandler",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
       "id": "export:libs/react/src/render/index.ts#RenderComputedFunction",
       "taskIds": [
         "T07",
@@ -16087,6 +16105,18 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
+    },
+    {
+      "id": "source:libs/react/src/render/actions.ts",
+      "taskIds": [
+        "T07",
+        "T24",
+        "T20"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Opt-in React render-tree interaction: runs an element's on[event] bindings against handlers the app lists, with resolved params, confirmation, and set or action follow-ups written through the app's onStateChange. State stays controlled by the app.",
+      "note": "Covered by render specs and installed type fixtures. Inert unless handlers or onStateChange is passed. Navigate follow-ups are not performed, preventDefault is not applied because payloads are plain data, and there is no built-in store, watch bindings, lifecycle or result events, or schema validation."
     },
     {
       "id": "source:libs/react/src/render/render-spec.tsx",

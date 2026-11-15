@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useEffect, useMemo, useRef } from 'react';
 import {
   evaluateVisibility,
   getByPath,
@@ -13,11 +13,16 @@ import type { RenderSpecProps, RenderValue } from './types.js';
 import { ownRenderValue } from './values.js';
 import { ownRenderFunctions } from './functions.js';
 import { ReadinessGate } from './readiness.js';
+import { runActions, type RenderActionHost } from './actions.js';
 import type { RenderReadinessEntry, RenderViewProps } from './types.js';
 
 const EMPTY_STATE = Object.freeze({});
 interface ElementProps
-  extends Omit<RenderSpecProps, 'spec' | 'state' | 'functions'> {
+  extends Omit<
+    RenderSpecProps,
+    'spec' | 'state' | 'functions' | 'handlers' | 'onStateChange'
+  > {
+  readonly host: RenderActionHost;
   readonly spec: NonNullable<RenderSpecProps['spec']>;
   readonly elementKey: string;
   readonly context: PropResolutionContext;
@@ -48,6 +53,7 @@ function Element({
   fallback,
   context,
   ancestors,
+  host,
 }: ElementProps) {
   if (ancestors.has(elementKey) || !Object.hasOwn(spec.elements, elementKey))
     return null;
@@ -89,6 +95,7 @@ function Element({
         fallback={fallback}
         context={childContext}
         ancestors={nextAncestors}
+        host={host}
       />
     ));
   let children;
@@ -127,6 +134,22 @@ function Element({
     elementKey,
     loading,
     children,
+    emit: (event, payload) => {
+      const declared = element.on;
+      if (declared && Object.hasOwn(declared, event))
+        runActions(
+          host,
+          (declared as Readonly<Record<string, unknown>>)[event],
+          context,
+          payload
+        );
+    },
+    setValue: (prop, value) => {
+      const path =
+        bindings && Object.hasOwn(bindings, prop) ? bindings[prop] : undefined;
+      if (path !== undefined && host.mounted())
+        host.onStateChange?.(path, ownRenderValue(value));
+    },
   };
   if (
     Object.hasOwn(entry, 'kind') &&
@@ -143,15 +166,48 @@ function Element({
   return <Component {...view} />;
 }
 
-/** Present a caller-prepared read-only tree; application code owns validation and state. */
+/**
+ * Present a caller-prepared tree; application code owns validation and state.
+ * The tree is read-only unless `handlers` or `onStateChange` is passed.
+ */
 export function RenderSpec({
   spec,
   registry,
   state = EMPTY_STATE,
   functions,
+  handlers,
+  onStateChange,
   loading,
   fallback,
 }: RenderSpecProps) {
+  // Views call through refs, so a handler or callback the app recreates each
+  // render never reruns an effect or leaves a view holding a stale one.
+  const latest = useRef({ handlers, onStateChange });
+  latest.current = { handlers, onStateChange };
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  // One stable object for the tree's lifetime; it reads the latest props through the ref.
+  const host = useMemo<RenderActionHost>(
+    () => ({
+      get handlers() {
+        return latest.current.handlers;
+      },
+      get onStateChange() {
+        return latest.current.onStateChange;
+      },
+      mounted: () => mounted.current,
+      confirm:
+        typeof window !== 'undefined' && typeof window.confirm === 'function'
+          ? (message) => window.confirm(message)
+          : undefined,
+    }),
+    []
+  );
   if (!spec) return null;
   // Keep resolver reads on owned plain data, including absent prototype-named paths.
   const stateModel = ownRenderValue(state) as Record<string, unknown>;
@@ -164,6 +220,7 @@ export function RenderSpec({
       fallback={fallback}
       context={{ stateModel, functions: ownRenderFunctions(functions) }}
       ancestors={new Set()}
+      host={host}
     />
   );
 }

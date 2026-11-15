@@ -1377,6 +1377,57 @@ resolvers. Repeat containers render their children per array item, with `$item`,
 key preserves mounted identity across reorder; absent or unsupported keys use the
 item index. String, number and index identities have separate namespaces.
 
+### Interactive trees
+
+A tree is read-only until you opt in. Pass `handlers` to let a spec's event
+bindings call app functions, and `onStateChange` to accept state writes:
+
+```tsx
+const [state, setState] = useState({ form: { name: '' }, saved: false });
+
+<RenderSpec
+  spec={spec}
+  registry={registry}
+  state={state}
+  handlers={{ save: async ({ name }) => api.save(String(name)) }}
+  onStateChange={(path, value) => setState((current) => setByPath(current, path, value))}
+/>;
+```
+
+`setByPath` there is your own immutable path setter; `RenderSpec` ships none.
+
+Every view also receives `emit` and `setValue`:
+
+```tsx
+const SaveButton = ({ props, emit }: RenderViewProps) => (
+  <button type="button" onClick={() => emit('press')}>{String(props.label)}</button>
+);
+const NameField = ({ props, setValue }: RenderViewProps) => (
+  <input value={String(props.value ?? '')} onChange={(event) => setValue('value', event.target.value)} />
+);
+```
+
+- `emit(event, payload?)` runs the bindings the element declares under
+  `on[event]`, in order. A binding names a handler; only handlers you list can
+  run, and a name you did not list is skipped. Its `params` resolve against
+  state and the element's repeat scope like props, and `payload` (plain data)
+  wins on a shared key. Handlers receive owned, frozen params.
+- A binding with `confirm` asks through `window.confirm` first.
+- After a handler returns, or its promise resolves, `onSuccess` runs: `set`
+  reports each path to `onStateChange`, and `action` calls another listed
+  handler with no params. `onError` does the same after a throw or rejection,
+  with the literal `'$error.message'` replaced by the error's message. A
+  handler that throws with no `onError` rethrows to the view that emitted.
+  A follow-up that settles after the tree unmounts is dropped.
+- `setValue(prop, value)` reports a write to the state path that prop is bound
+  to with `$bindState` (see `bindings`). It does nothing for an unbound prop.
+- State stays yours. Nothing changes until you apply the change and pass the
+  new `state` back; `RenderSpec` keeps no store of its own.
+- A `navigate` follow-up is not performed, and `preventDefault` is not applied,
+  because a spec is data an agent can author and payloads are plain data.
+  `watch` bindings, lifecycle and result events and schema validation are not
+  implemented.
+
 Supply an optional `functions` map for authored `$computed` expressions:
 
 ```tsx

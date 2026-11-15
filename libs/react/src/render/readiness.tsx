@@ -65,6 +65,8 @@ export function ReadinessGate({
     bindings: view.bindings,
     elementKey: view.elementKey,
     loading: view.loading,
+    emit: view.emit,
+    setValue: view.setValue,
   };
   const Component = entry.component;
   const Fallback = entry.fallback;

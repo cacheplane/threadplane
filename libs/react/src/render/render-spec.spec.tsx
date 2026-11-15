@@ -476,7 +476,8 @@ describe('RenderSpec', () => {
           watch: { '/text': { action: command } },
         },
       },
-    };
+      // A callable in spec data is outside the type; this proves it is never called.
+    } as unknown as RenderSpecData;
     const view = render(
       <StrictMode>
         <RenderSpec

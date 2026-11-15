@@ -42,8 +42,21 @@ export function readonlyContracts(
 ) {
   // @ts-expect-error raw JSON is not prepared data
   const raw = <RenderSpec spec="{}" registry={registry} />;
-  // @ts-expect-error commands remain application owned
-  const handlers = <RenderSpec spec={spec} registry={registry} handlers={{}} />;
+  // Commands stay application owned: a spec can call only the handlers listed here.
+  const handlers = (
+    <RenderSpec
+      spec={spec}
+      registry={registry}
+      handlers={{ save: (params) => params['id'] }}
+      onStateChange={(path, value) => void [path, value]}
+    />
+  );
+  // @ts-expect-error handlers are a named map, not one callback
+  const single = <RenderSpec spec={spec} registry={registry} handlers={() => 1} />;
+  props.emit('press', { id: 1 });
+  props.setValue('value', 'next');
+  // @ts-expect-error a payload is plain data, not a callback
+  props.emit('press', { run: () => 1 });
   // @ts-expect-error source children are readonly
   element.children?.push('new');
   // @ts-expect-error source props are readonly
@@ -54,7 +67,7 @@ export function readonlyContracts(
   props.props['changed'] = 1;
   // @ts-expect-error schema validation is not a renderer capability
   const schema = <RenderSpec spec={spec} registry={registry} schema={{}} />;
-  return { raw, handlers, schema };
+  return { raw, handlers, single, schema };
 }
 
 const InstalledView = ({ props }: RenderViewProps) => (

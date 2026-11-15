@@ -501,7 +501,8 @@ describe('readiness contracts', () => {
           watch: { '/value': { action: command } },
         },
       },
-    };
+      // A callable in spec data is outside the type; this proves it is never called.
+    } as unknown as RenderSpecData;
     const predicate = vi.fn(ready);
     const config = entry({ isReady: predicate });
     const view = render(
