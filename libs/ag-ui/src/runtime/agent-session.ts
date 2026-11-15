@@ -23,12 +23,15 @@ export const INTERRUPTED_COPY = Object.freeze({
   detail: 'Trying again could repeat it.',
 });
 const FAILED = 'The agent request failed.';
+/** The same wording the LangGraph runtime uses for a rejected credential. */
+export const AUTH_COPY = 'Authentication failed. Check your credentials.';
 
 /**
- * The native snapshot keeps the run's outcome and its terminal event, not the
- * cause of a transport failure. So a failure is one of three things: the
- * backend's own `RUN_ERROR` text, a stream that ended without a terminal, or a
- * request that failed for a reason this view cannot name.
+ * The native snapshot keeps the run's outcome, its terminal event and the HTTP
+ * status of a response that was not OK. So a failure is the backend's own
+ * `RUN_ERROR` text, a stream that ended without a terminal, a rejected
+ * credential (401 or 403), another HTTP status, or a request that failed for a
+ * reason this view cannot name, such as a host that could not be reached.
  */
 function failure(native: SessionSnapshot, previous?: AgentError): AgentError {
   const terminal = native.run?.terminal;
@@ -37,19 +40,27 @@ function failure(native: SessionSnapshot, previous?: AgentError): AgentError {
       ? terminal.message
       : undefined;
   const interrupted = reported === undefined && native.run?.outcome === 'interrupted';
-  const kind = interrupted ? 'interrupted' : 'server';
-  const message = interrupted ? INTERRUPTED_COPY.message : reported || FAILED;
+  const status = reported === undefined ? native.run?.failure?.status : undefined;
+  const auth = status === 401 || status === 403;
+  const kind = interrupted ? 'interrupted' : auth ? 'auth' : 'server';
+  const message = interrupted
+    ? INTERRUPTED_COPY.message
+    : auth
+    ? AUTH_COPY
+    : reported || FAILED;
   const detail = interrupted ? INTERRUPTED_COPY.detail : undefined;
   if (
     previous &&
     previous.kind === kind &&
     previous.message === message &&
-    previous.detail === detail
+    previous.detail === detail &&
+    previous.status === status
   )
     return previous;
   return Object.freeze({
     kind,
     message,
+    ...(status !== undefined && { status }),
     // Nothing here proves the request never reached the backend, so sending it
     // again could repeat work. The native owner has no status check either.
     retryable: false,

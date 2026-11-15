@@ -65,6 +65,12 @@ export interface SessionSnapshot {
   readonly run?: {
     readonly id: string;
     readonly outcome?: CompleteOutcome;
+    /**
+     * The HTTP status of a response that was not OK, when that is why the run
+     * failed. Absent for every other failure, including a backend `RUN_ERROR`
+     * and a request that got no response.
+     */
+    readonly failure?: { readonly status: number };
     readonly terminal?: OwnedRootTerminal;
     readonly legacyInterrupt?: OwnedLegacyInterrupt;
   };

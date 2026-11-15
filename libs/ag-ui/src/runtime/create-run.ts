@@ -19,6 +19,23 @@ type RunOutcome =
   | { outcome: 'error'; error: unknown };
 export type RunResult = RunOutcome & { readonly fetchInvoked: boolean };
 
+/** The HTTP status the SDK put on its error for a response that was not OK. */
+export function httpFailure(
+  result: RunResult
+): { readonly status: number } | undefined {
+  if (result.outcome !== 'error') return undefined;
+  const status =
+    typeof result.error === 'object' && result.error !== null
+      ? (result.error as { status?: unknown }).status
+      : undefined;
+  return typeof status === 'number' &&
+    Number.isInteger(status) &&
+    status >= 100 &&
+    status <= 599
+    ? Object.freeze({ status })
+    : undefined;
+}
+
 export interface RunHandle {
   abort(): void;
   done: Promise<RunResult>;
