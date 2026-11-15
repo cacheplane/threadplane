@@ -106,6 +106,10 @@ export const EXCLUDED_EXPORTS = new Set([
   'react/chat/styles.css',
   'react/debug/styles.css',
   'react/a2ui/styles.css',
+  'react/a2ui/themes/default-light.css',
+  'react/a2ui/themes/default-dark.css',
+  'react/a2ui/themes/material-light.css',
+  'react/a2ui/themes/material-dark.css',
   'middleware/README.md',
   'telemetry/README.md',
 ]);
