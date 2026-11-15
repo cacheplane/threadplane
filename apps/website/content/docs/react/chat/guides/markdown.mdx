@@ -19,9 +19,89 @@ The [message model](/docs/react/chat/concepts/message-model) links the actual ap
 
 ## Understand the presentation policy
 
-The renderer supports semantic lists and tables, disabled task checkboxes, references, and image fallbacks. Literal HTML stays text. Math remains delimited text; this entry does not add syntax highlighting or a custom node registry.
+The renderer supports semantic lists and tables, disabled task checkboxes, references, and image fallbacks. Literal HTML stays text. Math remains delimited text unless you pass a `math` renderer. Code blocks are plain text with a `language-*` class and a Copy button; the library does not bundle a highlighter, so add one by [replacing the code block](#replace-how-a-node-renders).
 
 Links and images use the shared content destination policy. Blocked or absent image targets, and failed image loads, produce accessible alt-text fallbacks. A new generation resets local image state.
+
+## Copy a code block
+
+Every finished code block has a Copy button in its top corner. It appears on hover and keyboard focus, and stays visible on touch screens. It writes the block's source text to the clipboard and reads "Copied" for two seconds. While the block is still streaming, the button is absent, so nobody copies half a function.
+
+## Replace how a node renders
+
+Pass `components` to replace the rendering of chosen node types. Every other type keeps the built-in view. Keys are the parser's node types, such as `'code-block'`, `'link'`, `'heading'`, `'image'`, and `'table'`.
+
+A replacement receives four props:
+
+| Prop | What it holds |
+| --- | --- |
+| `node` | The node, including its streaming `status`, which is `'complete'` once its source is closed |
+| `children` | The node's children, already rendered, or `null` for a leaf such as a code block |
+| `url` | For a link or image, the URL after the library's URL policy, or `undefined` when the policy refused it |
+| `defaultView` | The built-in rendering of the node, to wrap or to fall back to |
+
+Use `url` instead of `node.url`, so a custom link cannot skip the URL policy by accident.
+
+Define the map and its components at module scope. A new component type on each render remounts its nodes, and a streaming reply renders many times.
+
+`Chat` and `MessageList` pass the map to message text through `markdownComponents`. A custom `renderMessage` keeps full ownership of its row.
+
+```tsx
+<Chat session={session} markdownComponents={markdownComponents} />
+```
+
+### Highlight code with Shiki
+
+This replacement shows the built-in block while the code streams, then highlights it once the fence closes. `MarkdownCopyButton` keeps the Copy button on the highlighted block.
+
+```tsx
+import { useEffect, useState } from 'react';
+import { codeToHtml } from 'shiki';
+import {
+  MarkdownCopyButton,
+  type MarkdownComponentProps,
+  type MarkdownComponents,
+} from '@threadplane/react/markdown';
+
+function ShikiCodeBlock({ node, defaultView }: MarkdownComponentProps<'code-block'>) {
+  const done = node.status === 'complete';
+  const [html, setHtml] = useState<string | null>(null);
+  useEffect(() => {
+    if (!done) return;
+    let live = true;
+    codeToHtml(node.text, { lang: node.language || 'text', theme: 'github-light' }).then(
+      (out) => live && setHtml(out),
+      () => undefined, // An unknown language keeps the plain block.
+    );
+    return () => {
+      live = false;
+    };
+  }, [done, node.text, node.language]);
+  if (!html) return defaultView;
+  return (
+    <div className="tp-markdown__code" dir="ltr">
+      <div dangerouslySetInnerHTML={{ __html: html }} />
+      <MarkdownCopyButton text={node.text} />
+    </div>
+  );
+}
+
+export const markdownComponents: MarkdownComponents = { 'code-block': ShikiCodeBlock };
+```
+
+Shiki escapes the code it highlights, so its output is safe to insert. Insert only markup your highlighter produced.
+
+### Set components for the whole application
+
+`MarkdownComponentsProvider` supplies components to every `Markdown` below it, including the ones `Chat` renders. A nested provider adds to the outer one, type by type, and a `components` or `markdownComponents` prop on one surface wins over both.
+
+```tsx
+import { MarkdownComponentsProvider } from '@threadplane/react/markdown';
+
+<MarkdownComponentsProvider components={markdownComponents}>
+  <App />
+</MarkdownComponentsProvider>;
+```
 
 ## Supply citations deliberately
 

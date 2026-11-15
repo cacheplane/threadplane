@@ -159,6 +159,11 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly mergeReasoning?: boolean;
   /** Typesets math in message text; see `MarkdownProps.math`. Keep stable; custom renderMessage retains full ownership. */
   readonly math?: MarkdownProps['math'];
+  /**
+   * Replaces how chosen Markdown node types render in message text; see `MarkdownProps.components`.
+   * Define it outside render. Custom renderMessage retains full ownership.
+   */
+  readonly markdownComponents?: MarkdownProps['components'];
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -343,9 +348,11 @@ function RowView<TRow extends MessageRow>({
   running,
   messageActions,
   math,
+  markdownComponents,
   mergeReasoning,
 }: {
   readonly math?: MarkdownProps['math'];
+  readonly markdownComponents?: MarkdownProps['components'];
   readonly mergeReasoning: boolean;
   readonly messageActions?: BuiltInMessageActions;
   readonly row: TRow;
@@ -560,6 +567,7 @@ function RowView<TRow extends MessageRow>({
             row.role === 'assistant' ? row.message.citations : undefined
           }
           math={math}
+          components={markdownComponents}
         />
       )}
     </ChatMessage>
@@ -589,6 +597,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   typingIndicator = true,
   messageActions,
   math,
+  markdownComponents,
   mergeReasoning,
   children,
   renderScrollControl,
@@ -747,6 +756,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   }
                   messageActions={messageActions}
                   math={math}
+                  markdownComponents={markdownComponents}
                   mergeReasoning={mergeReasoning !== false}
                 />
                 {renderApprovalRecords(recordsAfter, row.id)}

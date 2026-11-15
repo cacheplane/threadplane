@@ -156,7 +156,7 @@ test('plain declaration proof checks exact opt-in Markdown preview contract', t 
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
   writeFileSync(join(consumer, 'package.json'), '{"type":"module"}');
   for (const [name, entry, declaration] of [
-    ['react', 'markdown', `export interface MarkdownProps { readonly snapshot: import('@threadplane/content/markdown').MarkdownSnapshot; readonly citations?: readonly import('@threadplane/core').Citation[]; readonly citationPreview?: boolean; readonly math?: (latex: string, options: { readonly display: boolean }) => string | null | undefined; }\nexport declare function Markdown(props: MarkdownProps): unknown;`],
+    ['react', 'markdown', `export interface MarkdownProps { readonly snapshot: import('@threadplane/content/markdown').MarkdownSnapshot; readonly citations?: readonly import('@threadplane/core').Citation[]; readonly citationPreview?: boolean; readonly math?: (latex: string, options: { readonly display: boolean }) => string | null | undefined; readonly components?: MarkdownComponents; }\nexport type MarkdownComponents = { readonly 'code-block'?: (props: { readonly text: string }) => unknown };\nexport declare function Markdown(props: MarkdownProps): unknown;`],
     ['content', 'markdown', 'export interface MarkdownSnapshot { readonly accepted: string; }'],
     ['core', '', 'export interface Citation { readonly id: string; readonly index: number; }'],
   ]) {
@@ -180,6 +180,7 @@ test('plain declaration proof checks exact opt-in Markdown preview contract', t 
   for (const replacement of ['', 'citationPreview?: boolean;', 'readonly citationPreview: boolean;', 'readonly citationPreview?: any;', 'readonly citationPreview?: string;'])
     assert.match(compile(declaration.replace('readonly citationPreview?: boolean;', replacement)), /false.*true/, replacement);
   assert.match(compile(declaration.replace('props: MarkdownProps', 'props: any')), /false.*true/);
+  assert.match(compile(declaration.replace(' readonly components?: MarkdownComponents;', '')), /false.*true/);
 });
 
 test('plain declaration proof checks exact passive StateDiff types', t => {
@@ -934,8 +935,8 @@ const reactMarkdown = { types: './src/markdown/index.d.ts', import: './src/markd
 
 test('React Markdown exposes exactly its implemented component', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('react/markdown', {}), /Markdown/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/markdown', { Markdown() {} }));
-  assert.throws(() => packageVerifier.assertSupportedExports('react/markdown', { Markdown() {}, createMarkdown() {} }), /unexpected/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/markdown', { Markdown() {}, MarkdownComponentsProvider() {}, MarkdownCopyButton() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/markdown', { Markdown() {}, MarkdownComponentsProvider() {}, MarkdownCopyButton() {}, createMarkdown() {} }), /unexpected/);
 });
 test('React Markdown cannot disappear from package validation or consumer enumeration', (t) => {
   const exports = { '.': { types: './src/index.d.ts', import: './src/index.js', default: './src/index.js' } };

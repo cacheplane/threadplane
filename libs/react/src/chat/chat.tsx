@@ -71,6 +71,8 @@ export interface ChatProps
   readonly messageActions?: MessageListProps['messageActions'];
   /** Typesets math in message text; see `MessageListProps.math`. Keep stable. */
   readonly math?: MessageListProps['math'];
+  /** Replaces how chosen Markdown node types render; see `MessageListProps.markdownComponents`. Define it outside render. */
+  readonly markdownComponents?: MessageListProps['markdownComponents'];
   /** One reasoning disclosure per multi-step turn; see `MessageListProps.mergeReasoning`. Defaults to true. */
   readonly mergeReasoning?: MessageListProps['mergeReasoning'];
   /**
@@ -131,6 +133,7 @@ export function Chat({
   approvalRecords,
   messageActions,
   math,
+  markdownComponents,
   mergeReasoning,
   typingIndicator,
   welcome,
@@ -271,6 +274,7 @@ export function Chat({
         approvalRecords={approvalRecords}
         messageActions={messageActions}
         math={math}
+        markdownComponents={markdownComponents}
         mergeReasoning={mergeReasoning}
         typingIndicator={typingIndicator}
         renderScrollControl={(controls) =>
