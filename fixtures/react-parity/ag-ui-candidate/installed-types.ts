@@ -1,6 +1,8 @@
 import {
   createSession,
   projectTextTranscript,
+  projectMessages,
+  projectToolCalls,
   type Session,
   type SessionOptions,
   type TextTranscriptRow,
@@ -10,7 +12,7 @@ import {
   type ClientToolBlocker,
 } from '@threadplane/ag-ui';
 import type { CheckedTools, ToolContracts } from '@threadplane/core/tools';
-import type { CompleteOutcome } from '@threadplane/core';
+import type { CompleteOutcome, Message, ToolCall } from '@threadplane/core';
 export type NativeResponse = Parameters<Session['resume']>[1][number];
 export function checkCandidate(signal: AbortSignal) {
   const options: SessionOptions = {
@@ -29,6 +31,14 @@ export function checkCandidate(signal: AbortSignal) {
     snapshot.transcript
   );
   const stable = projectTextTranscript(snapshot.transcript, rows);
+  const messages: readonly Message[] = projectMessages(snapshot);
+  const toolCalls: readonly ToolCall[] = projectToolCalls(snapshot);
+  void projectMessages(snapshot, messages);
+  void projectToolCalls(snapshot, toolCalls);
+  // @ts-expect-error Core messages are projected from the snapshot, not the transcript.
+  void projectMessages(snapshot.transcript);
+  // @ts-expect-error Projected messages remain readonly.
+  messages.push(messages[0]);
   const resolved: NativeResponse = {
     interruptId: 'backend-id',
     status: 'resolved',
@@ -71,7 +81,7 @@ export function checkCandidate(signal: AbortSignal) {
   void session.reconnect();
   // @ts-expect-error No client tool execution command is invented.
   void session.addToolResult('id', 'result');
-  return { session, snapshot, rows, stable };
+  return { session, snapshot, rows, stable, messages, toolCalls };
 }
 export function checkClientTools(options: SessionOptions) {
   const catalog = {

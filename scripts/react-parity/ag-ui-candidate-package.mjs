@@ -24,6 +24,7 @@ import { installFootprint, runConsumer } from './verify-packages.mjs';
 export const entry = 'fixtures/react-parity/ag-ui-candidate/entry';
 export const factory = 'libs/ag-ui/src/runtime/create-session';
 export const projector = 'libs/ag-ui/src/runtime/text-transcript';
+export const messages = 'libs/ag-ui/src/runtime/message-projection';
 export const clientTools = 'libs/ag-ui/src/runtime/client-tools';
 export const reviewedSources = [
   entry,
@@ -40,6 +41,7 @@ export const reviewedSources = [
     'decision',
     'encrypted-messages',
     'interrupt-mode',
+    'message-projection',
     'reasoning-clock',
     'reconcile-transcript',
     'session-attribution',
@@ -115,6 +117,8 @@ function forwarding(source, declaration) {
             'ClientToolSession',
           ].includes(name.name.text)
         ? factory
+        : ['projectMessages', 'projectToolCalls'].includes(name.name.text)
+        ? messages
         : projector;
       if (statement.moduleSpecifier.text !== '../../../' + expected + '.js')
         return false;
@@ -149,8 +153,15 @@ function forwarding(source, declaration) {
             'ClientToolBlocker',
             'projectTextTranscript',
             'TextTranscriptRow',
+            'projectMessages',
+            'projectToolCalls',
           ]
-        : ['createSession', 'projectTextTranscript']
+        : [
+            'createSession',
+            'projectTextTranscript',
+            'projectMessages',
+            'projectToolCalls',
+          ]
       ).sort()
     )
   );
@@ -188,7 +199,7 @@ export function candidateViolations(directory) {
     manifest.optionalDependencies
   )
     errors.push('Unexpected candidate install metadata');
-  for (const path of [entry, factory, projector])
+  for (const path of [entry, factory, projector, messages])
     for (const suffix of ['.js', '.d.ts']) {
       const target = join(directory, path + suffix);
       if (!existsSync(target)) errors.push(`Missing emitted ${path}${suffix}`);
