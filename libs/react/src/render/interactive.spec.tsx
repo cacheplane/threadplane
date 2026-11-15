@@ -221,21 +221,51 @@ describe('interactive RenderSpec', () => {
     expect((thrown as Error).message).toBe('Unhandled');
   });
 
-  it('never navigates for a spec', async () => {
+  it('navigates after success, and only when a listed handler ran', async () => {
     const assign = vi.fn();
     vi.stubGlobal('location', { ...window.location, assign });
     const done = vi.fn();
+    const spec = button({
+      press: [
+        { action: 'unlisted', onSuccess: { navigate: 'https://example.test/unlisted' } },
+        { action: 'done', onSuccess: { navigate: 'https://example.test/next' } },
+      ],
+    });
+    const plain = render(<RenderSpec spec={spec} registry={registry} />);
+    fireEvent.click(plain.getByRole('button'));
+    expect(assign).not.toHaveBeenCalled();
+    plain.unmount();
+    const view = render(<RenderSpec spec={spec} registry={registry} handlers={{ done }} />);
+    fireEvent.click(view.getByRole('button'));
+    await flush();
+    expect(done).toHaveBeenCalledTimes(1);
+    expect(assign).toHaveBeenCalledTimes(1);
+    expect(assign).toHaveBeenCalledWith('https://example.test/next');
+    vi.unstubAllGlobals();
+  });
+
+  it('navigates from an error follow-up and ignores a target that is not a string', () => {
+    const assign = vi.fn();
+    vi.stubGlobal('location', { ...window.location, assign });
     const view = render(
       <RenderSpec
-        spec={button({ press: { action: 'done', onSuccess: { navigate: 'https://example.test/' } } })}
+        spec={button({
+          press: [
+            { action: 'ok', onSuccess: { navigate: 7 } },
+            { action: 'bad', onError: { navigate: '/help' } },
+          ],
+        })}
         registry={registry}
-        handlers={{ done }}
+        handlers={{
+          ok: () => 1,
+          bad: () => {
+            throw new Error('Failed');
+          },
+        }}
       />
     );
     fireEvent.click(view.getByRole('button'));
-    await flush();
-    expect(done).toHaveBeenCalled();
-    expect(assign).not.toHaveBeenCalled();
+    expect(assign.mock.calls).toEqual([['/help']]);
     vi.unstubAllGlobals();
   });
 

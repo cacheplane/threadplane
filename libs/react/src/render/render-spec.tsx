@@ -205,6 +205,10 @@ export function RenderSpec({
         typeof window !== 'undefined' && typeof window.confirm === 'function'
           ? (message) => window.confirm(message)
           : undefined,
+      navigate:
+        typeof window !== 'undefined'
+          ? (url) => window.location.assign(url)
+          : undefined,
     }),
     []
   );

@@ -1414,8 +1414,9 @@ const NameField = ({ props, setValue }: RenderViewProps) => (
   wins on a shared key. Handlers receive owned, frozen params.
 - A binding with `confirm` asks through `window.confirm` first.
 - After a handler returns, or its promise resolves, `onSuccess` runs: `set`
-  reports each path to `onStateChange`, and `action` calls another listed
-  handler with no params. `onError` does the same after a throw or rejection,
+  reports each path to `onStateChange`, `action` calls another listed handler
+  with no params, and `navigate` moves the page to that URL with
+  `window.location.assign`. `onError` does the same after a throw or rejection,
   with the literal `'$error.message'` replaced by the error's message. A
   handler that throws with no `onError` rethrows to the view that emitted.
   A follow-up that settles after the tree unmounts is dropped.
@@ -1423,9 +1424,12 @@ const NameField = ({ props, setValue }: RenderViewProps) => (
   to with `$bindState` (see `bindings`). It does nothing for an unbound prop.
 - State stays yours. Nothing changes until you apply the change and pass the
   new `state` back; `RenderSpec` keeps no store of its own.
-- A `navigate` follow-up is not performed, and `preventDefault` is not applied,
-  because a spec is data an agent can author and payloads are plain data.
-  `watch` bindings, lifecycle and result events and schema validation are not
+- A spec is data an agent can author, and `navigate` lets it send the page
+  anywhere once one of your handlers has run. If you render specs you do not
+  trust, list only handlers whose bindings you are willing to follow, or
+  validate the spec before rendering it.
+- `preventDefault` is not applied, because payloads are plain data. `watch`
+  bindings, lifecycle and result events and schema validation are not
   implemented.
 
 Supply an optional `functions` map for authored `$computed` expressions:

@@ -11,6 +11,8 @@ export interface RenderActionHost {
   readonly mounted: () => boolean;
   /** Asks the person to confirm; absent where there is nobody to ask. */
   readonly confirm?: (message: string) => boolean;
+  /** Moves the page to a URL; absent where there is no window. */
+  readonly navigate?: (url: string) => void;
 }
 
 type Data = Readonly<Record<string, unknown>>;
@@ -21,11 +23,16 @@ const record = (value: unknown): value is Data =>
 /**
  * Runs a binding's follow-up. `set` writes each path through `onStateChange`;
  * in an error follow-up the literal `'$error.message'` becomes the error's
- * message. `action` calls that handler with no params. `navigate` is not
- * performed: a spec is agent-authored data and does not get to move the page.
+ * message. `action` calls that handler with no params. `navigate` moves the
+ * page to the given URL, as the Angular renderer does; it is reachable only
+ * after a handler the app listed has run.
  */
 function follow(host: RenderActionHost, step: unknown, error?: unknown) {
   if (!record(step) || !host.mounted()) return;
+  if (typeof step['navigate'] === 'string') {
+    host.navigate?.(step['navigate']);
+    return;
+  }
   if (record(step['set'])) {
     const message = error instanceof Error ? error.message : String(error);
     for (const [path, value] of Object.entries(step['set']))
