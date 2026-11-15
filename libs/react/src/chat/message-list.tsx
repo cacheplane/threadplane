@@ -39,6 +39,11 @@ import {
   renderApprovalRecords,
   type ApprovalRecordEntry,
 } from './approval-card.js';
+import {
+  carriesGenerativeUi,
+  GenerativeUiContent,
+  type MessageGenerativeUi,
+} from './generative-ui.js';
 
 type RenderRow<TRow extends MessageRow> = [TRow] extends [never]
   ? MessageRow
@@ -159,6 +164,13 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly mergeReasoning?: boolean;
   /** Typesets math in message text; see `MarkdownProps.math`. Keep stable; custom renderMessage retains full ownership. */
   readonly math?: MarkdownProps['math'];
+  /**
+   * Renders generated UI carried by an assistant message in place of its text: a json-render spec through
+   * `registry`, A2UI content through `renderA2ui`, with a "Building UI…" placeholder while it streams. A message
+   * shown as a surface gets no built-in message actions. Keep the object stable; custom renderMessage retains
+   * full ownership. Off unless set.
+   */
+  readonly generativeUi?: MessageGenerativeUi;
   /**
    * Replaces how chosen Markdown node types render in message text; see `MarkdownProps.components`.
    * Define it outside render. Custom renderMessage retains full ownership.
@@ -348,10 +360,12 @@ function RowView<TRow extends MessageRow>({
   running,
   messageActions,
   math,
+  generativeUi,
   markdownComponents,
   mergeReasoning,
 }: {
   readonly math?: MarkdownProps['math'];
+  readonly generativeUi?: MessageGenerativeUi;
   readonly markdownComponents?: MarkdownProps['components'];
   readonly mergeReasoning: boolean;
   readonly messageActions?: BuiltInMessageActions;
@@ -460,6 +474,14 @@ function RowView<TRow extends MessageRow>({
   });
   // The plan and Stop belong to the row's last built-in group, the one the turn is still running.
   const planGroup = [...runs].reverse().find((run) => 'activities' in run);
+  const text = (
+    <Markdown
+      snapshot={row.markdown}
+      citations={row.role === 'assistant' ? row.message.citations : undefined}
+      math={math}
+      components={markdownComponents}
+    />
+  );
   return (
     <ChatMessage
       role={row.role}
@@ -548,7 +570,8 @@ function RowView<TRow extends MessageRow>({
             messageActions !== undefined &&
             messageActions !== false &&
             row.message.delivery.phase === 'complete' &&
-            row.message.content.trim().length > 0 && (
+            row.message.content.trim().length > 0 &&
+            !carriesGenerativeUi(row, generativeUi) && (
               <BuiltInActions
                 messageId={row.message.id}
                 content={row.message.content}
@@ -560,15 +583,10 @@ function RowView<TRow extends MessageRow>({
     >
       {row.role === 'tool' ? (
         <pre className="tp-chat-message__literal">{row.message.content}</pre>
+      ) : generativeUi !== undefined && assistant ? (
+        <GenerativeUiContent row={row} options={generativeUi} text={text} />
       ) : (
-        <Markdown
-          snapshot={row.markdown}
-          citations={
-            row.role === 'assistant' ? row.message.citations : undefined
-          }
-          math={math}
-          components={markdownComponents}
-        />
+        text
       )}
     </ChatMessage>
   );
@@ -597,6 +615,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   typingIndicator = true,
   messageActions,
   math,
+  generativeUi,
   markdownComponents,
   mergeReasoning,
   children,
@@ -756,6 +775,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   }
                   messageActions={messageActions}
                   math={math}
+                  generativeUi={generativeUi}
                   markdownComponents={markdownComponents}
                   mergeReasoning={mergeReasoning !== false}
                 />

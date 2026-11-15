@@ -2367,9 +2367,9 @@
         "T25"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/generative-ui.tsx",
-      "reason": "Native component. Spec/registry/state/handler facade; fallback readiness and correlated events."
+      "reason": "React has no separate facade: MessageList and Chat generativeUi render a spec message through RenderSpec with a registry, functions and fallback, seeded from the spec's own state. Handlers, a shared store and correlated events remain open."
     },
     {
       "id": "component:libs/chat/src/lib/primitives/chat-genui-skeleton/chat-genui-skeleton.component.ts#ChatGenuiSkeletonComponent",
@@ -5562,9 +5562,9 @@
         "T25"
       ],
       "treatment": "react",
-      "status": "planned",
+      "status": "in-progress",
       "target": "libs/react/src/chat/generative-ui.tsx",
-      "reason": "Native component. Spec/registry/state/handler facade; fallback readiness and correlated events."
+      "reason": "React has no separate facade: MessageList and Chat generativeUi render a spec message through RenderSpec with a registry, functions and fallback, seeded from the spec's own state. Handlers, a shared store and correlated events remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#ChatGenuiSkeletonComponent",
@@ -18605,6 +18605,31 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/genui-skeleton.tsx",
       "reason": "Controlled placeholder presentation for pending generated UI, with no subscriptions, timers or commands. Full T25 remains open."
+    },
+    {
+      "id": "source:libs/react/src/chat/generative-ui.tsx",
+      "taskIds": ["T19", "T25"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/generative-ui.tsx",
+      "reason": "Opt-in generated UI in the transcript: MessageList and Chat generativeUi renders an assistant message whose content is a json-render spec through RenderSpec, element by finished element, with GenerativeUiSkeleton until the root element has arrived, and hands content after the A2UI marker to an app renderer. A view that throws gives way to the message text.",
+      "note": "Read-only: no events, handlers or state writes. Accumulating A2UI envelopes into surfaces stays with the application; a ready-made per-message accumulator, the source Details disclosure and live partial tool arguments remain open."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageGenerativeUi",
+      "taskIds": ["T19", "T25"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/generative-ui.tsx",
+      "reason": "Readonly registry/functions/fallback/renderA2ui/skeletonLabel options for generated UI rendered from assistant messages by MessageList and Chat. Off unless set."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageA2uiContent",
+      "taskIds": ["T19", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/generative-ui.tsx",
+      "reason": "What renderA2ui receives for one assistant message: its ID, the envelope source after the marker, whether it is still streaming, and the transcript's placeholder."
     },
     {
       "id": "source:libs/react/src/chat/typing-indicator.tsx",

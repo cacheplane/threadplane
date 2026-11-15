@@ -71,6 +71,8 @@ export interface ChatProps
   readonly messageActions?: MessageListProps['messageActions'];
   /** Typesets math in message text; see `MessageListProps.math`. Keep stable. */
   readonly math?: MessageListProps['math'];
+  /** Generated UI rendered from assistant messages in the transcript; see `MessageListProps.generativeUi`. Keep stable. Off unless set. */
+  readonly generativeUi?: MessageListProps['generativeUi'];
   /** Replaces how chosen Markdown node types render; see `MessageListProps.markdownComponents`. Define it outside render. */
   readonly markdownComponents?: MessageListProps['markdownComponents'];
   /** One reasoning disclosure per multi-step turn; see `MessageListProps.mergeReasoning`. Defaults to true. */
@@ -133,6 +135,7 @@ export function Chat({
   approvalRecords,
   messageActions,
   math,
+  generativeUi,
   markdownComponents,
   mergeReasoning,
   typingIndicator,
@@ -274,6 +277,7 @@ export function Chat({
         approvalRecords={approvalRecords}
         messageActions={messageActions}
         math={math}
+        generativeUi={generativeUi}
         markdownComponents={markdownComponents}
         mergeReasoning={mergeReasoning}
         typingIndicator={typingIndicator}
