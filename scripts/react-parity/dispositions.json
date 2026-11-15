@@ -19022,6 +19022,79 @@
       "target": "libs/react/src/markdown/markdown.tsx",
       "reason": "React per-node Markdown replacements: a typed components map on Markdown, Chat and MessageList, and a provider for app-wide entries, mirroring the Angular view registry.",
       "note": "Replacements receive the node, rendered children, the policy-checked URL and the built-in view. Finished code blocks carry a Copy button in both frameworks; highlighting stays an application replacement."
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#ReactRenderHandlers",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderActionHandler",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderEvent",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderHandlerEvent",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderResultEvent",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderStateChangeEvent",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderStore",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "source:libs/react/src/render/interaction.ts",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Runs an element's on bindings through application handlers with resolved params, confirm and onSuccess/onError follow-ups, writes a writable store, and reports handler, stateChange and result events. Lifecycle events, watch effects and preventDefault are not applied."
     }
   ]
 }

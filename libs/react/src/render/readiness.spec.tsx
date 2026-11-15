@@ -497,7 +497,7 @@ describe('readiness contracts', () => {
         ...spec.elements,
         root: {
           ...spec.elements.root,
-          on: { press: { action: command } },
+          on: { press: { action: 'command' } },
           watch: { '/value': { action: command } },
         },
       },
