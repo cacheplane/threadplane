@@ -170,6 +170,7 @@ export { MarkdownBlockquoteComponent }     from './lib/markdown/views/markdown-b
 export { MarkdownListComponent }           from './lib/markdown/views/markdown-list.component';
 export { MarkdownListItemComponent }       from './lib/markdown/views/markdown-list-item.component';
 export { MarkdownCodeBlockComponent }      from './lib/markdown/views/markdown-code-block.component';
+export { MarkdownCodeCopyComponent }       from './lib/markdown/views/markdown-code-copy.component';
 export { MarkdownThematicBreakComponent }  from './lib/markdown/views/markdown-thematic-break.component';
 export { MarkdownTextComponent }           from './lib/markdown/views/markdown-text.component';
 export { MarkdownEmphasisComponent }       from './lib/markdown/views/markdown-emphasis.component';

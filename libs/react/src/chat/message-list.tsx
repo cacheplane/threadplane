@@ -171,6 +171,11 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * full ownership. Off unless set.
    */
   readonly generativeUi?: MessageGenerativeUi;
+  /**
+   * Replaces how chosen Markdown node types render in message text; see `MarkdownProps.components`.
+   * Define it outside render. Custom renderMessage retains full ownership.
+   */
+  readonly markdownComponents?: MarkdownProps['components'];
   /** Application-owned content after the rows, such as a pending approval, in the same scrollable transcript. */
   readonly children?: ReactNode;
   /** Render a sibling control; attach actions to explicit event handlers. */
@@ -356,10 +361,12 @@ function RowView<TRow extends MessageRow>({
   messageActions,
   math,
   generativeUi,
+  markdownComponents,
   mergeReasoning,
 }: {
   readonly math?: MarkdownProps['math'];
   readonly generativeUi?: MessageGenerativeUi;
+  readonly markdownComponents?: MarkdownProps['components'];
   readonly mergeReasoning: boolean;
   readonly messageActions?: BuiltInMessageActions;
   readonly row: TRow;
@@ -472,6 +479,7 @@ function RowView<TRow extends MessageRow>({
       snapshot={row.markdown}
       citations={row.role === 'assistant' ? row.message.citations : undefined}
       math={math}
+      components={markdownComponents}
     />
   );
   return (
@@ -608,6 +616,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   messageActions,
   math,
   generativeUi,
+  markdownComponents,
   mergeReasoning,
   children,
   renderScrollControl,
@@ -767,6 +776,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   messageActions={messageActions}
                   math={math}
                   generativeUi={generativeUi}
+                  markdownComponents={markdownComponents}
                   mergeReasoning={mergeReasoning !== false}
                 />
                 {renderApprovalRecords(recordsAfter, row.id)}
