@@ -30,7 +30,7 @@ import {
   type SessionSnapshot,
 } from './session-observation.js';
 import { earlierSubagents, type Subagents } from './subagents.js';
-import { createRun, type RunHandle } from './create-run.js';
+import { createRun, httpFailure, type RunHandle } from './create-run.js';
 import { createPublication } from './session-publication.js';
 import { createReasoningClock } from './reasoning-clock.js';
 import type { InterruptMode } from './interrupt-mode.js';
@@ -160,7 +160,8 @@ export function createSession(
   const finish = (
     attempt: Attempt,
     outcome: CompleteOutcome,
-    fetchInvoked: boolean
+    fetchInvoked: boolean,
+    failure?: { readonly status: number }
   ) => {
     if (attempt.finished) return;
     attempt.finished = true;
@@ -178,7 +179,12 @@ export function createSession(
           ),
           status:
             outcome === 'error' || outcome === 'interrupted' ? 'error' : 'idle',
-          run: Object.freeze({ ...previous.run, id: attempt.id, outcome }),
+          run: Object.freeze({
+            ...previous.run,
+            id: attempt.id,
+            outcome,
+            ...(failure && outcome === 'error' && { failure }),
+          }),
         })
       );
       if (disposed) publication.clear();
@@ -272,7 +278,7 @@ export function createSession(
     if (!current(attempt)) attempt.handle.abort();
     void attempt.handle.done.then((result) =>
       publication.command(() =>
-        finish(attempt, result.outcome, result.fetchInvoked)
+        finish(attempt, result.outcome, result.fetchInvoked, httpFailure(result))
       )
     );
   };
@@ -781,7 +787,8 @@ function createToolsOwner(
     command: Command,
     physical: Physical,
     outcome: CompleteOutcome,
-    fetchInvoked: boolean
+    fetchInvoked: boolean,
+    failure?: { readonly status: number }
   ) => {
     if (physical.settled) return;
     physical.settled = true;
@@ -810,6 +817,7 @@ function createToolsOwner(
           ...previous.run,
           id: physical.id,
           outcome: nativeSuccess ? 'success' : outcome,
+          ...(failure && !nativeSuccess && outcome === 'error' && { failure }),
         }),
         clientTools: ledger.snapshot(),
       })
@@ -1032,7 +1040,13 @@ function createToolsOwner(
       physical.handle.abort();
     void physical.handle.done.then((result) =>
       publication.command(() =>
-        settlePhysical(command, physical, result.outcome, result.fetchInvoked)
+        settlePhysical(
+          command,
+          physical,
+          result.outcome,
+          result.fetchInvoked,
+          httpFailure(result)
+        )
       )
     );
   };

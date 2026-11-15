@@ -149,9 +149,13 @@ const session = createAgentSession(native);
   `dispose`. Disposing the view disposes the session.
 - A failed run becomes `snapshot.error`. A backend `RUN_ERROR` is a `server`
   error carrying the backend's message. A stream that ended without a terminal
-  is `interrupted`. Any other failure is a generic `server` error, because the
-  native snapshot keeps the outcome and not the cause: an authentication
-  failure and an unreachable host are not told apart.
+  is `interrupted`. A response that was not OK carries its HTTP status: 401 and
+  403 are an `auth` error, any other status a generic `server` error. The
+  response body is never shown. A request that got no response, such as an
+  unreachable host, is a generic `server` error without a status.
+- The native snapshot records that status as `run.failure.status` when a
+  response that was not OK is why the run failed, and clears it with the next
+  run.
 - Every error has `retryable: false` and `recovery: 'none'`. Nothing in the
   snapshot proves a request never reached the backend, and the owner has no
   status check, so the view has no `checkStatus`.

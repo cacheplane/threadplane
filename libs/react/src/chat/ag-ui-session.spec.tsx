@@ -8,6 +8,8 @@ import { decisionState } from '../../../ag-ui/src/runtime/decision';
 import { createAgentSession } from '../../../ag-ui/src/runtime/agent-session';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
 import { bindingFixture } from '../../../ag-ui/src/runtime/testing/binding-fixture';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
+import { createSession } from '../../../ag-ui/src/runtime/create-session';
 
 afterEach(cleanup);
 
@@ -201,6 +203,32 @@ describe('Chat over a native AG-UI session', () => {
       expect(fixture.exchanges).toHaveLength(2);
     } finally {
       await act(() => fixture.cleanup());
+    }
+  });
+
+  it('names a rejected credential instead of a generic failure', async () => {
+    const native = createSession({
+      threadId: 'thread',
+      url: 'https://failure.invalid/run',
+      fetch: async () =>
+        new Response('{"detail":"Not allowed"}', {
+          status: 401,
+          headers: { 'content-type': 'application/json' },
+        }),
+    });
+    const view = render(<Chat session={createAgentSession(native)} />);
+    try {
+      const box = view.getByRole('textbox');
+      fireEvent.change(box, { target: { value: 'Hello' } });
+      fireEvent.keyDown(box, { key: 'Enter' });
+      const alert = await view.findByRole('alert');
+      expect(alert.textContent).toContain(
+        'Authentication failed. Check your credentials.'
+      );
+      expect(alert.textContent).not.toContain('Not allowed');
+      expect(view.queryByRole('button', { name: 'Retry response' })).toBeNull();
+    } finally {
+      await act(() => native.dispose());
     }
   });
 });

@@ -18954,7 +18954,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private core AgentSession view of the native owner: a snapshot derived from the native one with the message and tool-call selectors, change-only notification, a display error for a failed run, and text submit, stop and dispose forwarded to the owner.",
-      "note": "Covered by runtime specs and a React Chat integration spec over the real owner. Exported from the test-only candidate package entry and checked from installed tarballs; not exported from the published package root. State patches, native resume, client-tool evidence, a status check and failure causes (authentication, connection) are not represented."
+      "note": "Covered by runtime specs and a React Chat integration spec over the real owner. Exported from the test-only candidate package entry and checked from installed tarballs; not exported from the published package root. A rejected credential (401 or 403) is an auth error and another HTTP status is carried on a server error. State patches, native resume, client-tool evidence, a status check and a failure without a response are not represented."
     },
     {
       "id": "source:libs/ag-ui/src/runtime/message-projection.ts",
