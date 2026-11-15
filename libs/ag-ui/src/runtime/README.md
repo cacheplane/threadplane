@@ -1,7 +1,8 @@
 # Private native AG-UI session commands
 
 The test-only [candidate package proof](../../../../fixtures/react-parity/ag-ui-candidate/README.md)
-emits this actual owner and text selector with complete declarations, then runs
+emits this actual owner, its text selector and its core message and tool-call
+selectors with complete declarations, then runs
 the existing browser and local-provider oracles against installed tarballs. It
 does not change this private API's status or the current published Angular root.
 
@@ -114,8 +115,9 @@ Tool calls follow these rules:
 - Calls owned by a child-attributed record, media parts of a tool result and the
   session's own client-tool statuses are not projected.
 
-These selectors are not exported from the candidate package entry and do not
-make the owner a core `AgentSession`.
+The test-only candidate package entry exports both selectors next to
+`createSession`. They are still private source: the published package root does
+not export them, and they do not make the owner a core `AgentSession`.
 
 ## Interruption evidence
 

@@ -12,3 +12,4 @@ export type {
 } from '../../../libs/ag-ui/src/runtime/client-tools.js';
 export { projectTextTranscript } from '../../../libs/ag-ui/src/runtime/text-transcript.js';
 export type { TextTranscriptRow } from '../../../libs/ag-ui/src/runtime/text-transcript.js';
+export { projectMessages, projectToolCalls } from '../../../libs/ag-ui/src/runtime/message-projection.js';
