@@ -65,6 +65,47 @@ The existing shared backend is used by default. A developer LangGraph target can
 
 <ExampleCode file="cockpit/langgraph/client-tools/react/src/connection.ts" />
 
+## Ask the person in the transcript
+
+An ask tool is a function tool that the person answers. Declare it with `ask`, collect the declarations with `createClientTools`, pass `clientTools.tools` to the session, and pass the whole object to `Chat` as `clientTools`. While a call waits, your view replaces that call's row in the transcript. The value you pass to `answer` becomes the tool result, the built-in row returns, and focus goes back to the composer.
+
+~~~tsx
+import type { AgentSession } from '@threadplane/core';
+import { Chat, ask, createClientTools } from '@threadplane/react/chat';
+
+const clientTools = createClientTools({
+  pick_day: ask<{ days: string[] }, { day: string }>({
+    description: 'Ask which itinerary day to plan.',
+    parameters: {
+      type: 'object',
+      properties: { days: { type: 'array', items: { type: 'string' } } },
+      required: ['days'],
+    },
+    render: ({ args, answer }) => (
+      <fieldset>
+        <legend>Which day?</legend>
+        {args.days.map((day) => (
+          <button key={day} type="button" onClick={() => answer({ day })}>
+            {day}
+          </button>
+        ))}
+      </fieldset>
+    ),
+  }),
+});
+
+// Create the session once, with these tools beside any other function tools:
+// createSession({ ...options, tools: { ...clientTools.tools, ...otherTools } })
+
+export function Planner({ session }: { session: AgentSession }) {
+  return <Chat session={session} clientTools={clientTools} />;
+}
+~~~
+
+Create `clientTools` once, outside the component, like the session. Only the first answer counts, and **Stop** cancels a waiting call. `Chat` shows these views only when `clientTools` is set, and it shows them ahead of `renderToolCall`. Arguments are not validated before `render` runs, so check them in your view. A call observed from saved history has no handler waiting and keeps its built-in row. With `MessageList`, pass `useClientToolCalls(clientTools, renderToolCall)` as `renderToolCall`.
+
+The session does not tell a handler its call ID. A waiting call is paired with the transcript call of the same name and equal arguments, and a view always answers the arguments it was drawn with. Render-only view tools, schema-derived argument types, and a continuation limit are not part of this API.
+
 ## Build from source
 
 ~~~sh

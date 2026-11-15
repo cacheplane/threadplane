@@ -14,6 +14,11 @@ import {
   type ChatInputHandle,
   type ChatInputProps,
 } from './chat-input.js';
+import {
+  useClientToolCalls,
+  usePendingClientToolCalls,
+  type ChatClientTools,
+} from './client-tools.js';
 import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
 import {
@@ -49,6 +54,13 @@ export interface ChatProps
   /** App-owned presentation for one tool call; see `MessageListProps.renderToolCall`. Keep stable. */
   readonly renderToolCall?: MessageListProps['renderToolCall'];
   readonly renderToolResult?: MessageListProps['renderToolResult'];
+  /**
+   * Interactive client tools from `createClientTools`. While one of its calls waits for the person,
+   * its view replaces that call's row in the transcript, ahead of `renderToolCall`; the answer
+   * becomes the tool result, the built-in row returns, and focus goes back to the composer. The
+   * app passes `clientTools.tools` to the session; Chat never runs a tool. Off unless set.
+   */
+  readonly clientTools?: ChatClientTools;
   /** Child agents shown as subagent cards in place of the tool calls that started them. Keep stable. */
   readonly subagents?: MessageListProps['subagents'];
   /** Application-owned handler for a retry declared by `toolOutcome`; Chat never re-runs a call. Keep stable. */
@@ -119,6 +131,7 @@ export function Chat({
   toolOutcome,
   renderToolCall,
   renderToolResult,
+  clientTools,
   subagents,
   onToolRetry,
   onRetry,
@@ -168,17 +181,21 @@ export function Chat({
   const pending =
     approval !== undefined && approval !== null && approval !== false;
   const disabled = input.disabled ?? false;
-  const hadApproval = useRef(pending);
+  // An answered client tool leaves the transcript the same way.
+  const renderCall = useClientToolCalls(clientTools, renderToolCall);
+  const asked = usePendingClientToolCalls(clientTools).length > 0;
+  const awaited = pending || asked;
+  const hadApproval = useRef(awaited);
   const focusOwed = useRef(false);
   useEffect(() => {
-    if (hadApproval.current && !pending) focusOwed.current = true;
-    if (pending) focusOwed.current = false;
-    hadApproval.current = pending;
+    if (hadApproval.current && !awaited) focusOwed.current = true;
+    if (awaited) focusOwed.current = false;
+    hadApproval.current = awaited;
     if (focusOwed.current && !disabled) {
       focusOwed.current = false;
       composer.current?.focus();
     }
-  }, [pending, disabled]);
+  }, [awaited, disabled]);
   const rows = useMessageContent(snapshot, session, content);
   // A failed call already shows these words, and the notice would add no action or detail of its own.
   // A custom renderMessage owns that display, so the notice stays whenever one is in use.
@@ -261,7 +278,7 @@ export function Chat({
         groupRelatedTools={groupRelatedTools}
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
-        renderToolCall={renderToolCall}
+        renderToolCall={renderCall}
         renderToolResult={renderToolResult}
         subagents={subagents}
         onToolRetry={onToolRetry}
