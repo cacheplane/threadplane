@@ -14,3 +14,5 @@ export { projectTextTranscript } from '../../../libs/ag-ui/src/runtime/text-tran
 export type { TextTranscriptRow } from '../../../libs/ag-ui/src/runtime/text-transcript.js';
 export { projectMessages, projectToolCalls } from '../../../libs/ag-ui/src/runtime/message-projection.js';
 export { createAgentSession } from '../../../libs/ag-ui/src/runtime/agent-session.js';
+export { decisionState } from '../../../libs/ag-ui/src/runtime/decision.js';
+export type { DecisionState } from '../../../libs/ag-ui/src/runtime/decision.js';

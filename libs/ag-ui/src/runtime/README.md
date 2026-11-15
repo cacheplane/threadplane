@@ -158,7 +158,52 @@ const session = createAgentSession(native);
 - A state patch, native resume and client-tool evidence have no core
   equivalent. Keep the native session for those; both can be used together.
   While a native decision is waiting, `submit` resolves `error` without sending,
-  and nothing in the core snapshot says why.
+  and nothing in the core snapshot says why. Show the decision instead, as
+  below.
+
+### Approvals
+
+`decisionState(snapshot)` reads the native snapshot's pending decision and how
+far it has got, so an app can show it in `Chat`'s `approval` slot and answer it
+on the native session:
+
+```tsx
+const pending = decisionState(useAgent(native));
+<Chat
+  session={session}
+  approval={
+    pending?.kind === 'native' ? (
+      <ApprovalCard
+        disabled={pending.phase !== 'ready'}
+        actions={[
+          {
+            id: 'approve',
+            label: 'Issue refund',
+            onSelect: () =>
+              void native.resume(pending.id, [
+                { interruptId: pending.interrupts[0].id, status: 'resolved' },
+              ]),
+          },
+        ]}
+      >
+        {pending.interrupts[0].reason}
+      </ApprovalCard>
+    ) : null
+  }
+/>;
+```
+
+- It is absent when nothing is waiting, and `{ kind: 'unsupported' }` for a
+  pause this owner cannot answer.
+- A native pause has a `phase`: `observing` until the pausing run has settled
+  locally, `ready` when it can be answered, `answering` while the answer's run
+  is going, and `uncertain` when that run ended without proof the backend took
+  the answer. An uncertain answer cannot be sent again.
+- The same decision in the same phase returns the same reference.
+- `ready` does not look at the clock: an interrupt past its `expiresAt` still
+  reads `ready`, and `resume` then resolves `error`.
+- What the buttons mean, and which payload answers which interrupt, stay with
+  the app. Response schemas are not interpreted.
 
 The candidate package entry exports it. The published package root does not.
 

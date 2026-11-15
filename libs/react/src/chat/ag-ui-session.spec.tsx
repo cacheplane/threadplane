@@ -1,6 +1,9 @@
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Chat } from './index';
+import { ApprovalCard, Chat } from './index';
+import { useAgent } from '../use-agent';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
+import { decisionState } from '../../../ag-ui/src/runtime/decision';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
 import { createAgentSession } from '../../../ag-ui/src/runtime/agent-session';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
@@ -103,6 +106,99 @@ describe('Chat over a native AG-UI session', () => {
       expect(sources?.textContent).toContain('1');
       expect(view.container.textContent).toContain('Signals are reactive.');
       expect(view.container.textContent).not.toContain('[^doc]');
+    } finally {
+      await act(() => fixture.cleanup());
+    }
+  });
+
+  it('shows a pending approval from the native session and answers it', async () => {
+    const fixture = bindingFixture();
+    const native = fixture.session;
+    const session = createAgentSession(native);
+    function App() {
+      const pending = decisionState(useAgent(native));
+      return (
+        <Chat
+          session={session}
+          approval={
+            pending?.kind === 'native' ? (
+              <ApprovalCard
+                title="Refund approval"
+                disabled={pending.phase !== 'ready'}
+                actions={[
+                  {
+                    id: 'approve',
+                    label: 'Issue refund',
+                    onSelect: () =>
+                      void native.resume(
+                        pending.id,
+                        pending.interrupts.map((interrupt) => ({
+                          interruptId: interrupt.id,
+                          status: 'resolved' as const,
+                          payload: { approved: true },
+                        }))
+                      ),
+                  },
+                ]}
+              >
+                {pending.interrupts[0].reason}
+              </ApprovalCard>
+            ) : null
+          }
+        />
+      );
+    }
+    const view = render(<App />);
+    const box = () => view.getByRole('textbox');
+    try {
+      fireEvent.change(box(), { target: { value: 'Refund order 7' } });
+      fireEvent.keyDown(box(), { key: 'Enter' });
+      const exchange = await act(() => fixture.started());
+      expect(view.queryByRole('button', { name: 'Issue refund' })).toBeNull();
+      await act(async () => {
+        exchange.emit({
+          type: 'RUN_FINISHED',
+          threadId: exchange.body.threadId,
+          runId: exchange.body.runId,
+          outcome: {
+            type: 'interrupt',
+            interrupts: [{ id: 'approval', reason: 'Refund 20 to order 7?' }],
+          },
+        });
+        await fixture.changed((snapshot) => snapshot.run?.outcome === 'paused');
+      });
+      const approve = view.getByRole('button', { name: 'Issue refund' });
+      expect((approve as HTMLButtonElement).disabled).toBe(false);
+      expect(view.container.textContent).toContain('Refund 20 to order 7?');
+      expect(box().getAttribute('placeholder')).toBe(
+        'Answer the approval to continue'
+      );
+
+      fireEvent.click(approve);
+      const next = await act(() => fixture.started(1));
+      expect((next.body as { resume?: unknown }).resume).toEqual([
+        { interruptId: 'approval', status: 'resolved', payload: { approved: true } },
+      ]);
+      expect(
+        (view.getByRole('button', { name: 'Issue refund' }) as HTMLButtonElement)
+          .disabled
+      ).toBe(true);
+      await act(async () => {
+        next.emit({ type: 'TEXT_MESSAGE_START', messageId: 'a', role: 'assistant' });
+        next.emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'a', delta: 'Refund issued.' });
+        next.emit({ type: 'TEXT_MESSAGE_END', messageId: 'a' });
+        next.emit({
+          type: 'RUN_FINISHED',
+          threadId: next.body.threadId,
+          runId: next.body.runId,
+        });
+        await fixture.changed(
+          (snapshot) => snapshot.status === 'idle' && !snapshot.decision
+        );
+      });
+      expect(view.queryByRole('button', { name: 'Issue refund' })).toBeNull();
+      expect(view.container.textContent).toContain('Refund issued.');
+      expect(fixture.exchanges).toHaveLength(2);
     } finally {
       await act(() => fixture.cleanup());
     }

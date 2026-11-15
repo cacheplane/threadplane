@@ -190,3 +190,65 @@ export function settleDecision(
   }
   return decision;
 }
+
+/**
+ * What a view can do about the session's pending decision.
+ *
+ * - `observing`: the pausing run has not settled locally yet; do not answer.
+ * - `ready`: the pause can be answered with `session.resume(id, responses)`.
+ * - `answering`: an answer was sent and its run is still going.
+ * - `uncertain`: the answering run ended without proof that the backend took
+ *   the answer. It cannot be sent again; only a new session can continue.
+ *
+ * `unsupported` is a pause this owner cannot answer, such as a legacy custom
+ * interrupt or a batch with duplicate identifiers.
+ */
+export type DecisionState =
+  | { readonly kind: 'unsupported' }
+  | {
+      readonly kind: 'native';
+      readonly id: PauseId;
+      readonly interrupts: readonly OwnedInterrupt[];
+      readonly phase: 'observing' | 'ready' | 'answering' | 'uncertain';
+    };
+
+const unsupported: DecisionState = Object.freeze({ kind: 'unsupported' });
+const states = new WeakMap<NativeDecision, Map<string, DecisionState>>();
+
+/**
+ * Display only: reads the pending decision and how far it has got from a
+ * session snapshot. Absent when nothing is waiting. The same decision in the
+ * same phase returns the same reference.
+ *
+ * `ready` does not look at the clock. An interrupt with an `expiresAt` in the
+ * past still reads `ready`, and `resume` then rejects it.
+ */
+export function decisionState(snapshot: {
+  readonly decision?: Decision;
+  readonly run?: DecisionRun;
+}): DecisionState | undefined {
+  const { decision, run } = snapshot;
+  if (!decision) return undefined;
+  if (decision.kind !== 'native') return unsupported;
+  const settled = run?.outcome !== undefined;
+  const phase = decision.attempt
+    ? settled
+      ? 'uncertain'
+      : 'answering'
+    : settled
+    ? 'ready'
+    : 'observing';
+  let known = states.get(decision);
+  if (!known) states.set(decision, (known = new Map()));
+  let state = known.get(phase);
+  if (!state) {
+    state = Object.freeze({
+      kind: 'native',
+      id: decision.id,
+      interrupts: decision.interrupts,
+      phase,
+    });
+    known.set(phase, state);
+  }
+  return state;
+}

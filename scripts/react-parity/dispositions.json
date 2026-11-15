@@ -15022,7 +15022,7 @@
       ],
       "treatment": "internal",
       "status": "in-progress",
-      "reason": "Private correlated native resume capture, claim and settlement; retains uncertain invoked attempts and does not establish public backend or provider parity."
+      "reason": "Private correlated native resume capture, claim and settlement, and a display selector of the pending decision and its phase for approval views; retains uncertain invoked attempts and does not establish public backend or provider parity."
     },
     {
       "id": "component:libs/angular/chat/src/tool-observation.component.ts#ToolObservationComponent",
