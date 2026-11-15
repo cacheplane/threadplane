@@ -1,4 +1,5 @@
 import {
+  createAgentSession,
   createSession,
   projectTextTranscript,
   projectMessages,
@@ -12,7 +13,13 @@ import {
   type ClientToolBlocker,
 } from '@threadplane/ag-ui';
 import type { CheckedTools, ToolContracts } from '@threadplane/core/tools';
-import type { CompleteOutcome, Message, ToolCall } from '@threadplane/core';
+import type {
+  AgentSession,
+  AgentSnapshot,
+  CompleteOutcome,
+  Message,
+  ToolCall,
+} from '@threadplane/core';
 export type NativeResponse = Parameters<Session['resume']>[1][number];
 export function checkCandidate(signal: AbortSignal) {
   const options: SessionOptions = {
@@ -81,7 +88,16 @@ export function checkCandidate(signal: AbortSignal) {
   void session.reconnect();
   // @ts-expect-error No client tool execution command is invented.
   void session.addToolResult('id', 'result');
-  return { session, snapshot, rows, stable, messages, toolCalls };
+  const agent: AgentSession = createAgentSession(session);
+  const core: AgentSnapshot = agent.getSnapshot();
+  void agent.submit('Hello', { signal });
+  // @ts-expect-error The core view submits text only; state goes through the native session.
+  void agent.submit({ message: 'Hello' });
+  // @ts-expect-error Native resume stays on the native session.
+  void agent.resume;
+  // @ts-expect-error The view wraps a session, not its options.
+  createAgentSession(options);
+  return { session, snapshot, rows, stable, messages, toolCalls, agent, core };
 }
 export function checkClientTools(options: SessionOptions) {
   const catalog = {
@@ -112,6 +128,8 @@ export function checkClientTools(options: SessionOptions) {
   const blocker: ClientToolBlocker | undefined = snapshot.clientTools.blocker;
   void outcome;
   void blocker;
+  const view: AgentSession = createAgentSession(owner);
+  void view;
   for (const call of calls) {
     const name: 'get_weather' | 'book' = call.name;
     void name;

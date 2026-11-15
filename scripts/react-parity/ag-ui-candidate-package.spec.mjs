@@ -180,7 +180,7 @@ function fixture(t) {
   mkdirSync(join(source, 'libs/ag-ui/src/runtime'), { recursive: true });
   writeFileSync(
     join(source, entry + '.ts'),
-    "export { createSession } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport type { Session, SessionOptions, ClientToolSession } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport type { ClientToolSessionSnapshot, ClientToolCall, ClientToolBlocker } from '../../../libs/ag-ui/src/runtime/client-tools.js';\nexport { projectTextTranscript } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\nexport type { TextTranscriptRow } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\nexport { projectMessages, projectToolCalls } from '../../../libs/ag-ui/src/runtime/message-projection.js';\n"
+    "export { createSession } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport type { Session, SessionOptions, ClientToolSession } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport type { ClientToolSessionSnapshot, ClientToolCall, ClientToolBlocker } from '../../../libs/ag-ui/src/runtime/client-tools.js';\nexport { projectTextTranscript } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\nexport type { TextTranscriptRow } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\nexport { projectMessages, projectToolCalls } from '../../../libs/ag-ui/src/runtime/message-projection.js';\nexport { createAgentSession } from '../../../libs/ag-ui/src/runtime/agent-session.js';\n"
   );
   writeFileSync(
     join(source, 'libs/ag-ui/src/runtime/create-session.ts'),
@@ -197,6 +197,10 @@ function fixture(t) {
   writeFileSync(
     join(source, 'libs/ag-ui/src/runtime/message-projection.ts'),
     'export function projectMessages(snapshot: object) { return [snapshot]; }\nexport function projectToolCalls(snapshot: object) { return [snapshot]; }'
+  );
+  writeFileSync(
+    join(source, 'libs/ag-ui/src/runtime/agent-session.ts'),
+    'export function createAgentSession(session: object) { return session; }'
   );
   writeFileSync(join(source, 'package.json'), '{"type":"module"}');
   const program = ts.createProgram([join(source, entry + '.ts')], {
@@ -312,6 +316,8 @@ for (const path of [
   'libs/ag-ui/src/runtime/text-transcript.d.ts',
   'libs/ag-ui/src/runtime/message-projection.js',
   'libs/ag-ui/src/runtime/message-projection.d.ts',
+  'libs/ag-ui/src/runtime/agent-session.js',
+  'libs/ag-ui/src/runtime/agent-session.d.ts',
 ])
   test('rejects missing actual output ' + path, (t) => {
     const { output } = fixture(t);

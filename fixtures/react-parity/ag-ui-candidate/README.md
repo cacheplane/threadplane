@@ -43,10 +43,11 @@ snapshot type. Core is required by those declarations; its implementation need
 not occur in the backend's runtime graph.
 The sole additional bare subpath is a type-only `@threadplane/core/tools`
 declaration dependency resolved from the actual packed core tools entry.
-The candidate has exactly four runtime exports: `createSession`, the text
-selector `projectTextTranscript`, and the core selectors `projectMessages` and
-`projectToolCalls`, which return core `Message` and `ToolCall` values and add
-no types of their own. Its client-tool session, snapshot, call and blocker
+The candidate has exactly five runtime exports: `createSession`, the text
+selector `projectTextTranscript`, the core selectors `projectMessages` and
+`projectToolCalls`, which return core `Message` and `ToolCall` values, and
+`createAgentSession`, which wraps a native session as a core `AgentSession`.
+None of the last three adds a type of its own to the entry. Its client-tool session, snapshot, call and blocker
 types forward directly from the native runtime modules. Heterogeneous authored
 handler argument/result contracts are verified under NodeNext and Bundler,
 including readonly projections, an empty catalog and the original no-catalog

@@ -1,0 +1,87 @@
+import { act, cleanup, fireEvent, render } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { Chat } from './index';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
+import { createAgentSession } from '../../../ag-ui/src/runtime/agent-session';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
+import { bindingFixture } from '../../../ag-ui/src/runtime/testing/binding-fixture';
+
+afterEach(cleanup);
+
+describe('Chat over a native AG-UI session', () => {
+  it('sends from the composer, streams the reply with its tool call, and shows a backend error', async () => {
+    const fixture = bindingFixture();
+    const session = createAgentSession(fixture.session);
+    const view = render(
+      <Chat
+        session={session}
+        renderToolCall={(call) => (
+          <p data-testid="call">
+            {call.name}:{call.status}
+          </p>
+        )}
+      />
+    );
+    const box = () => view.getByRole('textbox', { name: 'Message' });
+    try {
+      fireEvent.change(box(), { target: { value: 'Find tea' } });
+      fireEvent.keyDown(box(), { key: 'Enter' });
+      const exchange = await act(() => fixture.started());
+      expect(exchange.body.messages.at(-1)).toMatchObject({
+        role: 'user',
+        content: 'Find tea',
+      });
+      expect(view.container.textContent).toContain('Find tea');
+      expect(view.getByRole('button', { name: 'Stop' })).toBeTruthy();
+
+      await act(async () => {
+        exchange.emit({
+          type: 'TOOL_CALL_START',
+          toolCallId: 'c1',
+          toolCallName: 'search',
+          parentMessageId: 'a1',
+        });
+        exchange.emit({ type: 'TOOL_CALL_ARGS', toolCallId: 'c1', delta: '{"q":"tea"}' });
+        exchange.emit({ type: 'TOOL_CALL_END', toolCallId: 'c1' });
+        exchange.emit({
+          type: 'TOOL_CALL_RESULT',
+          toolCallId: 'c1',
+          messageId: 't1',
+          content: '{"hits":2}',
+        });
+        exchange.emit({ type: 'TEXT_MESSAGE_START', messageId: 'a2', role: 'assistant' });
+        exchange.emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'a2', delta: 'Two teas found.' });
+        exchange.emit({ type: 'TEXT_MESSAGE_END', messageId: 'a2' });
+        exchange.emit({
+          type: 'RUN_FINISHED',
+          threadId: exchange.body.threadId,
+          runId: exchange.body.runId,
+        });
+        await fixture.changed((snapshot) => snapshot.status === 'idle');
+      });
+      expect(view.container.textContent).toContain('Two teas found.');
+      expect(view.getByTestId('call').textContent).toBe('search:complete');
+      expect(view.queryByRole('button', { name: 'Stop' })).toBeNull();
+
+      fireEvent.change(box(), { target: { value: 'Again' } });
+      fireEvent.keyDown(box(), { key: 'Enter' });
+      const next = await act(() => fixture.started(1));
+      expect(next.body.messages.map((message) => message.role)).toEqual([
+        'user',
+        'assistant',
+        'tool',
+        'assistant',
+        'user',
+      ]);
+      await act(async () => {
+        next.emit({ type: 'RUN_ERROR', message: 'Quota exceeded' });
+        await fixture.changed((snapshot) => snapshot.status === 'error');
+      });
+      expect(view.getByRole('alert').textContent).toContain('Quota exceeded');
+      expect(view.queryByRole('button', { name: 'Retry response' })).toBeNull();
+      expect(view.queryByRole('button', { name: 'Check status' })).toBeNull();
+    } finally {
+      await act(() => fixture.cleanup());
+    }
+  });
+});
