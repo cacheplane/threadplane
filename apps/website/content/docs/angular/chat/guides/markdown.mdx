@@ -208,6 +208,62 @@ the application should render markdown differently. A `[viewRegistry]` input on
 an individual `<chat-streaming-md>` still wins over both, so a single surface can
 opt out of the application-wide choice.
 
+## Copy a code block
+
+Every finished code block has a Copy button in its top-right corner. It appears on hover and keyboard focus, and stays visible on touch screens. It writes the block's source text to the clipboard and reads "Copied" for two seconds. While the block is still streaming, the button is absent.
+
+## Highlight code with Shiki
+
+The library does not bundle a highlighter. Replace the `'code-block'` view with one that highlights once the fence closes, and keep the Copy button with `<chat-md-code-copy>`:
+
+```typescript
+import { Component, ChangeDetectionStrategy, effect, inject, input, signal } from '@angular/core';
+import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
+import { codeToHtml } from 'shiki';
+import type { MarkdownCodeBlockNode } from '@cacheplane/partial-markdown';
+import { MarkdownCodeCopyComponent } from '@threadplane/chat';
+
+@Component({
+  selector: 'app-shiki-code-block',
+  standalone: true,
+  imports: [MarkdownCodeCopyComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="chat-md-code">
+      @if (html(); as markup) {
+        <div [innerHTML]="markup"></div>
+      } @else {
+        <pre><code>{{ node().text }}</code></pre>
+      }
+      @if (node().status === 'complete') {
+        <chat-md-code-copy [text]="node().text" />
+      }
+    </div>
+  `,
+})
+export class ShikiCodeBlockComponent {
+  readonly node = input.required<MarkdownCodeBlockNode>();
+  protected readonly html = signal<SafeHtml | null>(null);
+  private readonly sanitizer = inject(DomSanitizer);
+
+  constructor() {
+    effect((onCleanup) => {
+      const node = this.node();
+      if (node.status !== 'complete') return;
+      let live = true;
+      onCleanup(() => (live = false));
+      codeToHtml(node.text, { lang: node.language || 'text', theme: 'github-light' }).then(
+        // Shiki escapes the code it highlights, so its output is safe to trust.
+        (out) => live && this.html.set(this.sanitizer.bypassSecurityTrustHtml(out)),
+        () => undefined, // An unknown language keeps the plain block.
+      );
+    });
+  }
+}
+```
+
+Register it with `overrideViews(cacheplaneMarkdownViews, { 'code-block': ShikiCodeBlockComponent })`, on one surface or app-wide as shown above. Insert only markup your highlighter produced.
+
 ## Node-Type Reference
 
 `cacheplaneMarkdownViews` covers every node type emitted by `@cacheplane/partial-markdown`. Use these keys when calling `overrideViews` or `withViews`.

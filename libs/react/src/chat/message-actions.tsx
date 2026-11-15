@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { MessageRating, type MessageRatingValue } from './message-rating.js';
+import { writeClipboard } from '../markdown/clipboard.js';
 
 /** An explicitly authored action; IDs must be unique within the group. */
 export interface MessageAction {
@@ -81,36 +82,6 @@ export type BuiltInMessageActions =
         messageId: string
       ) => void;
     };
-
-/** Writes text to the clipboard, falling back to a selection copy where the async API is absent or refuses. */
-async function writeClipboard(document: Document, text: string): Promise<boolean> {
-  const clipboard = document.defaultView?.navigator.clipboard;
-  if (clipboard?.writeText) {
-    try {
-      await clipboard.writeText(text);
-      return true;
-    } catch {
-      // Permissions, an insecure context or an unfocused document: try the selection copy.
-    }
-  }
-  // Selecting the helper takes focus; hand it back so a keyboard user stays on the button.
-  const focused = document.activeElement;
-  const area = document.createElement('textarea');
-  try {
-    area.value = text;
-    area.setAttribute('readonly', '');
-    area.style.position = 'fixed';
-    area.style.opacity = '0';
-    document.body.appendChild(area);
-    area.select();
-    return document.execCommand?.('copy') === true;
-  } catch {
-    return false;
-  } finally {
-    area.remove();
-    if (focused instanceof HTMLElement && focused.isConnected) focused.focus();
-  }
-}
 
 /** Built-in Copy, and rating when asked, under one finished assistant message. Not part of the public entry. */
 export function BuiltInActions({
