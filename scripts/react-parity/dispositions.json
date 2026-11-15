@@ -18978,6 +18978,62 @@
       "status": "in-progress",
       "reason": "Private arrival-time measurement of root reasoning messages between their start and end events, published as the session snapshot's reasoningDurations by message ID.",
       "note": "Restored reasoning, reasoning without an end event and child reasoning stay unmeasured. A messages snapshot carries each run of reasoning's measured total onto the records that replace it when the runs line up. Nothing is stored or sent."
+    },
+    {
+      "id": "component:libs/chat/src/lib/markdown/views/markdown-code-copy.component.ts#MarkdownCodeCopyComponent",
+      "taskIds": ["T26"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "Native component. The code block's Copy button, reusable by a replacement code-block view."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#MarkdownCodeCopyComponent",
+      "taskIds": ["T26"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "Native component. The code block's Copy button, reusable by a replacement code-block view."
+    },
+    {
+      "id": "source:libs/chat/src/lib/markdown/views/markdown-code-copy.component.ts",
+      "taskIds": ["T26"], "treatment": "react", "status": "in-progress"
+    },
+    {
+      "id": "source:libs/react/src/markdown/clipboard.ts",
+      "taskIds": ["T26"], "treatment": "react", "status": "in-progress",
+      "reason": "Shared clipboard write with a selection-copy fallback for message and code-block Copy."
+    },
+    {
+      "id": "export:libs/react/src/markdown/index.ts#MarkdownComponentProps",
+      "taskIds": ["T26"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "React per-node Markdown replacements: a typed components map on Markdown, Chat and MessageList, and a provider for app-wide entries, mirroring the Angular view registry.",
+      "note": "Replacements receive the node, rendered children, the policy-checked URL and the built-in view. Finished code blocks carry a Copy button in both frameworks; highlighting stays an application replacement."
+    },
+    {
+      "id": "export:libs/react/src/markdown/index.ts#MarkdownComponents",
+      "taskIds": ["T26"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "React per-node Markdown replacements: a typed components map on Markdown, Chat and MessageList, and a provider for app-wide entries, mirroring the Angular view registry.",
+      "note": "Replacements receive the node, rendered children, the policy-checked URL and the built-in view. Finished code blocks carry a Copy button in both frameworks; highlighting stays an application replacement."
+    },
+    {
+      "id": "export:libs/react/src/markdown/index.ts#MarkdownComponentsProvider",
+      "taskIds": ["T26"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "React per-node Markdown replacements: a typed components map on Markdown, Chat and MessageList, and a provider for app-wide entries, mirroring the Angular view registry.",
+      "note": "Replacements receive the node, rendered children, the policy-checked URL and the built-in view. Finished code blocks carry a Copy button in both frameworks; highlighting stays an application replacement."
+    },
+    {
+      "id": "export:libs/react/src/markdown/index.ts#MarkdownCopyButton",
+      "taskIds": ["T26"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "React per-node Markdown replacements: a typed components map on Markdown, Chat and MessageList, and a provider for app-wide entries, mirroring the Angular view registry.",
+      "note": "Replacements receive the node, rendered children, the policy-checked URL and the built-in view. Finished code blocks carry a Copy button in both frameworks; highlighting stays an application replacement."
+    },
+    {
+      "id": "export:libs/react/src/markdown/index.ts#MarkdownNodeType",
+      "taskIds": ["T26"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "React per-node Markdown replacements: a typed components map on Markdown, Chat and MessageList, and a provider for app-wide entries, mirroring the Angular view registry.",
+      "note": "Replacements receive the node, rendered children, the policy-checked URL and the built-in view. Finished code blocks carry a Copy button in both frameworks; highlighting stays an application replacement."
     }
   ]
 }
