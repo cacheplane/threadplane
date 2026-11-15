@@ -2820,6 +2820,17 @@
   .tp-typing-indicator { color: CanvasText; }
 }
 
+/* Generated UI carried by a message. Its own views bring their styles. */
+.tp-chat-generative-ui {
+  display: block;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+/* The text caret has no place under a surface. */
+.tp-chat-message__body:has(> .tp-chat-generative-ui) > .tp-chat-message__caret {
+  display: none;
+}
+
 .tp-genui-skeleton {
   display: block;
   box-sizing: border-box;

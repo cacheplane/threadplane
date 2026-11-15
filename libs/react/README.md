@@ -695,6 +695,42 @@ control, render `MessageRating` from `renderMessage`. A message that is still
 streaming, a user message, and a row drawn by `renderMessage` get no actions.
 Regenerate is not included because `AgentSession` has no command for it.
 
+### Generated UI in the transcript
+
+`generativeUi` on `Chat` and `MessageList` renders generated UI carried by an
+assistant message in place of that message's text. It is off unless set, and
+each kind is turned on separately.
+
+```tsx
+import { Chat, type MessageGenerativeUi } from '@threadplane/react/chat';
+
+// Define it once: a new object each render re-renders every row.
+const generativeUi: MessageGenerativeUi = { registry };
+
+<Chat session={session} generativeUi={generativeUi} />;
+```
+
+With `registry`, an assistant message whose content is a json-render spec
+(`{ "root": …, "elements": … }`) renders through `RenderSpec` (see Read-only
+render trees). While it streams, a "Building UI…" `GenerativeUiSkeleton` stands
+in until the root element has arrived, then each element appears as its JSON
+finishes, and views receive `loading` until the message completes. The spec's
+own `state` feeds its bindings; a prop written `{ "statePath": "/x" }` is read
+as a state binding. `functions` and `fallback` pass through to `RenderSpec`,
+and `skeletonLabel` replaces the placeholder text. The tree is read-only.
+Finished content that is not a spec stays text, and a view that throws gives
+way to the message text instead of taking the transcript down.
+
+With `renderA2ui`, an assistant message whose content starts with
+`---a2ui_JSON---` is handed to your function as `{ messageId, source,
+streaming, skeleton }`, where `source` is the newline-delimited envelopes after
+the marker. Parsing them, accumulating surfaces with `createA2uiSurfaces` and
+rendering `A2uiSurface` stay with the application; return `skeleton` until a
+surface is ready. The chat entry does not load the A2UI packages.
+
+A message shown as a surface gets no built-in message actions. A custom
+`renderMessage` keeps full ownership of its rows.
+
 ## Controlled welcome content (private React T22 slice)
 
 `@threadplane/react/chat` exports `Welcome`, `WelcomeSuggestion` and their readonly
