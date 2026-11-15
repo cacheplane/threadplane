@@ -2,6 +2,7 @@ import {
   completeDelivery,
   staticDelivery,
   streamingDelivery,
+  type Citation,
   type Message,
   type ToolCall,
 } from '@threadplane/core';
@@ -176,6 +177,80 @@ const sameIds = (a?: readonly string[], b?: readonly string[]) =>
     a.length === b.length &&
     a.every((id, index) => id === b[index]));
 
+const plain = (value: unknown): Record<string, unknown> | undefined =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+
+/** One source entry as a core citation. A string is a URL; common aliases are read. */
+function citation(entry: unknown, position: number): Citation {
+  const index = position + 1;
+  if (typeof entry === 'string') return { id: `c${index}`, index, url: entry };
+  const source = plain(entry);
+  const first = (...keys: string[]) => {
+    for (const key of keys) {
+      const value = source?.[key];
+      if (typeof value === 'string') return value;
+    }
+    return undefined;
+  };
+  const explicit = source?.['index'];
+  const publishedAt = source?.['publishedAt'];
+  const fields = {
+    title: first('title', 'name'),
+    url: first('url', 'href', 'source'),
+    snippet: first('snippet', 'content', 'excerpt'),
+    sourceType: first('sourceType'),
+    iconUrl: first('iconUrl'),
+    publishedAt:
+      typeof publishedAt === 'string' ||
+      (typeof publishedAt === 'number' && Number.isFinite(publishedAt))
+        ? publishedAt
+        : undefined,
+    extra: plain(source?.['extra']),
+  };
+  const result: Record<string, unknown> = {
+    id: first('id', 'refId') ?? `c${index}`,
+    index:
+      typeof explicit === 'number' && Number.isFinite(explicit)
+        ? explicit
+        : index,
+  };
+  for (const [key, value] of Object.entries(fields))
+    if (value !== undefined) result[key] = value;
+  return result as unknown as Citation;
+}
+
+/** State lists are owned and frozen, so one list is projected once. */
+const projected = new WeakMap<object, readonly Citation[]>();
+
+/**
+ * The sources the application state lists for one message, read from
+ * `state.citations[messageId]`. AG-UI has no citation event, so a backend
+ * sends them as state, keyed by the assistant message's identifier.
+ */
+function citationsFor(
+  byMessage: Record<string, unknown> | undefined,
+  id: string
+): readonly Citation[] | undefined {
+  const list =
+    byMessage && Object.prototype.hasOwnProperty.call(byMessage, id)
+      ? byMessage[id]
+      : undefined;
+  if (!Array.isArray(list) || list.length === 0) return undefined;
+  let result = projected.get(list);
+  if (!result) {
+    result = copyData(list.map(citation), true) as readonly Citation[];
+    projected.set(list, result);
+  }
+  return result;
+}
+
+const sameCitations = (
+  a: readonly Citation[] | undefined,
+  b: readonly Citation[] | undefined
+) => a === b || (!!a && !!b && JSON.stringify(a) === JSON.stringify(b));
+
 interface Pending {
   readonly ids: string[];
   readonly text: string[];
@@ -197,6 +272,8 @@ interface Pending {
  *   assistant are joined by blank lines. Reasoning with no assistant record
  *   after it yet is shown as an assistant message under the reasoning record's
  *   identifier, so the row's identifier changes once the answer record arrives.
+ * - An assistant message carries the sources the application state lists for
+ *   it under `state.citations[messageId]`, as core citations.
  * - `reasoningDurationMs` is the sum of the times the session measured for the
  *   attached reasoning records, and absent when it measured none.
  * - While the session runs, the message built from the transcript's last root
@@ -220,6 +297,7 @@ export function projectMessages(
     reasoningDurationMs?: number;
     toolCallId?: string;
     toolCallIds?: readonly string[];
+    citations?: readonly Citation[];
     /** Position of the newest transcript record this message was built from. */
     last: number;
   }[] = [];
@@ -229,6 +307,7 @@ export function projectMessages(
   let lastUser = -1;
   let lastAssistant = -1;
   const owners = selectCalls(snapshot);
+  const sources = plain(plain(snapshot.state)?.['citations']);
   const reasoned = (waiting: Pending) => ({
     reasoning: waiting.text.join('\n\n'),
     ...(waiting.durationMs !== undefined && {
@@ -285,6 +364,7 @@ export function projectMessages(
     if (role !== 'assistant') continue;
     const text = typeof content === 'string' ? content : '';
     const shown = owners.get(id);
+    const cited = citationsFor(sources, id);
     if (text === '' && !pending && !shown) continue;
     lastAssistant = drafts.length;
     drafts.push({
@@ -293,6 +373,7 @@ export function projectMessages(
       content: text,
       ...(pending && reasoned(pending)),
       ...(shown && { toolCallIds: shown.map(({ call }) => call.id) }),
+      ...(cited && { citations: cited }),
       last: position,
     });
     pending = undefined;
@@ -317,6 +398,9 @@ export function projectMessages(
     if (old && sameIds(old.toolCallIds, draft.toolCallIds) && draft.toolCallIds)
       draft.toolCallIds = old.toolCallIds;
     else if (draft.toolCallIds) Object.freeze(draft.toolCallIds);
+    // A state snapshot can replace the list with an equal one.
+    if (old && draft.citations && sameCitations(old.citations, draft.citations))
+      draft.citations = old.citations;
     return old &&
       old.role === draft.role &&
       old.content === draft.content &&
@@ -324,6 +408,7 @@ export function projectMessages(
       old.reasoningDurationMs === draft.reasoningDurationMs &&
       old.toolCallId === draft.toolCallId &&
       old.toolCallIds === draft.toolCallIds &&
+      old.citations === draft.citations &&
       old.delivery.phase === delivery.phase &&
       (old.delivery.phase !== 'complete' ||
         (delivery.phase === 'complete' &&

@@ -18965,8 +18965,8 @@
       ],
       "treatment": "internal",
       "status": "in-progress",
-      "reason": "Private pure display selection of the root transcript into core messages and tool calls: user and assistant text, reasoning records attached to the assistant record after them, measured reasoning time, a delivery phase, tool records as tool messages, and tool calls with final arguments, status and result; full native history and command ownership remain unchanged.",
-      "note": "Covered by runtime specs and a React MessageList integration spec. Exported from the test-only candidate package entry and checked from installed tarballs; not exported from the published package root. A call is withheld until its arguments are final. System records, child records and their calls, media parts of tool results, client-tool statuses, citations, a core AgentSession over the native owner and rich legacy migration remain incomplete."
+      "reason": "Private pure display selection of the root transcript into core messages and tool calls: user and assistant text, reasoning records attached to the assistant record after them, measured reasoning time, a delivery phase, tool records as tool messages, sources listed in state.citations as citations, and tool calls with final arguments, status and result; full native history and command ownership remain unchanged.",
+      "note": "Covered by runtime specs and a React MessageList integration spec. Exported from the test-only candidate package entry and checked from installed tarballs; not exported from the published package root. A call is withheld until its arguments are final. System records, child records and their calls, media parts of tool results, client-tool statuses and rich legacy migration remain incomplete."
     },
     {
       "id": "source:libs/ag-ui/src/runtime/reasoning-clock.ts",
