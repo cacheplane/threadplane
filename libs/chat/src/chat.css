@@ -9,8 +9,9 @@
  * This file exists so `@import '@threadplane/chat/chat.css';` keeps
  * resolving. It declares nothing, and adds nothing to the cascade.
  *
- * To customise the look, override the tokens in your own stylesheet, or
- * import one of the presets:
+ * To customise the look, override the tokens in your own stylesheet. To pin
+ * the palette of agent-rendered A2UI surfaces, import one of the presets.
+ * They set `--a2ui-*` tokens only; the chat's own colours are unchanged:
  *   @import '@threadplane/chat/themes/default-dark.css';
  *   @import '@threadplane/chat/themes/default-light.css';
  *   @import '@threadplane/chat/themes/material-dark.css';

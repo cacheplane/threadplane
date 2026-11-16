@@ -1895,6 +1895,22 @@ export function Surfaces({ snapshot }: { readonly snapshot: A2uiSurfacesSnapshot
 }
 ```
 
+The base stylesheet follows the system colour scheme. To fix the palette, also
+import one of the four theme files, in either order:
+
+```tsx
+import '@threadplane/react/a2ui/styles.css';
+import '@threadplane/react/a2ui/themes/material-light.css';
+```
+
+`default-light.css`, `default-dark.css`, `material-light.css` and
+`material-dark.css` set the colour and shadow tokens on every
+`.a2ui-surface`, so surfaces stop following the system colour scheme. The two
+default files repeat the base stylesheet's own light and dark values. The Material files use the Material Design 3 colour tokens and
+add no dependency. An agent's own `theme.primaryColor` still overrides the
+primary colour on its surface. To theme one part of the page differently, set
+the `--a2ui-*` custom properties on a wrapper yourself.
+
 `a2uiBasicCatalog()` returns `Text`, `Image`, `Icon`, `Video`, `AudioPlayer`,
 `Row`, `Column`, `List`, `Card`, `Divider`, `Tabs`, `Modal`, `TextField`,
 `CheckBox`, `ChoicePicker`, `DateTimeInput`, `Slider` and `Button`. Spread it into your own registry and pass that as
