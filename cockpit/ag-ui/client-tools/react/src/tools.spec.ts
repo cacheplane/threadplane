@@ -1,25 +1,37 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createClientToolsController, type BookingInvocation } from './tools';
+import { createClientToolsController, type BookingArguments, type BookingAsk, type BookingDecision, type BookingInvocation } from './tools';
 
 const weather = { location: 'Denver', temperatureF: 68, conditions: 'Sunny', humidity: 55, windMph: 8 };
 const invocation: BookingInvocation = {
   ownerGeneration: 1, callId: 'call-real', assistantMessageId: 'assistant-real',
   sourceRunId: 'run-real', summary: 'Fictional Denver visit',
 };
+/** Stands in for the ask tool: records each question and waits like the real one. */
+function fakeAsk() {
+  const asks: { args: BookingArguments; signal: AbortSignal; resolve(decision: BookingDecision): void }[] = [];
+  const ask: BookingAsk = {
+    description: 'Ask',
+    handler: (args, { signal }) => new Promise((resolve, reject) => {
+      asks.push({ args, signal, resolve });
+      signal.addEventListener('abort', () => reject(new DOMException('Client tool cancelled.', 'AbortError')), { once: true });
+    }),
+  };
+  return { ask, asks };
+}
 function setup() {
   let current: BookingInvocation | undefined = invocation;
   const read = vi.fn(() => current);
-  const controller = createClientToolsController(read);
+  const { ask, asks } = fakeAsk();
+  const controller = createClientToolsController(read, ask);
   const abort = new AbortController();
-  return { controller, abort, read, setCurrent(value: BookingInvocation | undefined) { current = value; } };
+  return { controller, abort, read, asks, setCurrent(value: BookingInvocation | undefined) { current = value; } };
 }
 afterEach(() => vi.useRealTimers());
 
 describe('native five-tool business catalog', () => {
-  it('constructs and subscribes inertly and exposes exactly five authored schemas/policies', () => {
-    const { controller, read } = setup();
-    const unsubscribe = controller.subscribe(() => undefined);
-    expect(read).not.toHaveBeenCalled();
+  it('constructs inertly and exposes exactly five authored schemas/policies', () => {
+    const { controller, read, asks } = setup();
+    expect(read).not.toHaveBeenCalled(); expect(asks).toHaveLength(0);
     expect(Object.keys(controller.tools)).toEqual(['get_weather', 'slow_status_check', 'weather_card', 'weather_snapshot', 'confirm_booking']);
     for (const tool of Object.values(controller.tools)) {
       expect(tool.parameters).toMatchObject({ type: 'object', additionalProperties: false });
@@ -30,7 +42,7 @@ describe('native five-tool business catalog', () => {
     expect(controller.tools.slow_status_check.parameters).toMatchObject({ required: [], properties: { label: { default: 'status check' } } });
     expect(controller.tools.weather_card.parameters).toEqual(controller.tools.weather_snapshot.parameters);
     expect(controller.tools.weather_card.parameters).toMatchObject({ required: Object.keys(weather) });
-    unsubscribe(); controller.dispose();
+    controller.dispose();
   });
   it('returns asynchronous simulated data isolated across invocations and descriptors', async () => {
     const { controller, abort } = setup();
@@ -48,7 +60,6 @@ describe('native five-tool business catalog', () => {
     const { controller, abort } = setup();
     expect(await controller.tools.weather_card.handler(weather, abort)).toEqual({ displayed: true });
     expect(await controller.tools.weather_snapshot.handler(weather, abort)).toEqual({ displayed: true });
-    expect(controller.getSnapshot()).toEqual({ bookings: [] });
   });
   it.each([null, [], Object.create({ location: 'Denver' }), { location: '' }, { location: ' ' }, { location: 7 }, { location: 'Denver', extra: true }, Object.defineProperty({}, 'location', { get() { throw new Error('getter ran'); }, enumerable: true })])('rejects malformed location arguments case %# without reading getters', async (input: unknown) => {
     const { controller, abort } = setup();
@@ -120,147 +131,83 @@ describe('owned slow delay', () => {
   });
 });
 
-describe('identity-bound fictional booking decisions', () => {
-  it('does not reconstruct the same native booking identity after cancellation', async () => {
-    const { controller, abort } = setup();
-    const result = controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort);
+describe('fictional booking guarded by its native call', () => {
+  const booking = { summary: invocation.summary };
+  it('asks with the checked summary and returns each answer', async () => {
+    for (const confirmed of [true, false]) {
+      const { controller, abort, asks } = setup();
+      const result = controller.tools.confirm_booking.handler(booking, abort);
+      await vi.waitFor(() => expect(asks).toHaveLength(1));
+      expect(asks[0].args).toEqual(booking);
+      asks[0].resolve({ confirmed });
+      expect(await result).toEqual({ confirmed });
+    }
+  });
+  it('does not ask the same native booking again after cancellation', async () => {
+    const { controller, abort, asks } = setup();
+    const result = controller.tools.confirm_booking.handler(booking, abort);
     const cancelled = expect(result).rejects.toMatchObject({ name: 'AbortError' });
     abort.abort(); await cancelled;
-    await expect(controller.tools.confirm_booking.handler({ summary: invocation.summary }, new AbortController())).rejects.toThrow('Booking invocation unavailable');
-    expect(controller.getSnapshot().bookings).toHaveLength(1);
+    await expect(controller.tools.confirm_booking.handler(booking, new AbortController())).rejects.toThrow('Booking invocation unavailable');
+    expect(asks).toHaveLength(1);
   });
-  it('does not grant a fresh controller authority to an old controller token', async () => {
-    const old = setup(); const fresh = setup();
-    const oldResult = old.controller.tools.confirm_booking.handler({ summary: invocation.summary }, old.abort);
-    const cancelled = expect(oldResult).rejects.toMatchObject({ name: 'AbortError' });
-    const oldToken = old.controller.getSnapshot().bookings[0].token;
-    old.controller.dispose(); await cancelled;
-    const result = fresh.controller.tools.confirm_booking.handler({ summary: invocation.summary }, fresh.abort);
-    const newToken = fresh.controller.getSnapshot().bookings[0].token;
-    expect(fresh.controller.respond(oldToken, true)).toBe(false);
-    expect(fresh.controller.respond(newToken, false)).toBe(true);
-    expect(await result).toEqual({ confirmed: false });
+  it('refuses a duplicate running booking and asks again for a new native call', async () => {
+    const { controller, abort, asks, setCurrent } = setup();
+    const first = controller.tools.confirm_booking.handler(booking, abort);
+    const rejected = expect(first).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(controller.tools.confirm_booking.handler(booking, abort)).rejects.toThrow('Booking invocation unavailable');
+    abort.abort(); await rejected;
+    setCurrent({ ...invocation, ownerGeneration: 2, callId: 'fresh-call' });
+    const fresh = controller.tools.confirm_booking.handler(booking, new AbortController());
+    await vi.waitFor(() => expect(asks).toHaveLength(2));
+    asks[1].resolve({ confirmed: true });
+    expect(await fresh).toEqual({ confirmed: true });
   });
-  it('revokes acquisition when pending notification changes the actual current call', async () => {
-    const { controller, abort, setCurrent } = setup();
-    controller.subscribe(() => setCurrent(undefined));
-    const result = controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort);
-    await expect(result).rejects.toMatchObject({ name: 'AbortError' });
-    expect(controller.getSnapshot().bookings[0].status).toBe('aborted');
-  });
-  it('does not expose authority from malformed identity accessors or argument getters', async () => {
-    const { controller, abort } = setup();
+  it('does not ask for malformed arguments or a malformed native identity', async () => {
+    const { controller, abort, asks } = setup();
     const malformed: unknown[] = [null, { summary: '' }, { summary: invocation.summary, extra: 1 },
       Object.defineProperty({}, 'summary', { get() { throw new Error('getter ran'); } })];
     for (const input of malformed) {
       // @ts-expect-error hostile runtime booking arguments
       await expect(controller.tools.confirm_booking.handler(input, abort)).rejects.toThrow('Invalid tool arguments');
     }
-    const invalid = createClientToolsController(() => Object.defineProperty({ ...invocation }, 'callId', { get() { throw new Error('getter ran'); } }));
-    await expect(invalid.tools.confirm_booking.handler({ summary: invocation.summary }, abort)).rejects.toThrow('Booking invocation unavailable');
-    expect(invalid.getSnapshot().bookings).toEqual([]);
+    expect(asks).toHaveLength(0);
+    const other = fakeAsk();
+    const invalid = createClientToolsController(() => Object.defineProperty({ ...invocation }, 'callId', { get() { throw new Error('getter ran'); } }), other.ask);
+    await expect(invalid.tools.confirm_booking.handler(booking, abort)).rejects.toThrow('Booking invocation unavailable');
+    expect(other.asks).toHaveLength(0);
   });
-  it('cannot acquire a duplicate running booking and cancelled controls stay distinct after a new generation', async () => {
-    const { controller, abort, setCurrent } = setup();
-    const first = controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort);
-    const rejected = expect(first).rejects.toMatchObject({ name: 'AbortError' });
-    const old = controller.getSnapshot().bookings[0];
-    await expect(controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort)).rejects.toThrow('Booking invocation unavailable');
-    abort.abort(); await rejected;
-    setCurrent({ ...invocation, ownerGeneration: 2, callId: 'fresh-call' });
-    const fresh = controller.tools.confirm_booking.handler({ summary: invocation.summary }, new AbortController());
-    const next = controller.getSnapshot().bookings[1];
-    expect(next.token).not.toBe(old.token); expect(controller.respond(old.token, true)).toBe(false);
-    expect(controller.respond(next.token, true)).toBe(true); expect(await fresh).toEqual({ confirmed: true });
+  it.each([undefined, { ...invocation, summary: 'Different summary' }])('does not ask when the native call is unavailable or mismatched: %j', async (current) => {
+    const { controller, abort, asks, setCurrent } = setup(); setCurrent(current);
+    await expect(controller.tools.confirm_booking.handler(booking, abort)).rejects.toThrow('Booking invocation unavailable');
+    expect(asks).toHaveLength(0);
   });
-  it.each([true, false])('settles only the first explicit boolean %s and retains frozen visible result', async (decision) => {
-    const { controller, abort } = setup();
-    const result = controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort);
-    const pending = controller.getSnapshot().bookings[0];
-    expect(pending).toMatchObject({ ...invocation, status: 'pending' });
-    expect(Object.isFrozen(pending)).toBe(true);
-    expect(Object.isFrozen(controller.getSnapshot().bookings)).toBe(true);
-    expect(Object.isFrozen(controller.getSnapshot())).toBe(true);
-    expect(controller.respond('wrong-token', decision)).toBe(false);
-    expect(controller.respond(pending.token, decision)).toBe(true);
-    expect(controller.respond(pending.token, !decision)).toBe(false);
-    expect(await result).toEqual({ confirmed: decision });
-    expect(controller.getSnapshot().bookings[0]).toMatchObject({ status: 'resolved', confirmed: decision });
-    expect(Object.isFrozen(controller.getSnapshot().bookings[0])).toBe(true);
+  it.each(['ownerGeneration', 'sourceRunId'] as const)('does not ask for an unsafe %s identity', async (field) => {
+    const { controller, abort, asks, setCurrent } = setup();
+    setCurrent({ ...invocation, [field]: field === 'ownerGeneration' ? -1 : ' ' });
+    await expect(controller.tools.confirm_booking.handler(booking, abort)).rejects.toThrow('Booking invocation unavailable');
+    expect(asks).toHaveLength(0);
   });
-  it.each([undefined, { ...invocation, summary: 'Different summary' }])('rejects unavailable or mismatched acquisition without publishing %j', async (current) => {
-    const { controller, abort, setCurrent } = setup(); setCurrent(current);
-    const notify = vi.fn(); controller.subscribe(notify);
-    await expect(controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort)).rejects.toThrow('Booking invocation unavailable');
-    expect(controller.getSnapshot().bookings).toEqual([]); expect(notify).not.toHaveBeenCalled();
+  it('reports a throwing native accessor as unavailable, and its cancellation as cancelled', async () => {
+    const { controller, abort, asks, read } = setup();
+    read.mockImplementationOnce(() => { throw new Error('native accessor failed'); });
+    await expect(controller.tools.confirm_booking.handler(booking, abort)).rejects.toThrow('Booking invocation unavailable');
+    read.mockImplementationOnce(() => { abort.abort(); return invocation; });
+    await expect(controller.tools.confirm_booking.handler(booking, abort)).rejects.toMatchObject({ name: 'AbortError' });
+    expect(asks).toHaveLength(0);
   });
-  it.each(['ownerGeneration', 'callId', 'assistantMessageId', 'sourceRunId', 'summary'] as const)('refuses stale %s identities', async (field) => {
-    const { controller, abort, setCurrent } = setup();
-    const result = controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort);
-    const rejected = expect(result).rejects.toMatchObject({ name: 'AbortError' });
-    const pending = controller.getSnapshot().bookings[0];
-    setCurrent(field === 'ownerGeneration' ? { ...invocation, ownerGeneration: 2 } : { ...invocation, [field]: 'other' });
-    expect(controller.respond(pending.token, true)).toBe(false);
-    await rejected;
-    setCurrent(invocation);
-    expect(controller.respond(pending.token, true)).toBe(false);
-    expect(controller.getSnapshot().bookings[0]).toMatchObject({ status: 'aborted' });
-    expect(controller.getSnapshot().bookings[0]).not.toHaveProperty('confirmed');
-  });
-  it.each(['missing', 'throwing'] as const)('irreversibly revokes an owned token when the accessor is %s', async (mode) => {
-    const { controller, abort, read, setCurrent } = setup();
-    const remove = vi.spyOn(abort.signal, 'removeEventListener');
-    const result = controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort);
-    const rejected = expect(result).rejects.toMatchObject({ name: 'AbortError' });
-    const token = controller.getSnapshot().bookings[0].token;
-    if (mode === 'missing') setCurrent(undefined);
-    else read.mockImplementationOnce(() => { throw new Error('native accessor failed'); });
-    expect(controller.respond(token, true)).toBe(false);
-    await rejected;
-    setCurrent(invocation);
-    expect(controller.respond(token, false)).toBe(false);
-    expect(controller.getSnapshot().bookings[0]).toMatchObject({ status: 'aborted' });
-    expect(controller.getSnapshot().bookings[0]).not.toHaveProperty('confirmed');
-    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
-  });
-  it('rejects ambiguous acquisition represented by the native accessor returning undefined', async () => {
-    const { controller, abort, setCurrent } = setup(); setCurrent(undefined);
-    await expect(controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort)).rejects.toThrow('Booking invocation unavailable');
-    expect(controller.getSnapshot().bookings).toEqual([]);
-  });
-  it.each(['abort', 'dispose'] as const)('revokes before another listener can respond during pending publication: %s', async (action) => {
-    const { controller, abort } = setup();
-    controller.subscribe(() => { if (action === 'abort') abort.abort(); else controller.dispose(); });
-    const later = vi.fn(() => controller.respond(controller.getSnapshot().bookings[0].token, true));
-    controller.subscribe(later);
-    await expect(controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort)).rejects.toMatchObject({ name: 'AbortError' });
-    const row = controller.getSnapshot().bookings[0];
-    expect(row.status).toBe('aborted'); expect(row).not.toHaveProperty('confirmed');
-    expect(controller.respond(row.token, false)).toBe(false);
-    expect(later.mock.results.every((entry) => entry.value !== true)).toBe(true);
+  it.each(['abort', 'dispose'] as const)('revokes a waiting booking on %s, and nothing is asked afterwards', async (action) => {
+    const { controller, abort, asks } = setup();
+    const result = controller.tools.confirm_booking.handler(booking, abort);
+    const cancelled = expect(result).rejects.toMatchObject({ name: 'AbortError' });
+    await vi.waitFor(() => expect(asks).toHaveLength(1));
+    expect(asks[0].signal.aborted).toBe(false);
+    if (action === 'abort') abort.abort(); else controller.dispose();
+    expect(asks[0].signal.aborted).toBe(true);
+    await cancelled;
+    asks[0].resolve({ confirmed: true });
+    await expect(controller.tools.confirm_booking.handler(booking, abort)).rejects.toMatchObject({ name: 'AbortError' });
+    expect(asks).toHaveLength(1);
     controller.dispose(); controller.dispose();
-  });
-  it('rechecks cancellation caused by the accessor and by resolved publication', async () => {
-    const abort = new AbortController(); let cancelOnRead = false;
-    const controller = createClientToolsController(() => { if (cancelOnRead) abort.abort(); return invocation; });
-    const result = controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort);
-    const rejected = expect(result).rejects.toMatchObject({ name: 'AbortError' });
-    const token = controller.getSnapshot().bookings[0].token; cancelOnRead = true;
-    expect(controller.respond(token, true)).toBe(false); await rejected;
-    const next = setup();
-    next.controller.subscribe(() => { if (next.controller.getSnapshot().bookings[0]?.status === 'resolved') next.abort.abort(); });
-    const pending = next.controller.tools.confirm_booking.handler({ summary: invocation.summary }, next.abort);
-    const cancelled = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
-    expect(next.controller.respond(next.controller.getSnapshot().bookings[0].token, true)).toBe(false);
-    await cancelled; expect(next.controller.getSnapshot().bookings[0].status).toBe('aborted');
-  });
-  it('refuses nonboolean decisions without settling and removes booking abort listener on explicit resolution', async () => {
-    const { controller, abort } = setup(); const remove = vi.spyOn(abort.signal, 'removeEventListener');
-    const result = controller.tools.confirm_booking.handler({ summary: invocation.summary }, abort);
-    const token = controller.getSnapshot().bookings[0].token;
-    // @ts-expect-error runtime control input must be boolean
-    expect(controller.respond(token, 'yes')).toBe(false);
-    expect(controller.respond(token, false)).toBe(true); expect(await result).toEqual({ confirmed: false });
-    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
   });
 });
