@@ -497,6 +497,26 @@
   background: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
   color: light-dark(#ffffff, #1c1c1c);
 }
+/* The same panel as a modal: opaque, centred, over a scrim. */
+.tp-approval-card.tp-approval-card--dialog {
+  box-sizing: border-box;
+  inline-size: min(27.5rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - 2rem);
+  margin: auto;
+  overflow: auto;
+  background: color-mix(
+    in srgb,
+    var(--tp-status-tone) 8%,
+    var(--tp-chat-surface, var(--ds-surface, Canvas))
+  );
+  box-shadow: 0 1rem 3rem #0004;
+}
+.tp-approval-card--dialog:not([open]) {
+  display: none;
+}
+.tp-approval-card--dialog::backdrop {
+  background: #0007;
+}
 @media (pointer: coarse) {
   .tp-approval-card__action { min-height: 44px; }
 }

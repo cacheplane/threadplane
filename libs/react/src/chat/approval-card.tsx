@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
 
 /** One explicitly authored presentation action; IDs must be unique per card. The first action is the primary one. */
 export interface ApprovalCardAction {
@@ -24,13 +25,26 @@ export interface ApprovalCardProps {
   readonly destructive?: boolean;
   /** Moves focus to the first action when the card appears. Defaults to true. */
   readonly autoFocus?: boolean;
+  /**
+   * `inline` (default) renders the panel where the card is placed. `dialog` shows the same content
+   * in a modal over the page for as long as the card is mounted: the rest of the page is inert,
+   * and focus returns to where it was when the card unmounts.
+   */
+  readonly presentation?: 'inline' | 'dialog';
+  /**
+   * Dialog only: called when the user presses Escape. The dialog stays open until you unmount the
+   * card, so answer the request here, usually the same way as your declining action. Without it,
+   * Escape does nothing.
+   */
+  readonly onDismiss?: () => void;
   readonly className?: string;
 }
 
 /**
  * Inline approval panel with an app-authored body and explicit actions: a warning panel led by
  * "Waiting for your approval.", or a danger panel for a destructive action. Place it at the end of
- * the transcript, for example through `Chat`'s `approval` slot.
+ * the transcript, for example through `Chat`'s `approval` slot. With `presentation="dialog"` the
+ * same content opens as a modal instead.
  */
 export function ApprovalCard({
   children,
@@ -39,17 +53,46 @@ export function ApprovalCard({
   disabled = false,
   destructive = false,
   autoFocus = true,
+  presentation = 'inline',
+  onDismiss,
   className,
 }: ApprovalCardProps) {
   const heading = useId();
   const firstAction = useRef<HTMLButtonElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const dismiss = useRef(onDismiss);
+  dismiss.current = onDismiss;
+  const modal = presentation === 'dialog';
+  // Before the focus effect below, so the first action is focusable inside the open modal.
+  useIsomorphicLayoutEffect(() => {
+    const panel = dialog.current;
+    if (!modal || !panel) return;
+    // Escape asks the app; only unmounting the card closes it.
+    const cancel = (event: Event) => {
+      event.preventDefault();
+      dismiss.current?.();
+    };
+    panel.addEventListener('cancel', cancel);
+    if (!panel.open) panel.showModal();
+    return () => {
+      panel.removeEventListener('cancel', cancel);
+      if (panel.open) panel.close();
+    };
+  }, [modal]);
   useEffect(() => {
     // Once, when the card appears.
     if (autoFocus) firstAction.current?.focus();
   }, []);
+  const Panel = modal ? 'dialog' : 'section';
   return (
-    <section
-      className={['tp-approval-card', 'tp-status-panel', className]
+    <Panel
+      ref={modal ? dialog : undefined}
+      className={[
+        'tp-approval-card',
+        'tp-status-panel',
+        modal && 'tp-approval-card--dialog',
+        className,
+      ]
         .filter(Boolean)
         .join(' ')}
       data-tone={destructive ? 'danger' : 'warning'}
@@ -86,7 +129,7 @@ export function ApprovalCard({
           </button>
         ))}
       </div>
-    </section>
+    </Panel>
   );
 }
 

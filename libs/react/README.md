@@ -411,7 +411,29 @@ actions. Each action has a unique `id`, `label`, `onSelect` callback and optiona
 `disabled` flag. The card's `disabled` flag disables all actions. Clicking does
 not hide or consume the card; the app owns interrupt matching, decision tokens,
 pending/error state and command handling. Async callbacks must handle their own
-rejections. The card adds no modal, focus management, timer or session lifecycle.
+rejections. The inline card adds no modal, timer or session lifecycle.
+
+Pass `presentation="dialog"` to show the same content as a modal over the page
+for as long as the card is mounted. Focus moves to the first action, the rest
+of the page is inert, and focus returns to where it was when you unmount the
+card. Escape calls `onDismiss`, where you answer the request (usually as a
+decline); without it Escape does nothing. In `Chat`'s `approval` slot the
+composer still reads "Answer the approval to continue" and takes focus back
+once the approval clears.
+
+```tsx
+<ApprovalCard
+  presentation="dialog"
+  title="Save the note?"
+  onDismiss={decline}
+  actions={[
+    { id: 'approve', label: 'Save note', onSelect: approve },
+    { id: 'decline', label: "Don't save", onSelect: decline },
+  ]}
+>
+  <p>{reason}</p>
+</ApprovalCard>
+```
 
 ```tsx
 import { ApprovalCard } from '@threadplane/react/chat';
