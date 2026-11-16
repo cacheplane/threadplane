@@ -14670,6 +14670,17 @@
       "note": "Streaming Markdown, trimmed submit, swallowed submit/stop rejections, error alert, session-keyed draft reset, owned-projection disposal, StrictMode remount and never disposing app content are verified with real DOM tests. Interrupts, attachments, threads, SSR and publication remain incomplete."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ChatModelPicker",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Options, controlled value and labels for the opt-in model picker Chat renders in the composer before inputTrailing.",
+      "note": "Placement, choice reporting, declined change, labels, empty options, running state and disabled state are verified with real DOM tests. Chat sends nothing about the value to the session."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#ChatProps",
       "taskIds": [
         "T22",

@@ -564,7 +564,19 @@ next message, such as chosen files (`Chat`: `inputBanner`, `inputAttachments`).
 The composer never reads, sends or clears either one. Your `onSubmit` sends the
 files you hold and clears them, and a banner that should be announced carries
 its own `role="status"`. A model picker needs no slot of its own: pass a
-`Select` as `trailing`.
+`Select` as `trailing`. `Chat` can render one for you:
+
+```tsx
+<Chat
+  session={session}
+  modelPicker={{ options: models, value: model, onValueChange: setModel }}
+/>
+```
+
+The picker sits before `inputTrailing` and is hidden while `options` is empty.
+You hold the value: `Chat` sends nothing about it to the session, so pass the
+chosen model to your backend yourself. `label` (default "Model") names the list
+and `placeholder` (default "Choose a model") shows while no option matches.
 
 Slot content sits inside the composer form and is otherwise untouched: it keeps
 its own state across drafts and submissions, stays enabled while the composer is

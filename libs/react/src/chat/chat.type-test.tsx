@@ -40,6 +40,18 @@ ok.className = 'x';
 <Chat session={session} leading={<span />} />;
 // @ts-expect-error Slots are content, not render functions.
 <Chat session={session} inputFooter={() => null} />;
+<Chat
+  session={session}
+  modelPicker={{
+    options: [{ value: 'a', label: 'A' }],
+    value: 'a',
+    onValueChange: (value: string) => void value,
+  }}
+/>;
+// @ts-expect-error The picker is controlled: a value needs its change handler.
+<Chat session={session} modelPicker={{ options: [], value: 'a' }} />;
+// @ts-expect-error Options are value and label records, not strings.
+<Chat session={session} modelPicker={{ options: ['a'], value: 'a', onValueChange: () => undefined }} />;
 void missing;
 
 import type { ReactNode } from 'react';
