@@ -113,6 +113,19 @@ export type {
   MessageRenderEvent,
 } from './generative-ui.js';
 export { Reasoning, type ReasoningProps } from './reasoning.js';
+export {
+  ask,
+  createClientTools,
+  useClientToolCalls,
+  usePendingClientToolCalls,
+  type AskTool,
+  type AskToolDefinition,
+  type AskToolViewProps,
+  type ChatClientTools,
+  type ClientToolCallLike,
+  type ClientTools,
+  type PendingClientToolCall,
+} from './client-tools.js';
 export { Trace, type TraceProps, type TraceState } from './trace.js';
 export { Citations, type CitationsProps } from './citations.js';
 export { CitationCard, type CitationCardProps } from './citation-card.js';

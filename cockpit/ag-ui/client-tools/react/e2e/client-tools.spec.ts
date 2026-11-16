@@ -66,12 +66,11 @@ test('a planned trip shows Chat progress with plan steps, waits for the booking,
   const group = conversation.locator('.tp-tool-activity-group[data-active="true"]');
   await expect(group).toBeVisible();
   await expect(group.getByRole('button', {name:'Stop', exact:true})).toBeVisible();
-  // The booking waits in Chat's approval slot at the end of the transcript.
-  const card = conversation.locator('.tp-approval-card');
-  await expect(card).toContainText('Waiting for your approval.');
+  // The booking is an ask tool: its card sits below the tool calls, and the call keeps its running group.
+  const card = conversation.locator('[data-tool-prompt] .tp-approval-card');
   await expect(card).toContainText('Fictional trip to Portland');
   await expect(page.getByRole('button', {name:'Confirm booking'})).toBeFocused();
-  await expect(page.getByLabel('Message', {exact:true})).toHaveAttribute('placeholder', 'Answer the approval to continue');
+  await expect(page.getByLabel('Message', {exact:true})).toHaveAttribute('placeholder', 'Answer the booking to continue');
   causal(await records(request), 1);
   // Opened while running: a static count, then the plan's pending steps after the calls.
   await group.locator('.tp-tool-activity-group__details > summary').click();

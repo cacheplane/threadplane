@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { createSession } from '@threadplane/ag-ui';
 import type { RunAgentInput } from '@ag-ui/client';
 import type { AgentSnapshot } from '@threadplane/core';
@@ -12,6 +13,7 @@ import {
 } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { ClientToolsDemo } from './app';
+import { createBookingTools, type BookingTools } from './booking';
 import type { ClientToolsApplicationSnapshot } from './application';
 const mocks = vi.hoisted(() => ({ create: vi.fn() }));
 vi.mock('./connection', () => ({ createConnectedApplication: mocks.create }));
@@ -38,7 +40,6 @@ function fixture(
     threadId: null,
     native: undefined,
     views: [],
-    bookings: [],
     busy: false,
     canSubmit: true,
     activity: 'idle',
@@ -54,6 +55,7 @@ function fixture(
     toolCalls: [],
     ...view,
   } as AgentSnapshot;
+  const tools = createBookingTools();
   const listeners = new Set<() => void>();
   const subscribe = (notify: () => void) => {
     listeners.add(notify);
@@ -67,7 +69,7 @@ function fixture(
     submit: vi.fn(),
     stop: vi.fn(),
     newConversation: vi.fn(),
-    respond: vi.fn(() => true),
+    clientTools: tools,
     dispose: vi.fn(),
     agent: {
       getSnapshot: () => agentSnapshot,
@@ -180,54 +182,51 @@ it('renders native text literally and local evidence under its call', () => {
   expect(screen.getByText('Delivery: unsent')).toBeTruthy();
   expect(screen.getByText('Simulated weather')).toBeTruthy();
 });
-it('a pending booking waits in the approval card, dispatches its exact token and records the answer', () => {
-  const booking = {
-    ownerGeneration: 1,
-    callId: 'c',
-    assistantMessageId: 'a',
-    sourceRunId: 'r',
-    summary: 'Fictional table',
-    token: 'owned',
-    status: 'pending' as const,
-  };
-  const f = fixture(
-    { busy: true, canSubmit: false, bookings: [booking] },
-    transcript({
-      id: 'c',
-      name: 'confirm_booking',
-      args: { summary: 'Fictional table' },
-      status: 'running',
-    })
-  );
+/** Starts the booking question the way a session calls its tool. */
+const ask = (tools: BookingTools, context: { signal: AbortSignal }) =>
+  Promise.resolve(tools.tools.confirm_booking.handler({ summary: 'Fictional table' }, context));
+const running = transcript({
+  id: 'c',
+  name: 'confirm_booking',
+  args: { summary: 'Fictional table' },
+  status: 'running',
+});
+it('a waiting booking shows its card below the call, answers the tool and records the answer', async () => {
+  const f = fixture({ busy: true, canSubmit: false }, running);
+  expect(screen.queryByRole('button', { name: 'Confirm booking' })).toBeNull();
+  let result!: Promise<{ confirmed: boolean }>;
+  act(() => {
+    result = ask(f.app.clientTools,
+      { signal: new AbortController().signal }
+    );
+  });
   expect(screen.getByText('Fictional table')).toBeTruthy();
+  expect(screen.getByText('Waiting for your fictional booking decision…')).toBeTruthy();
   expect(
     screen
       .getByRole('textbox', { name: 'Message' })
       .getAttribute('placeholder')
-  ).toBe('Answer the approval to continue');
+  ).toBe('Answer the booking to continue');
   fireEvent.click(screen.getByRole('button', { name: "Don't book" }));
-  expect(f.app.respond).toHaveBeenCalledWith('owned', false);
+  expect(await result).toEqual({ confirmed: false });
   expect(screen.getByText('Declined: Booking')).toBeTruthy();
-  f.update({ bookings: [{ ...booking, status: 'resolved', confirmed: false }] });
   expect(screen.queryByRole('button', { name: 'Confirm booking' })).toBeNull();
 });
-it('a decision the application refuses leaves no record, and an aborted booking clears the card', () => {
-  const booking = {
-    ownerGeneration: 1,
-    callId: 'c',
-    assistantMessageId: 'a',
-    sourceRunId: 'r',
-    summary: 'Fictional table',
-    token: 'owned',
-    status: 'pending' as const,
-  };
-  const f = fixture({ busy: true, canSubmit: false, bookings: [booking] });
-  f.app.respond.mockReturnValueOnce(false);
-  fireEvent.click(screen.getByRole('button', { name: 'Confirm booking' }));
-  expect(f.app.respond).toHaveBeenCalledWith('owned', true);
-  expect(screen.queryByText('Approved: Booking')).toBeNull();
-  f.update({ bookings: [{ ...booking, status: 'aborted' }] });
+it('a stopped booking clears the card and leaves no record', async () => {
+  const f = fixture({ busy: true, canSubmit: false }, running);
+  const abort = new AbortController();
+  let result!: Promise<{ confirmed: boolean }>;
+  act(() => {
+    result = ask(f.app.clientTools,
+      abort
+    );
+  });
+  const rejected = expect(result).rejects.toMatchObject({ name: 'AbortError' });
+  expect(screen.getByRole('button', { name: 'Confirm booking' })).toBeTruthy();
+  act(() => abort.abort());
+  await rejected;
   expect(screen.queryByRole('button', { name: 'Confirm booking' })).toBeNull();
+  expect(screen.queryByText(/^(Approved|Declined): Booking$/)).toBeNull();
 });
 it('busy input exposes Stop and prevents New, while blocked idle asks for explicit New', () => {
   const f = fixture({ busy: true, canSubmit: false });
@@ -318,9 +317,15 @@ it('actual owned pending booking loses all authority on React unmount without na
   await waitFor(() =>
     expect(screen.getByRole('button', { name: 'Confirm booking' })).toBeTruthy()
   );
-  const token = app.getSnapshot().bookings[0].token;
+  const card = app.clientTools.render({
+    id: 'unmount-call',
+    name: 'confirm_booking',
+    args: { summary: 'Fictional only' },
+    status: 'running',
+  }) as ReactElement<{ answer(result: { confirmed: boolean }): boolean }>;
   rendered.unmount();
   await done;
-  expect(app.respond(token, true)).toBe(false);
+  expect(card.props.answer({ confirmed: true })).toBe(false);
+  expect(app.clientTools.getSnapshot()).toEqual([]);
   expect(fetch).toHaveBeenCalledOnce();
 });
