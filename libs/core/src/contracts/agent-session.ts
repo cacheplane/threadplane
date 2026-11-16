@@ -30,5 +30,13 @@ export type AgentSession<
       /** Read-only reconciliation; never retries an uncertain submission. */
       checkStatus?(): Promise<void>;
       dispose(): Promise<void>;
+      /**
+       * Optional: sends the last failed submission again, including a resume
+       * that carried no message. Appends no second user message. Resolves
+       * without sending while a request runs or when nothing failed. Only an
+       * error whose `recovery` is `'retry'` can be retried; for any other, such
+       * as one whose backend outcome is uncertain, it rejects without sending.
+       */
+      retry?(): Promise<void>;
     }
   : never;

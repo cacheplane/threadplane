@@ -6,7 +6,11 @@ import {
   type RunAgentInput,
   type ResumeEntry,
 } from '@ag-ui/client';
-import type { CompleteOutcome, ToolContract } from '@threadplane/core';
+import type {
+  CompleteOutcome,
+  PlainValue,
+  ToolContract,
+} from '@threadplane/core';
 import type {
   CheckedTools,
   FunctionToolDefinition,
@@ -26,6 +30,7 @@ import {
 import { requestState } from './state.js';
 import {
   applyObservation,
+  failedWithRunError,
   initialObservation,
   type SessionSnapshot,
 } from './session-observation.js';
@@ -84,6 +89,16 @@ export interface Session {
   ): Promise<CompleteOutcome>;
   stop(): Promise<void>;
   dispose(): Promise<void>;
+  /**
+   * Sends the last submission again after its run failed with a backend
+   * `RUN_ERROR`. The request carries the history and state that submission
+   * sent, so no second user message is added and the failed run's output is
+   * dropped. Resolves `aborted` without sending while a run is active or when
+   * the last run was not a failed submission, and `error` without sending when
+   * the failure leaves the backend outcome open. Absent on the client-tool
+   * owner, which blocks every dispatched failure as uncertain.
+   */
+  retry?(): Promise<CompleteOutcome>;
 }
 export type ClientToolSession<C extends Record<string, ToolContract>> = Omit<
   Session,
@@ -152,6 +167,14 @@ export function createSession(
   let active: Attempt | undefined;
   let disposed = false;
   let revision = 0;
+  /** What the latest admitted submission sent; a resume or newer submission replaces it. */
+  let saved:
+    | {
+        readonly runId: string;
+        readonly transcript: Transcript;
+        readonly state: PlainValue;
+      }
+    | undefined;
   const current = (attempt: Attempt) =>
     active === attempt &&
     !disposed &&
@@ -418,6 +441,7 @@ export function createSession(
             resolve('aborted');
             return;
           }
+          saved = undefined;
           admit(id, next, signal, resolve);
         });
       }),
@@ -501,7 +525,54 @@ export function createSession(
             resolve('aborted');
             return;
           }
+          saved = {
+            runId: id,
+            transcript: next.transcript,
+            state: next.state,
+          };
           admit(id, next, signal, resolve);
+        });
+      }),
+    retry: () =>
+      new Promise<CompleteOutcome>((resolve) => {
+        if (disposed) {
+          resolve('aborted');
+          return;
+        }
+        publication.command(() => {
+          const previous = publication.getSnapshot();
+          const last = saved;
+          if (
+            disposed ||
+            active ||
+            !last ||
+            previous.status !== 'error' ||
+            previous.run?.id !== last.runId
+          ) {
+            resolve('aborted');
+            return;
+          }
+          if (!failedWithRunError(previous)) {
+            resolve('error');
+            return;
+          }
+          const id = crypto.randomUUID();
+          saved = { ...last, runId: id };
+          // The failed run's output and state changes are dropped: the request
+          // is rebuilt from exactly what the failed submission sent.
+          admit(
+            id,
+            Object.freeze({
+              ...previous,
+              status: 'running',
+              transcript: last.transcript,
+              state: last.state,
+              ...nextInvocationSubagents(previous),
+              run: Object.freeze({ id }),
+            }),
+            undefined,
+            resolve
+          );
         });
       }),
     stop: () => close(false),

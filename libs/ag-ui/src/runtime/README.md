@@ -141,12 +141,13 @@ const session = createAgentSession(native);
 ```
 
 - It is a view, not a second owner. `getSnapshot` derives
-  `{ status, messages, toolCalls, error?, plan? }` from the native snapshot with
+  `{ status, messages, toolCalls, error?, plan?, usage? }` from the native snapshot with
   the two selectors above and keeps its reference until one of those fields
   changes. Subscribers hear about those changes only, so a native publication
   that touches only state, child evidence or a decision is silent here.
 - `submit` takes text and goes straight to the native session, as do `stop` and
-  `dispose`. Disposing the view disposes the session.
+  `dispose`. Disposing the view disposes the session. `retry` goes to the native
+  session too, when it has one (see "Retry" below).
 - A failed run becomes `snapshot.error`. A backend `RUN_ERROR` is a `server`
   error carrying the backend's message. A stream that ended without a terminal
   is `interrupted`. A response that was not OK carries its HTTP status: 401 and
@@ -156,14 +157,42 @@ const session = createAgentSession(native);
 - The native snapshot records that status as `run.failure.status` when a
   response that was not OK is why the run failed, and clears it with the next
   run.
-- Every error has `retryable: false` and `recovery: 'none'`. Nothing in the
-  snapshot proves a request never reached the backend, and the owner has no
-  status check, so the view has no `checkStatus`.
+- A backend `RUN_ERROR` for a submission is `retryable: true` with
+  `recovery: 'retry'` when the native session has `retry`. Every other error has
+  `retryable: false` and `recovery: 'none'`: a stream that ended without a
+  terminal, a response that was not OK and a request that got no response leave
+  open whether the backend did the work.
+- The view has no `checkStatus`. AG-UI defines no read-only way to ask a backend
+  what became of a run: `HttpAgent` only posts new runs, and it does not
+  implement the client's optional `connect` hook. Reconciling an uncertain run
+  would therefore mean sending a request, which a status check must never do.
+- `usage` is the token usage the settled run's `RUN_FINISHED` or `RUN_ERROR`
+  reported, one entry per provider and model, with only the provider and model
+  labels and finite counts copied. It is absent while a run is going and after a
+  run that reported none, so it never carries over from an earlier run. The
+  native snapshot keeps the event's own `usage` on `run.terminal`.
 - A state patch, native resume and client-tool evidence have no core
   equivalent. Keep the native session for those; both can be used together.
   While a native decision is waiting, `submit` resolves `error` without sending,
   and nothing in the core snapshot says why. Show the decision instead, as
   below.
+
+### Retry
+
+The plain native owner has `retry()`. It sends the last submission again after
+its run failed with a backend `RUN_ERROR`, rebuilding the request from exactly the
+history and state that submission sent. No second user message is added, and the
+failed run's output and state changes are dropped. It resolves `aborted` without
+sending while a run is active or when the last run was not a failed submission,
+and `error` without sending when the failure leaves the backend outcome open. The
+view's `retry` resolves in the first case and rejects in the second.
+
+- A failed resume is not retried. Its decision stays `uncertain`, as described
+  under "Correlated native resume".
+- The client-tool owner has no `retry`: it treats every failure after a request
+  was sent as uncertain and blocks further commands, so nothing could be retried.
+- A `RUN_ERROR` settles that the run failed, not that it did nothing. Work the
+  backend did before failing can be repeated.
 
 ### Approvals
 

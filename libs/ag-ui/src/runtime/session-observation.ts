@@ -41,8 +41,12 @@ export type OwnedRootTerminal = DeepReadonly<
       | 'outcome'
       | 'timestamp'
       | 'metadata'
+      | 'usage'
     >
-  | Pick<RunErrorEvent, 'type' | 'message' | 'code' | 'timestamp' | 'metadata'>
+  | Pick<
+      RunErrorEvent,
+      'type' | 'message' | 'code' | 'timestamp' | 'metadata' | 'usage'
+    >
   | Pick<CustomEvent, 'type' | 'name' | 'value' | 'timestamp' | 'metadata'>
 >;
 export interface SessionSnapshot {
@@ -74,6 +78,19 @@ export interface SessionSnapshot {
     readonly terminal?: OwnedRootTerminal;
     readonly legacyInterrupt?: OwnedLegacyInterrupt;
   };
+}
+/**
+ * The last run failed with the backend's own `RUN_ERROR` and left no decision
+ * waiting. That is the only failure this session treats as settled: a stream
+ * that ended without a terminal, a response that was not OK and a request that
+ * got no response all leave open whether the backend did the work.
+ */
+export function failedWithRunError(snapshot: SessionSnapshot): boolean {
+  return (
+    snapshot.status === 'error' &&
+    snapshot.run?.terminal?.type === 'RUN_ERROR' &&
+    !snapshot.decision
+  );
 }
 /** Session policy, not an SDK guarantee: identifiers are global in history. */
 export function assertTranscriptIdentity(transcript: Transcript): void {
@@ -159,9 +176,11 @@ export function applyObservation(
       const name = type === 'CUSTOM' ? event.name : undefined;
       if (type === 'CUSTOM' && name !== 'on_interrupt') break;
       const { timestamp, metadata } = event;
+      const usage = type === 'CUSTOM' ? undefined : event.usage;
       const common = {
         ...(timestamp !== undefined && { timestamp }),
         ...(metadata !== undefined && { metadata }),
+        ...(usage !== undefined && { usage }),
       };
       let selected: OwnedRootTerminal;
       if (type === 'RUN_FINISHED') {

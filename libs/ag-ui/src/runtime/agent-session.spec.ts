@@ -110,7 +110,7 @@ describe('createAgentSession', () => {
     expect('plan' in session.getSnapshot()).toBe(false);
   });
 
-  it('reports the backend error text as a server failure with no recovery', () => {
+  it('reports the backend error text as a server failure with no recovery when the owner cannot retry', () => {
     const source = controlled(initialObservation(history));
     const session = createAgentSession(source.native);
     source.publish({
@@ -222,7 +222,13 @@ describe('createAgentSession over the real owner', () => {
       await expect(failed).resolves.toBe('error');
       expect(session.getSnapshot()).toMatchObject({
         status: 'error',
-        error: { kind: 'server', message: 'Quota exceeded', recovery: 'none' },
+        // The backend settled the outcome, and this owner can send it again.
+        error: {
+          kind: 'server',
+          message: 'Quota exceeded',
+          retryable: true,
+          recovery: 'retry',
+        },
       });
     } finally {
       await fixture.cleanup();
