@@ -5,3 +5,8 @@ export {
   useA2uiSurfaceWriter,
   type A2uiSurfaceWriter,
 } from './surface-context.js';
+export {
+  A2uiMessageSurfaces,
+  type A2uiMessageContent,
+  type A2uiMessageSurfacesProps,
+} from './message-surfaces.js';

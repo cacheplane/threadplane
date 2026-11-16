@@ -1084,8 +1084,9 @@ test('React render requires exactly the pure RenderSpec runtime export', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', {}), /A2uiSurface/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {} }), /a2uiBasicCatalog/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {} }), /useA2uiSurfaceWriter/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {} }));
-  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, surfaceToSpec() {} }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {} }), /A2uiMessageSurfaces/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {}, surfaceToSpec() {} }), /unexpected/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', {}), /RenderSpec/);
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec }));
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createStateStore: () => ({}) }), /unexpected/);

@@ -724,9 +724,11 @@ way to the message text instead of taking the transcript down.
 With `renderA2ui`, an assistant message whose content starts with
 `---a2ui_JSON---` is handed to your function as `{ messageId, source,
 streaming, skeleton }`, where `source` is the newline-delimited envelopes after
-the marker. Parsing them, accumulating surfaces with `createA2uiSurfaces` and
-rendering `A2uiSurface` stay with the application; return `skeleton` until a
-surface is ready. The chat entry does not load the A2UI packages.
+the marker. The chat entry does not load the A2UI packages, so the rendering
+comes from your function: pass the content to `A2uiMessageSurfaces` from
+`@threadplane/react/a2ui` (see Surfaces from a message), or parse the envelopes
+and render `A2uiSurface` yourself, returning `skeleton` until a surface is
+ready.
 
 A message shown as a surface gets no built-in message actions. A custom
 `renderMessage` keeps full ownership of its rows.
@@ -1841,6 +1843,43 @@ export function Surfaces({ snapshot }: { readonly snapshot: A2uiSurfacesSnapshot
 pass through and `{ path }` props read the surface data model, so a new snapshot
 updates bound text. A component the catalog lacks keeps its children and renders
 no control.
+
+### Surfaces from a message
+
+`A2uiMessageSurfaces` renders the surfaces one assistant message carries. It
+takes what `renderA2ui` on `Chat` and `MessageList` hands over (see Generated UI
+in the transcript), so a transcript with A2UI needs no parsing of your own:
+
+```tsx
+import { Chat, type MessageGenerativeUi } from '@threadplane/react/chat';
+import { A2uiMessageSurfaces } from '@threadplane/react/a2ui';
+import '@threadplane/react/a2ui/styles.css';
+
+// Define it once: a new object each render re-renders every row.
+const generativeUi: MessageGenerativeUi = {
+  renderA2ui: (content) => (
+    <A2uiMessageSurfaces content={content} onAction={sendAction} />
+  ),
+};
+
+<Chat session={session} generativeUi={generativeUi} />;
+```
+
+It keeps one `createA2uiSurfaces()` store per message and reads `content.source`
+into it as the message streams: each finished line is applied once, and the
+last line waits for its newline until the message is no longer streaming. Every
+live surface renders through `A2uiSurface` with that store, so inputs are
+editable and an edit survives later lines (see Editable surfaces).
+`content.skeleton` shows while the message streams and no surface is live; a
+finished message with no surface renders nothing. A line that is not a
+`createSurface`, `updateComponents`, `updateDataModel` or `deleteSurface`
+envelope is skipped. If `source` stops being an extension of what was read, or
+`messageId` changes, the component starts over with an empty store and the
+edits are gone. The store lives as long as the component is mounted.
+
+`onAction`, `onValidationError`, `functions`, `catalog` and `className` go to
+every surface of the message. Outside a transcript, pass
+`{ source, streaming }` yourself; `messageId` and `skeleton` are optional.
 
 ### Editable surfaces
 
