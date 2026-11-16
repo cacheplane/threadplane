@@ -2,6 +2,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -160,6 +161,18 @@ export function Chat({
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
+  // A session that can regenerate gets the built-in action, unless the app
+  // handles it itself. Built-in actions stay off until `messageActions` is set.
+  const actions = useMemo(() => {
+    if (!messageActions || !session.regenerate) return messageActions;
+    if (messageActions !== true && messageActions.onRegenerate) return messageActions;
+    return {
+      ...(messageActions === true ? {} : messageActions),
+      onRegenerate: (messageId: string) => {
+        session.regenerate?.(messageId).catch(ignore);
+      },
+    };
+  }, [messageActions, session]);
   // Stable so the current transcript row keeps its memo while work runs.
   const tracksStop = useRef(runStatus);
   tracksStop.current = runStatus;
@@ -291,7 +304,7 @@ export function Chat({
         onStop={snapshot.status === 'running' ? stop : undefined}
         running={snapshot.status === 'running'}
         approvalRecords={approvalRecords}
-        messageActions={messageActions}
+        messageActions={actions}
         math={math}
         generativeUi={generativeUi}
         markdownComponents={markdownComponents}
