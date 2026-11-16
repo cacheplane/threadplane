@@ -151,6 +151,7 @@ it('requires CI validation when Angular startup or its lifecycle checks change',
   for (const path of [
     'scripts/website-angular-startup.mjs',
     'scripts/website-angular-startup.spec.mjs',
+    'scripts/website-angular-static.mjs',
   ]) assert.equal(hasGlobalCiFileChange([path]), true, path);
 });
 

@@ -28,7 +28,7 @@ fi
 
 meminfo() {
   awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} /^SwapTotal:/{st=$2} /^SwapFree:/{sf=$2}
-    END {printf "total_mb=%d avail_mb=%d swap_used_mb=%d", t/1024, a/1024, (st-sf)/1024}' /proc/meminfo
+    END {printf "total_mb=%d avail_mb=%d swap_total_mb=%d swap_used_mb=%d", t/1024, a/1024, st/1024, (st-sf)/1024}' /proc/meminfo
 }
 
 pressure() {
@@ -39,7 +39,9 @@ pressure() {
 
 # Resident memory summed by command name, largest first.
 rss_by_command() {
-  ps -eo comm=,rss= | awk '{s[$1]+=$2} END {for (c in s) printf "%d %s\n", s[c]/1024, c}' |
+  # rss first: a command name may contain spaces ("next-server (v16…)").
+  ps -eo rss=,comm= | awk '{r=$1; $1=""; c=substr($0, 2); gsub(/ /, "_", c); s[c]+=r}
+    END {for (c in s) printf "%d %s\n", s[c]/1024, c}' |
     sort -rn | head -6 | awk '{printf " %s=%dMB", $2, $1}'
 }
 
@@ -96,6 +98,7 @@ report() {
       for (i=2; i<=NF; i++) { split($i, kv, "="); v[kv[1]]=kv[2] }
       if (min_avail == "" || v["avail_mb"]+0 < min_avail) { min_avail=v["avail_mb"]+0; min_at=t; total=v["total_mb"] }
       if (v["swap_used_mb"]+0 > max_swap) { max_swap=v["swap_used_mb"]+0; swap_at=t }
+      if (v["swap_total_mb"] != "") swap_total=v["swap_total_mb"]
       if (v["psi_full10"]+0 > max_full) { max_full=v["psi_full10"]+0; full_at=t }
     }
     /^stuck website probe/ { stuck++; if (first_stuck == "") first_stuck=t }
@@ -106,7 +109,7 @@ report() {
     }
     END {
       printf "lowest MemAvailable: %d MB of %d MB at %s\n", min_avail, total, min_at
-      printf "highest swap used: %d MB%s\n", max_swap, (swap_at ? " at " swap_at : "")
+      printf "highest swap used: %d MB%s%s\n", max_swap, (swap_total != "" ? " of " swap_total " MB" : ""), (swap_at ? " at " swap_at : "")
       printf "highest memory pressure (full avg10): %s%s\n", max_full + 0, (full_at ? " at " full_at : "")
       printf "website probe failures: %d%s\n", stuck, (first_stuck ? ", first at " first_stuck : "")
       print "peak resident memory by process:"
