@@ -18654,6 +18654,14 @@
       "reason": "What onRenderEvent receives: the ID of the message whose spec tree produced the event, and the RenderSpec event (an action that ran, a state write, or a reported result)."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#MessageSourceLabels",
+      "taskIds": ["T19", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/generative-ui.tsx",
+      "reason": "Replacement text for the opt-in source disclosure under a surface: its toggle and the headings over a spec's and an A2UI message's source."
+    },
+    {
       "id": "source:libs/react/src/chat/typing-indicator.tsx",
       "taskIds": ["T23"],
       "treatment": "react",
