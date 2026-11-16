@@ -18657,6 +18657,14 @@
       "reason": "What renderA2ui receives for one assistant message: its ID, the envelope source after the marker, whether it is still streaming, and the transcript's placeholder."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#MessageRenderEvent",
+      "taskIds": ["T19", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/generative-ui.tsx",
+      "reason": "What onRenderEvent receives: the ID of the message whose spec tree produced the event, and the RenderSpec event (an action that ran, a state write, or a reported result)."
+    },
+    {
       "id": "source:libs/react/src/chat/typing-indicator.tsx",
       "taskIds": ["T23"],
       "treatment": "react",
