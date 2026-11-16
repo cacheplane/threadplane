@@ -463,6 +463,7 @@ const SUPPORTED_EXPORTS = {
     'staticDelivery',
     'projectAgentError',
   ],
+  'core/testing': ['createFakeAgentSession'],
   react: ['useAgent'],
   'react/chat': [
     'ApprovalCard',
@@ -541,7 +542,7 @@ export function assertSupportedExports(project, entry) {
     if (!supported(entry[name], name))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    ['react', 'react/debug', 'react/chat', 'react/markdown', 'react/render', 'react/a2ui', 'content/messages', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
+    ['core/testing', 'react', 'react/debug', 'react/chat', 'react/markdown', 'react/render', 'react/a2ui', 'content/messages', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
     throw new Error(`${project} has unexpected exports`);

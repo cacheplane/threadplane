@@ -819,6 +819,12 @@ test('React chat entry supports the outcome registry and status panel', () => {
   }
 });
 
+test('core testing entry exposes only the fake session factory', () => {
+  assert.throws(() => packageVerifier.assertSupportedExports('core/testing', {}), /createFakeAgentSession/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('core/testing', { createFakeAgentSession() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('core/testing', { createFakeAgentSession() {}, mockAgent() {} }), /unexpected/);
+});
+
 test('JSON feature exposes only its owned factory', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('content/json', {}), /createJson/);
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('content/json', { createJson() {} }));
