@@ -1,3 +1,4 @@
+import type { AgentSessionCustomEvent } from '@threadplane/core';
 import type { LangGraphSnapshot } from './langgraph-snapshot.js';
 import { ownLangGraphSnapshot } from './ownership.js';
 
@@ -10,6 +11,9 @@ export function createPublication(
 ) {
   let current = ownLangGraphSnapshot(initial);
   const listeners = new Set<{ notify: () => void }>();
+  const eventListeners = new Set<{
+    listener: (event: AgentSessionCustomEvent) => void;
+  }>();
   const pending: (() => void)[] = [];
   let flushing = false;
   let notifying = false;
@@ -69,8 +73,36 @@ export function createPublication(
       };
     },
     publish,
+    /** Events are delivered once, to the listeners registered right now. */
+    onCustomEvent(
+      listener: (event: AgentSessionCustomEvent) => void
+    ): () => void {
+      const registration = { listener };
+      eventListeners.add(registration);
+      return () => {
+        eventListeners.delete(registration);
+      };
+    },
+    emitCustomEvent(event: AgentSessionCustomEvent): void {
+      for (const registration of [...eventListeners]) {
+        // A listener can release another, or dispose the session, mid-pass.
+        if (!eventListeners.has(registration)) continue;
+        try {
+          registration.listener(event);
+        } catch (error) {
+          try {
+            reportListenerError(error);
+          } catch {
+            /* Reporting cannot abort the pass. */
+          }
+        }
+      }
+    },
     // Session disposal releases observers without discarding queued commands.
-    clearListeners: () => listeners.clear(),
+    clearListeners: () => {
+      listeners.clear();
+      eventListeners.clear();
+    },
     command<T>(run: () => T | PromiseLike<T>): Promise<T> {
       return new Promise<T>((resolve, reject) =>
         schedule(() => {

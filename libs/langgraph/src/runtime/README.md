@@ -188,6 +188,20 @@ The interruption copy is a bounded duplicate of `AGENT_RECOVERY_MESSAGES` and
 import; `runtime-recovery-copy.spec.ts` under the Angular test target fails when
 they drift.
 
+## Custom events
+
+`session.onCustomEvent(listener)` delivers each `custom` stream frame, from the
+root or any subgraph namespace, as `{ name, data }`. The frame is read the way the
+Angular adapter reads it: a `{ name, data }` payload unwraps, and any other payload
+is the data with an empty name. Events are not state: no snapshot holds them, and
+a listener added later does not receive earlier events. `data` is owned frozen
+plain data; a payload that is not plain data is dropped. The middleware's
+subagent binding frame is protocol and is not delivered. A throwing listener
+does not affect the run or other listeners. Disposal releases every listener,
+including in the middle of a delivery, and later registrations are inert. Owned
+streams always request `custom` mode; a supplied transport delivers what its own
+stream modes produce.
+
 ## Dynamic pauses
 
 Branch resume reads the exact retained pause before sending a decision. Task and

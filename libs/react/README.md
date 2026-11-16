@@ -88,6 +88,21 @@ invent core pending-tool states. Integration tests borrow the actual private
 owner through a browser-safe Fetch API fixture. This is not a public AG-UI factory
 or a claim that shared display components accept every native snapshot.
 
+Custom events are not snapshot data, so `useAgent` does not observe them. A
+session can offer the optional core `onCustomEvent(listener)` method; both private
+runtime sessions do. Register a listener in an effect and return its release
+function:
+
+```tsx
+useEffect(
+  () => session.onCustomEvent?.((event) => console.log(event.name, event.data)),
+  [session]
+);
+```
+
+A listener receives only events emitted after it registers. `data` is frozen
+plain data.
+
 The root retains `use client`. Server rendering and hydration are not supported
 by this binding. No backend constructor is exported here; the current real
 LangGraph runtime is still a private development composition seam. This API is
