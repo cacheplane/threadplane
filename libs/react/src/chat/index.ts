@@ -163,6 +163,10 @@ export {
   type ChatSidenavProps,
 } from './chat-sidenav.js';
 export {
+  ChatSidenavSections,
+  type ChatSidenavSectionsProps,
+} from './chat-sidenav-sections.js';
+export {
   ChatSidenavScrim,
   type ChatSidenavScrimProps,
 } from './chat-sidenav-scrim.js';

@@ -1348,6 +1348,35 @@ shell accepts application-owned navigation as `children`:
 </>
 ```
 
+`ChatSidenavSections` is the usual content for that slot: a **New chat**
+button, **Projects**, **Recent** and a collapsed **Archived** section, built
+from `ProjectList` and `ThreadList`.
+
+```tsx
+<ChatSidenav mode={mode} open={drawerOpen} onModeChange={setDesktopMode} onOpenChange={setDrawerOpen}>
+  <ChatSidenavSections
+    onNewChat={startThread}
+    threads={threads}
+    archivedThreads={archived}
+    activeThreadId={threadId}
+    onThreadSelect={selectThread}
+    threadActions={threadActions}
+    projects={projects}
+    selectedProjectId={projectId}
+    onProjectSelect={selectProject}
+    projectActions={projectActions}
+  />
+</ChatSidenav>
+```
+
+Each section appears only when its data is supplied (`null` or absent omits
+it), and **New chat** only with `onNewChat`. The lists stay controlled: you own
+the data and what selecting or acting on a row does. `projects` are also
+offered as **Move to project** destinations. Archived conversations stay
+unmounted until the section is opened, and an empty one reads "No archived
+conversations." Label props replace the built-in headings, and `children`
+render after the sections. Search and collapse stay on `ChatSidenav`.
+
 Required `mode` selects `expanded`, `collapsed` or `drawer`; `open` controls only
 the drawer. Expanded and collapsed navigation stay in normal flow at 18rem and
 4rem. The drawer sits at the viewport's inline-start edge, is at most 20rem wide, and

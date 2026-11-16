@@ -17060,6 +17060,33 @@
       "reason": "Readonly required open and onDismiss, optional label and className. Application owns visibility and focus restoration."
     },
     {
+      "id": "source:libs/react/src/chat/chat-sidenav-sections.tsx",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Composed sidebar content for ChatSidenav: New chat, Projects, Recent and a collapsed Archived section built from ProjectList and ThreadList. Every list stays controlled; no devtools button, search or session behavior."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavSections",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Composed sidebar content placed inside ChatSidenav; sections appear only for the data supplied, and the application owns selection and row commands."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavSectionsProps",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly optional conversations, archived conversations and projects with their selection callbacks, action adapters, labels and trailing children."
+    },
+    {
       "id": "source:libs/react/src/chat/chat-sidenav-scrim.tsx",
       "taskIds": [
         "T30"
