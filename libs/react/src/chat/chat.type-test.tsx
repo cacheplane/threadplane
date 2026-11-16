@@ -48,6 +48,14 @@ ok.className = 'x';
 />;
 // @ts-expect-error Message activity is a render function, not content.
 <Chat session={session} renderMessageActivity={<p />} />;
+<Chat
+  session={session}
+  threads={[{ id: 'a', title: 'Alpha' }]}
+  activeThreadId="a"
+  onThreadSelect={(threadId: string) => void threadId}
+/>;
+// @ts-expect-error Conversations are row records, not IDs.
+<Chat session={session} threads={['a']} />;
 void missing;
 
 import type { ReactNode } from 'react';

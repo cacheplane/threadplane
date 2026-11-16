@@ -27,6 +27,13 @@ const props: ApprovalCardProps = {
 >
   <input />
 </ApprovalCard>;
+<ApprovalCard presentation="dialog" onDismiss={() => undefined} actions={[action]}>
+  Reason
+</ApprovalCard>;
+// @ts-expect-error Presentation is inline or dialog.
+<ApprovalCard presentation="sheet" actions={[action]}>Reason</ApprovalCard>;
+// @ts-expect-error Dismissal receives no event or payload.
+<ApprovalCard onDismiss={(event: Event) => event} actions={[action]}>Reason</ApprovalCard>;
 // @ts-expect-error Actions are explicit and required.
 <ApprovalCard>Reason</ApprovalCard>;
 // @ts-expect-error Body must be a React node, not an unprojected SDK object.
