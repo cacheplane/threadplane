@@ -796,6 +796,22 @@ focus survive, and when a chosen suggestion disappears with the greeting, focus
 moves to the composer. It is off unless set, and `--tp-welcome-max-width`,
 `--tp-welcome-gap` and `--tp-welcome-padding` adjust it.
 
+Pass `threads` to list conversations in a sidebar beside the chat, with
+`activeThreadId` and `onThreadSelect` to mark and switch them. The sidebar
+shows on viewports at least 768px wide. Passing the prop, even as an empty
+array, wraps the chat in a `tp-chat-shell` row, so a list that loads later
+never remounts the composer. For row actions, projects or a collapsible
+sidebar, compose `ChatSidenav` instead.
+
+```tsx
+<Chat
+  session={session}
+  threads={threads}
+  activeThreadId={threadId}
+  onThreadSelect={selectThread}
+/>
+```
+
 `WelcomeSuggestion` requires literal `label`, exact string `value` and
 `onSelect(value)`. Its native `type="button"` never submits a surrounding form;
 an enabled, unclaimed click emits the value without trimming or transformation.
