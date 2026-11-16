@@ -22,6 +22,7 @@ import {
   type MessageListProps,
 } from './message-list.js';
 import { ScrollBubble } from './scroll-bubble.js';
+import { ThreadList, type ThreadListItem } from './thread-list.js';
 
 /** Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options. */
 export interface ChatProps
@@ -60,6 +61,18 @@ export interface ChatProps
    * actions. It steps aside while the `welcome` greeting shows. Off unless set.
    */
   readonly header?: ReactNode;
+  /**
+   * Conversations listed in a sidebar beside the chat, on viewports at least
+   * 768px wide. Passing the prop, even as an empty array, wraps the chat in a
+   * `tp-chat-shell` row; the sidebar appears once there are conversations.
+   * For row actions, projects or a collapsible sidebar, compose `ChatSidenav`
+   * instead.
+   */
+  readonly threads?: readonly ThreadListItem[];
+  /** The conversation marked as current in the `threads` sidebar. */
+  readonly activeThreadId?: string | null;
+  /** Called with the chosen conversation's ID; the app switches sessions. */
+  readonly onThreadSelect?: (threadId: string) => void;
   /** App-owned notice above the composer; see `ChatInputProps.banner`. */
   readonly inputBanner?: ChatInputProps['banner'];
   /** App-owned content above the input surface; see `ChatInputProps.attachments`. */
@@ -132,6 +145,9 @@ export function Chat({
   onToolRetry,
   onRetry,
   header,
+  threads,
+  activeThreadId,
+  onThreadSelect = ignore,
   inputBanner,
   inputAttachments,
   inputLeading,
@@ -251,7 +267,7 @@ export function Chat({
     suggestionFocus.current = false;
     composer.current?.focus();
   }, [greeted]);
-  return (
+  const chat = (
     <div
       className={['tp-chat', greeting && 'tp-chat--welcome', className]
         .filter(Boolean)
@@ -383,6 +399,22 @@ export function Chat({
           {suggestions}
         </div>
       )}
+    </div>
+  );
+  // The prop's presence, not its length, decides the wrapper, so a list that loads later never remounts the chat.
+  if (threads === undefined) return chat;
+  return (
+    <div className="tp-chat-shell">
+      {threads.length > 0 ? (
+        <aside className="tp-chat tp-chat-shell__sidebar">
+          <ThreadList
+            threads={threads}
+            activeThreadId={activeThreadId}
+            onSelect={onThreadSelect}
+          />
+        </aside>
+      ) : null}
+      {chat}
     </div>
   );
 }

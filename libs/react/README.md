@@ -411,7 +411,29 @@ actions. Each action has a unique `id`, `label`, `onSelect` callback and optiona
 `disabled` flag. The card's `disabled` flag disables all actions. Clicking does
 not hide or consume the card; the app owns interrupt matching, decision tokens,
 pending/error state and command handling. Async callbacks must handle their own
-rejections. The card adds no modal, focus management, timer or session lifecycle.
+rejections. The inline card adds no modal, timer or session lifecycle.
+
+Pass `presentation="dialog"` to show the same content as a modal over the page
+for as long as the card is mounted. Focus moves to the first action, the rest
+of the page is inert, and focus returns to where it was when you unmount the
+card. Escape calls `onDismiss`, where you answer the request (usually as a
+decline); without it Escape does nothing. In `Chat`'s `approval` slot the
+composer still reads "Answer the approval to continue" and takes focus back
+once the approval clears.
+
+```tsx
+<ApprovalCard
+  presentation="dialog"
+  title="Save the note?"
+  onDismiss={decline}
+  actions={[
+    { id: 'approve', label: 'Save note', onSelect: approve },
+    { id: 'decline', label: "Don't save", onSelect: decline },
+  ]}
+>
+  <p>{reason}</p>
+</ApprovalCard>
+```
 
 ```tsx
 import { ApprovalCard } from '@threadplane/react/chat';
@@ -717,9 +739,30 @@ in until the root element has arrived, then each element appears as its JSON
 finishes, and views receive `loading` until the message completes. The spec's
 own `state` feeds its bindings; a prop written `{ "statePath": "/x" }` is read
 as a state binding. `functions` and `fallback` pass through to `RenderSpec`,
-and `skeletonLabel` replaces the placeholder text. The tree is read-only.
+and `skeletonLabel` replaces the placeholder text.
 Finished content that is not a spec stays text, and a view that throws gives
 way to the message text instead of taking the transcript down.
+
+The tree is read-only until you set `handlers`, `store` or `onRenderEvent`.
+With any of them, views get `emit` and `set`, as they do from `RenderSpec` with
+a `store`:
+
+```tsx
+const generativeUi: MessageGenerativeUi = {
+  registry,
+  handlers: { book: ({ guest }) => bookTrip(String(guest)) },
+  onRenderEvent: ({ messageId, event }) => console.log(messageId, event.type),
+};
+```
+
+`handlers` are the actions a spec's `on` bindings may run; a binding that names
+an action you did not supply does nothing. Each message keeps state of its own,
+seeded from its spec's `state` when that finishes streaming and dropped with
+its row, so two messages with the same spec do not share edits. Pass `store`
+(for example `createRenderState()` from `@threadplane/content/render-state`) to
+own the state yourself: every spec then reads and writes that one store, and a
+spec's own `state` is not applied. `onRenderEvent` reports each action, state
+write and reported result with the ID of the message it came from.
 
 With `renderA2ui`, an assistant message whose content starts with
 `---a2ui_JSON---` is handed to your function as `{ messageId, source,
@@ -759,6 +802,22 @@ and adds no element unless set.
 
 ```tsx
 <Chat session={session} header={<h2>Support</h2>} />
+```
+
+Pass `threads` to list conversations in a sidebar beside the chat, with
+`activeThreadId` and `onThreadSelect` to mark and switch them. The sidebar
+shows on viewports at least 768px wide. Passing the prop, even as an empty
+array, wraps the chat in a `tp-chat-shell` row, so a list that loads later
+never remounts the composer. For row actions, projects or a collapsible
+sidebar, compose `ChatSidenav` instead.
+
+```tsx
+<Chat
+  session={session}
+  threads={threads}
+  activeThreadId={threadId}
+  onThreadSelect={selectThread}
+/>
 ```
 
 `WelcomeSuggestion` requires literal `label`, exact string `value` and
