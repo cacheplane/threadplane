@@ -927,7 +927,10 @@ Report the failure from your command; the list does not show an error itself.
 - **Pin** or **Unpin** is offered according to the row's `pinned` value. With
   `reorderPinned`, pinned rows also get **Move up** and **Move down**; the
   command receives the ID of the pinned row to place it before, or `null` for
-  last. The list keeps your order and does not sort pinned rows itself.
+  last. Pinned rows can also be dragged with a mouse onto another pinned row:
+  a line shows whether the row lands before or after it, and the drop calls
+  the same command. Keyboard and touch users keep **Move up** and **Move
+  down**. The list keeps your order and does not sort pinned rows itself.
 - **Move to project** is offered when you also pass `projects`. The open menu
   swaps to **No project** and your projects, and `moveToProject` receives the
   chosen project ID or `null`. The row stays in place until you update `threads`.
