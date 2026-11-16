@@ -368,6 +368,29 @@
 .tp-thread-list__item {
   min-width: 0;
 }
+.tp-thread-list__item[draggable='true'] {
+  position: relative;
+}
+.tp-thread-list__item[data-dragging] {
+  opacity: 0.4;
+}
+/* Where a dragged pinned row would land. */
+.tp-thread-list__item[data-drop-position='before']::before,
+.tp-thread-list__item[data-drop-position='after']::after {
+  content: '';
+  position: absolute;
+  inset-inline: 4px;
+  block-size: 2px;
+  border-radius: 1px;
+  background: var(--tp-chat-accent, var(--ds-accent, Highlight));
+  pointer-events: none;
+}
+.tp-thread-list__item[data-drop-position='before']::before {
+  inset-block-start: calc(-0.25rem - 1px);
+}
+.tp-thread-list__item[data-drop-position='after']::after {
+  inset-block-end: calc(-0.25rem - 1px);
+}
 .tp-thread-list__item--actions {
   display: flex;
   align-items: center;
