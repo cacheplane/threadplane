@@ -14735,6 +14735,17 @@
       "reason": "Readonly positional current and previous projected-role context reaches stable custom renderers and Chat while primitive memo-row props preserve historical rendering. Direct assistant controls use the opt-in stylesheet's hover, focus-within and current reveal, always visible at widths up to 768px or with no hover support. Full T23 parity remains deferred."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#MessageActivityContext",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "The row, tool calls and child agents passed to renderMessageActivity, which replaces one assistant message's reasoning and tool-call area on MessageList and Chat.",
+      "note": "Replacement above the text, per-message fallback on undefined, an empty area on null, unused per-call renderers, child agents and custom renderMessage ownership are verified with real DOM tests."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#MessageListProps",
       "taskIds": [
         "T22",

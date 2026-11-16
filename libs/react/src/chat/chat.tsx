@@ -75,6 +75,8 @@ export interface ChatProps
   readonly generativeUi?: MessageListProps['generativeUi'];
   /** Replaces how chosen Markdown node types render; see `MessageListProps.markdownComponents`. Define it outside render. */
   readonly markdownComponents?: MessageListProps['markdownComponents'];
+  /** Replaces an assistant message's reasoning and tool-call area; see `MessageListProps.renderMessageActivity`. Keep stable. */
+  readonly renderMessageActivity?: MessageListProps['renderMessageActivity'];
   /** One reasoning disclosure per multi-step turn; see `MessageListProps.mergeReasoning`. Defaults to true. */
   readonly mergeReasoning?: MessageListProps['mergeReasoning'];
   /**
@@ -138,6 +140,7 @@ export function Chat({
   generativeUi,
   markdownComponents,
   mergeReasoning,
+  renderMessageActivity,
   typingIndicator,
   welcome,
   runStatus = false,
@@ -280,6 +283,7 @@ export function Chat({
         generativeUi={generativeUi}
         markdownComponents={markdownComponents}
         mergeReasoning={mergeReasoning}
+        renderMessageActivity={renderMessageActivity}
         typingIndicator={typingIndicator}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
