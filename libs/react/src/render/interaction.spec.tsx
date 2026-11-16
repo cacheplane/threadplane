@@ -35,6 +35,10 @@ const Text = ({ props }: RenderViewProps) => (
 );
 const Box = ({ children }: RenderViewProps) => <section>{children}</section>;
 const registry: ReactRenderRegistry = { Box, Button, Field, Text };
+/** Collects what the tree did, leaving out mount notifications covered in lifecycle.spec.tsx. */
+const record = (events: RenderEvent[]) => (event: RenderEvent) => {
+  if (event.type !== 'lifecycle') events.push(event);
+};
 const settle = () =>
   act(async () => {
     await Promise.resolve();
@@ -66,7 +70,7 @@ describe('RenderSpec interaction', () => {
         registry={registry}
         state={{ name: 'Ada' }}
         handlers={{ save }}
-        onEvent={(event) => events.push(event)}
+        onEvent={record(events)}
       />
     );
     fireEvent.click(view.getByRole('button', { name: 'Save' }));
@@ -225,7 +229,7 @@ describe('RenderSpec interaction', () => {
         spec={spec}
         registry={registry}
         store={store}
-        onEvent={(event) => events.push(event)}
+        onEvent={record(events)}
       />
     );
     fireEvent.change(view.getByRole('textbox', { name: 'Name' }), {
@@ -347,7 +351,7 @@ describe('RenderSpec interaction', () => {
         spec={spec}
         registry={registry}
         handlers={{ load: async () => 42 }}
-        onEvent={(event) => events.push(event)}
+        onEvent={record(events)}
       />
     );
     fireEvent.click(view.getByRole('button', { name: 'Go' }));
@@ -490,7 +494,7 @@ describe('RenderSpec interaction', () => {
       <RenderSpec
         spec={spec}
         registry={{ Picker }}
-        onEvent={(event) => events.push(event)}
+        onEvent={record(events)}
       />
     );
     fireEvent.click(view.getByRole('button', { name: 'Pick' }));
@@ -580,7 +584,7 @@ describe('RenderSpec interaction', () => {
         registry={registry}
         store={store}
         handlers={{ slow: () => new Promise<void>((done) => (resolve = done)) }}
-        onEvent={(event) => events.push(event)}
+        onEvent={record(events)}
       />
     );
     fireEvent.click(view.getByRole('button', { name: 'Go' }));

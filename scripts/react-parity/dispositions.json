@@ -19145,7 +19145,53 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "note": "Runs an element's on bindings through application handlers with resolved params, confirm and onSuccess/onError follow-ups, writes a writable store, and reports handler, stateChange and result events. Lifecycle events, watch effects and preventDefault are not applied."
+      "note": "Runs an element's on bindings through application handlers with resolved params, confirm and onSuccess/onError follow-ups, writes a writable store, and reports handler, stateChange and result events. Watch effects and preventDefault are not applied; lifecycle events report spec and element mounts."
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderLifecycle",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderLifecycleEvent",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderLifecycleSnapshot",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#createRenderLifecycle",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "source:libs/react/src/render/lifecycle.ts",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Turns RenderSpec lifecycle, stateChange and handler events into first-mount, mount-count and latest-activity timings, the React counterpart of Angular RENDER_LIFECYCLE."
     }
   ]
 }

@@ -1,5 +1,6 @@
 import {
   Fragment,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -169,19 +170,45 @@ function Element({
         });
     },
   };
-  if (
-    Object.hasOwn(entry, 'kind') &&
-    (entry as RenderReadinessEntry).kind === 'readiness'
-  )
-    return (
-      <ReadinessGate
-        entry={entry as RenderReadinessEntry}
-        type={element.type}
-        {...view}
-      />
-    );
   const Component = entry as Exclude<typeof entry, RenderReadinessEntry>;
-  return <Component {...view} />;
+  return (
+    <ElementLifecycle
+      interaction={interaction}
+      elementKey={elementKey}
+      elementType={element.type}
+    >
+      {Object.hasOwn(entry, 'kind') &&
+      (entry as RenderReadinessEntry).kind === 'readiness' ? (
+        <ReadinessGate
+          entry={entry as RenderReadinessEntry}
+          type={element.type}
+          {...view}
+        />
+      ) : (
+        <Component {...view} />
+      )}
+    </ElementLifecycle>
+  );
+}
+
+/** Reports an element's view mounting and leaving, including the leaving after the tree unmounts. */
+function ElementLifecycle({
+  interaction,
+  elementKey,
+  elementType,
+  children,
+}: {
+  readonly interaction: Interaction;
+  readonly elementKey: string;
+  readonly elementType: string;
+  readonly children: ReactNode;
+}) {
+  useEffect(() => {
+    const event = { type: 'lifecycle', scope: 'element', elementKey, elementType } as const;
+    interaction.report({ ...event, event: 'mounted' });
+    return () => interaction.report({ ...event, event: 'destroyed' });
+  }, [interaction, elementKey, elementType]);
+  return children;
 }
 
 /**
@@ -225,6 +252,15 @@ export function RenderSpec({
     }),
     []
   );
+  useEffect(() => {
+    interaction.report({ type: 'lifecycle', event: 'mounted', scope: 'spec' });
+    return () =>
+      interaction.report({
+        type: 'lifecycle',
+        event: 'destroyed',
+        scope: 'spec',
+      });
+  }, [interaction]);
   const subscribe = useCallback(
     (notify: () => void) =>
       store ? store.subscribe(notify) : noSubscription(),
