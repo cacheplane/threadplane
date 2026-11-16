@@ -504,6 +504,21 @@
   .tp-approval-card .tp-approval-card__action--primary,
   .tp-approval-card .tp-approval-card__action--danger { border: 1px solid ButtonText; }
 }
+.tp-chat__header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  box-sizing: border-box;
+  min-block-size: 3.5rem;
+  min-inline-size: 0;
+  padding-block: 0.5rem;
+  padding-inline: 1.5rem;
+  border-block-end: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
 .tp-chat__stopped {
   display: flex;
   align-items: center;

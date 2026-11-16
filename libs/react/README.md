@@ -753,6 +753,14 @@ focus survive, and when a chosen suggestion disappears with the greeting, focus
 moves to the composer. It is off unless set, and `--tp-welcome-max-width`,
 `--tp-welcome-gap` and `--tp-welcome-padding` adjust it.
 
+`Chat` also takes a `header`: app-owned content, such as a title and actions,
+in a bar above the transcript. It steps aside while the welcome greeting shows
+and adds no element unless set.
+
+```tsx
+<Chat session={session} header={<h2>Support</h2>} />
+```
+
 `WelcomeSuggestion` requires literal `label`, exact string `value` and
 `onSelect(value)`. Its native `type="button"` never submits a surrounding form;
 an enabled, unclaimed click emits the value without trimming or transformation.

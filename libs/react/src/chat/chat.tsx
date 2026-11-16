@@ -55,6 +55,11 @@ export interface ChatProps
   readonly onToolRetry?: MessageListProps['onToolRetry'];
   /** Explicit application-owned retry intent; Chat never replays a submission. */
   readonly onRetry?: () => void;
+  /**
+   * App-owned content in a bar above the transcript, such as a title and
+   * actions. It steps aside while the `welcome` greeting shows. Off unless set.
+   */
+  readonly header?: ReactNode;
   /** App-owned notice above the composer; see `ChatInputProps.banner`. */
   readonly inputBanner?: ChatInputProps['banner'];
   /** App-owned content above the input surface; see `ChatInputProps.attachments`. */
@@ -126,6 +131,7 @@ export function Chat({
   subagents,
   onToolRetry,
   onRetry,
+  header,
   inputBanner,
   inputAttachments,
   inputLeading,
@@ -251,6 +257,9 @@ export function Chat({
         .filter(Boolean)
         .join(' ')}
     >
+      {greeting || header == null || header === false ? null : (
+        <div className="tp-chat__header">{header}</div>
+      )}
       {/* The composer below keeps its place and key, so it is never remounted. */}
       {greeting === null || greeting.title === null ? null : (
         <div className="tp-chat__welcome-title">
