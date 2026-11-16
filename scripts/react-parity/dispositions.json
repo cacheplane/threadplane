@@ -16336,6 +16336,13 @@
       "note": "A2uiMessageSurfaces: the per-message accumulator for MessageGenerativeUi.renderA2ui. One surfaces store per message, every live surface rendered with A2uiSurface, local edits kept in that store, the placeholder until a surface is live. Envelopes arriving as live partial tool arguments remain open."
     },
     {
+      "id": "source:libs/react/src/a2ui/capabilities.ts",
+      "taskIds": ["T19", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "a2uiClientCapabilities: the basic catalog id the React renderer supports, for A2UI catalog negotiation. Apps send it in AG-UI run state under a2ui_client_capabilities; a spec pins the same id as the @threadplane/a2ui constant."
+    },
+    {
       "id": "source:libs/react/src/a2ui/surface-context.ts",
       "taskIds": ["T27"],
       "treatment": "react",
