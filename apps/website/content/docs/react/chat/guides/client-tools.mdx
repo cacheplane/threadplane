@@ -51,9 +51,11 @@ Ask for **Trip** in the local preview. The model calls `get_weather` and `confir
 
 ## Booking decisions and ownership
 
-A fictional booking is an approval, so it follows the same pattern as the other examples: its `ApprovalCard` waits at the end of the transcript (through the `approval` slot of `Chat`) with named actions, `Confirm booking` and `Don't book`, and the composer reads "Answer the approval to continue". These actions stay available while chat is busy. Parallel cards resolve independently, including identical summaries, and only the first takes focus. An answered booking leaves a one-line record in the transcript, **Approved: Booking** or **Declined: Booking**, through `approvalRecords`. `Chat` returns focus to the composer once no booking waits and the composer is enabled again. A booking that **Stop** revokes was never answered, so it leaves no record. Completed weather panels and booking records remain visible until **New conversation**.
+A fictional booking is an ask tool: `confirm_booking` is declared with `ask`, and `Chat` draws its `ApprovalCard` through `clientTools`. The card waits below the message's tool calls with named actions, `Confirm booking` and `Don't book`, and the composer reads "Answer the booking to continue". The call keeps its row in the tool group, so the group's progress, **Stop** and plan stay visible while the booking waits. These actions stay available while chat is busy. Parallel cards resolve independently, including identical summaries, and only the oldest takes focus. An answered booking leaves a one-line record in the transcript, **Approved: Booking** or **Declined: Booking**, through `approvalRecords`. `Chat` returns focus to the composer once no booking waits and the composer is enabled again. A booking that **Stop** revokes was never answered, so it leaves no record. Completed weather panels and booking records remain visible until **New conversation**.
 
-React borrows snapshots through useAgent and renders `Chat` and `ApprovalCard`. The application exposes itself to `Chat` as a core session through `application.agent`: its run status, the thread's messages and tool calls, and the declared plan. Admission stays with the application, which sets `disabled` on `Chat` while it cannot accept a message. Weather details and booking summaries render as literal text. This preview uses authored functions and example-owned presentation; it does not implement a general view-tool or ask-tool registry or infer schemas from TypeScript.
+<ExampleCode file="cockpit/langgraph/client-tools/react/src/booking.tsx" />
+
+React borrows snapshots through useAgent and renders `Chat`. The application exposes itself to `Chat` as a core session through `application.agent`: its run status, the thread's messages and tool calls, and the declared plan. It passes the booking ask tool as `application.clientTools`. Admission stays with the application, which sets `disabled` on `Chat` while it cannot accept a message. Weather details and booking summaries render as literal text, and the booking handler checks its arguments before the card is shown. The other tools are authored functions with example-owned presentation; this preview does not implement render-only view tools or infer schemas from TypeScript.
 
 <ExampleCode file="cockpit/langgraph/client-tools/react/src/app.tsx" />
 
@@ -67,7 +69,7 @@ The existing shared backend is used by default. A developer LangGraph target can
 
 ## Ask the person in the transcript
 
-An ask tool is a function tool that the person answers. Declare it with `ask`, collect the declarations with `createClientTools`, pass `clientTools.tools` to the session, and pass the whole object to `Chat` as `clientTools`. While a call waits, your view replaces that call's row in the transcript. The value you pass to `answer` becomes the tool result, the built-in row returns, and focus goes back to the composer.
+An ask tool is a function tool that the person answers. Declare it with `ask`, collect the declarations with `createClientTools`, pass `clientTools.tools` to the session, and pass the whole object to `Chat` as `clientTools`. While a call waits, your view is drawn below the message's tool calls, and the call keeps its row and its place in the tool group. The value you pass to `answer` becomes the tool result, the view goes, and focus returns to the composer.
 
 ~~~tsx
 import type { AgentSession } from '@threadplane/core';
@@ -102,7 +104,7 @@ export function Planner({ session }: { session: AgentSession }) {
 }
 ~~~
 
-Create `clientTools` once, outside the component, like the session. Only the first answer counts, and **Stop** cancels a waiting call. `Chat` shows these views only when `clientTools` is set, and it shows them ahead of `renderToolCall`. Arguments are not validated before `render` runs, so check them in your view. A call observed from saved history has no handler waiting and keeps its built-in row. With `MessageList`, pass `useClientToolCalls(clientTools, renderToolCall)` as `renderToolCall`.
+Create `clientTools` once, outside the component, like the session. Only the first answer counts, and **Stop** cancels a waiting call. `Chat` shows these views only when `clientTools` is set, and `renderToolCall` still decides how the call itself is drawn. Arguments are not validated before `render` runs, so check them in your view. A call observed from saved history has no handler waiting and keeps its built-in row. With `MessageList`, pass `useClientToolCalls(clientTools)` as `renderToolCallPrompt`.
 
 The session does not tell a handler its call ID. A waiting call is paired with the transcript call of the same name and equal arguments, and a view always answers the arguments it was drawn with. Render-only view tools, schema-derived argument types, and a continuation limit are not part of this API.
 

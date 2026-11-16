@@ -56,8 +56,8 @@ export interface ChatProps
   readonly renderToolResult?: MessageListProps['renderToolResult'];
   /**
    * Interactive client tools from `createClientTools`. While one of its calls waits for the person,
-   * its view replaces that call's row in the transcript, ahead of `renderToolCall`; the answer
-   * becomes the tool result, the built-in row returns, and focus goes back to the composer. The
+   * its view is drawn below the message's tool calls and the call keeps its row; the answer
+   * becomes the tool result, the view goes, and focus returns to the composer. The
    * app passes `clientTools.tools` to the session; Chat never runs a tool. Off unless set.
    */
   readonly clientTools?: ChatClientTools;
@@ -182,7 +182,7 @@ export function Chat({
     approval !== undefined && approval !== null && approval !== false;
   const disabled = input.disabled ?? false;
   // An answered client tool leaves the transcript the same way.
-  const renderCall = useClientToolCalls(clientTools, renderToolCall);
+  const renderPrompt = useClientToolCalls(clientTools);
   const asked = usePendingClientToolCalls(clientTools).length > 0;
   const awaited = pending || asked;
   const hadApproval = useRef(awaited);
@@ -278,7 +278,8 @@ export function Chat({
         groupRelatedTools={groupRelatedTools}
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
-        renderToolCall={renderCall}
+        renderToolCall={renderToolCall}
+        renderToolCallPrompt={renderPrompt}
         renderToolResult={renderToolResult}
         subagents={subagents}
         onToolRetry={onToolRetry}

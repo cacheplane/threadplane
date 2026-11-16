@@ -531,6 +531,7 @@ describe('registered React public previews', () => {
         'app.tsx',
         'application.ts',
         'tools.ts',
+        'booking.tsx',
         'connection.ts',
         'main.tsx',
       ].map((file) => `cockpit/langgraph/client-tools/react/src/${file}`)

@@ -227,7 +227,7 @@ describe('createClientTools', () => {
 });
 
 describe('Chat clientTools', () => {
-  it('shows a waiting ask in the transcript, returns the answer and restores the built-in row', async () => {
+  it('shows a waiting ask below the call, which keeps its row, and returns the answer', async () => {
     const tools = dayTools();
     const { session, set } = fakeSession(
       transcript([running('c1', ['Mon', 'Tue'])])
@@ -235,14 +235,22 @@ describe('Chat clientTools', () => {
     const { container } = render(
       <Chat session={session} clientTools={tools} />
     );
-    // The session reports the call before its handler starts: the built-in row stands in.
+    // The session reports the call before its handler starts: only the built-in row shows.
     expect(container.querySelector('[data-ask]')).toBeNull();
-    expect(container.querySelector('.tp-tool-activity')).not.toBeNull();
+    const row = container.querySelector('.tp-tool-activity');
+    expect(row).not.toBeNull();
 
     const call = start(tools, ['Mon', 'Tue']);
-    const card = container.querySelector('.tp-chat-tool-call [data-ask="c1"]');
+    const card = container.querySelector(
+      '.tp-chat-tool-call[data-tool-prompt="c1"] [data-ask="c1"]'
+    );
     expect(card).not.toBeNull();
-    expect(container.querySelector('.tp-tool-activity')).toBeNull();
+    // The call keeps its row, and the view follows it.
+    expect(container.querySelector('.tp-tool-activity')).toBe(row);
+    expect(
+      (row as Element).compareDocumentPosition(card as Element) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
 
     const button = card?.querySelectorAll('button')[1] as HTMLElement;
     button.focus();
@@ -269,7 +277,7 @@ describe('Chat clientTools', () => {
     expect(container.querySelector('.tp-tool-activity')).not.toBeNull();
   });
 
-  it('takes a waiting ask ahead of renderToolCall and leaves other calls to it', () => {
+  it('adds a waiting ask without taking any call from renderToolCall', () => {
     const tools = dayTools();
     const { session } = fakeSession(
       transcript([running('c1', ['Mon']), running('c2', ['x'], 'lookup')])
@@ -295,7 +303,30 @@ describe('Chat clientTools', () => {
       [...container.querySelectorAll('[data-app]')].map((el) =>
         el.getAttribute('data-app')
       )
-    ).toEqual(['c2']);
+    ).toEqual(['c1', 'c2']);
+  });
+
+  it('keeps the waiting call in its running group, with the ask after the group', () => {
+    const tools = dayTools();
+    const { session } = fakeSession(
+      transcript([
+        { ...running('c0', ['x'], 'lookup'), status: 'complete', result: 1 },
+        running('c1', ['Mon']),
+        { ...running('c2', ['y'], 'lookup'), status: 'complete', result: 2 },
+      ])
+    );
+    const { container } = render(
+      <Chat session={session} clientTools={tools} />
+    );
+    start(tools, ['Mon']);
+    const groups = container.querySelectorAll('.tp-tool-activity-group');
+    expect(groups).toHaveLength(1);
+    expect(groups[0].getAttribute('data-active')).toBe('true');
+    const ask = container.querySelector('[data-ask="c1"]') as Element;
+    expect(groups[0].contains(ask)).toBe(false);
+    expect(
+      groups[0].compareDocumentPosition(ask) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 
   it('shows no ask without the clientTools prop, even while a handler waits', () => {
@@ -329,7 +360,10 @@ describe('useClientToolCalls', () => {
       transcript([running('c1', ['Mon'])])
     );
     return (
-      <MessageList rows={rows} renderToolCall={useClientToolCalls(tools)} />
+      <MessageList
+        rows={rows}
+        renderToolCallPrompt={useClientToolCalls(tools)}
+      />
     );
   }
   it('lets MessageList draw a waiting ask and re-renders when it starts', () => {

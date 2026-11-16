@@ -78,7 +78,7 @@ export interface ClientTools<T extends Record<string, AskToolDefinition>>
 
 /**
  * Declares a tool the person answers. The model fills `args`; `render` draws the control in the
- * transcript where the call is, and the value passed to `answer` becomes the tool result.
+ * transcript below the message's tool calls, and the value passed to `answer` becomes the tool result.
  *
  * @example
  * ```tsx
@@ -252,24 +252,20 @@ export function usePendingClientToolCalls(
 }
 
 /**
- * A `renderToolCall` for `MessageList` that draws waiting ask tools and leaves every other call to
- * `fallback`. `Chat` does this itself through its `clientTools` prop. The function changes only
- * when a call starts or stops waiting, so rows keep their memo otherwise; keep `fallback` stable.
+ * A `renderToolCallPrompt` for `MessageList` that draws waiting ask tools below the message's tool
+ * calls. `Chat` does this itself through its `clientTools` prop. The function changes only when a
+ * call starts or stops waiting, so rows keep their memo otherwise.
  */
-export function useClientToolCalls<TCall extends ClientToolCallLike, TActivity>(
-  clientTools: ChatClientTools | undefined,
-  fallback?: (call: TCall, activity: TActivity) => ReactNode
-): ((call: TCall, activity: TActivity) => ReactNode) | undefined {
+export function useClientToolCalls<TCall extends ClientToolCallLike>(
+  clientTools: ChatClientTools | undefined
+): ((call: TCall) => ReactNode) | undefined {
   // Read for its identity: a new array is a new set of waiting calls, so a new function.
   const pending = usePendingClientToolCalls(clientTools);
   return useMemo(
     () =>
       clientTools && pending
-        ? (call: TCall, activity: TActivity) => {
-            const view = clientTools.render(call);
-            return view !== undefined ? view : fallback?.(call, activity);
-          }
-        : fallback,
-    [clientTools, fallback, pending]
+        ? (call: TCall) => clientTools.render(call)
+        : undefined,
+    [clientTools, pending]
   );
 }

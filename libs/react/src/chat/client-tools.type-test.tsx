@@ -6,6 +6,7 @@ import type {
 } from '@threadplane/core/tools';
 import {
   Chat,
+  MessageList,
   ask,
   createClientTools,
   type AskToolViewProps,
@@ -58,6 +59,9 @@ const face: ChatClientTools = clientTools;
 <Chat session={session} clientTools={face} />;
 <Chat session={session} clientTools={clientTools} />;
 <Chat session={session} />;
+<MessageList rows={[]} renderToolCallPrompt={(call) => face.render(call)} />;
+// @ts-expect-error A prompt is a function of the call, not the controller.
+<MessageList rows={[]} renderToolCallPrompt={face} />;
 // @ts-expect-error The function-tool catalog alone has no views.
 <Chat session={session} clientTools={clientTools.tools} />;
 

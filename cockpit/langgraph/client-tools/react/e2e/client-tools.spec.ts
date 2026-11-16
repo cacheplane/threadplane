@@ -62,14 +62,14 @@ test('mixed snapshot and normal tools follow up as one batch with exact result i
   expect(entries.filter((entry) => entry.path.endsWith('/state'))).toHaveLength(0);
   expect(runs[1].body.input!.messages.map((message) => message.tool_call_id).sort()).toEqual(['snapshot-1', 'weather-1']);
 });
-test('identical parallel bookings wait in the transcript, confirm and decline independently, and leave records', async ({ page, request }) => {
+test('identical parallel bookings wait below their calls, confirm and decline independently, and leave records', async ({ page, request }) => {
   await send(page, 'Bookings');
   const conversation = page.getByRole('region', { name: 'Conversation' });
   await expect(conversation.getByRole('button', { name: 'Confirm booking' })).toHaveCount(2);
   await expect(conversation.locator('.tp-approval-card').first()).toContainText('Waiting for your approval.');
   // The first card takes focus; the second does not steal it.
   await expect(page.getByRole('button', { name: 'Confirm booking' }).nth(0)).toBeFocused();
-  await expect(page.getByLabel('Message', { exact: true })).toHaveAttribute('placeholder', 'Answer the approval to continue');
+  await expect(page.getByLabel('Message', { exact: true })).toHaveAttribute('placeholder', 'Answer the booking to continue');
   await page.getByRole('button', { name: 'Confirm booking' }).nth(0).click();
   await expect(conversation.getByText('Approved: Booking', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
@@ -217,12 +217,12 @@ test('a planned trip shows Chat progress with plan steps, waits for the booking,
   await expect(group).toBeVisible();
   await expect(group.locator('.tp-tool-activity-group__elapsed')).toHaveText(/^\d+s$/);
   await expect(group.getByRole('button', { name: 'Stop', exact: true })).toBeVisible();
-  // The booking waits in Chat's approval slot at the end of the transcript.
-  const card = conversation.locator('.tp-approval-card');
+  // The booking waits below the group, which keeps its call, progress and Stop.
+  const card = conversation.locator('[data-tool-prompt] .tp-approval-card');
   await expect(card).toContainText('Waiting for your approval.');
   await expect(card).toContainText('Fictional trip to Portland');
   await expect(page.getByRole('button', { name: 'Confirm booking' })).toBeFocused();
-  await expect(page.getByLabel('Message', { exact: true })).toHaveAttribute('placeholder', 'Answer the approval to continue');
+  await expect(page.getByLabel('Message', { exact: true })).toHaveAttribute('placeholder', 'Answer the booking to continue');
   // Opened while running: a static count, then the plan's pending steps after the calls.
   await group.locator('.tp-tool-activity-group__details > summary').click();
   await expect(group.locator('.tp-tool-activity-group__details > summary')).toContainText('Working · 1 of 2 done');
