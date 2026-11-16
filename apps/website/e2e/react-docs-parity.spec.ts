@@ -46,7 +46,12 @@ test('framework switching and shared pages keep the docs reading theme', async (
   await selectFramework(page, 'react');
   await expect(surface).toHaveCSS('background-color', 'rgb(246, 247, 249)');
   await page.goto('/docs/choosing-an-adapter');
-  await expect(page.locator('article h1')).toBeVisible();
+  // `next dev` streams the article: for a moment its copy inside React's
+  // hidden holder exists beside the one the shell shows. A role lookup reads
+  // the rendered heading only.
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Choosing an adapter', exact: true })
+  ).toBeVisible();
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
   await expect(page.locator('[data-website-workspace-host][data-docs-reading]')).toHaveCount(1);
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-navigation-layout', 'toolbar');

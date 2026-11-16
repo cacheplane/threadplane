@@ -27,6 +27,16 @@ export const nextConfig: WithNxOptions = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
+  // Contributor agent guidance lives in the repository's own AGENTS.md;
+  // keep `next dev` from writing a second, generated copy into this app.
+  agentRules: false,
+  experimental: {
+    // Next 16.4 made `next build` shell out to the `tsc` CLI by default. That
+    // applies project-reference file-list rules and checks spec files, which
+    // the in-process checker this app has always used does not. Keep the
+    // existing build type check until that migration is done deliberately.
+    useTypeScriptCli: false,
+  },
   compiler: {
     runAfterProductionCompile: async (metadata) => {
       const result = finalizeWebsiteContentTraces(metadata);
