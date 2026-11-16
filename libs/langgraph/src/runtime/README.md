@@ -199,8 +199,9 @@ reported that command's run as `error` or `timeout`, at close or through
   fork, and a command whose tool follow-up failed are never retried. While such
   an error is shown, `retry()` rejects; after `checkStatus()` settles it as a
   failed run, `retry()` is allowed.
-- `retry()` resolves without sending while a request, history load or checkpoint
-  preparation is active, and when nothing failed. Replacing the transcript
+- `retry()` resolves with the re-run's outcome. It resolves `aborted` without
+  sending, as an ignored `submit` does, while a request, history load or
+  checkpoint preparation is active, and when nothing failed. Replacing the transcript
   through `load()` or another command withdraws the retry.
 - A failed run can still have done work in the steps before it failed. Retrying
   runs the graph again from the same input, so those steps can run again.

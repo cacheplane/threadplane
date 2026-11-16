@@ -95,7 +95,7 @@ describe('retry', () => {
         message: 'The LangGraph run did not complete successfully.',
       },
     });
-    await retryOf(f.session);
+    expect(await retryOf(f.session)).toBe('success');
     expect(f.stream).toHaveBeenCalledTimes(2);
     const first = f.stream.mock.calls[0][2] as Payload;
     const second = f.stream.mock.calls[1][2] as Payload;
@@ -111,7 +111,7 @@ describe('retry', () => {
       ['assistant', 'Done'],
     ]);
     // Nothing failed now: a second retry sends nothing.
-    await retryOf(f.session);
+    expect(await retryOf(f.session)).toBe('aborted');
     expect(f.stream).toHaveBeenCalledTimes(2);
   });
 
@@ -134,7 +134,7 @@ describe('retry', () => {
       retryable: true,
       recovery: 'retry',
     });
-    await retryOf(f.session);
+    expect(await retryOf(f.session)).toBe('success');
     expect(f.stream).toHaveBeenCalledTimes(2);
     expect(f.session.getSnapshot().messages.at(-1)).toMatchObject({
       content: 'Done',
@@ -155,11 +155,11 @@ describe('retry', () => {
   it('is a no-op with nothing saved and while a request runs', async () => {
     const gate = deferred<never>();
     const f = fixture([() => gate.promise], []);
-    await retryOf(f.session);
+    expect(await retryOf(f.session)).toBe('aborted');
     expect(f.stream).not.toHaveBeenCalled();
     const run = f.session.submit('Question');
     await vi.waitFor(() => expect(f.stream).toHaveBeenCalledTimes(1));
-    await retryOf(f.session);
+    expect(await retryOf(f.session)).toBe('aborted');
     expect(f.stream).toHaveBeenCalledTimes(1);
     expect(
       f.session.getSnapshot().messages.filter(({ role }) => role === 'user')
@@ -199,7 +199,7 @@ describe('retry', () => {
         },
       };
     });
-    await retryOf(f.session);
+    expect(await retryOf(f.session)).toBe('success');
     expect(f.stream).toHaveBeenCalledTimes(3);
     expect(f.stream.mock.calls[2][2]).toBeNull();
     expect(f.stream.mock.calls[2][4]).toMatchObject({

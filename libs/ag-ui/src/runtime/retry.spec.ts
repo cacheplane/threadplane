@@ -62,7 +62,7 @@ describe('retry over the native owner', () => {
         runId: second.body.runId,
         usage: [{ model: 'small', totalTokens: 9, ignored: 'x' }],
       });
-      await retried;
+      await expect(retried).resolves.toBe('success');
       const done = session.getSnapshot();
       expect(done).toMatchObject({ status: 'idle' });
       expect(done.messages.map((message) => message.content)).toEqual([
@@ -72,7 +72,7 @@ describe('retry over the native owner', () => {
       expect(done.usage).toEqual({ entries: [{ model: 'small', totalTokens: 9 }] });
       expect(Object.isFrozen(done.usage?.entries[0])).toBe(true);
       // Nothing failed now, so another retry sends nothing.
-      await retryOf(session);
+      expect(await retryOf(session)).toBe('aborted');
       expect(fixture.exchanges).toHaveLength(2);
     } finally {
       await fixture.cleanup();
@@ -104,12 +104,12 @@ describe('retry over the native owner', () => {
     const fixture = bindingFixture();
     const session = createAgentSession(fixture.session);
     try {
-      await retryOf(session);
+      expect(await retryOf(session)).toBe('aborted');
       await expect(retryOf(fixture.session)).resolves.toBe('aborted');
       expect(fixture.exchanges).toHaveLength(0);
       const run = session.submit('Go');
       const first = await fixture.started();
-      await retryOf(session);
+      expect(await retryOf(session)).toBe('aborted');
       await expect(retryOf(fixture.session)).resolves.toBe('aborted');
       first.emit({ type: 'RUN_ERROR', message: 'Failed' });
       await run;

@@ -198,12 +198,13 @@ export function createAgentSession(session: NativeSession): AgentSession {
     ...(retry && {
       async retry() {
         const snapshot = getSnapshot();
-        if (snapshot.status !== 'error') return;
+        // Nothing failed or a run is going: nothing runs, as for an ignored submit.
+        if (snapshot.status !== 'error') return 'aborted' as const;
         if (snapshot.error?.recovery !== 'retry')
           throw new Error(
             'This failure cannot be retried: the backend may already have done the work.'
           );
-        await retry.call(session);
+        return retry.call(session);
       },
     }),
   };

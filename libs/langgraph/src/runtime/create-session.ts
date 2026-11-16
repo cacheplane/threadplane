@@ -1956,8 +1956,9 @@ export function createSession(
    * the transcript and values it started with. The submission keeps its user
    * message id, so the snapshot gains no second copy and an `add_messages`
    * thread replaces rather than appends it; a resume sends the same response.
-   * It never replays an uncertain outcome. */
-  function retry(): Promise<void> {
+   * Resolves with the re-run's outcome, or `aborted` when nothing ran. It
+   * never replays an uncertain outcome. */
+  function retry(): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
     const beginning = publication.command(() => {
       if (disposed || owner || preparing || loading) return;
@@ -1975,7 +1976,8 @@ export function createSession(
       values = previous.baseline.values;
       attempt = beginAttempt(previous.input, undefined, previous.runOptions);
     });
-    return dispatch(beginning, () => attempt).then(() => undefined);
+    // No attempt means nothing ran: `aborted`, as for an ignored submit.
+    return dispatch(beginning, () => attempt);
   }
 
   async function checkStatus() {

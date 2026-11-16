@@ -32,11 +32,12 @@ export type AgentSession<
       dispose(): Promise<void>;
       /**
        * Optional: sends the last failed submission again, including a resume
-       * that carried no message. Appends no second user message. Resolves
-       * without sending while a request runs or when nothing failed. Only an
-       * error whose `recovery` is `'retry'` can be retried; for any other, such
-       * as one whose backend outcome is uncertain, it rejects without sending.
+       * that carried no message, and resolves with the re-run's outcome.
+       * Appends no second user message. Resolves `'aborted'` without sending
+       * while a request runs or when nothing failed. Only an error whose
+       * `recovery` is `'retry'` can be retried; for any other, such as one
+       * whose backend outcome is uncertain, it rejects without sending.
        */
-      retry?(): Promise<void>;
+      retry?(): Promise<CompleteOutcome>;
     }
   : never;

@@ -185,7 +185,8 @@ history and state that submission sent. No second user message is added, and the
 failed run's output and state changes are dropped. It resolves `aborted` without
 sending while a run is active or when the last run was not a failed submission,
 and `error` without sending when the failure leaves the backend outcome open. The
-view's `retry` resolves in the first case and rejects in the second.
+view's `retry` resolves `aborted` in the first case, rejects in the second, and
+otherwise resolves with the native re-run's outcome.
 
 - A failed resume is not retried. Its decision stays `uncertain`, as described
   under "Correlated native resume".
