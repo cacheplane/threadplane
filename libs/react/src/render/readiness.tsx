@@ -1,5 +1,8 @@
 import { Fragment, useLayoutEffect, useState } from 'react';
 import type { RenderReadinessEntry, RenderViewProps } from './types.js';
+import { RenderDevtoolsMark } from './devtools.js';
+
+declare const process: { readonly env: { readonly NODE_ENV?: string } };
 
 interface Contract {
   readonly elementKey: string;
@@ -68,12 +71,22 @@ export function ReadinessGate({
   };
   const Component = entry.component;
   const Fallback = entry.fallback;
+  // Development only: the DevTools render report (see ./devtools.tsx).
+  const mark =
+    process.env.NODE_ENV !== 'production' ? (
+      <RenderDevtoolsMark
+        elementKey={view.elementKey}
+        state={ready ? 'mounted' : 'fallback'}
+      />
+    ) : null;
   return ready ? (
     <Fragment key={`real:${generation}`}>
+      {mark}
       <Component {...view} />
     </Fragment>
   ) : (
     <Fragment key={`pending:${generation}`}>
+      {mark}
       {Fallback ? <Fallback {...pending} /> : null}
     </Fragment>
   );

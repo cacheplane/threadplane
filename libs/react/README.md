@@ -1813,6 +1813,38 @@ drag end, blur and unmount retire local captures. Foreign payloads cannot supply
 conversation IDs. Dragging preserves selection, keyed rows, draft, transcript,
 URL and an active response. Shared catalogs and full T29 parity remain open.
 
+## DevTools reporting (development only)
+
+In development, React apps can feed the Threadplane DevTools browser extension
+the same `threadplane:devtools` reports the Angular adapters send. Both are
+opt-in, and production builds (`process.env.NODE_ENV === 'production'`) fold
+them away entirely.
+
+```tsx
+import { useAgentDevtools } from '@threadplane/react/debug';
+import { RenderDevtools, RenderSpec } from '@threadplane/react/render';
+
+function AgentPanel({ session }) {
+  // Names the adapter whose signal vocabulary the reports use.
+  useAgentDevtools(session, { adapter: 'langgraph' });
+  return (
+    <RenderDevtools surface="trip-recap">
+      <RenderSpec spec={spec} registry={registry} state={state} />
+    </RenderDevtools>
+  );
+}
+```
+
+`useAgentDevtools` reports, per snapshot change, which of `status`, `messages`,
+`toolCalls` and `error` changed, as `{ v, agent, adapter, seq, eventType, wrote,
+tMs }`. The event type is `run:start`, `run:end` or `snapshot`, because the
+core snapshot does not expose protocol events. `RenderDevtools` reports the
+registry names and each element of the `RenderSpec` inside it as `mounted`,
+`fallback`, `unresolved` or `hidden`, coalesced over 50 ms and only when the
+resolution changes. Reports carry names, keys, states and timing, never values.
+Set `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true` to turn both off. The
+extension's scripted runs are not available in React.
+
 ## A2UI surfaces
 
 `@threadplane/react/a2ui` renders one A2UI surface. Accumulate wire
