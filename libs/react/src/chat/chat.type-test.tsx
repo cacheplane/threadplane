@@ -40,6 +40,17 @@ ok.className = 'x';
 <Chat session={session} leading={<span />} />;
 // @ts-expect-error Slots are content, not render functions.
 <Chat session={session} inputFooter={() => null} />;
+<Chat
+  session={session}
+  renderRunActivity={({ messages }) => <p>{messages.length} so far</p>}
+/>;
+// @ts-expect-error Run activity is a render function, not content.
+<Chat session={session} renderRunActivity={<p />} />;
+<Chat
+  session={session}
+  // @ts-expect-error The run's messages are readonly.
+  renderRunActivity={({ messages }) => messages.push(messages[0])}
+/>;
 void missing;
 
 import type { ReactNode } from 'react';
