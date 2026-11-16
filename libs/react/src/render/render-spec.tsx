@@ -16,7 +16,12 @@ import type {
   PropResolutionContext,
   VisibilityCondition,
 } from '@json-render/core';
-import type { RenderSpecProps, RenderValue } from './types.js';
+import { createRenderState } from '@threadplane/content/render-state';
+import type {
+  RenderSpecData,
+  RenderSpecProps,
+  RenderValue,
+} from './types.js';
 import { ownRenderValue } from './values.js';
 import { ownRenderFunctions } from './functions.js';
 import { ReadinessGate } from './readiness.js';
@@ -187,22 +192,24 @@ function Element({
 /**
  * Present a caller-prepared tree. Application code owns validation, state and actions: the spec
  * names actions in its `on` bindings, and only `handlers` the application supplies run. With a
- * `store`, views can write state; with `state`, the tree is read-only.
+ * `store`, views can write state; with `state`, the tree is read-only. With neither, a spec that
+ * carries `state` seeds a store the tree owns, so views can write.
  */
 export function RenderSpec({
   spec,
   registry,
   state,
-  store,
+  store: suppliedStore,
   functions,
   loading,
   fallback,
   handlers,
   onEvent,
 }: RenderSpecProps) {
-  if (state !== undefined && store !== undefined)
+  if (state !== undefined && suppliedStore !== undefined)
     throw new TypeError('RenderSpec takes state or a store, not both.');
   checkRenderHandlers(handlers);
+  const store = useSeededStore(spec, state, suppliedStore);
   // Actions read the handlers, store and listener of the latest render.
   const latest = useRef({ handlers, store, onEvent });
   latest.current = { handlers, store, onEvent };
@@ -254,6 +261,25 @@ export function RenderSpec({
       writable={store !== undefined}
     />
   );
+}
+
+/**
+ * The store the tree reads: the supplied one, else (without `state`) one seeded from the first
+ * spec that carries `state`. The seeded store is created once and kept for the tree's lifetime.
+ */
+function useSeededStore(
+  spec: RenderSpecData | null | undefined,
+  state: RenderSpecProps['state'],
+  supplied: RenderStore | undefined
+): RenderStore | undefined {
+  const seeded = useRef<RenderStore | undefined>(undefined);
+  if (supplied !== undefined) return supplied;
+  if (state !== undefined) return undefined;
+  if (seeded.current === undefined && spec?.state !== undefined)
+    seeded.current = createRenderState(
+      ownRenderValue(spec.state) as Record<string, unknown>
+    );
+  return seeded.current;
 }
 
 /** Reports each store write as a `stateChange` event while the tree is mounted. */
