@@ -1,3 +1,5 @@
+import type { ReactElement } from 'react';
+import { cleanup, fireEvent, render, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createClientToolsController } from './tools';
 
@@ -6,7 +8,17 @@ const readings = {
   humidity: 55, windMph: 8,
 };
 const context = () => ({ signal: new AbortController().signal });
-afterEach(() => vi.useRealTimers());
+afterEach(() => { vi.useRealTimers(); cleanup(); });
+type Controller = ReturnType<typeof createClientToolsController>;
+/** The transcript call a session would report for a waiting booking. */
+const call = (id: string, summary: string) =>
+  ({ id, name: 'confirm_booking', args: { summary }, status: 'running' });
+/** Draws the booking card `Chat` would show for that call. */
+function card(controller: Controller, id: string, summary: string) {
+  const view = controller.clientTools.render(call(id, summary));
+  // Scoped to this card: several may be on the page.
+  return within(render(view as ReactElement).container);
+}
 
 describe('authored client tools', () => {
   it('declares the complete five-tool catalog used by the shared graph', () => {
@@ -73,7 +85,8 @@ describe('authored client tools', () => {
       const input = name === 'get_weather' ? { location: 'city' } : name === 'confirm_booking' ? { summary: 'booking' } : name === 'slow_status_check' ? {} : readings;
       const proxy = new Proxy(input, { getPrototypeOf(target) { abort.abort(); return Reflect.getPrototypeOf(target); } });
       await expect(controller.tools[name].handler(proxy as never, { signal: abort.signal })).rejects.toMatchObject({ name: 'AbortError' });
-      expect(controller.getSnapshot()).toMatchObject({ weather: [], bookings: [] });
+      expect(controller.getSnapshot()).toMatchObject({ weather: [] });
+      expect(controller.clientTools.getSnapshot()).toEqual([]);
     }
   );
 
@@ -89,98 +102,87 @@ describe('authored client tools', () => {
     expect(await controller.tools.weather_card.handler(Object.assign(Object.create(null), readings), context())).toEqual({ shown: true });
   });
 
-  it('keeps identical concurrent booking requests independent without runtime call IDs', async () => {
+  it('declares the booking as an ask tool whose card answers the call', async () => {
+    const controller = createClientToolsController();
+    expect(controller.tools.confirm_booking).toMatchObject({
+      description: expect.stringContaining('fictional booking'),
+      parameters: { type: 'object', required: ['summary'], additionalProperties: false },
+    });
+    const result = controller.tools.confirm_booking.handler({ summary: '<b>Fictional</b> booking' }, context());
+    expect(controller.clientTools.getSnapshot()).toEqual([
+      { name: 'confirm_booking', args: { summary: '<b>Fictional</b> booking' } },
+    ]);
+    const view = card(controller, 'c1', '<b>Fictional</b> booking');
+    expect(view.getByText('<b>Fictional</b> booking')).toBeTruthy();
+    expect(document.querySelector('b')).toBeNull();
+    fireEvent.click(view.getByRole('button', { name: 'Confirm booking' }));
+    expect(await result).toEqual({ confirmed: true });
+    expect(controller.clientTools.getSnapshot()).toEqual([]);
+    expect(controller.clientTools.render(call('c1', '<b>Fictional</b> booking'))).toBeUndefined();
+  });
+
+  it('keeps identical concurrent booking requests independent and focuses only the oldest', async () => {
     const controller = createClientToolsController();
     const first = controller.tools.confirm_booking.handler({ summary: 'Same fictional booking' }, context());
     const second = controller.tools.confirm_booking.handler({ summary: 'Same fictional booking' }, context());
-    const [one, two] = controller.getSnapshot().bookings;
-    expect(one.id).not.toBe(two.id);
-    expect(one.summary).toBe(two.summary);
-    expect(controller.decide({ ...one }, true)).toBe(false);
-    expect(controller.decide(one, false)).toBe(true);
-    expect(controller.decide(one, true)).toBe(false);
-    expect(controller.decide(two, true)).toBe(true);
+    const one = card(controller, 'c1', 'Same fictional booking');
+    const two = card(controller, 'c2', 'Same fictional booking');
+    expect(document.activeElement).toBe(one.getByRole('button', { name: 'Confirm booking' }));
+    fireEvent.click(one.getByRole('button', { name: "Don't book" }));
+    fireEvent.click(one.getByRole('button', { name: 'Confirm booking' }));
+    fireEvent.click(two.getByRole('button', { name: 'Confirm booking' }));
     expect(await first).toEqual({ confirmed: false });
     expect(await second).toEqual({ confirmed: true });
-    expect(controller.getSnapshot().bookings.map((entry) => entry.status)).toEqual(['cancelled', 'confirmed']);
+    expect(controller.clientTools.getSnapshot()).toEqual([]);
   });
 
-  it('consumes decision authority before reentrant publication', async () => {
-    const controller = createClientToolsController();
-    const result = controller.tools.confirm_booking.handler({ summary: 'Fictional booking' }, context());
-    const token = controller.getSnapshot().bookings[0];
-    const duplicate = vi.fn(() => controller.decide(token, false));
-    const release = controller.subscribe(duplicate);
-    expect(controller.decide(token, true)).toBe(true);
-    expect(duplicate).toHaveReturnedWith(false);
-    expect(await result).toEqual({ confirmed: true });
-    release();
-    expect(Object.isFrozen(controller.getSnapshot().bookings[0])).toBe(true);
-  });
-
-  it('abort revokes a pending decision and removes its listener', async () => {
+  it('abort revokes a waiting booking, and its card can no longer answer', async () => {
     const controller = createClientToolsController();
     const abort = new AbortController();
-    const remove = vi.spyOn(abort.signal, 'removeEventListener');
     const result = controller.tools.confirm_booking.handler({ summary: 'Fictional booking' }, { signal: abort.signal });
     const rejected = expect(result).rejects.toMatchObject({ name: 'AbortError' });
-    const token = controller.getSnapshot().bookings[0];
+    const view = card(controller, 'c1', 'Fictional booking');
     abort.abort();
     await rejected;
-    expect(controller.decide(token, true)).toBe(false);
-    expect(controller.getSnapshot().bookings[0].status).toBe('aborted');
-    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
+    fireEvent.click(view.getByRole('button', { name: 'Confirm booking' }));
+    expect(controller.clientTools.getSnapshot()).toEqual([]);
+    expect(controller.clientTools.render(call('c1', 'Fictional booking'))).toBeUndefined();
   });
 
-  it('handles abort during pending request publication', async () => {
+  it('handles abort while the waiting booking is published', async () => {
     const controller = createClientToolsController();
     const abort = new AbortController();
-    controller.subscribe(() => abort.abort());
+    controller.clientTools.subscribe(() => abort.abort());
     await expect(controller.tools.confirm_booking.handler({ summary: 'Fictional booking' }, { signal: abort.signal })).rejects.toMatchObject({ name: 'AbortError' });
-    const token = controller.getSnapshot().bookings[0];
-    expect(token.status).toBe('aborted');
-    expect(controller.decide(token, true)).toBe(false);
+    expect(controller.clientTools.getSnapshot()).toEqual([]);
   });
 
-  it('decision settlement cleans up handlers while retaining the completed panel', async () => {
-    const controller = createClientToolsController();
-    const abort = new AbortController();
-    const remove = vi.spyOn(abort.signal, 'removeEventListener');
-    const result = controller.tools.confirm_booking.handler({ summary: 'Fictional booking' }, { signal: abort.signal });
-    controller.decide(controller.getSnapshot().bookings[0], true);
-    await result;
-    const snapshot = controller.getSnapshot();
-    abort.abort();
-    expect(controller.getSnapshot()).toBe(snapshot);
-    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
-  });
-
-  it('disposal immediately revokes pending handlers and cannot publish afterward', async () => {
+  it('disposal immediately revokes a waiting booking and cannot publish afterward', async () => {
     const controller = createClientToolsController();
     const result = controller.tools.confirm_booking.handler({ summary: 'Fictional booking' }, context());
     const rejected = expect(result).rejects.toMatchObject({ name: 'AbortError' });
-    const token = controller.getSnapshot().bookings[0];
     const notify = vi.fn();
     controller.subscribe(notify);
     controller.dispose();
     controller.dispose();
     await rejected;
-    expect(controller.decide(token, true)).toBe(false);
+    expect(controller.clientTools.getSnapshot()).toEqual([]);
+    await expect(controller.tools.confirm_booking.handler({ summary: 'Fictional booking' }, context())).rejects.toMatchObject({ name: 'AbortError' });
     await expect(controller.tools.get_weather.handler({ location: 'city' }, context())).rejects.toMatchObject({ name: 'AbortError' });
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it('rejects an already-aborted handler before admission or publication', async () => {
+  it('rejects an already-aborted handler before any booking waits', async () => {
     const controller = createClientToolsController();
     const abort = new AbortController();
     abort.abort();
     await expect(controller.tools.confirm_booking.handler({ summary: 'Fictional booking' }, { signal: abort.signal })).rejects.toMatchObject({ name: 'AbortError' });
-    expect(controller.getSnapshot().bookings).toEqual([]);
+    expect(controller.clientTools.getSnapshot()).toEqual([]);
   });
 
-  it('cancels an admitted handler if publication disposes its controller', async () => {
+  it('cancels a waiting booking if its publication disposes the controller', async () => {
     const controller = createClientToolsController();
-    controller.subscribe(() => controller.dispose());
+    controller.clientTools.subscribe(() => controller.dispose());
     await expect(controller.tools.confirm_booking.handler({ summary: 'Fictional booking' }, context())).rejects.toMatchObject({ name: 'AbortError' });
   });
 
@@ -227,6 +229,6 @@ describe('authored client tools', () => {
   ] as const)('validates %s arguments before side effects', async (name, input) => {
     const controller = createClientToolsController();
     await expect(controller.tools[name].handler(input as never, context())).rejects.toThrow(/Invalid/);
-    expect(controller.getSnapshot().bookings).toEqual([]);
+    expect(controller.clientTools.getSnapshot()).toEqual([]);
   });
 });

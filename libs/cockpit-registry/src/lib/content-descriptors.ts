@@ -1209,7 +1209,7 @@ const agUiClientToolsReact = (() => {
     ...canonical, id: 'ag-ui-client-tools-python-react', frontend: 'react',
     title: 'AG-UI Client Tools (React preview)',
     codeAssetPaths: [
-      ...['app.tsx', 'tools.ts', 'application.ts', 'projection.ts', 'weather-card.tsx', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/client-tools/react/src/${file}`),
+      ...['app.tsx', 'tools.ts', 'booking.tsx', 'application.ts', 'projection.ts', 'weather-card.tsx', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/client-tools/react/src/${file}`),
       'cockpit/ag-ui/client-tools/react/project.json',
       ...canonical.promptAssetPaths,
     ],
@@ -1504,7 +1504,7 @@ export const frontendCapabilityModules: readonly RegisteredCapabilityModule[] =
       if (!canonical || !frontend) throw new Error(`${topic} frontend registration is missing`);
       return freezeCapabilityDescriptor({
         ...canonical, id: `langgraph-${topic}-python-react`, frontend: 'react', title,
-        codeAssetPaths: ['app.tsx', 'application.ts', ...(topic === 'client-tools' ? ['tools.ts'] : []), ...(topic === 'time-travel' ? ['checkpoint-history.ts'] : []), ...(['time-travel', 'deployment-runtime'].includes(topic) ? ['canonical-history.ts'] : []), 'connection.ts', 'main.tsx'].map((file) => `cockpit/langgraph/${topic}/react/src/${file}`),
+        codeAssetPaths: ['app.tsx', 'application.ts', ...(topic === 'client-tools' ? ['tools.ts', 'booking.tsx'] : []), ...(topic === 'time-travel' ? ['checkpoint-history.ts'] : []), ...(['time-travel', 'deployment-runtime'].includes(topic) ? ['canonical-history.ts'] : []), 'connection.ts', 'main.tsx'].map((file) => `cockpit/langgraph/${topic}/react/src/${file}`),
         runtimeUrl: frontend.runtimePath, devPort: frontend.port,
       });
     }),

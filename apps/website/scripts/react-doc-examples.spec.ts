@@ -27,16 +27,22 @@ it('compiles the exact self-contained React onboarding examples against public s
     join(tmpdir(), 'threadplane-react-doc-examples-')
   );
   try {
-    const files = pages.map((page, index) => {
+    // Every tsx example on a listed page compiles on its own.
+    const files = pages.flatMap((page, index) => {
       const source = readFileSync(
         join(repo, 'apps/website/content/docs/react', `${page}.mdx`),
         'utf8'
       );
       const examples = [...source.matchAll(/^~~~tsx\n([\s\S]*?)^~~~$/gm)];
-      expect(examples, page).toHaveLength(1);
-      const file = join(directory, `${index}-${page.replaceAll('/', '-')}.tsx`);
-      writeFileSync(file, examples[0][1]);
-      return file;
+      expect(examples.length, page).toBeGreaterThan(0);
+      return examples.map((example, position) => {
+        const file = join(
+          directory,
+          `${index}-${position}-${page.replaceAll('/', '-')}.tsx`
+        );
+        writeFileSync(file, example[1]);
+        return file;
+      });
     });
     const configPath = join(
       repo,
@@ -67,6 +73,11 @@ it('compiles the exact self-contained React onboarding examples against public s
         react: [join(repo, 'node_modules/@types/react/index.d.ts')],
         'react/jsx-runtime': [
           join(repo, 'node_modules/@types/react/jsx-runtime.d.ts'),
+        ],
+        // Testing examples import their runner and renderer.
+        vitest: [join(repo, 'node_modules/vitest')],
+        '@testing-library/react': [
+          join(repo, 'node_modules/@testing-library/react'),
         ],
       },
     };

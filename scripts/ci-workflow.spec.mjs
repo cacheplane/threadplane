@@ -45,7 +45,8 @@ it('reuses only same-run dependencies while preserving every isolated Cockpit pr
   assert.equal(restore.env.COCKPIT_DEPENDENCY_NODE, '${{ needs.cockpit-e2e-dispatcher.outputs.dependency_node }}');
   assert.equal(restore.if, undefined, 'a failed restore must prevent proofs from running');
   assert.equal(restore['continue-on-error'], undefined);
-  assert.equal(consumer.strategy['max-parallel'], 5);
+  assert.equal(consumer.strategy['max-parallel'], 12,
+    'the fleet may hold at most 12 of the 20 hosted-runner slots; the rest of the run and sibling workflows need the other 8');
   assert.equal(consumer.strategy['fail-fast'], false);
   assert.equal(consumer.steps.some(step => step.run === 'npm ci'), false);
   const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step))
@@ -375,7 +376,8 @@ it('delegates local public coverage only when its required deployed preview is e
           event: event === 'pull_request' ? { pull_request: { head: { repo: { full_name: trusted ? 'owner/repo' : 'fork/repo' } } } } : {},
         };
         const needs = { 'ci-scope': { outputs: { website_e2e: String(selected) } } };
-        const expected = selected && (event === 'merge_group' || (event === 'pull_request' && trusted));
+        // Merge-queue candidates keep complete local coverage: no preview runs there.
+        const expected = selected && event === 'pull_request' && trusted;
         assert.equal(evaluate(flag[1])(github, needs), expected, `${event}/${trusted}/${selected}`);
         assert.equal(evaluate(preview)(github, needs), expected, 'local ownership and preview eligibility must agree');
       }
@@ -1512,11 +1514,12 @@ describe('CI workflow', () => {
     const ifBlock = readJobFieldBlock(job, 'if');
 
     assert.deepEqual(readJobNeeds(job), ['ci-scope', 'website-preview-build', 'website-preview-deploy']);
-    assert.match(ifBlock, /\(github\.event_name == 'pull_request' \|\| github\.event_name == 'merge_group'\)/);
+    assert.match(ifBlock, /github\.event_name == 'pull_request' &&/);
+    assert.doesNotMatch(job, /merge_group/, 'a queued candidate must not wait on a preview deployment');
     assert.match(ifBlock, /needs\.ci-scope\.outputs\.website_e2e == 'true'/);
     assert.match(
       ifBlock,
-      /github\.event_name == 'merge_group' \|\| github\.event\.pull_request\.head\.repo\.full_name == github\.repository/
+      /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/
     );
 
     const aliases = readNamedStep(job, 'Derive deterministic preview aliases');
@@ -1528,7 +1531,6 @@ describe('CI workflow', () => {
 
     assert.match(aliases, /id:\s*aliases/);
     assert.match(aliases, /key="pr-\$\{\{ github\.event\.pull_request\.number \}\}"/);
-    assert.match(aliases, /key="mq-\$\(echo "\$\{\{ github\.event\.merge_group\.head_sha \}\}" \| cut -c1-8\)"/);
     assert.match(aliases, /website=threadplane-\$\{key\}-cacheplane\.vercel\.app/);
     assert.match(aliases, /examples=threadplane-examples-\$\{key\}-cacheplane\.vercel\.app/);
 
@@ -1604,7 +1606,7 @@ describe('CI workflow', () => {
     );
     assert.match(
       required,
-      /PREVIEW_LANES_ELIGIBLE:\s*\$\{\{ github\.event_name == 'merge_group' \|\| github\.event\.pull_request\.head\.repo\.full_name == github\.repository \}\}/
+      /PREVIEW_LANES_ELIGIBLE:\s*\$\{\{ github\.event_name == 'pull_request' && github\.event\.pull_request\.head\.repo\.full_name == github\.repository \}\}/
     );
     assert.match(required, /require_preview\(\) \{/);
     assert.match(
@@ -2304,7 +2306,7 @@ describe('guarded current-main manual recovery', () => {
         assert.ok(job.indexOf('prerequisite jobs') < job.indexOf('uses: actions/checkout@'));
       }
     }
-    assert.match(readJobFieldBlock(readJobBlock(workflow, 'website-preview-e2e'), 'if'), /\(github.event_name == 'pull_request' \|\| github.event_name == 'merge_group'\)/);
+    assert.match(readJobFieldBlock(readJobBlock(workflow, 'website-preview-e2e'), 'if'), /github.event_name == 'pull_request' &&/);
     assert.match(readJobFieldBlock(readJobBlock(workflow, 'required-pr-checks'), 'if'), /github.event_name == 'pull_request'.*github.event_name == 'merge_group'/);
     assert.match(workflow, /group: \$\{\{ github.workflow \}\}-\$\{\{ github.event_name == 'pull_request' && github.event.pull_request.number \|\| github.ref \}\}/);
     assert.match(workflow, /cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}/);

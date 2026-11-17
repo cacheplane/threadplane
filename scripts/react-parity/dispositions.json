@@ -3,6 +3,78 @@
   "purpose": "Planning ownership for the reviewed migration scope. Existing task assignments are preserved; in-progress records identify bounded runtime/configuration subsets, not whole-task completion. Inventory validation is not React parity.",
   "rows": [
     {
+      "id": "export:libs/react/src/chat/index.ts#ask",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "Declares a tool the person answers, like Angular ask(): the model fills the arguments and the value the view passes to answer becomes the tool result. React takes authored argument and result types and a render function; there is no schema DSL or argument validation."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#createClientTools",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "Turns ask tools into core function tools for an app-owned session and keeps the calls that wait for an answer, the React counterpart of Angular tools() plus the chat coordinator for ask tools. Execution, follow-up and persistence stay with the session; view tools, a continuation policy and an execution guard are not part of it."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#useClientToolCalls",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "React-only seam: a renderToolCall for MessageList that draws waiting ask tools and changes only when a call starts or stops waiting. Chat applies it through its opt-in clientTools prop, as Angular chat does through its clientTools input."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#usePendingClientToolCalls",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "React-only seam: the calls waiting for the person, for an app that composes its own transcript or status; Angular reads the same from the agent's clientTools.pending signal."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#AskTool",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "Typed ask-tool declaration, the counterpart of Angular AskToolDef with a render function in place of a component and authored types in place of a schema."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#AskToolDefinition",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "Storage constraint for a catalog of ask tools with different argument and result types, as Angular ClientToolDef is for its registry."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#AskToolViewProps",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "What an ask view receives: the call ID, name, finalized arguments and an answer function. Angular passes the same through component inputs and an emitted value."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatClientTools",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "The read-only face Chat takes as clientTools: waiting calls, a subscription and the view for a call. Chat never runs a tool."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ClientToolCallLike",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "The snapshot tool-call fields used to pair a transcript call with a waiting handler, since a core function-tool handler is not told its call ID."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ClientTools",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "Result of createClientTools: the function-tool catalog for the session plus the Chat face, the counterpart of Angular ClientToolRegistry for ask tools."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#PendingClientToolCall",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "One call waiting for an answer, by name and arguments; Angular exposes pending client tool calls on the agent capability."
+    },
+    {
+      "id": "source:libs/react/src/chat/client-tools.ts",
+      "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/client-tools.ts",
+      "reason": "Interactive client tools for React Chat, first slice: ask tools become core function tools whose handler waits for the person, and Chat shows the app-rendered view in place of the pending call. Opt-in through clientTools; view tools, schema validation, a continuation policy and composer wording are left."
+    },
+    {
       "id": "component:libs/chat/src/lib/primitives/chat-status-panel/chat-status-panel.component.ts#ChatStatusPanelComponent",
       "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
       "target": "libs/react/src/chat/status-panel.tsx",
@@ -5227,7 +5299,8 @@
         "T04"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Both framework-neutral runtime sessions expose custom events through the optional core AgentSession.onCustomEvent listener as owned plain { name, data } payloads, read the way the Angular adapters read them. A React state_update variant and the a2ui-partial bridge remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#AgentError",
@@ -5258,7 +5331,8 @@
         "T04"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Both framework-neutral runtime sessions expose custom events through the optional core AgentSession.onCustomEvent listener as owned plain { name, data } payloads, read the way the Angular adapters read them. A React state_update variant and the a2ui-partial bridge remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#AgentInterrupt",
@@ -16147,6 +16221,34 @@
       "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Default rows compose passive CitationCard local icons/monograms, normalized type badges, hostname and formatted publication; native custom cards compose it beside the retained explicit preview. Provider icons are never fetched. The collapsible header visual gap is closed with the first three sources in exact resolved displayed order, private shared local markers and a decorative expansion chevron. Provider images remain deferred T26 work."
     },
     {
+      "id": "asset:libs/react/src/a2ui/themes/default-light.css",
+      "taskIds": ["T22", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Opt-in theme stylesheet that fixes the --a2ui-* colour and shadow tokens the React components read to the default light palette, whatever the system colour scheme. Scoped to .a2ui-surface and import-order independent; an agent's primaryColor still wins. Typography and spacing tokens are not themed."
+    },
+    {
+      "id": "asset:libs/react/src/a2ui/themes/default-dark.css",
+      "taskIds": ["T22", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Opt-in theme stylesheet that fixes the --a2ui-* colour and shadow tokens the React components read to the default dark palette, whatever the system colour scheme. Scoped to .a2ui-surface and import-order independent; an agent's primaryColor still wins. Typography and spacing tokens are not themed."
+    },
+    {
+      "id": "asset:libs/react/src/a2ui/themes/material-light.css",
+      "taskIds": ["T22", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Opt-in theme stylesheet that fixes the --a2ui-* colour and shadow tokens the React components read to the Material Design 3 light tokens, whatever the system colour scheme. Scoped to .a2ui-surface and import-order independent; an agent's primaryColor still wins. Typography and spacing tokens are not themed."
+    },
+    {
+      "id": "asset:libs/react/src/a2ui/themes/material-dark.css",
+      "taskIds": ["T22", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Opt-in theme stylesheet that fixes the --a2ui-* colour and shadow tokens the React components read to the Material Design 3 dark tokens, whatever the system colour scheme. Scoped to .a2ui-surface and import-order independent; an agent's primaryColor still wins. Typography and spacing tokens are not themed."
+    },
+    {
       "id": "asset:libs/react/src/a2ui/styles.css",
       "taskIds": ["T27"],
       "treatment": "react",
@@ -16441,6 +16543,25 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Readonly app-owned DTOs and synchronous notifications; no SDK, session, read or disposal capability accepted by the view. Broader T29 contracts remain planned."
+    },
+    {
+      "id": "source:libs/react/src/debug/agent-devtools.ts",
+      "taskIds": [
+        "T17",
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only useAgentDevtools reports which of status, messages, toolCalls and error each core snapshot change wrote, as the Angular adapters' devtools-emitter.ts reports do, under the caller's langgraph or ag-ui vocabulary. Scripted runs need the adapter transport and are not ported. Production builds fold it away."
+    },
+    {
+      "id": "source:libs/react/src/devtools/protocol.ts",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Shared page side of the threadplane:devtools wire protocol for the React signals and render reports: event name, report shapes and bounds, and the __THREADPLANE_DEVTOOLS_DISABLED__ opt-out."
     },
     {
       "id": "entry:libs/content/src/a2ui/index.ts",
@@ -16751,6 +16872,36 @@
       "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
+      "id": "export:libs/react/src/render/index.ts#RenderDevtools",
+      "taskIds": [
+        "T17",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only render report for the Threadplane DevTools extension, mirroring Angular's devtools-render-report.ts and render-devtools.ts: RenderDevtools wraps one surface, RenderSpec and the readiness gate mark committed views, and each element reports mounted, fallback, unresolved or hidden. Production builds fold it away."
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderDevtoolsProps",
+      "taskIds": [
+        "T17",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only render report for the Threadplane DevTools extension, mirroring Angular's devtools-render-report.ts and render-devtools.ts: RenderDevtools wraps one surface, RenderSpec and the readiness gate mark committed views, and each element reports mounted, fallback, unresolved or hidden. Production builds fold it away."
+    },
+    {
+      "id": "source:libs/react/src/render/devtools.tsx",
+      "taskIds": [
+        "T17",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only render report for the Threadplane DevTools extension, mirroring Angular's devtools-render-report.ts and render-devtools.ts: RenderDevtools wraps one surface, RenderSpec and the readiness gate mark committed views, and each element reports mounted, fallback, unresolved or hidden. Production builds fold it away."
+    },
+    {
       "id": "asset:libs/cockpit-a2ui-react/project.json",
       "taskIds": [
         "T19"
@@ -16965,6 +17116,33 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly required open and onDismiss, optional label and className. Application owns visibility and focus restoration."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-sidenav-sections.tsx",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Composed sidebar content for ChatSidenav: New chat, Projects, Recent and a collapsed Archived section built from ProjectList and ThreadList. Every list stays controlled; no devtools button, search or session behavior."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavSections",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Composed sidebar content placed inside ChatSidenav; sections appear only for the data supplied, and the application owns selection and row commands."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavSectionsProps",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly optional conversations, archived conversations and projects with their selection callbacks, action adapters, labels and trailing children."
     },
     {
       "id": "source:libs/react/src/chat/chat-sidenav-scrim.tsx",
@@ -18651,6 +18829,22 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/generative-ui.tsx",
       "reason": "What renderA2ui receives for one assistant message: its ID, the envelope source after the marker, whether it is still streaming, and the transcript's placeholder."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageRenderEvent",
+      "taskIds": ["T19", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/generative-ui.tsx",
+      "reason": "What onRenderEvent receives: the ID of the message whose spec tree produced the event, and the RenderSpec event (an action that ran, a state write, or a reported result)."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageSourceLabels",
+      "taskIds": ["T19", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/generative-ui.tsx",
+      "reason": "Replacement text for the opt-in source disclosure under a surface: its toggle and the headings over a spec's and an A2UI message's source."
     },
     {
       "id": "source:libs/react/src/chat/typing-indicator.tsx",
