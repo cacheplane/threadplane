@@ -827,6 +827,23 @@ focus survive, and when a chosen suggestion disappears with the greeting, focus
 moves to the composer. It is off unless set, and `--tp-welcome-max-width`,
 `--tp-welcome-gap` and `--tp-welcome-padding` adjust it.
 
+`renderMessageActivity` (on `Chat` and `MessageList`) replaces the reasoning
+disclosure and tool-call area of an assistant message with your own content,
+shown above the message text. It receives the `row`, its `toolCalls` and the
+`subagents` those calls started. Text, sources, generated UI and message
+actions still render. While it returns content, `renderToolCall`,
+`renderToolResult` and subagent cards are not used for that message; return
+`undefined` to keep the built-in area for a message, or `null` to show nothing.
+
+```tsx
+<Chat
+  session={session}
+  renderMessageActivity={({ toolCalls, subagents }) => (
+    <ActivitySummary calls={toolCalls} subagents={subagents} />
+  )}
+/>
+```
+
 `Chat` also takes a `header`: app-owned content, such as a title and actions,
 in a bar above the transcript. It steps aside while the welcome greeting shows
 and adds no element unless set.

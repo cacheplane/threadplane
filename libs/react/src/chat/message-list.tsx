@@ -79,6 +79,14 @@ export interface MessageListScrollControls {
   readonly focus: () => void;
 }
 
+/** What `renderMessageActivity` receives for one assistant message. */
+export interface MessageActivityContext<TRow extends MessageRow = MessageRow> {
+  readonly row: TRow;
+  /** The tool calls this message made, in order. */
+  readonly toolCalls: TRow['toolCalls'];
+  /** Child agents started by this message's tool calls. */
+  readonly subagents: readonly SubagentInfo[];
+}
 /** Supplies projected transcript rows and an optional stable custom renderer to a scrolling list with memoized rows. */
 export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly rows: readonly TRow[];
@@ -149,6 +157,17 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * the run continues below.
    */
   readonly approvalRecords?: readonly ApprovalRecordEntry[];
+  /**
+   * Replaces the reasoning disclosure and the tool-call area of an assistant message with your
+   * own content, shown above the message text. It receives the row, its tool calls and the child
+   * agents those calls started. Text, sources, generated UI and message actions still render.
+   * While it returns content, `renderToolCall`, `renderToolResult` and subagent cards are not
+   * used for that message; return `undefined` to keep the built-in area for a message, or `null`
+   * to show nothing. Keep stable. A custom renderMessage retains full ownership.
+   */
+  readonly renderMessageActivity?: (
+    context: MessageActivityContext<TRow>
+  ) => ReactNode;
   /**
    * While `running`, a typing indicator follows the rows until the last row has assistant text (see `isTyping`).
    * Pass `false` to render your own, or `{ label, announce }` to change its wording or keep it out of the polite
@@ -374,7 +393,11 @@ function RowView<TRow extends MessageRow>({
   generativeUi,
   markdownComponents,
   mergeReasoning,
+  renderMessageActivity,
 }: {
+  readonly renderMessageActivity?: (
+    context: MessageActivityContext<TRow>
+  ) => ReactNode;
   readonly math?: MarkdownProps['math'];
   readonly generativeUi?: MessageGenerativeUi;
   readonly markdownComponents?: MarkdownProps['components'];
@@ -457,6 +480,11 @@ function RowView<TRow extends MessageRow>({
   // Sources a tool call declares join the message's one Sources panel instead of
   // repeating as links under the activity.
   const assistant = row.role === 'assistant';
+  // Undefined keeps the built-in reasoning and tool area for this message.
+  const ownActivity =
+    assistant && renderMessageActivity
+      ? renderMessageActivity({ row, toolCalls: row.toolCalls, subagents })
+      : undefined;
   const sourcePlacement = assistant ? 'panel' : 'links';
   // What a child read counts as a source of the message that delegated to it.
   const childActivities = subagents.flatMap((subagent) =>
@@ -512,7 +540,9 @@ function RowView<TRow extends MessageRow>({
       current={current}
       streaming={row.message.delivery.phase === 'streaming'}
       beforeContent={
-        row.role === 'assistant' &&
+        ownActivity !== undefined
+          ? ownActivity
+          : row.role === 'assistant' &&
         (mergeReasoning
           ? row.reasoningRun && (
               <Reasoning
@@ -544,6 +574,7 @@ function RowView<TRow extends MessageRow>({
             />
           )}
           {row.role !== 'tool' &&
+            ownActivity === undefined &&
             runs.map((run) =>
               'child' in run ? (
                 <SubagentCard
@@ -653,6 +684,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   generativeUi,
   markdownComponents,
   mergeReasoning,
+  renderMessageActivity,
   children,
   renderScrollControl,
 }: MessageListProps<TRow>) {
@@ -819,6 +851,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   generativeUi={generativeUi}
                   markdownComponents={markdownComponents}
                   mergeReasoning={mergeReasoning !== false}
+                  renderMessageActivity={renderMessageActivity}
                 />
                 {renderApprovalRecords(recordsAfter, row.id)}
               </Fragment>
