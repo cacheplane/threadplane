@@ -16536,6 +16536,25 @@
       "note": "Readonly app-owned DTOs and synchronous notifications; no SDK, session, read or disposal capability accepted by the view. Broader T29 contracts remain planned."
     },
     {
+      "id": "source:libs/react/src/debug/agent-devtools.ts",
+      "taskIds": [
+        "T17",
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only useAgentDevtools reports which of status, messages, toolCalls and error each core snapshot change wrote, as the Angular adapters' devtools-emitter.ts reports do, under the caller's langgraph or ag-ui vocabulary. Scripted runs need the adapter transport and are not ported. Production builds fold it away."
+    },
+    {
+      "id": "source:libs/react/src/devtools/protocol.ts",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Shared page side of the threadplane:devtools wire protocol for the React signals and render reports: event name, report shapes and bounds, and the __THREADPLANE_DEVTOOLS_DISABLED__ opt-out."
+    },
+    {
       "id": "entry:libs/content/src/a2ui/index.ts",
       "taskIds": [
         "T19"
@@ -16842,6 +16861,36 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderDevtools",
+      "taskIds": [
+        "T17",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only render report for the Threadplane DevTools extension, mirroring Angular's devtools-render-report.ts and render-devtools.ts: RenderDevtools wraps one surface, RenderSpec and the readiness gate mark committed views, and each element reports mounted, fallback, unresolved or hidden. Production builds fold it away."
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderDevtoolsProps",
+      "taskIds": [
+        "T17",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only render report for the Threadplane DevTools extension, mirroring Angular's devtools-render-report.ts and render-devtools.ts: RenderDevtools wraps one surface, RenderSpec and the readiness gate mark committed views, and each element reports mounted, fallback, unresolved or hidden. Production builds fold it away."
+    },
+    {
+      "id": "source:libs/react/src/render/devtools.tsx",
+      "taskIds": [
+        "T17",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only render report for the Threadplane DevTools extension, mirroring Angular's devtools-render-report.ts and render-devtools.ts: RenderDevtools wraps one surface, RenderSpec and the readiness gate mark committed views, and each element reports mounted, fallback, unresolved or hidden. Production builds fold it away."
     },
     {
       "id": "asset:libs/cockpit-a2ui-react/project.json",
