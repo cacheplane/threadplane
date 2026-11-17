@@ -238,7 +238,7 @@ describe('read-only recovery for a dispatched run', () => {
     });
   });
 
-  it('reports a failed run and withdraws every recovery when an explicit check finds it failed', async () => {
+  it('reports a failed run and offers only a retry when an explicit check finds it failed', async () => {
     const f = fixture({ status: 'running' });
     expect(await f.session.submit('Question')).toBe('interrupted');
     f.getRunStatus.mockResolvedValue('error');
@@ -248,8 +248,8 @@ describe('read-only recovery for a dispatched run', () => {
       status: 'error',
       error: {
         kind: 'server',
-        retryable: false,
-        recovery: 'none',
+        retryable: true,
+        recovery: 'retry',
         message: 'The LangGraph run did not complete successfully.',
       },
     });

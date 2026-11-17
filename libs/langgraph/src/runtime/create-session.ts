@@ -17,7 +17,11 @@ import type {
 } from '@threadplane/core/tools';
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport.js';
-import { initialMessageState, reduceMessages } from './message-reducer.js';
+import {
+  initialMessageState,
+  reduceMessages,
+  type MessageState,
+} from './message-reducer.js';
 import { createReasoningTimer } from './reasoning-timing.js';
 import { createPublication } from './publication.js';
 import {
@@ -192,6 +196,11 @@ interface Attempt {
   readonly result: Promise<CompleteOutcome>;
   readonly resolve: (outcome: CompleteOutcome) => void;
   readonly input: AttemptInput;
+  /** The transcript and values before this command added anything; retry restores them. */
+  readonly baseline: {
+    readonly state: MessageState;
+    readonly values: LangGraphValues | undefined;
+  };
   readonly runOptions: CapturedRunOptions | undefined;
   readonly branch?: CheckpointOwner;
   projection: StreamProjection;
@@ -362,6 +371,9 @@ export function createSession(
     publication.getSnapshot().interrupts;
   let owner: Attempt | undefined;
   let recoveryAttempt: Attempt | undefined;
+  /** A command whose exact run the backend reported failed, valid only while
+   * the transcript it left is still the current one. */
+  let replayable: { attempt: Attempt; state: MessageState } | undefined;
   let retained: { attempt: Attempt; run: PhysicalRun } | undefined;
   let disposed = false;
   let revision = 0;
@@ -394,15 +406,20 @@ export function createSession(
   }
 
   /** The exact run ended without success: nothing is pending and nothing can
-   * be checked again, so no recovery is offered. */
+   * be checked again. A run the backend reports as `error` or `timeout` has a
+   * settled outcome, so a plain command whose only run that was can be sent
+   * again; an `interrupted` run may have lost a pause, so it offers nothing. */
   function runFailureError(
-    status: 'error' | 'timeout' | 'interrupted'
+    status: 'error' | 'timeout' | 'interrupted',
+    attempt: Attempt
   ): AgentError {
+    const retry =
+      status !== 'interrupted' && !attempt.branch && attempt.groups === 0;
     return {
       kind: status === 'interrupted' ? 'interrupted' : 'server',
       message: 'The LangGraph run did not complete successfully.',
-      retryable: false,
-      recovery: 'none',
+      retryable: retry,
+      recovery: retry ? 'retry' : 'none',
     };
   }
 
@@ -558,6 +575,7 @@ export function createSession(
     if (attempt.branch)
       attempt.branch.state = uncertainCheckpoint(attempt.branch.state);
     recoveryAttempt = error?.recovery === 'check' ? attempt : undefined;
+    replayable = error?.recovery === 'retry' ? { attempt, state } : undefined;
     publish(error ? 'error' : 'idle', error);
     // An error can end local consumption before the HTTP body closes. SDK
     // iterator return releases its reader; abort also cancels our request.
@@ -571,6 +589,7 @@ export function createSession(
     if (!attempt) return;
     owner = undefined;
     recoveryAttempt = undefined;
+    replayable = undefined;
     retained = undefined;
     for (const call of attempt.calls.values()) {
       const current = state.toolCalls.find((entry) => entry.id === call.id);
@@ -1139,7 +1158,7 @@ export function createSession(
               settle(
                 attempt,
                 status === 'interrupted' ? 'interrupted' : 'error',
-                runFailureError(status)
+                runFailureError(status, attempt)
               );
               return;
             }
@@ -1379,6 +1398,7 @@ export function createSession(
       groups: 0,
       handoffIds: [],
       input,
+      baseline: { state, values },
       runOptions,
       branch,
       subgraphs,
@@ -1398,6 +1418,7 @@ export function createSession(
     };
     owner = created;
     recoveryAttempt = undefined;
+    replayable = undefined;
     retained = undefined;
 
     if (input.kind === 'submit')
@@ -1794,6 +1815,7 @@ export function createSession(
         result,
         resolve,
         input: candidate.attempt.input,
+        baseline: candidate.attempt.baseline,
         runOptions: candidate.attempt.runOptions,
         branch: candidate.attempt.branch,
         calls: new Map(),
@@ -1963,6 +1985,34 @@ export function createSession(
     });
   }
 
+  /** Sends the command whose exact run the backend reported failed again, from
+   * the transcript and values it started with. The submission keeps its user
+   * message id, so the snapshot gains no second copy and an `add_messages`
+   * thread replaces rather than appends it; a resume sends the same response.
+   * Resolves with the re-run's outcome, or `aborted` when nothing ran. It
+   * never replays an uncertain outcome. */
+  function retry(): Promise<CompleteOutcome> {
+    let attempt: Attempt | undefined;
+    const beginning = publication.command(() => {
+      if (disposed || owner || preparing || loading) return;
+      const failed = replayable;
+      if (!failed || failed.state !== state) {
+        if (publication.getSnapshot().status === 'error')
+          throw new Error(
+            'This failure cannot be retried: the backend has not reported that the run failed.'
+          );
+        return;
+      }
+      admitSubmission();
+      const previous = failed.attempt;
+      state = previous.baseline.state;
+      values = previous.baseline.values;
+      attempt = beginAttempt(previous.input, undefined, previous.runOptions);
+    });
+    // No attempt means nothing ran: `aborted`, as for an ignored submit.
+    return dispatch(beginning, () => attempt);
+  }
+
   async function checkStatus() {
     let checking:
       | { revision: number; attempt: Attempt; controller: AbortController }
@@ -2023,7 +2073,12 @@ export function createSession(
             recoveryAttempt = undefined;
             checkController = undefined;
             retained = undefined;
-            publish('error', runFailureError(failed));
+            const error = runFailureError(failed, captured.attempt);
+            replayable =
+              error.recovery === 'retry'
+                ? { attempt: captured.attempt, state }
+                : undefined;
+            publish('error', error);
           });
           return;
         }
@@ -2153,6 +2208,9 @@ export function createSession(
         stopExecution();
       }),
     ...(canCheck || getState ? { checkStatus, load } : {}),
+    // Only the exact run's status can settle a failure, so without it nothing
+    // could ever be retried and the command is left out.
+    ...(getRunStatus ? { retry } : {}),
     dispose: () =>
       publication.command(() => {
         if (disposed) return;
