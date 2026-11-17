@@ -21,6 +21,7 @@ import type { RenderSpecProps, RenderValue } from './types.js';
 import { ownRenderValue } from './values.js';
 import { ownRenderFunctions } from './functions.js';
 import { ReadinessGate } from './readiness.js';
+import { RenderDevtoolsMark, RenderDevtoolsScope } from './devtools.js';
 import type {
   RenderReadinessEntry,
   RenderStore,
@@ -35,6 +36,7 @@ import {
 const EMPTY_STATE = Object.freeze({});
 const NO_STORE = Object.freeze({});
 const noSubscription = () => () => undefined;
+declare const process: { readonly env: { readonly NODE_ENV?: string } };
 interface ElementProps
   extends Pick<RenderSpecProps, 'registry' | 'loading' | 'fallback'> {
   readonly spec: NonNullable<RenderSpecProps['spec']>;
@@ -184,6 +186,12 @@ function Element({
           type={element.type}
           {...view}
         />
+      ) : process.env.NODE_ENV !== 'production' ? (
+        // Development only: the DevTools render report (see ./devtools.tsx).
+        <>
+          <RenderDevtoolsMark elementKey={elementKey} state="mounted" />
+          <Component {...view} />
+        </>
       ) : (
         <Component {...view} />
       )}
@@ -277,7 +285,7 @@ export function RenderSpec({
   const stateModel = ownRenderValue(
     store ? snapshot : state ?? EMPTY_STATE
   ) as Record<string, unknown>;
-  return (
+  const tree = (
     <Element
       spec={spec}
       elementKey={spec.root}
@@ -290,6 +298,14 @@ export function RenderSpec({
       writable={store !== undefined}
     />
   );
+  // Development only: the DevTools render report (see ./devtools.tsx).
+  if (process.env.NODE_ENV !== 'production')
+    return (
+      <RenderDevtoolsScope spec={spec} registry={registry}>
+        {tree}
+      </RenderDevtoolsScope>
+    );
+  return tree;
 }
 
 /** Reports each store write as a `stateChange` event while the tree is mounted. */

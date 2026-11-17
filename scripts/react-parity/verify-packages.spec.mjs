@@ -1080,7 +1080,7 @@ test('React chat requires its real supported export', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, isTyping: forwarded }), /isTyping/);
   assert.throws(() => packageVerifier.assertSupportedExports('core', { completeDelivery: forwarded }), /completeDelivery/);
 });
-test('React render requires exactly the RenderSpec and lifecycle recorder runtime exports', () => {
+test('React render requires exactly the RenderSpec, lifecycle recorder and RenderDevtools runtime exports', () => {
   const RenderSpec = () => null;
   const createRenderLifecycle = () => ({});
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', {}), /A2uiSurface/);
@@ -1089,10 +1089,12 @@ test('React render requires exactly the RenderSpec and lifecycle recorder runtim
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {} }), /A2uiMessageSurfaces/);
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {} }));
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {}, surfaceToSpec() {} }), /unexpected/);
+  const RenderDevtools = () => null;
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', {}), /RenderSpec/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec }), /createRenderLifecycle/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle }));
-  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle, createStateStore: () => ({}) }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle }), /RenderDevtools/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle, RenderDevtools }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle, RenderDevtools, createStateStore: () => ({}) }), /unexpected/);
 });
 test('headless framework root rejects the render adapter and engine', () => {
   assert.throws(() => packageVerifier.assertHeadlessInputs({ 'node_modules/@threadplane/react/src/render/render-spec.js': {} }), /render/i);
@@ -1230,11 +1232,12 @@ test('installation footprint counts actual package files and bytes separately fr
 });
 
 const reactDebug = { types: './src/debug/index.d.ts', import: './src/debug/index.js', default: './src/debug/index.js' };
-test('React Debug exposes exactly the passive components', () => {
+test('React Debug exposes exactly the passive components and the DevTools hook', () => {
  assert.throws(() => packageVerifier.assertSupportedExports('react/debug', {}), /ChatDebug/);
  assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {} }), /StateDiff/);
- assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {} }));
- assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {}, createSession() {} }), /unexpected/);
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {} }), /useAgentDevtools/);
+ assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {}, useAgentDevtools() {} }));
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {}, useAgentDevtools() {}, createSession() {} }), /unexpected/);
 });
 test('production root and chat bundle evidence rejects Debug JS or CSS', () => {
  for (const suffix of ['index.js', 'chat-debug.js', 'styles.css']) {
