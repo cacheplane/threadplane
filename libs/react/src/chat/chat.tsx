@@ -28,6 +28,7 @@ import {
   type MessageListProps,
 } from './message-list.js';
 import { ScrollBubble } from './scroll-bubble.js';
+import { Select, type SelectOption } from './select.js';
 import { ThreadList, type ThreadListItem } from './thread-list.js';
 
 /** Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options. */
@@ -123,6 +124,13 @@ export interface ChatProps
   /** App-owned content below the composer; see `ChatInputProps.footer`. */
   readonly inputFooter?: ChatInputProps['footer'];
   /**
+   * A model picker in the composer, before `inputTrailing`. The app owns the
+   * value: `onValueChange` reports a choice and nothing is sent to the session,
+   * so pass the chosen model to your backend yourself. Hidden while `options`
+   * is empty. Off unless set.
+   */
+  readonly modelPicker?: ChatModelPicker;
+  /**
    * A greeting shown while the conversation is empty: a centred title above the
    * composer and optional suggestions below it. `true` uses the default title;
    * an object replaces the title (null omits it) and adds `suggestions`, such as
@@ -143,7 +151,45 @@ export interface ChatProps
   readonly runStatus?: boolean;
 }
 
+/** The options, controlled value and labels of the composer's model picker. */
+export interface ChatModelPicker {
+  readonly options: readonly SelectOption[];
+  /** The chosen option's value; one that matches no option shows `placeholder`. */
+  readonly value: string;
+  readonly onValueChange: (value: string) => void;
+  /** Names the list for assistive technology. Defaults to "Model". */
+  readonly label?: string;
+  /** Shown while no option matches `value`. Defaults to "Choose a model". */
+  readonly placeholder?: string;
+  readonly disabled?: boolean;
+}
+
 const ignore = () => undefined;
+
+/** Holds the open state so the app controls only the value. */
+function ModelPicker({
+  options,
+  value,
+  onValueChange,
+  label = 'Model',
+  placeholder = 'Choose a model',
+  disabled,
+}: ChatModelPicker) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Select
+      className="tp-chat__model-picker"
+      options={options}
+      value={value}
+      onValueChange={(next) => onValueChange(next)}
+      open={open}
+      onOpenChange={setOpen}
+      label={label}
+      placeholder={placeholder}
+      disabled={disabled}
+    />
+  );
+}
 
 /** Transcript, error and composer wired to an app-owned `AgentSession`. */
 export function Chat({
@@ -169,6 +215,7 @@ export function Chat({
   inputLeading,
   inputTrailing,
   inputFooter,
+  modelPicker,
   approval,
   approvalRecords,
   messageActions,
@@ -410,7 +457,16 @@ export function Chat({
           pending ? 'Answer the approval to continue' : input.placeholder
         }
         leading={inputLeading}
-        trailing={inputTrailing}
+        trailing={
+          modelPicker && modelPicker.options.length > 0 ? (
+            <>
+              <ModelPicker {...modelPicker} />
+              {inputTrailing}
+            </>
+          ) : (
+            inputTrailing
+          )
+        }
         footer={inputFooter}
         busy={snapshot.status === 'running'}
         onSubmit={(text) => {
