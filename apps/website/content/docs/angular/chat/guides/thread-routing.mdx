@@ -74,7 +74,7 @@ The `<chat>` composition owns the transcript, the input, and the loading and err
 
 <ExampleCode file="threads.component.ts" region="chat-and-sidebar" title="threads.component.ts — the template" />
 
-The sidebar emits `threadSelected` for a row and for a conversation that its New chat created, so the same handler drives every switch.
+The sidebar emits `threadSelected` when a row is chosen. The template listens to `(newChat)`, so New chat runs the same handler as the header's "New conversation" button and clears the unsent draft. Selecting a project emits `projectSelected`; the component keeps the selection in a signal bound to `[selectedProjectId]`, so the sidebar lists only that project's conversations until the project is selected again.
 
 ### Row actions
 
@@ -98,7 +98,7 @@ Apps that draw their own list can call `refreshOnRunEnd(agent, () => threads.ref
 
 ### Switching and creating
 
-Two handlers close the loop. Selecting a row tells the agent to load that thread and updates the signal; the header's "New conversation" button asks the store for a thread and then activates it. `create()` returns `null` when the request fails, which is why the result is checked before it is used.
+Two handlers close the loop. Selecting a row tells the agent to load that thread and updates the signal; New chat in the sidebar and the header's "New conversation" button both ask the store for a thread and then activate it. `create()` returns `null` when the request fails, which is why the result is checked before it is used.
 
 <ExampleCode file="threads.component.ts" region="switch-and-create" title="threads.component.ts — switching and creating" />
 
@@ -121,7 +121,9 @@ import { injectAgent, LangGraphThreadsAdapter } from '@threadplane/langgraph';
       [directory]="threads.directory"
       [agent]="agent"
       [activeThreadId]="activeThreadId()"
+      [selectedProjectId]="projectId()"
       (threadSelected)="activeThreadId.set($event)"
+      (projectSelected)="selectProject($event)"
       (activeThreadRemoved)="activeThreadId.set(null)" />
   `,
 })
@@ -129,6 +131,11 @@ export class ThreadsPanelComponent {
   protected readonly threads = inject(LangGraphThreadsAdapter);
   protected readonly agent = injectAgent();
   protected readonly activeThreadId = signal<string | null>(null);
+  protected readonly projectId = signal<string | null>(null);
+
+  protected selectProject(id: string | null): void {
+    this.projectId.update((current) => (current === id ? null : id));
+  }
 }
 ```
 
@@ -136,11 +143,13 @@ With no listener on `(newChat)`, New chat calls `directory.create()` and emits `
 
 ### Projects
 
-Project names are stored in the LangGraph Store under the namespace `['threadplane', 'projects']`. Each project is one item whose key is the project identifier and whose value is `{ name }`. A thread joins a project through its `projectId` metadata. To turn projects off, set `projects: false` in the `LANGGRAPH_THREADS_CONFIG` value; to keep them in another namespace, set `projects: { namespace: [...] }`. A server without the Store API still lists threads: the adapter's `projects` signal reports an empty list and project commands fail without affecting the thread list.
+Project names are stored in the LangGraph Store under the namespace `['threadplane', 'projects']`. Each project is one item whose key is the project identifier and whose value is `{ name }`. A thread joins a project through its `projectId` metadata. To turn projects off, set `projects: false` in the `LANGGRAPH_THREADS_CONFIG` value; to keep them in another namespace, set `projects: { namespace: [...] }`. A server without the Store API still lists threads: the adapter's `projects` signal is `undefined`, the sidebar hides the Projects section and project commands fail without affecting the thread list.
 
-The adapter also exposes `status`, `error` and `projects` signals for applications that draw their own list. `status` is `'loading'` until the first successful load, `'error'` after a failed load and `'idle'` otherwise.
+`[selectedProjectId]` is controlled by the application. When it holds a project identifier, Recent and Archived list only that project's conversations; `null` lists every conversation. `(projectSelected)` emits the project the user picked and never clears the selection by itself, so the component above clears it when the selected project is picked again.
 
-### Refreshing after a run
+The adapter also exposes `status`, `error` and `projects` signals for applications that draw their own list. `status` is `'loading'` until the first successful load, `'error'` after a failed load and `'idle'` otherwise. The adapter's `refresh()` resolves once the thread list is published and loads project names in the background; `directory.refresh()` resolves after both.
+
+### Refreshing the sidebar after a run
 
 The sidebar loads the directory when it mounts and again after each row command. Pass `[agent]` and it also refreshes every time a run ends, which is when the graph has written a generated title.
 

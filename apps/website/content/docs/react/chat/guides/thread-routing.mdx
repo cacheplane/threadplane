@@ -29,29 +29,58 @@ Drafts and confirmed evidence belong to this page, so a reload clears them. Conv
 
 `ThreadSidebar` comes from `@threadplane/react/chat` and draws New chat, Projects, Recent and Archived for any `ThreadDirectory`. `createLangGraphThreadDirectory` from `@threadplane/langgraph` builds one over the LangGraph threads API. The directory belongs to the application: the sidebar subscribes to it but never disposes it, so dispose it yourself when the page unmounts.
 
+Create the directory and dispose it in the same effect. A directory created in `useState` and disposed in an effect cleanup does not survive React StrictMode: the development double mount runs the cleanup once, and the directory stays disposed for good. The example creates its directory this way.
+
 ~~~tsx
+import { useEffect, useState } from 'react';
 import { Client } from '@langchain/langgraph-sdk';
+import type { AgentSession, ThreadDirectory } from '@threadplane/core';
 import { createLangGraphThreadDirectory } from '@threadplane/langgraph';
 import { ThreadSidebar } from '@threadplane/react/chat';
 
-const directory = createLangGraphThreadDirectory({
-  client: new Client({ apiUrl, callerOptions: { maxRetries: 0 } }),
-});
-
-<ThreadSidebar
-  directory={directory}
-  session={session}
-  activeThreadId={threadId}
-  onSelect={setThreadId}
-  onActiveRemoved={() => setThreadId(null)}
-/>;
+export function Conversations(props: {
+  readonly apiUrl: string;
+  /** The selected conversation's session, for example from `createSession`. */
+  readonly session?: AgentSession;
+  readonly threadId: string | null;
+  readonly onThreadChange: (threadId: string | null) => void;
+}) {
+  const { apiUrl, session, threadId, onThreadChange } = props;
+  const [directory, setDirectory] = useState<ThreadDirectory | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  useEffect(() => {
+    const created = createLangGraphThreadDirectory({
+      client: new Client({ apiUrl, callerOptions: { maxRetries: 0 } }),
+    });
+    setDirectory(created);
+    return () => created.dispose();
+  }, [apiUrl]);
+  if (!directory) return null;
+  return (
+    <ThreadSidebar
+      directory={directory}
+      session={session}
+      activeThreadId={threadId}
+      onSelect={onThreadChange}
+      onActiveRemoved={() => onThreadChange(null)}
+      selectedProjectId={projectId}
+      onProjectSelect={(id) =>
+        setProjectId((current) => (current === id ? null : id))
+      }
+    />
+  );
+}
 ~~~
 
-With no `onNewChat`, New chat creates a thread through the directory and passes its identifier to `onSelect`. Pass `onNewChat` to replace that behavior, as the example above does to open a blank local conversation.
+The `session` is the `AgentSession` of the selected conversation, such as one returned by `createSession` from `@threadplane/langgraph` for that thread. The example builds a session the same way each time a conversation is selected.
+
+With no `onNewChat`, New chat creates a thread through the directory and passes its identifier to `onSelect`. Pass `onNewChat` to replace that behavior, as the example does to open a blank local conversation.
 
 ### Projects
 
-Project names are stored in the LangGraph Store under the namespace `['threadplane', 'projects']`. Each project is one item whose key is the project identifier and whose value is `{ name }`. A thread joins a project through its `projectId` metadata. Pass `projects: false` to `createLangGraphThreadDirectory` to turn projects off, or pass your own project store in the same option. A server without the Store API still lists threads: the project list stays empty and project commands fail without affecting the thread list.
+Project names are stored in the LangGraph Store under the namespace `['threadplane', 'projects']`. Each project is one item whose key is the project identifier and whose value is `{ name }`. A thread joins a project through its `projectId` metadata. Pass `projects: false` to `createLangGraphThreadDirectory` to turn projects off, or pass your own project store in the same option. A server without the Store API still lists threads: the snapshot carries no `projects`, the sidebar hides the Projects section and project commands fail without affecting the thread list.
+
+`selectedProjectId` is controlled by the application. When it holds a project identifier, Recent and Archived list only that project's conversations; `null` or no value lists every conversation. `onProjectSelect` reports the project the user picked, so the snippet above clears the selection when the selected project is picked again.
 
 ### Refreshing after a run
 
