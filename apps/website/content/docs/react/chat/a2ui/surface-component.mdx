@@ -80,6 +80,9 @@ A surface appears in `snapshot.surfaces` once the agent has created it and sent 
 The basic catalog is built in, so the 18 standard components render without any setup: `Text`, `Image`, `Icon`, `Video`, `AudioPlayer`, `Row`, `Column`, `List`, `Card`, `Tabs`, `Modal`, `Divider`, `Button`, `TextField`, `CheckBox`, `ChoicePicker`, `Slider` and `DateTimeInput`.
 A component the catalog does not know still renders its children.
 
+To tell the agent which catalog it may target, send `a2uiClientCapabilities()` from `@threadplane/react/a2ui` with the run.
+With the AG-UI runtime, put it in the run state under `a2ui_client_capabilities`, the key an A2UI agent reads: `session.submit({ message, state: { a2ui_client_capabilities: a2uiClientCapabilities() } })`.
+
 ## Who owns the edits?
 
 Your store does.
