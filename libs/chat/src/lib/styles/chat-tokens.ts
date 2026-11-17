@@ -37,9 +37,9 @@ const LIGHT_TOKENS = `
   --tplane-chat-scrim: rgb(0 0 0 / .32);
 
   /* --a2ui-* light variant */
-  --a2ui-primary: #4f8df5;
+  --a2ui-primary: #2f6fed;
   --a2ui-on-primary: #ffffff;
-  --a2ui-primary-hover: #3a78e0;
+  --a2ui-primary-hover: #245bd0;
   --a2ui-secondary: #5f6470;
   --a2ui-on-secondary: #ffffff;
   --a2ui-surface: #ffffff;
@@ -113,9 +113,9 @@ const DARK_TOKENS = `
   --tplane-chat-scrim: rgb(0 0 0 / .6);
 
   /* --a2ui-* dark variant (preserves current chat.css values) */
-  --a2ui-primary: #4f8df5;
-  --a2ui-on-primary: #ffffff;
-  --a2ui-primary-hover: #6699f7;
+  --a2ui-primary: #8ab4ff;
+  --a2ui-on-primary: #0b1220;
+  --a2ui-primary-hover: #a9c7ff;
   --a2ui-secondary: #8a92a3;
   --a2ui-on-secondary: #ffffff;
   --a2ui-surface: #1a1d23;

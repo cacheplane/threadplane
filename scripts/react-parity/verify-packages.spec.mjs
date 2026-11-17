@@ -1040,7 +1040,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { Trace: component, LauncherButton: component, ChatWindow: component, Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
+  const supported = { Trace: component, LauncherButton: component, ChatWindow: component, Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatSidenavSections: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
   supported.Suggestions = component;
   supported.Select = component;
   supported.MessageRating = component;
@@ -1062,6 +1062,7 @@ test('React chat requires its real supported export', () => {
   supported.ChatMessage = component;
   supported.isTyping = component;
   supported.ApprovalRecord = component;
+  for (const name of ['ask', 'createClientTools', 'useClientToolCalls', 'usePendingClientToolCalls']) supported[name] = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
@@ -1079,7 +1080,7 @@ test('React chat requires its real supported export', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, isTyping: forwarded }), /isTyping/);
   assert.throws(() => packageVerifier.assertSupportedExports('core', { completeDelivery: forwarded }), /completeDelivery/);
 });
-test('React render requires exactly the pure RenderSpec runtime export', () => {
+test('React render requires exactly the RenderSpec and RenderDevtools runtime exports', () => {
   const RenderSpec = () => null;
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', {}), /A2uiSurface/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {} }), /a2uiBasicCatalog/);
@@ -1087,9 +1088,11 @@ test('React render requires exactly the pure RenderSpec runtime export', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {} }), /A2uiMessageSurfaces/);
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {} }));
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {}, surfaceToSpec() {} }), /unexpected/);
+  const RenderDevtools = () => null;
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', {}), /RenderSpec/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec }));
-  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createStateStore: () => ({}) }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec }), /RenderDevtools/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, RenderDevtools }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, RenderDevtools, createStateStore: () => ({}) }), /unexpected/);
 });
 test('headless framework root rejects the render adapter and engine', () => {
   assert.throws(() => packageVerifier.assertHeadlessInputs({ 'node_modules/@threadplane/react/src/render/render-spec.js': {} }), /render/i);
@@ -1227,11 +1230,12 @@ test('installation footprint counts actual package files and bytes separately fr
 });
 
 const reactDebug = { types: './src/debug/index.d.ts', import: './src/debug/index.js', default: './src/debug/index.js' };
-test('React Debug exposes exactly the passive components', () => {
+test('React Debug exposes exactly the passive components and the DevTools hook', () => {
  assert.throws(() => packageVerifier.assertSupportedExports('react/debug', {}), /ChatDebug/);
  assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {} }), /StateDiff/);
- assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {} }));
- assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {}, createSession() {} }), /unexpected/);
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {} }), /useAgentDevtools/);
+ assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {}, useAgentDevtools() {} }));
+ assert.throws(() => packageVerifier.assertSupportedExports('react/debug', { ChatDebug() {}, StateDiff() {}, useAgentDevtools() {}, createSession() {} }), /unexpected/);
 });
 test('production root and chat bundle evidence rejects Debug JS or CSS', () => {
  for (const suffix of ['index.js', 'chat-debug.js', 'styles.css']) {

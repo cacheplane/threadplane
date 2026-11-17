@@ -1,5 +1,6 @@
 import type { PlainValue } from '@threadplane/core';
 import type { FunctionTool } from '@threadplane/core/tools';
+import { createBookingTools, type BookingArguments, type BookingDecision } from './booking';
 
 export interface LocationArguments { location: string }
 export interface WeatherArguments extends LocationArguments {
@@ -8,19 +9,12 @@ export interface WeatherArguments extends LocationArguments {
   humidity: number;
   windMph: number;
 }
-export interface BookingArguments { summary: string }
 export interface StatusArguments { label?: string }
 export interface WeatherPanel extends Readonly<WeatherArguments> {
   readonly id: string;
 }
-export interface BookingPanel {
-  readonly id: string;
-  readonly summary: string;
-  readonly status: 'pending' | 'confirmed' | 'cancelled' | 'aborted';
-}
 export interface ClientToolsSnapshot {
   readonly weather: readonly WeatherPanel[];
-  readonly bookings: readonly BookingPanel[];
 }
 
 function argumentsRecord(value: unknown, keys: readonly string[]) {
@@ -75,18 +69,14 @@ const weatherParameters = parameters({
 }, weatherKeys);
 const aborted = () => new DOMException('Client tool cancelled.', 'AbortError');
 
-/** App-owned presentation and decision authority; no runtime call IDs are inferred. */
+/** App-owned function tools and weather panels, plus the booking ask tool `Chat` draws. */
 export function createClientToolsController() {
-  let snapshot: ClientToolsSnapshot = Object.freeze({
-    weather: Object.freeze([]), bookings: Object.freeze([]),
-  });
+  let snapshot: ClientToolsSnapshot = Object.freeze({ weather: Object.freeze([]) });
   const listeners = new Set<() => void>();
   const cancellations = new Set<() => void>();
-  const pending = new Map<string, {
-    readonly row: BookingPanel;
-    readonly signal: AbortSignal;
-    readonly finish: (confirmed: boolean) => void;
-  }>();
+  const bookings = createBookingTools();
+  // Disposal revokes a waiting booking, like Stop.
+  const disposal = new AbortController();
   let sequence = 0;
   let disposed = false;
   function active(signal: AbortSignal) {
@@ -96,11 +86,6 @@ export function createClientToolsController() {
     if (disposed) return;
     snapshot = Object.freeze({ ...snapshot, ...update });
     for (const notify of listeners) notify();
-  }
-  function replaceBooking(row: BookingPanel, status: BookingPanel['status']) {
-    publish({ bookings: Object.freeze(snapshot.bookings.map((entry) =>
-      entry === row ? Object.freeze({ ...row, status }) : entry
-    )) });
   }
   function delay(signal: AbortSignal): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -172,66 +157,33 @@ export function createClientToolsController() {
       handler: (input: WeatherArguments, { signal }) => showWeather(input, signal),
     } satisfies FunctionTool<WeatherArguments, { shown: boolean }>,
     confirm_booking: {
-      description: 'Ask the user to confirm a fictional booking. No real reservation is made.',
-      parameters: parameters({ summary: { type: 'string', minLength: 1 } }, ['summary']),
+      ...bookings.tools.confirm_booking,
+      // Check the arguments first, so the card only ever shows a valid summary.
       async handler(input: BookingArguments, { signal }) {
         active(signal);
-        const summary = text(argumentsRecord(input, ['summary']), 'summary');
-        active(signal);
-        return new Promise<{ confirmed: boolean }>((resolve, reject) => {
-          const row: BookingPanel = Object.freeze({ id: `booking-${++sequence}`, summary, status: 'pending' });
-          let finished = false;
-          const cleanup = () => {
-            pending.delete(row.id);
-            cancellations.delete(cancel);
-            signal.removeEventListener('abort', cancel);
-          };
-          const cancel = () => {
-            if (finished) return;
-            finished = true;
-            cleanup();
-            replaceBooking(row, 'aborted');
-            reject(aborted());
-          };
-          pending.set(row.id, {
-            row, signal,
-            finish(confirmed) {
-              if (finished) return;
-              finished = true;
-              cleanup();
-              replaceBooking(row, confirmed ? 'confirmed' : 'cancelled');
-              resolve({ confirmed });
-            },
-          });
-          cancellations.add(cancel);
-          signal.addEventListener('abort', cancel, { once: true });
-          publish({ bookings: Object.freeze([...snapshot.bookings, row]) });
-          if (signal.aborted || disposed) cancel();
+        text(argumentsRecord(input, ['summary']), 'summary');
+        return bookings.tools.confirm_booking.handler(input, {
+          signal: AbortSignal.any([signal, disposal.signal]),
         });
       },
-    } satisfies FunctionTool<BookingArguments, { confirmed: boolean }>,
+    } satisfies FunctionTool<BookingArguments, BookingDecision>,
   });
   return Object.freeze({
     tools,
+    /** Pass to `Chat` as `clientTools`; a waiting booking is drawn from here. */
+    clientTools: bookings,
     getSnapshot: () => snapshot,
     subscribe(notify: () => void) {
       if (disposed) return () => undefined;
       listeners.add(notify);
       return () => { listeners.delete(notify); };
     },
-    decide(row: BookingPanel, confirmed: boolean): boolean {
-      const request = pending.get(row.id);
-      if (disposed || typeof confirmed !== 'boolean' || !request ||
-        request.row !== row || request.signal.aborted) return false;
-      request.finish(confirmed);
-      return true;
-    },
     dispose() {
       if (disposed) return;
       disposed = true;
       listeners.clear();
       for (const cancel of [...cancellations]) cancel();
-      pending.clear();
+      disposal.abort();
     },
   });
 }

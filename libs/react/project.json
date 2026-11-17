@@ -46,6 +46,11 @@
             "input": "libs/react/src/a2ui",
             "glob": "styles.css",
             "output": "src/a2ui"
+          },
+          {
+            "input": "libs/react/src/a2ui/themes",
+            "glob": "*.css",
+            "output": "src/a2ui/themes"
           }
         ]
       }
