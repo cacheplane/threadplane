@@ -3,9 +3,13 @@ import { afterEach, beforeAll, afterAll, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
 import { createMessageContent } from '@threadplane/content/messages';
 import { createThreadsApplication, type ThreadsSnapshot } from './application';
-import { createThreadsClient } from './connection';
+import type { ThreadDirectory, ThreadEntry } from '@threadplane/core';
+import { createThreadsClient, createThreadsDirectory } from './connection';
 vi.mock('./application', () => ({ createThreadsApplication: vi.fn() }));
-vi.mock('./connection', () => ({ createThreadsClient: vi.fn() }));
+vi.mock('./connection', () => ({
+  createThreadsClient: vi.fn(),
+  createThreadsDirectory: vi.fn(),
+}));
 import { ThreadsDemo, renderMessage } from './app';
 const environment = globalThis as typeof globalThis & {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
@@ -70,17 +74,40 @@ function fakeApp() {
   };
   return { app, update };
 }
-function composition() {
+function fakeDirectory(threads: ThreadEntry[] = []) {
+  const snapshot = Object.freeze({
+    threads: Object.freeze(threads),
+    archived: Object.freeze([]),
+    status: 'idle' as const,
+  });
+  const directory = {
+    getSnapshot: () => snapshot,
+    subscribe: () => () => undefined,
+    refresh: vi.fn(async () => undefined),
+    dispose: vi.fn(),
+  } satisfies ThreadDirectory;
+  return directory;
+}
+const entry = (id: string, title: string): ThreadEntry => ({
+  id,
+  title,
+  pinned: false,
+  archived: false,
+  projectId: null,
+});
+function composition(threads: ThreadEntry[] = []) {
   const h = fakeApp(),
-    onReady = vi.fn();
+    onReady = vi.fn(),
+    directory = fakeDirectory(threads);
   vi.mocked(createThreadsApplication).mockReturnValue(h.app);
+  vi.mocked(createThreadsDirectory).mockReturnValue(directory);
   const connection = { apiUrl: 'https://authored.invalid', headers: {} };
   const view = render(
     <ThreadsDemo connection={connection} onReady={onReady} />
   );
   const box = () =>
     view.getByRole('textbox', { name: 'Message' }) as HTMLTextAreaElement;
-  return { ...h, view, box, onReady, connection };
+  return { ...h, view, box, onReady, connection, directory };
 }
 it('renders the native text, reasoning, citations and Markdown composition', () => {
   const content = createMessageContent(),
@@ -130,64 +157,38 @@ it('mounts ready and fills a draft without remote execution', () => {
   const h = composition();
   expect(h.onReady).toHaveBeenCalledOnce();
   expect(createThreadsClient).toHaveBeenCalledWith(h.connection);
+  expect(createThreadsDirectory).toHaveBeenCalledWith(h.connection);
   expect(h.view.getByRole('status').textContent).toBe('Ready.');
   fireEvent.click(h.view.getByRole('button', { name: 'Try a question' }));
   expect(h.box().value).toBe(
     'Explain how saved conversations work in two sentences.'
   );
   expect(h.app.submit).not.toHaveBeenCalled();
-  expect(h.view.getByText(/list and drafts last/i)).toBeTruthy();
+  expect(h.view.getByText(/their drafts last/i)).toBeTruthy();
   fireEvent.keyDown(h.box(), { key: 'Enter' });
   expect(h.app.submit).toHaveBeenCalledExactlyOnceWith(
     'Explain how saved conversations work in two sentences.'
   );
   expect(h.box().value).toBe('');
 });
-it('renders literal optional titles and marks unavailable records clearly', () => {
-  const h = composition(),
-    base = {
-      ordinal: 1,
-      draft: '',
-      canonical: null,
-      generations: [],
-      version: 0,
-    };
-  act(() =>
-    h.update({
-      selectedKey: 'a',
-      threadId: 'A',
-      conversations: [
-        {
-          ...base,
-          key: 'a',
-          threadId: 'A',
-          label: '<b>Literal title</b>',
-          availability: 'available',
-        },
-        {
-          ...base,
-          key: 'b',
-          threadId: 'B',
-          label: 'Conversation 2',
-          availability: 'unavailable',
-        },
-      ],
-    })
-  );
+it('renders literal server titles and marks the active conversation', () => {
+  const h = composition([
+    entry('A', '<b>Literal title</b>'),
+    entry('B', 'Conversation 2'),
+  ]);
+  act(() => h.update({ selectedKey: 'a', threadId: 'A' }));
   const selected = h.view.getByRole('button', { name: '<b>Literal title</b>' });
-  expect(selected.getAttribute('aria-pressed')).toBe('true');
+  expect(selected.getAttribute('aria-current')).toBe('true');
   expect(selected.querySelector('b')).toBeNull();
   expect(
-    (
-      h.view.getByRole('button', {
-        name: 'Conversation 2 (unavailable)',
-      }) as HTMLButtonElement
-    ).disabled
-  ).toBe(true);
+    h.view
+      .getByRole('button', { name: 'Conversation 2' })
+      .getAttribute('aria-current')
+  ).toBeNull();
 });
-it('uses known local record keys for selection and preserves the controlled draft', () => {
-  const h = composition(),
-    entry = {
+it('selects only conversations confirmed on this page and preserves the controlled draft', () => {
+  const h = composition([entry('A', 'Conversation 1'), entry('X', 'Elsewhere')]),
+    record = {
       key: 'a',
       threadId: 'A',
       ordinal: 1,
@@ -198,7 +199,9 @@ it('uses known local record keys for selection and preserves the controlled draf
       generations: [],
       version: 0,
     };
-  act(() => h.update({ conversations: [entry], draft: 'B draft' }));
+  act(() => h.update({ conversations: [record], draft: 'B draft' }));
+  fireEvent.click(h.view.getByRole('button', { name: 'Elsewhere' }));
+  expect(h.app.select).not.toHaveBeenCalled();
   fireEvent.click(h.view.getByRole('button', { name: 'Conversation 1' }));
   expect(h.app.select).toHaveBeenCalledExactlyOnceWith('a');
   act(() =>
@@ -213,6 +216,7 @@ it('uses known local record keys for selection and preserves the controlled draf
   );
   expect(h.box().value).toBe('A draft');
   expect(h.view.getByRole('status').textContent).toBe('Conversation loaded.');
+  expect(h.directory.refresh).toHaveBeenCalled();
 });
 it('keeps Stop available while loading and prevents changing the selected record', () => {
   const h = composition();
@@ -273,4 +277,5 @@ it('creates a fresh application lifetime when the runtime target changes', () =>
   expect(h.view.container.textContent).not.toContain('fictional-next');
   h.view.unmount();
   expect(next.app.dispose).toHaveBeenCalledOnce();
+  expect(h.directory.dispose).toHaveBeenCalled();
 });

@@ -306,10 +306,10 @@ test('only confirmed UUID creation and exact supported routes are admitted', asy
     400
   );
   for (const [path, method, body] of [
-    ['/api/threads/search', 'POST', {}],
     ['/api/threads', 'GET'],
-    [`/api/threads/${id}`, 'DELETE'],
     [`/api/threads/${id}`, 'PATCH', {}],
+    [`/api/threads/${randomUUID()}`, 'DELETE'],
+    ['/api/store/items', 'PUT', { namespace: [], key: 'p' }],
     [`/api/threads/${id}/runs/x/cancel`, 'POST', {}],
     [`/api/threads/${id}/runs/x/stream`, 'GET'],
     [`/api/threads/${id}/state`, 'GET'],
@@ -334,7 +334,92 @@ test('only confirmed UUID creation and exact supported routes are admitted', asy
     ],
   ])
     assert((await f.request(path, body, method)).status >= 400, path);
-  assert((await f.json('/__requests')).length >= 12);
+  assert((await f.json('/__requests')).length >= 10);
+  assert.equal((await f.json('/__directory-requests')).length, 3);
+});
+
+test('sidebar directory routes list, patch and delete threads and keep Store items apart from the runtime wire', async (t) => {
+  const f = await fixture(t),
+    first = await f.create(),
+    second = await f.create();
+  await (await f.submit(first, 'Hello')).text();
+  assert.deepEqual(
+    (await f.json('/api/threads/search', { limit: 50, offset: 0 })).map(
+      (thread) => [thread.thread_id, thread.metadata.title]
+    ),
+    [
+      [first, 'Authored conversation title'],
+      [second, undefined],
+    ]
+  );
+  assert.deepEqual(
+    (
+      await f.json(
+        `/api/threads/${second}`,
+        { metadata: { title: 'Renamed', pinned: true } },
+        'PATCH'
+      )
+    ).metadata,
+    { title: 'Renamed', pinned: true }
+  );
+  await f.json(`/api/threads/${second}`, { metadata: { pinnedOrder: 0 } }, 'PATCH');
+  assert.deepEqual((await f.title(second)).metadata, {
+    title: 'Renamed',
+    pinned: true,
+    pinnedOrder: 0,
+  });
+  await f.json('/__title/missing');
+  assert.deepEqual(
+    (await f.json('/api/threads/search', { limit: 50, offset: 0 })).map(
+      (thread) => thread.metadata.title
+    ),
+    [undefined, 'Renamed']
+  );
+  const namespace = ['threadplane', 'projects'];
+  assert.equal(
+    (
+      await f.request(
+        '/api/store/items',
+        { namespace, key: 'p1', value: { name: 'Research' } },
+        'PUT'
+      )
+    ).status,
+    204
+  );
+  assert.deepEqual(
+    (
+      await f.json('/api/store/items/search', {
+        namespace_prefix: namespace,
+        limit: 100,
+      })
+    ).items,
+    [{ namespace, key: 'p1', value: { name: 'Research' } }]
+  );
+  assert.equal(
+    (await f.request('/api/store/items', { namespace, key: 'p1' }, 'DELETE'))
+      .status,
+    204
+  );
+  assert.deepEqual(
+    (await f.json('/api/store/items/search', { namespace_prefix: namespace }))
+      .items,
+    []
+  );
+  assert.equal(
+    (await f.request(`/api/threads/${second}`, undefined, 'DELETE')).status,
+    204
+  );
+  assert.equal((await f.request(`/api/threads/${second}`, undefined, 'GET')).status, 404);
+  assert.deepEqual(
+    (await f.json('/api/threads/search', {})).map((thread) => thread.thread_id),
+    [first]
+  );
+  const runtime = await f.json('/__requests');
+  assert(runtime.every((item) => !/search|store/.test(item.path)));
+  assert(runtime.every((item) => item.method !== 'PATCH' && item.method !== 'DELETE'));
+  assert.equal((await f.json('/__directory-requests')).length, 10);
+  await f.json('/__reset');
+  assert.deepEqual(await f.json('/__directory-requests'), []);
 });
 
 test('history injections preserve separate actual proof and restore real saved data', async (t) => {

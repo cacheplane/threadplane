@@ -7,10 +7,15 @@ import {
   MessageList,
   Reasoning,
   Citations,
+  ThreadSidebar,
 } from '@threadplane/react/chat';
 import { Markdown } from '@threadplane/react/markdown';
 import type { MessageRow } from '@threadplane/content/messages';
-import { createThreadsClient, type ThreadsConnection } from './connection';
+import {
+  createThreadsClient,
+  createThreadsDirectory,
+  type ThreadsConnection,
+} from './connection';
 import { createThreadsApplication } from './application';
 
 /** Render existing native content stores without retaining them outside their session owner. */
@@ -53,6 +58,7 @@ function ThreadsOwner({ connection, onReady }: Props) {
   const [application] = useState(() =>
     createThreadsApplication(createThreadsClient(connection))
   );
+  const [directory] = useState(() => createThreadsDirectory(connection));
   const snapshot = useAgent(application);
   useEffect(() => {
     onReady();
@@ -63,6 +69,17 @@ function ThreadsOwner({ connection, onReady }: Props) {
     },
     [application]
   );
+  useEffect(() => () => directory.dispose(), [directory]);
+  // The sidebar refreshes itself on mount and after each row command. A new
+  // saved conversation, a saved response (the graph writes the title) and a
+  // loaded conversation also refresh it.
+  const confirmedThreads = snapshot.conversations
+    .map((record) => record.threadId)
+    .join(' ');
+  useEffect(() => {
+    if (!confirmedThreads && snapshot.confirmation === null) return;
+    directory.refresh().catch(() => undefined);
+  }, [directory, confirmedThreads, snapshot.confirmation]);
   const status = snapshot.busy
     ? snapshot.activity === 'creating'
       ? 'Creating conversation…'
@@ -115,28 +132,28 @@ function ThreadsOwner({ connection, onReady }: Props) {
         </button>
       </header>
       <p>
-        Switch between conversations created on this page. The list and drafts
-        last while this page stays open; saved history is checked before
+        The sidebar lists the conversations saved on the server: rename, pin,
+        reorder, archive, delete or move them into a project from each row menu.
+        Conversations created on this page can be continued; their drafts last
+        while this page stays open and saved history is checked before
         continuing. Titles are optional.
       </p>
       <div className="threads-layout">
         <nav aria-label="Conversations" className="conversation-picker">
-          <h2>Conversations</h2>
-          {snapshot.conversations.length === 0 && (
-            <p>No saved conversations on this page yet.</p>
-          )}
-          {snapshot.conversations.map((record) => (
-            <button
-              type="button"
-              key={record.key}
-              aria-pressed={snapshot.selectedKey === record.key}
-              disabled={snapshot.busy || record.availability === 'unavailable'}
-              onClick={() => void application.select(record.key)}
-            >
-              {record.label}
-              {record.availability === 'unavailable' ? ' (unavailable)' : ''}
-            </button>
-          ))}
+          <ThreadSidebar
+            directory={directory}
+            activeThreadId={snapshot.threadId}
+            onSelect={(threadId) => {
+              // Only conversations confirmed on this page can be continued.
+              const record = application
+                .getSnapshot()
+                .conversations.find((entry) => entry.threadId === threadId);
+              if (record) void application.select(record.key);
+            }}
+            onNewChat={() => void application.newConversation()}
+            onActiveRemoved={() => void application.newConversation()}
+            labels={{ empty: 'No saved conversations yet.' }}
+          />
         </nav>
         <section
           className="conversation-panel"

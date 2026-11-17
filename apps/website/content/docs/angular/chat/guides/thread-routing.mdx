@@ -16,7 +16,7 @@ Start with one active-thread value, then decide where it lives: page memory for 
 
 The Run tab shows the prebuilt `<chat>` composition with a thread sidebar beside it. Ask the aviation assistant about a route — a flight from LAX to JFK, for instance — and the backend allocates a thread. The sidebar row starts out labeled `Untitled` and picks up a short generated title once the run finishes.
 
-Press "+ New" above the list to open a second conversation, then move between the rows and watch the transcript swap. Each row also carries a menu with Rename, Archive, and Delete, and every one of those round-trips through the LangGraph Threads API. Archiving a thread moves it out of the top list and into a second one headed Archived, whose rows offer Unarchive, so the round trip is reachable from the page.
+Press "New chat" at the top of the sidebar to open a second conversation, then move between the rows and watch the transcript swap. Each row also carries a menu with Rename, Pin, Move to project, Archive, and Delete, and pinned rows can be dragged into a new order. Every one of those round-trips through the LangGraph Threads API, and project names are kept in the LangGraph Store. Archived threads move into a collapsible Archived section whose rows offer Unarchive.
 
 ## How it is built
 
@@ -70,35 +70,35 @@ Use a confirmed backend thread: one reported through `onThreadId`, or one create
 
 ### The sidebar and the thread list
 
-The `<chat>` composition owns the transcript, the input, and the loading and error states, so the template adds the lists beside it. `<chat>` can also render a `<chat-thread-list>` of its own, in a sidebar shown at widths of 768px and up whenever its `[threads]` input is non-empty, and it re-emits that list's `threadSelected`. The demo leaves those inputs unbound and mounts explicit lists instead, so that they can carry the row actions shown below: one over `threads()` in the default `active` mode, and a second over `archivedThreads()` in `archived` mode that renders only when something has been archived.
+The `<chat>` composition owns the transcript, the input, and the loading and error states, so the template adds the sidebar beside it. `<chat-thread-sidebar>` is connected: it takes the adapter's `directory` and draws New chat, Projects, Recent, and Archived with the row commands the directory supports. It refreshes the directory when it mounts, after each row command, and, given `[agent]`, each time a run ends.
 
 <ExampleCode file="threads.component.ts" region="chat-and-sidebar" title="threads.component.ts — the template" />
 
-Both `<chat>` and `<chat-thread-list>` emit `threadSelected`, so either surface can drive the switch.
+The sidebar emits `threadSelected` for a row and for a conversation that its New chat created, so the same handler drives every switch.
 
 ### Row actions
 
-`ThreadActionAdapter` is how the list asks the application to perform a rename, an archive, or a delete. The framework owns the row interactions around each call — the inline rename field, the delete confirmation dialog, and the optimistic row update — so the adapter only has to perform the write.
+The sidebar performs each row command through the directory. The framework owns the interactions around each call (the inline rename field, the delete confirmation dialog, and the optimistic row update), so the component only handles the one event that changes its own state: the active conversation was deleted.
 
-<ExampleCode file="threads.component.ts" region="thread-actions" title="threads.component.ts — the action adapter" />
+<ExampleCode file="threads.component.ts" region="thread-actions" title="threads.component.ts — the removed active thread" />
 
-Deleting or archiving the active conversation clears the signal, which returns the surface to its empty state.
+Clearing the signal and calling `switchThread(null)` returns the surface to a new chat.
 
 <Callout type="info" title="Which menu entries appear">
-`<chat-thread-list>` builds its menu from the keys the adapter defines, and then filters by mode. The demo's first list runs in the default `active` mode, so it offers Rename, Archive, and Delete; `unarchive` surfaces only in a list rendered with `[mode]="'archived'"`, which is the second list. One adapter serves both. Each adapter method refreshes the store on success, which the framework relies on to clear its optimistic overrides.
+The sidebar offers a command only when the directory can perform it, and the `features` input turns built-in commands off. The adapter's directory supports them all. It is owned by the application: the sidebar unsubscribes when it is destroyed but never disposes it.
 </Callout>
 
 ### Refreshing after a run
 
-The store is a snapshot, not a subscription, so something has to re-fetch it. `refreshOnRunEnd()` calls back on every transition out of the running state, which is precisely when the title node has finished writing.
+The store is a snapshot, not a subscription, so something has to re-fetch it. Given `[agent]`, the sidebar refreshes on every transition out of the running state, which is precisely when the title node has finished writing.
 
-<ExampleCode file="threads.component.ts" region="refresh-on-run-end" title="threads.component.ts — initial fetch and refresh" />
+<ExampleCode file="threads.component.ts" region="refresh-on-run-end" title="threads.component.ts — refresh" />
 
-`refreshOnRunEnd()` must run inside an injection context, because it uses an Angular effect; `refresh()` is a plain async call.
+Apps that draw their own list can call `refreshOnRunEnd(agent, () => threads.refresh())` inside an injection context instead.
 
 ### Switching and creating
 
-Two handlers close the loop. Selecting a row tells the agent to load that thread and updates the signal; the "+ New" button asks the store for a thread and then activates it. `create()` returns `null` when the request fails, which is why the result is checked before it is used.
+Two handlers close the loop. Selecting a row tells the agent to load that thread and updates the signal; the header's "New conversation" button asks the store for a thread and then activates it. `create()` returns `null` when the request fails, which is why the result is checked before it is used.
 
 <ExampleCode file="threads.component.ts" region="switch-and-create" title="threads.component.ts — switching and creating" />
 

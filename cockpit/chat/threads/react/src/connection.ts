@@ -1,6 +1,9 @@
 import { Client } from '@langchain/langgraph-sdk';
-import { createSession } from '@threadplane/langgraph';
-import type { AgentSession } from '@threadplane/core';
+import {
+  createLangGraphThreadDirectory,
+  createSession,
+} from '@threadplane/langgraph';
+import type { AgentSession, ThreadDirectory } from '@threadplane/core';
 import type { ThreadsState } from './authority';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Internal bridge is copied by the isolated build.
 import type { RuntimeBridgeConfiguration } from '../../../../../libs/cockpit-runtime-bridge/src/index';
@@ -118,4 +121,21 @@ export function createThreadsClient(
       }
     },
   };
+}
+/**
+ * The sidebar's thread directory: the server's thread list, row commands and
+ * Store API project names on the same target and headers, never retried.
+ */
+export function createThreadsDirectory(
+  connection: ThreadsConnection
+): ThreadDirectory {
+  return createLangGraphThreadDirectory({
+    client: new Client({
+      apiUrl: connection.apiUrl,
+      apiKey: null,
+      defaultHeaders: connection.headers,
+      callerOptions: { maxRetries: 0 },
+    }),
+    titleFallback: 'Untitled conversation',
+  });
 }

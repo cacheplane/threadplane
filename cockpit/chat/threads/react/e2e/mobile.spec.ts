@@ -15,7 +15,8 @@ test('mobile A/B/A preserves drafts and a usable transcript after viewport reduc
   });
   const picker = page
     .getByRole('navigation', { name: 'Conversations' })
-    .getByRole('button');
+    .getByRole('list', { name: 'Recent' })
+    .locator('.tp-thread-list__button');
   await input().fill('A first');
   await input().press('Enter');
   await expect(page.getByRole('status')).toHaveText('Response saved.');
