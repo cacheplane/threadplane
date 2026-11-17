@@ -159,6 +159,7 @@ export {
   type ChatProps,
   type ChatRunActivityContext,
 } from './chat.js';
+export { useChatLifecycle, type ChatLifecycle } from './lifecycle.js';
 export { ChatError, type ChatErrorProps } from './error.js';
 export { ChatPopup, type ChatPopupProps } from './chat-popup.js';
 export { LauncherButton, type LauncherButtonProps } from './launcher-button.js';
