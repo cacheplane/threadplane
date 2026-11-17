@@ -3,6 +3,7 @@ import {
   completeDelivery,
   type AgentError,
   type AgentSession,
+  type AgentSessionCustomEvent,
   type CompleteOutcome,
   type PlainValue,
   type ToolCall,
@@ -143,6 +144,8 @@ export type LangGraphSession<
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
+  /** Always present here: `custom` stream frames as application events. */
+  onCustomEvent(listener: (event: AgentSessionCustomEvent) => void): () => void;
 };
 
 interface HistoryRead {
@@ -215,6 +218,31 @@ function sameInterrupts(
     JSON.stringify([interrupt.id ?? null, interrupt.value ?? null]);
   const keys = answered.map(key);
   return current.every((interrupt) => keys.includes(key(interrupt)));
+}
+
+/** A `custom` stream frame from any namespace as an application event, read the
+ * way the Angular adapter reads it: `{ name, data }` payloads unwrap, any other
+ * payload is the data with an empty name. The middleware's subagent binding is
+ * protocol, not application data. Payloads that are not plain data are dropped. */
+function captureCustomEvent(
+  event: StreamEvent
+): AgentSessionCustomEvent | undefined {
+  if (event.type.split('|')[0] !== 'custom' || !Object.hasOwn(event, 'data'))
+    return undefined;
+  try {
+    const payload = ownValue(event['data'] as PlainValue);
+    const record =
+      payload !== null && typeof payload === 'object' && !Array.isArray(payload)
+        ? (payload as { readonly [key: string]: PlainValue })
+        : undefined;
+    if (record?.['type'] === 'threadplane.subagent_binding') return undefined;
+    return Object.freeze({
+      name: typeof record?.['name'] === 'string' ? record['name'] : '',
+      data: record?.['data'] ?? payload,
+    });
+  } catch {
+    return undefined;
+  }
 }
 
 /** Private development composition. Construction/observation perform no I/O.
@@ -945,6 +973,7 @@ export function createSession(
           run.received = true;
           const event = captureStreamEvent(next.value);
           if (!owns(attempt)) return;
+          const custom = captureCustomEvent(event);
           const previousState = state;
           const previousValues = values;
           const previousInterrupts = interrupts;
@@ -1012,6 +1041,10 @@ export function createSession(
           // publish drains observer commands before returning. Never dispatch or
           // read on behalf of an attempt a listener just stopped/superseded.
           if (!owns(attempt)) return;
+          if (custom) {
+            publication.emitCustomEvent(custom);
+            if (!owns(attempt)) return;
+          }
         }
         if (!owns(attempt)) return;
         run.captureOpen = false;
@@ -2107,6 +2140,8 @@ export function createSession(
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
+    onCustomEvent: (listener) =>
+      disposed ? () => undefined : publication.onCustomEvent(listener),
     submit,
     fork,
     ...(canRegenerate ? { regenerate } : {}),

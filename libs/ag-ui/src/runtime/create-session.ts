@@ -6,7 +6,12 @@ import {
   type RunAgentInput,
   type ResumeEntry,
 } from '@ag-ui/client';
-import type { CompleteOutcome, ToolContract } from '@threadplane/core';
+import type {
+  AgentSessionCustomEvent,
+  CompleteOutcome,
+  PlainValue,
+  ToolContract,
+} from '@threadplane/core';
 import type {
   CheckedTools,
   FunctionToolDefinition,
@@ -84,6 +89,16 @@ export interface Session {
   ): Promise<CompleteOutcome>;
   stop(): Promise<void>;
   dispose(): Promise<void>;
+  /**
+   * Listens for `CUSTOM` events other than `on_interrupt` while runs stream.
+   * The factory always supplies it; it is optional so hand-written sessions
+   * need not. Returns an idempotent release. Nothing is replayed to a later
+   * listener, a throwing listener cannot fail the run, and nothing is
+   * delivered after disposal.
+   */
+  onCustomEvent?(
+    listener: (event: AgentSessionCustomEvent) => void
+  ): () => void;
 }
 export type ClientToolSession<C extends Record<string, ToolContract>> = Omit<
   Session,
@@ -91,6 +106,31 @@ export type ClientToolSession<C extends Record<string, ToolContract>> = Omit<
 > & {
   getSnapshot(): ClientToolSessionSnapshot<C>;
 };
+/** A `CUSTOM` event as an application event, read the way the Angular adapter
+ * reads it: a string value that parses as JSON becomes that data. The legacy
+ * `on_interrupt` notice is protocol, not application data. Values that are not
+ * plain data are dropped. */
+function captureCustomEvent(
+  event: AGUIEvent
+): AgentSessionCustomEvent | undefined {
+  if (event.type !== 'CUSTOM' || event.name === 'on_interrupt') return undefined;
+  let value: unknown = event.value;
+  if (typeof value === 'string') {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      /* Keep text that is not JSON. */
+    }
+  }
+  try {
+    return Object.freeze({
+      name: event.name,
+      data: copyData(value, true) as PlainValue,
+    });
+  } catch {
+    return undefined;
+  }
+}
 interface Attempt {
   readonly id: string;
   readonly controller: AbortController;
@@ -271,6 +311,8 @@ export function createSession(
           });
         }
         if (current(attempt)) publication.publish(next);
+        const custom = captureCustomEvent(event as AGUIEvent);
+        if (custom && current(attempt)) publication.emitCustomEvent(custom);
       },
       attempt.controller.signal
     );
@@ -325,7 +367,11 @@ export function createSession(
     revision++;
     return new Promise((resolve) => {
       publication.command(() => {
-        if (permanent) disposed = true;
+        if (permanent) {
+          disposed = true;
+          // Events are not settlement: stop delivering them right away.
+          publication.clearCustomEventListeners();
+        }
         const attempt = active;
         if (attempt) {
           cancel(attempt);
@@ -341,6 +387,8 @@ export function createSession(
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
+    onCustomEvent: (listener) =>
+      disposed ? () => undefined : publication.onCustomEvent(listener),
     resume: (pause, responses, options) =>
       new Promise<CompleteOutcome>((resolve) => {
         const beforeSignal = revision;
@@ -994,6 +1042,14 @@ function createToolsOwner(
                 clientTools: ledger.snapshot(),
               })
             );
+          const custom = captureCustomEvent(event as AGUIEvent);
+          if (
+            custom &&
+            owns(command, physical) &&
+            !command.controller.signal.aborted &&
+            !disposed
+          )
+            publication.emitCustomEvent(custom);
         });
       },
       command.controller.signal,
@@ -1123,7 +1179,11 @@ function createToolsOwner(
     revision++;
     return new Promise<void>((resolve) =>
       publication.command(() => {
-        if (permanent) disposed = true;
+        if (permanent) {
+          disposed = true;
+          // Events are not settlement: stop delivering them right away.
+          publication.clearCustomEventListeners();
+        }
         const command = active;
         if (command) {
           cancel(command);
@@ -1139,6 +1199,8 @@ function createToolsOwner(
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
+    onCustomEvent: (listener) =>
+      disposed ? () => undefined : publication.onCustomEvent(listener),
     stop: () => close(false),
     dispose: () => close(true),
     submit: (input, options) =>

@@ -5299,7 +5299,8 @@
         "T04"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Both framework-neutral runtime sessions expose custom events through the optional core AgentSession.onCustomEvent listener as owned plain { name, data } payloads, read the way the Angular adapters read them. A React state_update variant and the a2ui-partial bridge remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#AgentError",
@@ -5330,7 +5331,8 @@
         "T04"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Both framework-neutral runtime sessions expose custom events through the optional core AgentSession.onCustomEvent listener as owned plain { name, data } payloads, read the way the Angular adapters read them. A React state_update variant and the a2ui-partial bridge remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#AgentInterrupt",
