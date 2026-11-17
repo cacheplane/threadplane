@@ -33,7 +33,27 @@ The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation
 
 Choose **Run** and select **Dark**, **Light**, **Ocean** or **Forest**. The palette changes a class on this chat root. It preserves the same application owner, exact unsent draft, messages and active conversation during streaming and saved-history confirmation. Palette changes make no runtime requests, cancel no work and do not change the document theme. A second chat root can choose independently; reload restores Dark.
 
-The eight React chat CSS tokens are **--tp-chat-text**, **--tp-chat-muted**, **--tp-chat-border**, **--tp-chat-surface**, **--tp-chat-accent**, **--tp-chat-on-accent**, **--tp-chat-danger** and **--tp-chat-gap**. These local presets demonstrate this composed React surface. The Angular guide retains its framework-specific token API.
+The eight React chat CSS tokens are **--tp-chat-text**, **--tp-chat-muted**, **--tp-chat-border**, **--tp-chat-surface**, **--tp-chat-accent**, **--tp-chat-on-accent**, **--tp-chat-danger** and **--tp-chat-gap**. These local presets demonstrate this composed React surface.
+
+## Reuse an Angular chat theme
+
+React chat also reads the Angular chat token names. A stylesheet that sets `--tplane-chat-*` properties on `:root` restyles React chat the same way it restyles Angular chat, so one theme serves both frameworks. Each React token reads its Angular name first and falls back to its own default, and a `--tp-chat-*` value set on a chat root still wins over the shared theme.
+
+| Angular token | React token or use |
+| --- | --- |
+| `--tplane-chat-text`, `--tplane-chat-text-muted`, `--tplane-chat-separator` | `--tp-chat-text`, `--tp-chat-muted`, `--tp-chat-border` |
+| `--tplane-chat-bg`, `--tplane-chat-surface`, `--tplane-chat-surface-alt` | `--tp-chat-bg`, `--tp-chat-surface`, `--tp-chat-surface-alt` |
+| `--tplane-chat-primary`, `--tplane-chat-on-primary` | `--tp-chat-accent`, `--tp-chat-on-accent`, and the user bubble (`--tp-chat-user-bg`, `--tp-chat-user-text`) |
+| `--tplane-chat-error-text` | `--tp-chat-danger` |
+| `--tplane-chat-error-*`, `--tplane-chat-warning-*`, `--tplane-chat-success-*` | Status panels, approvals and subagent status labels |
+| `--tplane-chat-destructive`, `--tplane-chat-on-destructive` | The destructive approval action |
+| `--tplane-chat-focus-ring` | Every focus ring, including A2UI controls |
+| `--tplane-chat-elevation-float`, `--tplane-chat-scrim` | Menus, dialogs, the launcher, the debug panel, and dialog backdrops |
+| `--tplane-chat-motion-duration`, `--tplane-chat-motion-ease` | Transitions |
+| `--tplane-chat-font-*`, `--tplane-chat-line-height*`, `--tplane-chat-radius-*`, `--tplane-chat-max-width` | Typography, corner radii and the reading width |
+| `--tplane-chat-citation-type-*-fg` | Source type colors for files, apps and memory |
+
+React chat does not inject the Angular default values, so a token that the theme does not set keeps the React default. React follows `color-scheme` for light and dark defaults. A theme that switches with `[data-theme="dark"]` must set its dark values under that selector, as it does for Angular.
 
 <ExampleCode file="cockpit/chat/theming/react/src/styles.css" />
 
