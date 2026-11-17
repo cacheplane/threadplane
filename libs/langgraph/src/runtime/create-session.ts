@@ -57,6 +57,12 @@ import {
   type LangGraphRunOptions,
 } from './run-options.js';
 export type { LangGraphRunOptions } from './run-options.js';
+export {
+  createLangGraphThreadDirectory,
+  type LangGraphThreadDirectoryOptions,
+  type LangGraphThreadsClient,
+} from './thread-directory.js';
+export type { ProjectStore } from './project-store.js';
 import {
   advanceCursor,
   captureRun,
