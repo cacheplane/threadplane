@@ -16,12 +16,9 @@ export interface BookingInvocation {
   readonly sourceRunId: string;
   readonly summary: string;
 }
-export type BookingPanel = BookingInvocation & { readonly token: string } & (
-  | { readonly status: 'pending' }
-  | { readonly status: 'resolved'; readonly confirmed: boolean }
-  | { readonly status: 'aborted' }
-);
-export interface ClientToolsSnapshot { readonly bookings: readonly BookingPanel[] }
+export interface BookingDecision { confirmed: boolean }
+/** The booking question as a function tool whose handler waits for the person's answer. */
+export type BookingAsk = FunctionTool<BookingArguments, BookingDecision>;
 
 function argumentsRecord(input: unknown, keys: readonly string[]): object {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid tool arguments');
@@ -76,32 +73,19 @@ function sameInvocation(left: BookingInvocation, right: BookingInvocation): bool
   return left.ownerGeneration === right.ownerGeneration && left.callId === right.callId &&
     left.assistantMessageId === right.assistantMessageId && left.sourceRunId === right.sourceRunId && left.summary === right.summary;
 }
-/** Owns business promises only. The native session supplies every protocol identity. */
-export function createClientToolsController(readCurrentBooking: () => BookingInvocation | undefined) {
+/**
+ * Owns business promises only. The native session supplies every protocol identity, and `ask`
+ * (the booking declared in booking.tsx) waits for the person's answer.
+ */
+export function createClientToolsController(readCurrentBooking: () => BookingInvocation | undefined, ask: BookingAsk) {
   let disposed = false;
-  let snapshot: ClientToolsSnapshot = Object.freeze({ bookings: Object.freeze([]) });
-  const listeners = new Set<() => void>();
   const cancellations = new Set<() => void>();
-  const pending = new Map<string, {
-    readonly signal: AbortSignal;
-    readonly identity: BookingInvocation;
-    readonly cancel: () => void;
-    readonly finish: (decision: boolean) => boolean;
-  }>();
+  // One native call is asked once, even after it was cancelled.
+  const asked: BookingInvocation[] = [];
+  // Disposal revokes a waiting booking, like Stop.
+  const disposal = new AbortController();
   function active(signal: AbortSignal) {
     if (disposed || signal.aborted) throw aborted();
-  }
-  function publish(row: BookingPanel) {
-    const existing = snapshot.bookings.some((entry) => entry.token === row.token);
-    snapshot = Object.freeze({ bookings: Object.freeze(existing
-      ? snapshot.bookings.map((entry) => entry.token === row.token ? row : entry)
-      : [...snapshot.bookings, row]) });
-    const publication = snapshot;
-    for (const notify of [...listeners]) {
-      if (disposed || snapshot !== publication) break;
-      // An observer cannot strand a tool promise or prevent other owned cleanup.
-      try { notify(); } catch { /* Consumers own their notification errors. */ }
-    }
   }
   function current(signal: AbortSignal): BookingInvocation | undefined {
     active(signal);
@@ -172,74 +156,26 @@ export function createClientToolsController(readCurrentBooking: () => BookingInv
       description: 'Ask for an explicit fictional booking decision. No real reservation is made.', followUp: true,
       parameters: Object.freeze({ type: 'object', additionalProperties: false, required: Object.freeze(['summary']),
         properties: Object.freeze({ summary: Object.freeze({ type: 'string', minLength: 1 }) }) }),
+      // Check the arguments and the native call first, so the card only ever shows an admitted booking.
       async handler(input: BookingArguments, { signal }) {
         active(signal); const { summary } = validateBookingArguments(input); active(signal);
         let identity: BookingInvocation | undefined;
         try { identity = current(signal); } catch (error) { if (signal.aborted || disposed) throw aborted(); throw new Error('Booking invocation unavailable', { cause: error }); }
-        if (!identity || identity.summary !== summary || snapshot.bookings.some((entry) => sameInvocation(entry, identity))) {
+        if (!identity || identity.summary !== summary || asked.some((entry) => sameInvocation(entry, identity))) {
           throw new Error('Booking invocation unavailable');
         }
-        const captured = identity;
-        // This UUID is app control authority, never a native call/message/run identity.
-        const token = crypto.randomUUID();
-        const row: BookingPanel = Object.freeze({ ...captured, token, status: 'pending' });
-        const result = new Promise<{ confirmed: boolean }>((resolve, reject) => {
-          let finished = false;
-          const cleanup = () => { pending.delete(token); cancellations.delete(cancel); signal.removeEventListener('abort', cancel); };
-          const cancel = () => {
-            if (finished) return;
-            finished = true; cleanup();
-            publish(Object.freeze({ ...captured, token, status: 'aborted' })); reject(aborted());
-          };
-          pending.set(token, { identity: captured, signal, cancel, finish(decision) {
-            if (finished || disposed || signal.aborted) return false;
-            // Consume authority before notification; reentrant controls cannot win twice.
-            pending.delete(token);
-            publish(Object.freeze({ ...captured, token, status: 'resolved', confirmed: decision }));
-            if (finished || disposed || signal.aborted) { cancel(); return false; }
-            // Notifications may revoke the native call without aborting its signal yet.
-            let latest: BookingInvocation | undefined;
-            try { latest = current(signal); } catch { cancel(); return false; }
-            if (!latest || !sameInvocation(captured, latest)) { cancel(); return false; }
-            finished = true; cleanup(); resolve({ confirmed: decision }); return true;
-          } });
-          cancellations.add(cancel); signal.addEventListener('abort', cancel, { once: true });
-          publish(row);
-          if (disposed || signal.aborted) cancel();
-          if (!finished) {
-            let latest: BookingInvocation | undefined;
-            try { latest = current(signal); } catch { cancel(); }
-            if (!latest || !sameInvocation(captured, latest)) cancel();
-          }
-        });
-        // Observe rejection immediately even when native consumers attach after publication.
-        void result.catch(() => undefined);
-        return result;
+        asked.push(identity);
+        return ask.handler({ summary }, { signal: AbortSignal.any([signal, disposal.signal]) });
       },
-    } satisfies FunctionTool<BookingArguments, { confirmed: boolean }>),
+    } satisfies BookingAsk),
   });
   return Object.freeze({
     tools,
-    getSnapshot: () => snapshot,
-    subscribe(notify: () => void) {
-      if (disposed) return () => undefined;
-      listeners.add(notify); return () => { listeners.delete(notify); };
-    },
-    respond(token: string, decision: boolean): boolean {
-      const request = pending.get(token);
-      if (!request || disposed || request.signal.aborted || typeof decision !== 'boolean') return false;
-      let latest: BookingInvocation | undefined;
-      try { latest = current(request.signal); } catch { request.cancel(); return false; }
-      if (!latest || !sameInvocation(request.identity, latest) || disposed || request.signal.aborted) {
-        request.cancel(); return false;
-      }
-      return request.finish(decision);
-    },
     dispose() {
       if (disposed) return;
-      disposed = true; listeners.clear();
+      disposed = true;
       for (const cancel of [...cancellations]) cancel();
-      pending.clear();
+      disposal.abort();
     },
   });
 }

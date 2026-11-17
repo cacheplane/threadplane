@@ -4,7 +4,7 @@ Five browser tools demonstrate simulated weather, a cancellable status check, an
 
 ## Execute a typed browser catalog
 
-Choose **Run**. Each of the six example prompts sends its question, or type your own and choose **Send**. **get_weather** returns a fixed simulated reading. **slow_status_check** waits three seconds and supports **Stop**. **weather_card** renders a local reading and follows up. **weather_snapshot** renders the same reading without an automatic follow-up. **confirm_booking** waits in an approval card for **Confirm booking** or a cancel action. **Plan a trip** checks the weather and asks for the booking in one turn. No tool fetches real weather or makes a real reservation.
+Choose **Run**. Each of the six example prompts sends its question, or type your own and choose **Send**. **get_weather** returns a fixed simulated reading. **slow_status_check** waits three seconds and supports **Stop**. **weather_card** renders a local reading and follows up. **weather_snapshot** renders the same reading without an automatic follow-up. **confirm_booking** waits in a card below its call for **Confirm booking** or a cancel action. **Plan a trip** checks the weather and asks for the booking in one turn. No tool fetches real weather or makes a real reservation.
 
 Source: `cockpit/ag-ui/client-tools/react/src/tools.ts`
 
@@ -24,7 +24,9 @@ Source: `cockpit/ag-ui/client-tools/react/src/projection.ts`
 
 Source: `cockpit/ag-ui/client-tools/react/src/weather-card.tsx`
 
-A fictional booking resolves a browser promise through your explicit decision. This is separate from a native agent pause/resume. The booking waits in the `<Chat>` approval slot as an **ApprovalCard** at the end of the transcript, and the composer asks you to answer it first. An answer the application admits stays in the transcript as a one-line record. Once resolved, stopped, replaced, or unmounted, the card cannot make another decision.
+A fictional booking resolves a browser promise through your explicit decision. This is separate from a native agent pause/resume. The booking is an **ask** tool from `@threadplane/react/chat`: `createClientTools` turns it into a function tool whose handler waits for the answer, and `<Chat clientTools>` draws its **ApprovalCard** below the message's tool calls while the call keeps its running row. The application checks the arguments and the native call before the question is asked. The composer asks you to answer the booking first, and an answer the booking admits stays in the transcript as a one-line record. Once resolved, stopped, replaced, or unmounted, the card cannot make another decision.
+
+Source: `cockpit/ag-ui/client-tools/react/src/booking.tsx`
 
 When a turn requests more than one call, the graph writes a **todos** list to its state, and the session publishes it as the plan. While the trip waits for the booking, the running tool group lists the plan's pending steps, such as **Summarize the results**.
 

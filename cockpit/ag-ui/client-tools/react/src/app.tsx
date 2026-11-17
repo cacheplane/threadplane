@@ -3,17 +3,17 @@ import { ExampleLayout } from '../../../../shared/react-example';
 import { useCallback, useEffect, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
-  ApprovalCard,
   Chat,
+  usePendingClientToolCalls,
   type ApprovalRecordEntry,
   type ToolActivityInfo,
 } from '@threadplane/react/chat';
+import { BookingAnswered } from './booking';
 import {
   createConnectedApplication,
   type ClientToolsConnection,
 } from './connection';
 import { WeatherCard } from './weather-card';
-import type { BookingPanel } from './tools';
 const prompts = Object.freeze([
   {
     label: 'Weather result',
@@ -63,15 +63,17 @@ export function ClientToolsDemo({
   useEffect(() => {
     setRecords([]);
   }, [snapshot.viewGeneration]);
-  function decide(row: BookingPanel, confirmed: boolean) {
-    const afterId = application.agent.getSnapshot().messages.at(-1)?.id;
-    // Record only a decision the application admitted.
-    if (!application.respond(row.token, confirmed)) return;
-    setRecords((previous) => [
-      ...previous,
-      { afterId, verdict: confirmed ? 'approved' : 'declined', label: 'Booking' },
-    ]);
-  }
+  // The card reports an answer the booking admitted.
+  const answered = useCallback(
+    (confirmed: boolean) => {
+      const afterId = application.agent.getSnapshot().messages.at(-1)?.id;
+      setRecords((previous) => [
+        ...previous,
+        { afterId, verdict: confirmed ? 'approved' : 'declined', label: 'Booking' },
+      ]);
+    },
+    [application]
+  );
   // Local execution evidence and a validated weather reading under each call.
   const { views } = snapshot;
   const renderToolResult = useCallback(
@@ -94,11 +96,11 @@ export function ClientToolsDemo({
     },
     [views]
   );
-  const pending = snapshot.bookings.filter((row) => row.status === 'pending');
+  const asked = usePendingClientToolCalls(application.clientTools).length > 0;
   const status = snapshot.busy
     ? snapshot.activity === 'replacing'
       ? 'Starting a new conversation…'
-      : pending.length
+      : asked
       ? 'Waiting for your fictional booking decision…'
       : 'Running client tools…'
     : !snapshot.canSubmit
@@ -142,37 +144,20 @@ export function ClientToolsDemo({
       </div>
       {/*
         Chat owns the transcript, the progress view and the composer. The
-        application is its session; a booking waits at the end of the
-        transcript through the approval slot, which also hints the composer
-        and returns focus to it once the composer is enabled again.
+        application is its session; `clientTools` draws a waiting booking
+        below its call, which keeps its row and progress, and returns focus
+        to the composer once the booking is answered and it is enabled again.
       */}
+      <BookingAnswered.Provider value={answered}>
       <Chat
         session={application.agent}
+        clientTools={application.clientTools}
         className="client-tools-chat"
         label="Message"
-        placeholder="Try an example prompt…"
+        placeholder={asked ? 'Answer the booking to continue' : 'Try an example prompt…'}
         disabled={!snapshot.canSubmit}
         renderToolResult={renderToolResult}
         approvalRecords={records}
-        approval={
-          pending.length
-            ? pending.map((row, index) => (
-                <ApprovalCard
-                  key={row.token}
-                  title="Confirm this fictional booking?"
-                  disabled={!snapshot.busy}
-                  autoFocus={index === 0}
-                  actions={[
-                    { id: 'confirm', label: 'Confirm booking', onSelect: () => decide(row, true) },
-                    { id: 'cancel', label: "Don't book", onSelect: () => decide(row, false) },
-                  ]}
-                >
-                  <p>{row.summary}</p>
-                  <p>No real reservation is made.</p>
-                </ApprovalCard>
-              ))
-            : undefined
-        }
         inputFooter={
           <>
             {snapshot.error && <p role="alert">{snapshot.error}</p>}
@@ -180,6 +165,7 @@ export function ClientToolsDemo({
           </>
         }
       />
+      </BookingAnswered.Provider>
     </ExampleLayout>
   );
 }

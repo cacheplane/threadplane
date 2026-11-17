@@ -1,37 +1,43 @@
 /*
- * @threadplane/chat — Material Design 3 dark theme
+ * @threadplane/chat: Material Design 3 dark A2UI palette
  *
- * Maps Google's Material Design 3 dark color tokens (m3.material.io)
- * into the @threadplane/chat token vocabulary. No `@angular/material` runtime
- * dependency — pure CSS custom-property declarations.
+ * Material Design 3 dark colour tokens (m3.material.io) mapped onto the A2UI
+ * token names. Plain custom properties; there is no `@angular/material`
+ * dependency. Shape and elevation keep the chat defaults.
  *
- * Color values from the Material Design 3 spec
- * (https://m3.material.io/styles/color/the-color-system/tokens).
+ * This file sets the `--a2ui-*` colour and elevation tokens that agent-rendered
+ * A2UI surfaces read. It does not change the chat's own `--tplane-chat-*`
+ * tokens, and it pins the surface palette: A2UI surfaces stop following
+ * `prefers-color-scheme` and the `data-theme` attribute once it is imported.
+ * Pair it with a chat in the same scheme.
+ *
+ * An agent's own `theme.primaryColor` still overrides `--a2ui-primary` on its
+ * surface.
  *
  * Usage in your global stylesheet:
  *   @import '@threadplane/chat/themes/material-dark.css';
  */
 :root {
-  /* === Color (M3 dark) === */
-  --a2ui-primary: #D0BCFF;
-  --a2ui-on-primary: #381E72;
-  --a2ui-primary-hover: #B69DF8;
-  --a2ui-secondary: #CCC2DC;
-  --a2ui-on-secondary: #332D41;
-  --a2ui-surface: #1C1B1F;
-  --a2ui-on-surface: #E6E1E5;
-  --a2ui-surface-variant: #49454F;
-  --a2ui-on-surface-variant: #CAC4D0;
-  --a2ui-outline: #938F99;
-  --a2ui-outline-variant: #49454F;
-  --a2ui-error: #F2B8B5;
+  /* Colour */
+  --a2ui-primary: #d0bcff;
+  --a2ui-on-primary: #381e72;
+  --a2ui-primary-hover: #b69df8;
+  --a2ui-secondary: #ccc2dc;
+  --a2ui-on-secondary: #332d41;
+  --a2ui-surface: #1c1b1f;
+  --a2ui-on-surface: #e6e1e5;
+  --a2ui-surface-variant: #49454f;
+  --a2ui-on-surface-variant: #cac4d0;
+  --a2ui-outline: #938f99;
+  --a2ui-outline-variant: #49454f;
+  --a2ui-error: #f2b8b5;
   --a2ui-on-error: #601410;
   --a2ui-scrim: rgba(0, 0, 0, 0.6);
 
-  /* === Shape (M3 favors slightly larger radii) === */
-  --a2ui-shape-extra-small: 4px;
-  --a2ui-shape-small: 8px;
-  --a2ui-shape-medium: 12px;
-  --a2ui-shape-large: 16px;
-  --a2ui-shape-extra-large: 28px;
+  /* Elevation */
+  --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --a2ui-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.35);
+  --a2ui-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --a2ui-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.45);
+  --a2ui-elevation-5: 0 16px 32px rgba(0, 0, 0, 0.5);
 }

@@ -411,7 +411,29 @@ actions. Each action has a unique `id`, `label`, `onSelect` callback and optiona
 `disabled` flag. The card's `disabled` flag disables all actions. Clicking does
 not hide or consume the card; the app owns interrupt matching, decision tokens,
 pending/error state and command handling. Async callbacks must handle their own
-rejections. The card adds no modal, focus management, timer or session lifecycle.
+rejections. The inline card adds no modal, timer or session lifecycle.
+
+Pass `presentation="dialog"` to show the same content as a modal over the page
+for as long as the card is mounted. Focus moves to the first action, the rest
+of the page is inert, and focus returns to where it was when you unmount the
+card. Escape calls `onDismiss`, where you answer the request (usually as a
+decline); without it Escape does nothing. In `Chat`'s `approval` slot the
+composer still reads "Answer the approval to continue" and takes focus back
+once the approval clears.
+
+```tsx
+<ApprovalCard
+  presentation="dialog"
+  title="Save the note?"
+  onDismiss={decline}
+  actions={[
+    { id: 'approve', label: 'Save note', onSelect: approve },
+    { id: 'decline', label: "Don't save", onSelect: decline },
+  ]}
+>
+  <p>{reason}</p>
+</ApprovalCard>
+```
 
 ```tsx
 import { ApprovalCard } from '@threadplane/react/chat';
@@ -693,7 +715,18 @@ and reports each change, with `null` when the current rating is pressed again.
 Storing ratings and restoring them after a reload is yours; for a rating you
 control, render `MessageRating` from `renderMessage`. A message that is still
 streaming, a user message, and a row drawn by `renderMessage` get no actions.
-Regenerate is not included because `AgentSession` has no command for it.
+
+Regenerate appears beside Copy when `messageActions` is set and the session has
+the optional `regenerate` command. `Chat` calls `session.regenerate(messageId)`
+and ignores a rejection; the button is disabled while a response is running. A
+session without the command gets no button. To handle the action yourself, on
+`Chat` or on `MessageList`, pass `onRegenerate`:
+
+```tsx
+const actions = {
+  onRegenerate: (messageId: string) => rerun(messageId),
+};
+```
 
 ### Generated UI in the transcript
 
@@ -717,9 +750,30 @@ in until the root element has arrived, then each element appears as its JSON
 finishes, and views receive `loading` until the message completes. The spec's
 own `state` feeds its bindings; a prop written `{ "statePath": "/x" }` is read
 as a state binding. `functions` and `fallback` pass through to `RenderSpec`,
-and `skeletonLabel` replaces the placeholder text. The tree is read-only.
+and `skeletonLabel` replaces the placeholder text.
 Finished content that is not a spec stays text, and a view that throws gives
 way to the message text instead of taking the transcript down.
+
+The tree is read-only until you set `handlers`, `store` or `onRenderEvent`.
+With any of them, views get `emit` and `set`, as they do from `RenderSpec` with
+a `store`:
+
+```tsx
+const generativeUi: MessageGenerativeUi = {
+  registry,
+  handlers: { book: ({ guest }) => bookTrip(String(guest)) },
+  onRenderEvent: ({ messageId, event }) => console.log(messageId, event.type),
+};
+```
+
+`handlers` are the actions a spec's `on` bindings may run; a binding that names
+an action you did not supply does nothing. Each message keeps state of its own,
+seeded from its spec's `state` when that finishes streaming and dropped with
+its row, so two messages with the same spec do not share edits. Pass `store`
+(for example `createRenderState()` from `@threadplane/content/render-state`) to
+own the state yourself: every spec then reads and writes that one store, and a
+spec's own `state` is not applied. `onRenderEvent` reports each action, state
+write and reported result with the ID of the message it came from.
 
 With `renderA2ui`, an assistant message whose content starts with
 `---a2ui_JSON---` is handed to your function as `{ messageId, source,
@@ -752,6 +806,22 @@ appears. The composer is the same element before and after, so a draft and
 focus survive, and when a chosen suggestion disappears with the greeting, focus
 moves to the composer. It is off unless set, and `--tp-welcome-max-width`,
 `--tp-welcome-gap` and `--tp-welcome-padding` adjust it.
+
+Pass `threads` to list conversations in a sidebar beside the chat, with
+`activeThreadId` and `onThreadSelect` to mark and switch them. The sidebar
+shows on viewports at least 768px wide. Passing the prop, even as an empty
+array, wraps the chat in a `tp-chat-shell` row, so a list that loads later
+never remounts the composer. For row actions, projects or a collapsible
+sidebar, compose `ChatSidenav` instead.
+
+```tsx
+<Chat
+  session={session}
+  threads={threads}
+  activeThreadId={threadId}
+  onThreadSelect={selectThread}
+/>
+```
 
 `WelcomeSuggestion` requires literal `label`, exact string `value` and
 `onSelect(value)`. Its native `type="button"` never submits a surrounding form;
@@ -927,7 +997,10 @@ Report the failure from your command; the list does not show an error itself.
 - **Pin** or **Unpin** is offered according to the row's `pinned` value. With
   `reorderPinned`, pinned rows also get **Move up** and **Move down**; the
   command receives the ID of the pinned row to place it before, or `null` for
-  last. The list keeps your order and does not sort pinned rows itself.
+  last. Pinned rows can also be dragged with a mouse onto another pinned row:
+  a line shows whether the row lands before or after it, and the drop calls
+  the same command. Keyboard and touch users keep **Move up** and **Move
+  down**. The list keeps your order and does not sort pinned rows itself.
 - **Move to project** is offered when you also pass `projects`. The open menu
   swaps to **No project** and your projects, and `moveToProject` receives the
   chosen project ID or `null`. The row stays in place until you update `threads`.
@@ -1277,6 +1350,35 @@ shell accepts application-owned navigation as `children`:
   </ChatSidenav>
 </>
 ```
+
+`ChatSidenavSections` is the usual content for that slot: a **New chat**
+button, **Projects**, **Recent** and a collapsed **Archived** section, built
+from `ProjectList` and `ThreadList`.
+
+```tsx
+<ChatSidenav mode={mode} open={drawerOpen} onModeChange={setDesktopMode} onOpenChange={setDrawerOpen}>
+  <ChatSidenavSections
+    onNewChat={startThread}
+    threads={threads}
+    archivedThreads={archived}
+    activeThreadId={threadId}
+    onThreadSelect={selectThread}
+    threadActions={threadActions}
+    projects={projects}
+    selectedProjectId={projectId}
+    onProjectSelect={selectProject}
+    projectActions={projectActions}
+  />
+</ChatSidenav>
+```
+
+Each section appears only when its data is supplied (`null` or absent omits
+it), and **New chat** only with `onNewChat`. The lists stay controlled: you own
+the data and what selecting or acting on a row does. `projects` are also
+offered as **Move to project** destinations. Archived conversations stay
+unmounted until the section is opened, and an empty one reads "No archived
+conversations." Label props replace the built-in headings, and `children`
+render after the sections. Search and collapse stay on `ChatSidenav`.
 
 Required `mode` selects `expanded`, `collapsed` or `drawer`; `open` controls only
 the drawer. Expanded and collapsed navigation stay in normal flow at 18rem and
@@ -1835,6 +1937,22 @@ export function Surfaces({ snapshot }: { readonly snapshot: A2uiSurfacesSnapshot
   ));
 }
 ```
+
+The base stylesheet follows the system colour scheme. To fix the palette, also
+import one of the four theme files, in either order:
+
+```tsx
+import '@threadplane/react/a2ui/styles.css';
+import '@threadplane/react/a2ui/themes/material-light.css';
+```
+
+`default-light.css`, `default-dark.css`, `material-light.css` and
+`material-dark.css` set the colour and shadow tokens on every
+`.a2ui-surface`, so surfaces stop following the system colour scheme. The two
+default files repeat the base stylesheet's own light and dark values. The Material files use the Material Design 3 colour tokens and
+add no dependency. An agent's own `theme.primaryColor` still overrides the
+primary colour on its surface. To theme one part of the page differently, set
+the `--a2ui-*` custom properties on a wrapper yourself.
 
 `a2uiBasicCatalog()` returns `Text`, `Image`, `Icon`, `Video`, `AudioPlayer`,
 `Row`, `Column`, `List`, `Card`, `Divider`, `Tabs`, `Modal`, `TextField`,

@@ -1040,7 +1040,7 @@ for (const [name, entry, files] of [
 });
 test('React chat requires its real supported export', () => {
   const component = () => undefined;
-  const supported = { Trace: component, LauncherButton: component, ChatWindow: component, Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
+  const supported = { Trace: component, LauncherButton: component, ChatWindow: component, Welcome: component, WelcomeSuggestion: component, Timeline: component, HistorySearchPalette: component, ProjectNameForm: component, ProjectList: component, OverflowMenu: component, ApprovalCard: component, Chat: component, ChatPopup: component, ChatSidebar: component, ChatSidenav: component, ChatSidenavScrim: component, ChatSidenavSections: component, ChatInput: component, Citations: component, MessageList: component, MessageActions: component, Reasoning: component, TextTranscript: component, ToolObservation: component, ThreadList: component, ThreadRenameForm: component, ConfirmDialog: component };
   supported.Suggestions = component;
   supported.Select = component;
   supported.MessageRating = component;
@@ -1062,6 +1062,7 @@ test('React chat requires its real supported export', () => {
   supported.ChatMessage = component;
   supported.isTyping = component;
   supported.ApprovalRecord = component;
+  for (const name of ['ask', 'createClientTools', 'useClientToolCalls', 'usePendingClientToolCalls']) supported[name] = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;

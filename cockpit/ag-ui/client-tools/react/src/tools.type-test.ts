@@ -1,11 +1,13 @@
 import { createSession } from '@threadplane/ag-ui';
 import type { ClientToolCall } from '@threadplane/ag-ui';
 import type { ToolContracts } from '@threadplane/core/tools';
-import { createClientToolsController } from './tools';
+import { createClientToolsController, type BookingAsk } from './tools';
+
+declare const ask: BookingAsk;
 
 /** Compile-only checks against the actual native generic declaration boundary. */
 export function checkToolDeclarations() {
-  const controller = createClientToolsController(() => undefined);
+  const controller = createClientToolsController(() => undefined, ask);
   const session = createSession({ threadId: 'compile-only', url: 'http://127.0.0.1:1', interruptMode: 'native' }, controller.tools);
   const calls = session.getSnapshot().clientTools.calls;
   const typed: readonly ClientToolCall<ToolContracts<typeof controller.tools>>[] = calls;

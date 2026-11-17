@@ -64,6 +64,10 @@
       "import": "./src/a2ui/index.js",
       "default": "./src/a2ui/index.js"
     },
-    "./a2ui/styles.css": "./src/a2ui/styles.css"
+    "./a2ui/styles.css": "./src/a2ui/styles.css",
+    "./a2ui/themes/default-light.css": "./src/a2ui/themes/default-light.css",
+    "./a2ui/themes/default-dark.css": "./src/a2ui/themes/default-dark.css",
+    "./a2ui/themes/material-light.css": "./src/a2ui/themes/material-light.css",
+    "./a2ui/themes/material-dark.css": "./src/a2ui/themes/material-dark.css"
   }
 }
