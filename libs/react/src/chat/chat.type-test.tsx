@@ -56,6 +56,14 @@ ok.className = 'x';
 />;
 <Chat
   session={session}
+  renderMessageActivity={({ row, toolCalls, subagents }) =>
+    toolCalls.length + subagents.length > 0 ? <p>{row.id}</p> : undefined
+  }
+/>;
+// @ts-expect-error Message activity is a render function, not content.
+<Chat session={session} renderMessageActivity={<p />} />;
+<Chat
+  session={session}
   threads={[{ id: 'a', title: 'Alpha' }]}
   activeThreadId="a"
   onThreadSelect={(threadId: string) => void threadId}

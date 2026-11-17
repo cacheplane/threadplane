@@ -103,6 +103,7 @@ export {
 } from './chat-input.js';
 export {
   MessageList,
+  type MessageActivityContext,
   type MessageListProps,
   type MessageListRowContext,
   type MessageListScrollControls,
