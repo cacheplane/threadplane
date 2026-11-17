@@ -51,6 +51,14 @@ ok.className = 'x';
   // @ts-expect-error The run's messages are readonly.
   renderRunActivity={({ messages }) => messages.push(messages[0])}
 />;
+<Chat
+  session={session}
+  threads={[{ id: 'a', title: 'Alpha' }]}
+  activeThreadId="a"
+  onThreadSelect={(threadId: string) => void threadId}
+/>;
+// @ts-expect-error Conversations are row records, not IDs.
+<Chat session={session} threads={['a']} />;
 void missing;
 
 import type { ReactNode } from 'react';

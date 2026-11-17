@@ -1,22 +1,26 @@
 /*
- * @threadplane/chat — default dark theme
+ * @threadplane/chat: default dark A2UI palette
  *
- * The lib's `:host` defaults on `<a2ui-surface>` already declare these
- * exact values — this preset is a no-op @import for symmetry/docs and
- * for consumers who want their `:root` to make the choice explicit.
+ * The values the chat already uses for A2UI surfaces in the dark scheme. Import
+ * it to keep surfaces dark when the rest of the page is light.
+ *
+ * This file sets the `--a2ui-*` colour and elevation tokens that agent-rendered
+ * A2UI surfaces read. It does not change the chat's own `--tplane-chat-*`
+ * tokens, and it pins the surface palette: A2UI surfaces stop following
+ * `prefers-color-scheme` and the `data-theme` attribute once it is imported.
+ * Pair it with a chat in the same scheme.
+ *
+ * An agent's own `theme.primaryColor` still overrides `--a2ui-primary` on its
+ * surface.
  *
  * Usage in your global stylesheet:
  *   @import '@threadplane/chat/themes/default-dark.css';
- *
- * The agent's `beginRendering.styles.primaryColor` continues to override
- * `--a2ui-primary` per surface (host inline-style binding, highest
- * specificity).
  */
 :root {
-  /* === Color (dark, blue accent) === */
-  --a2ui-primary: #4f8df5;
-  --a2ui-on-primary: #ffffff;
-  --a2ui-primary-hover: #6699f7;
+  /* Colour */
+  --a2ui-primary: #8ab4ff;
+  --a2ui-on-primary: #0b1220;
+  --a2ui-primary-hover: #a9c7ff;
   --a2ui-secondary: #8a92a3;
   --a2ui-on-secondary: #ffffff;
   --a2ui-surface: #1a1d23;
@@ -28,4 +32,11 @@
   --a2ui-error: #f5524f;
   --a2ui-on-error: #ffffff;
   --a2ui-scrim: rgba(0, 0, 0, 0.6);
+
+  /* Elevation */
+  --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --a2ui-elevation-2: 0 2px 4px rgba(0, 0, 0, 0.35);
+  --a2ui-elevation-3: 0 4px 8px rgba(0, 0, 0, 0.4);
+  --a2ui-elevation-4: 0 8px 16px rgba(0, 0, 0, 0.45);
+  --a2ui-elevation-5: 0 16px 32px rgba(0, 0, 0, 0.5);
 }

@@ -1,19 +1,25 @@
 'use client';
 import {
   Component,
+  useCallback,
   useMemo,
+  useRef,
   type ComponentType,
   type ReactNode,
 } from 'react';
 import { createJson, type JsonNode } from '@threadplane/content/json';
+import { createRenderState } from '@threadplane/content/render-state';
 import type { MessageRow } from '@threadplane/content/messages';
 import {
   RenderSpec,
   type ReactRenderFunctions,
+  type ReactRenderHandlers,
   type ReactRenderRegistry,
   type RenderElementData,
+  type RenderEvent,
   type RenderSpecData,
   type RenderSpecProps,
+  type RenderStore,
   type RenderViewProps,
 } from '../render/index.js';
 import { GenerativeUiSkeleton } from './genui-skeleton.js';
@@ -33,6 +39,13 @@ export interface MessageA2uiContent {
   readonly skeleton: ReactNode;
 }
 
+/** Something that happened in one message's spec tree, handed to `MessageGenerativeUi.onRenderEvent`. */
+export interface MessageRenderEvent {
+  readonly messageId: string;
+  /** An action that ran, a state write, or a value a view reported; see `RenderEvent`. */
+  readonly event: RenderEvent;
+}
+
 /**
  * Turns on generated UI inside the transcript. Each part is separate: an
  * assistant message is rendered as a surface only for the kinds configured
@@ -43,13 +56,28 @@ export interface MessageGenerativeUi {
    * Views by component name. With it, an assistant message whose content is a
    * json-render spec (`{ "root": …, "elements": … }`) renders as that tree in
    * place of its text. Elements appear as each one finishes streaming, and a
-   * placeholder stands in until the root element has. The tree is read-only.
+   * placeholder stands in until the root element has. The tree is read-only
+   * unless `handlers`, `store` or `onRenderEvent` is set.
    */
   readonly registry?: ReactRenderRegistry;
   /** Computed functions for spec props; see `RenderSpecProps.functions`. */
   readonly functions?: ReactRenderFunctions;
   /** Rendered for a spec component the registry lacks; see `RenderSpecProps.fallback`. */
   readonly fallback?: ComponentType<RenderViewProps>;
+  /**
+   * Actions a spec's `on` bindings may run; see `RenderSpecProps.handlers`. A
+   * binding that names an action missing here does nothing. Setting this
+   * makes spec trees interactive: views get `emit`, and `set` to write state.
+   */
+  readonly handlers?: ReactRenderHandlers;
+  /**
+   * One state owner shared by every spec in the transcript, in place of each
+   * spec's own `state`. Without it, an interactive spec keeps state of its
+   * own, seeded from its `state` and dropped with its row.
+   */
+  readonly store?: RenderStore;
+  /** Notified when a spec's action runs, its state changes, or a view reports a result. */
+  readonly onRenderEvent?: (event: MessageRenderEvent) => void;
   /**
    * Renders an assistant message whose content starts with the
    * `---a2ui_JSON---` marker, in place of its text. The application parses
@@ -137,7 +165,7 @@ function renderable(
   const elements: Record<string, RenderElementData> = Object.create(null);
   for (const [id, node] of Object.entries(nodes.children)) {
     if (node.kind !== 'object' || node.status !== 'complete') continue;
-    const { type, children, visible, repeat } = node.value;
+    const { type, children, visible, repeat, on } = node.value;
     if (typeof type !== 'string') continue;
     elements[id] = {
       type,
@@ -149,6 +177,7 @@ function renderable(
       ...(record(repeat) && typeof repeat['statePath'] === 'string'
         ? { repeat }
         : {}),
+      ...(record(on) ? { on } : {}),
     } as RenderElementData;
   }
   if (!Object.hasOwn(elements, key.value)) return null;
@@ -214,22 +243,53 @@ function SpecSurface({
     json.dispose();
     return renderable(root);
   }, [content, delivery.generation, delivery.phase]);
+  const { handlers, onRenderEvent } = options;
+  const interactive =
+    handlers !== undefined ||
+    options.store !== undefined ||
+    onRenderEvent !== undefined;
+  // A spec's own state arrives once, when its `state` object finishes.
+  const seed = tree?.state;
+  const seeded = seed !== undefined;
+  const own = useRef<{ readonly seeded: boolean; readonly store: RenderStore }>(
+    undefined
+  );
+  let store = options.store;
+  if (interactive && store === undefined) {
+    if (own.current?.seeded !== seeded)
+      own.current = { seeded, store: createRenderState(seed) };
+    store = own.current.store;
+  }
+  const messageId = row.message.id;
+  const onEvent = useCallback(
+    (event: RenderEvent) => onRenderEvent?.({ messageId, event }),
+    [onRenderEvent, messageId]
+  );
   // Finished content that is not a spec after all is ordinary text.
   if (tree === null) return streaming ? skeleton : text;
+  const shared = {
+    spec: tree.spec,
+    registry: options.registry,
+    functions: options.functions,
+    fallback: options.fallback,
+    loading: streaming,
+  };
   return (
     <div
       className="tp-chat-generative-ui"
       data-kind="spec"
       data-streaming={String(streaming)}
     >
-      <RenderSpec
-        spec={tree.spec}
-        registry={options.registry}
-        state={tree.state}
-        functions={options.functions}
-        fallback={options.fallback}
-        loading={streaming}
-      />
+      {store === undefined ? (
+        <RenderSpec {...shared} state={tree.state} />
+      ) : (
+        <RenderSpec
+          {...shared}
+          store={store}
+          handlers={handlers}
+          onEvent={onRenderEvent === undefined ? undefined : onEvent}
+        />
+      )}
     </div>
   );
 }

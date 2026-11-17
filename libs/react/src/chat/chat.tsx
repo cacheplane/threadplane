@@ -15,6 +15,11 @@ import {
   type ChatInputHandle,
   type ChatInputProps,
 } from './chat-input.js';
+import {
+  useClientToolCalls,
+  usePendingClientToolCalls,
+  type ChatClientTools,
+} from './client-tools.js';
 import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
 import {
@@ -23,6 +28,7 @@ import {
   type MessageListProps,
 } from './message-list.js';
 import { ScrollBubble } from './scroll-bubble.js';
+import { ThreadList, type ThreadListItem } from './thread-list.js';
 
 /** Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options. */
 export interface ChatProps
@@ -50,12 +56,31 @@ export interface ChatProps
   /** App-owned presentation for one tool call; see `MessageListProps.renderToolCall`. Keep stable. */
   readonly renderToolCall?: MessageListProps['renderToolCall'];
   readonly renderToolResult?: MessageListProps['renderToolResult'];
+  /**
+   * Interactive client tools from `createClientTools`. While one of its calls waits for the person,
+   * its view is drawn below the message's tool calls and the call keeps its row; the answer
+   * becomes the tool result, the view goes, and focus returns to the composer. The
+   * app passes `clientTools.tools` to the session; Chat never runs a tool. Off unless set.
+   */
+  readonly clientTools?: ChatClientTools;
   /** Child agents shown as subagent cards in place of the tool calls that started them. Keep stable. */
   readonly subagents?: MessageListProps['subagents'];
   /** Application-owned handler for a retry declared by `toolOutcome`; Chat never re-runs a call. Keep stable. */
   readonly onToolRetry?: MessageListProps['onToolRetry'];
   /** Explicit application-owned retry intent; Chat never replays a submission. */
   readonly onRetry?: () => void;
+  /**
+   * Conversations listed in a sidebar beside the chat, on viewports at least
+   * 768px wide. Passing the prop, even as an empty array, wraps the chat in a
+   * `tp-chat-shell` row; the sidebar appears once there are conversations.
+   * For row actions, projects or a collapsible sidebar, compose `ChatSidenav`
+   * instead.
+   */
+  readonly threads?: readonly ThreadListItem[];
+  /** The conversation marked as current in the `threads` sidebar. */
+  readonly activeThreadId?: string | null;
+  /** Called with the chosen conversation's ID; the app switches sessions. */
+  readonly onThreadSelect?: (threadId: string) => void;
   /** App-owned notice above the composer; see `ChatInputProps.banner`. */
   readonly inputBanner?: ChatInputProps['banner'];
   /** App-owned content above the input surface; see `ChatInputProps.attachments`. */
@@ -139,9 +164,13 @@ export function Chat({
   toolOutcome,
   renderToolCall,
   renderToolResult,
+  clientTools,
   subagents,
   onToolRetry,
   onRetry,
+  threads,
+  activeThreadId,
+  onThreadSelect = ignore,
   inputBanner,
   inputAttachments,
   inputLeading,
@@ -161,6 +190,18 @@ export function Chat({
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
+  // A session that can regenerate gets the built-in action, unless the app
+  // handles it itself. Built-in actions stay off until `messageActions` is set.
+  const actions = useMemo(() => {
+    if (!messageActions || !session.regenerate) return messageActions;
+    if (messageActions !== true && messageActions.onRegenerate) return messageActions;
+    return {
+      ...(messageActions === true ? {} : messageActions),
+      onRegenerate: (messageId: string) => {
+        session.regenerate?.(messageId).catch(ignore);
+      },
+    };
+  }, [messageActions, session]);
   // Stable so the current transcript row keeps its memo while work runs.
   const tracksStop = useRef(runStatus);
   tracksStop.current = runStatus;
@@ -191,17 +232,21 @@ export function Chat({
   const pending =
     approval !== undefined && approval !== null && approval !== false;
   const disabled = input.disabled ?? false;
-  const hadApproval = useRef(pending);
+  // An answered client tool leaves the transcript the same way.
+  const renderPrompt = useClientToolCalls(clientTools);
+  const asked = usePendingClientToolCalls(clientTools).length > 0;
+  const awaited = pending || asked;
+  const hadApproval = useRef(awaited);
   const focusOwed = useRef(false);
   useEffect(() => {
-    if (hadApproval.current && !pending) focusOwed.current = true;
-    if (pending) focusOwed.current = false;
-    hadApproval.current = pending;
+    if (hadApproval.current && !awaited) focusOwed.current = true;
+    if (awaited) focusOwed.current = false;
+    hadApproval.current = awaited;
     if (focusOwed.current && !disabled) {
       focusOwed.current = false;
       composer.current?.focus();
     }
-  }, [pending, disabled]);
+  }, [awaited, disabled]);
   const rows = useMessageContent(snapshot, session, content);
   // A failed call already shows these words, and the notice would add no action or detail of its own.
   // A custom renderMessage owns that display, so the notice stays whenever one is in use.
@@ -275,7 +320,7 @@ export function Chat({
     !runMessages.some((message) => message.role === 'assistant')
       ? renderRunActivity({ messages: runMessages })
       : null;
-  return (
+  const chat = (
     <div
       className={['tp-chat', greeting && 'tp-chat--welcome', className]
         .filter(Boolean)
@@ -298,6 +343,7 @@ export function Chat({
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
         renderToolCall={renderToolCall}
+        renderToolCallPrompt={renderPrompt}
         renderToolResult={renderToolResult}
         subagents={subagents}
         onToolRetry={onToolRetry}
@@ -305,7 +351,7 @@ export function Chat({
         onStop={snapshot.status === 'running' ? stop : undefined}
         running={snapshot.status === 'running'}
         approvalRecords={approvalRecords}
-        messageActions={messageActions}
+        messageActions={actions}
         math={math}
         generativeUi={generativeUi}
         markdownComponents={markdownComponents}
@@ -409,6 +455,22 @@ export function Chat({
           {suggestions}
         </div>
       )}
+    </div>
+  );
+  // The prop's presence, not its length, decides the wrapper, so a list that loads later never remounts the chat.
+  if (threads === undefined) return chat;
+  return (
+    <div className="tp-chat-shell">
+      {threads.length > 0 ? (
+        <aside className="tp-chat tp-chat-shell__sidebar">
+          <ThreadList
+            threads={threads}
+            activeThreadId={activeThreadId}
+            onSelect={onThreadSelect}
+          />
+        </aside>
+      ) : null}
+      {chat}
     </div>
   );
 }

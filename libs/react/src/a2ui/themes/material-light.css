@@ -1,0 +1,28 @@
+/*
+ * Material Design 3 light palette for A2UI surfaces rendered by @threadplane/react/a2ui.
+ *
+ * Import it with the base stylesheet, in either order:
+ *   import '@threadplane/react/a2ui/styles.css';
+ *   import '@threadplane/react/a2ui/themes/material-light.css';
+ *
+ * Material Design 3 light colour tokens; no Material dependency. Shadows keep the base light values.
+ * It pins the palette: surfaces stop following the system colour scheme.
+ * An agent's own `theme.primaryColor` still overrides the primary colour on
+ * its surface.
+ */
+:root .a2ui-surface {
+  color-scheme: light;
+  --a2ui-surface: #fffbfe;
+  --a2ui-on-surface: #1c1b1f;
+  --a2ui-on-surface-variant: #49454f;
+  --a2ui-outline: #79747e;
+  --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --a2ui-elevation-4: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --a2ui-primary: #6750a4;
+  --a2ui-error: #b3261e;
+  --a2ui-scrim: rgba(0, 0, 0, 0.4);
+  --a2ui-input-bg: #fffbfe;
+  --a2ui-on-primary: #ffffff;
+  --a2ui-primary-hover: #533f8e;
+  --a2ui-surface-variant: #e7e0ec;
+}

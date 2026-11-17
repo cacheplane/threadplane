@@ -27,6 +27,17 @@ export type AgentSession<
         options?: AgentSubmitOptions
       ): Promise<CompleteOutcome>;
       stop(): Promise<void>;
+      /**
+       * Optional: answers the prompt behind one assistant message again. Takes
+       * that message's `id`; the earlier answer is replaced in the snapshot
+       * once the new run starts. A session that cannot do this leaves the
+       * command undefined, and callers offer no control for it. Rejects when
+       * the message cannot be regenerated, such as during a run.
+       */
+      regenerate?(
+        messageId: string,
+        options?: AgentSubmitOptions
+      ): Promise<CompleteOutcome>;
       /** Read-only reconciliation; never retries an uncertain submission. */
       checkStatus?(): Promise<void>;
       dispose(): Promise<void>;
