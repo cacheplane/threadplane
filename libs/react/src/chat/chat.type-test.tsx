@@ -71,7 +71,7 @@ ok.className = 'x';
 <Chat session={session} modelPicker={{ options: [], value: 'a' }} />;
 // @ts-expect-error Options are value and label records, not strings.
 <Chat session={session} modelPicker={{ options: ['a'], value: 'a', onValueChange: () => undefined }} />;
-<Chat session={session} a2uiActionLabels />;
+<Chat session={session} a2uiActionLabels={false} />;
 // @ts-expect-error Action labels are a switch, not a renderer.
 <Chat session={session} a2uiActionLabels={() => 'Go'} />;
 void missing;

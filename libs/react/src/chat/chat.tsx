@@ -111,7 +111,7 @@ export interface ChatProps
   readonly renderMessageActivity?: MessageListProps['renderMessageActivity'];
   /** One reasoning disclosure per multi-step turn; see `MessageListProps.mergeReasoning`. Defaults to true. */
   readonly mergeReasoning?: MessageListProps['mergeReasoning'];
-  /** Shows an A2UI action sent as a user message by its label; see `MessageListProps.a2uiActionLabels`. Off unless set. */
+  /** Shows an A2UI action sent as a user message by its label; see `MessageListProps.a2uiActionLabels`. Defaults to true. */
   readonly a2uiActionLabels?: MessageListProps['a2uiActionLabels'];
   /**
    * The waiting indicator in the transcript; see `MessageListProps.typingIndicator`. Pass

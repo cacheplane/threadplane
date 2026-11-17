@@ -194,8 +194,9 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   /**
    * Shows a user message that is a serialized A2UI action as the pressed
    * control's label ("Search flights") in place of its JSON. Without a label
-   * the action name is put in plain words. Off unless set; other messages are
-   * unchanged, and custom renderMessage retains full row ownership.
+   * the action name is put in plain words. Defaults to true; false shows the
+   * JSON as sent. Other messages are unchanged, and custom renderMessage
+   * retains full row ownership.
    */
   readonly a2uiActionLabels?: boolean;
   /** Typesets math in message text; see `MarkdownProps.math`. Keep stable; custom renderMessage retains full ownership. */
@@ -536,7 +537,7 @@ function RowView<TRow extends MessageRow>({
   // The plan and Stop belong to the row's last built-in group, the one the turn is still running.
   const planGroup = [...runs].reverse().find((run) => 'activities' in run);
   const actionLabel =
-    a2uiActionLabels === true && row.role === 'user'
+    a2uiActionLabels !== false && row.role === 'user'
       ? a2uiActionLabel(row.message.content)
       : null;
   const text =
