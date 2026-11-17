@@ -63,6 +63,14 @@ function controlledFetchResponse(
         new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`)
       );
     },
+    /** Ends the body cleanly, with or without a terminal event before it. */
+    end() {
+      if (ended) return;
+      ended = true;
+      signal?.removeEventListener('abort', abort);
+      controller.close();
+      closed.resolve();
+    },
   };
 }
 

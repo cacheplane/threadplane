@@ -158,11 +158,13 @@ the snapshot shows the new one.
 
 A stream that closes without this runtime's own terminal evidence settles as
 `interrupted`, never as a completed turn, and the error offers only the recovery
-the session can prove is safe. The runtime never emits `recovery: 'retry'`: a
-thrown iterator cannot show that a request was undispatched (a browser
-`TypeError: fetch failed` carries no cause, and a reset after the server accepted
-the request looks identical to one that never left), so a pre-response failure is
-an `interrupted` error too, not a retryable `connection` one.
+the session can prove is safe. A failure that leaves the backend outcome open is
+never `recovery: 'retry'`: a thrown iterator cannot show that a request was
+undispatched (a browser `TypeError: fetch failed` carries no cause, and a reset
+after the server accepted the request looks identical to one that never left), so
+a pre-response failure is an `interrupted` error too, not a retryable
+`connection` one. The only `retry` the runtime emits is for a run the backend
+itself reports as failed (see "Retry" below).
 
 `recovery: 'check'` is offered exactly when `transport.getHistory` exists for an
 ordinary submit, with or without a captured run id, and `checkStatus()` is exposed
@@ -170,7 +172,7 @@ on the same condition. The check is read-only: with a captured run id it inspect
 the exact run first (`getRunStatus`), then reads this turn's saved checkpoint and
 correlates it by the submitted user message. An in-flight run leaves the snapshot
 untouched so the check can be repeated; a failed run is reported as such and
-withdraws every recovery; a committed answer or a pending interrupt settles the
+offers at most the retry below; a committed answer or a pending interrupt settles the
 turn. Close-time settlement performs the same read once, automatically, unless the
 exact run is known to be still in flight; a stream that throws instead of closing
 gets that same single read, and a conclusive answer settles the attempt itself. Fork attempts and tool follow-ups after
@@ -199,6 +201,30 @@ not part of the core contract: they join the retained physical run from its last
 cursor when `joinStream` and `getRunStatus` exist and the run is not confirmed
 ended. Portable callers use `checkStatus()`; a resolved check clears the retained
 run so the two surfaces cannot disagree.
+
+### Retry
+
+`session.retry()` is the core session's optional retry command. It exists only
+when the transport has `getRunStatus`, because only the exact run's status can
+settle a failure. It sends a command again when, and only when, the backend
+reported that command's run as `error` or `timeout`, at close or through
+`checkStatus()`. That error carries `retryable: true` and `recovery: 'retry'`.
+
+- The transcript and values return to what they were before the command, and the
+  command's captured input is sent again. A submission keeps its user message id,
+  so the snapshot gains no second copy, and neither does a thread whose
+  `messages` key uses the standard `add_messages` reducer, which replaces a
+  message by id. A resume sends the same response and no message.
+- An `interrupted` run status, a run whose status is unknown or still running, a
+  fork, and a command whose tool follow-up failed are never retried. While such
+  an error is shown, `retry()` rejects; after `checkStatus()` settles it as a
+  failed run, `retry()` is allowed.
+- `retry()` resolves with the re-run's outcome. It resolves `aborted` without
+  sending, as an ignored `submit` does, while a request, history load or
+  checkpoint preparation is active, and when nothing failed. Replacing the transcript
+  through `load()` or another command withdraws the retry.
+- A failed run can still have done work in the steps before it failed. Retrying
+  runs the graph again from the same input, so those steps can run again.
 
 Errors are plain frozen snapshots (`AgentError` from `@threadplane/core`), not
 `Error` instances: `instanceof Error` and `instanceof` the `@threadplane/chat`

@@ -2,7 +2,9 @@ import type {
   AgentError,
   AgentSession,
   AgentSnapshot,
+  AgentUsage,
   Citation,
+  CompleteOutcome,
   Message,
   MessageDelivery,
   PlainValue,
@@ -211,3 +213,12 @@ void [
   cause,
   invalidStatus,
 ];
+
+// retry is optional and reports the re-run's outcome, like submit.
+const retried: Promise<CompleteOutcome> | undefined = session.retry?.();
+// @ts-expect-error retry resolves with an outcome, not a string of any kind
+const retriedText: Promise<number> | undefined = session.retry?.();
+const usage: AgentUsage | undefined = snapshot.usage;
+// @ts-expect-error usage entries are readonly
+usage?.entries.push({ inputTokens: 1 });
+void [retried, retriedText, usage];

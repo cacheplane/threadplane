@@ -14744,6 +14744,17 @@
       "note": "Streaming Markdown, trimmed submit, swallowed submit/stop rejections, error alert, session-keyed draft reset, owned-projection disposal, StrictMode remount and never disposing app content are verified with real DOM tests. Interrupts, attachments, threads, SSR and publication remain incomplete."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ChatModelPicker",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Options, controlled value and labels for the opt-in model picker Chat renders in the composer before inputTrailing.",
+      "note": "Placement, choice reporting, declined change, labels, empty options, running state and disabled state are verified with real DOM tests. Chat sends nothing about the value to the session."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#ChatRunActivityContext",
       "taskIds": [
         "T22",
@@ -19361,7 +19372,53 @@
       ],
       "treatment": "react",
       "status": "in-progress",
-      "note": "Runs an element's on bindings through application handlers with resolved params, confirm and onSuccess/onError follow-ups, writes a writable store, and reports handler, stateChange and result events. Lifecycle events, watch effects and preventDefault are not applied."
+      "note": "Runs an element's on bindings through application handlers with resolved params, confirm and onSuccess/onError follow-ups, writes a writable store, and reports handler, stateChange and result events. Watch effects and preventDefault are not applied; lifecycle events report spec and element mounts."
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderLifecycle",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderLifecycleEvent",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderLifecycleSnapshot",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#createRenderLifecycle",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress"
+    },
+    {
+      "id": "source:libs/react/src/render/lifecycle.ts",
+      "taskIds": [
+        "T07",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Turns RenderSpec lifecycle, stateChange and handler events into first-mount, mount-count and latest-activity timings, the React counterpart of Angular RENDER_LIFECYCLE."
     }
   ]
 }

@@ -155,6 +155,7 @@ export {
 } from './approval-card.js';
 export {
   Chat,
+  type ChatModelPicker,
   type ChatProps,
   type ChatRunActivityContext,
 } from './chat.js';

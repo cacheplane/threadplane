@@ -3,15 +3,20 @@ import type {
   AgentSession,
   AgentSessionCustomEvent,
   AgentSnapshot,
+  AgentUsage,
+  AgentUsageEntry,
 } from '@threadplane/core';
 import type { Session } from './create-session.js';
 import { projectMessages, projectToolCalls } from './message-projection.js';
-import type { SessionSnapshot } from './session-observation.js';
+import {
+  failedWithRunError,
+  type SessionSnapshot,
+} from './session-observation.js';
 
 /** The native owner, with or without a client-tool catalog. */
 export type NativeSession = Pick<
   Session,
-  'subscribe' | 'submit' | 'stop' | 'dispose' | 'onCustomEvent'
+  'subscribe' | 'submit' | 'stop' | 'dispose' | 'retry' | 'onCustomEvent'
 > & { getSnapshot(): SessionSnapshot };
 
 /**
@@ -34,7 +39,11 @@ export const AUTH_COPY = 'Authentication failed. Check your credentials.';
  * credential (401 or 403), another HTTP status, or a request that failed for a
  * reason this view cannot name, such as a host that could not be reached.
  */
-function failure(native: SessionSnapshot, previous?: AgentError): AgentError {
+function failure(
+  native: SessionSnapshot,
+  canRetry: boolean,
+  previous?: AgentError
+): AgentError {
   const terminal = native.run?.terminal;
   const reported =
     terminal?.type === 'RUN_ERROR' && 'message' in terminal
@@ -50,41 +59,93 @@ function failure(native: SessionSnapshot, previous?: AgentError): AgentError {
     ? AUTH_COPY
     : reported || FAILED;
   const detail = interrupted ? INTERRUPTED_COPY.detail : undefined;
+  // Only the backend's own RUN_ERROR settles what happened. Any other failure
+  // leaves open whether the request did its work, so sending it again could
+  // repeat it, and the native owner has no status check to find out.
+  const retryable = canRetry && failedWithRunError(native);
   if (
     previous &&
     previous.kind === kind &&
     previous.message === message &&
     previous.detail === detail &&
-    previous.status === status
+    previous.status === status &&
+    previous.retryable === retryable
   )
     return previous;
   return Object.freeze({
     kind,
     message,
     ...(status !== undefined && { status }),
-    // Nothing here proves the request never reached the backend, so sending it
-    // again could repeat work. The native owner has no status check either.
-    retryable: false,
-    recovery: 'none',
+    retryable,
+    recovery: retryable ? 'retry' : 'none',
     ...(detail !== undefined && { detail }),
   });
 }
 
+const USAGE_COUNTS = [
+  'inputTokens',
+  'outputTokens',
+  'totalTokens',
+  'reasoningTokens',
+  'cachedInputTokens',
+  'cacheWriteInputTokens',
+] as const;
+const usageViews = new WeakMap<object, AgentUsage | null>();
+
+/**
+ * The `usage` a settled run's `RUN_FINISHED` or `RUN_ERROR` carried, one entry
+ * per provider and model. Only labels and finite counts are read. The terminal
+ * is owned and frozen, so one terminal always yields the same projection.
+ */
+function usage(native: SessionSnapshot): AgentUsage | undefined {
+  if (native.status === 'running') return undefined;
+  const terminal = native.run?.terminal;
+  if (!terminal || terminal.type === 'CUSTOM') return undefined;
+  const reported: unknown = terminal.usage;
+  if (!Array.isArray(reported)) return undefined;
+  const known = usageViews.get(reported);
+  if (known !== undefined) return known ?? undefined;
+  const entries: AgentUsageEntry[] = [];
+  for (const raw of reported as readonly unknown[]) {
+    if (typeof raw !== 'object' || raw === null) continue;
+    const record = raw as Record<string, unknown>;
+    const entry: Record<string, string | number> = {};
+    for (const label of ['provider', 'model'] as const)
+      if (typeof record[label] === 'string') entry[label] = record[label];
+    for (const count of USAGE_COUNTS) {
+      const value = record[count];
+      if (typeof value === 'number' && Number.isFinite(value))
+        entry[count] = value;
+    }
+    entries.push(Object.freeze(entry) as AgentUsageEntry);
+  }
+  const projected = entries.length
+    ? Object.freeze({ entries: Object.freeze(entries) })
+    : null;
+  usageViews.set(reported, projected);
+  return projected ?? undefined;
+}
+
 function project(
   native: SessionSnapshot,
+  canRetry: boolean,
   previous?: AgentSnapshot
 ): AgentSnapshot {
   const messages = projectMessages(native, previous?.messages);
   const toolCalls = projectToolCalls(native, previous?.toolCalls);
   const error =
-    native.status === 'error' ? failure(native, previous?.error) : undefined;
+    native.status === 'error'
+      ? failure(native, canRetry, previous?.error)
+      : undefined;
+  const used = usage(native);
   if (
     previous &&
     previous.status === native.status &&
     previous.messages === messages &&
     previous.toolCalls === toolCalls &&
     previous.error === error &&
-    previous.plan === native.plan
+    previous.plan === native.plan &&
+    previous.usage === used
   )
     return previous;
   return Object.freeze({
@@ -93,6 +154,7 @@ function project(
     toolCalls,
     ...(error && { error }),
     ...(native.plan && { plan: native.plan }),
+    ...(used && { usage: used }),
   });
 }
 
@@ -102,21 +164,23 @@ function project(
  *
  * It is a view, not a second owner. The snapshot is derived from the native
  * snapshot on read and keeps its reference until something a core observer can
- * see changes; subscribers are told about those changes only. `submit`, `stop`
- * and `dispose` go straight to the native session, so disposing the view
- * disposes the session. Custom event listeners pass straight through to the
- * native session too, when it has them. Application state, native resume and
- * client-tool evidence have no core equivalent: keep the native session for
- * those.
+ * see changes; subscribers are told about those changes only. `submit`, `stop`,
+ * `dispose` and, when the native session has it, `retry` go straight to the
+ * native session, so disposing the view disposes the session. `retry` rejects
+ * unless the error is `recovery: 'retry'`. Custom event listeners pass straight
+ * through to the native session too, when it has them. Application state,
+ * native resume and client-tool evidence have no core equivalent: keep the
+ * native session for those.
  */
 export function createAgentSession(session: NativeSession): AgentSession {
   let seen: SessionSnapshot | undefined;
   let current: AgentSnapshot | undefined;
+  const retry = session.retry;
   const listen = session.onCustomEvent;
   const getSnapshot = (): AgentSnapshot => {
     const native = session.getSnapshot();
     if (native !== seen || !current) {
-      current = project(native, current);
+      current = project(native, !!retry, current);
       seen = native;
     }
     return current;
@@ -140,5 +204,17 @@ export function createAgentSession(session: NativeSession): AgentSession {
     submit: (input, options) => session.submit(input, options),
     stop: () => session.stop(),
     dispose: () => session.dispose(),
+    ...(retry && {
+      async retry() {
+        const snapshot = getSnapshot();
+        // Nothing failed or a run is going: nothing runs, as for an ignored submit.
+        if (snapshot.status !== 'error') return 'aborted' as const;
+        if (snapshot.error?.recovery !== 'retry')
+          throw new Error(
+            'This failure cannot be retried: the backend may already have done the work.'
+          );
+        return retry.call(session);
+      },
+    }),
   };
 }

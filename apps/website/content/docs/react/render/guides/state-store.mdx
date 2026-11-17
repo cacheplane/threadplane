@@ -36,6 +36,8 @@ The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation
 
 To let controls inside the rendered tree edit values, pass a writable `store`, such as the owner from `createRenderState`, instead of `state`. [Events](/docs/react/render/guides/events) shows bound inputs writing through `set` and actions updating the store.
 
+A spec can also carry its own starting values in a top-level `state` field. When you pass neither `state` nor `store`, `RenderSpec` creates a store from that field the first time it appears, and controls in the tree can write to it. The tree keeps that store while it stays mounted, so a later spec with different `state` does not reset what the user entered. Pass `state` to keep the tree read-only, or pass your own `store` to read, reset or persist the values.
+
 ## Edit local state
 
 Choose **Run**, select **User Profile**, **Nested Paths** or **Form Display**, and press **Finish**. **Name**, **Age** and **Theme** sit outside the rendered tree and update its visible values. Age accepts whole numbers from 0 to 150; an invalid draft keeps the last valid value until you correct it. Theme changes the displayed preference. Reloading restores Alice, age 30, and Dark.
