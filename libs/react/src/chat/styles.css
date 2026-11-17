@@ -570,13 +570,13 @@
     var(--tp-status-tone) 8%,
     var(--tp-chat-surface, var(--ds-surface, Canvas))
   );
-  box-shadow: 0 1rem 3rem #0004;
+  box-shadow: var(--tplane-chat-elevation-float, 0 1rem 3rem #0004);
 }
 .tp-approval-card--dialog:not([open]) {
   display: none;
 }
 .tp-approval-card--dialog::backdrop {
-  background: #0007;
+  background: var(--tplane-chat-scrim, #0007);
 }
 @media (pointer: coarse) {
   .tp-approval-card__action { min-height: 44px; }
@@ -1865,12 +1865,12 @@
 }
 .tp-chat-sidenav-sections__new:focus-visible,
 .tp-chat-sidenav-sections__archived-toggle:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--ds-accent, Highlight)));
   outline-offset: 2px;
 }
 .tp-chat-sidenav-sections__chevron {
   flex: none;
-  transition: transform 0.15s ease;
+  transition: transform var(--tplane-chat-motion-duration, 0.15s) var(--tplane-chat-motion-ease, ease);
 }
 .tp-chat-sidenav-sections__archived[data-open] .tp-chat-sidenav-sections__chevron {
   transform: rotate(90deg);
