@@ -5,6 +5,16 @@ import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 const route = '/docs/angular/chat/guides/thread-routing';
 const reactRoute = '/docs/react/chat/guides/thread-routing';
 const reactFrame = /(?:localhost:4625|chat\/threads\/react)/;
+/**
+ * The connected sidebar lists saved conversations and project names on mount.
+ * Those searches are read-only; creating a thread or starting a run is not.
+ */
+function readOnlyListing(method: string, pathname: string): boolean {
+  return (
+    method === 'POST' &&
+    /\/(?:threads|store\/items)\/search$/.test(pathname)
+  );
+}
 const observations = new WeakMap<
   Page,
   { requests: string[]; errors: string[] }
@@ -13,12 +23,14 @@ test.beforeEach(async ({ page }) => {
   const observed = { requests: [] as string[], errors: [] as string[] };
   observations.set(page, observed);
   page.on('request', (request) => {
+    const pathname = new URL(request.url()).pathname;
     if (
       ['fetch', 'xhr'].includes(request.resourceType()) &&
-      /\/threads(?:\/|$)/.test(new URL(request.url()).pathname) &&
+      /\/threads(?:\/|$)/.test(pathname) &&
+      !readOnlyListing(request.method(), pathname) &&
       fromPageOrReactPreview(request, reactFrame)
     )
-      observed.requests.push(request.method());
+      observed.requests.push(`${request.method()} ${pathname}`);
   });
   page.on('pageerror', (error) => observed.errors.push(error.message));
 });
@@ -123,7 +135,7 @@ test('a direct React run link mounts an empty conversation without creating a th
   });
   await emptyRun(page);
 });
-test('history preserves the mounted React owner and unsent draft without runtime requests', async ({
+test('history preserves the mounted React owner and unsent draft without creating threads or runs', async ({
   page,
 }) => {
   await page.goto(reactRoute + '?mode=run', {
@@ -153,7 +165,7 @@ test('history preserves the mounted React owner and unsent draft without runtime
   ).toBe(true);
   expect(observations.get(page)?.requests).toEqual(before);
 });
-test('reload clears an unsent React draft without runtime requests', async ({
+test('reload clears an unsent React draft without creating threads or runs', async ({
   page,
 }) => {
   await page.goto(reactRoute + '?mode=run', {

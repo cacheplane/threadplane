@@ -161,6 +161,45 @@ test('c-threads: a conversation moved into a new project keeps it after reload',
   expect(items.find((item) => item.key === projectId)?.value.name).toBe(project);
 });
 
+test('c-threads: selecting a project lists only its conversations until it is selected again', async ({
+  page,
+  request,
+}) => {
+  const member = `Filtered member ${randomUUID()}`;
+  const outsider = `Filtered outsider ${randomUUID()}`;
+  const project = `Filter ${randomUUID().slice(0, 8)}`;
+  const id = await createThread(request, member);
+  await createThread(request, outsider);
+  await page.goto('/');
+  await expect(row(page, outsider)).toHaveCount(1);
+  await sidebar(page).getByRole('button', { name: '+ New project' }).click();
+  const name = sidebar(page).getByRole('textbox', { name: 'New project name' });
+  await name.fill(project);
+  await name.press('Enter');
+  const projectButton = sidebar(page)
+    .locator('chat-project-list')
+    .getByRole('button', { name: project, exact: true });
+  await expect(projectButton).toBeVisible();
+  await rowCommand(page, member, 'Move to project');
+  await page.getByRole('menuitem', { name: project, exact: true }).click();
+  await expect
+    .poll(async () => (await readThread(request, id)).metadata['projectId'])
+    .toEqual(expect.any(String));
+  created.projects.add(
+    (await readThread(request, id)).metadata['projectId'] as string
+  );
+
+  await projectButton.click();
+  await expect(projectButton).toHaveAttribute('aria-current', 'true');
+  await expect(row(page, member)).toHaveCount(1);
+  await expect(row(page, outsider)).toHaveCount(0);
+
+  await projectButton.click();
+  await expect(projectButton).not.toHaveAttribute('aria-current', 'true');
+  await expect(row(page, outsider)).toHaveCount(1);
+  await expect(row(page, member)).toHaveCount(1);
+});
+
 test('c-threads: deleting the active conversation returns to a new chat', async ({
   page,
   request,

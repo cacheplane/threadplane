@@ -55,7 +55,7 @@ export const activeThreadIdState = signal<string | null>(null);
     <!-- #region chat-and-sidebar -->
     <example-chat-layout sidebarPosition="right" sidebarWidth="18rem"
       title="Chat threads"
-      description="Conversations are listed from the LangGraph server. Use each row menu to rename, pin, reorder, archive, delete or move a conversation into a project; project names are kept in the LangGraph Store. Titles are optional."
+      description="Conversations are listed from the LangGraph server. Use each row menu to rename, pin, reorder, archive, delete or move a conversation into a project; project names are kept in the LangGraph Store. Select a project to list only its conversations. Titles are optional."
     >
       <button headerActions type="button" [disabled]="agent.isLoading()"
         (click)="!agent.isLoading() &amp;&amp; onNewThread(conversation)">New conversation</button>
@@ -69,7 +69,10 @@ export const activeThreadIdState = signal<string | null>(null);
         [directory]="threadsSvc.directory"
         [agent]="agent"
         [activeThreadId]="activeThreadId()"
+        [selectedProjectId]="selectedProjectId()"
         (threadSelected)="onThreadSelected($event)"
+        (newChat)="!agent.isLoading() &amp;&amp; onNewThread(conversation)"
+        (projectSelected)="onProjectSelected($event)"
         (activeThreadRemoved)="onActiveThreadRemoved(conversation)" />
     </example-chat-layout>
     <!-- #endregion -->
@@ -90,6 +93,16 @@ export class ThreadsComponent {
   protected readonly activeThreadId = activeThreadIdState;
 
   protected readonly agent = injectAgent();
+
+  /** The project whose conversations the sidebar lists; `null` lists all. */
+  protected readonly selectedProjectId = signal<string | null>(null);
+
+  /** Selecting the selected project again lists every conversation. */
+  protected onProjectSelected(projectId: string | null): void {
+    this.selectedProjectId.update((current) =>
+      current === projectId ? null : projectId,
+    );
+  }
 
   // #region thread-actions
   /** Row commands go through `threadsSvc.directory`; the sidebar reports

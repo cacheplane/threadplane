@@ -627,6 +627,61 @@ test('sidebar creates a project, moves a conversation into it and keeps both aft
   ]);
 });
 
+test('selecting a project lists only its conversations until it is selected again', async ({
+  page,
+  request,
+}) => {
+  await page.goto(base);
+  await submit(page, 'A first');
+  await saved(page);
+  await newConversation(page);
+  await submit(page, 'B first');
+  await saved(page);
+  const [a, b] = await createdThreads(request);
+  for (const [id, title] of [
+    [a, 'Alpha'],
+    [b, 'Beta'],
+  ])
+    expect(
+      (
+        await request.patch(`/api/threads/${id}`, {
+          data: { metadata: { title } },
+        })
+      ).status()
+    ).toBe(200);
+  await page.reload();
+  const sorted = async () => (await rowTitles(page)()).sort();
+  await expect.poll(sorted).toEqual(['Alpha', 'Beta']);
+  await page
+    .getByRole('button', { name: '+ New project', exact: true })
+    .click();
+  const name = page.getByLabel('New project name', { exact: true });
+  await name.fill('Research');
+  await name.press('Enter');
+  await rowCommand(page, 'Alpha', 'Move to project');
+  await page.getByRole('menuitem', { name: 'Research', exact: true }).click();
+  await expect
+    .poll(async () =>
+      (await serverThreads(request)).find((thread) => thread.thread_id === a)
+        ?.metadata['projectId']
+    )
+    .toEqual(expect.any(String));
+
+  await projectButton(page, 'Research').click();
+  await expect(projectButton(page, 'Research')).toHaveAttribute(
+    'aria-current',
+    'true'
+  );
+  await expect(sidebarRows(page)).toHaveText(['Alpha']);
+
+  await projectButton(page, 'Research').click();
+  await expect(projectButton(page, 'Research')).not.toHaveAttribute(
+    'aria-current',
+    'true'
+  );
+  await expect.poll(sorted).toEqual(['Alpha', 'Beta']);
+});
+
 test('sidebar delete of the active conversation returns to a new chat', async ({
   page,
   request,
