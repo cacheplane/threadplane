@@ -60,6 +60,18 @@ if (snapshot.error) {
 }
 // @ts-expect-error full message payload submission is outside the text session slice
 session.submit({ messages: [] });
+// @ts-expect-error custom events are optional on the core session
+session.onCustomEvent(() => undefined);
+const releaseCustom: (() => void) | undefined = session.onCustomEvent?.(
+  (event) => {
+    const name: string = event.name;
+    const data: PlainValue = event.data;
+    // @ts-expect-error custom events are readonly
+    event.name = name;
+    return data;
+  }
+);
+void releaseCustom;
 // @ts-expect-error strict null checking must remain enabled for these fixtures
 const invalidStatus: AgentSnapshot['status'] = null;
 

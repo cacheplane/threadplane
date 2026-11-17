@@ -46,6 +46,16 @@ export interface MessageRenderEvent {
   readonly event: RenderEvent;
 }
 
+/** Text of the source disclosure under a surface; see `MessageGenerativeUi.sourceDetails`. */
+export interface MessageSourceLabels {
+  /** The disclosure's toggle. Defaults to "Details". */
+  readonly summary?: string;
+  /** Heading over a spec's source. Defaults to "Layout source". */
+  readonly spec?: string;
+  /** Heading over A2UI source. Defaults to "Response source". */
+  readonly a2ui?: string;
+}
+
 /**
  * Turns on generated UI inside the transcript. Each part is separate: an
  * assistant message is rendered as a surface only for the kinds configured
@@ -85,6 +95,12 @@ export interface MessageGenerativeUi {
    * with `A2uiSurface`; return `content.skeleton` until one is ready.
    */
   readonly renderA2ui?: (content: MessageA2uiContent) => ReactNode;
+  /**
+   * Adds a closed "Details" disclosure under each surface that shows the
+   * message content the surface was built from. Pass labels to replace its
+   * text. Off unless set.
+   */
+  readonly sourceDetails?: boolean | MessageSourceLabels;
   /** Placeholder text while a surface is being built. Defaults to "Building UI…". */
   readonly skeletonLabel?: string;
 }
@@ -190,6 +206,32 @@ function renderable(
   };
 }
 
+/** The message content a surface was built from, closed until the reader opens it. */
+function SourceDetails({
+  kind,
+  content,
+  options,
+}: {
+  readonly kind: 'spec' | 'a2ui';
+  readonly content: string;
+  readonly options: MessageGenerativeUi;
+}) {
+  const { sourceDetails } = options;
+  if (sourceDetails === undefined || sourceDetails === false) return null;
+  const labels = sourceDetails === true ? {} : sourceDetails;
+  return (
+    <details className="tp-chat-generative-ui__source" data-kind={kind}>
+      <summary>{labels.summary ?? 'Details'}</summary>
+      <p>
+        {kind === 'spec'
+          ? labels.spec ?? 'Layout source'
+          : labels.a2ui ?? 'Response source'}
+      </p>
+      <pre>{content}</pre>
+    </details>
+  );
+}
+
 /** Content from the agent must not take the transcript down: a surface that throws gives way to `fallback`. */
 class SurfaceBoundary extends Component<
   {
@@ -275,22 +317,25 @@ function SpecSurface({
     loading: streaming,
   };
   return (
-    <div
-      className="tp-chat-generative-ui"
-      data-kind="spec"
-      data-streaming={String(streaming)}
-    >
-      {store === undefined ? (
-        <RenderSpec {...shared} state={tree.state} />
-      ) : (
-        <RenderSpec
-          {...shared}
-          store={store}
-          handlers={handlers}
-          onEvent={onRenderEvent === undefined ? undefined : onEvent}
-        />
-      )}
-    </div>
+    <>
+      <div
+        className="tp-chat-generative-ui"
+        data-kind="spec"
+        data-streaming={String(streaming)}
+      >
+        {store === undefined ? (
+          <RenderSpec {...shared} state={tree.state} />
+        ) : (
+          <RenderSpec
+            {...shared}
+            store={store}
+            handlers={handlers}
+            onEvent={onRenderEvent === undefined ? undefined : onEvent}
+          />
+        )}
+      </div>
+      <SourceDetails kind="spec" content={content} options={options} />
+    </>
   );
 }
 
@@ -359,6 +404,7 @@ export function GenerativeUiContent({
           }}
         />
       </div>
+      <SourceDetails kind="a2ui" content={content} options={options} />
     </SurfaceBoundary>
   );
 }

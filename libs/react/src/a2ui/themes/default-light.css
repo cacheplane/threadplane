@@ -1,0 +1,28 @@
+/*
+ * Default light palette for A2UI surfaces rendered by @threadplane/react/a2ui.
+ *
+ * Import it with the base stylesheet, in either order:
+ *   import '@threadplane/react/a2ui/styles.css';
+ *   import '@threadplane/react/a2ui/themes/default-light.css';
+ *
+ * The values the base stylesheet uses in the light scheme.
+ * It pins the palette: surfaces stop following the system colour scheme.
+ * An agent's own `theme.primaryColor` still overrides the primary colour on
+ * its surface.
+ */
+:root .a2ui-surface {
+  color-scheme: light;
+  --a2ui-surface: #ffffff;
+  --a2ui-on-surface: #1a1d23;
+  --a2ui-on-surface-variant: rgba(0, 0, 0, 0.6);
+  --a2ui-outline: rgba(0, 0, 0, 0.12);
+  --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --a2ui-elevation-4: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --a2ui-primary: #2f6fed;
+  --a2ui-error: #b3261e;
+  --a2ui-scrim: rgba(0, 0, 0, 0.4);
+  --a2ui-input-bg: #ffffff;
+  --a2ui-on-primary: #ffffff;
+  --a2ui-primary-hover: #245bd0;
+  --a2ui-surface-variant: #f1f3f6;
+}

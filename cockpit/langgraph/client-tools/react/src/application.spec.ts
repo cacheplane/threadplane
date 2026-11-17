@@ -1,7 +1,20 @@
-import { expect, it, vi } from 'vitest';
+import type { ReactElement } from 'react';
+import { cleanup, fireEvent, render } from '@testing-library/react';
+import { afterEach, expect, it, vi } from 'vitest';
 import type { CompleteOutcome } from '@threadplane/core';
 import { createClientToolsApplication, type ClientToolsSession, type ClientToolCatalog } from './application';
 
+afterEach(cleanup);
+/** Answers the booking card `Chat` would draw; false when no booking waits. */
+function answerBooking(application: ReturnType<typeof createClientToolsApplication>, confirmed: boolean) {
+  const view = application.clientTools.render({
+    id: 'booking', name: 'confirm_booking', args: { summary: 'Fictional booking' }, status: 'running',
+  });
+  if (view === undefined) return false;
+  const card = render(view as ReactElement);
+  fireEvent.click(card.getByRole('button', { name: confirmed ? 'Confirm booking' : "Don't book" }));
+  return true;
+}
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason: unknown) => void;
@@ -55,7 +68,7 @@ function setup() {
 it('starts empty and ignores blank text', async () => {
   const h = setup();
   expect(h.application.getSnapshot()).toMatchObject({
-    creation: 'idle', rows: [], weather: [], bookings: [], busy: false,
+    creation: 'idle', rows: [], weather: [], busy: false,
     canSubmit: true, outcome: null, error: null,
   });
   await h.application.submit('  ');
@@ -114,12 +127,12 @@ it('allows an owned booking decision while the command and composer remain busy'
     return 'success';
   });
   const { pending } = await h.start();
-  const row = h.application.getSnapshot().bookings[0];
+  expect(h.application.clientTools.getSnapshot()).toHaveLength(1);
   expect(h.application.getSnapshot()).toMatchObject({ busy: true, canSubmit: false });
-  expect(h.application.decide(row, true)).toBe(true);
-  expect(h.application.decide(row, false)).toBe(false);
+  expect(answerBooking(h.application, true)).toBe(true);
+  expect(answerBooking(h.application, false)).toBe(false);
   await pending;
-  expect(h.application.getSnapshot().bookings[0].status).toBe('confirmed');
+  expect(h.application.clientTools.getSnapshot()).toEqual([]);
   expect(h.application.getSnapshot().canSubmit).toBe(true);
 });
 
@@ -130,12 +143,12 @@ it('Stop aborts a pending browser decision and requires a new conversation', asy
     return 'success';
   });
   const { pending } = await h.start();
-  const row = h.application.getSnapshot().bookings[0];
+  expect(h.application.clientTools.getSnapshot()).toHaveLength(1);
   await h.application.stop();
   await pending;
-  expect(h.application.decide(row, true)).toBe(false);
+  expect(answerBooking(h.application, true)).toBe(false);
   expect(h.application.getSnapshot()).toMatchObject({ busy: false, canSubmit: false, outcome: 'aborted' });
-  expect(h.application.getSnapshot().bookings[0].status).toBe('aborted');
+  expect(h.application.clientTools.getSnapshot()).toEqual([]);
   await h.application.submit('No replay');
   expect(h.session.submit).toHaveBeenCalledTimes(1);
 });
@@ -283,10 +296,10 @@ it('disposal releases observation and fences both rows and decisions before asyn
     return 'success';
   });
   const { pending } = await h.start();
-  const row = h.application.getSnapshot().bookings[0];
+  expect(h.application.clientTools.getSnapshot()).toHaveLength(1);
   const disposal = h.application.dispose();
   const snapshot = h.application.getSnapshot();
-  expect(h.application.decide(row, true)).toBe(false);
+  expect(answerBooking(h.application, true)).toBe(false);
   h.replace({ messages: [{ id: 'late', role: 'assistant', content: 'Late', delivery: { generation: 'old', phase: 'complete' } }] });
   expect(h.application.getSnapshot()).toBe(snapshot);
   expect(h.release).toHaveBeenCalledTimes(1);

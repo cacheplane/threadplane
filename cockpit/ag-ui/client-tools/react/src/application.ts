@@ -12,8 +12,8 @@ import {
   createClientToolsController,
   validateBookingArguments,
   type BookingInvocation,
-  type BookingPanel,
 } from './tools';
+import { createBookingTools } from './booking';
 import {
   projectAgentSnapshot,
   projectClientToolViews,
@@ -28,7 +28,6 @@ export interface ClientToolsApplicationSnapshot {
   readonly threadId: string | null;
   readonly native: NativeSnapshot | undefined;
   readonly views: readonly ClientToolMessageView[];
-  readonly bookings: readonly BookingPanel[];
   readonly busy: boolean;
   readonly canSubmit: boolean;
   readonly activity: 'idle' | 'running' | 'replacing';
@@ -48,10 +47,11 @@ export function createClientToolsApplication(options: {
     closed: boolean;
     unsafe: boolean;
     release?: () => void;
-    releaseTools?: () => void;
   };
   type Operation = { readonly controller: AbortController; owner?: Primary };
   const listeners = new Set<() => void>();
+  // One booking ask for every conversation; each conversation's controller guards and revokes its own calls.
+  const bookings = createBookingTools();
   let primary: Primary | undefined, operation: Operation | undefined;
   let generation = 0,
     disposed = false;
@@ -59,7 +59,6 @@ export function createClientToolsApplication(options: {
     threadId: null,
     native: undefined,
     views: Object.freeze([]),
-    bookings: Object.freeze([]),
     busy: false,
     canSubmit: true,
     activity: 'idle',
@@ -114,7 +113,6 @@ export function createClientToolsApplication(options: {
     if (owner.closed) return;
     owner.closed = true;
     cleanup(() => owner.release?.());
-    cleanup(() => owner.releaseTools?.());
     owner.tools.dispose();
     const session = owner.session;
     if (session) {
@@ -162,8 +160,7 @@ export function createClientToolsApplication(options: {
     if (!native || !valid()) return;
     const views = projectClientToolViews(native, valid);
     if (!valid()) return;
-    const bookings = owner.tools.getSnapshot().bookings;
-    return valid() ? { native, views, bookings } : undefined;
+    return valid() ? { native, views } : undefined;
   }
   function observe(owner: Primary) {
     const admitted = operation;
@@ -191,7 +188,10 @@ export function createClientToolsApplication(options: {
     if (!valid()) return;
     const threadId = crypto.randomUUID();
     if (!valid()) return;
-    const tools = createClientToolsController(() => booking(owner));
+    const tools = createClientToolsController(
+      () => booking(owner),
+      bookings.tools.confirm_booking
+    );
     const owner: Primary = {
       threadId,
       generation: ++generation,
@@ -213,13 +213,6 @@ export function createClientToolsApplication(options: {
       if (!current(owner, admitted)) {
         close(owner);
         cleanup(() => session.dispose());
-        return;
-      }
-      const releaseTools = tools.subscribe(() => observe(owner));
-      owner.releaseTools = releaseTools;
-      if (!current(owner, admitted)) {
-        cleanup(releaseTools);
-        close(owner);
         return;
       }
       const subscribe = session.subscribe;
@@ -384,7 +377,6 @@ export function createClientToolsApplication(options: {
       canSubmit: false,
       activity: 'idle',
       outcome: 'aborted',
-      ...(owner ? { bookings: owner.tools.getSnapshot().bookings } : {}),
       error: 'The operation stopped. Start a new conversation.',
     });
   }
@@ -408,21 +400,13 @@ export function createClientToolsApplication(options: {
       threadId: null,
       native: undefined,
       views: Object.freeze([]),
-      bookings: Object.freeze([]),
-      busy: false,
+        busy: false,
       canSubmit: true,
       activity: 'idle',
       outcome: null,
       error: null,
       viewGeneration: snapshot.viewGeneration + 1,
     });
-  }
-  function respond(token: string, decision: boolean) {
-    const owner = primary,
-      admitted = operation;
-    if (!owner || !admitted || !current(owner, admitted) || !snapshot.busy)
-      return false;
-    return owner.tools.respond(token, decision);
   }
   function dispose(): Promise<void> {
     if (disposed) return Promise.resolve();
@@ -461,8 +445,9 @@ export function createClientToolsApplication(options: {
     agent,
     submit,
     stop,
+    /** Pass to `Chat` as `clientTools`; a waiting booking is drawn from here. */
+    clientTools: bookings,
     newConversation,
-    respond,
     dispose,
   });
 }

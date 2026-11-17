@@ -129,6 +129,15 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
     call: NoInfer<RenderRow<TRow>>['toolCalls'][number],
     activity: ToolActivityInfo
   ) => ReactNode;
+  /**
+   * App-owned control for a tool call that waits on the person, drawn below the message's tool calls. Unlike
+   * `renderToolCall` the call keeps its place: its row, group, progress and Stop stay as they are. Return `undefined`
+   * for a call with nothing to ask. Keep stable like renderMessage; custom renderMessage retains full ownership.
+   */
+  readonly renderToolCallPrompt?: (
+    call: NoInfer<RenderRow<TRow>>['toolCalls'][number],
+    activity: ToolActivityInfo
+  ) => ReactNode;
   /** App-owned rich result or action for one tool call, rendered outside technical Details. Keep stable like renderMessage; custom renderMessage retains full ownership. */
   readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;
   /**
@@ -369,6 +378,7 @@ function RowView<TRow extends MessageRow>({
   toolLabel,
   toolOutcome,
   renderToolCall,
+  renderToolCallPrompt,
   renderToolResult,
   onToolRetry,
   staleRetries,
@@ -377,6 +387,7 @@ function RowView<TRow extends MessageRow>({
   plan,
   onStop,
   running,
+  busy,
   messageActions,
   math,
   generativeUi,
@@ -408,6 +419,10 @@ function RowView<TRow extends MessageRow>({
     call: TRow['toolCalls'][number],
     activity: ToolActivityInfo
   ) => ReactNode;
+  readonly renderToolCallPrompt?: (
+    call: TRow['toolCalls'][number],
+    activity: ToolActivityInfo
+  ) => ReactNode;
   readonly renderToolResult?: (activity: ToolActivityInfo) => ReactNode;
   readonly onToolRetry?: (activity: ToolActivityInfo) => void;
   /** "*" while work is active, otherwise the row's superseded call IDs joined by newlines. A string keeps the memo stable. */
@@ -420,6 +435,8 @@ function RowView<TRow extends MessageRow>({
   readonly onStop?: () => void;
   /** True only for a row holding a running call while the session runs, so other rows keep their memo. */
   readonly running?: boolean;
+  /** The session is running and the built-in actions include Regenerate, which a run disables. */
+  readonly busy?: boolean;
 }) {
   if (renderMessage) {
     const contexts = current ? CURRENT_ROW_CONTEXTS : HISTORICAL_ROW_CONTEXTS;
@@ -480,6 +497,9 @@ function RowView<TRow extends MessageRow>({
     | { readonly activities: ToolActivityInfo[] }
     | { readonly child: SubagentInfo }
   > = [];
+  // Controls for calls that wait on the person follow the runs, so no group is split.
+  const prompts: Array<{ readonly prompt: ReactNode; readonly id: string }> =
+    [];
   const activityById = new Map(
     activities.map((activity) => [activity.id, activity])
   );
@@ -491,6 +511,9 @@ function RowView<TRow extends MessageRow>({
     }
     const activity = activityById.get(call.id);
     if (!activity) return;
+    const prompt = renderToolCallPrompt?.(call, activity);
+    if (prompt != null && prompt !== false)
+      prompts.push({ prompt, id: activity.id });
     const custom = renderToolCall?.(call, activity);
     if (custom !== undefined) {
       runs.push({ custom, id: activity.id });
@@ -597,6 +620,16 @@ function RowView<TRow extends MessageRow>({
                 ))
               )
             )}
+          {row.role !== 'tool' &&
+            prompts.map(({ prompt, id }) => (
+              <div
+                key={`prompt:${id}`}
+                className="tp-chat-tool-call"
+                data-tool-prompt={id}
+              >
+                {prompt}
+              </div>
+            ))}
           {assistant &&
             messageActions !== undefined &&
             messageActions !== false &&
@@ -607,6 +640,7 @@ function RowView<TRow extends MessageRow>({
                 messageId={row.message.id}
                 content={row.message.content}
                 options={messageActions}
+                running={busy}
               />
             )}
         </>
@@ -636,6 +670,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   toolLabel,
   toolOutcome,
   renderToolCall,
+  renderToolCallPrompt,
   renderToolResult,
   onToolRetry,
   plan,
@@ -794,6 +829,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   toolLabel={toolLabel}
                   toolOutcome={toolOutcome}
                   renderToolCall={renderToolCall}
+                  renderToolCallPrompt={renderToolCallPrompt}
                   renderToolResult={renderToolResult}
                   onToolRetry={onToolRetry}
                   staleRetries={staleRetries?.[index]}
@@ -804,6 +840,11 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   running={
                     running &&
                     row.toolCalls.some((call) => call.status === 'running')
+                  }
+                  busy={
+                    running &&
+                    typeof messageActions === 'object' &&
+                    messageActions.onRegenerate !== undefined
                   }
                   messageActions={messageActions}
                   math={math}

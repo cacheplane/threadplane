@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { createServer, type ServerResponse } from 'node:http';
 import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
@@ -17,6 +18,17 @@ afterEach(() => {
   for (const dispose of disposals.splice(0)) dispose();
   vi.restoreAllMocks();
 });
+type App = ReturnType<typeof createClientToolsApplication>;
+/** The booking card `Chat` would draw for the running call, if a booking waits for it. */
+function bookingCard(app: App, id: string, summary: string) {
+  return app.clientTools.render({
+    id, name: 'confirm_booking', args: { summary }, status: 'running',
+  }) as ReactElement<{ answer(result: { confirmed: boolean }): boolean }> | undefined;
+}
+/** Answers that card; false when no booking waits or it was already answered or revoked. */
+function answerBooking(app: App, id: string, summary: string, confirmed: boolean) {
+  return bookingCard(app, id, summary)?.props.answer({ confirmed }) ?? false;
+}
 async function until(check: () => boolean) {
   for (let i = 0; i < 200; i++) {
     if (check()) return;
@@ -168,19 +180,16 @@ describe('application with actual native owner and synthetic SDK SSE', () => {
       const done = f.app.submit('Booking');
       await f.next();
       f.finish(0, 'confirm_booking', { summary: 'Fictional table' });
-      await until(() => f.app.getSnapshot().bookings.length === 1);
-      const panel = f.app.getSnapshot().bookings[0];
-      expect(panel).toMatchObject({
-        callId: 'call-0',
-        assistantMessageId: 'assistant-0',
-        sourceRunId: f.requests[0].body.runId,
-        summary: 'Fictional table',
-        status: 'pending',
-      });
-      expect(f.app.respond('wrong', confirmed)).toBe(false);
+      await until(() => f.app.clientTools.getSnapshot().length === 1);
+      expect(f.app.clientTools.getSnapshot()).toEqual([
+        { name: 'confirm_booking', args: { summary: 'Fictional table' } },
+      ]);
+      expect(
+        f.app.agent.getSnapshot().toolCalls.find((call) => call.id === 'call-0')
+      ).toMatchObject({ name: 'confirm_booking', status: 'running' });
       expect(f.requests).toHaveLength(1);
-      expect(f.app.respond(panel.token, confirmed)).toBe(true);
-      expect(f.app.respond(panel.token, !confirmed)).toBe(false);
+      expect(answerBooking(f.app, 'call-0', 'Fictional table', confirmed)).toBe(true);
+      expect(answerBooking(f.app, 'call-0', 'Fictional table', !confirmed)).toBe(false);
       await f.next(1);
       expect(f.requests[1].body.threadId).toBe(f.requests[0].body.threadId);
       expect(f.requests[1].body.runId).not.toBe(f.requests[0].body.runId);
@@ -264,7 +273,7 @@ describe('application with actual native owner and synthetic SDK SSE', () => {
     await f.next();
     f.finish(0, 'confirm_booking', { summary: 'Fictional' });
     await done;
-    expect(f.app.getSnapshot().bookings).toHaveLength(0);
+    expect(f.app.clientTools.getSnapshot()).toHaveLength(0);
     expect(invoked).not.toHaveBeenCalled();
     expect(f.app.getSnapshot().canSubmit).toBe(false);
     expect(f.requests).toHaveLength(1);
@@ -274,20 +283,18 @@ describe('application with actual native owner and synthetic SDK SSE', () => {
     const done = f.app.submit('Booking');
     await f.next();
     f.finish(0, 'confirm_booking', { summary: 'Fictional' });
-    await until(() => f.app.getSnapshot().bookings.length > 0);
-    const old = f.app.getSnapshot().bookings[0];
+    await until(() => f.app.clientTools.getSnapshot().length > 0);
+    const old = bookingCard(f.app, 'call-0', 'Fictional');
+    if (!old) throw new Error('Missing booking card');
     const thread = f.app.getSnapshot().threadId;
     await f.app.stop();
     await done;
-    expect(f.app.respond(old.token, false)).toBe(false);
-    expect(f.app.getSnapshot().bookings[0]).toMatchObject({
-      status: 'aborted',
-    });
+    expect(old.props.answer({ confirmed: false })).toBe(false);
+    expect(f.app.clientTools.getSnapshot()).toEqual([]);
     await f.app.newConversation();
     expect(f.app.getSnapshot()).toMatchObject({
       threadId: null,
       native: undefined,
-      bookings: [],
       views: [],
       error: null,
       canSubmit: true,
@@ -296,7 +303,8 @@ describe('application with actual native owner and synthetic SDK SSE', () => {
     const next = f.app.submit('new');
     await f.next(1);
     expect(f.app.getSnapshot().threadId).not.toBe(thread);
-    expect(f.app.respond(old.token, true)).toBe(false);
+    expect(old.props.answer({ confirmed: true })).toBe(false);
+    expect(f.app.clientTools.getSnapshot()).toEqual([]);
     f.finish(1);
     await next;
   });
@@ -488,7 +496,7 @@ it.each(['ambiguous', 'wrong-run', 'missing', 'invalid-args'] as const)(
     await f.next(1);
     f.finish(1);
     await done;
-    expect(f.app.getSnapshot().bookings).toHaveLength(0);
+    expect(f.app.clientTools.getSnapshot()).toHaveLength(0);
     expect(f.app.getSnapshot().canSubmit).toBe(false);
   }
 );
@@ -641,8 +649,8 @@ export function checkApplicationTypes(
   const state = app.getSnapshot();
   // @ts-expect-error App snapshots are readonly.
   state.busy = false;
-  // @ts-expect-error Booking observations are readonly arrays.
-  state.bookings.push({});
+  // @ts-expect-error Waiting bookings are a readonly array.
+  app.clientTools.getSnapshot().push({ name: 'confirm_booking', args: {} });
   // @ts-expect-error Message projections are readonly arrays.
   state.views.push({});
   for (const call of state.native?.clientTools.calls ?? []) {
@@ -725,10 +733,8 @@ it('actual native SDK over loopback HTTP preserves terminal result and owns exac
       requests[1].body.messages.filter((message) => message.role === 'tool')
     ).toHaveLength(1);
     finish(1, 'confirm_booking', { summary: 'HTTP fictional table' });
-    await until(() => app.getSnapshot().bookings.length === 1);
-    const panel = app.getSnapshot().bookings[0];
-    expect(panel.callId).toBe('http-call-1');
-    expect(app.respond(panel.token, true)).toBe(true);
+    await until(() => app.clientTools.getSnapshot().length === 1);
+    expect(answerBooking(app, 'http-call-1', 'HTTP fictional table', true)).toBe(true);
     await until(() => requests.length === 3);
     expect(requests[2].body.threadId).toBe(requests[1].body.threadId);
     expect(requests[2].body.runId).not.toBe(requests[1].body.runId);

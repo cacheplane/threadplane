@@ -463,6 +463,7 @@ const SUPPORTED_EXPORTS = {
     'staticDelivery',
     'projectAgentError',
   ],
+  'core/testing': ['createFakeAgentSession'],
   react: ['useAgent'],
   'react/chat': [
     'ApprovalCard',
@@ -480,6 +481,7 @@ const SUPPORTED_EXPORTS = {
     'ChatSidebar',
     'ChatSidenav',
     'ChatSidenavScrim',
+    'ChatSidenavSections',
     'ChatInput',
     'Citations',
     'CitationCard',
@@ -506,6 +508,10 @@ const SUPPORTED_EXPORTS = {
     'toolOutcomes',
     'citationsWithToolSources',
     'StatusPanel',
+    'ask',
+    'createClientTools',
+    'useClientToolCalls',
+    'usePendingClientToolCalls',
     'ToolObservation',
     'SubagentCard',
     'subagentsFromEvidence',
@@ -513,9 +519,9 @@ const SUPPORTED_EXPORTS = {
     'WelcomeSuggestion',
     'Suggestions',
   ],
-  'react/debug': ['ChatDebug', 'StateDiff'],
+  'react/debug': ['ChatDebug', 'StateDiff', 'useAgentDevtools'],
   'react/markdown': ['Markdown', 'MarkdownComponentsProvider', 'MarkdownCopyButton'],
-  'react/render': ['RenderSpec'],
+  'react/render': ['RenderSpec', 'RenderDevtools'],
   'react/a2ui': ['A2uiSurface', 'a2uiBasicCatalog', 'useA2uiSurfaceWriter', 'A2uiMessageSurfaces'],
   'content/messages': ['createMessageContent', 'deriveDomain', 'deriveSourceType', 'deriveMonogram', 'monogramHue', 'formatPublished', 'monogramColor', 'citationTypeMeta', 'citationTypeLabel', 'citationSourceVisual'],
   'content/json': ['createJson'],
@@ -541,7 +547,7 @@ export function assertSupportedExports(project, entry) {
     if (!supported(entry[name], name))
       throw new Error(`${project} missing supported contract ${name}`);
   if (
-    ['react', 'react/debug', 'react/chat', 'react/markdown', 'react/render', 'react/a2ui', 'content/messages', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
+    ['core/testing', 'react', 'react/debug', 'react/chat', 'react/markdown', 'react/render', 'react/a2ui', 'content/messages', 'content/json', 'content/a2ui', 'content/render-state'].includes(project) &&
     Object.keys(entry).some((name) => !expected.includes(name))
   )
     throw new Error(`${project} has unexpected exports`);

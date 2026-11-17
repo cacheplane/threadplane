@@ -88,6 +88,21 @@ invent core pending-tool states. Integration tests borrow the actual private
 owner through a browser-safe Fetch API fixture. This is not a public AG-UI factory
 or a claim that shared display components accept every native snapshot.
 
+Custom events are not snapshot data, so `useAgent` does not observe them. A
+session can offer the optional core `onCustomEvent(listener)` method; both private
+runtime sessions do. Register a listener in an effect and return its release
+function:
+
+```tsx
+useEffect(
+  () => session.onCustomEvent?.((event) => console.log(event.name, event.data)),
+  [session]
+);
+```
+
+A listener receives only events emitted after it registers. `data` is frozen
+plain data.
+
 The root retains `use client`. Server rendering and hydration are not supported
 by this binding. No backend constructor is exported here; the current real
 LangGraph runtime is still a private development composition seam. This API is
@@ -715,7 +730,18 @@ and reports each change, with `null` when the current rating is pressed again.
 Storing ratings and restoring them after a reload is yours; for a rating you
 control, render `MessageRating` from `renderMessage`. A message that is still
 streaming, a user message, and a row drawn by `renderMessage` get no actions.
-Regenerate is not included because `AgentSession` has no command for it.
+
+Regenerate appears beside Copy when `messageActions` is set and the session has
+the optional `regenerate` command. `Chat` calls `session.regenerate(messageId)`
+and ignores a rejection; the button is disabled while a response is running. A
+session without the command gets no button. To handle the action yourself, on
+`Chat` or on `MessageList`, pass `onRegenerate`:
+
+```tsx
+const actions = {
+  onRegenerate: (messageId: string) => rerun(messageId),
+};
+```
 
 ### Generated UI in the transcript
 
@@ -773,6 +799,11 @@ comes from your function: pass the content to `A2uiMessageSurfaces` from
 and render `A2uiSurface` yourself, returning `skeleton` until a surface is
 ready.
 
+`sourceDetails: true` adds a closed "Details" disclosure under each surface
+that shows the message content it was built from, headed "Layout source" for a
+spec and "Response source" for A2UI. Pass `{ summary, spec, a2ui }` instead of
+`true` to replace that text. A placeholder and a message left as text get none.
+
 A message shown as a surface gets no built-in message actions. A custom
 `renderMessage` keeps full ownership of its rows.
 
@@ -811,6 +842,14 @@ actions still render. While it returns content, `renderToolCall`,
     <ActivitySummary calls={toolCalls} subagents={subagents} />
   )}
 />
+```
+
+`Chat` also takes a `header`: app-owned content, such as a title and actions,
+in a bar above the transcript. It steps aside while the welcome greeting shows
+and adds no element unless set.
+
+```tsx
+<Chat session={session} header={<h2>Support</h2>} />
 ```
 
 Pass `threads` to list conversations in a sidebar beside the chat, with
@@ -1003,7 +1042,10 @@ Report the failure from your command; the list does not show an error itself.
 - **Pin** or **Unpin** is offered according to the row's `pinned` value. With
   `reorderPinned`, pinned rows also get **Move up** and **Move down**; the
   command receives the ID of the pinned row to place it before, or `null` for
-  last. The list keeps your order and does not sort pinned rows itself.
+  last. Pinned rows can also be dragged with a mouse onto another pinned row:
+  a line shows whether the row lands before or after it, and the drop calls
+  the same command. Keyboard and touch users keep **Move up** and **Move
+  down**. The list keeps your order and does not sort pinned rows itself.
 - **Move to project** is offered when you also pass `projects`. The open menu
   swaps to **No project** and your projects, and `moveToProject` receives the
   chosen project ID or `null`. The row stays in place until you update `threads`.
@@ -1353,6 +1395,35 @@ shell accepts application-owned navigation as `children`:
   </ChatSidenav>
 </>
 ```
+
+`ChatSidenavSections` is the usual content for that slot: a **New chat**
+button, **Projects**, **Recent** and a collapsed **Archived** section, built
+from `ProjectList` and `ThreadList`.
+
+```tsx
+<ChatSidenav mode={mode} open={drawerOpen} onModeChange={setDesktopMode} onOpenChange={setDrawerOpen}>
+  <ChatSidenavSections
+    onNewChat={startThread}
+    threads={threads}
+    archivedThreads={archived}
+    activeThreadId={threadId}
+    onThreadSelect={selectThread}
+    threadActions={threadActions}
+    projects={projects}
+    selectedProjectId={projectId}
+    onProjectSelect={selectProject}
+    projectActions={projectActions}
+  />
+</ChatSidenav>
+```
+
+Each section appears only when its data is supplied (`null` or absent omits
+it), and **New chat** only with `onNewChat`. The lists stay controlled: you own
+the data and what selecting or acting on a row does. `projects` are also
+offered as **Move to project** destinations. Archived conversations stay
+unmounted until the section is opened, and an empty one reads "No archived
+conversations." Label props replace the built-in headings, and `children`
+render after the sections. Search and collapse stay on `ChatSidenav`.
 
 Required `mode` selects `expanded`, `collapsed` or `drawer`; `open` controls only
 the drawer. Expanded and collapsed navigation stay in normal flow at 18rem and
@@ -1889,6 +1960,38 @@ drag end, blur and unmount retire local captures. Foreign payloads cannot supply
 conversation IDs. Dragging preserves selection, keyed rows, draft, transcript,
 URL and an active response. Shared catalogs and full T29 parity remain open.
 
+## DevTools reporting (development only)
+
+In development, React apps can feed the Threadplane DevTools browser extension
+the same `threadplane:devtools` reports the Angular adapters send. Both are
+opt-in, and production builds (`process.env.NODE_ENV === 'production'`) fold
+them away entirely.
+
+```tsx
+import { useAgentDevtools } from '@threadplane/react/debug';
+import { RenderDevtools, RenderSpec } from '@threadplane/react/render';
+
+function AgentPanel({ session }) {
+  // Names the adapter whose signal vocabulary the reports use.
+  useAgentDevtools(session, { adapter: 'langgraph' });
+  return (
+    <RenderDevtools surface="trip-recap">
+      <RenderSpec spec={spec} registry={registry} state={state} />
+    </RenderDevtools>
+  );
+}
+```
+
+`useAgentDevtools` reports, per snapshot change, which of `status`, `messages`,
+`toolCalls` and `error` changed, as `{ v, agent, adapter, seq, eventType, wrote,
+tMs }`. The event type is `run:start`, `run:end` or `snapshot`, because the
+core snapshot does not expose protocol events. `RenderDevtools` reports the
+registry names and each element of the `RenderSpec` inside it as `mounted`,
+`fallback`, `unresolved` or `hidden`, coalesced over 50 ms and only when the
+resolution changes. Reports carry names, keys, states and timing, never values.
+Set `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true` to turn both off. The
+extension's scripted runs are not available in React.
+
 ## A2UI surfaces
 
 `@threadplane/react/a2ui` renders one A2UI surface. Accumulate wire
@@ -1911,6 +2014,22 @@ export function Surfaces({ snapshot }: { readonly snapshot: A2uiSurfacesSnapshot
   ));
 }
 ```
+
+The base stylesheet follows the system colour scheme. To fix the palette, also
+import one of the four theme files, in either order:
+
+```tsx
+import '@threadplane/react/a2ui/styles.css';
+import '@threadplane/react/a2ui/themes/material-light.css';
+```
+
+`default-light.css`, `default-dark.css`, `material-light.css` and
+`material-dark.css` set the colour and shadow tokens on every
+`.a2ui-surface`, so surfaces stop following the system colour scheme. The two
+default files repeat the base stylesheet's own light and dark values. The Material files use the Material Design 3 colour tokens and
+add no dependency. An agent's own `theme.primaryColor` still overrides the
+primary colour on its surface. To theme one part of the page differently, set
+the `--a2ui-*` custom properties on a wrapper yourself.
 
 `a2uiBasicCatalog()` returns `Text`, `Image`, `Icon`, `Video`, `AudioPlayer`,
 `Row`, `Column`, `List`, `Card`, `Divider`, `Tabs`, `Modal`, `TextField`,
