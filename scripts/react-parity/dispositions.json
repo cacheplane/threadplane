@@ -19207,6 +19207,16 @@
       "note": "Reasoning first seen already settled (saved history, or delivered whole) stays unmeasured. Nothing is stored, so a new session knows no durations. Subgraph messages are not timed. Rich blocks, event-only retention and full T09/T15 parity remain open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/thread-directory.ts",
+      "taskIds": [
+        "T11"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral directory of a deployment's saved conversations: an observable list read from thread metadata (title, archived, pinned, pinned order, project) with create, rename, delete, archive, pin, move and reorder commands that write metadata and read the list again.",
+      "note": "Staged beside the private session; not exported from a published entry. The Angular LangGraphThreadsAdapter is unchanged and not yet built on it. Reads one page of the configured size; no paging, search or cross-tab refresh."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/agent-session.ts",
       "taskIds": [
         "T12",
