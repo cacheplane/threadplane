@@ -338,6 +338,50 @@ describe('Chat clientTools', () => {
     expect(container.querySelector('.tp-tool-activity')).not.toBeNull();
   });
 
+  it('moves focus to the next waiting ask when one of several is answered', async () => {
+    const tools = dayTools();
+    const calls = [running('c1', ['Mon']), running('c2', ['Tue'])];
+    const { session } = fakeSession(transcript(calls));
+    const { container } = render(
+      <Chat session={session} clientTools={tools} />
+    );
+    start(tools, ['Mon']);
+    start(tools, ['Tue']);
+    const first = container.querySelector(
+      '[data-ask="c1"] button'
+    ) as HTMLElement;
+    first.focus();
+    fireEvent.click(first);
+    await flush();
+    expect(container.querySelector('[data-ask="c1"]')).toBeNull();
+    // The answered button is gone; the remaining question takes over, not the page.
+    expect(document.activeElement).toBe(
+      container.querySelector('[data-ask="c2"] button')
+    );
+  });
+
+  it('leaves focus alone when it is elsewhere as one of several asks is answered', async () => {
+    const tools = dayTools();
+    const calls = [running('c1', ['Mon']), running('c2', ['Tue'])];
+    const { session } = fakeSession(transcript(calls));
+    const { container } = render(
+      <>
+        <input aria-label="Elsewhere" />
+        <Chat session={session} clientTools={tools} />
+      </>
+    );
+    start(tools, ['Mon']);
+    start(tools, ['Tue']);
+    const elsewhere = container.querySelector('input') as HTMLElement;
+    elsewhere.focus();
+    fireEvent.click(
+      container.querySelector('[data-ask="c1"] button') as HTMLElement
+    );
+    await flush();
+    expect(container.querySelector('[data-ask="c2"]')).not.toBeNull();
+    expect(document.activeElement).toBe(elsewhere);
+  });
+
   it('removes the ask when the run is stopped', async () => {
     const tools = dayTools();
     const stop = new AbortController();
