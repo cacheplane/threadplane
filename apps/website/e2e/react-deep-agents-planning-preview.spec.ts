@@ -1,3 +1,4 @@
+// Covers the planning capability page and its React preview counterpart.
 import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
