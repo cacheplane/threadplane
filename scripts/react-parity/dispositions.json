@@ -19351,6 +19351,114 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Runs an element's on bindings through application handlers with resolved params, confirm and onSuccess/onError follow-ups, writes a writable store, and reports handler, stateChange and result events. Lifecycle events, watch effects and preventDefault are not applied."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ProjectEntry",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadDirectory",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadDirectoryError",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadDirectorySnapshot",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadDirectoryStatus",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadEntry",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "source:libs/chat/src/lib/thread-directory/thread-directory.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/project-store.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset: framework-neutral thread directory and LangGraph Store project names behind the React ThreadSidebar."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/thread-directory.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset: framework-neutral thread directory and LangGraph Store project names behind the React ThreadSidebar."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/thread-metadata.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset: framework-neutral thread directory and LangGraph Store project names behind the React ThreadSidebar."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/fake-threads-client.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private test fixture: in-memory LangGraph threads/store client and the shared ThreadDirectory conformance suite run against both the runtime directory and the Angular adapter."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/thread-directory-conformance.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private test fixture: in-memory LangGraph threads/store client and the shared ThreadDirectory conformance suite run against both the runtime directory and the Angular adapter."
     }
   ]
 }

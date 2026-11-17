@@ -87,6 +87,14 @@ export { ChatStatusPanelComponent, type ChatStatusPanelTone } from './lib/primit
 export { ChatSubagentsComponent } from './lib/primitives/chat-subagents/chat-subagents.component';
 export { ChatThreadListComponent } from './lib/primitives/chat-thread-list/chat-thread-list.component';
 export type { Thread, ThreadActionAdapter } from './lib/primitives/chat-thread-list/chat-thread-list.component';
+export type {
+  ProjectEntry,
+  ThreadDirectory,
+  ThreadDirectoryError,
+  ThreadDirectorySnapshot,
+  ThreadDirectoryStatus,
+  ThreadEntry,
+} from './lib/thread-directory/thread-directory';
 export { ChatProjectListComponent } from './lib/primitives/chat-project-list/chat-project-list.component';
 export type { Project, ProjectActionAdapter } from './lib/primitives/chat-project-list/chat-project-list.component';
 export { ChatGenuiSkeletonComponent } from './lib/primitives/chat-genui-skeleton/chat-genui-skeleton.component';
