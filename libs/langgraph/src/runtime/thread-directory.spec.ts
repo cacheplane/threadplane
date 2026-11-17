@@ -3,9 +3,15 @@ import { createLangGraphThreadDirectory } from './create-session';
 import { describeThreadDirectoryConformance } from './testing/thread-directory-conformance';
 import { createFakeThreadsClient } from './testing/fake-threads-client';
 
-describeThreadDirectoryConformance('runtime', (client) => ({
+describeThreadDirectoryConformance('runtime, projects off', (client) => ({
   directory: createLangGraphThreadDirectory({ client, projects: false }),
 }));
+
+describeThreadDirectoryConformance(
+  'runtime, default project store',
+  (client) => ({ directory: createLangGraphThreadDirectory({ client }) }),
+  { projects: true }
+);
 
 describe('createLangGraphThreadDirectory', () => {
   it('rejects a cross-origin apiUrl when browserOrigin is set', () => {
@@ -44,9 +50,39 @@ describe('createLangGraphThreadDirectory', () => {
     expect(directory.getSnapshot()).toEqual({
       threads: [],
       archived: [],
+      projects: [],
       status: 'idle',
     });
     directory.dispose();
+  });
+
+  it('omits projects and never touches the store when projects is false', async () => {
+    const client = createFakeThreadsClient([{ thread_id: 'a' }]);
+    const directory = createLangGraphThreadDirectory({
+      client,
+      projects: false,
+    });
+    await directory.refresh();
+
+    expect('projects' in directory.getSnapshot()).toBe(false);
+    expect(client.calls.some((call) => call.startsWith('store.'))).toBe(false);
+    expect(directory.createProject).toBeUndefined();
+    expect(directory.renameProject).toBeUndefined();
+    expect(directory.removeProject).toBeUndefined();
+  });
+
+  it('uses a supplied project store', async () => {
+    const client = createFakeThreadsClient();
+    const projects = {
+      list: async () => [{ id: 'x', name: 'X' }],
+      create: async () => ({ id: 'y' }),
+      rename: async () => undefined,
+      remove: async () => undefined,
+    };
+    const directory = createLangGraphThreadDirectory({ client, projects });
+    await directory.refresh();
+    expect(directory.getSnapshot().projects).toEqual([{ id: 'x', name: 'X' }]);
+    expect(client.calls.some((call) => call.startsWith('store.'))).toBe(false);
   });
 
   it('requires an apiUrl or a client', () => {

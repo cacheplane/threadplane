@@ -8,7 +8,18 @@ export interface FakeThread {
   readonly metadata?: Record<string, unknown>;
 }
 
+/** A seeded or stored Store API item. */
+export interface FakeStoreItem {
+  readonly namespace: readonly string[];
+  readonly key: string;
+  readonly value: Record<string, unknown>;
+}
+
 export interface FakeThreadsClient extends LangGraphThreadsClient {
+  /** Every `store.putItem` call, in order. */
+  readonly puts: readonly FakeStoreItem[];
+  /** Current Store API items. */
+  readonly items: () => readonly FakeStoreItem[];
   /** Method names in call order, such as `'threads.search'`. */
   readonly calls: readonly string[];
   /** Current server-side threads, newest first. */
@@ -20,13 +31,21 @@ export interface FakeThreadsClient extends LangGraphThreadsClient {
 }
 
 /**
- * In-memory stand-in for the SDK's `threads` API. It records calls, merges
+ * In-memory stand-in for the SDK's `threads` and `store` APIs. It records calls, merges
  * metadata on update and returns threads newest first, as the server lists
- * them. Only the members a thread directory uses are implemented.
+ * them. Only the members a thread directory uses are implemented. `storeSeed` seeds
+ * Store API items, such as projects.
  */
 export function createFakeThreadsClient(
-  seed: readonly FakeThread[] = []
+  seed: readonly FakeThread[] = [],
+  storeSeed: readonly FakeStoreItem[] = []
 ): FakeThreadsClient {
+  const items = new Map<string, FakeStoreItem>();
+  const puts: FakeStoreItem[] = [];
+  const itemKey = (namespace: readonly string[], key: string) =>
+    JSON.stringify([...namespace, key]);
+  for (const item of storeSeed)
+    items.set(itemKey(item.namespace, item.key), item);
   const threads = new Map<string, FakeThread>(
     seed.map((thread) => [thread.thread_id, clone(thread)])
   );
@@ -76,8 +95,11 @@ export function createFakeThreadsClient(
 
   const fakeThreads = {
     async search(query?: { signal?: AbortSignal }) {
+      // Answers with the state at call time, as a server that was already
+      // reading when a later write arrived.
+      const answer = stored();
       await enter('threads.search', query?.signal);
-      return stored();
+      return answer;
     },
     async create(payload?: {
       metadata?: Record<string, unknown>;
@@ -113,9 +135,56 @@ export function createFakeThreadsClient(
     },
   };
 
+  const fakeStore = {
+    async putItem(
+      namespace: string[],
+      key: string,
+      value: Record<string, unknown>,
+      options?: { signal?: AbortSignal }
+    ) {
+      await enter('store.putItem', options?.signal);
+      const item = { namespace: [...namespace], key, value: { ...value } };
+      puts.push(item);
+      items.set(itemKey(namespace, key), item);
+    },
+    async getItem(
+      namespace: string[],
+      key: string,
+      options?: { signal?: AbortSignal }
+    ) {
+      await enter('store.getItem', options?.signal);
+      const item = items.get(itemKey(namespace, key));
+      return item ? { ...item, createdAt: '', updatedAt: '' } : null;
+    },
+    async deleteItem(
+      namespace: string[],
+      key: string,
+      options?: { signal?: AbortSignal }
+    ) {
+      await enter('store.deleteItem', options?.signal);
+      items.delete(itemKey(namespace, key));
+    },
+    async searchItems(
+      prefix: string[],
+      options?: { limit?: number; signal?: AbortSignal }
+    ) {
+      const answer = [...items.values()].filter((item) =>
+        prefix.every((part, index) => item.namespace[index] === part)
+      );
+      await enter('store.searchItems', options?.signal);
+      return {
+        items: answer
+          .slice(0, options?.limit ?? 10)
+          .map((item) => ({ ...item, createdAt: '', updatedAt: '' })),
+      };
+    },
+  };
+
   return {
     threads: fakeThreads as unknown as LangGraphThreadsClient['threads'],
-    store: {} as LangGraphThreadsClient['store'],
+    store: fakeStore as unknown as LangGraphThreadsClient['store'],
+    puts,
+    items: () => [...items.values()],
     calls,
     stored,
     failNext(method, status) {

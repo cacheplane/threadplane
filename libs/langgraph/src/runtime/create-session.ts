@@ -62,6 +62,7 @@ export {
   type LangGraphThreadDirectoryOptions,
   type LangGraphThreadsClient,
 } from './thread-directory.js';
+export { createLangGraphProjectStore } from './project-store.js';
 export type { ProjectStore } from './project-store.js';
 import {
   advanceCursor,

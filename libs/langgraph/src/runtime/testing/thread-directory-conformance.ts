@@ -3,6 +3,12 @@ import type { ThreadDirectory } from '@threadplane/core';
 import type { LangGraphThreadsClient } from '../thread-directory';
 import { createFakeThreadsClient, type FakeThread } from './fake-threads-client';
 
+/** What a conformance subject offers beyond threads. */
+export interface ThreadDirectoryConformanceOptions {
+  /** The subject keeps projects in the default Store namespace. */
+  readonly projects?: boolean;
+}
+
 type Make = (client: LangGraphThreadsClient) => {
   directory: ThreadDirectory;
   teardown?(): void;
@@ -17,8 +23,10 @@ const at = (minute: number) =>
  */
 export function describeThreadDirectoryConformance(
   name: string,
-  make: Make
+  make: Make,
+  options: ThreadDirectoryConformanceOptions = {}
 ): void {
+  const withProjects = options.projects === true;
   describe(`ThreadDirectory conformance: ${name}`, () => {
     const teardowns: (() => void)[] = [];
 
@@ -26,8 +34,18 @@ export function describeThreadDirectoryConformance(
       for (const teardown of teardowns.splice(0)) teardown();
     });
 
-    function setup(seed: readonly FakeThread[]) {
-      const client = createFakeThreadsClient(seed);
+    function setup(
+      seed: readonly FakeThread[],
+      projects: readonly { id: string; name: string }[] = []
+    ) {
+      const client = createFakeThreadsClient(
+        seed,
+        projects.map((project) => ({
+          namespace: ['threadplane', 'projects'],
+          key: project.id,
+          value: { name: project.name },
+        }))
+      );
       const subject = make(client);
       teardowns.push(() => {
         subject.directory.dispose();
@@ -240,7 +258,7 @@ export function describeThreadDirectoryConformance(
       expect(entry(directory, created?.id ?? '')?.projectId).toBe('p1');
     });
 
-    it('does not notify after dispose', async () => {
+    it('does not notify or write after dispose', async () => {
       const { client, directory } = setup([
         { thread_id: 'a', updated_at: at(1), metadata: { title: 'A' } },
       ]);
@@ -248,14 +266,212 @@ export function describeThreadDirectoryConformance(
       directory.subscribe(notify);
       const release = client.hold('threads.search');
       const refreshing = directory.refresh();
+      const before = directory.getSnapshot();
 
       directory.dispose();
-      const before = notify.mock.calls.length;
+      const notified = notify.mock.calls.length;
       release();
       await refreshing;
 
-      expect(notify).toHaveBeenCalledTimes(before);
+      expect(notify).toHaveBeenCalledTimes(notified);
+      expect(directory.getSnapshot()).toBe(before);
       expect(directory.getSnapshot().threads).toEqual([]);
     });
+
+    it('does not flicker back when a refresh that began before a rename resolves late', async () => {
+      const { client, directory } = setup([
+        { thread_id: 'a', updated_at: at(1), metadata: { title: 'A' } },
+      ]);
+      await directory.refresh();
+      const releaseStale = client.hold('threads.search');
+      const stale = directory.refresh();
+      const releaseConfirm = client.hold('threads.search');
+      const titles: (string | undefined)[] = [];
+      directory.subscribe(() => titles.push(entry(directory, 'a')?.title));
+
+      const renaming = directory.rename?.('a', 'Trip');
+      // Let the update settle and the confirming refresh start.
+      await vi.waitFor(() =>
+        expect(client.calls.filter((c) => c === 'threads.search')).toHaveLength(3)
+      );
+      releaseStale();
+      await stale;
+      expect(entry(directory, 'a')?.title).toBe('Trip');
+      releaseConfirm();
+      await renaming;
+
+      expect(entry(directory, 'a')?.title).toBe('Trip');
+      expect(titles).not.toContain('A');
+    });
+
+    it('does not carry pinnedOrder on published entries', async () => {
+      const { directory } = setup([
+        {
+          thread_id: 'a',
+          updated_at: at(1),
+          metadata: { title: 'A', pinned: true, pinnedOrder: 3 },
+        },
+      ]);
+      await directory.refresh();
+      const first = entry(directory, 'a');
+      await directory.refresh();
+
+      expect(first).toBeDefined();
+      expect('pinnedOrder' in (first as object)).toBe(false);
+      expect(entry(directory, 'a')).toBe(first);
+      await directory.setPinned?.('a', true);
+      expect('pinnedOrder' in (entry(directory, 'a') as object)).toBe(false);
+    });
+
+    it('appends a pinned thread moved before an unknown id', async () => {
+      const { client, directory } = setup([
+        {
+          thread_id: 'c',
+          updated_at: at(3),
+          metadata: { title: 'C', pinned: true, pinnedOrder: 0 },
+        },
+        {
+          thread_id: 'd',
+          updated_at: at(4),
+          metadata: { title: 'D', pinned: true, pinnedOrder: 1 },
+        },
+      ]);
+      await directory.refresh();
+
+      await directory.reorderPinned?.('c', 'missing');
+
+      expect(directory.getSnapshot().threads.map((t) => t.id)).toEqual([
+        'd',
+        'c',
+      ]);
+      expect(
+        ['d', 'c'].map((id) => metadata(client, id)?.['pinnedOrder'])
+      ).toEqual([0, 1]);
+    });
+
+    it('does not show loading during a background refresh', async () => {
+      const { client, directory } = setup([
+        { thread_id: 'a', updated_at: at(1), metadata: { title: 'A' } },
+      ]);
+      const statuses: string[] = [];
+      directory.subscribe(() => statuses.push(directory.getSnapshot().status));
+      const first = directory.refresh();
+      expect(directory.getSnapshot().status).toBe('loading');
+      await first;
+      statuses.length = 0;
+
+      const release = client.hold('threads.search');
+      const refreshing = directory.refresh();
+      expect(directory.getSnapshot().status).toBe('idle');
+      release();
+      await refreshing;
+      await directory.rename?.('a', 'Trip');
+
+      expect(directory.getSnapshot().status).toBe('idle');
+      expect(statuses).not.toContain('loading');
+
+      client.failNext('threads.search', 500);
+      await directory.refresh();
+      expect(directory.getSnapshot().status).toBe('error');
+      const recovery = client.hold('threads.search');
+      const recovering = directory.refresh();
+      expect(directory.getSnapshot().status).toBe('loading');
+      recovery();
+      await recovering;
+      expect(directory.getSnapshot().status).toBe('idle');
+    });
+
+    it.skipIf(!withProjects)(
+      'lists, creates, renames and removes projects',
+      async () => {
+        const { client, directory } = setup(
+          [],
+          [
+            { id: 'p2', name: 'Zed' },
+            { id: 'p1', name: 'Alpha' },
+          ]
+        );
+        await directory.refresh();
+        expect(directory.getSnapshot().projects).toEqual([
+          { id: 'p1', name: 'Alpha' },
+          { id: 'p2', name: 'Zed' },
+        ]);
+
+        const created = await directory.createProject?.('  Trips ');
+        await directory.renameProject?.('p2', 'Work');
+        await directory.removeProject?.('p1');
+
+        expect(created?.id).toEqual(expect.any(String));
+        expect(directory.getSnapshot().projects?.map((p) => p.name)).toEqual([
+          'Trips',
+          'Work',
+        ]);
+        expect(client.items()).toHaveLength(2);
+        await expect(directory.createProject?.('  ')).rejects.toThrow(
+          'Project name is required'
+        );
+      }
+    );
+
+    it.skipIf(!withProjects)('moves threads out of a removed project', async () => {
+      const { client, directory } = setup(
+        [
+          {
+            thread_id: 'a',
+            updated_at: at(1),
+            metadata: { title: 'A', projectId: 'p1' },
+          },
+          {
+            thread_id: 'b',
+            updated_at: at(2),
+            metadata: { title: 'B', projectId: 'p1', archived: true },
+          },
+          {
+            thread_id: 'c',
+            updated_at: at(3),
+            metadata: { title: 'C', projectId: 'p2' },
+          },
+        ],
+        [
+          { id: 'p1', name: 'One' },
+          { id: 'p2', name: 'Two' },
+        ]
+      );
+      await directory.refresh();
+      expect(entry(directory, 'a')?.projectId).toBe('p1');
+
+      await directory.removeProject?.('p1');
+
+      expect(entry(directory, 'a')?.projectId).toBeNull();
+      expect(entry(directory, 'b')?.projectId).toBeNull();
+      expect(entry(directory, 'c')?.projectId).toBe('p2');
+      expect(metadata(client, 'a')?.['projectId']).toBeNull();
+      expect(directory.getSnapshot().projects).toEqual([
+        { id: 'p2', name: 'Two' },
+      ]);
+      expect(client.items().map((item) => item.key)).toEqual(['p2']);
+    });
+
+    it.skipIf(!withProjects)(
+      'lists threads when the project store is unavailable',
+      async () => {
+        const { client, directory } = setup([
+          { thread_id: 'a', updated_at: at(1), metadata: { title: 'A' } },
+        ]);
+        client.failNext('store.searchItems', 404);
+
+        await directory.refresh();
+
+        const snapshot = directory.getSnapshot();
+        expect(snapshot.status).toBe('idle');
+        expect(snapshot.error).toBeUndefined();
+        expect(snapshot.threads.map((t) => t.id)).toEqual(['a']);
+        expect(snapshot.projects).toEqual([]);
+        await expect(directory.createProject?.('Trips')).rejects.toThrow(
+          'The LangGraph request failed.'
+        );
+        expect(client.puts).toEqual([]);
+      }
+    );
   });
 }

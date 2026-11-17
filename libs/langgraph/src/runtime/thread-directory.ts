@@ -1,6 +1,7 @@
 import type {
   AgentError,
   PlainValue,
+  ProjectEntry,
   ThreadDirectory,
   ThreadDirectorySnapshot,
   ThreadEntry,
@@ -12,7 +13,11 @@ import {
   createSafeRequestError,
   projectLangGraphOperationFailure,
 } from './operation-errors.js';
-import type { ProjectStore } from './project-store.js';
+import {
+  createLangGraphProjectStore,
+  requireProjectName,
+  type ProjectStore,
+} from './project-store.js';
 import {
   orderThreads,
   projectThread,
@@ -34,7 +39,10 @@ export interface LangGraphThreadDirectoryOptions {
   readonly browserOrigin?: string;
   /** Title for threads without one. Defaults to `'New chat'`. */
   readonly titleFallback?: string;
-  /** Project names. `false` turns projects off. */
+  /**
+   * Project names. Defaults to the LangGraph Store API
+   * (`createLangGraphProjectStore`); `false` turns projects off.
+   */
   readonly projects?: ProjectStore | false;
 }
 
@@ -63,13 +71,27 @@ export function createLangGraphThreadDirectory(
 ): ThreadDirectory {
   const client = options.client ?? ownedClient(options);
   const titleFallback = options.titleFallback ?? 'New chat';
+  const projectStore: ProjectStore | undefined =
+    options.projects === false
+      ? undefined
+      : options.projects ?? createLangGraphProjectStore(client);
   const lifetime = new AbortController();
   const listeners = new Set<() => void>();
   const pending = new Set<Patch>();
   let server: readonly ProjectedThread[] = [];
+  let serverProjects: readonly ProjectEntry[] = Object.freeze([]);
+  // Cached publication per thread: the source it came from and the entry
+  // published for it, so unchanged threads keep their reference.
+  let published = new Map<
+    string,
+    { readonly source: ProjectedThread; readonly entry: ThreadEntry }
+  >();
+  let projectsUnavailable = false;
+  let loaded = false;
   let snapshot: ThreadDirectorySnapshot = Object.freeze({
     threads: Object.freeze([]),
     archived: Object.freeze([]),
+    ...(projectStore ? { projects: serverProjects } : {}),
     status: 'idle',
   });
   let error: AgentError | undefined;
@@ -81,37 +103,56 @@ export function createLangGraphThreadDirectory(
 
   function publish(): void {
     if (disposed()) return;
-    const previous = new Map(
-      [...snapshot.threads, ...snapshot.archived].map((entry) => [
-        entry.id,
-        entry as ProjectedThread,
-      ])
-    );
     const entries: ProjectedThread[] = [];
     for (const base of server) {
       let entry: ProjectedThread | undefined = base;
       for (const patch of pending)
         if (patch.id === base.id) entry = entry && applyPatch(entry, patch.fields);
-      if (!entry) continue;
-      const kept = previous.get(entry.id);
-      entries.push(kept && sameEntry(kept, entry) ? kept : entry);
+      if (entry) entries.push(entry);
     }
     const ordered = orderThreads(entries);
+    const nextPublished = new Map<
+      string,
+      { readonly source: ProjectedThread; readonly entry: ThreadEntry }
+    >();
+    const project = (source: ProjectedThread): ThreadEntry => {
+      const kept = published.get(source.id);
+      const entry =
+        kept && sameEntry(kept.source, source)
+          ? kept.entry
+          : (stripOrder(source) as ThreadEntry);
+      nextPublished.set(source.id, {
+        source: kept && entry === kept.entry ? kept.source : source,
+        entry,
+      });
+      return entry;
+    };
+    const threads = ordered.threads.map(project);
+    const archived = ordered.archived.map(project);
+    published = nextPublished;
+    // Loading shows only until the first successful load, or while recovering
+    // from an error; a later refresh keeps the last state until it resolves.
     const status =
-      inFlight > 0 ? 'loading' : error !== undefined ? 'error' : 'idle';
+      inFlight > 0 && (!loaded || error !== undefined)
+        ? 'loading'
+        : error !== undefined
+          ? 'error'
+          : 'idle';
     const next: ThreadDirectorySnapshot = Object.freeze({
-      threads: sameList(snapshot.threads, ordered.threads)
+      threads: sameList(snapshot.threads, threads)
         ? snapshot.threads
-        : Object.freeze(ordered.threads),
-      archived: sameList(snapshot.archived, ordered.archived)
+        : Object.freeze(threads),
+      archived: sameList(snapshot.archived, archived)
         ? snapshot.archived
-        : Object.freeze(ordered.archived),
+        : Object.freeze(archived),
+      ...(projectStore ? { projects: serverProjects } : {}),
       status,
       ...(error === undefined ? {} : { error }),
     });
     if (
       next.threads === snapshot.threads &&
       next.archived === snapshot.archived &&
+      next.projects === snapshot.projects &&
       next.status === snapshot.status &&
       next.error === snapshot.error
     )
@@ -130,12 +171,12 @@ export function createLangGraphThreadDirectory(
     inFlight++;
     publish();
     let outcome: { list: unknown } | { failed: unknown };
+    let projectOutcome: { list: unknown } | { failed: unknown } | undefined;
     try {
-      outcome = {
-        list: await client.threads.search({ limit: 50, offset: 0, signal }),
-      };
-    } catch (failure) {
-      outcome = { failed: failure };
+      [outcome, projectOutcome] = await Promise.all([
+        settle(() => client.threads.search({ limit: 50, offset: 0, signal })),
+        projectStore ? settle(() => projectStore.list(signal)) : undefined,
+      ]);
     } finally {
       link.release();
     }
@@ -150,6 +191,7 @@ export function createLangGraphThreadDirectory(
       if ('list' in outcome && Array.isArray(outcome.list)) {
         server = outcome.list.map((raw) => projectThread(raw, titleFallback));
         error = undefined;
+        loaded = true;
         for (const patch of pending)
           if (patch.settledAt !== undefined && patch.settledAt < sequence)
             pending.delete(patch);
@@ -157,6 +199,17 @@ export function createLangGraphThreadDirectory(
         error = loadError(
           requestError('failed' in outcome ? outcome.failed : outcome, signal)
         );
+      }
+    }
+    if (projectOutcome && sequence === applied) {
+      if ('list' in projectOutcome && Array.isArray(projectOutcome.list)) {
+        const list = projectOutcome.list as readonly ProjectEntry[];
+        projectsUnavailable = false;
+        if (!sameProjects(serverProjects, list))
+          serverProjects = Object.freeze([...list]);
+      } else {
+        // A missing or failing Store API never fails the thread list.
+        projectsUnavailable = true;
       }
     }
     publish();
@@ -179,6 +232,28 @@ export function createLangGraphThreadDirectory(
     }
     for (const record of records) record.settledAt = started;
     await refresh();
+  }
+
+  async function mutateProjects<T>(
+    work: () => Promise<T>,
+    patches: readonly { readonly id: string; readonly fields: Fields }[] = []
+  ): Promise<T> {
+    if (disposed() || !projectStore || projectsUnavailable)
+      throw createSafeRequestError();
+    let result: T | undefined;
+    const wrapped = async () => {
+      try {
+        result = await work();
+      } catch (failure) {
+        throw requestError(failure, lifetime.signal);
+      }
+    };
+    if (patches.length > 0) await mutate(patches, wrapped);
+    else {
+      await wrapped();
+      await refresh();
+    }
+    return result as T;
   }
 
   const update = (id: string, metadata: Record<string, PlainValue>) =>
@@ -251,11 +326,80 @@ export function createLangGraphThreadDirectory(
           )
       );
     },
+    ...(projectStore
+      ? {
+          createProject: async (name: string) => {
+            const trimmed = requireProjectName(name);
+            return mutateProjects(() => projectStore.create(trimmed));
+          },
+          renameProject: async (id: string, name: string) => {
+            const trimmed = requireProjectName(name);
+            return mutateProjects(() => projectStore.rename(id, trimmed));
+          },
+          async removeProject(id: string) {
+            const members = [
+              ...snapshot.threads,
+              ...snapshot.archived,
+            ].filter((entry) => entry.projectId === id);
+            try {
+              await mutateProjects(
+                async () => {
+                  await Promise.all(
+                    members.map((entry) =>
+                      update(entry.id, { projectId: null })(lifetime.signal)
+                    )
+                  );
+                  await projectStore.remove(id);
+                },
+                members.map((entry) => ({
+                  id: entry.id,
+                  fields: { projectId: null },
+                }))
+              );
+            } catch (failure) {
+              // Some threads may already have left the project on the server.
+              void refresh();
+              throw failure;
+            }
+          },
+        }
+      : {}),
     dispose() {
       lifetime.abort();
       listeners.clear();
     },
   });
+}
+
+async function settle(
+  work: () => Promise<unknown>
+): Promise<{ list: unknown } | { failed: unknown }> {
+  try {
+    return { list: await work() };
+  } catch (failed) {
+    return { failed };
+  }
+}
+
+function stripOrder(entry: ProjectedThread): ThreadEntry {
+  return Object.freeze({
+    id: entry.id,
+    title: entry.title,
+    ...(entry.updatedAt === undefined ? {} : { updatedAt: entry.updatedAt }),
+    pinned: entry.pinned,
+    archived: entry.archived,
+    projectId: entry.projectId,
+  });
+}
+
+function sameProjects(
+  a: readonly ProjectEntry[],
+  b: readonly ProjectEntry[]
+): boolean {
+  return (
+    a.length === b.length &&
+    a.every((project, i) => project.id === b[i]?.id && project.name === b[i]?.name)
+  );
 }
 
 function ownedClient(
