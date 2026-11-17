@@ -799,6 +799,11 @@ comes from your function: pass the content to `A2uiMessageSurfaces` from
 and render `A2uiSurface` yourself, returning `skeleton` until a surface is
 ready.
 
+`sourceDetails: true` adds a closed "Details" disclosure under each surface
+that shows the message content it was built from, headed "Layout source" for a
+spec and "Response source" for A2UI. Pass `{ summary, spec, a2ui }` instead of
+`true` to replace that text. A placeholder and a message left as text get none.
+
 A message shown as a surface gets no built-in message actions. A custom
 `renderMessage` keeps full ownership of its rows.
 

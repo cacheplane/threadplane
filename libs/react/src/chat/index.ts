@@ -111,6 +111,7 @@ export type {
   MessageA2uiContent,
   MessageGenerativeUi,
   MessageRenderEvent,
+  MessageSourceLabels,
 } from './generative-ui.js';
 export { Reasoning, type ReasoningProps } from './reasoning.js';
 export {

@@ -3019,6 +3019,21 @@
 .tp-chat-message__body:has(> .tp-chat-generative-ui) > .tp-chat-message__caret {
   display: none;
 }
+/* The source a surface was built from, for a reader who wants to check it. */
+.tp-chat-generative-ui__source {
+  margin-block: 12px;
+  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+  font-size: 12px;
+}
+.tp-chat-generative-ui__source > summary {
+  cursor: pointer;
+}
+.tp-chat-generative-ui__source > pre {
+  max-block-size: 280px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 
 .tp-genui-skeleton {
   display: block;
