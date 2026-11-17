@@ -3,11 +3,11 @@ import { ExampleLayout } from '../../../../shared/react-example';
 import { useEffect, useRef, useState } from 'react';
 import { useAgent } from '@threadplane/react';
 import {
-  ApprovalCard,
   Chat,
+  usePendingClientToolCalls,
   type ApprovalRecordEntry,
 } from '@threadplane/react/chat';
-import type { BookingPanel } from './tools';
+import { BookingAnswered } from './booking';
 import {
   createConnectedApplication,
   type clientToolsConnection,
@@ -28,11 +28,10 @@ export function ClientToolsDemo({
   const snapshot = useAgent(application);
   // Answered bookings stay in the transcript as one-line records.
   const [records, setRecords] = useState<readonly ApprovalRecordEntry[]>([]);
-  const pending = snapshot.bookings.filter((row) => row.status === 'pending');
-  function decide(row: BookingPanel, confirmed: boolean) {
+  const asked = usePendingClientToolCalls(application.clientTools).length > 0;
+  // The booking card reports only an answer it admitted.
+  function answered(confirmed: boolean) {
     const afterId = application.getSnapshot().rows.at(-1)?.id;
-    // Record only a decision the application admitted.
-    if (!application.decide(row, confirmed)) return;
     setRecords((previous) => [
       ...previous,
       { afterId, verdict: confirmed ? 'approved' : 'declined', label: 'Booking' },
@@ -106,36 +105,19 @@ export function ClientToolsDemo({
       </section>
       {/*
         Chat owns the transcript, the progress view and the composer. The
-        application is its session; a booking waits at the end of the
-        transcript through the approval slot, which also hints the composer
-        and returns focus to it once the composer is enabled again.
+        application is its session; `clientTools` draws a waiting booking
+        below its call, which keeps its row and progress, and returns focus
+        to the composer once the booking is answered and it is enabled again.
       */}
+      <BookingAnswered.Provider value={answered}>
       <Chat
         session={application.agent}
+        clientTools={application.clientTools}
         className="client-tools-chat"
         label="Message"
-        placeholder="Ask for weather or a fictional booking…"
+        placeholder={asked ? 'Answer the booking to continue' : 'Ask for weather or a fictional booking…'}
         disabled={resetting || !snapshot.canSubmit}
         approvalRecords={records}
-        approval={
-          pending.length
-            ? pending.map((row, index) => (
-                <ApprovalCard
-                  key={row.id}
-                  title="Confirm this fictional booking?"
-                  disabled={resetting || !snapshot.busy}
-                  autoFocus={index === 0}
-                  actions={[
-                    { id: 'confirm', label: 'Confirm booking', onSelect: () => decide(row, true) },
-                    { id: 'cancel', label: "Don't book", onSelect: () => decide(row, false) },
-                  ]}
-                >
-                  <p>{row.summary}</p>
-                  <p>No real reservation is made.</p>
-                </ApprovalCard>
-              ))
-            : undefined
-        }
         inputFooter={
           <>
             {snapshot.error && <p role="alert">{snapshot.error}</p>}
@@ -143,6 +125,7 @@ export function ClientToolsDemo({
           </>
         }
       />
+      </BookingAnswered.Provider>
     </ExampleLayout>
   );
 }

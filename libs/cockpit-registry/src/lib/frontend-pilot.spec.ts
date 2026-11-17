@@ -531,6 +531,7 @@ describe('registered React public previews', () => {
         'app.tsx',
         'application.ts',
         'tools.ts',
+        'booking.tsx',
         'connection.ts',
         'main.tsx',
       ].map((file) => `cockpit/langgraph/client-tools/react/src/${file}`)
@@ -702,7 +703,7 @@ describe('registered React public previews', () => {
   const react = getFrontendCapabilityDescriptor(canonical.manifestIdentity as CockpitManifestIdentity, 'react');
   expect(react).toMatchObject({ id: 'ag-ui-client-tools-python-react', frontend: 'react', runtimeAdapter: 'ag-ui', runtimeUrl: 'ag-ui/client-tools/react', devPort: 4640, docsPath: '/docs/react/ag-ui/guides/client-tools', backendAssetPaths: canonical.backendAssetPaths, promptAssetPaths: canonical.promptAssetPaths });
   expect(react?.codeAssetPaths).toEqual([
-    ...['app.tsx', 'tools.ts', 'application.ts', 'projection.ts', 'weather-card.tsx', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/client-tools/react/src/${file}`),
+    ...['app.tsx', 'tools.ts', 'booking.tsx', 'application.ts', 'projection.ts', 'weather-card.tsx', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/ag-ui/client-tools/react/src/${file}`),
     'cockpit/ag-ui/client-tools/react/project.json',
     'cockpit/ag-ui/client-tools/python/prompts/client-tools.md',
   ]);

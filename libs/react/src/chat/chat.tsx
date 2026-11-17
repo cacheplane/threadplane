@@ -2,6 +2,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -14,6 +15,11 @@ import {
   type ChatInputHandle,
   type ChatInputProps,
 } from './chat-input.js';
+import {
+  useClientToolCalls,
+  usePendingClientToolCalls,
+  type ChatClientTools,
+} from './client-tools.js';
 import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
 import {
@@ -51,12 +57,24 @@ export interface ChatProps
   /** App-owned presentation for one tool call; see `MessageListProps.renderToolCall`. Keep stable. */
   readonly renderToolCall?: MessageListProps['renderToolCall'];
   readonly renderToolResult?: MessageListProps['renderToolResult'];
+  /**
+   * Interactive client tools from `createClientTools`. While one of its calls waits for the person,
+   * its view is drawn below the message's tool calls and the call keeps its row; the answer
+   * becomes the tool result, the view goes, and focus returns to the composer. The
+   * app passes `clientTools.tools` to the session; Chat never runs a tool. Off unless set.
+   */
+  readonly clientTools?: ChatClientTools;
   /** Child agents shown as subagent cards in place of the tool calls that started them. Keep stable. */
   readonly subagents?: MessageListProps['subagents'];
   /** Application-owned handler for a retry declared by `toolOutcome`; Chat never re-runs a call. Keep stable. */
   readonly onToolRetry?: MessageListProps['onToolRetry'];
   /** Explicit application-owned retry intent; Chat never replays a submission. */
   readonly onRetry?: () => void;
+  /**
+   * App-owned content in a bar above the transcript, such as a title and
+   * actions. It steps aside while the `welcome` greeting shows. Off unless set.
+   */
+  readonly header?: ReactNode;
   /**
    * Conversations listed in a sidebar beside the chat, on viewports at least
    * 768px wide. Passing the prop, even as an empty array, wraps the chat in a
@@ -182,9 +200,11 @@ export function Chat({
   toolOutcome,
   renderToolCall,
   renderToolResult,
+  clientTools,
   subagents,
   onToolRetry,
   onRetry,
+  header,
   threads,
   activeThreadId,
   onThreadSelect = ignore,
@@ -207,6 +227,18 @@ export function Chat({
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
+  // A session that can regenerate gets the built-in action, unless the app
+  // handles it itself. Built-in actions stay off until `messageActions` is set.
+  const actions = useMemo(() => {
+    if (!messageActions || !session.regenerate) return messageActions;
+    if (messageActions !== true && messageActions.onRegenerate) return messageActions;
+    return {
+      ...(messageActions === true ? {} : messageActions),
+      onRegenerate: (messageId: string) => {
+        session.regenerate?.(messageId).catch(ignore);
+      },
+    };
+  }, [messageActions, session]);
   // Stable so the current transcript row keeps its memo while work runs.
   const tracksStop = useRef(runStatus);
   tracksStop.current = runStatus;
@@ -237,17 +269,21 @@ export function Chat({
   const pending =
     approval !== undefined && approval !== null && approval !== false;
   const disabled = input.disabled ?? false;
-  const hadApproval = useRef(pending);
+  // An answered client tool leaves the transcript the same way.
+  const renderPrompt = useClientToolCalls(clientTools);
+  const asked = usePendingClientToolCalls(clientTools).length > 0;
+  const awaited = pending || asked;
+  const hadApproval = useRef(awaited);
   const focusOwed = useRef(false);
   useEffect(() => {
-    if (hadApproval.current && !pending) focusOwed.current = true;
-    if (pending) focusOwed.current = false;
-    hadApproval.current = pending;
+    if (hadApproval.current && !awaited) focusOwed.current = true;
+    if (awaited) focusOwed.current = false;
+    hadApproval.current = awaited;
     if (focusOwed.current && !disabled) {
       focusOwed.current = false;
       composer.current?.focus();
     }
-  }, [pending, disabled]);
+  }, [awaited, disabled]);
   const rows = useMessageContent(snapshot, session, content);
   // A failed call already shows these words, and the notice would add no action or detail of its own.
   // A custom renderMessage owns that display, so the notice stays whenever one is in use.
@@ -314,6 +350,9 @@ export function Chat({
         .filter(Boolean)
         .join(' ')}
     >
+      {greeting || header == null || header === false ? null : (
+        <div className="tp-chat__header">{header}</div>
+      )}
       {/* The composer below keeps its place and key, so it is never remounted. */}
       {greeting === null || greeting.title === null ? null : (
         <div className="tp-chat__welcome-title">
@@ -331,6 +370,7 @@ export function Chat({
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
         renderToolCall={renderToolCall}
+        renderToolCallPrompt={renderPrompt}
         renderToolResult={renderToolResult}
         subagents={subagents}
         onToolRetry={onToolRetry}
@@ -338,7 +378,7 @@ export function Chat({
         onStop={snapshot.status === 'running' ? stop : undefined}
         running={snapshot.status === 'running'}
         approvalRecords={approvalRecords}
-        messageActions={messageActions}
+        messageActions={actions}
         math={math}
         generativeUi={generativeUi}
         markdownComponents={markdownComponents}

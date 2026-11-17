@@ -40,6 +40,9 @@ ok.className = 'x';
 <Chat session={session} leading={<span />} />;
 // @ts-expect-error Slots are content, not render functions.
 <Chat session={session} inputFooter={() => null} />;
+<Chat session={session} header={<h2>Support</h2>} />;
+// @ts-expect-error The header is content, not a render function.
+<Chat session={session} header={() => null} />;
 <Chat
   session={session}
   modelPicker={{
