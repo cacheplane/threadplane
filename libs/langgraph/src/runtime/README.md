@@ -236,6 +236,37 @@ paused. The preflight detects already-observed consumption, but it is not an ato
 server claim. Applications must coordinate responders to the same task. Distinct
 checkpoint branches do not provide independent opposing decisions on one task.
 
+## Thread directory
+
+`createThreadDirectory` in `thread-directory.ts` lists a deployment's saved
+conversations for a sidebar. It is a store with `getSnapshot` and `subscribe`,
+so a framework binding observes it the same way it observes a session, and it
+holds no framework dependency. Pass `apiUrl` (with optional `clientOptions`) to
+have it build its own SDK client, or `threads` to reuse an existing
+`client.threads`.
+
+An entry is read from thread metadata: `title` (or `titleFallback`),
+`archived`, `pinned`, `pinnedOrder` and `projectId`. `threads` holds the
+conversations that are not archived, pinned ones first in their saved order;
+`archived` holds the rest. Nothing is read until `refresh()` is called. A failed
+read never rejects: it is published as `status: 'error'` with the failure, and
+the lists keep the last successful result. When two reads overlap, the later
+call's result is kept.
+
+`create`, `delete`, `rename`, `archive`, `unarchive`, `pin`, `unpin`,
+`moveToProject` and `reorderPinned` write metadata and then read the list
+again. A failed write rejects with the SDK's error and leaves the list as it
+was, which lets a list that shows the change optimistically put the row back.
+The command names and arguments match the conversation-list action adapters, so
+the directory can be passed as the adapter. `get` resolves null for an unknown
+(404) or malformed (422) ID and rejects for any other failure.
+
+Limits: one page of `limit` conversations (default 50), no paging or search,
+and no refresh when another tab or a run changes a thread; the application
+calls `refresh()`. The directory is staged here with the session and is not
+exported from a published entry. The Angular `LangGraphThreadsAdapter` is
+unchanged and is not built on it yet.
+
 ## Verification
 
 Run `langgraph:runtime-quality`, `langgraph:runtime-type-tests` and
