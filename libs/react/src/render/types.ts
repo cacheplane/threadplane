@@ -6,10 +6,16 @@ import type { DeepReadonly } from '@threadplane/core';
 export type RenderElementData = DeepReadonly<
   Pick<UIElement, 'type' | 'props' | 'children' | 'visible' | 'repeat' | 'on'>
 >;
-/** Caller-prepared tree identified by a root key and a record of keyed element definitions. */
+/** Caller-prepared tree identified by a root key, a record of keyed element definitions, and optional initial state. */
 export interface RenderSpecData {
   readonly root: string;
   readonly elements: Readonly<Record<string, RenderElementData>>;
+  /**
+   * Initial state carried by the spec. When `RenderSpec` receives neither `state` nor `store`, it
+   * seeds a store of its own from this the first time it appears, so bound inputs can write. The
+   * tree keeps that store across later specs; pass `store` to own or reset it yourself.
+   */
+  readonly state?: Readonly<Record<string, RenderValue>>;
 }
 /** Recursive readonly plain data accepted as resolved view props and computed-function arguments or results. */
 export type RenderValue =
