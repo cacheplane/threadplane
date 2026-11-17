@@ -19477,6 +19477,42 @@
       "treatment": "shared",
       "status": "in-progress",
       "reason": "Phase 1 Angular-side copy of the runtime LangGraph Store project store behind LangGraphThreadsAdapter.directory; deleted when the adapter is rebuilt on the shared directory in phase 2."
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-sidebar.tsx",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Connected conversation sidebar: reads a ThreadDirectory through useSyncExternalStore, refreshes on mount and after each run, and composes ChatSidenavSections with action adapters derived from the directory commands and feature switches. Never disposes the app-owned directory."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadSidebar",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Connected sidebar over a ThreadDirectory with New chat, Projects, Recent and Archived, load error with Retry, empty state, row slots and before and after sections."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadSidebarProps",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly directory, optional session, selection callbacks, feature switches, row override, extra row actions, before and after content, labels and className."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadSidebarFeatures",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly optional switches for projects, archive, pin, reorder, rename and remove; each defaults to on when the directory supports it."
     }
   ]
 }

@@ -169,6 +169,11 @@ export {
   type ChatSidenavSectionsProps,
 } from './chat-sidenav-sections.js';
 export {
+  ThreadSidebar,
+  type ThreadSidebarFeatures,
+  type ThreadSidebarProps,
+} from './thread-sidebar.js';
+export {
   ChatSidenavScrim,
   type ChatSidenavScrimProps,
 } from './chat-sidenav-scrim.js';

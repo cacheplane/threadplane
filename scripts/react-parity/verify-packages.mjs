@@ -482,6 +482,7 @@ const SUPPORTED_EXPORTS = {
     'ChatSidenav',
     'ChatSidenavScrim',
     'ChatSidenavSections',
+    'ThreadSidebar',
     'ChatInput',
     'Citations',
     'CitationCard',
