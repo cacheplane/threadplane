@@ -70,6 +70,11 @@ export interface ChatProps
   /** Explicit application-owned retry intent; Chat never replays a submission. */
   readonly onRetry?: () => void;
   /**
+   * App-owned content in a bar above the transcript, such as a title and
+   * actions. It steps aside while the `welcome` greeting shows. Off unless set.
+   */
+  readonly header?: ReactNode;
+  /**
    * Conversations listed in a sidebar beside the chat, on viewports at least
    * 768px wide. Passing the prop, even as an empty array, wraps the chat in a
    * `tp-chat-shell` row; the sidebar appears once there are conversations.
@@ -101,6 +106,8 @@ export interface ChatProps
   readonly generativeUi?: MessageListProps['generativeUi'];
   /** Replaces how chosen Markdown node types render; see `MessageListProps.markdownComponents`. Define it outside render. */
   readonly markdownComponents?: MessageListProps['markdownComponents'];
+  /** Replaces an assistant message's reasoning and tool-call area; see `MessageListProps.renderMessageActivity`. Keep stable. */
+  readonly renderMessageActivity?: MessageListProps['renderMessageActivity'];
   /** One reasoning disclosure per multi-step turn; see `MessageListProps.mergeReasoning`. Defaults to true. */
   readonly mergeReasoning?: MessageListProps['mergeReasoning'];
   /**
@@ -153,6 +160,7 @@ export function Chat({
   subagents,
   onToolRetry,
   onRetry,
+  header,
   threads,
   activeThreadId,
   onThreadSelect = ignore,
@@ -168,6 +176,7 @@ export function Chat({
   generativeUi,
   markdownComponents,
   mergeReasoning,
+  renderMessageActivity,
   typingIndicator,
   welcome,
   runStatus = false,
@@ -297,6 +306,9 @@ export function Chat({
         .filter(Boolean)
         .join(' ')}
     >
+      {greeting || header == null || header === false ? null : (
+        <div className="tp-chat__header">{header}</div>
+      )}
       {/* The composer below keeps its place and key, so it is never remounted. */}
       {greeting === null || greeting.title === null ? null : (
         <div className="tp-chat__welcome-title">
@@ -327,6 +339,7 @@ export function Chat({
         generativeUi={generativeUi}
         markdownComponents={markdownComponents}
         mergeReasoning={mergeReasoning}
+        renderMessageActivity={renderMessageActivity}
         typingIndicator={typingIndicator}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (

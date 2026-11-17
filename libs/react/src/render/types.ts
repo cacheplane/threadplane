@@ -6,10 +6,16 @@ import type { DeepReadonly } from '@threadplane/core';
 export type RenderElementData = DeepReadonly<
   Pick<UIElement, 'type' | 'props' | 'children' | 'visible' | 'repeat' | 'on'>
 >;
-/** Caller-prepared tree identified by a root key and a record of keyed element definitions. */
+/** Caller-prepared tree identified by a root key, a record of keyed element definitions, and optional initial state. */
 export interface RenderSpecData {
   readonly root: string;
   readonly elements: Readonly<Record<string, RenderElementData>>;
+  /**
+   * Initial state carried by the spec. When `RenderSpec` receives neither `state` nor `store`, it
+   * seeds a store of its own from this the first time it appears, so bound inputs can write. The
+   * tree keeps that store across later specs; pass `store` to own or reset it yourself.
+   */
+  readonly state?: Readonly<Record<string, RenderValue>>;
 }
 /** Recursive readonly plain data accepted as resolved view props and computed-function arguments or results. */
 export type RenderValue =
@@ -102,10 +108,23 @@ export interface RenderResultEvent {
   readonly value: RenderValue;
   readonly elementKey: string;
 }
+/**
+ * The tree or one of its elements mounted or was removed. An element mounts when its view renders,
+ * so a hidden element mounts once it becomes visible; elements report before the tree that holds
+ * them, because React mounts children first.
+ */
+export interface RenderLifecycleEvent {
+  readonly type: 'lifecycle';
+  readonly event: 'mounted' | 'destroyed';
+  readonly scope: 'spec' | 'element';
+  readonly elementKey?: string;
+  readonly elementType?: string;
+}
 /** What `onEvent` receives. */
 export type RenderEvent =
   | RenderHandlerEvent
   | RenderStateChangeEvent
+  | RenderLifecycleEvent
   | RenderResultEvent;
 interface RenderSpecBaseProps {
   readonly spec: RenderSpecData | null;

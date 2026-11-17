@@ -40,6 +40,17 @@ ok.className = 'x';
 <Chat session={session} leading={<span />} />;
 // @ts-expect-error Slots are content, not render functions.
 <Chat session={session} inputFooter={() => null} />;
+<Chat session={session} header={<h2>Support</h2>} />;
+// @ts-expect-error The header is content, not a render function.
+<Chat session={session} header={() => null} />;
+<Chat
+  session={session}
+  renderMessageActivity={({ row, toolCalls, subagents }) =>
+    toolCalls.length + subagents.length > 0 ? <p>{row.id}</p> : undefined
+  }
+/>;
+// @ts-expect-error Message activity is a render function, not content.
+<Chat session={session} renderMessageActivity={<p />} />;
 <Chat
   session={session}
   threads={[{ id: 'a', title: 'Alpha' }]}

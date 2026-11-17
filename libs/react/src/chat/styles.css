@@ -5,37 +5,62 @@
     .tp-project-name-form:not(.tp-chat .tp-project-name-form),
     .tp-thread-rename-form:not(.tp-chat .tp-thread-rename-form)
   ) {
-  /* Standalone parts get tokens too; nested parts inherit .tp-chat overrides. */
-  --tp-chat-text: var(--ds-text-primary, light-dark(#1c1c1c, #f5f5f5));
-  --tp-chat-muted: var(
-    --ds-text-muted,
-    var(--ds-text-secondary, light-dark(#737373, #a0a0a0))
+  /* Standalone parts get tokens too; nested parts inherit .tp-chat overrides.
+     Each token reads the matching Angular --tplane-chat-* name first, so one
+     theme stylesheet restyles both frameworks. An explicit --tp-chat-* override
+     on a chat root still wins, and the last fallback is the React default. */
+  --tp-chat-text: var(
+    --tplane-chat-text,
+    var(--ds-text-primary, light-dark(#1c1c1c, #f5f5f5))
   );
-  --tp-chat-border: var(--ds-border, light-dark(#e5e5e5, #2d2d2d));
-  --tp-chat-bg: var(--ds-bg, light-dark(#ffffff, #111111));
-  --tp-chat-surface: var(--ds-surface, light-dark(#ffffff, #1c1c1c));
-  --tp-chat-surface-alt: var(--ds-surface-tinted, light-dark(#fbfbfb, #2c2c2c));
-  --tp-chat-accent: var(--ds-accent, CanvasText);
-  --tp-chat-on-accent: var(--ds-surface, Canvas);
+  --tp-chat-muted: var(
+    --tplane-chat-text-muted,
+    var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0)))
+  );
+  --tp-chat-border: var(
+    --tplane-chat-separator,
+    var(--ds-border, light-dark(#e5e5e5, #2d2d2d))
+  );
+  --tp-chat-bg: var(--tplane-chat-bg, var(--ds-bg, light-dark(#ffffff, #111111)));
+  --tp-chat-surface: var(
+    --tplane-chat-surface,
+    var(--ds-surface, light-dark(#ffffff, #1c1c1c))
+  );
+  --tp-chat-surface-alt: var(
+    --tplane-chat-surface-alt,
+    var(--ds-surface-tinted, light-dark(#fbfbfb, #2c2c2c))
+  );
+  --tp-chat-accent: var(--tplane-chat-primary, var(--ds-accent, CanvasText));
+  --tp-chat-on-accent: var(--tplane-chat-on-primary, var(--ds-surface, Canvas));
   /* Bubbles invert neutral foreground/surface, independently of brand accent.
      Design-system palettes and explicit --tp-chat-user-* overrides still win. */
-  --tp-chat-user-bg: var(--ds-text-primary, light-dark(#1c1c1c, #ffffff));
-  --tp-chat-user-text: var(--ds-surface, light-dark(#ffffff, #1c1c1c));
-  /* No danger token exists in design-tokens; override --tp-chat-danger to theme. */
-  --tp-chat-danger: light-dark(#b42318, #ff8a80);
+  --tp-chat-user-bg: var(
+    --tplane-chat-primary,
+    var(--ds-text-primary, light-dark(#1c1c1c, #ffffff))
+  );
+  --tp-chat-user-text: var(
+    --tplane-chat-on-primary,
+    var(--ds-surface, light-dark(#ffffff, #1c1c1c))
+  );
+  /* No danger token exists in design-tokens; override --tp-chat-danger or
+     --tplane-chat-error-text to theme. */
+  --tp-chat-danger: var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80));
   --tp-chat-gap: 1rem;
-  --tp-chat-font-family: ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --tp-chat-font-size-xs: 0.75rem;
-  --tp-chat-font-size-sm: 0.875rem;
-  --tp-chat-font-size-base: 1rem;
-  --tp-chat-line-height: 1.6;
-  --tp-chat-line-height-tight: 1.5;
-  --tp-chat-radius-sm: 0.25rem;
-  --tp-chat-radius-card: 0.5rem;
-  --tp-chat-radius-message: 0.9375rem;
-  --tp-chat-radius-input: 9999px;
-  --tp-chat-reading-width: 48rem;
+  --tp-chat-font-family: var(
+    --tplane-chat-font-family,
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif
+  );
+  --tp-chat-font-size-xs: var(--tplane-chat-font-size-xs, 0.75rem);
+  --tp-chat-font-size-sm: var(--tplane-chat-font-size-sm, 0.875rem);
+  --tp-chat-font-size-base: var(--tplane-chat-font-size, 1rem);
+  --tp-chat-line-height: var(--tplane-chat-line-height, 1.6);
+  --tp-chat-line-height-tight: var(--tplane-chat-line-height-tight, 1.5);
+  --tp-chat-radius-sm: var(--tplane-chat-radius-sm, 0.25rem);
+  --tp-chat-radius-card: var(--tplane-chat-radius-card, 0.5rem);
+  --tp-chat-radius-message: var(--tplane-chat-radius-bubble, 0.9375rem);
+  --tp-chat-radius-input: var(--tplane-chat-radius-input, 9999px);
+  --tp-chat-reading-width: var(--tplane-chat-max-width, 48rem);
   color-scheme: var(--tp-chat-color-scheme, light dark);
   color: var(--tp-chat-text);
   font-family: var(--tp-chat-font-family);
@@ -52,10 +77,10 @@
   min-inline-size: 44px;
   max-inline-size: 100%;
   padding: 0.5rem 1rem;
-  border: 1px solid var(--tp-chat-border, currentColor);
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, currentColor));
   border-radius: 9999px;
-  color: var(--tp-chat-text, CanvasText);
-  background: var(--tp-chat-surface, Canvas);
+  color: var(--tp-chat-text, var(--tplane-chat-text, CanvasText));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, Canvas));
   font: inherit;
   overflow-wrap: anywhere;
   cursor: pointer;
@@ -65,7 +90,7 @@
   flex: 0 0 auto;
 }
 .tp-scroll-bubble:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--tplane-chat-focus-ring, currentColor);
   outline-offset: 2px;
 }
 .tp-scroll-bubble:disabled {
@@ -156,7 +181,7 @@
   color: var(--tp-chat-danger);
 }
 .tp-thread-rename-form :focus-visible {
-  outline: 2px solid var(--tp-chat-accent);
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent));
   outline-offset: 2px;
 }
 .tp-overflow-menu__trigger {
@@ -184,11 +209,11 @@
   max-height: calc(100vh - 16px);
   overflow-y: auto;
   padding: 0.25rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.5rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
-  box-shadow: 0 0.25rem 1rem #0003;
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
+  box-shadow: var(--tplane-chat-elevation-float, 0 0.25rem 1rem #0003);
 }
 .tp-overflow-menu ul {
   list-style: none;
@@ -212,15 +237,15 @@
   cursor: pointer;
 }
 .tp-overflow-menu__item--destructive {
-  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  color: var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)));
 }
 .tp-overflow-menu__item:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, CanvasText));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, CanvasText))));
   outline-offset: -2px;
 }
 .tp-overflow-menu__item:disabled,
 .tp-overflow-menu__trigger:disabled {
-  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, GrayText)));
   cursor: default;
 }
 .tp-select__trigger {
@@ -234,16 +259,16 @@
   border: 1px solid transparent;
   border-radius: 9999px;
   font: inherit;
-  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, GrayText)));
   background: transparent;
   cursor: pointer;
 }
 .tp-select__trigger:hover:not(:disabled),
 .tp-select__trigger[data-open] {
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
 }
 .tp-select__trigger:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, CanvasText));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, CanvasText))));
   outline-offset: 2px;
 }
 .tp-select__value {
@@ -254,7 +279,7 @@
 }
 .tp-select__chevron {
   flex: none;
-  transition: transform 120ms ease;
+  transition: transform var(--tplane-chat-motion-duration, 120ms) var(--tplane-chat-motion-ease, ease);
 }
 .tp-select__trigger[data-open] .tp-select__chevron {
   transform: rotate(180deg);
@@ -269,11 +294,11 @@
   max-height: min(20rem, calc(100vh - 16px));
   overflow-y: auto;
   padding: 0.25rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.75rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
-  box-shadow: 0 0.25rem 1rem #0003;
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
+  box-shadow: var(--tplane-chat-elevation-float, 0 0.25rem 1rem #0003);
 }
 .tp-select__option {
   box-sizing: border-box;
@@ -298,7 +323,7 @@
 .tp-select__option-description {
   font-size: 0.875em;
   line-height: 1.3;
-  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, GrayText)));
 }
 .tp-select__option:hover:not(:disabled),
 .tp-select__option:focus:not(:disabled),
@@ -309,12 +334,12 @@
   font-weight: 600;
 }
 .tp-select__option:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, CanvasText));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, CanvasText))));
   outline-offset: -2px;
 }
 .tp-select__option:disabled,
 .tp-select__trigger:disabled {
-  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, GrayText)));
   cursor: default;
 }
 .tp-select__trigger:disabled {
@@ -411,10 +436,10 @@
   min-width: 0;
   padding-block: 0.625rem;
   padding-inline: 0.75rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.5rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
   font: inherit;
   text-align: start;
   white-space: normal;
@@ -422,9 +447,9 @@
   cursor: pointer;
 }
 .tp-thread-list .tp-thread-list__button[aria-current='true'] {
-  border-color: var(--tp-chat-accent, var(--ds-accent, Highlight));
-  background: var(--tp-chat-accent, var(--ds-accent, Highlight));
-  color: var(--tp-chat-on-accent, var(--ds-surface, HighlightText));
+  border-color: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight)));
+  background: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight)));
+  color: var(--tp-chat-on-accent, var(--tplane-chat-on-primary, var(--ds-surface, HighlightText)));
 }
 .tp-thread-list .tp-thread-list__pin {
   display: inline-block;
@@ -460,17 +485,17 @@
 }
 .tp-thread-list .tp-thread-list__button:focus-visible,
 .tp-thread-list__container .tp-thread-list__new:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 3px;
 }
 .tp-approval-card {
   padding: 1rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
-  border-radius: var(--tp-chat-radius-card, 0.75rem);
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
-  font-size: var(--tp-chat-font-size-sm, 0.875rem);
-  line-height: var(--tp-chat-line-height, 1.6);
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
+  border-radius: var(--tp-chat-radius-card, var(--tplane-chat-radius-card, 0.75rem));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 0.875rem));
+  line-height: var(--tp-chat-line-height, var(--tplane-chat-line-height, 1.6));
 }
 .tp-approval-card__title {
   margin-block: 0 0.75rem;
@@ -487,16 +512,16 @@
 .tp-message-actions__action {
   min-height: 36px;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
-  border-radius: var(--tp-chat-radius-sm, 0.25rem);
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
+  border-radius: var(--tp-chat-radius-sm, var(--tplane-chat-radius-sm, 0.25rem));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
   font: inherit;
   cursor: pointer;
 }
 .tp-approval-card__action:focus-visible,
 .tp-message-actions__action:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 3px;
 }
 .tp-approval-card__action:disabled {
@@ -504,21 +529,34 @@
 }
 /* The approval reads as a status panel: warning, or danger for a destructive action. */
 .tp-approval-card.tp-status-panel {
-  border-color: color-mix(in srgb, var(--tp-status-tone) 40%, transparent);
-  background: color-mix(in srgb, var(--tp-status-tone) 8%, var(--tp-chat-surface, Canvas));
+  border-color: var(
+    --tp-status-border,
+    color-mix(in srgb, var(--tp-status-tone) 40%, transparent)
+  );
+  background: var(
+    --tp-status-bg,
+    color-mix(in srgb, var(--tp-status-tone) 8%, var(--tp-chat-surface, var(--tplane-chat-surface, Canvas)))
+  );
 }
 .tp-approval-card .tp-status-panel__lead {
   margin: 0 0 0.25rem;
 }
 .tp-approval-card .tp-approval-card__action--primary {
-  border-color: var(--tp-chat-text, CanvasText);
-  background: var(--tp-chat-text, CanvasText);
-  color: var(--tp-chat-surface, Canvas);
+  border-color: var(--tp-chat-text, var(--tplane-chat-text, CanvasText));
+  background: var(--tp-chat-text, var(--tplane-chat-text, CanvasText));
+  color: var(--tp-chat-surface, var(--tplane-chat-surface, Canvas));
 }
 .tp-approval-card .tp-approval-card__action--danger {
-  border-color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
-  background: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
-  color: light-dark(#ffffff, #1c1c1c);
+  /* A destructive fill reads --tplane-chat-destructive first, as Angular does. */
+  border-color: var(
+    --tplane-chat-destructive,
+    var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)))
+  );
+  background: var(
+    --tplane-chat-destructive,
+    var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)))
+  );
+  color: var(--tplane-chat-on-destructive, light-dark(#ffffff, #1c1c1c));
 }
 /* The same panel as a modal: opaque, centred, over a scrim. */
 .tp-approval-card.tp-approval-card--dialog {
@@ -532,13 +570,13 @@
     var(--tp-status-tone) 8%,
     var(--tp-chat-surface, var(--ds-surface, Canvas))
   );
-  box-shadow: 0 1rem 3rem #0004;
+  box-shadow: var(--tplane-chat-elevation-float, 0 1rem 3rem #0004);
 }
 .tp-approval-card--dialog:not([open]) {
   display: none;
 }
 .tp-approval-card--dialog::backdrop {
-  background: #0007;
+  background: var(--tplane-chat-scrim, #0007);
 }
 @media (pointer: coarse) {
   .tp-approval-card__action { min-height: 44px; }
@@ -546,6 +584,21 @@
 @media (forced-colors: active) {
   .tp-approval-card .tp-approval-card__action--primary,
   .tp-approval-card .tp-approval-card__action--danger { border: 1px solid ButtonText; }
+}
+.tp-chat__header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  box-sizing: border-box;
+  min-block-size: 3.5rem;
+  min-inline-size: 0;
+  padding-block: 0.5rem;
+  padding-inline: 1.5rem;
+  border-block-end: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  font-weight: 500;
+  overflow-wrap: anywhere;
 }
 .tp-chat-shell {
   display: flex;
@@ -574,14 +627,14 @@
   align-items: center;
   gap: 0.5rem;
   margin: 0;
-  color: var(--tp-chat-muted, GrayText);
-  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 0.875rem));
 }
 .tp-chat__stopped > svg { flex: none; }
 .tp-approval-record {
   margin: 0;
-  color: var(--tp-chat-muted, GrayText);
-  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 0.875rem));
 }
 .tp-approval-record[data-verdict='approved']::before {
   content: '✓ ' / '';
@@ -606,7 +659,7 @@
   line-height: var(--tp-chat-line-height);
 }
 .tp-chat-list:focus-visible {
-  outline: 2px solid var(--tp-chat-accent);
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent));
   outline-offset: -2px;
 }
 .tp-message-actions {
@@ -658,9 +711,9 @@
   cursor: not-allowed;
 }
 .tp-message-rating__option[aria-pressed='true'] {
-  border-color: var(--tp-chat-accent, var(--ds-accent, CanvasText));
+  border-color: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, CanvasText)));
   background: color-mix(in srgb, currentColor 10%, transparent);
-  color: var(--tp-chat-accent, var(--ds-accent, CanvasText));
+  color: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, CanvasText)));
 }
 .tp-message-rating__option:disabled {
   opacity: 0.6;
@@ -703,7 +756,7 @@
 .tp-chat-message--assistant > .tp-chat-message__controls {
   opacity: 0;
   pointer-events: none;
-  transition: opacity 200ms ease;
+  transition: opacity var(--tplane-chat-motion-duration, 200ms) var(--tplane-chat-motion-ease, ease);
 }
 .tp-chat-message--assistant:hover > .tp-chat-message__controls,
 .tp-chat-message--assistant:focus-within > .tp-chat-message__controls,
@@ -729,8 +782,8 @@
   margin-inline-start: 0.25rem;
   border-radius: 50%;
   background: linear-gradient(
-    var(--tp-chat-text, CanvasText),
-    var(--tp-chat-muted, CanvasText)
+    var(--tp-chat-text, var(--tplane-chat-text, CanvasText)),
+    var(--tp-chat-muted, var(--tplane-chat-text-muted, CanvasText))
   );
   opacity: 1;
   animation: tp-chat-message-pulse 1.2s infinite alternate;
@@ -815,7 +868,7 @@
 }
 .tp-markdown {
   min-width: 0;
-  line-height: var(--tp-chat-line-height, 1.6);
+  line-height: var(--tp-chat-line-height, var(--tplane-chat-line-height, 1.6));
 }
 .tp-markdown :is(p, ul, ol, blockquote, pre) {
   margin-block: 0 0.75rem;
@@ -824,7 +877,7 @@
   /* Angular's paragraph/heading views wrap each block individually; match
      their effective first/last-child spacing in this wrapper-free renderer. */
   margin: 0;
-  font-size: var(--tp-chat-font-size-base, 1rem);
+  font-size: var(--tp-chat-font-size-base, var(--tplane-chat-font-size, 1rem));
   line-height: inherit;
 }
 .tp-markdown :is(h1, h2, h3, h4, h5, h6) {
@@ -846,8 +899,8 @@
   font-size: 1rem;
 }
 .tp-markdown :is(h5, h6) {
-  font-size: var(--tp-chat-font-size-sm, 0.875rem);
-  color: var(--tp-chat-muted, GrayText);
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 0.875rem));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
 }
 .tp-markdown :is(ul, ol) {
   padding-inline-start: 1.5rem;
@@ -856,22 +909,22 @@
   margin-block: 0.25rem;
 }
 .tp-markdown li::marker {
-  color: var(--tp-chat-muted, GrayText);
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
 }
 .tp-markdown blockquote {
   margin: 0 0 0.75rem;
   padding-block: 0.25rem;
   padding-inline: 0.75rem 0;
-  border-inline-start: 3px solid var(--tp-chat-border, GrayText);
-  color: var(--tp-chat-muted, GrayText);
+  border-inline-start: 3px solid var(--tp-chat-border, var(--tplane-chat-separator, GrayText));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
 }
 .tp-markdown hr {
   border: 0;
-  border-block-start: 1px solid var(--tp-chat-border, GrayText);
+  border-block-start: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, GrayText));
   margin-block: 1rem;
 }
 .tp-markdown :is(del, s) {
-  color: var(--tp-chat-muted, GrayText);
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
 }
 .tp-markdown a {
   color: inherit;
@@ -881,8 +934,8 @@
   font-family: var(--ds-font-mono, ui-monospace, monospace);
   font-size: 0.875em;
   padding: 1px 4px;
-  border-radius: var(--tp-chat-radius-sm, 4px);
-  background: var(--tp-chat-surface-alt, Canvas);
+  border-radius: var(--tp-chat-radius-sm, var(--tplane-chat-radius-sm, 4px));
+  background: var(--tp-chat-surface-alt, var(--tplane-chat-surface-alt, Canvas));
 }
 .tp-markdown pre {
   /* Override the renderer's inline wrapping fallback when chat CSS is opted in. */
@@ -891,12 +944,12 @@
   word-break: normal;
   padding: 0.75rem 1rem;
   border: 0;
-  border-radius: var(--tp-chat-radius-card, 0.5rem);
-  background: var(--tp-chat-surface-alt, Canvas);
+  border-radius: var(--tp-chat-radius-card, var(--tplane-chat-radius-card, 0.5rem));
+  background: var(--tp-chat-surface-alt, var(--tplane-chat-surface-alt, Canvas));
   font-family: var(--ds-font-mono, ui-monospace, monospace);
-  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 0.875rem));
   overflow-x: auto;
-  line-height: var(--tp-chat-line-height-tight, 1.5);
+  line-height: var(--tp-chat-line-height-tight, var(--tplane-chat-line-height-tight, 1.5));
 }
 .tp-markdown pre code {
   padding: 0;
@@ -917,13 +970,13 @@
   inline-size: 2rem;
   block-size: 2rem;
   padding: 0;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
-  border-radius: var(--tp-chat-radius-sm, 0.25rem);
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-muted, var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0))));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
+  border-radius: var(--tp-chat-radius-sm, var(--tplane-chat-radius-sm, 0.25rem));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0)))));
   cursor: pointer;
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--tplane-chat-motion-duration, 120ms) var(--tplane-chat-motion-ease, ease);
 }
 .tp-markdown__code:hover .tp-markdown__code-copy,
 .tp-markdown__code-copy:focus-visible,
@@ -931,10 +984,10 @@
   opacity: 1;
 }
 .tp-markdown__code-copy:hover {
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
 }
 .tp-markdown__code-copy:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 2px;
 }
 @media (hover: none) {
@@ -977,17 +1030,17 @@
   box-sizing: border-box;
   width: 0.875rem;
   height: 0.875rem;
-  border: 1.5px solid var(--tp-chat-muted, GrayText);
-  border-radius: var(--tp-chat-radius-sm, 4px);
+  border: 1.5px solid var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
+  border-radius: var(--tp-chat-radius-sm, var(--tplane-chat-radius-sm, 4px));
 }
 .tp-markdown__task-box svg {
   width: 0.625rem;
   height: 0.625rem;
 }
 .tp-markdown__task-box[data-checked='true'] {
-  color: var(--tp-chat-bg, Canvas);
-  background: var(--tp-chat-text, CanvasText);
-  border-color: var(--tp-chat-text, CanvasText);
+  color: var(--tp-chat-bg, var(--tplane-chat-bg, Canvas));
+  background: var(--tp-chat-text, var(--tplane-chat-text, CanvasText));
+  border-color: var(--tp-chat-text, var(--tplane-chat-text, CanvasText));
 }
 .tp-markdown__table-scroll {
   max-width: 100%;
@@ -995,21 +1048,21 @@
   margin-block: 0 0.75rem;
   background: linear-gradient(
         to right,
-        var(--tp-chat-bg, Canvas) 30%,
+        var(--tp-chat-bg, var(--tplane-chat-bg, Canvas)) 30%,
         transparent
       )
       left center / 24px 100% no-repeat local,
-    linear-gradient(to left, var(--tp-chat-bg, Canvas) 30%, transparent) right
+    linear-gradient(to left, var(--tp-chat-bg, var(--tplane-chat-bg, Canvas)) 30%, transparent) right
       center / 24px 100% no-repeat local,
     radial-gradient(
         farthest-side at 0 50%,
-        color-mix(in srgb, var(--tp-chat-text, CanvasText) 22%, transparent),
+        color-mix(in srgb, var(--tp-chat-text, var(--tplane-chat-text, CanvasText)) 22%, transparent),
         transparent
       )
       left center / 12px 100% no-repeat scroll,
     radial-gradient(
         farthest-side at 100% 50%,
-        color-mix(in srgb, var(--tp-chat-text, CanvasText) 22%, transparent),
+        color-mix(in srgb, var(--tp-chat-text, var(--tplane-chat-text, CanvasText)) 22%, transparent),
         transparent
       )
       right center / 12px 100% no-repeat scroll;
@@ -1017,23 +1070,23 @@
 .tp-markdown table {
   border-collapse: collapse;
   width: 100%;
-  font-size: var(--tp-chat-font-size-sm, 14px);
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 14px));
 }
 .tp-markdown :is(th, td) {
   padding: 6px 10px;
-  border: 1px solid var(--tp-chat-border, GrayText);
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, GrayText));
   text-align: start;
   vertical-align: top;
 }
 .tp-markdown table code {
-  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-size: var(--tp-chat-font-size-xs, var(--tplane-chat-font-size-xs, 0.75rem));
 }
 .tp-markdown th {
   font-weight: 600;
-  background: var(--tp-chat-surface-alt, Canvas);
+  background: var(--tp-chat-surface-alt, var(--tplane-chat-surface-alt, Canvas));
 }
 .tp-markdown__table-scroll:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, Highlight);
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, Highlight)));
   outline-offset: -2px;
 }
 @media (forced-colors: active) {
@@ -1054,9 +1107,9 @@
   margin-block: 1rem;
   padding-inline-start: 1rem;
   border-inline-start: 2px solid
-    var(--tp-chat-border, var(--ds-border, GrayText));
-  font-size: var(--tp-chat-font-size-sm, 0.875rem);
-  line-height: var(--tp-chat-line-height-tight, 1.5);
+    var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 0.875rem));
+  line-height: var(--tp-chat-line-height-tight, var(--tplane-chat-line-height-tight, 1.5));
 }
 .tp-tool-observation h3 {
   margin-block: 0 0.5rem;
@@ -1064,33 +1117,33 @@
   font-weight: 600;
 }
 .tp-tool-observation pre {
-  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-size: var(--tp-chat-font-size-xs, var(--tplane-chat-font-size-xs, 0.75rem));
 }
 .tp-markdown sup {
-  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-size: var(--tp-chat-font-size-xs, var(--tplane-chat-font-size-xs, 0.75rem));
 }
 .tp-reasoning__toggle {
   border: 0;
   padding: 0.25rem 0;
   background: transparent;
-  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, GrayText)));
   font: inherit;
   cursor: pointer;
 }
 .tp-reasoning__toggle:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 3px;
 }
 .tp-reasoning__body {
   margin-block-start: 0.5rem;
   padding-inline-start: 0.75rem;
   border-inline-start: 2px solid
-    var(--tp-chat-border, var(--ds-border, GrayText));
+    var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
 }
 .tp-trace {
   display: block;
   min-inline-size: 0;
-  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 0.875rem));
 }
 .tp-trace__header {
   display: flex;
@@ -1103,20 +1156,20 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, GrayText)));
   font: inherit;
   text-align: start;
   cursor: pointer;
 }
 .tp-trace__header:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 2px;
 }
 .tp-trace__chevron {
   flex: none;
   inline-size: 0.75rem;
   block-size: 0.75rem;
-  transition: transform 0.2s ease;
+  transition: transform var(--tplane-chat-motion-duration, 0.2s) var(--tplane-chat-motion-ease, ease);
 }
 .tp-trace:dir(rtl) .tp-trace__chevron {
   transform: scaleX(-1);
@@ -1144,7 +1197,7 @@
 }
 .tp-trace[data-state='error'] .tp-trace__label {
   /* Standalone use has no chat root to define the token. */
-  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  color: var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)));
 }
 .tp-trace__content {
   max-block-size: 250px;
@@ -1152,7 +1205,7 @@
   padding-block-start: 0.375rem;
   padding-inline-start: 1rem;
   border-inline-start: 1px solid
-    var(--tp-chat-border, var(--ds-border, GrayText));
+    var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   overflow: auto;
 }
 .tp-trace__content[hidden] {
@@ -1168,7 +1221,7 @@
 }
 .tp-chat__error {
   margin: 0;
-  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  color: var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)));
 }
 .tp-chat-error {
   display: flex;
@@ -1177,7 +1230,7 @@
   gap: 0.5rem 1rem;
   min-inline-size: 0;
   max-inline-size: 100%;
-  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  color: var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)));
   overflow-wrap: anywhere;
 }
 .tp-chat-error p {
@@ -1197,7 +1250,7 @@
   padding: 0.5rem 0.75rem;
   border: 1px solid currentColor;
   border-radius: 0.5rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
   color: inherit;
   font: inherit;
   white-space: normal;
@@ -1205,7 +1258,7 @@
   cursor: pointer;
 }
 .tp-chat-error button:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 3px;
 }
 .tp-chat-error button:disabled {
@@ -1216,7 +1269,7 @@
   margin-block: 1.25rem 0.75rem;
   padding-block-start: 0.5rem;
   border-block-start: 1px solid
-    var(--tp-chat-border, var(--ds-border, GrayText));
+    var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   overflow-wrap: anywhere;
 }
 .tp-citations__heading,
@@ -1236,7 +1289,7 @@
 }
 .tp-citations__type {
   margin-inline-start: 0.5rem;
-  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, GrayText)));
 }
 .tp-citations__snippet {
   white-space: pre-wrap;
@@ -1250,10 +1303,10 @@
   box-sizing: border-box;
   padding: 0.75rem;
   overflow-wrap: anywhere;
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
-  border-radius: var(--tp-chat-radius-card, 0.5rem);
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
+  border-radius: var(--tp-chat-radius-card, var(--tplane-chat-radius-card, 0.5rem));
   /* The title link covers the card, so the whole card opens the source. */
   position: relative;
 }
@@ -1264,7 +1317,7 @@
   border-radius: inherit;
 }
 .tp-citation-card:has(a.tp-citations__title:hover) {
-  border-color: var(--tp-chat-accent, var(--ds-accent, currentColor));
+  border-color: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, currentColor)));
 }
 .tp-citation-card__index {
   display: inline-flex;
@@ -1276,9 +1329,9 @@
   block-size: 1.125rem;
   margin-block-start: 0.0625rem;
   padding-inline: 0.1875rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
-  border-radius: var(--tp-chat-radius-sm, 0.25rem);
-  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
+  border-radius: var(--tp-chat-radius-sm, var(--tplane-chat-radius-sm, 0.25rem));
+  font-size: var(--tp-chat-font-size-xs, var(--tplane-chat-font-size-xs, 0.75rem));
   font-weight: 600;
   line-height: 1;
 }
@@ -1289,7 +1342,7 @@
   flex: 0 0 0.875rem;
   inline-size: 0.875rem;
   block-size: 0.875rem;
-  border-radius: var(--tp-chat-radius-sm, 0.25rem);
+  border-radius: var(--tp-chat-radius-sm, var(--tplane-chat-radius-sm, 0.25rem));
   font-size: 0.5rem;
   font-weight: 600;
   line-height: 1;
@@ -1307,7 +1360,7 @@
 .tp-citation-card__badge--file {
   color: var(
     --tp-chat-citation-file,
-    var(--tp-chat-text, var(--ds-text-primary, CanvasText))
+    var(--tplane-chat-citation-type-file-fg, var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText))))
   );
 }
 .tp-citations__marker--app,
@@ -1315,7 +1368,7 @@
 .tp-citation-card__badge--app {
   color: var(
     --tp-chat-citation-app,
-    var(--tp-chat-text, var(--ds-text-primary, CanvasText))
+    var(--tplane-chat-citation-type-app-fg, var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText))))
   );
 }
 .tp-citations__marker--memory,
@@ -1323,7 +1376,7 @@
 .tp-citation-card__badge--memory {
   color: var(
     --tp-chat-citation-memory,
-    var(--tp-chat-text, var(--ds-text-primary, CanvasText))
+    var(--tplane-chat-citation-type-memory-fg, var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText))))
   );
 }
 .tp-citations__marker--generic,
@@ -1340,7 +1393,7 @@
 }
 .tp-citation-card__heading {
   min-width: 0;
-  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 0.875rem));
   font-weight: 600;
   line-height: 1.35;
 }
@@ -1349,8 +1402,8 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: var(--tp-chat-muted, var(--ds-text-secondary, inherit));
-  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, inherit)));
+  font-size: var(--tp-chat-font-size-xs, var(--tplane-chat-font-size-xs, 0.75rem));
   line-height: 1.45;
 }
 .tp-citation-card__metadata {
@@ -1359,11 +1412,11 @@
   align-items: center;
   gap: 0.25rem 0.5rem;
   min-width: 0;
-  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-size: var(--tp-chat-font-size-xs, var(--tplane-chat-font-size-xs, 0.75rem));
 }
 .tp-citation-card__domain,
 .tp-citation-card__published {
-  color: var(--tp-chat-muted, var(--ds-text-secondary, inherit));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, inherit)));
 }
 .tp-citation-card__metadata > * {
   min-width: 0;
@@ -1385,7 +1438,7 @@
   color: inherit;
 }
 .tp-citation-card .tp-citations__title:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--tplane-chat-focus-ring, currentColor);
   outline-offset: 2px;
 }
 .tp-chat-input {
@@ -1407,7 +1460,7 @@
   padding-block: 0.5rem;
   padding-inline: 1rem 0.5rem;
   border: 1px solid var(--tp-chat-border);
-  border-radius: var(--tp-chat-radius-input, 9999px);
+  border-radius: var(--tp-chat-radius-input, var(--tplane-chat-radius-input, 9999px));
   background: var(--tp-chat-surface);
 }
 .tp-chat-input__pill:focus-within {
@@ -1456,8 +1509,8 @@
   display: block;
   margin-block-start: 0.375rem;
   padding-inline: 1rem;
-  font-size: var(--tp-chat-font-size-sm, 0.875rem);
-  color: var(--tp-chat-muted, GrayText);
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 0.875rem));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
 }
 .tp-chat-input__send,
 .tp-chat-input__stop {
@@ -1505,7 +1558,7 @@
 }
 .tp-chat-input__send:focus-visible,
 .tp-chat-input__stop:focus-visible {
-  outline: 2px solid var(--tp-chat-accent);
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent));
   outline-offset: 3px;
 }
 @media (forced-colors: active) {
@@ -1556,7 +1609,10 @@
   border-radius: 0.75rem;
   background: var(--tp-chat-surface);
   color: var(--tp-chat-text);
-  box-shadow: 0 0.5rem 2rem color-mix(in srgb, CanvasText 15%, transparent);
+  box-shadow: var(
+    --tplane-chat-elevation-float,
+    0 0.5rem 2rem color-mix(in srgb, CanvasText 15%, transparent)
+  );
 }
 .tp-chat-popup .tp-chat-popup__panel[hidden] {
   display: none;
@@ -1597,7 +1653,7 @@
 }
 .tp-chat-popup .tp-chat-popup__launcher:focus-visible,
 .tp-chat-popup .tp-chat-popup__close:focus-visible {
-  outline: 2px solid var(--tp-chat-accent);
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent));
   outline-offset: 3px;
 }
 .tp-launcher-button {
@@ -1610,17 +1666,17 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: var(--tp-chat-accent, var(--ds-accent, CanvasText));
-  color: var(--tp-chat-on-accent, var(--ds-surface, Canvas));
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+  background: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, CanvasText)));
+  color: var(--tp-chat-on-accent, var(--tplane-chat-on-primary, var(--ds-surface, Canvas)));
+  box-shadow: var(--tplane-chat-elevation-float, 0 8px 24px rgb(0 0 0 / 0.18));
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform var(--tplane-chat-motion-duration, 0.2s) var(--tplane-chat-motion-ease, ease);
 }
 .tp-launcher-button:hover {
   transform: scale(1.05);
 }
 .tp-launcher-button:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 3px;
 }
 .tp-launcher-button__icon {
@@ -1641,8 +1697,8 @@
   block-size: 100%;
   min-block-size: 0;
   min-inline-size: 0;
-  background: var(--tp-chat-bg, var(--ds-bg, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  background: var(--tp-chat-bg, var(--tplane-chat-bg, var(--ds-bg, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
 }
 .tp-chat-window__header {
   display: flex;
@@ -1655,7 +1711,7 @@
   min-inline-size: 0;
   padding-block: 0.5rem;
   padding-inline: 1.5rem;
-  border-block-end: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border-block-end: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   font-weight: 500;
   overflow-wrap: anywhere;
 }
@@ -1684,7 +1740,7 @@
   background: linear-gradient(
     180deg,
     transparent 0%,
-    var(--tp-chat-bg, var(--ds-bg, Canvas)) 100%
+    var(--tp-chat-bg, var(--tplane-chat-bg, var(--ds-bg, Canvas))) 100%
   );
   pointer-events: none;
 }
@@ -1692,7 +1748,7 @@
   .tp-chat-window__fade { display: none; }
 }
 .tp-chat-sidebar-layout {
-  --tp-chat-sidebar-width: 28rem;
+  --tp-chat-sidebar-width: var(--tplane-chat-sidebar-width-drawer, 28rem);
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -1729,11 +1785,11 @@
   border: 0;
   border-radius: 0;
   padding: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--tplane-chat-scrim, rgba(0, 0, 0, 0.4));
   cursor: pointer;
 }
 .tp-chat-sidenav-scrim:focus-visible {
-  outline: 2px solid var(--tp-chat-accent);
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent));
   outline-offset: -4px;
 }
 .tp-chat-sidenav {
@@ -1824,12 +1880,12 @@
 }
 .tp-chat-sidenav-sections__new:focus-visible,
 .tp-chat-sidenav-sections__archived-toggle:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--ds-accent, Highlight)));
   outline-offset: 2px;
 }
 .tp-chat-sidenav-sections__chevron {
   flex: none;
-  transition: transform 0.15s ease;
+  transition: transform var(--tplane-chat-motion-duration, 0.15s) var(--tplane-chat-motion-ease, ease);
 }
 .tp-chat-sidenav-sections__archived[data-open] .tp-chat-sidenav-sections__chevron {
   transform: rotate(90deg);
@@ -1898,7 +1954,7 @@
   border: 0;
 }
 .tp-chat-sidenav .tp-chat-sidenav__search:focus-visible {
-  outline: 2px solid var(--tp-chat-accent);
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent));
   outline-offset: 3px;
 }
 .tp-chat-sidenav .tp-chat-sidenav__collapsed-content {
@@ -1925,7 +1981,7 @@
 .tp-chat-sidenav .tp-chat-sidenav__launcher:focus-visible,
 .tp-chat-sidenav .tp-chat-sidenav__toggle:focus-visible,
 .tp-chat-sidenav .tp-chat-sidenav__close:focus-visible {
-  outline: 2px solid var(--tp-chat-accent);
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent));
   outline-offset: 3px;
 }
 .tp-chat-sidenav [hidden] {
@@ -1947,21 +2003,21 @@
   max-height: calc(100dvh - 2rem);
   overflow: auto;
   padding: 1.25rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.75rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
   font: inherit;
   text-align: start;
   overflow-wrap: anywhere;
-  box-shadow: 0 1rem 3rem #0004;
+  box-shadow: var(--tplane-chat-elevation-float, 0 1rem 3rem #0004);
 }
 /* A styled dialog must remain hidden until showModal owns the top layer. */
 .tp-confirm-dialog:not([open]) {
   display: none;
 }
 .tp-confirm-dialog::backdrop {
-  background: #0007;
+  background: var(--tplane-chat-scrim, #0007);
 }
 .tp-confirm-dialog h2 {
   margin: 0;
@@ -1983,7 +2039,7 @@
   min-height: 40px;
   max-width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.375rem;
   font: inherit;
   white-space: normal;
@@ -1993,18 +2049,18 @@
   cursor: pointer;
 }
 .tp-confirm-dialog .tp-confirm-dialog__confirm {
-  background: var(--tp-chat-accent, var(--ds-accent, CanvasText));
-  color: var(--tp-chat-on-accent, var(--ds-surface, Canvas));
+  background: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, CanvasText)));
+  color: var(--tp-chat-on-accent, var(--tplane-chat-on-primary, var(--ds-surface, Canvas)));
 }
 .tp-confirm-dialog .tp-confirm-dialog__confirm--destructive {
-  background: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  background: var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)));
 }
 .tp-confirm-dialog button:disabled {
   opacity: 0.6;
   cursor: default;
 }
 .tp-confirm-dialog :focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, CanvasText));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, CanvasText))));
   outline-offset: 2px;
 }
 
@@ -2033,10 +2089,10 @@
   min-width: 0;
   padding-block: 0.625rem;
   padding-inline: 0.75rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.5rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
   font: inherit;
   text-align: start;
   white-space: normal;
@@ -2044,9 +2100,9 @@
   cursor: pointer;
 }
 .tp-project-list .tp-project-list__button[aria-current='true'] {
-  border-color: var(--tp-chat-accent, var(--ds-accent, Highlight));
-  background: var(--tp-chat-accent, var(--ds-accent, Highlight));
-  color: var(--tp-chat-on-accent, var(--ds-surface, HighlightText));
+  border-color: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight)));
+  background: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight)));
+  color: var(--tp-chat-on-accent, var(--tplane-chat-on-primary, var(--ds-surface, HighlightText)));
 }
 .tp-project-list__container .tp-project-list__new:disabled {
   cursor: default;
@@ -2054,7 +2110,7 @@
 }
 .tp-project-list .tp-project-list__button:focus-visible,
 .tp-project-list__container .tp-project-list__new:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 3px;
 }
 
@@ -2092,7 +2148,7 @@
   color: var(--tp-chat-danger);
 }
 .tp-project-name-form :focus-visible {
-  outline: 2px solid var(--tp-chat-accent);
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent));
   outline-offset: 2px;
 }
 .tp-project-list__item--actions {
@@ -2115,15 +2171,15 @@
   max-height: calc(100dvh - 2rem);
   padding: 1rem;
   overflow: hidden;
-  color: var(--tp-chat-text, var(--ds-text-primary, #172033));
-  background: var(--tp-chat-surface, var(--ds-surface, #fff));
-  border: 1px solid var(--tp-chat-border, var(--ds-border, #cbd5e1));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, #172033)));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, #fff)));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, #cbd5e1)));
   border-radius: 0.75rem;
-  box-shadow: 0 1rem 4rem #0004;
+  box-shadow: var(--tplane-chat-elevation-float, 0 1rem 4rem #0004);
   font: inherit;
 }
 .tp-history-search-palette::backdrop {
-  background: #0008;
+  background: var(--tplane-chat-scrim, #0008);
 }
 .tp-history-search-palette[open] {
   display: flex;
@@ -2139,7 +2195,7 @@
 .tp-history-search-palette__description,
 .tp-history-search-palette__status,
 .tp-history-search-palette__subtitle {
-  color: var(--tp-chat-muted, var(--ds-text-secondary, #475569));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, #475569)));
   font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
@@ -2156,7 +2212,7 @@
   min-height: 2.75rem;
   color: inherit;
   background: inherit;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, #cbd5e1));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, #cbd5e1)));
   border-radius: 0.375rem;
   padding: 0.5rem 0.75rem;
   font: inherit;
@@ -2170,7 +2226,7 @@
   cursor: pointer;
 }
 .tp-history-search-palette :focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, #2563eb));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, #2563eb))));
   outline-offset: 2px;
 }
 .tp-history-search-palette [role='listbox'] {
@@ -2193,7 +2249,7 @@
   overflow-wrap: anywhere;
 }
 .tp-history-search-palette [role='option'][aria-selected='true'] {
-  border-color: var(--tp-chat-accent, var(--ds-accent, #2563eb));
+  border-color: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, #2563eb)));
   font-weight: 600;
 }
 .tp-history-search-palette [role='option'][aria-disabled='true'] {
@@ -2227,10 +2283,10 @@
   min-width: 0;
   padding-block: 0.625rem;
   padding-inline: 0.75rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.5rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
   font: inherit;
   text-align: start;
   white-space: normal;
@@ -2257,10 +2313,10 @@
 .tp-timeline .tp-timeline__action {
   padding-block: 0.375rem;
   padding-inline: 0.625rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.5rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
   font: inherit;
   font-size: 0.875em;
   cursor: pointer;
@@ -2270,7 +2326,7 @@
   opacity: 0.6;
 }
 .tp-timeline .tp-timeline__action:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 3px;
 }
 .tp-timeline .tp-timeline__marker {
@@ -2295,16 +2351,16 @@
   font-size: 0.875em;
 }
 .tp-timeline .tp-timeline__button[aria-current='true'] {
-  border-color: var(--tp-chat-accent, var(--ds-accent, Highlight));
-  background: var(--tp-chat-accent, var(--ds-accent, Highlight));
-  color: var(--tp-chat-on-accent, var(--ds-surface, HighlightText));
+  border-color: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight)));
+  background: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight)));
+  color: var(--tp-chat-on-accent, var(--tplane-chat-on-primary, var(--ds-surface, HighlightText)));
 }
 .tp-timeline .tp-timeline__button:disabled {
   cursor: default;
   opacity: 0.6;
 }
 .tp-timeline .tp-timeline__button:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 3px;
 }
 
@@ -2352,7 +2408,7 @@
   min-inline-size: 0;
   min-block-size: 0;
   padding: var(--tp-welcome-padding, 24px);
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
 }
 .tp-welcome__inner {
   display: flex;
@@ -2399,10 +2455,10 @@
   min-block-size: 2.75rem;
   padding-block: 0.625rem;
   padding-inline: 1rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.75rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
   font: inherit;
   text-align: start;
   cursor: pointer;
@@ -2416,7 +2472,7 @@
 .tp-welcome-suggestion__icon,
 .tp-welcome-suggestion__chevron {
   flex: 0 0 auto;
-  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, GrayText)));
 }
 .tp-welcome-suggestion__icon {
   display: inline-flex;
@@ -2427,10 +2483,10 @@
   transform: scaleX(-1);
 }
 .tp-welcome-suggestion:enabled:hover {
-  border-color: var(--tp-chat-accent, var(--ds-accent, Highlight));
+  border-color: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight)));
 }
 .tp-welcome-suggestion:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 3px;
 }
 .tp-welcome-suggestion:disabled {
@@ -2451,10 +2507,10 @@
   max-inline-size: 100%;
   min-block-size: 2.75rem;
   padding: 0.625rem 1rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 1.5rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
   font: inherit;
   text-align: start;
   white-space: pre-wrap;
@@ -2462,10 +2518,10 @@
   cursor: pointer;
 }
 .tp-suggestions .tp-suggestions__button:enabled:hover {
-  border-color: var(--tp-chat-accent, var(--ds-accent, Highlight));
+  border-color: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight)));
 }
 .tp-suggestions .tp-suggestions__button:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 3px;
 }
 .tp-suggestions .tp-suggestions__button:disabled {
@@ -2481,10 +2537,10 @@
   min-inline-size: 2.75rem;
   max-inline-size: 100%;
   padding: 0.625rem 1rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.5rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
   font: inherit;
   text-align: start;
   white-space: pre-wrap;
@@ -2492,8 +2548,8 @@
   cursor: pointer;
 }
 .tp-citations__toggle:hover:not(:disabled) {
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  border-color: var(--tp-chat-border, var(--ds-border, GrayText));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  border-color: var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
 }
 .tp-citation-preview__dialog {
   box-sizing: border-box;
@@ -2502,36 +2558,36 @@
   max-block-size: calc(100dvh - 2rem);
   padding: 1rem;
   overflow: auto;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.75rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-text, var(--ds-text-primary, CanvasText));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-text, var(--tplane-chat-text, var(--ds-text-primary, CanvasText)));
   text-align: start;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 .tp-citation-preview__dialog::backdrop {
-  background: rgb(0 0 0 / 45%);
+  background: var(--tplane-chat-scrim, rgb(0 0 0 / 45%));
 }
 .tp-citation-preview__dialog h2 {
   margin-block: 1rem;
   font-size: 1.25em;
 }
 .tp-citation-preview__dialog dt {
-  color: var(--tp-chat-muted, var(--ds-text-secondary, GrayText));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-secondary, GrayText)));
 }
 .tp-citation-preview__dialog dd {
   margin-inline: 0;
   margin-block: 0.25rem 1rem;
 }
 .tp-citation-preview__dialog a {
-  color: var(--tp-chat-accent, var(--ds-accent, LinkText));
+  color: var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, LinkText)));
 }
 .tp-citations__toggle:focus-visible,
 .tp-citation-preview__trigger:focus-visible,
 .tp-citation-preview__close:focus-visible,
 .tp-citation-preview__dialog a:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, var(--ds-accent, Highlight));
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, var(--ds-accent, Highlight))));
   outline-offset: 3px;
 }
 .tp-citations__toggle:focus-visible {
@@ -2555,15 +2611,15 @@
 .tp-citations__label {
   min-inline-size: 0;
   overflow-wrap: anywhere;
-  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 0.875rem));
   font-weight: 600;
 }
 .tp-citations__count {
   display: inline-block;
   padding: 0.0625rem 0.5rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 999px;
-  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-size: var(--tp-chat-font-size-xs, var(--tplane-chat-font-size-xs, 0.75rem));
   font-weight: 600;
   line-height: 1.35;
 }
@@ -2580,7 +2636,7 @@
   inline-size: 16px;
   block-size: 16px;
   border-radius: 0.25rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
   font-size: 10px;
   font-weight: 600;
 }
@@ -2612,7 +2668,7 @@
 }
 .tp-tool-activity-group {
   min-width: 0;
-  color: var(--tp-chat-text, CanvasText);
+  color: var(--tp-chat-text, var(--tplane-chat-text, CanvasText));
   font: inherit;
 }
 .tp-tool-activity__heading {
@@ -2624,7 +2680,7 @@
 }
 .tp-tool-activity__phase,
 .tp-tool-activity__duration {
-  color: var(--tp-chat-muted, GrayText);
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
   font-size: 12px;
   font-weight: 400;
 }
@@ -2633,20 +2689,20 @@
   margin: 8px 0 0;
   font-size: 13px;
   font-weight: 500;
-  color: var(--tp-chat-text, CanvasText);
+  color: var(--tp-chat-text, var(--tplane-chat-text, CanvasText));
 }
 .tp-tool-activity[data-phase='error'] .tp-tool-activity__phase {
-  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  color: var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)));
 }
 .tp-tool-activity summary,
 .tp-tool-activity-group summary {
   cursor: pointer;
-  color: var(--tp-chat-muted, GrayText);
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
   padding: 6px 0;
 }
 .tp-tool-activity summary:focus-visible,
 .tp-tool-activity-group summary:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, Highlight);
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, Highlight)));
   outline-offset: 3px;
   border-radius: 4px;
 }
@@ -2669,7 +2725,7 @@
   min-height: 32px;
   min-inline-size: 0;
   padding: 4px 0;
-  color: var(--tp-chat-text, CanvasText);
+  color: var(--tp-chat-text, var(--tplane-chat-text, CanvasText));
   list-style: none;
 }
 .tp-tool-activity-group__details > summary::-webkit-details-marker { display:none; }
@@ -2690,23 +2746,23 @@
   min-height: 40px;
 }
 .tp-tool-activity-group__elapsed {
-  color: var(--tp-chat-muted, GrayText);
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 .tp-tool-activity-group__stop {
   min-height: 28px;
   padding: 2px 10px;
-  border: 1px solid var(--tp-chat-border, CanvasText);
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, CanvasText));
   border-radius: var(--tp-chat-radius-sm);
   background: transparent;
-  color: var(--tp-chat-text, CanvasText);
+  color: var(--tp-chat-text, var(--tplane-chat-text, CanvasText));
   font: inherit;
   font-size: 12px;
   cursor: pointer;
 }
 .tp-tool-activity-group__stop:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--tplane-chat-focus-ring, currentColor);
   outline-offset: 2px;
 }
 .tp-tool-activity__heading > .tp-tool-activity__label {
@@ -2715,11 +2771,11 @@
 .tp-tool-activity-group__items .tp-tool-activity[data-phase='complete'] > .tp-tool-activity__heading > .tp-tool-activity__label::before {
   content: '✓' / '';
   margin-inline-end: 6px;
-  color: var(--tp-chat-success, light-dark(#15803d, #4ade80));
+  color: var(--tp-chat-success, var(--tplane-chat-success-text, light-dark(#15803d, #4ade80)));
 }
 .tp-tool-activity-group__items .tp-tool-activity[data-phase='pending'] > .tp-tool-activity__heading > .tp-tool-activity__label,
 .tp-tool-activity-group__plan-step {
-  color: var(--tp-chat-muted, GrayText);
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
 }
 .tp-tool-activity-group__plan-step {
   margin: 12px 0 0;
@@ -2741,7 +2797,7 @@
 }
 .tp-subagent-card {
   min-width: 0;
-  color: var(--tp-chat-text, CanvasText);
+  color: var(--tp-chat-text, var(--tplane-chat-text, CanvasText));
   font: inherit;
 }
 .tp-subagent-card__details > summary {
@@ -2758,37 +2814,37 @@
 .tp-subagent-card__details > summary::before { content:''; width:6px; height:6px; flex:none; border-inline-end:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(-45deg); margin-inline-end:2px; }
 .tp-subagent-card__details[open] > summary::before { transform:rotate(45deg); }
 .tp-subagent-card__details > summary:focus-visible {
-  outline: 2px solid var(--tp-chat-accent, Highlight);
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent, var(--tplane-chat-primary, Highlight)));
   outline-offset: 3px;
   border-radius: 4px;
 }
 .tp-subagent-card__name {
-  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+  font-size: var(--tp-chat-font-size-sm, var(--tplane-chat-font-size-sm, 0.875rem));
   font-weight: 500;
 }
 .tp-subagent-card__status {
   padding: 1px 8px;
   border-radius: 9999px;
-  font-size: var(--tp-chat-font-size-xs, 0.75rem);
+  font-size: var(--tp-chat-font-size-xs, var(--tplane-chat-font-size-xs, 0.75rem));
   font-weight: 500;
-  background: var(--tp-chat-surface-alt, light-dark(#fbfbfb, #2c2c2c));
-  color: var(--tp-chat-muted, GrayText);
+  background: var(--tp-chat-surface-alt, var(--tplane-chat-surface-alt, light-dark(#fbfbfb, #2c2c2c)));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
 }
 .tp-subagent-card[data-status='running'] .tp-subagent-card__status {
-  background: light-dark(#fffbeb, #3a2a06);
-  color: light-dark(#b45309, #fcd34d);
+  background: var(--tplane-chat-warning-bg, light-dark(#fffbeb, #3a2a06));
+  color: var(--tplane-chat-warning-text, light-dark(#b45309, #fcd34d));
 }
 .tp-subagent-card[data-status='complete'] .tp-subagent-card__status {
   background: transparent;
-  color: light-dark(#15803d, #86efac);
+  color: var(--tplane-chat-success-text, light-dark(#15803d, #86efac));
 }
 .tp-subagent-card[data-status='error'] .tp-subagent-card__status {
-  background: light-dark(#fef2f2, #3b1512);
-  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  background: var(--tplane-chat-error-bg, light-dark(#fef2f2, #3b1512));
+  color: var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)));
 }
 .tp-subagent-card__count {
-  font-size: var(--tp-chat-font-size-xs, 0.75rem);
-  color: var(--tp-chat-muted, GrayText);
+  font-size: var(--tp-chat-font-size-xs, var(--tplane-chat-font-size-xs, 0.75rem));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
 }
 .tp-subagent-card__body {
   padding: 4px 12px 12px;
@@ -2796,8 +2852,8 @@
 .tp-subagent-card__description,
 .tp-subagent-card__reasoning {
   margin: 0 0 4px;
-  font-size: var(--tp-chat-font-size-xs, 0.75rem);
-  color: var(--tp-chat-muted, GrayText);
+  font-size: var(--tp-chat-font-size-xs, var(--tplane-chat-font-size-xs, 0.75rem));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
 }
 .tp-subagent-card__reasoning {
   font-style: italic;
@@ -2806,7 +2862,7 @@
   padding: 6px 0;
 }
 .tp-subagent-card__message + .tp-subagent-card__message {
-  border-top: 1px solid var(--tp-chat-border, light-dark(#e5e5e5, #2d2d2d));
+  border-top: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, light-dark(#e5e5e5, #2d2d2d)));
 }
 .tp-subagent-card__text {
   margin: 0;
@@ -2815,7 +2871,7 @@
 }
 .tp-subagent-card__error {
   margin: 4px 0 0;
-  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  color: var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)));
 }
 @media (forced-colors: active) {
   .tp-subagent-card__status {
@@ -2842,36 +2898,47 @@
   margin: 4px 0 12px;
   padding: 8px;
   border-radius: 6px;
-  background: var(--tp-chat-surface-alt, light-dark(#fbfbfb, #2c2c2c));
+  background: var(--tp-chat-surface-alt, var(--tplane-chat-surface-alt, light-dark(#fbfbfb, #2c2c2c)));
 }
 .tp-tool-activity__error {
-  color: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  color: var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)));
   font-size: 13px;
   margin: 8px 0;
 }
 .tp-status-panel {
-  --tp-status-tone: var(--tp-chat-muted, light-dark(#5f6368, #b0b0b0));
+  --tp-status-tone: var(--tp-chat-muted, var(--tplane-chat-text-muted, light-dark(#5f6368, #b0b0b0)));
+  /* Tones that have an Angular -bg/-border pair set these; otherwise the
+     panel mixes its tint from the tone, as before. */
+  --tp-status-bg: initial;
+  --tp-status-border: initial;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
   margin: 8px 0;
   padding: 8px 12px;
-  border: 1px solid color-mix(in srgb, var(--tp-status-tone) 40%, transparent);
-  border-radius: var(--tp-chat-radius-card, 8px);
-  background: color-mix(in srgb, var(--tp-status-tone) 8%, transparent);
-  color: var(--tp-chat-text, inherit);
+  border: 1px solid
+    var(--tp-status-border, color-mix(in srgb, var(--tp-status-tone) 40%, transparent));
+  border-radius: var(--tp-chat-radius-card, var(--tplane-chat-radius-card, 8px));
+  background: var(--tp-status-bg, color-mix(in srgb, var(--tp-status-tone) 8%, transparent));
+  color: var(--tp-chat-text, var(--tplane-chat-text, inherit));
   font-size: 13px;
   overflow-wrap: anywhere;
 }
 .tp-status-panel[data-tone='danger'] {
-  --tp-status-tone: var(--tp-chat-danger, light-dark(#b42318, #ff8a80));
+  --tp-status-tone: var(--tp-chat-danger, var(--tplane-chat-error-text, light-dark(#b42318, #ff8a80)));
+  --tp-status-bg: var(--tplane-chat-error-bg);
+  --tp-status-border: var(--tplane-chat-error-border);
 }
 .tp-status-panel[data-tone='warning'] {
-  --tp-status-tone: light-dark(#b45309, #fbbf24);
+  --tp-status-tone: var(--tplane-chat-warning-text, light-dark(#b45309, #fbbf24));
+  --tp-status-bg: var(--tplane-chat-warning-bg);
+  --tp-status-border: var(--tplane-chat-warning-border);
 }
 .tp-status-panel[data-tone='success'] {
-  --tp-status-tone: light-dark(#15803d, #4ade80);
+  --tp-status-tone: var(--tplane-chat-success-text, light-dark(#15803d, #4ade80));
+  --tp-status-bg: var(--tplane-chat-success-bg);
+  --tp-status-border: var(--tplane-chat-success-border);
 }
 .tp-status-panel p {
   margin: 0;
@@ -2890,16 +2957,16 @@
 .tp-tool-activity__retry {
   min-height: 32px;
   padding: 4px 12px;
-  border: 1px solid var(--tp-chat-border, currentColor);
-  border-radius: var(--tp-chat-radius-sm, 6px);
-  background: var(--tp-chat-surface, transparent);
-  color: var(--tp-chat-text, inherit);
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, currentColor));
+  border-radius: var(--tp-chat-radius-sm, var(--tplane-chat-radius-sm, 6px));
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, transparent));
+  color: var(--tp-chat-text, var(--tplane-chat-text, inherit));
   font: inherit;
   cursor: pointer;
 }
 .tp-status-panel button:focus-visible,
 .tp-tool-activity__retry:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--tplane-chat-focus-ring, currentColor);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -2922,7 +2989,7 @@
 .tp-tool-activity__cue {
   flex: none;
   white-space: nowrap;
-  color: var(--tp-chat-muted, var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0))));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0)))));
   font-size: 12px;
 }
 .tp-tool-activity__status {
@@ -2949,9 +3016,9 @@
     .tp-tool-activity__label[data-active='true'] {
       background-image: linear-gradient(
         100deg,
-        var(--tp-chat-muted, var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0)))) 35%,
-        var(--tp-chat-text, CanvasText) 50%,
-        var(--tp-chat-muted, var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0)))) 65%
+        var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0))))) 35%,
+        var(--tp-chat-text, var(--tplane-chat-text, CanvasText)) 50%,
+        var(--tp-chat-muted, var(--tplane-chat-text-muted, var(--ds-text-muted, var(--ds-text-secondary, light-dark(#737373, #a0a0a0))))) 65%
       );
       background-size: 200% 100%;
       background-clip: text;
@@ -2971,7 +3038,7 @@
 .tp-tool-outcomes p { margin:4px 0; }
 .tp-tool-outcomes ul { display:flex; flex-wrap:wrap; gap:8px 16px; padding:0; list-style:none; margin:8px 0; }
 .tp-tool-outcomes a { color:var(--tp-chat-accent); text-decoration:underline; text-underline-offset:3px; }
-.tp-tool-outcomes a:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+.tp-tool-outcomes a:focus-visible { outline:2px solid var(--tplane-chat-focus-ring, currentColor); outline-offset:3px; }
 
 .tp-typing-indicator {
   display: flex;
@@ -2980,7 +3047,7 @@
   min-inline-size: 0;
   max-inline-size: 100%;
   padding-block: 0.5rem;
-  color: var(--tp-chat-muted, GrayText);
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
   font: inherit;
 }
 .tp-typing-indicator__label {
@@ -3041,10 +3108,10 @@
   inline-size: 100%;
   min-inline-size: 0;
   padding: 0.875rem;
-  border: 1px solid var(--tp-chat-border, var(--ds-border, GrayText));
+  border: 1px solid var(--tp-chat-border, var(--tplane-chat-separator, var(--ds-border, GrayText)));
   border-radius: 0.75rem;
-  background: var(--tp-chat-surface, var(--ds-surface, Canvas));
-  color: var(--tp-chat-muted, GrayText);
+  background: var(--tp-chat-surface, var(--tplane-chat-surface, var(--ds-surface, Canvas)));
+  color: var(--tp-chat-muted, var(--tplane-chat-text-muted, GrayText));
   font: inherit;
 }
 .tp-genui-skeleton__label {

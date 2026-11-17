@@ -1,5 +1,6 @@
 import {
   Fragment,
+  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -16,7 +17,12 @@ import type {
   PropResolutionContext,
   VisibilityCondition,
 } from '@json-render/core';
-import type { RenderSpecProps, RenderValue } from './types.js';
+import { createRenderState } from '@threadplane/content/render-state';
+import type {
+  RenderSpecData,
+  RenderSpecProps,
+  RenderValue,
+} from './types.js';
 import { ownRenderValue } from './values.js';
 import { ownRenderFunctions } from './functions.js';
 import { ReadinessGate } from './readiness.js';
@@ -171,48 +177,74 @@ function Element({
         });
     },
   };
-  if (
-    Object.hasOwn(entry, 'kind') &&
-    (entry as RenderReadinessEntry).kind === 'readiness'
-  )
-    return (
-      <ReadinessGate
-        entry={entry as RenderReadinessEntry}
-        type={element.type}
-        {...view}
-      />
-    );
   const Component = entry as Exclude<typeof entry, RenderReadinessEntry>;
-  // Development only: the DevTools render report (see ./devtools.tsx).
-  if (process.env.NODE_ENV !== 'production')
-    return (
-      <>
-        <RenderDevtoolsMark elementKey={elementKey} state="mounted" />
+  return (
+    <ElementLifecycle
+      interaction={interaction}
+      elementKey={elementKey}
+      elementType={element.type}
+    >
+      {Object.hasOwn(entry, 'kind') &&
+      (entry as RenderReadinessEntry).kind === 'readiness' ? (
+        <ReadinessGate
+          entry={entry as RenderReadinessEntry}
+          type={element.type}
+          {...view}
+        />
+      ) : process.env.NODE_ENV !== 'production' ? (
+        // Development only: the DevTools render report (see ./devtools.tsx).
+        <>
+          <RenderDevtoolsMark elementKey={elementKey} state="mounted" />
+          <Component {...view} />
+        </>
+      ) : (
         <Component {...view} />
-      </>
-    );
-  return <Component {...view} />;
+      )}
+    </ElementLifecycle>
+  );
+}
+
+/** Reports an element's view mounting and leaving, including the leaving after the tree unmounts. */
+function ElementLifecycle({
+  interaction,
+  elementKey,
+  elementType,
+  children,
+}: {
+  readonly interaction: Interaction;
+  readonly elementKey: string;
+  readonly elementType: string;
+  readonly children: ReactNode;
+}) {
+  useEffect(() => {
+    const event = { type: 'lifecycle', scope: 'element', elementKey, elementType } as const;
+    interaction.report({ ...event, event: 'mounted' });
+    return () => interaction.report({ ...event, event: 'destroyed' });
+  }, [interaction, elementKey, elementType]);
+  return children;
 }
 
 /**
  * Present a caller-prepared tree. Application code owns validation, state and actions: the spec
  * names actions in its `on` bindings, and only `handlers` the application supplies run. With a
- * `store`, views can write state; with `state`, the tree is read-only.
+ * `store`, views can write state; with `state`, the tree is read-only. With neither, a spec that
+ * carries `state` seeds a store the tree owns, so views can write.
  */
 export function RenderSpec({
   spec,
   registry,
   state,
-  store,
+  store: suppliedStore,
   functions,
   loading,
   fallback,
   handlers,
   onEvent,
 }: RenderSpecProps) {
-  if (state !== undefined && store !== undefined)
+  if (state !== undefined && suppliedStore !== undefined)
     throw new TypeError('RenderSpec takes state or a store, not both.');
   checkRenderHandlers(handlers);
+  const store = useSeededStore(spec, state, suppliedStore);
   // Actions read the handlers, store and listener of the latest render.
   const latest = useRef({ handlers, store, onEvent });
   latest.current = { handlers, store, onEvent };
@@ -235,6 +267,15 @@ export function RenderSpec({
     }),
     []
   );
+  useEffect(() => {
+    interaction.report({ type: 'lifecycle', event: 'mounted', scope: 'spec' });
+    return () =>
+      interaction.report({
+        type: 'lifecycle',
+        event: 'destroyed',
+        scope: 'spec',
+      });
+  }, [interaction]);
   const subscribe = useCallback(
     (notify: () => void) =>
       store ? store.subscribe(notify) : noSubscription(),
@@ -272,6 +313,25 @@ export function RenderSpec({
       </RenderDevtoolsScope>
     );
   return tree;
+}
+
+/**
+ * The store the tree reads: the supplied one, else (without `state`) one seeded from the first
+ * spec that carries `state`. The seeded store is created once and kept for the tree's lifetime.
+ */
+function useSeededStore(
+  spec: RenderSpecData | null | undefined,
+  state: RenderSpecProps['state'],
+  supplied: RenderStore | undefined
+): RenderStore | undefined {
+  const seeded = useRef<RenderStore | undefined>(undefined);
+  if (supplied !== undefined) return supplied;
+  if (state !== undefined) return undefined;
+  if (seeded.current === undefined && spec?.state !== undefined)
+    seeded.current = createRenderState(
+      ownRenderValue(spec.state) as Record<string, unknown>
+    );
+  return seeded.current;
 }
 
 /** Reports each store write as a `stateChange` event while the tree is mounted. */

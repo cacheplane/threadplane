@@ -158,18 +158,25 @@ export function TripEditor() {
 
 ## Observe what happened
 
-`onEvent` receives a notification when an action runs, when the store changes, and when a view reports a value through `result`:
+`onEvent` receives a notification when an action runs, when the store changes, when the tree or one of its elements mounts or leaves, and when a view reports a value through `result`:
 
 | `type` | Fields |
 |--------|--------|
 | `'handler'` | `action`, `params`, and `result`: what the action returned, or what its promise resolved to |
 | `'stateChange'` | `path`, `value`, and the whole `snapshot` after the write |
+| `'lifecycle'` | `event` (`'mounted'` or `'destroyed'`), `scope` (`'spec'` or `'element'`), and for an element its `elementKey` and `elementType` |
 | `'result'` | `value` and the `elementKey` of the view that reported it |
 
 ```tsx
 <RenderSpec spec={spec} registry={registry} store={store} handlers={handlers} onEvent={(event) => console.log(event)} />
 ```
 
-Once the tree unmounts, a late promise no longer writes the store, runs follow-ups, or reports events.
+Once the tree unmounts, a late promise no longer writes the store, runs follow-ups, or reports events. The `'destroyed'` lifecycle notifications still arrive as the tree leaves.
+
+An element mounts when its view renders, so an element hidden by `visible` mounts when it becomes visible and reports `'destroyed'` when it is hidden again. Elements report before the tree that holds them, because React mounts children first. Development builds under `StrictMode` mount, remove and mount again, and report each step.
+
+## Measure render timing
+
+`createRenderLifecycle` turns those notifications into timings: the first mount, the mount count, the latest mount, the latest store change, and the latest action. Pass its `onEvent` to one or more trees, and read its snapshot with `useSyncExternalStore(lifecycle.subscribe, lifecycle.getSnapshot)`. Create it once, outside the component or in a ref, so the measurements survive re-renders.
 
 See [State Store](/docs/react/render/guides/state-store) for read-only state owned by React, and [Lifecycle](/docs/react/render/guides/lifecycle) for retiring work.
