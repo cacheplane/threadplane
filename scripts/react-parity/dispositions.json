@@ -19513,6 +19513,86 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly optional switches for projects, archive, pin, reorder, rename and remove; each defaults to on when the directory supports it."
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component.ts",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Connected Angular conversation sidebar: reads a ThreadDirectory through a signal bumped by subscribe, refreshes on mount and when the agent leaves running, and composes chat-thread-list and chat-project-list with action adapters derived from the directory commands and feature switches. Never disposes the app-owned directory."
+    },
+    {
+      "id": "component:libs/chat/src/lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component.ts#ChatThreadSidebarComponent",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Angular counterpart of ThreadSidebar with New chat, Projects, Recent and Archived, load error with Retry, empty state, row template, extra actions and before and after content."
+    },
+    {
+      "id": "component:libs/chat/src/lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component.ts#ChatThreadRowTemplateDirective",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Row override for chat-thread-sidebar; React passes renderThread. Rows drawn by the template get no row menu, as in React."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatThreadSidebarComponent",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Connected sidebar over a ThreadDirectory with New chat, Projects, Recent and Archived, load error with Retry, empty state, row slots and before and after sections."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatThreadRowTemplateDirective",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "ng-template[chatThreadRow] row override; React passes renderThread."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatThreadRowTemplateContext",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Row template context with the thread and isActive; mirrors the renderThread arguments."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadSidebarFeatures",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Readonly optional switches for projects, archive, pin, reorder, rename and remove; same shape as the React ThreadSidebarFeatures."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadRowAction",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-list.tsx",
+      "reason": "App command appended to each conversation row menu; mirrors the React ThreadList extraActions item shape."
     }
   ]
 }
