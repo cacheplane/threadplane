@@ -19459,6 +19459,24 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private test fixture: in-memory LangGraph threads/store client and the shared ThreadDirectory conformance suite run against both the runtime directory and the Angular adapter."
+    },
+    {
+      "id": "source:libs/langgraph/src/lib/threads/thread-entries.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular-side copy of the runtime thread metadata projection and publication helpers behind LangGraphThreadsAdapter.directory; deleted when the adapter is rebuilt on the shared directory in phase 2."
+    },
+    {
+      "id": "source:libs/langgraph/src/lib/threads/thread-projects.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular-side copy of the runtime LangGraph Store project store behind LangGraphThreadsAdapter.directory; deleted when the adapter is rebuilt on the shared directory in phase 2."
     }
   ]
 }

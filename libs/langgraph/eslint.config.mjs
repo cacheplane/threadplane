@@ -17,6 +17,9 @@ export default [
             // package. Its neutral source graph is checked separately; do not
             // add unpublished core peers to the legacy production manifest.
             '{projectRoot}/src/runtime/**',
+            // Type-level specs compile only under tsconfig.type-tests.json and
+            // may pin contracts to private sibling libraries.
+            '{projectRoot}/src/**/*.type-spec.ts',
           ],
           ignoredDependencies: ['vite', '@nx/vite'],
         },

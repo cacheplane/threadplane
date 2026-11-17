@@ -158,6 +158,171 @@ describe('LangGraphThreadsAdapter', () => {
   });
 });
 
+describe('LangGraphThreadsAdapter directory view', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('sets status error and keeps refresh resolving on failure', async () => {
+    const search = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce([{ thread_id: 'a', metadata: { title: 'A' } }]);
+    const client = { threads: { search } } as unknown as Client;
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const svc = configure(client);
+
+    await expect(svc.refresh()).resolves.toBeUndefined();
+
+    expect(errSpy).toHaveBeenCalledWith(
+      '[LangGraphThreadsAdapter.refresh] failed:',
+      expect.objectContaining({ message: 'boom' }),
+    );
+    expect(svc.status()).toBe('error');
+    expect(svc.error()).toEqual({
+      kind: 'server',
+      message: 'The LangGraph request failed.',
+      retryable: true,
+      recovery: 'retry',
+    });
+    expect(svc.directory.getSnapshot().status).toBe('error');
+    expect(JSON.stringify(svc.error())).not.toContain('boom');
+
+    await svc.refresh();
+
+    expect(svc.status()).toBe('idle');
+    expect(svc.error()).toBeUndefined();
+    expect(svc.threads().map((t) => t.id)).toEqual(['a']);
+    errSpy.mockRestore();
+  });
+
+  it('keeps create returning null on failure', async () => {
+    const m = mockClient();
+    m.create.mockRejectedValue(new Error('nope'));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const svc = configure(m.client);
+
+    await expect(svc.create({ title: 'x' })).resolves.toBeNull();
+    await expect(svc.directory.create?.()).rejects.toThrow(
+      'The LangGraph request failed.',
+    );
+    expect(errSpy).toHaveBeenCalledWith(
+      '[LangGraphThreadsAdapter.create] failed:',
+      expect.objectContaining({ message: 'nope' }),
+    );
+    errSpy.mockRestore();
+  });
+
+  it('keeps rethrowing the original error from adapter methods', async () => {
+    const m = mockClient([{ thread_id: 'a', metadata: { title: 'A' } }]);
+    m.update.mockRejectedValue(new Error('ordinary app failure'));
+    const svc = configure(m.client);
+    await svc.refresh();
+
+    await expect(svc.rename('a', 'Trip')).rejects.toThrow('ordinary app failure');
+    expect(svc.threads()[0].title).toBe('A');
+  });
+
+  it('lists threads without a store client and reports no projects', async () => {
+    const m = mockClient([{ thread_id: 'a', metadata: { title: 'A' } }]);
+    const svc = configure(m.client);
+
+    await svc.refresh();
+
+    expect(svc.threads().map((t) => t.id)).toEqual(['a']);
+    expect(svc.status()).toBe('idle');
+    expect(svc.projects()).toEqual([]);
+    expect(svc.directory.getSnapshot().projects).toEqual([]);
+  });
+
+  it('turns projects off with projects: false', async () => {
+    const searchItems = vi.fn().mockResolvedValue({ items: [] });
+    const m = mockClient([{ thread_id: 'a', metadata: { title: 'A' } }]);
+    (m.client as unknown as { store: unknown }).store = { searchItems };
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: LANGGRAPH_THREADS_CONFIG,
+          useValue: { apiUrl: 'http://x', projects: false },
+        },
+        { provide: LANGGRAPH_CLIENT, useValue: m.client },
+      ],
+    });
+    const svc = TestBed.inject(LangGraphThreadsAdapter);
+
+    await svc.refresh();
+
+    expect(searchItems).not.toHaveBeenCalled();
+    expect(svc.projects()).toBeUndefined();
+    expect('projects' in svc.directory.getSnapshot()).toBe(false);
+    expect(svc.directory.createProject).toBeUndefined();
+  });
+
+  it('reads projects from a custom namespace', async () => {
+    const searchItems = vi.fn().mockResolvedValue({
+      items: [{ key: 'p1', value: { name: ' Work ' } }],
+    });
+    const m = mockClient();
+    (m.client as unknown as { store: unknown }).store = { searchItems };
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: LANGGRAPH_THREADS_CONFIG,
+          useValue: { apiUrl: 'http://x', projects: { namespace: ['app', 'groups'] } },
+        },
+        { provide: LANGGRAPH_CLIENT, useValue: m.client },
+      ],
+    });
+    const svc = TestBed.inject(LangGraphThreadsAdapter);
+
+    await svc.refresh();
+
+    expect(searchItems).toHaveBeenCalledWith(['app', 'groups'], { limit: 100 });
+    expect(svc.projects()).toEqual([{ id: 'p1', name: 'Work' }]);
+  });
+
+  it('notifies directory listeners outside an injection context and stops after dispose', async () => {
+    const m = mockClient([{ thread_id: 'a', metadata: { title: 'A' } }]);
+    const svc = configure(m.client);
+    const notify = vi.fn();
+    svc.directory.subscribe(notify);
+
+    await svc.refresh();
+    const snapshot = svc.directory.getSnapshot();
+
+    expect(notify).toHaveBeenCalled();
+    expect(Object.isFrozen(snapshot)).toBe(true);
+    expect(snapshot.threads.map((t) => t.id)).toEqual(['a']);
+
+    svc.directory.dispose();
+    notify.mockClear();
+    m.search.mockResolvedValue([{ thread_id: 'b', metadata: {} }]);
+    await svc.refresh();
+
+    expect(notify).not.toHaveBeenCalled();
+    expect(svc.directory.getSnapshot()).toBe(snapshot);
+    // The adapter itself keeps working for its signals.
+    expect(svc.threads().map((t) => t.id)).toEqual(['b']);
+    await expect(svc.directory.rename?.('b', 'B')).rejects.toThrow(
+      'The LangGraph request failed.',
+    );
+  });
+
+  it('shows a rename in threads() before the server answers', async () => {
+    const m = mockClient([{ thread_id: 'a', metadata: { title: 'A' } }]);
+    const svc = configure(m.client);
+    await svc.refresh();
+    let release!: () => void;
+    m.update.mockReturnValue(new Promise<void>((resolve) => (release = resolve)));
+    m.search.mockResolvedValue([{ thread_id: 'a', metadata: { title: 'Trip' } }]);
+
+    const renaming = svc.rename('a', 'Trip');
+
+    expect(svc.threads()[0].title).toBe('Trip');
+    release();
+    await renaming;
+    expect(svc.threads()[0].title).toBe('Trip');
+  });
+});
+
 describe('LangGraphThreadsAdapter client options', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
