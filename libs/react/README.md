@@ -562,6 +562,10 @@ composer, scrollable tables and native task-checkbox semantics. Override
 `--tp-chat-font-family`, `--tp-chat-font-size-base`, or the
 `--tp-chat-radius-*` properties on the composed part to customize it. An explicit
 `color-scheme` or `--tp-chat-color-scheme` selects the host's light/dark treatment.
+Without one, a `data-theme="light|dark"` or `data-threadplane-chat-theme="light|dark"`
+attribute on the chat or any ancestor forces that scheme, as in Angular chat (the
+nearest attribute wins); otherwise the system `prefers-color-scheme` applies. The A2UI
+surface stylesheet follows the same attributes.
 User bubbles use the neutral inverted palette; override `--tp-chat-user-bg` and
 `--tp-chat-user-text` on the composed part to supply a different color pair.
 Custom message renderers retain their own layout and need their own integration.
