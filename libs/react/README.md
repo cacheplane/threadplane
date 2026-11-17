@@ -827,6 +827,14 @@ focus survive, and when a chosen suggestion disappears with the greeting, focus
 moves to the composer. It is off unless set, and `--tp-welcome-max-width`,
 `--tp-welcome-gap` and `--tp-welcome-padding` adjust it.
 
+`Chat` also takes a `header`: app-owned content, such as a title and actions,
+in a bar above the transcript. It steps aside while the welcome greeting shows
+and adds no element unless set.
+
+```tsx
+<Chat session={session} header={<h2>Support</h2>} />
+```
+
 Pass `threads` to list conversations in a sidebar beside the chat, with
 `activeThreadId` and `onThreadSelect` to mark and switch them. The sidebar
 shows on viewports at least 768px wide. Passing the prop, even as an empty
