@@ -2,7 +2,9 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
@@ -10,6 +12,7 @@ import {
   refreshDirectoryOnRunEnd,
   type AgentSession,
   type ThreadDirectory,
+  type ThreadEntry,
 } from '@threadplane/core';
 import { ChatSidenavSections } from './chat-sidenav-sections.js';
 import type { ProjectActionAdapter } from './project-list.js';
@@ -42,7 +45,12 @@ export interface ThreadSidebarProps {
   readonly onNewChat?: () => void;
   /** Called after the active thread is deleted. */
   readonly onActiveRemoved?: () => void;
+  /**
+   * When a project id, Recent and Archived list only that project's threads;
+   * `null` or omitted lists every thread.
+   */
   readonly selectedProjectId?: string | null;
+  /** Called with the project the user picked; the app owns `selectedProjectId`. */
   readonly onProjectSelect?: (projectId: string | null) => void;
   readonly features?: ThreadSidebarFeatures;
   /** Replaces each conversation row; see `ThreadListProps.renderItem`. */
@@ -71,6 +79,16 @@ export interface ThreadSidebarProps {
 
 const ignore = () => undefined;
 const NO_FEATURES: ThreadSidebarFeatures = {};
+
+/** The entries in `projectId`, or all of them when no project is selected. */
+function inProject(
+  entries: readonly ThreadEntry[],
+  projectId: string | null | undefined
+): readonly ThreadEntry[] {
+  return typeof projectId === 'string'
+    ? entries.filter((entry) => entry.projectId === projectId)
+    : entries;
+}
 
 /**
  * A conversation sidebar connected to a `ThreadDirectory`: New chat,
@@ -106,9 +124,17 @@ export function ThreadSidebar({
   const latest = useRef({ activeThreadId, onSelect, onActiveRemoved });
   latest.current = { activeThreadId, onSelect, onActiveRemoved };
 
+  // Until the mount refresh settles, an empty list means "not loaded yet",
+  // so the empty label waits for it.
+  const [settled, setSettled] = useState<ThreadDirectory | null>(null);
   useEffect(() => {
     const controller = new AbortController();
-    directory.refresh({ signal: controller.signal }).catch(ignore);
+    directory
+      .refresh({ signal: controller.signal })
+      .catch(ignore)
+      .then(() => {
+        if (!controller.signal.aborted) setSettled(directory);
+      });
     return () => controller.abort();
   }, [directory]);
 
@@ -199,7 +225,16 @@ export function ThreadSidebar({
         }
       : undefined);
 
-  const loading = snapshot.status === 'loading';
+  const threads = useMemo(
+    () => inProject(snapshot.threads, selectedProjectId),
+    [snapshot.threads, selectedProjectId]
+  );
+  const archived = useMemo(
+    () => inProject(snapshot.archived, selectedProjectId),
+    [snapshot.archived, selectedProjectId]
+  );
+
+  const loading = snapshot.status === 'loading' || settled !== directory;
   const failed = snapshot.status === 'error';
   return (
     <div
@@ -224,8 +259,8 @@ export function ThreadSidebar({
       )}
       <ChatSidenavSections
         onNewChat={newChat}
-        threads={snapshot.threads}
-        archivedThreads={showArchive ? snapshot.archived : null}
+        threads={threads}
+        archivedThreads={showArchive ? archived : null}
         activeThreadId={activeThreadId}
         onThreadSelect={onSelect}
         threadActions={threadActions}

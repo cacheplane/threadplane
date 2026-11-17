@@ -167,6 +167,24 @@ export function describeThreadDirectoryConformance(
       expect(metadata(client, 'a')?.['title']).toBe('Trip');
     });
 
+    it('trims a renamed title and shows the fallback for a blank one', async () => {
+      const { client, directory } = setup([
+        { thread_id: 'a', updated_at: at(1), metadata: { title: 'A' } },
+      ]);
+      await directory.refresh();
+      const release = client.hold('threads.update');
+
+      const blank = directory.rename?.('a', '   ');
+
+      expect(entry(directory, 'a')?.title).toBe('New chat');
+      release();
+      await blank;
+      expect(entry(directory, 'a')?.title).toBe('New chat');
+
+      await directory.rename?.('a', '  Trip  ');
+      expect(entry(directory, 'a')?.title).toBe('Trip');
+    });
+
     it('rolls back a failed rename and rejects', async () => {
       const { client, directory } = setup([
         { thread_id: 'a', updated_at: at(1), metadata: { title: 'A' } },
@@ -466,11 +484,39 @@ export function describeThreadDirectoryConformance(
         expect(snapshot.status).toBe('idle');
         expect(snapshot.error).toBeUndefined();
         expect(snapshot.threads.map((t) => t.id)).toEqual(['a']);
-        expect(snapshot.projects).toEqual([]);
+        expect(snapshot.projects).toBeUndefined();
         await expect(directory.createProject?.('Trips')).rejects.toThrow(
           'The LangGraph request failed.'
         );
         expect(client.puts).toEqual([]);
+      }
+    );
+
+    it.skipIf(!withProjects)(
+      'stops publishing projects when the project store later fails',
+      async () => {
+        const { client, directory } = setup(
+          [{ thread_id: 'a', updated_at: at(1), metadata: { title: 'A' } }],
+          [{ id: 'p1', name: 'One' }]
+        );
+        await directory.refresh();
+        expect(directory.getSnapshot().projects).toEqual([
+          { id: 'p1', name: 'One' },
+        ]);
+        client.failNext('store.searchItems', 500);
+
+        await directory.refresh();
+
+        expect(directory.getSnapshot().projects).toBeUndefined();
+        expect(directory.getSnapshot().threads.map((t) => t.id)).toEqual([
+          'a',
+        ]);
+
+        await directory.refresh();
+
+        expect(directory.getSnapshot().projects).toEqual([
+          { id: 'p1', name: 'One' },
+        ]);
       }
     );
   });

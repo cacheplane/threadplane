@@ -41,7 +41,9 @@ export interface LangGraphThreadDirectoryOptions {
   readonly titleFallback?: string;
   /**
    * Project names. Defaults to the LangGraph Store API
-   * (`createLangGraphProjectStore`); `false` turns projects off.
+   * (`createLangGraphProjectStore`); `false` turns projects off. While the
+   * store cannot be read, the snapshot has no `projects` and project
+   * commands reject.
    */
   readonly projects?: ProjectStore | false;
 }
@@ -145,7 +147,10 @@ export function createLangGraphThreadDirectory(
       archived: sameList(snapshot.archived, archived)
         ? snapshot.archived
         : Object.freeze(archived),
-      ...(projectStore ? { projects: serverProjects } : {}),
+      // An unavailable Store API publishes no projects, so views hide them.
+      ...(projectStore && !projectsUnavailable
+        ? { projects: serverProjects }
+        : {}),
       status,
       ...(error === undefined ? {} : { error }),
     });
@@ -290,8 +295,12 @@ export function createLangGraphThreadDirectory(
       await refresh();
       return Object.freeze({ id });
     },
+    // A blank title shows the fallback at once, as the server list would.
     rename: (id: string, title: string) =>
-      mutate([{ id, fields: { title } }], update(id, { title })),
+      mutate(
+        [{ id, fields: { title: title.trim() || titleFallback } }],
+        update(id, { title })
+      ),
     remove: (id: string) =>
       mutate([{ id, fields: { removed: true } }], (signal) =>
         client.threads.delete(encodeURIComponent(id), { signal })

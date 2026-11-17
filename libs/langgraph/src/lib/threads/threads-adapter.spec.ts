@@ -229,8 +229,9 @@ describe('LangGraphThreadsAdapter directory view', () => {
 
     expect(svc.threads().map((t) => t.id)).toEqual(['a']);
     expect(svc.status()).toBe('idle');
-    expect(svc.projects()).toEqual([]);
-    expect(svc.directory.getSnapshot().projects).toEqual([]);
+    // Unavailable reads like "no project store", so views hide Projects.
+    await vi.waitFor(() => expect(svc.projects()).toBeUndefined());
+    expect('projects' in svc.directory.getSnapshot()).toBe(false);
   });
 
   it('turns projects off with projects: false', async () => {
@@ -273,7 +274,7 @@ describe('LangGraphThreadsAdapter directory view', () => {
     });
     const svc = TestBed.inject(LangGraphThreadsAdapter);
 
-    await svc.refresh();
+    await svc.directory.refresh();
 
     expect(searchItems).toHaveBeenCalledWith(['app', 'groups'], { limit: 100 });
     expect(svc.projects()).toEqual([{ id: 'p1', name: 'Work' }]);
@@ -318,23 +319,31 @@ describe('LangGraphThreadsAdapter directory view', () => {
     (m.client as unknown as { store: unknown }).store = { searchItems };
     const svc = configure(m.client);
 
-    let refreshed = false;
-    const refreshing = svc.refresh().then(() => (refreshed = true));
-    await vi.waitFor(() => expect(searchItems).toHaveBeenCalledTimes(1));
+    // The legacy refresh() resolves once threads are published, with the
+    // Store API still held.
+    await svc.refresh();
+    expect(searchItems).toHaveBeenCalledTimes(1);
 
     expect(svc.threads().map((t) => t.id)).toEqual(['a']);
     expect(svc.directory.getSnapshot().threads.map((t) => t.id)).toEqual(['a']);
     expect(svc.status()).toBe('idle');
     expect(svc.projects()).toEqual([]);
-    expect(refreshed).toBe(false);
 
     m.search.mockResolvedValue([{ thread_id: 'a', metadata: { title: 'Trip' } }]);
     await svc.rename('a', 'Trip');
     expect(svc.threads()[0].title).toBe('Trip');
 
+    // The directory's refresh() still waits for project names.
+    let directoryRefreshed = false;
+    const directoryRefreshing = svc.directory
+      .refresh()
+      .then(() => (directoryRefreshed = true));
+    await vi.waitFor(() => expect(searchItems).toHaveBeenCalledTimes(3));
+    expect(directoryRefreshed).toBe(false);
+
     for (const release of releases) release();
-    await refreshing;
-    await vi.waitFor(() => expect(svc.projects()).toEqual([{ id: 'p1', name: 'P' }]));
+    await directoryRefreshing;
+    expect(svc.projects()).toEqual([{ id: 'p1', name: 'P' }]);
     expect(svc.directory.getSnapshot().projects).toEqual([{ id: 'p1', name: 'P' }]);
   });
 

@@ -36,6 +36,23 @@ describe('refreshDirectoryOnRunEnd', () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  it('ignores a rejected refresh', async () => {
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+    try {
+      const fake = createFakeAgentSession();
+      const refresh = vi.fn(() => Promise.reject(new Error('offline')));
+      refreshDirectoryOnRunEnd({ refresh }, fake.session);
+      fake.setStatus('running');
+      fake.setStatus('idle');
+      expect(refresh).toHaveBeenCalledTimes(1);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
+  });
+
   it('stops after release', () => {
     const { fake, refresh, release } = setup();
     release();

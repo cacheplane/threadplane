@@ -59,7 +59,8 @@ export interface ThreadDirectory {
 
 /**
  * Refreshes the directory each time the session leaves `'running'`, whether
- * the run succeeded or ended in error. Returns an idempotent release.
+ * the run succeeded or ended in error. A rejected refresh is ignored. Returns
+ * an idempotent release.
  */
 export function refreshDirectoryOnRunEnd(
   directory: Pick<ThreadDirectory, 'refresh'>,
@@ -70,6 +71,8 @@ export function refreshDirectoryOnRunEnd(
     const next = session.getSnapshot().status;
     const ended = last === 'running' && next !== 'running';
     last = next;
-    if (ended) void directory.refresh();
+    // A failed refresh shows on the directory; it never escapes as an
+    // unhandled rejection.
+    if (ended) directory.refresh().catch(() => undefined);
   });
 }

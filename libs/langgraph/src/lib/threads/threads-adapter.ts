@@ -73,7 +73,9 @@ export interface LangGraphThreadsConfig {
   /** Project names, kept in the LangGraph Store API under `namespace`
    *  (default `['threadplane', 'projects']`), one item per project with the
    *  value `{ name }`. On by default; `false` turns projects off. A server
-   *  without the Store API still lists threads and reports no projects. */
+   *  without the Store API still lists threads; while the store cannot be
+   *  read, {@link LangGraphThreadsAdapter.projects} is `undefined` and project
+   *  commands reject. */
   projects?: false | { namespace?: readonly string[] };
 }
 
@@ -163,8 +165,9 @@ export class LangGraphThreadsAdapter {
   readonly status: Signal<ThreadDirectoryStatus> = this._status.asReadonly();
   /** The last load failure, opaque by design; cleared by a successful load. */
   readonly error: Signal<ThreadDirectoryError | undefined> = this._error.asReadonly();
-  /** Project names from the LangGraph Store API, sorted by name. `[]` when
-   *  the Store API is unavailable; `undefined` when `projects: false`. */
+  /** Project names from the LangGraph Store API, sorted by name.
+   *  `undefined` when `projects: false` or while the Store API cannot be
+   *  read, so views hide the Projects section. */
   readonly projects: Signal<readonly ProjectEntry[] | undefined> =
     this._projects.asReadonly();
 
@@ -224,7 +227,9 @@ export class LangGraphThreadsAdapter {
    *  with no visible signal. Tighten the log volume if it becomes
    *  noisy. */
   async refresh(): Promise<void> {
-    await this.load(true);
+    // Resolves once threads are published; project names load in the
+    // background. The directory's refresh() waits for them.
+    await this.load(false);
   }
 
   /** Reads the thread list, publishes it, then reads project names and
@@ -323,6 +328,8 @@ export class LangGraphThreadsAdapter {
     }
   }
 
+  // Phase 2: the runtime directory URL-encodes thread ids in request paths;
+  // this adapter keeps the legacy raw-id paths until it is rebuilt on it.
   async delete(threadId: string): Promise<void> {
     await this.mutate([{ id: threadId, fields: { removed: true } }], () =>
       this.client.threads.delete(threadId),
@@ -330,7 +337,9 @@ export class LangGraphThreadsAdapter {
   }
 
   async rename(threadId: string, newTitle: string): Promise<void> {
-    await this.mutate([{ id: threadId, fields: { title: newTitle } }], () =>
+    // A blank title shows the fallback at once, as the server list would.
+    const shown = newTitle.trim() || this.fallback;
+    await this.mutate([{ id: threadId, fields: { title: shown } }], () =>
       this.client.threads.update(threadId, { metadata: { title: newTitle } }),
     );
   }
@@ -459,7 +468,7 @@ export class LangGraphThreadsAdapter {
       await this.mutate(patches, run, true);
     } else {
       await this.request(run);
-      await this.refresh();
+      await this.load(true);
     }
     return result as T;
   }
@@ -509,7 +518,7 @@ export class LangGraphThreadsAdapter {
     }
     this._status.set(this.computeStatus());
     this._error.set(this.loadFailure);
-    if (this.projectStore) this._projects.set(this.serverProjects);
+    this._projects.set(this.publishedProjects());
     this.updateView();
   }
 
@@ -533,7 +542,7 @@ export class LangGraphThreadsAdapter {
       },
       refresh: async () => {
         if (this.viewDisposed) return;
-        await this.refresh();
+        await this.load(true);
       },
       create: (options?: { readonly metadata?: { readonly [key: string]: unknown } }) =>
         run(async () => {
@@ -591,11 +600,18 @@ export class LangGraphThreadsAdapter {
     this.viewListeners.clear();
   }
 
+  /** An unavailable Store API publishes no projects, so views hide them. */
+  private publishedProjects(): readonly ProjectEntry[] | undefined {
+    return this.projectStore && !this.projectsUnavailable
+      ? this.serverProjects
+      : undefined;
+  }
+
   private buildSnapshot(): ThreadDirectorySnapshot {
     return Object.freeze({
       threads: this.activeEntries,
       archived: this.archivedEntries,
-      ...(this.projectStore ? { projects: this.serverProjects } : {}),
+      ...(this.publishedProjects() ? { projects: this.serverProjects } : {}),
       status: this.computeStatus(),
       ...(this.loadFailure === undefined ? {} : { error: this.loadFailure }),
     });

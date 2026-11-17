@@ -189,7 +189,7 @@ describe('ThreadSidebar', () => {
     expect(directory.refresh).toHaveBeenCalledTimes(2);
   });
 
-  it('shows an empty state only once loaded', () => {
+  it('shows an empty state only once loaded', async () => {
     const directory = fakeDirectory({
       threads: [],
       archived: [],
@@ -202,11 +202,79 @@ describe('ThreadSidebar', () => {
     expect(view.container.firstElementChild?.getAttribute('aria-busy')).toBe(
       'true'
     );
-    act(() => directory.set({ threads: [], archived: [], status: 'idle' }));
+    await act(async () =>
+      directory.set({ threads: [], archived: [], status: 'idle' })
+    );
     expect(view.getByText('No conversations yet.')).not.toBeNull();
     expect(view.container.firstElementChild?.hasAttribute('aria-busy')).toBe(
       false
     );
+  });
+
+  it('waits for the first refresh before showing the empty state', async () => {
+    // A fresh directory reports idle with no threads before it has loaded.
+    const directory = fakeDirectory({ threads: [], archived: [], status: 'idle' });
+    let finish = () => undefined as void;
+    directory.refresh.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finish = resolve))
+    );
+    const view = render(
+      <ThreadSidebar directory={directory} onSelect={vi.fn()} />
+    );
+    expect(view.queryByText('No conversations yet.')).toBeNull();
+    expect(view.container.firstElementChild?.getAttribute('aria-busy')).toBe(
+      'true'
+    );
+    await act(async () => finish());
+    expect(view.getByText('No conversations yet.')).not.toBeNull();
+    expect(view.container.firstElementChild?.hasAttribute('aria-busy')).toBe(
+      false
+    );
+  });
+
+  it('filters threads by the selected project', async () => {
+    const directory = fakeDirectory({
+      threads: [
+        { id: 'a', title: 'Alpha', pinned: false, archived: false, projectId: 'p' },
+        { id: 'b', title: 'Beta', pinned: false, archived: false, projectId: null },
+      ],
+      archived: [
+        { id: 'c', title: 'Gamma', pinned: false, archived: true, projectId: 'p' },
+        { id: 'd', title: 'Delta', pinned: false, archived: true, projectId: 'q' },
+      ],
+      projects: [
+        { id: 'p', name: 'Research' },
+        { id: 'q', name: 'Travel' },
+      ],
+      status: 'idle',
+    });
+    const onProjectSelect = vi.fn();
+    const view = render(
+      <ThreadSidebar
+        directory={directory}
+        onSelect={vi.fn()}
+        selectedProjectId="p"
+        onProjectSelect={onProjectSelect}
+      />
+    );
+    await act(async () => undefined);
+    fireEvent.click(view.getByRole('button', { name: 'Archived' }));
+    expect(view.queryByRole('button', { name: 'Alpha' })).not.toBeNull();
+    expect(view.queryByRole('button', { name: 'Beta' })).toBeNull();
+    expect(view.queryByRole('button', { name: 'Gamma' })).not.toBeNull();
+    expect(view.queryByRole('button', { name: 'Delta' })).toBeNull();
+    fireEvent.click(view.getByRole('button', { name: 'Travel' }));
+    expect(onProjectSelect).toHaveBeenCalledWith('q');
+
+    view.rerender(
+      <ThreadSidebar
+        directory={directory}
+        onSelect={vi.fn()}
+        selectedProjectId={null}
+      />
+    );
+    for (const name of ['Alpha', 'Beta', 'Gamma', 'Delta'])
+      expect(view.queryByRole('button', { name })).not.toBeNull();
   });
 
   it('refreshes after a run ends', () => {

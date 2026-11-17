@@ -117,6 +117,16 @@ const asThreads = (entries: readonly ThreadEntry[]): Thread[] =>
   entries as unknown as Thread[];
 const asProjects = (entries: readonly ProjectEntry[]): Project[] =>
   entries as unknown as Project[];
+
+/** The entries in `projectId`, or all of them when no project is selected. */
+function inProject(
+  entries: readonly ThreadEntry[],
+  projectId: string | null
+): readonly ThreadEntry[] {
+  return typeof projectId === 'string'
+    ? entries.filter((entry) => entry.projectId === projectId)
+    : entries;
+}
 let sidebarInstanceCounter = 0;
 
 const CHAT_THREAD_SIDEBAR_STYLES = `
@@ -396,6 +406,10 @@ export class ChatThreadSidebarComponent {
   /** Refreshes the directory each time a run ends. */
   readonly agent = input<Agent | null>(null);
   readonly activeThreadId = input<string | null>(null);
+  /**
+   * When a project id, Recent and Archived list only that project's threads;
+   * `null` lists every thread.
+   */
   readonly selectedProjectId = input<string | null>(null);
   readonly features = input<ThreadSidebarFeatures | null>(null);
   /** App commands appended to each conversation row menu. */
@@ -431,8 +445,13 @@ export class ChatThreadSidebarComponent {
     return this.directory().getSnapshot();
   });
 
+  /** The directory whose mount refresh has settled. Until then an empty
+   *  list means "not loaded yet", so the empty label waits for it. */
+  private readonly settled = signal<ThreadDirectory | null>(null);
   protected readonly loading = computed(
-    () => this.snapshot().status === 'loading'
+    () =>
+      this.snapshot().status === 'loading' ||
+      this.settled() !== this.directory()
   );
   protected readonly failed = computed(
     () => this.snapshot().status === 'error'
@@ -445,11 +464,11 @@ export class ChatThreadSidebarComponent {
     () => this.on('projects') && this.snapshot().projects !== undefined
   );
 
-  protected readonly threads = computed(
-    () => asThreads(this.snapshot().threads)
+  protected readonly threads = computed(() =>
+    asThreads(inProject(this.snapshot().threads, this.selectedProjectId()))
   );
-  protected readonly archivedThreads = computed(
-    () => asThreads(this.snapshot().archived)
+  protected readonly archivedThreads = computed(() =>
+    asThreads(inProject(this.snapshot().archived, this.selectedProjectId()))
   );
   protected readonly projects = computed<Project[] | null>(() => {
     if (!this.showProjects()) return null;
@@ -541,7 +560,12 @@ export class ChatThreadSidebarComponent {
         // Catch a change published before this subscription.
         this.version.update((v) => v + 1);
         const controller = new AbortController();
-        directory.refresh({ signal: controller.signal }).catch(ignore);
+        directory
+          .refresh({ signal: controller.signal })
+          .catch(ignore)
+          .then(() => {
+            if (!controller.signal.aborted) this.settled.set(directory);
+          });
         onCleanup(() => {
           unsubscribe();
           controller.abort();

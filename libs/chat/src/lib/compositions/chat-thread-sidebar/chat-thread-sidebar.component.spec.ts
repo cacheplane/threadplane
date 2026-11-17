@@ -77,6 +77,7 @@ interface Inputs {
   directory: ThreadDirectory;
   agent?: Agent;
   activeThreadId?: string | null;
+  selectedProjectId?: string | null;
   features?: ThreadSidebarFeatures;
   labels?: Record<string, string>;
   extraActions?: readonly {
@@ -229,7 +230,7 @@ describe('ChatThreadSidebarComponent', () => {
     expect(directory.refresh).toHaveBeenCalledTimes(2);
   });
 
-  it('shows an empty state only once loaded', () => {
+  it('shows an empty state only once loaded', async () => {
     const directory = fakeDirectory({
       threads: [],
       archived: [],
@@ -240,9 +241,72 @@ describe('ChatThreadSidebarComponent', () => {
     expect(text(fixture)).not.toContain('No conversations yet.');
     expect(host.getAttribute('aria-busy')).toBe('true');
     directory.set({ threads: [], archived: [], status: 'idle' });
+    await flush();
     fixture.detectChanges();
     expect(text(fixture)).toContain('No conversations yet.');
     expect(host.hasAttribute('aria-busy')).toBe(false);
+  });
+
+  it('waits for the first refresh before showing the empty state', async () => {
+    // A fresh directory reports idle with no threads before it has loaded.
+    const directory = fakeDirectory({ threads: [], archived: [], status: 'idle' });
+    let finish = () => undefined as void;
+    directory.refresh.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (finish = resolve))
+    );
+    const fixture = render({ directory });
+    const host = fixture.nativeElement as HTMLElement;
+    expect(text(fixture)).not.toContain('No conversations yet.');
+    expect(host.getAttribute('aria-busy')).toBe('true');
+    finish();
+    await flush();
+    fixture.detectChanges();
+    expect(text(fixture)).toContain('No conversations yet.');
+    expect(host.hasAttribute('aria-busy')).toBe(false);
+  });
+
+  it('filters threads by the selected project', () => {
+    const directory = fakeDirectory({
+      threads: [
+        { id: 'a', title: 'Alpha', pinned: false, archived: false, projectId: 'p' },
+        { id: 'b', title: 'Beta', pinned: false, archived: false, projectId: null },
+      ],
+      archived: [
+        { id: 'c', title: 'Gamma', pinned: false, archived: true, projectId: 'p' },
+        { id: 'd', title: 'Delta', pinned: false, archived: true, projectId: 'q' },
+      ],
+      projects: [
+        { id: 'p', name: 'Research' },
+        { id: 'q', name: 'Travel' },
+      ],
+      status: 'idle',
+    });
+    const fixture = render({ directory, selectedProjectId: 'p' });
+    const selected: (string | null)[] = [];
+    fixture.componentInstance.projectSelected.subscribe((id) =>
+      selected.push(id)
+    );
+    (
+      fixture.nativeElement as HTMLElement
+    ).querySelector<HTMLButtonElement>('.chat-thread-sidebar__archived-toggle')
+      ?.click();
+    fixture.detectChanges();
+    expect(rowButton(fixture, 'Alpha')).toBeDefined();
+    expect(rowButton(fixture, 'Beta')).toBeUndefined();
+    expect(rowButton(fixture, 'Gamma')).toBeDefined();
+    expect(rowButton(fixture, 'Delta')).toBeUndefined();
+    const travel = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+        'chat-project-list button'
+      )
+    ).find((button) => button.textContent?.trim() === 'Travel');
+    travel?.click();
+    expect(selected).toEqual(['q']);
+
+    fixture.componentRef.setInput('selectedProjectId', null);
+    fixture.detectChanges();
+    for (const title of ['Alpha', 'Beta', 'Gamma', 'Delta'])
+      expect(rowButton(fixture, title)).toBeDefined();
   });
 
   it('refreshes after a run ends', () => {
