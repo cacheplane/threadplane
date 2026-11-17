@@ -108,10 +108,23 @@ export interface RenderResultEvent {
   readonly value: RenderValue;
   readonly elementKey: string;
 }
+/**
+ * The tree or one of its elements mounted or was removed. An element mounts when its view renders,
+ * so a hidden element mounts once it becomes visible; elements report before the tree that holds
+ * them, because React mounts children first.
+ */
+export interface RenderLifecycleEvent {
+  readonly type: 'lifecycle';
+  readonly event: 'mounted' | 'destroyed';
+  readonly scope: 'spec' | 'element';
+  readonly elementKey?: string;
+  readonly elementType?: string;
+}
 /** What `onEvent` receives. */
 export type RenderEvent =
   | RenderHandlerEvent
   | RenderStateChangeEvent
+  | RenderLifecycleEvent
   | RenderResultEvent;
 interface RenderSpecBaseProps {
   readonly spec: RenderSpecData | null;

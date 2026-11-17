@@ -2,6 +2,11 @@
 export { RenderSpec } from './render-spec.js';
 export { RenderDevtools } from './devtools.js';
 export type { RenderDevtoolsProps } from './devtools.js';
+export { createRenderLifecycle } from './lifecycle.js';
+export type {
+  RenderLifecycle,
+  RenderLifecycleSnapshot,
+} from './lifecycle.js';
 export type {
   ReactRenderFunctions,
   ReactRenderHandlers,
@@ -11,6 +16,7 @@ export type {
   RenderElementData,
   RenderEvent,
   RenderHandlerEvent,
+  RenderLifecycleEvent,
   RenderReadinessEntry,
   RenderResultEvent,
   RenderSpecData,
