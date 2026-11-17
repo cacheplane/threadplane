@@ -118,12 +118,18 @@ const asThreads = (entries: readonly ThreadEntry[]): Thread[] =>
 const asProjects = (entries: readonly ProjectEntry[]): Project[] =>
   entries as unknown as Project[];
 
-/** The entries in `projectId`, or all of them when no project is selected. */
+/**
+ * The entries in `projectId`, or all of them when no project is selected or
+ * the selected project is not in `projects` (deleted, or the Store is
+ * unavailable), so a stale selection never hides every conversation.
+ */
 function inProject(
   entries: readonly ThreadEntry[],
-  projectId: string | null
+  projectId: string | null,
+  projects: ThreadDirectorySnapshot['projects']
 ): readonly ThreadEntry[] {
-  return typeof projectId === 'string'
+  return typeof projectId === 'string' &&
+    projects?.some((project) => project.id === projectId)
     ? entries.filter((entry) => entry.projectId === projectId)
     : entries;
 }
@@ -422,7 +428,7 @@ export class ChatThreadSidebarComponent {
   private readonly newChatRequests = new Subject<void>();
   /** Replaces the default New chat, which creates a thread and selects it. */
   readonly newChat = outputFromObservable(this.newChatRequests);
-  /** Never emits `null` by itself; the app decides what clears a project. */
+  /** Emits `null` after the selected project is removed; otherwise the app decides what clears a project. */
   readonly projectSelected = output<string | null>();
   /** Emits after the conversation that was active when the delete was confirmed is removed. */
   readonly activeThreadRemoved = output<void>();
@@ -465,10 +471,18 @@ export class ChatThreadSidebarComponent {
   );
 
   protected readonly threads = computed(() =>
-    asThreads(inProject(this.snapshot().threads, this.selectedProjectId()))
+    asThreads(inProject(
+      this.snapshot().threads,
+      this.selectedProjectId(),
+      this.snapshot().projects
+    ))
   );
   protected readonly archivedThreads = computed(() =>
-    asThreads(inProject(this.snapshot().archived, this.selectedProjectId()))
+    asThreads(inProject(
+      this.snapshot().archived,
+      this.selectedProjectId(),
+      this.snapshot().projects
+    ))
   );
   protected readonly projects = computed<Project[] | null>(() => {
     if (!this.showProjects()) return null;
@@ -540,7 +554,11 @@ export class ChatThreadSidebarComponent {
           ? (id, name) => renameProject.call(directory, id, name)
           : undefined,
         delete: removeProject
-          ? (id) => removeProject.call(directory, id)
+          ? async (id) => {
+              const wasSelected = id === untracked(this.selectedProjectId);
+              await removeProject.call(directory, id);
+              if (wasSelected && !this.destroyed) this.projectSelected.emit(null);
+            }
           : undefined,
       };
     }

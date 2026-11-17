@@ -12,6 +12,7 @@ import {
   refreshDirectoryOnRunEnd,
   type AgentSession,
   type ThreadDirectory,
+  type ThreadDirectorySnapshot,
   type ThreadEntry,
 } from '@threadplane/core';
 import { ChatSidenavSections } from './chat-sidenav-sections.js';
@@ -80,12 +81,18 @@ export interface ThreadSidebarProps {
 const ignore = () => undefined;
 const NO_FEATURES: ThreadSidebarFeatures = {};
 
-/** The entries in `projectId`, or all of them when no project is selected. */
+/**
+ * The entries in `projectId`, or all of them when no project is selected or
+ * the selected project is not in `projects` (deleted, or the Store is
+ * unavailable), so a stale selection never hides every conversation.
+ */
 function inProject(
   entries: readonly ThreadEntry[],
-  projectId: string | null | undefined
+  projectId: string | null | undefined,
+  projects: ThreadDirectorySnapshot['projects']
 ): readonly ThreadEntry[] {
-  return typeof projectId === 'string'
+  return typeof projectId === 'string' &&
+    projects?.some((project) => project.id === projectId)
     ? entries.filter((entry) => entry.projectId === projectId)
     : entries;
 }
@@ -121,8 +128,20 @@ export function ThreadSidebar({
   const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   // Handlers read the latest props without resubscribing.
-  const latest = useRef({ activeThreadId, onSelect, onActiveRemoved });
-  latest.current = { activeThreadId, onSelect, onActiveRemoved };
+  const latest = useRef({
+    activeThreadId,
+    onSelect,
+    onActiveRemoved,
+    selectedProjectId,
+    onProjectSelect,
+  });
+  latest.current = {
+    activeThreadId,
+    onSelect,
+    onActiveRemoved,
+    selectedProjectId,
+    onProjectSelect,
+  };
 
   // Until the mount refresh settles, an empty list means "not loaded yet",
   // so the empty label waits for it.
@@ -210,7 +229,11 @@ export function ThreadSidebar({
           ? (id, name) => renameProject.call(directory, id, name)
           : undefined,
         delete: removeProject
-          ? (id) => removeProject.call(directory, id)
+          ? async (id) => {
+              const wasSelected = id === latest.current.selectedProjectId;
+              await removeProject.call(directory, id);
+              if (wasSelected) latest.current.onProjectSelect?.(null);
+            }
           : undefined,
       }
     : null;
@@ -226,12 +249,12 @@ export function ThreadSidebar({
       : undefined);
 
   const threads = useMemo(
-    () => inProject(snapshot.threads, selectedProjectId),
-    [snapshot.threads, selectedProjectId]
+    () => inProject(snapshot.threads, selectedProjectId, snapshot.projects),
+    [snapshot.threads, snapshot.projects, selectedProjectId]
   );
   const archived = useMemo(
-    () => inProject(snapshot.archived, selectedProjectId),
-    [snapshot.archived, selectedProjectId]
+    () => inProject(snapshot.archived, selectedProjectId, snapshot.projects),
+    [snapshot.archived, snapshot.projects, selectedProjectId]
   );
 
   const loading = snapshot.status === 'loading' || settled !== directory;

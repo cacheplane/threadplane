@@ -309,6 +309,66 @@ describe('ChatThreadSidebarComponent', () => {
       expect(rowButton(fixture, title)).toBeDefined();
   });
 
+  it('shows all threads when the selected project no longer exists', () => {
+    const directory = fakeDirectory({
+      threads: [
+        { id: 'a', title: 'Alpha', pinned: false, archived: false, projectId: 'p' },
+        { id: 'b', title: 'Beta', pinned: false, archived: false, projectId: null },
+      ],
+      archived: [],
+      projects: [{ id: 'p', name: 'Research' }],
+      status: 'idle',
+    });
+    const fixture = render({ directory, selectedProjectId: 'gone' });
+    expect(rowButton(fixture, 'Alpha')).toBeDefined();
+    expect(rowButton(fixture, 'Beta')).toBeDefined();
+    // An unavailable Store reports no projects at all.
+    directory.set({
+      threads: loaded.threads,
+      archived: [],
+      status: 'idle',
+    });
+    fixture.detectChanges();
+    expect(rowButton(fixture, 'Alpha')).toBeDefined();
+    expect(rowButton(fixture, 'Beta')).toBeDefined();
+  });
+
+  it('clears the selection when the selected project is removed', async () => {
+    const directory = fakeDirectory({
+      threads: loaded.threads,
+      archived: [],
+      projects: [
+        { id: 'p', name: 'Research' },
+        { id: 'q', name: 'Travel' },
+      ],
+      status: 'idle',
+    });
+    const fixture = render({ directory, selectedProjectId: 'p' });
+    const selected: (string | null)[] = [];
+    fixture.componentInstance.projectSelected.subscribe((id) =>
+      selected.push(id)
+    );
+    const removeProject = async (index: number) => {
+      (fixture.nativeElement as HTMLElement)
+        .querySelectorAll<HTMLButtonElement>('.chat-project-list__kebab')
+        [index].click();
+      fixture.detectChanges();
+      chooseMenuItem(fixture, 'Delete');
+      (
+        document.querySelector('.chat-confirm-dialog__confirm') as HTMLElement
+      ).click();
+      fixture.detectChanges();
+      await flush();
+      fixture.detectChanges();
+    };
+    await removeProject(1);
+    expect(directory.removeProject).toHaveBeenCalledWith('q');
+    expect(selected).toEqual([]);
+    await removeProject(0);
+    expect(directory.removeProject).toHaveBeenCalledWith('p');
+    expect(selected).toEqual([null]);
+  });
+
   it('refreshes after a run ends', () => {
     const directory = fakeDirectory();
     const run = fakeAgent('running');

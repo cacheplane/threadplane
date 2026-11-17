@@ -80,7 +80,7 @@ With no `onNewChat`, New chat creates a thread through the directory and passes 
 
 Project names are stored in the LangGraph Store under the namespace `['threadplane', 'projects']`. Each project is one item whose key is the project identifier and whose value is `{ name }`. A thread joins a project through its `projectId` metadata. Pass `projects: false` to `createLangGraphThreadDirectory` to turn projects off, or pass your own project store in the same option. A server without the Store API still lists threads: the snapshot carries no `projects`, the sidebar hides the Projects section and project commands fail without affecting the thread list.
 
-`selectedProjectId` is controlled by the application. When it holds a project identifier, Recent and Archived list only that project's conversations; `null` or no value lists every conversation. `onProjectSelect` reports the project the user picked, so the snippet above clears the selection when the selected project is picked again.
+`selectedProjectId` is controlled by the application. When it holds a project identifier, Recent and Archived list only that project's conversations; `null` or no value lists every conversation. `onProjectSelect` reports the project the user picked, so the snippet above clears the selection when the selected project is picked again. The sidebar lists every conversation when the selected identifier matches no project in the directory, and it calls `onProjectSelect(null)` after the selected project is deleted from the sidebar.
 
 ### Refreshing after a run
 

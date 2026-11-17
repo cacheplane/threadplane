@@ -277,6 +277,73 @@ describe('ThreadSidebar', () => {
       expect(view.queryByRole('button', { name })).not.toBeNull();
   });
 
+  it('shows all threads when the selected project no longer exists', () => {
+    const directory = fakeDirectory({
+      threads: [
+        { id: 'a', title: 'Alpha', pinned: false, archived: false, projectId: 'p' },
+        { id: 'b', title: 'Beta', pinned: false, archived: false, projectId: null },
+      ],
+      archived: [],
+      projects: [{ id: 'p', name: 'Research' }],
+      status: 'idle',
+    });
+    const view = render(
+      <ThreadSidebar
+        directory={directory}
+        onSelect={vi.fn()}
+        selectedProjectId="gone"
+      />
+    );
+    expect(view.queryByRole('button', { name: 'Alpha' })).not.toBeNull();
+    expect(view.queryByRole('button', { name: 'Beta' })).not.toBeNull();
+    // An unavailable Store reports no projects at all.
+    act(() =>
+      directory.set({
+        threads: loaded.threads,
+        archived: [],
+        status: 'idle',
+      })
+    );
+    expect(view.queryByRole('button', { name: 'Alpha' })).not.toBeNull();
+    expect(view.queryByRole('button', { name: 'Beta' })).not.toBeNull();
+  });
+
+  it('clears the selection when the selected project is removed', async () => {
+    const directory = fakeDirectory({
+      threads: loaded.threads,
+      archived: [],
+      projects: [
+        { id: 'p', name: 'Research' },
+        { id: 'q', name: 'Travel' },
+      ],
+      status: 'idle',
+    });
+    const onProjectSelect = vi.fn();
+    const view = render(
+      <ThreadSidebar
+        directory={directory}
+        onSelect={vi.fn()}
+        selectedProjectId="p"
+        onProjectSelect={onProjectSelect}
+      />
+    );
+    const removeProject = async (name: string) => {
+      fireEvent.click(
+        view.getByRole('button', { name: `More actions for ${name}` })
+      );
+      fireEvent.click(view.getByRole('menuitem', { name: 'Delete' }));
+      await act(async () => {
+        fireEvent.click(view.getByRole('button', { name: 'Delete' }));
+      });
+    };
+    await removeProject('Travel');
+    expect(directory.removeProject).toHaveBeenCalledWith('q');
+    expect(onProjectSelect).not.toHaveBeenCalled();
+    await removeProject('Research');
+    expect(directory.removeProject).toHaveBeenCalledWith('p');
+    expect(onProjectSelect.mock.calls).toEqual([[null]]);
+  });
+
   it('refreshes after a run ends', () => {
     const directory = fakeDirectory();
     const run = fakeSession('running');
