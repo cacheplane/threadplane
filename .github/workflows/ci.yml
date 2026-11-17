@@ -1205,8 +1205,9 @@ jobs:
         timeout-minutes: 45
         env:
           # Delegate reviewed public surfaces only when the required preview
-          # runs. Main, manual runs and fork PRs keep complete local coverage.
-          WEBSITE_E2E_DEPLOYED_OWNER: ${{ (github.event_name == 'pull_request' || github.event_name == 'merge_group') && needs.ci-scope.outputs.website_e2e == 'true' && (github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository) }}
+          # runs. Main, manual runs, fork PRs and merge-queue candidates keep
+          # complete local coverage.
+          WEBSITE_E2E_DEPLOYED_OWNER: ${{ github.event_name == 'pull_request' && needs.ci-scope.outputs.website_e2e == 'true' && github.event.pull_request.head.repo.full_name == github.repository }}
           WEBSITE_ANGULAR_STARTUP: ${{ matrix.suite == 'control-plane' && '2' || '' }}
           WEBSITE_AGENTS_STARTUP: ${{ matrix.suite == 'agents' && '2' || '' }}
 
@@ -1302,9 +1303,9 @@ jobs:
     name: 'Website — example builds (${{ matrix.shard }}/4)'
     needs: ci-scope
     if: >-
-      (github.event_name == 'pull_request' || github.event_name == 'merge_group') &&
+      github.event_name == 'pull_request' &&
       needs.ci-scope.outputs.website_e2e == 'true' &&
-      (github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository)
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
@@ -1326,11 +1327,7 @@ jobs:
       - name: Derive deterministic preview aliases
         id: aliases
         run: |
-          if [ "${{ github.event_name }}" = "merge_group" ]; then
-            key="mq-$(echo "${{ github.event.merge_group.head_sha }}" | cut -c1-8)"
-          else
-            key="pr-${{ github.event.pull_request.number }}"
-          fi
+          key="pr-${{ github.event.pull_request.number }}"
           echo "website=threadplane-${key}-cacheplane.vercel.app" >> "$GITHUB_OUTPUT"
           echo "examples=threadplane-examples-${key}-cacheplane.vercel.app" >> "$GITHUB_OUTPUT"
       - name: Require preview bypass secrets
@@ -1368,9 +1365,9 @@ jobs:
     name: Website — deploy preview
     needs: ci-scope
     if: >-
-      (github.event_name == 'pull_request' || github.event_name == 'merge_group') &&
+      github.event_name == 'pull_request' &&
       needs.ci-scope.outputs.website_e2e == 'true' &&
-      (github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository)
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -1383,11 +1380,7 @@ jobs:
       - name: Derive deterministic preview aliases
         id: aliases
         run: |
-          if [ "${{ github.event_name }}" = "merge_group" ]; then
-            key="mq-$(echo "${{ github.event.merge_group.head_sha }}" | cut -c1-8)"
-          else
-            key="pr-${{ github.event.pull_request.number }}"
-          fi
+          key="pr-${{ github.event.pull_request.number }}"
           echo "website=threadplane-${key}-cacheplane.vercel.app" >> "$GITHUB_OUTPUT"
           echo "examples=threadplane-examples-${key}-cacheplane.vercel.app" >> "$GITHUB_OUTPUT"
       - name: Require preview bypass secrets
@@ -1450,12 +1443,14 @@ jobs:
     # assembled with the Website alias in their parent-origin policy, and the
     # Website is built with the examples alias as its runtime base. A later
     # push re-points both aliases; the deployments behind them are kept for
-    # inspection. Needs repository secrets, so same-repo PRs and merge-queue
-    # candidates only.
+    # inspection. Needs repository secrets, so same-repo PRs only. Merge-queue
+    # candidates skip it: a preview stuck in the platform's deployment queue
+    # ejected otherwise-green candidates, and the queue's local Website suite
+    # takes the delegated public surfaces back.
     if: >-
-      (github.event_name == 'pull_request' || github.event_name == 'merge_group') &&
+      github.event_name == 'pull_request' &&
       needs.ci-scope.outputs.website_e2e == 'true' &&
-      (github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository)
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -1483,11 +1478,7 @@ jobs:
       - name: Derive deterministic preview aliases
         id: aliases
         run: |
-          if [ "${{ github.event_name }}" = "merge_group" ]; then
-            key="mq-$(echo "${{ github.event.merge_group.head_sha }}" | cut -c1-8)"
-          else
-            key="pr-${{ github.event.pull_request.number }}"
-          fi
+          key="pr-${{ github.event.pull_request.number }}"
           echo "website=threadplane-${key}-cacheplane.vercel.app" >> "$GITHUB_OUTPUT"
           echo "examples=threadplane-examples-${key}-cacheplane.vercel.app" >> "$GITHUB_OUTPUT"
       - name: Require preview bypass secrets
@@ -1624,10 +1615,11 @@ jobs:
           SCOPE_GROWTH_LIFECYCLE: ${{ needs.ci-scope.outputs.growth_lifecycle }}
           SCOPE_GROWTH_RESEARCH: ${{ needs.ci-scope.outputs.growth_research }}
           # The preview lanes need repository secrets, so they skip on fork
-          # PRs. Their scope keys are computed from changed files alone, so on
-          # a fork they can be in scope yet legitimately skipped. This mirrors
-          # the lanes' own `if` so the gate only demands them when they could run.
-          PREVIEW_LANES_ELIGIBLE: ${{ github.event_name == 'merge_group' || github.event.pull_request.head.repo.full_name == github.repository }}
+          # PRs, and they do not run for merge-queue candidates. Their scope
+          # keys are computed from changed files alone, so there they can be in
+          # scope yet legitimately skipped. This mirrors the lanes' own `if` so
+          # the gate only demands them when they could run.
+          PREVIEW_LANES_ELIGIBLE: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           set -euo pipefail
 

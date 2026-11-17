@@ -31,6 +31,23 @@ export function ResponseStatus({ session }: { session: AgentSession }) {
 
 The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
+## Custom events
+
+A graph can stream application events beside the answer, such as progress notes written to the LangGraph custom stream. They are not part of the snapshot, so `useAgent` does not report them. The framework-neutral session delivers each one to listeners registered with `onCustomEvent` as a name and frozen plain data. A listener receives only events emitted after it registers, and a listener that throws does not stop the run.
+
+~~~tsx
+import { useEffect } from 'react';
+import type { AgentSession } from '@threadplane/core';
+
+export function ProgressLog({ session }: { session: AgentSession }) {
+  useEffect(
+    () => session.onCustomEvent?.((event) => console.info(event.name, event.data)),
+    [session]
+  );
+  return null;
+}
+~~~
+
 ## Try the example
 
 Choose **Run**, send a message, and watch the response arrive incrementally. Later messages reuse the confirmed conversation. **Stop** cancels active work. After cancellation or a request failure, choose **New conversation** before sending again; the example never silently retries an uncertain conversation creation.

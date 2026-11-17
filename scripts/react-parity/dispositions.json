@@ -5299,7 +5299,8 @@
         "T04"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Both framework-neutral runtime sessions expose custom events through the optional core AgentSession.onCustomEvent listener as owned plain { name, data } payloads, read the way the Angular adapters read them. A React state_update variant and the a2ui-partial bridge remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#AgentError",
@@ -5330,7 +5331,8 @@
         "T04"
       ],
       "treatment": "shared",
-      "status": "planned"
+      "status": "in-progress",
+      "reason": "Both framework-neutral runtime sessions expose custom events through the optional core AgentSession.onCustomEvent listener as owned plain { name, data } payloads, read the way the Angular adapters read them. A React state_update variant and the a2ui-partial bridge remain open."
     },
     {
       "id": "export:libs/chat/src/public-api.ts#AgentInterrupt",
@@ -16547,6 +16549,25 @@
       "note": "Readonly app-owned DTOs and synchronous notifications; no SDK, session, read or disposal capability accepted by the view. Broader T29 contracts remain planned."
     },
     {
+      "id": "source:libs/react/src/debug/agent-devtools.ts",
+      "taskIds": [
+        "T17",
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only useAgentDevtools reports which of status, messages, toolCalls and error each core snapshot change wrote, as the Angular adapters' devtools-emitter.ts reports do, under the caller's langgraph or ag-ui vocabulary. Scripted runs need the adapter transport and are not ported. Production builds fold it away."
+    },
+    {
+      "id": "source:libs/react/src/devtools/protocol.ts",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Shared page side of the threadplane:devtools wire protocol for the React signals and render reports: event name, report shapes and bounds, and the __THREADPLANE_DEVTOOLS_DISABLED__ opt-out."
+    },
+    {
       "id": "entry:libs/content/src/a2ui/index.ts",
       "taskIds": [
         "T19"
@@ -16855,6 +16876,36 @@
       "reason": "Bounded private T20/T24 React readiness admission: pure synchronous boolean over owned resolved props, pending fallback without children, successful real-view commit latch and explicit identity/lifetime resets. Direct registrations remain supported. Forms, schema validation, actions, catalog, SSR, public release and full legacy parity remain open."
     },
     {
+      "id": "export:libs/react/src/render/index.ts#RenderDevtools",
+      "taskIds": [
+        "T17",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only render report for the Threadplane DevTools extension, mirroring Angular's devtools-render-report.ts and render-devtools.ts: RenderDevtools wraps one surface, RenderSpec and the readiness gate mark committed views, and each element reports mounted, fallback, unresolved or hidden. Production builds fold it away."
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderDevtoolsProps",
+      "taskIds": [
+        "T17",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only render report for the Threadplane DevTools extension, mirroring Angular's devtools-render-report.ts and render-devtools.ts: RenderDevtools wraps one surface, RenderSpec and the readiness gate mark committed views, and each element reports mounted, fallback, unresolved or hidden. Production builds fold it away."
+    },
+    {
+      "id": "source:libs/react/src/render/devtools.tsx",
+      "taskIds": [
+        "T17",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Development-only render report for the Threadplane DevTools extension, mirroring Angular's devtools-render-report.ts and render-devtools.ts: RenderDevtools wraps one surface, RenderSpec and the readiness gate mark committed views, and each element reports mounted, fallback, unresolved or hidden. Production builds fold it away."
+    },
+    {
       "id": "asset:libs/cockpit-a2ui-react/project.json",
       "taskIds": [
         "T19"
@@ -17069,6 +17120,33 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Readonly required open and onDismiss, optional label and className. Application owns visibility and focus restoration."
+    },
+    {
+      "id": "source:libs/react/src/chat/chat-sidenav-sections.tsx",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Composed sidebar content for ChatSidenav: New chat, Projects, Recent and a collapsed Archived section built from ProjectList and ThreadList. Every list stays controlled; no devtools button, search or session behavior."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavSections",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Composed sidebar content placed inside ChatSidenav; sections appear only for the data supplied, and the application owns selection and row commands."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavSectionsProps",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly optional conversations, archived conversations and projects with their selection callbacks, action adapters, labels and trailing children."
     },
     {
       "id": "source:libs/react/src/chat/chat-sidenav-scrim.tsx",
@@ -18763,6 +18841,14 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/generative-ui.tsx",
       "reason": "What onRenderEvent receives: the ID of the message whose spec tree produced the event, and the RenderSpec event (an action that ran, a state write, or a reported result)."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#MessageSourceLabels",
+      "taskIds": ["T19", "T27"],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/generative-ui.tsx",
+      "reason": "Replacement text for the opt-in source disclosure under a surface: its toggle and the headings over a spec's and an A2UI message's source."
     },
     {
       "id": "source:libs/react/src/chat/typing-indicator.tsx",

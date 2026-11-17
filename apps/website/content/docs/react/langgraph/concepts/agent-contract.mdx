@@ -47,3 +47,45 @@ Backend-native snapshots are not interchangeable. AG-UI's native transcript is o
 ## Own the lifetime explicitly
 
 Create connections and content owners at the application's lifetime boundary. Fence obsolete callbacks, release subscriptions, and dispose owners when that boundary ends. Keep commands out of rendering. See [Lifecycle](/docs/react/chat/guides/lifecycle) and [State management](/docs/react/langgraph/concepts/state-management).
+
+## Test with a fake session
+
+`@threadplane/core/testing` exports `createFakeAgentSession`, an in-memory `AgentSession` with no transport. Pass its `session` to `Chat` or `useAgent`, then drive snapshots from the test:
+
+~~~tsx
+import { act, fireEvent, render } from '@testing-library/react';
+import { createFakeAgentSession } from '@threadplane/core/testing';
+import { Chat } from '@threadplane/react/chat';
+import { expect, it } from 'vitest';
+
+it('shows a streamed reply', async () => {
+  const fake = createFakeAgentSession({
+    onSubmit: (input, fake) => {
+      const reply = fake.stream();
+      reply.append(`Echo: ${input}`);
+      reply.complete();
+    },
+  });
+  const view = render(<Chat session={fake.session} />);
+  fireEvent.change(view.getByRole('textbox', { name: 'Message' }), {
+    target: { value: 'Hello' },
+  });
+  await act(async () => {
+    fireEvent.click(view.getByRole('button', { name: 'Send' }));
+  });
+  expect(fake.submits.map((call) => call.input)).toEqual(['Hello']);
+  expect(view.getByText('Echo: Hello')).toBeTruthy();
+});
+~~~
+
+By default `submit` records the call, appends the user message, and resolves `success`. An `onSubmit` handler can stream a reply, return another `CompleteOutcome`, or throw to reject the submission. The controls cover the rest of the snapshot:
+
+| Control | Effect |
+| --- | --- |
+| `push(message)` | Append a message. The id and a complete delivery are filled in when omitted. |
+| `stream({ id, text })` | Start a streaming assistant message and set status to `running`. Call `append(text)` and then `complete(outcome)` on the returned handle. |
+| `set(patch)` | Replace status, messages, tool calls, error, or plan in one change. |
+| `setStatus`, `setError`, `setToolCalls` | Replace one field. An error also sets status to `error`. |
+| `submits`, `stopCount`, `disposed` | Inspect the commands the view sent. |
+
+Every snapshot is frozen, and unchanged messages keep their references. Subscribers are notified synchronously, so wrap control calls in `act` when a React tree observes the session.

@@ -70,6 +70,11 @@ export interface ChatProps
   /** Explicit application-owned retry intent; Chat never replays a submission. */
   readonly onRetry?: () => void;
   /**
+   * App-owned content in a bar above the transcript, such as a title and
+   * actions. It steps aside while the `welcome` greeting shows. Off unless set.
+   */
+  readonly header?: ReactNode;
+  /**
    * Conversations listed in a sidebar beside the chat, on viewports at least
    * 768px wide. Passing the prop, even as an empty array, wraps the chat in a
    * `tp-chat-shell` row; the sidebar appears once there are conversations.
@@ -168,6 +173,7 @@ export function Chat({
   subagents,
   onToolRetry,
   onRetry,
+  header,
   threads,
   activeThreadId,
   onThreadSelect = ignore,
@@ -326,6 +332,9 @@ export function Chat({
         .filter(Boolean)
         .join(' ')}
     >
+      {greeting || header == null || header === false ? null : (
+        <div className="tp-chat__header">{header}</div>
+      )}
       {/* The composer below keeps its place and key, so it is never remounted. */}
       {greeting === null || greeting.title === null ? null : (
         <div className="tp-chat__welcome-title">

@@ -111,6 +111,7 @@ export type {
   MessageA2uiContent,
   MessageGenerativeUi,
   MessageRenderEvent,
+  MessageSourceLabels,
 } from './generative-ui.js';
 export { Reasoning, type ReasoningProps } from './reasoning.js';
 export {
@@ -166,6 +167,10 @@ export {
   type ChatSidenavMode,
   type ChatSidenavProps,
 } from './chat-sidenav.js';
+export {
+  ChatSidenavSections,
+  type ChatSidenavSectionsProps,
+} from './chat-sidenav-sections.js';
 export {
   ChatSidenavScrim,
   type ChatSidenavScrimProps,
