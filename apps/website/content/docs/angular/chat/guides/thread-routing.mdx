@@ -104,6 +104,57 @@ Two handlers close the loop. Selecting a row tells the agent to load that thread
 
 Each handler calls both `agent.switchThread(id)` and `activeThreadId.set(id)` because the two calls serve different consumers: the adapter watches the `activeThreadId` signal to drive the sidebar highlight, while `switchThread(id)` resets the agent's own derived state and re-fetches that thread's server-side history.
 
+## Connected sidebar
+
+`<chat-thread-sidebar>` from `@threadplane/chat` draws New chat, Projects, Recent and Archived for any `ThreadDirectory`. `LangGraphThreadsAdapter` exposes one as `directory`, so the minimal setup is the adapter plus the component:
+
+```typescript
+import { Component, inject, signal } from '@angular/core';
+import { ChatThreadSidebarComponent } from '@threadplane/chat';
+import { injectAgent, LangGraphThreadsAdapter } from '@threadplane/langgraph';
+
+@Component({
+  selector: 'app-threads',
+  imports: [ChatThreadSidebarComponent],
+  template: `
+    <chat-thread-sidebar
+      [directory]="threads.directory"
+      [agent]="agent"
+      [activeThreadId]="activeThreadId()"
+      (threadSelected)="activeThreadId.set($event)"
+      (activeThreadRemoved)="activeThreadId.set(null)" />
+  `,
+})
+export class ThreadsPanelComponent {
+  protected readonly threads = inject(LangGraphThreadsAdapter);
+  protected readonly agent = injectAgent();
+  protected readonly activeThreadId = signal<string | null>(null);
+}
+```
+
+With no listener on `(newChat)`, New chat calls `directory.create()` and emits `threadSelected` with the new identifier. The directory belongs to the application: the sidebar unsubscribes when it is destroyed but never disposes it.
+
+### Projects
+
+Project names are stored in the LangGraph Store under the namespace `['threadplane', 'projects']`. Each project is one item whose key is the project identifier and whose value is `{ name }`. A thread joins a project through its `projectId` metadata. To turn projects off, set `projects: false` in the `LANGGRAPH_THREADS_CONFIG` value; to keep them in another namespace, set `projects: { namespace: [...] }`. A server without the Store API still lists threads: the adapter's `projects` signal reports an empty list and project commands fail without affecting the thread list.
+
+The adapter also exposes `status`, `error` and `projects` signals for applications that draw their own list. `status` is `'loading'` until the first successful load, `'error'` after a failed load and `'idle'` otherwise.
+
+### Refreshing after a run
+
+The sidebar loads the directory when it mounts and again after each row command. Pass `[agent]` and it also refreshes every time a run ends, which is when the graph has written a generated title.
+
+### The active thread
+
+The sidebar never owns the selection. Bind `[activeThreadId]` to highlight a row and handle `(threadSelected)` to switch. When the user deletes the conversation that is active, `(activeThreadRemoved)` fires after the delete succeeds, so the application can return to a new chat.
+
+### Four levels of customization
+
+1. **Features and labels.** The `[features]` input turns built-in behavior off: `projects`, `archive`, `pin`, `reorder`, `rename` and `remove`. Each defaults to on when the directory supports it. The `[labels]` input replaces text for `newChat`, `projects`, `recent`, `archived`, `archivedEmpty`, `loadError`, `retry` and `empty`.
+2. **Slots.** An `ng-template[chatThreadRow]` replaces each conversation row, with the thread as `let-thread` and `isActive` in the context. `[extraActions]` appends application commands to each row menu, and content marked `chatThreadSidebarBefore` or `chatThreadSidebarAfter` places sections around the built-in ones. Rows drawn by a template get no row menu.
+3. **Your own directory.** `[directory]` accepts any object that meets `ThreadDirectory`, so an application without a LangGraph server can supply its own list and commands. The sidebar offers a command only when the directory implements it.
+4. **Lower-level pieces.** `<chat-thread-list>`, `<chat-project-list>` and `<chat-sidenav>` remain public for applications that want full control over layout and behavior.
+
 ## Routing a URL to a thread
 
 The example stops at an in-memory signal, which is the right choice for a surface with no visible URL. When the address bar is visible and the user may share it, `injectThreadRouting()` binds the same signal to the Angular Router: it restores the thread id from the URL on load, stamps signal changes back into the URL, validates stale links, and treats a bare URL as "no thread". The URL is the sole source of truth, and nothing is written to `localStorage`.

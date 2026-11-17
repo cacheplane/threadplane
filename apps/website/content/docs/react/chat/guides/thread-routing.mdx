@@ -25,6 +25,49 @@ The connected `ThreadSidebar` lists the server's conversations from a directory 
 
 Drafts and confirmed evidence belong to this page, so a reload clears them. Conversations from an earlier visit stay listed and can be organized, but selecting one shows a notice instead of opening it, because this page has not confirmed its saved history. Deleting the active conversation returns to a new chat. Angular remains the default on this canonical guide.
 
+## Connected sidebar
+
+`ThreadSidebar` comes from `@threadplane/react/chat` and draws New chat, Projects, Recent and Archived for any `ThreadDirectory`. `createLangGraphThreadDirectory` from `@threadplane/langgraph` builds one over the LangGraph threads API. The directory belongs to the application: the sidebar subscribes to it but never disposes it, so dispose it yourself when the page unmounts.
+
+~~~tsx
+import { Client } from '@langchain/langgraph-sdk';
+import { createLangGraphThreadDirectory } from '@threadplane/langgraph';
+import { ThreadSidebar } from '@threadplane/react/chat';
+
+const directory = createLangGraphThreadDirectory({
+  client: new Client({ apiUrl, callerOptions: { maxRetries: 0 } }),
+});
+
+<ThreadSidebar
+  directory={directory}
+  session={session}
+  activeThreadId={threadId}
+  onSelect={setThreadId}
+  onActiveRemoved={() => setThreadId(null)}
+/>;
+~~~
+
+With no `onNewChat`, New chat creates a thread through the directory and passes its identifier to `onSelect`. Pass `onNewChat` to replace that behavior, as the example above does to open a blank local conversation.
+
+### Projects
+
+Project names are stored in the LangGraph Store under the namespace `['threadplane', 'projects']`. Each project is one item whose key is the project identifier and whose value is `{ name }`. A thread joins a project through its `projectId` metadata. Pass `projects: false` to `createLangGraphThreadDirectory` to turn projects off, or pass your own project store in the same option. A server without the Store API still lists threads: the project list stays empty and project commands fail without affecting the thread list.
+
+### Refreshing after a run
+
+The sidebar loads the directory when it mounts and again after each row command. Pass `session` and it also refreshes every time a run ends, which is when the graph has written a generated title. Any object with `getSnapshot` and `subscribe`, such as an `AgentSession`, works.
+
+### The active thread
+
+The sidebar never owns the selection. Pass `activeThreadId` to highlight a row and handle `onSelect` to switch. When the user deletes the conversation that is active, the sidebar calls `onActiveRemoved` after the delete succeeds, so the application can return to a new chat instead of keeping a dangling selection.
+
+### Four levels of customization
+
+1. **Features and labels.** The `features` prop turns built-in behavior off: `projects`, `archive`, `pin`, `reorder`, `rename` and `remove`. Each defaults to on when the directory supports it. The `labels` prop replaces text for `newChat`, `projects`, `recent`, `archived`, `archivedEmpty`, `loadError`, `retry` and `empty`.
+2. **Slots.** `renderThread` replaces each conversation row, `extraActions` appends application commands to each row menu, and `before` and `after` place content around the built-in sections. Rows drawn by `renderThread` get no row menu.
+3. **Your own directory.** `directory` accepts any object that meets `ThreadDirectory`, so an application without a LangGraph server can supply its own list and commands. The sidebar offers a command only when the directory implements it.
+4. **Lower-level pieces.** `ThreadList`, `ProjectList` and `ChatSidenav` remain public for applications that want full control over layout and behavior.
+
 ## Keep titles optional
 
 Titles come from thread metadata, which the graph writes after the first turn. The sidebar shows them as literal text and shows "Untitled conversation" when a title is missing or invalid. A title never authorizes execution or replaces saved-history validation.
