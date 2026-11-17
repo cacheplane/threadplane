@@ -1,6 +1,6 @@
 import type { AgentSession, AgentSnapshot, CompleteOutcome } from '@threadplane/core';
 import { createMessageContent, type MessageRow } from '@threadplane/content/messages';
-import { createClientToolsController, type ClientToolsSnapshot, type BookingPanel } from './tools';
+import { createClientToolsController, type ClientToolsSnapshot } from './tools';
 
 export interface ClientToolsSession extends Omit<AgentSession, 'getSnapshot'> {
   getSnapshot(): AgentSnapshot & {
@@ -17,7 +17,7 @@ export interface ClientToolsApplicationSnapshot extends ClientToolsSnapshot {
   readonly error: string | null;
 }
 
-/** Owns one thread and the browser decisions admitted by its active command. */
+/** Owns one thread and the browser tools its active command runs. */
 export function createClientToolsApplication(options: {
   readonly createThread: (signal: AbortSignal) => Promise<string>;
   readonly sessionFactory: (threadId: string, tools: ClientToolCatalog) => ClientToolsSession;
@@ -41,7 +41,7 @@ export function createClientToolsApplication(options: {
     // Typed sessions omit unknown tools, but retain their server call references.
     ) || !!state?.messages.some((message) => message.role === 'assistant' &&
       message.toolCallIds?.some((id) => !state.toolCalls.some((call) => call.id === id))
-    ) || controller.getSnapshot().bookings.some((row) => row.status === 'pending');
+    ) || controller.clientTools.getSnapshot().length > 0;
   }
   /** The core session view `Chat` observes: run status from this owner, messages, calls and plan from the thread. */
   const none = Object.freeze([]) as readonly never[];
@@ -72,6 +72,7 @@ export function createClientToolsApplication(options: {
     publish({ ...projection(), ...(blocked() ? { canSubmit: false } : {}) });
   }
   const releaseTools = controller.subscribe(observe);
+  const releaseBookings = controller.clientTools.subscribe(observe);
   async function submit(text: string) {
     if (disposed || snapshot.busy || !snapshot.canSubmit || !text.trim()) return;
     if (blocked()) { observe(); return; }
@@ -127,6 +128,7 @@ export function createClientToolsApplication(options: {
     operation = undefined;
     release?.();
     releaseTools();
+    releaseBookings();
     controller.dispose();
     content.dispose();
     listeners.clear();
@@ -153,10 +155,8 @@ export function createClientToolsApplication(options: {
     getSnapshot: () => snapshot,
     subscribe,
     agent,
+    /** The booking ask tool for `Chat`; Stop and disposal revoke a waiting booking. */
+    clientTools: controller.clientTools,
     submit, stop, dispose,
-    decide(row: BookingPanel, confirmed: boolean) {
-      if (disposed || !operation || operation.signal.aborted || !snapshot.busy) return false;
-      return controller.decide(row, confirmed);
-    },
   };
 }

@@ -1,5 +1,6 @@
 export type {
   AgentSession,
+  AgentSessionCustomEvent,
   AgentSubmitInput,
   AgentSubmitOptions,
 } from './contracts/agent-session.js';

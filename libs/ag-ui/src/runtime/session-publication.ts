@@ -1,4 +1,8 @@
-import { agentPlanFromState, type AgentPlanStep } from '@threadplane/core';
+import {
+  agentPlanFromState,
+  type AgentPlanStep,
+  type AgentSessionCustomEvent,
+} from '@threadplane/core';
 import type { SessionSnapshot } from './session-observation.js';
 
 type Plan = readonly AgentPlanStep[];
@@ -39,6 +43,9 @@ function withPlan<T extends SessionSnapshot>(
 export function createPublication(initial: SessionSnapshot) {
   let current = withPlan(initial, undefined);
   const listeners = new Set<{ notify: () => void }>();
+  const eventListeners = new Set<{
+    listener: (event: AgentSessionCustomEvent) => void;
+  }>();
   const commands: (() => void)[] = [];
   let notifying = false;
   let draining = false;
@@ -88,8 +95,33 @@ export function createPublication(initial: SessionSnapshot) {
     },
     publish,
     command,
+    /** Events are delivered once, to the listeners registered right now. */
+    onCustomEvent: (
+      listener: (event: AgentSessionCustomEvent) => void
+    ): (() => void) => {
+      const registration = { listener };
+      eventListeners.add(registration);
+      return () => {
+        eventListeners.delete(registration);
+      };
+    },
+    emitCustomEvent: (event: AgentSessionCustomEvent): void => {
+      for (const registration of [...eventListeners]) {
+        // A listener can release another, or dispose the session, mid-pass.
+        if (!eventListeners.has(registration)) continue;
+        try {
+          registration.listener(event);
+        } catch {
+          /* A listener cannot fail a run. */
+        }
+      }
+    },
+    clearCustomEventListeners: (): void => {
+      eventListeners.clear();
+    },
     clear: (): void => {
       listeners.clear();
+      eventListeners.clear();
     },
   };
 }

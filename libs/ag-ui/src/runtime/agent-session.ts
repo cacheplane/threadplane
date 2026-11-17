@@ -1,6 +1,7 @@
 import type {
   AgentError,
   AgentSession,
+  AgentSessionCustomEvent,
   AgentSnapshot,
   AgentUsage,
   AgentUsageEntry,
@@ -15,7 +16,7 @@ import {
 /** The native owner, with or without a client-tool catalog. */
 export type NativeSession = Pick<
   Session,
-  'subscribe' | 'submit' | 'stop' | 'dispose' | 'retry'
+  'subscribe' | 'submit' | 'stop' | 'dispose' | 'retry' | 'onCustomEvent'
 > & { getSnapshot(): SessionSnapshot };
 
 /**
@@ -166,13 +167,16 @@ function project(
  * see changes; subscribers are told about those changes only. `submit`, `stop`,
  * `dispose` and, when the native session has it, `retry` go straight to the
  * native session, so disposing the view disposes the session. `retry` rejects
- * unless the error is `recovery: 'retry'`. Application state, native resume and client-tool
- * evidence have no core equivalent: keep the native session for those.
+ * unless the error is `recovery: 'retry'`. Custom event listeners pass straight
+ * through to the native session too, when it has them. Application state,
+ * native resume and client-tool evidence have no core equivalent: keep the
+ * native session for those.
  */
 export function createAgentSession(session: NativeSession): AgentSession {
   let seen: SessionSnapshot | undefined;
   let current: AgentSnapshot | undefined;
   const retry = session.retry;
+  const listen = session.onCustomEvent;
   const getSnapshot = (): AgentSnapshot => {
     const native = session.getSnapshot();
     if (native !== seen || !current) {
@@ -192,6 +196,11 @@ export function createAgentSession(session: NativeSession): AgentSession {
         notify();
       });
     },
+    // Events are not state, so they pass straight through to the native owner.
+    ...(listen && {
+      onCustomEvent: (listener: (event: AgentSessionCustomEvent) => void) =>
+        listen.call(session, listener),
+    }),
     submit: (input, options) => session.submit(input, options),
     stop: () => session.stop(),
     dispose: () => session.dispose(),

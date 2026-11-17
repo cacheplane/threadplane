@@ -81,6 +81,12 @@ export type BuiltInMessageActions =
         rating: MessageRatingValue | null,
         messageId: string
       ) => void;
+      /**
+       * Adds Regenerate; called with the message to answer again. `Chat` fills
+       * this in from a session that has `regenerate`, so set it only to handle
+       * the action yourself.
+       */
+      readonly onRegenerate?: (messageId: string) => void;
     };
 
 /** Built-in Copy, and rating when asked, under one finished assistant message. Not part of the public entry. */
@@ -88,10 +94,13 @@ export function BuiltInActions({
   messageId,
   content,
   options,
+  running = false,
 }: {
   readonly messageId: string;
   readonly content: string;
   readonly options: Exclude<BuiltInMessageActions, false>;
+  /** A run is active, so a new one cannot start. */
+  readonly running?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const [rating, setRating] = useState<MessageRatingValue | null>(null);
@@ -106,6 +115,7 @@ export function BuiltInActions({
   }, []);
   const onCopy = options === true ? undefined : options.onCopy;
   const onRate = options === true ? undefined : options.onRate;
+  const onRegenerate = options === true ? undefined : options.onRegenerate;
   const copyLabel = copied ? 'Copied' : 'Copy';
   return (
     <div role="group" aria-label="Message actions" className="tp-message-actions tp-message-actions--built-in">
@@ -151,6 +161,35 @@ export function BuiltInActions({
         </span>
         <span className="tp-message-actions__label">{copyLabel}</span>
       </button>
+      {onRegenerate && (
+        <button
+          type="button"
+          className="tp-message-actions__action tp-message-actions__action--icon-only"
+          title="Regenerate"
+          disabled={running}
+          onClick={() => {
+            if (!running) onRegenerate(messageId);
+          }}
+        >
+          <span className="tp-message-actions__icon" aria-hidden="true">
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              focusable="false"
+            >
+              <path d="M20 11a8 8 0 1 0-2.3 5.7" />
+              <path d="M20 4v7h-7" />
+            </svg>
+          </span>
+          <span className="tp-message-actions__label">Regenerate</span>
+        </button>
+      )}
       {onRate && (
         <MessageRating
           messageId={messageId}

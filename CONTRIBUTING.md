@@ -201,15 +201,16 @@ Vercel preview, so deploy-only failures surface before merge:
 - **Website — e2e (deployed preview)** builds and deploys the Website and
   the examples as previews under deterministic aliases
   (`threadplane-pr-<n>-cacheplane.vercel.app` and
-  `threadplane-examples-pr-<n>-cacheplane.vercel.app`; `mq-<sha8>` for
-  merge-queue candidates) and runs the ordinary suite against the Website
-  alias. The runtime iframe loads because the examples are assembled with
+  `threadplane-examples-pr-<n>-cacheplane.vercel.app`) and runs the ordinary
+  suite against the Website alias. The runtime iframe loads because the examples are assembled with
   the Website alias in their parent-origin policy and Playwright seeds the
   examples origin's bypass cookie (`apps/website/e2e/runtime-bypass-setup.ts`).
   A later push re-points both aliases; the deployments behind them are kept.
 
 It needs repository secrets and therefore skips on fork PRs; the required
-gate only demands it when it was eligible to run. Each Vercel project has its
+gate only demands it when it was eligible to run. Merge-queue candidates skip
+it as well, so a queued merge never waits on a preview deployment; there the
+local Website suite runs the public surfaces that the preview covers on a PR. Each Vercel project has its
 own Protection Bypass for Automation secret:
 `VERCEL_AUTOMATION_BYPASS_SECRET` (Website) and
 `VERCEL_EXAMPLES_AUTOMATION_BYPASS_SECRET`. A secret added while a run is in

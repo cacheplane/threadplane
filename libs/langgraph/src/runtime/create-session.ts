@@ -3,6 +3,7 @@ import {
   completeDelivery,
   type AgentError,
   type AgentSession,
+  type AgentSessionCustomEvent,
   type CompleteOutcome,
   type PlainValue,
   type ToolCall,
@@ -147,6 +148,8 @@ export type LangGraphSession<
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
+  /** Always present here: `custom` stream frames as application events. */
+  onCustomEvent(listener: (event: AgentSessionCustomEvent) => void): () => void;
 };
 
 interface HistoryRead {
@@ -224,6 +227,31 @@ function sameInterrupts(
     JSON.stringify([interrupt.id ?? null, interrupt.value ?? null]);
   const keys = answered.map(key);
   return current.every((interrupt) => keys.includes(key(interrupt)));
+}
+
+/** A `custom` stream frame from any namespace as an application event, read the
+ * way the Angular adapter reads it: `{ name, data }` payloads unwrap, any other
+ * payload is the data with an empty name. The middleware's subagent binding is
+ * protocol, not application data. Payloads that are not plain data are dropped. */
+function captureCustomEvent(
+  event: StreamEvent
+): AgentSessionCustomEvent | undefined {
+  if (event.type.split('|')[0] !== 'custom' || !Object.hasOwn(event, 'data'))
+    return undefined;
+  try {
+    const payload = ownValue(event['data'] as PlainValue);
+    const record =
+      payload !== null && typeof payload === 'object' && !Array.isArray(payload)
+        ? (payload as { readonly [key: string]: PlainValue })
+        : undefined;
+    if (record?.['type'] === 'threadplane.subagent_binding') return undefined;
+    return Object.freeze({
+      name: typeof record?.['name'] === 'string' ? record['name'] : '',
+      data: record?.['data'] ?? payload,
+    });
+  } catch {
+    return undefined;
+  }
 }
 
 /** Private development composition. Construction/observation perform no I/O.
@@ -964,6 +992,7 @@ export function createSession(
           run.received = true;
           const event = captureStreamEvent(next.value);
           if (!owns(attempt)) return;
+          const custom = captureCustomEvent(event);
           const previousState = state;
           const previousValues = values;
           const previousInterrupts = interrupts;
@@ -1031,6 +1060,10 @@ export function createSession(
           // publish drains observer commands before returning. Never dispatch or
           // read on behalf of an attempt a listener just stopped/superseded.
           if (!owns(attempt)) return;
+          if (custom) {
+            publication.emitCustomEvent(custom);
+            if (!owns(attempt)) return;
+          }
         }
         if (!owns(attempt)) return;
         run.captureOpen = false;
@@ -2099,12 +2132,74 @@ export function createSession(
     }
   }
 
+  /**
+   * Answers the prompt behind one assistant message again: forks from the
+   * newest saved checkpoint that does not yet hold that prompt, and submits the
+   * prompt's text there. The thread keeps the earlier answer on its old branch.
+   * Only the history page the transport returns is searched, so a prompt older
+   * than that page cannot be regenerated. Only the prompt's text is resent.
+   */
+  async function regenerate(
+    messageId: string,
+    options?: LangGraphRunOptions
+  ): Promise<CompleteOutcome> {
+    const select = () => {
+      const { status, messages } = publication.getSnapshot();
+      if (disposed) throw new Error('The session is disposed.');
+      if (status === 'running')
+        throw new Error('Cannot regenerate while a response is running.');
+      const at = messages.findIndex((message) => message.id === messageId);
+      if (at < 0 || messages[at].role !== 'assistant')
+        throw new Error('Regenerate needs the id of an assistant message.');
+      for (let index = at - 1; index >= 0; index--)
+        if (messages[index].role === 'user') return messages[index];
+      throw new Error('No prompt precedes that message.');
+    };
+    const prompt = select();
+    const history = await getHistory!(
+      threadId,
+      options?.signal ?? new AbortController().signal
+    );
+    // The transcript may have moved on while history was read.
+    if (select().id !== prompt.id)
+      throw new Error('The conversation changed before it could be regenerated.');
+    const holds = (saved: ThreadState) => {
+      const values = saved.values as { messages?: unknown } | null | undefined;
+      return (
+        Array.isArray(values?.messages) &&
+        values.messages.some(
+          (message) =>
+            typeof message === 'object' &&
+            message !== null &&
+            (message as { id?: unknown }).id === prompt.id
+        )
+      );
+    };
+    const source = history.find(
+      (saved) => !!saved.checkpoint?.checkpoint_id && !holds(saved)
+    );
+    if (!source)
+      throw new Error(
+        'The checkpoint before that prompt is not in the loaded history.'
+      );
+    return fork(source.checkpoint as CheckpointReference, prompt.content, options);
+  }
+  const canRegenerate =
+    !!getHistory &&
+    !!getState &&
+    !!getRunStatus &&
+    !!joinStream &&
+    (!!suppliedTransport || ownedRetries === 0);
+
   return {
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
+    onCustomEvent: (listener) =>
+      disposed ? () => undefined : publication.onCustomEvent(listener),
     submit,
     fork,
+    ...(canRegenerate ? { regenerate } : {}),
     resume,
     reconnect,
     stop: () =>

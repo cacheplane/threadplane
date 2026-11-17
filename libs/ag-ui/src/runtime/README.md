@@ -241,6 +241,23 @@ const pending = decisionState(useAgent(native));
 
 The candidate package entry exports it. The published package root does not.
 
+## Custom events
+
+`session.onCustomEvent(listener)` delivers each `CUSTOM` event except the
+`on_interrupt` notice as `{ name, data }`, root and child-attributed alike, the
+way the Angular adapter surfaces them on `events$`. A string value that parses as
+JSON becomes that data; other text stays a string. `data` is owned frozen plain
+data, and a value that is not plain data is dropped. Events are not state: no
+snapshot holds them, and a listener added later does not receive earlier events.
+A throwing listener does not affect the run or other listeners. Disposal releases
+every listener, and later registrations are inert. With a client-tool catalog,
+commands a listener issues wait until the current event finishes, so a listener
+that disposes the session does not stop the rest of that one delivery.
+
+The method is optional on the `Session` type so hand-written sessions need not
+supply it; the factory always does. `createAgentSession` forwards it when the
+native session has one.
+
 ## Interruption evidence
 
 Both `createSession` and standalone `createRun` default to

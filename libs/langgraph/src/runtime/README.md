@@ -134,6 +134,26 @@ tip. `checkStatus()` does not repair a branch: ready is a no-op; active, dispose
 or uncertain states reject. Explicit reconnect can join a retained physical run
 when sufficient run/cursor evidence exists. It never submits another run.
 
+### Regenerate
+
+`session.regenerate(messageId, options?)` is the core session's optional
+regenerate command, built on `fork`. It takes the `id` of an assistant message,
+finds the prompt before it, reads the thread's history, and forks from the
+newest saved checkpoint that does not hold that prompt yet, submitting the
+prompt's text there. The earlier answer stays on its old branch in the thread;
+the snapshot shows the new one.
+
+- The command exists only when the transport has `getHistory`, `getState`,
+  `getRunStatus` and `joinStream`, the same capabilities `fork` needs.
+- It rejects for an id that is not an assistant message, when no prompt
+  precedes it, while a response is running, when the conversation changes
+  while history is read, and when no such checkpoint is in the history page the
+  transport returned. A prompt older than that page cannot be regenerated.
+- Only the prompt's text is sent again. Input state and anything else the
+  original submission carried are not.
+- After the read, every rule of `fork` applies, including its refusal to
+  replace active or unsettled work.
+
 ## Interruptions and recovery
 
 A stream that closes without this runtime's own terminal evidence settles as
@@ -213,6 +233,20 @@ The interruption copy is a bounded duplicate of `AGENT_RECOVERY_MESSAGES` and
 `AGENT_RECOVERY_DETAILS` from `@threadplane/chat`, which this neutral graph cannot
 import; `runtime-recovery-copy.spec.ts` under the Angular test target fails when
 they drift.
+
+## Custom events
+
+`session.onCustomEvent(listener)` delivers each `custom` stream frame, from the
+root or any subgraph namespace, as `{ name, data }`. The frame is read the way the
+Angular adapter reads it: a `{ name, data }` payload unwraps, and any other payload
+is the data with an empty name. Events are not state: no snapshot holds them, and
+a listener added later does not receive earlier events. `data` is owned frozen
+plain data; a payload that is not plain data is dropped. The middleware's
+subagent binding frame is protocol and is not delivered. A throwing listener
+does not affect the run or other listeners. Disposal releases every listener,
+including in the middle of a delivery, and later registrations are inert. Owned
+streams always request `custom` mode; a supplied transport delivers what its own
+stream modes produce.
 
 ## Dynamic pauses
 

@@ -40,6 +40,14 @@ ok.className = 'x';
 <Chat session={session} leading={<span />} />;
 // @ts-expect-error Slots are content, not render functions.
 <Chat session={session} inputFooter={() => null} />;
+<Chat
+  session={session}
+  threads={[{ id: 'a', title: 'Alpha' }]}
+  activeThreadId="a"
+  onThreadSelect={(threadId: string) => void threadId}
+/>;
+// @ts-expect-error Conversations are row records, not IDs.
+<Chat session={session} threads={['a']} />;
 void missing;
 
 import type { ReactNode } from 'react';

@@ -7,7 +7,9 @@ delivery constructors and error projection, not an execution owner or public sto
 
 `@threadplane/core/tools` exports optional authored `FunctionTool<Args, Result>`,
 minimal signal-based execution context, catalog inference, and a structural
-acquire/settle invocation-ownership contract. `@threadplane/core/testing` is reserved.
+acquire/settle invocation-ownership contract. `@threadplane/core/testing` exports
+`createFakeAgentSession`, a transport-free session whose test controls publish frozen
+snapshots, stream assistant text and record submit, stop and dispose calls.
 
 Sessions accept text and an optional standard `AbortSignal`. Read and subscribe are
 inert; subscribe notifies changes only. Implementations must publish owned, deeply

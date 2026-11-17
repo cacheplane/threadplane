@@ -152,6 +152,12 @@ export function ThreadList({
     readonly returnTo: HTMLElement | null;
   } | null>(null);
   const [order, setOrder] = useState(NO_ORDER);
+  // A pinned row being dragged, and where it would land.
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{
+    readonly id: string;
+    readonly position: 'before' | 'after';
+  } | null>(null);
   const reference = validDate(now);
 
   let visible: readonly ThreadListItem[] = threads;
@@ -332,6 +338,7 @@ export function ThreadList({
           );
         }
         const pinned = thread.pinned === true;
+        const canDrag = adapter?.reorderPinned !== undefined;
         const title = thread.title || thread.id;
         const content = renderTitle ? renderTitle(thread) : title;
         const ownerActions = renderActions?.(thread);
@@ -404,6 +411,92 @@ export function ThreadList({
             className={`tp-thread-list__item${
               hasActions ? ' tp-thread-list__item--actions' : ''
             }`}
+            draggable={canDrag && pinned ? true : undefined}
+            data-dragging={dragging === thread.id ? '' : undefined}
+            data-drop-position={
+              dropTarget?.id === thread.id ? dropTarget.position : undefined
+            }
+            onDragStart={
+              canDrag && pinned
+                ? (event) => {
+                    event.dataTransfer.setData('text/plain', thread.id);
+                    event.dataTransfer.effectAllowed = 'move';
+                    setDragging(thread.id);
+                  }
+                : undefined
+            }
+            onDragOver={
+              canDrag && pinned
+                ? (event) => {
+                    // Only a pinned row from this list can land here.
+                    if (dragging === null || dragging === thread.id) return;
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = 'move';
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const position =
+                      event.clientY - rect.top < rect.height / 2
+                        ? 'before'
+                        : 'after';
+                    setDropTarget((current) =>
+                      current?.id === thread.id &&
+                      current.position === position
+                        ? current
+                        : { id: thread.id, position }
+                    );
+                  }
+                : undefined
+            }
+            onDragLeave={
+              canDrag && pinned
+                ? (event) => {
+                    // Moving between the row's own children is not leaving it.
+                    if (
+                      event.relatedTarget instanceof Node &&
+                      event.currentTarget.contains(event.relatedTarget)
+                    )
+                      return;
+                    setDropTarget((current) =>
+                      current?.id === thread.id ? null : current
+                    );
+                  }
+                : undefined
+            }
+            onDrop={
+              canDrag && pinned
+                ? (event) => {
+                    event.preventDefault();
+                    const moved = dragging;
+                    const target = dropTarget;
+                    setDragging(null);
+                    setDropTarget(null);
+                    if (
+                      moved === null ||
+                      moved === thread.id ||
+                      target?.id !== thread.id
+                    )
+                      return;
+                    const others = visible.filter(
+                      (row) => row.pinned === true && row.id !== moved
+                    );
+                    const at = others.findIndex((row) => row.id === thread.id);
+                    if (at < 0) return;
+                    reorder(
+                      moved,
+                      target.position === 'before'
+                        ? thread.id
+                        : others[at + 1]?.id ?? null
+                    );
+                  }
+                : undefined
+            }
+            onDragEnd={
+              canDrag && pinned
+                ? () => {
+                    setDragging(null);
+                    setDropTarget(null);
+                  }
+                : undefined
+            }
           >
             <button
               type="button"
