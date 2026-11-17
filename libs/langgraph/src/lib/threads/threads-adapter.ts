@@ -197,7 +197,8 @@ export class LangGraphThreadsAdapter {
    *
    * Mutation failures reject with an opaque `'The LangGraph request
    * failed.'` error, and `create` rejects where the adapter's `create()`
-   * returns `null`.
+   * returns `null`. `refresh({ signal })` and `create({ signal })` ignore
+   * `signal`: the adapter's requests are not abortable.
    *
    * `dispose()` detaches this view only: its listeners are dropped, its
    * snapshot stops changing and its commands reject. The adapter is a
@@ -223,6 +224,13 @@ export class LangGraphThreadsAdapter {
    *  with no visible signal. Tighten the log volume if it becomes
    *  noisy. */
   async refresh(): Promise<void> {
+    await this.load(true);
+  }
+
+  /** Reads the thread list, publishes it, then reads project names and
+   *  publishes again. Thread mutations confirm on the thread list alone
+   *  (`waitForProjects: false`), so a slow Store API never holds them. */
+  private async load(waitForProjects: boolean): Promise<void> {
     console.debug('[LangGraphThreadsAdapter.refresh] invoked');
     const sequence = ++this.started;
     this.inFlight++;
@@ -230,15 +238,10 @@ export class LangGraphThreadsAdapter {
     const outcome = await settle(() =>
       this.client.threads.search({ limit: 50, offset: 0 }),
     );
+    this.inFlight--;
     const list = 'value' in outcome && Array.isArray(outcome.value)
       ? (outcome.value as SdkThread[])
       : undefined;
-    // Projects load only after the thread list, so a failed load makes one
-    // request (and one operation-failure report), as it always has.
-    const store = this.projectStore;
-    const projectOutcome =
-      list && store ? await settle(() => store.list()) : undefined;
-    this.inFlight--;
     if (list) {
       console.debug('[LangGraphThreadsAdapter.refresh] resolved', list.length);
     } else {
@@ -261,16 +264,29 @@ export class LangGraphThreadsAdapter {
         this.loadFailure = LOAD_ERROR;
       }
     }
-    if (projectOutcome && sequence === this.applied) {
-      if ('value' in projectOutcome && Array.isArray(projectOutcome.value)) {
-        const projects = projectOutcome.value as readonly ProjectEntry[];
-        this.projectsUnavailable = false;
-        if (!sameProjects(this.serverProjects, projects))
-          this.serverProjects = Object.freeze([...projects]);
-      } else {
-        // A missing or failing Store API never fails the thread list.
-        this.projectsUnavailable = true;
-      }
+    this.publish();
+    // Projects load only after the thread list succeeds, so a failed load
+    // makes one request (and one operation-failure report), as it always has.
+    const store = this.projectStore;
+    if (!list || !store) return;
+    const projects = this.loadProjects(store, sequence);
+    if (waitForProjects) await projects;
+  }
+
+  private async loadProjects(
+    store: ThreadProjectStore,
+    sequence: number,
+  ): Promise<void> {
+    const outcome = await settle(() => store.list());
+    if (sequence !== this.applied) return;
+    if ('value' in outcome && Array.isArray(outcome.value)) {
+      const projects = outcome.value as readonly ProjectEntry[];
+      this.projectsUnavailable = false;
+      if (!sameProjects(this.serverProjects, projects))
+        this.serverProjects = Object.freeze([...projects]);
+    } else {
+      // A missing or failing Store API never fails the thread list.
+      this.projectsUnavailable = true;
     }
     this.publish();
   }
@@ -299,7 +315,7 @@ export class LangGraphThreadsAdapter {
   async create(metadata: Record<string, unknown> = {}): Promise<string | null> {
     try {
       const t = await this.client.threads.create({ metadata });
-      await this.refresh();
+      await this.load(false);
       return t.thread_id;
     } catch (e) {
       console.error('[LangGraphThreadsAdapter.create] failed:', this.safeError(e));
@@ -412,6 +428,7 @@ export class LangGraphThreadsAdapter {
   private async mutate(
     patches: readonly { readonly id: string; readonly fields: ThreadPatchFields }[],
     work: () => Promise<unknown>,
+    waitForProjects = false,
   ): Promise<void> {
     const records: ThreadPatch[] = patches.map((patch) => ({ ...patch }));
     for (const record of records) this.pending.add(record);
@@ -424,7 +441,7 @@ export class LangGraphThreadsAdapter {
       throw this.safeError(error);
     }
     for (const record of records) record.settledAt = this.started;
-    await this.refresh();
+    await this.load(waitForProjects);
   }
 
   private async mutateProjects<T>(
@@ -438,7 +455,8 @@ export class LangGraphThreadsAdapter {
       result = await work(store);
     };
     if (patches.length > 0) {
-      await this.mutate(patches, run);
+      // Project commands wait for the project list so callers see the change.
+      await this.mutate(patches, run, true);
     } else {
       await this.request(run);
       await this.refresh();

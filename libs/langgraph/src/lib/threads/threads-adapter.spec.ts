@@ -306,6 +306,38 @@ describe('LangGraphThreadsAdapter directory view', () => {
     );
   });
 
+  it('publishes threads and settles thread mutations before project names load', async () => {
+    const releases: (() => void)[] = [];
+    const searchItems = vi.fn(
+      () =>
+        new Promise((resolve) =>
+          releases.push(() => resolve({ items: [{ key: 'p1', value: { name: 'P' } }] })),
+        ),
+    );
+    const m = mockClient([{ thread_id: 'a', metadata: { title: 'A' } }]);
+    (m.client as unknown as { store: unknown }).store = { searchItems };
+    const svc = configure(m.client);
+
+    let refreshed = false;
+    const refreshing = svc.refresh().then(() => (refreshed = true));
+    await vi.waitFor(() => expect(searchItems).toHaveBeenCalledTimes(1));
+
+    expect(svc.threads().map((t) => t.id)).toEqual(['a']);
+    expect(svc.directory.getSnapshot().threads.map((t) => t.id)).toEqual(['a']);
+    expect(svc.status()).toBe('idle');
+    expect(svc.projects()).toEqual([]);
+    expect(refreshed).toBe(false);
+
+    m.search.mockResolvedValue([{ thread_id: 'a', metadata: { title: 'Trip' } }]);
+    await svc.rename('a', 'Trip');
+    expect(svc.threads()[0].title).toBe('Trip');
+
+    for (const release of releases) release();
+    await refreshing;
+    await vi.waitFor(() => expect(svc.projects()).toEqual([{ id: 'p1', name: 'P' }]));
+    expect(svc.directory.getSnapshot().projects).toEqual([{ id: 'p1', name: 'P' }]);
+  });
+
   it('shows a rename in threads() before the server answers', async () => {
     const m = mockClient([{ thread_id: 'a', metadata: { title: 'A' } }]);
     const svc = configure(m.client);
