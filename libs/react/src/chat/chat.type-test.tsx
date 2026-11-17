@@ -45,6 +45,14 @@ ok.className = 'x';
 <Chat session={session} header={() => null} />;
 <Chat
   session={session}
+  threads={[{ id: 'a', title: 'Alpha' }]}
+  activeThreadId="a"
+  onThreadSelect={(threadId: string) => void threadId}
+/>;
+// @ts-expect-error Conversations are row records, not IDs.
+<Chat session={session} threads={['a']} />;
+<Chat
+  session={session}
   modelPicker={{
     options: [{ value: 'a', label: 'A' }],
     value: 'a',
@@ -55,14 +63,6 @@ ok.className = 'x';
 <Chat session={session} modelPicker={{ options: [], value: 'a' }} />;
 // @ts-expect-error Options are value and label records, not strings.
 <Chat session={session} modelPicker={{ options: ['a'], value: 'a', onValueChange: () => undefined }} />;
-<Chat
-  session={session}
-  threads={[{ id: 'a', title: 'Alpha' }]}
-  activeThreadId="a"
-  onThreadSelect={(threadId: string) => void threadId}
-/>;
-// @ts-expect-error Conversations are row records, not IDs.
-<Chat session={session} threads={['a']} />;
 void missing;
 
 import type { ReactNode } from 'react';
