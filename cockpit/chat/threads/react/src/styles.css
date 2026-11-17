@@ -56,6 +56,14 @@ body {
 .conversation-picker {
   min-width: 0;
 }
+.conversation-notice {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
+}
+.conversation-notice:empty {
+  display: none;
+}
 .conversation-panel {
   display: flex;
   flex-direction: column;

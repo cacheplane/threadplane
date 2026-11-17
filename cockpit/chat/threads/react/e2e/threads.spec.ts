@@ -48,6 +48,26 @@ async function titleReads(request: APIRequestContext, count: number) {
     )
     .toBe(count);
 }
+const notice = (page: Page) => page.locator('.conversation-notice');
+const UNAVAILABLE =
+  'This conversation could not be confirmed and cannot be continued here.';
+const EARLIER_VISIT =
+  'This conversation was saved on an earlier visit and cannot be continued here.';
+/** A row the page cannot continue: the click explains why and sends nothing. */
+async function refused(
+  page: Page,
+  request: APIRequestContext,
+  row: ReturnType<typeof picker>,
+  message: string
+) {
+  const before = ((await (await request.get('/__requests')).json()) as Wire[])
+    .length;
+  await row.click();
+  await expect(notice(page)).toHaveText(message);
+  expect(
+    ((await (await request.get('/__requests')).json()) as Wire[]).length
+  ).toBe(before);
+}
 async function blocked(page: Page) {
   await expect(page.getByRole('status')).toHaveText(
     'Choose another conversation or start a new one.'
@@ -103,14 +123,12 @@ test('installed SDK switches A/B/A and extends only the selected saved conversat
   await expect(conversation(page).locator('article')).toHaveCount(2);
   await expect(conversation(page)).toContainText('A first');
   await expect(conversation(page)).not.toContainText('B first');
-  await titleReads(request, 3);
   await submit(page, 'A followup');
   await saved(page);
   await expect(conversation(page).locator('article')).toHaveCount(4);
   await expect(conversation(page)).toContainText('A first');
   await expect(conversation(page)).toContainText('A followup');
   await expect(conversation(page).locator('pre code')).toHaveCount(2);
-  await titleReads(request, 4);
   await page.screenshot({
     path: testInfo.outputPath('threads-desktop.png'),
     fullPage: true,
@@ -125,14 +143,8 @@ test('installed SDK switches A/B/A and extends only the selected saved conversat
     'Authored conversation title'
   );
   await expect(picker(page).nth(1)).toHaveAttribute('aria-current', 'true');
-  await expect
-    .poll(
-      async () =>
-        ((await (await request.get('/__requests')).json()) as Wire[]).filter(
-          (item) => item.method === 'GET' && /\/threads\/[^/]+$/.test(item.path)
-        ).length
-    )
-    .toBe(5);
+  // Titles come from the sidebar's directory, so the page never reads one.
+  await titleReads(request, 0);
   const wire: Wire[] = await (await request.get('/__requests')).json();
   const creates = wire.filter((item) => item.path.endsWith('/threads'));
   const runs = wire.filter((item) => item.path.endsWith('/runs/stream'));
@@ -225,16 +237,9 @@ test('draft typed while saved history is held survives confirmation', async ({
   await saved(page);
   await expect(box(page)).toHaveValue('Next draft');
 });
-// The sidebar shows the server's title: a missing or malformed one falls back,
-// while a failed or foreign title read leaves the server title in place.
-const sidebarTitle: Record<string, string> = {
-  missing: 'Untitled conversation',
-  invalid: 'Untitled conversation',
-  'wrong-thread': 'Authored conversation title',
-  titlefailure: 'Authored conversation title',
-};
-for (const mode of ['missing', 'wrong-thread', 'invalid', 'titlefailure']) {
-  test(`optional ${mode} title retains fallback without withholding continuation`, async ({
+// The sidebar shows the server's title; a missing or malformed one falls back.
+for (const mode of ['missing', 'invalid']) {
+  test(`server ${mode} title falls back in the sidebar without withholding continuation`, async ({
     page,
     request,
   }) => {
@@ -242,20 +247,12 @@ for (const mode of ['missing', 'wrong-thread', 'invalid', 'titlefailure']) {
     await page.goto(base);
     await submit(page, 'First');
     await saved(page);
-    await expect
-      .poll(
-        async () =>
-          ((await (await request.get('/__requests')).json()) as Wire[]).filter(
-            (item) =>
-              item.method === 'GET' && /\/threads\/[^/]+$/.test(item.path)
-          ).length
-      )
-      .toBe(1);
-    await expect(picker(page).first()).toHaveText(sidebarTitle[mode]);
+    await expect(picker(page).first()).toHaveText('Untitled conversation');
     await submit(page, 'Second');
     await saved(page);
     await expect(conversation(page).locator('article')).toHaveCount(4);
-    await expect(picker(page).first()).toHaveText(sidebarTitle[mode]);
+    await expect(picker(page).first()).toHaveText('Untitled conversation');
+    await titleReads(request, 0);
   });
 }
 for (const mode of ['changed', 'missing', 'pending', 'foreign', 'failure']) {
@@ -273,7 +270,7 @@ for (const mode of ['changed', 'missing', 'pending', 'foreign', 'failure']) {
     ).toHaveLength(1);
     expect(wire.filter((item) => item.body.command)).toHaveLength(0);
     // The quarantined conversation cannot be reopened from the sidebar.
-    await picker(page).first().click();
+    await refused(page, request, picker(page).first(), UNAVAILABLE);
     await blocked(page);
   });
 }
@@ -297,7 +294,7 @@ test('cancelled selection quarantines A while independently saved B remains usab
   await blocked(page);
   await request.post('/__release-history');
   await request.post('/__history/safe');
-  await picker(page).nth(0).click();
+  await refused(page, request, picker(page).nth(0), UNAVAILABLE);
   await blocked(page);
   await picker(page).nth(1).click();
   await loaded(page);
@@ -340,85 +337,6 @@ test('actual graph failure is generic and never confirms or replays', async ({
     wire.filter((item) => item.path.endsWith('/runs/stream'))
   ).toHaveLength(1);
   expect(wire.filter((item) => item.path.endsWith('/history'))).toHaveLength(0);
-});
-test('held title does not block a new conversation and cannot relabel it after release', async ({
-  page,
-  request,
-}) => {
-  await request.post('/__hold-title');
-  await page.goto(base);
-  await submit(page, 'A first');
-  await saved(page);
-  await expect
-    .poll(
-      async () => (await (await request.get('/__lifetime')).json()).activeTitle
-    )
-    .toBe(true);
-  // The sidebar reads the server title through its own list request.
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
-  await newConversation(page);
-  await expect
-    .poll(
-      async () => (await (await request.get('/__lifetime')).json()).activeTitle
-    )
-    .toBe(false);
-  await request.post('/__release-title');
-  await submit(page, 'B first');
-  await saved(page);
-  await expect(picker(page).nth(1)).toHaveText('Authored conversation title');
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
-});
-test('a late title from selected A cannot relabel B after switching', async ({
-  page,
-  request,
-}) => {
-  await page.goto(base);
-  await submit(page, 'A first');
-  await saved(page);
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
-  await newConversation(page);
-  await submit(page, 'B first');
-  await saved(page);
-  await expect(picker(page).nth(1)).toHaveText('Authored conversation title');
-  await request.post('/__title/literal');
-  await request.post('/__hold-title');
-  await picker(page).first().click();
-  await loaded(page);
-  await expect
-    .poll(
-      async () => (await (await request.get('/__lifetime')).json()).activeTitle
-    )
-    .toBe(true);
-  await request.post('/__title/safe');
-  await picker(page).nth(1).click();
-  await loaded(page);
-  await request.post('/__release-title');
-  await expect(picker(page).nth(1)).toHaveAttribute('aria-current', 'true');
-  await expect(picker(page).nth(1)).toHaveText('Authored conversation title');
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
-  await expect(conversation(page)).toContainText('B first');
-  await expect(conversation(page)).not.toContainText('A first');
-});
-test('failed metadata refresh retains the last valid title', async ({
-  page,
-  request,
-}) => {
-  await page.goto(base);
-  await submit(page, 'First');
-  await saved(page);
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
-  await request.post('/__title/titlefailure');
-  await submit(page, 'Second');
-  await saved(page);
-  await expect
-    .poll(
-      async () =>
-        ((await (await request.get('/__requests')).json()) as Wire[]).filter(
-          (item) => item.method === 'GET' && /\/threads\/[^/]+$/.test(item.path)
-        ).length
-    )
-    .toBe(2);
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
 });
 test('literal title markup remains button text', async ({ page, request }) => {
   await request.post('/__title/literal');
@@ -468,7 +386,7 @@ test('Stop fences held streaming and preserves other records', async ({
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await blocked(page);
   await request.post('/__release');
-  await picker(page).nth(1).click();
+  await refused(page, request, picker(page).nth(1), UNAVAILABLE);
   await blocked(page);
   await picker(page).first().click();
   await loaded(page);
@@ -479,7 +397,7 @@ test('Stop fences held streaming and preserves other records', async ({
     wire.filter((item) => item.path.endsWith('/runs/stream'))
   ).toHaveLength(2);
 });
-for (const kind of ['history', 'title', 'stream']) {
+for (const kind of ['history', 'stream']) {
   test(`page disposal aborts held ${kind} without replay`, async ({
     page,
     request,
@@ -524,7 +442,7 @@ test('worker failure stays generic and is not retried', async ({
   ).toHaveLength(1);
   expect(wire.filter((item) => item.path.endsWith('/history'))).toHaveLength(0);
 });
-test('developer endpoint credentials stay in headers for creation, stream, history and title', async ({
+test('developer endpoint credentials stay in headers for creation, stream, history and the sidebar', async ({
   page,
   request,
 }) => {
@@ -554,7 +472,7 @@ test('developer endpoint credentials stay in headers for creation, stream, histo
       .locator('.tp-thread-list__button')
   ).toHaveText('Authored conversation title');
   const wire: Wire[] = await (await request.get('/__requests')).json();
-  expect(wire).toHaveLength(5);
+  expect(wire).toHaveLength(4);
   expect(
     wire.every(
       (item) =>
@@ -625,6 +543,9 @@ test('sidebar rename persists on the server and survives reload', async ({
   await expect(sidebarRows(page)).toHaveText(['Renamed A']);
   await page.reload();
   await expect(sidebarRows(page)).toHaveText(['Renamed A']);
+  // Listed after reload, but only conversations confirmed on this page open.
+  await refused(page, request, sidebarRows(page).first(), EARLIER_VISIT);
+  await expect(page.getByRole('status')).toHaveText('Ready.');
   const [thread] = await serverThreads(request);
   expect(thread.metadata['title']).toBe('Renamed A');
 });

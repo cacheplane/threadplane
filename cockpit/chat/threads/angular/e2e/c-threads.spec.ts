@@ -62,11 +62,17 @@ test('c-threads: AI response renders in composed chat surface', async ({ page })
   await expect(bubble).toContainText('chat-threads demo');
 });
 
-test('c-threads: chat-thread-list sidebar is mounted', async ({ page }) => {
+test('c-threads: chat-thread-list sidebar is mounted', async ({
+  page,
+  request,
+}) => {
+  // Self-contained: this test creates the thread its list must show.
+  const title = `Mounted ${randomUUID()}`;
+  await createThread(request, title);
   await page.goto('/');
-  // Sidebar's distinctive surface — thread switcher seeded with 3 hardcoded
-  // threads (thread-1/2/3). Existence + non-zero entry count proves wiring.
+  await expect(page.locator('chat-thread-sidebar')).toBeVisible();
   await expect(page.locator('chat-thread-list')).toBeVisible();
+  await expect(row(page, title)).toHaveCount(1);
 });
 
 test('c-threads: a renamed conversation keeps its title after reload', async ({

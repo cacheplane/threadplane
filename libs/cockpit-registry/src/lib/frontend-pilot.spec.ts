@@ -113,7 +113,7 @@ it('resolves native Chat Threads with its canonical docs and existing backend', 
   if(!canonical) throw Error('Missing canonical Chat Threads');
   const react=getFrontendCapabilityDescriptor(canonical.manifestIdentity as CockpitManifestIdentity,'react');
   expect(react).toMatchObject({id:'chat-threads-python-react',frontend:'react',runtimeAdapter:'langgraph',runtimeUrl:'chat/threads/react',devPort:4625,docsPath:'/docs/react/chat/guides/thread-routing',backendAssetPaths:canonical.backendAssetPaths,promptAssetPaths:canonical.promptAssetPaths});
-  expect(react?.codeAssetPaths).toEqual(['app.tsx','application.ts','authority.ts','records.ts','titles.ts','connection.ts','main.tsx','styles.css'].map(file=>`cockpit/chat/threads/react/src/${file}`));
+  expect(react?.codeAssetPaths).toEqual(['app.tsx','application.ts','authority.ts','records.ts','connection.ts','main.tsx','styles.css'].map(file=>`cockpit/chat/threads/react/src/${file}`));
   for(const asset of react?.codeAssetPaths ?? [])expect(existsSync(new URL('../../../../'+asset,import.meta.url))).toBe(true);
   expect(getCockpitFrontends().find(entry=>entry.project==='cockpit-chat-threads-react')).toMatchObject({port:4625,runtimePath:'chat/threads/react'});
   expect(getFrontendCapabilityDescriptor(canonical.manifestIdentity as CockpitManifestIdentity,'angular')).toBe(canonical);

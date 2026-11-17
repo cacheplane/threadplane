@@ -37,6 +37,11 @@ export function renderMessage(row: MessageRow) {
     </article>
   );
 }
+/** Shown when a listed conversation cannot be opened on this page. */
+export const UNAVAILABLE_NOTICE =
+  'This conversation could not be confirmed and cannot be continued here.';
+export const EARLIER_VISIT_NOTICE =
+  'This conversation was saved on an earlier visit and cannot be continued here.';
 type Props = {
   readonly connection: ThreadsConnection;
   readonly onReady: () => void;
@@ -60,6 +65,9 @@ function ThreadsOwner({ connection, onReady }: Props) {
   );
   const [directory] = useState(() => createThreadsDirectory(connection));
   const snapshot = useAgent(application);
+  const [notice, setNotice] = useState<string | null>(null);
+  // A new view (selection, New, removal) replaces any earlier notice.
+  useEffect(() => setNotice(null), [snapshot.viewGeneration]);
   useEffect(() => {
     onReady();
   }, [onReady]);
@@ -148,12 +156,21 @@ function ThreadsOwner({ connection, onReady }: Props) {
               const record = application
                 .getSnapshot()
                 .conversations.find((entry) => entry.threadId === threadId);
-              if (record) void application.select(record.key);
+              if (!record) setNotice(EARLIER_VISIT_NOTICE);
+              else if (record.availability === 'unavailable')
+                setNotice(UNAVAILABLE_NOTICE);
+              else {
+                setNotice(null);
+                void application.select(record.key);
+              }
             }}
             onNewChat={() => void application.newConversation()}
             onActiveRemoved={() => void application.newConversation()}
             labels={{ empty: 'No saved conversations yet.' }}
           />
+          <p className="conversation-notice" aria-live="polite">
+            {notice}
+          </p>
         </nav>
         <section
           className="conversation-panel"

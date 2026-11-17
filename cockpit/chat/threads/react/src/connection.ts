@@ -18,7 +18,6 @@ export interface ThreadsConnection {
 export interface ThreadsClient {
   createThread(signal: AbortSignal): Promise<string>;
   sessionFactory(threadId: string): ThreadsSession;
-  readTitle(threadId: string, signal: AbortSignal): Promise<unknown>;
 }
 /** Resolve the shared proxy or the explicitly authored developer target. */
 export function threadsConnection(configuration: RuntimeBridgeConfiguration): {
@@ -109,15 +108,6 @@ export function createThreadsClient(
           /* Rejected sessions cannot be installed. */
         }
         throw new Error('Runtime session is unavailable.');
-      }
-    },
-    async readTitle(threadId, signal) {
-      if (!known.has(threadId) || signal.aborted) return undefined;
-      try {
-        const raw = await client.threads.get(threadId, { signal });
-        return signal.aborted ? undefined : raw;
-      } catch {
-        return undefined;
       }
     },
   };

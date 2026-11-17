@@ -10,7 +10,12 @@ vi.mock('./connection', () => ({
   createThreadsClient: vi.fn(),
   createThreadsDirectory: vi.fn(),
 }));
-import { ThreadsDemo, renderMessage } from './app';
+import {
+  EARLIER_VISIT_NOTICE,
+  ThreadsDemo,
+  UNAVAILABLE_NOTICE,
+  renderMessage,
+} from './app';
 const environment = globalThis as typeof globalThis & {
   IS_REACT_ACT_ENVIRONMENT?: boolean;
 };
@@ -192,18 +197,18 @@ it('selects only conversations confirmed on this page and preserves the controll
       key: 'a',
       threadId: 'A',
       ordinal: 1,
-      label: 'Conversation 1',
       availability: 'available' as const,
       draft: 'A draft',
       canonical: null,
       generations: [],
-      version: 0,
     };
   act(() => h.update({ conversations: [record], draft: 'B draft' }));
   fireEvent.click(h.view.getByRole('button', { name: 'Elsewhere' }));
   expect(h.app.select).not.toHaveBeenCalled();
+  expect(h.view.getByText(EARLIER_VISIT_NOTICE)).toBeTruthy();
   fireEvent.click(h.view.getByRole('button', { name: 'Conversation 1' }));
   expect(h.app.select).toHaveBeenCalledExactlyOnceWith('a');
+  expect(h.view.queryByText(EARLIER_VISIT_NOTICE)).toBeNull();
   act(() =>
     h.update({
       selectedKey: 'a',
@@ -217,6 +222,24 @@ it('selects only conversations confirmed on this page and preserves the controll
   expect(h.box().value).toBe('A draft');
   expect(h.view.getByRole('status').textContent).toBe('Conversation loaded.');
   expect(h.directory.refresh).toHaveBeenCalled();
+});
+it('marks an unavailable record clearly and never selects it', () => {
+  const h = composition([entry('B', 'Conversation 2')]),
+    record = {
+      key: 'b',
+      threadId: 'B',
+      ordinal: 2,
+      availability: 'unavailable' as const,
+      draft: '',
+      canonical: null,
+      generations: [],
+    };
+  act(() => h.update({ conversations: [record] }));
+  fireEvent.click(h.view.getByRole('button', { name: 'Conversation 2' }));
+  expect(h.app.select).not.toHaveBeenCalled();
+  expect(h.view.getByText(UNAVAILABLE_NOTICE)).toBeTruthy();
+  act(() => h.update({ viewGeneration: 1 }));
+  expect(h.view.queryByText(UNAVAILABLE_NOTICE)).toBeNull();
 });
 it('keeps Stop available while loading and prevents changing the selected record', () => {
   const h = composition();
