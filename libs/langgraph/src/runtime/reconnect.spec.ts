@@ -366,7 +366,11 @@ describe('owned run reconnect', () => {
       expect(f.getHistory).toHaveBeenCalledTimes(
         status === 'interrupted' ? 1 : 0
       );
-      expect(f.session.getSnapshot().error?.recovery).toBe('none');
+      // A run the backend reports failed is settled: it can only be sent
+      // again, never joined. A lost pause is not settled, so it offers nothing.
+      expect(f.session.getSnapshot().error?.recovery).toBe(
+        status === 'interrupted' ? 'none' : 'retry'
+      );
       await expect(f.session.reconnect()).rejects.toThrow();
     }
   );

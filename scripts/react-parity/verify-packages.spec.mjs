@@ -1086,8 +1086,9 @@ test('React chat requires its real supported export', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, isTyping: forwarded }), /isTyping/);
   assert.throws(() => packageVerifier.assertSupportedExports('core', { completeDelivery: forwarded }), /completeDelivery/);
 });
-test('React render requires exactly the RenderSpec and RenderDevtools runtime exports', () => {
+test('React render requires exactly the RenderSpec, lifecycle recorder and RenderDevtools runtime exports', () => {
   const RenderSpec = () => null;
+  const createRenderLifecycle = () => ({});
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', {}), /A2uiSurface/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {} }), /a2uiBasicCatalog/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {} }), /useA2uiSurfaceWriter/);
@@ -1096,9 +1097,10 @@ test('React render requires exactly the RenderSpec and RenderDevtools runtime ex
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {}, surfaceToSpec() {} }), /unexpected/);
   const RenderDevtools = () => null;
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', {}), /RenderSpec/);
-  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec }), /RenderDevtools/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, RenderDevtools }));
-  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, RenderDevtools, createStateStore: () => ({}) }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec }), /createRenderLifecycle/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle }), /RenderDevtools/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle, RenderDevtools }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle, RenderDevtools, createStateStore: () => ({}) }), /unexpected/);
 });
 test('headless framework root rejects the render adapter and engine', () => {
   assert.throws(() => packageVerifier.assertHeadlessInputs({ 'node_modules/@threadplane/react/src/render/render-spec.js': {} }), /render/i);

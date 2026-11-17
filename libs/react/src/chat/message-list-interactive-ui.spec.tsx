@@ -90,7 +90,9 @@ describe('MessageList generativeUi interaction', () => {
         generativeUi={{
           registry,
           handlers: { book },
-          onRenderEvent: (event) => events.push(event),
+          onRenderEvent: (event) => {
+            if (event.event.type !== 'lifecycle') events.push(event);
+          },
         }}
       />
     );
@@ -115,7 +117,9 @@ describe('MessageList generativeUi interaction', () => {
     const options: MessageGenerativeUi = {
       registry,
       handlers: { book },
-      onRenderEvent: (event) => events.push(event),
+      onRenderEvent: (event) => {
+        if (event.event.type !== 'lifecycle') events.push(event);
+      },
     };
     const view = render(
       <MessageList
