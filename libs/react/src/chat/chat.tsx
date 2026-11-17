@@ -59,8 +59,8 @@ export interface ChatProps
   /**
    * Interactive client tools from `createClientTools`. While one of its calls waits for the person,
    * its view is drawn below the message's tool calls and the call keeps its row; the answer
-   * becomes the tool result, the view goes, and focus returns to the composer. The
-   * app passes `clientTools.tools` to the session; Chat never runs a tool. Off unless set.
+   * becomes the tool result, the view goes, and focus moves to the next view still waiting, or to
+   * the composer when none is. The app passes `clientTools.tools` to the session; Chat never runs a tool. Off unless set.
    */
   readonly clientTools?: ChatClientTools;
   /** Child agents shown as subagent cards in place of the tool calls that started them. Keep stable. */
@@ -227,7 +227,8 @@ export function Chat({
   const disabled = input.disabled ?? false;
   // An answered client tool leaves the transcript the same way.
   const renderPrompt = useClientToolCalls(clientTools);
-  const asked = usePendingClientToolCalls(clientTools).length > 0;
+  const waiting = usePendingClientToolCalls(clientTools).length;
+  const asked = waiting > 0;
   const awaited = pending || asked;
   const hadApproval = useRef(awaited);
   const focusOwed = useRef(false);
@@ -240,6 +241,22 @@ export function Chat({
       composer.current?.focus();
     }
   }, [awaited, disabled]);
+  // One of several asks ended and took its focused control with it: continue in
+  // the next one still waiting, unless focus already sits somewhere else.
+  const root = useRef<HTMLDivElement>(null);
+  const hadWaiting = useRef(waiting);
+  useEffect(() => {
+    const fewer = waiting > 0 && waiting < hadWaiting.current;
+    hadWaiting.current = waiting;
+    if (!fewer) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && active.isConnected) return;
+    root.current
+      ?.querySelector<HTMLElement>(
+        '[data-tool-prompt] :is(button, input, select, textarea, a[href], [tabindex]):not(:disabled, [tabindex="-1"])'
+      )
+      ?.focus();
+  }, [waiting]);
   const rows = useMessageContent(snapshot, session, content);
   // A failed call already shows these words, and the notice would add no action or detail of its own.
   // A custom renderMessage owns that display, so the notice stays whenever one is in use.
@@ -302,6 +319,7 @@ export function Chat({
   }, [greeted]);
   const chat = (
     <div
+      ref={root}
       className={['tp-chat', greeting && 'tp-chat--welcome', className]
         .filter(Boolean)
         .join(' ')}

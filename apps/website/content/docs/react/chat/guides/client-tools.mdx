@@ -51,7 +51,7 @@ Ask for **Trip** in the local preview. The model calls `get_weather` and `confir
 
 ## Booking decisions and ownership
 
-A fictional booking is an ask tool: `confirm_booking` is declared with `ask`, and `Chat` draws its `ApprovalCard` through `clientTools`. The card waits below the message's tool calls with named actions, `Confirm booking` and `Don't book`, and the composer reads "Answer the booking to continue". The call keeps its row in the tool group, so the group's progress, **Stop** and plan stay visible while the booking waits. These actions stay available while chat is busy. Parallel cards resolve independently, including identical summaries, and only the oldest takes focus. An answered booking leaves a one-line record in the transcript, **Approved: Booking** or **Declined: Booking**, through `approvalRecords`. `Chat` returns focus to the composer once no booking waits and the composer is enabled again. A booking that **Stop** revokes was never answered, so it leaves no record. Completed weather panels and booking records remain visible until **New conversation**.
+A fictional booking is an ask tool: `confirm_booking` is declared with `ask`, and `Chat` draws its `ApprovalCard` through `clientTools`. The card waits below the message's tool calls with named actions, `Confirm booking` and `Don't book`, and the composer reads "Answer the booking to continue". The call keeps its row in the tool group, so the group's progress, **Stop** and plan stay visible while the booking waits. These actions stay available while chat is busy. Parallel cards resolve independently, including identical summaries, and only the oldest takes focus. When one of several is answered, `Chat` moves focus to the next card still waiting. An answered booking leaves a one-line record in the transcript, **Approved: Booking** or **Declined: Booking**, through `approvalRecords`. `Chat` returns focus to the composer once no booking waits and the composer is enabled again. A booking that **Stop** revokes was never answered, so it leaves no record. Completed weather panels and booking records remain visible until **New conversation**.
 
 <ExampleCode file="cockpit/langgraph/client-tools/react/src/booking.tsx" />
 
@@ -69,7 +69,7 @@ The existing shared backend is used by default. A developer LangGraph target can
 
 ## Ask the person in the transcript
 
-An ask tool is a function tool that the person answers. Declare it with `ask`, collect the declarations with `createClientTools`, pass `clientTools.tools` to the session, and pass the whole object to `Chat` as `clientTools`. While a call waits, your view is drawn below the message's tool calls, and the call keeps its row and its place in the tool group. The value you pass to `answer` becomes the tool result, the view goes, and focus returns to the composer.
+An ask tool is a function tool that the person answers. Declare it with `ask`, collect the declarations with `createClientTools`, pass `clientTools.tools` to the session, and pass the whole object to `Chat` as `clientTools`. While a call waits, your view is drawn below the message's tool calls, and the call keeps its row and its place in the tool group. The value you pass to `answer` becomes the tool result, the view goes, and focus returns to the composer. When other calls still wait, focus moves to the next waiting view instead.
 
 ~~~tsx
 import type { AgentSession } from '@threadplane/core';
