@@ -26,6 +26,7 @@ import {
   withoutStaleRetry,
 } from './tool-outcome.js';
 import { Reasoning } from './reasoning.js';
+import { a2uiActionLabel } from './internal/a2ui-action-label.js';
 import { isTyping, TypingIndicator } from './typing-indicator.js';
 import {
   BuiltInActions,
@@ -190,6 +191,13 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * reasoning on its own message. Custom renderMessage retains full row ownership.
    */
   readonly mergeReasoning?: boolean;
+  /**
+   * Shows a user message that is a serialized A2UI action as the pressed
+   * control's label ("Search flights") in place of its JSON. Without a label
+   * the action name is put in plain words. Off unless set; other messages are
+   * unchanged, and custom renderMessage retains full row ownership.
+   */
+  readonly a2uiActionLabels?: boolean;
   /** Typesets math in message text; see `MarkdownProps.math`. Keep stable; custom renderMessage retains full ownership. */
   readonly math?: MarkdownProps['math'];
   /**
@@ -393,8 +401,10 @@ function RowView<TRow extends MessageRow>({
   generativeUi,
   markdownComponents,
   mergeReasoning,
+  a2uiActionLabels,
   renderMessageActivity,
 }: {
+  readonly a2uiActionLabels?: boolean;
   readonly renderMessageActivity?: (
     context: MessageActivityContext<TRow>
   ) => ReactNode;
@@ -525,14 +535,23 @@ function RowView<TRow extends MessageRow>({
   });
   // The plan and Stop belong to the row's last built-in group, the one the turn is still running.
   const planGroup = [...runs].reverse().find((run) => 'activities' in run);
-  const text = (
-    <Markdown
-      snapshot={row.markdown}
-      citations={row.role === 'assistant' ? row.message.citations : undefined}
-      math={math}
-      components={markdownComponents}
-    />
-  );
+  const actionLabel =
+    a2uiActionLabels === true && row.role === 'user'
+      ? a2uiActionLabel(row.message.content)
+      : null;
+  const text =
+    actionLabel !== null ? (
+      <div className="tp-markdown" data-a2ui-action="">
+        <p>{actionLabel}</p>
+      </div>
+    ) : (
+      <Markdown
+        snapshot={row.markdown}
+        citations={row.role === 'assistant' ? row.message.citations : undefined}
+        math={math}
+        components={markdownComponents}
+      />
+    );
   return (
     <ChatMessage
       role={row.role}
@@ -684,6 +703,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   generativeUi,
   markdownComponents,
   mergeReasoning,
+  a2uiActionLabels,
   renderMessageActivity,
   children,
   renderScrollControl,
@@ -851,6 +871,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   generativeUi={generativeUi}
                   markdownComponents={markdownComponents}
                   mergeReasoning={mergeReasoning !== false}
+                  a2uiActionLabels={a2uiActionLabels}
                   renderMessageActivity={renderMessageActivity}
                 />
                 {renderApprovalRecords(recordsAfter, row.id)}

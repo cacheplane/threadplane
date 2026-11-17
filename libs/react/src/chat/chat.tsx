@@ -111,6 +111,8 @@ export interface ChatProps
   readonly renderMessageActivity?: MessageListProps['renderMessageActivity'];
   /** One reasoning disclosure per multi-step turn; see `MessageListProps.mergeReasoning`. Defaults to true. */
   readonly mergeReasoning?: MessageListProps['mergeReasoning'];
+  /** Shows an A2UI action sent as a user message by its label; see `MessageListProps.a2uiActionLabels`. Off unless set. */
+  readonly a2uiActionLabels?: MessageListProps['a2uiActionLabels'];
   /**
    * The waiting indicator in the transcript; see `MessageListProps.typingIndicator`. Pass
    * `{ announce: false }` when the app already announces progress, such as a status in
@@ -223,6 +225,7 @@ export function Chat({
   generativeUi,
   markdownComponents,
   mergeReasoning,
+  a2uiActionLabels,
   renderMessageActivity,
   typingIndicator,
   welcome,
@@ -404,6 +407,7 @@ export function Chat({
         generativeUi={generativeUi}
         markdownComponents={markdownComponents}
         mergeReasoning={mergeReasoning}
+        a2uiActionLabels={a2uiActionLabels}
         renderMessageActivity={renderMessageActivity}
         typingIndicator={typingIndicator}
         renderScrollControl={(controls) =>

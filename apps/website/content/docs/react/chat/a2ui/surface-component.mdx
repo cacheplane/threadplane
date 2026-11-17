@@ -117,6 +117,8 @@ The `context` is read from the data model at the moment of the press, so it carr
 When the agent created the surface with `sendDataModel: true`, the whole data model rides along as `metadata.a2uiClientDataModel`.
 
 How the message reaches the agent is your decision (most applications send it as the next turn of the conversation).
+When you send it as a user message, pass `a2uiActionLabels` to `Chat` or `MessageList` so the transcript shows the button's label, such as "Search flights", in place of the serialized message.
+An action from a control without literal text shows its name in plain words, so `bookingSubmit` reads "Booking submit".
 Without `onAction`, buttons that would send an action are disabled, so a read-only surface cannot look pressable.
 
 ## What happens when a check fails?
