@@ -74,7 +74,7 @@ test.afterEach(async ({ page, request }, info) => {
   await page.goto('about:blank');
   await expect
     .poll(async () => (await request.get('/__lifetime')).json())
-    .toEqual({ activeStream: false, activeHistory: false, openResponses: 0 });
+    .toMatchObject({ activeStream: false, activeHistory: false, openResponses: 0 });
   for (const path of ['/__requests', '/__captures', '/__lifetime']) {
     const body = JSON.stringify(
       await (await request.get(path)).json(),

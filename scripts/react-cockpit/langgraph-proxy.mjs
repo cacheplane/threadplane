@@ -10,16 +10,33 @@
  *   GET  /__requests          every /api and /developer-api request, in order
  *   POST /__ready             200 once `langgraph dev` answers /ok (graph loaded;
  *                             with `serve.mjs --backend`, after its lazy start)
- *   GET  /__lifetime          { activeStream, activeHistory, openResponses }
+ *   GET  /__lifetime          { activeStream, activeHistory, activeTitle,
+ *                               activeState, openResponses }
  *   GET  /__captures          per finished run: forwarded SSE text, saved
  *                             messages/next from the real server, title
- *                             before and after the run
+ *                             before and after the run (waits for captures
+ *                             still being read)
  *   POST /__reset             forget requests, drop held responses, clear modes
  *   POST /__fail-create       next thread creation answers 500 without forwarding
  *   POST /__history/<mode>    safe | hold | changed | missing | pending | failed,
  *                             or tool evidence: args | result | name | ids |
  *                             interrupt | subgraph, or approval evidence:
- *                             mismatch | unsupported
+ *                             mismatch | unsupported; foreign (checkpoint of
+ *                             another thread); failure (= failed)
+ *   POST /__title/<mode>      thread metadata read: safe | hold | missing |
+ *                             wrong-thread | invalid | titlefailure | literal |
+ *                             long (mode captured when the read arrives)
+ *   POST /__hold/title        hold the next thread metadata read
+ *   POST /__hold/history      hold the next history read
+ *   POST /__state/<mode>      checkpoint state reads: safe | hold | failure |
+ *                             changed | foreign | malformed
+ *   POST /__hold/state        hold the next checkpoint state read
+ *   POST /__release-state     finish a held checkpoint state read
+ *   POST /__mapped-checkpoints until reset, checkpoints the browser receives
+ *                             (history, state, `checkpoints` events) carry the
+ *                             root map { "": checkpoint_id } — the HTTP shape
+ *                             some deployments return
+ *   POST /__release-title     finish a held metadata read
  *   POST /__release-history   finish a held history read
  *   POST /__hold/stream       hold the next run stream; body { afterText? } holds
  *                             after the first AI message chunk (or once the AI text
@@ -46,6 +63,7 @@
  * Nothing here is reachable from a production build: only
  * scripts/react-cockpit/serve.mjs imports it.
  */
+import { randomUUID } from 'node:crypto';
 import { request as httpRequest } from 'node:http';
 
 // Saved-evidence rewrites of the latest history entry. Tool modes mirror the
@@ -53,8 +71,12 @@ import { request as httpRequest } from 'node:http';
 const HISTORY_MODES = [
   'safe', 'hold', 'changed', 'missing', 'pending', 'failed',
   'args', 'result', 'name', 'ids', 'interrupt', 'subgraph',
-  'mismatch', 'unsupported',
+  'mismatch', 'unsupported', 'foreign', 'failure',
 ];
+// Rewrites of checkpoint state reads (POST /threads/<id>/state/checkpoint).
+const STATE_MODES = ['safe', 'hold', 'failure', 'changed', 'foreign', 'malformed'];
+// Rewrites of the thread metadata read (GET /threads/<id>) the client uses for titles.
+const TITLE_MODES = ['safe', 'hold', 'missing', 'wrong-thread', 'invalid', 'titlefailure', 'literal', 'long'];
 const HOP_BY_HOP = new Set(['connection', 'keep-alive', 'transfer-encoding', 'content-length', 'host']);
 
 const json = (response, value, status = 200) => {
@@ -104,11 +126,20 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   let failCreate = false;
   let failStream = false;
   let childFault = null;
+  let titleMode = 'safe';
+  let holdNextTitle = false;
+  let heldTitle;
+  let holdNextHistory = false;
+  let stateMode = 'safe';
+  let holdNextState = false;
+  let heldState;
+  let mapped = false;
   let historyMode = 'safe';
   let holdNextStream = null;
   let heldStream;
   let heldHistory;
   let captures = [];
+  const pendingCaptures = new Set();
   let openResponses = 0;
   let reasoning = null;
 
@@ -130,9 +161,24 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       out[key] = key === 'messages' && Array.isArray(entry) ? entry.map(withReasoning) : decorateDeep(entry);
     return out;
   };
+  const mapCheckpoint = (checkpoint) =>
+    mapped && checkpoint?.checkpoint_id
+      ? { ...checkpoint, checkpoint_map: { '': checkpoint.checkpoint_id } }
+      : checkpoint;
+  const mapState = (state) =>
+    mapped && state && typeof state === 'object'
+      ? { ...state, checkpoint: mapCheckpoint(state.checkpoint), parent_checkpoint: mapCheckpoint(state.parent_checkpoint) }
+      : state;
   /** Rewrite one SSE event for an armed injection; first AI chunk per message only. */
   const decoratedChunks = new Set();
   function decorateEvent(raw) {
+    if (mapped && /^event: *checkpoints/m.test(raw)) {
+      const dataLine = raw.split(/\r?\n/).find((line) => line.startsWith('data:'));
+      const value = JSON.parse(dataLine.slice(5));
+      const config = value?.config?.configurable;
+      if (config?.checkpoint_id) value.config.configurable = mapCheckpoint(config);
+      raw = raw.replace(dataLine, 'data: ' + JSON.stringify(value));
+    }
     if (!reasoning) return raw;
     const name = /^event: *(.*)$/m.exec(raw)?.[1]?.trim() ?? '';
     const dataLine = raw.split(/\r?\n/).find((line) => line.startsWith('data:'));
@@ -159,6 +205,16 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     failCreate = false;
     failStream = false;
     childFault = null;
+    titleMode = 'safe';
+    holdNextTitle = false;
+    heldTitle?.response.destroy();
+    heldTitle = undefined;
+    holdNextHistory = false;
+    stateMode = 'safe';
+    holdNextState = false;
+    heldState?.response.destroy();
+    heldState = undefined;
+    mapped = false;
     historyMode = 'safe';
     holdNextStream = null;
   }
@@ -188,7 +244,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
 
   function transformHistory(input) {
     const states = Array.isArray(input)
-      ? input.map((state) => ({ ...state, values: decorateValues(state.values) }))
+      ? input.map((state) => mapState({ ...state, values: decorateValues(state.values) }))
       : input;
     if (!Array.isArray(states) || states.length === 0) return states;
     const latest = structuredClone(states[0]);
@@ -209,13 +265,17 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     const approval = latest.tasks?.[0]?.interrupts?.[0]?.value;
     if (historyMode === 'mismatch' && approval?.flight) approval.flight.flight_number = 'DL999';
     if (historyMode === 'unsupported' && approval) approval.type = 'unsupported';
+    if (historyMode === 'foreign' && latest.checkpoint)
+      latest.checkpoint = { ...latest.checkpoint, thread_id: randomUUID() };
     if (historyMode === 'subgraph' && latest.checkpoint)
       latest.checkpoint = { ...latest.checkpoint, checkpoint_ns: 'foreign:checkpoint' };
     return [latest, ...states.slice(1)];
   }
 
   async function proxyHistory(request, response, path, body) {
-    if (historyMode === 'failed') {
+    const holdThis = holdNextHistory || historyMode === 'hold';
+    holdNextHistory = false;
+    if (historyMode === 'failed' || historyMode === 'failure') {
       json(response, { error: 'PRIVATE history' }, 500);
       return;
     }
@@ -230,11 +290,81 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       }
       json(response, transformHistory(JSON.parse(raw.toString('utf8'))));
     };
-    if (historyMode !== 'hold') return finish();
+    if (!holdThis) return finish();
     const held = { response, finish };
     heldHistory = held;
     response.on('close', () => {
       if (heldHistory === held) heldHistory = undefined;
+    });
+  }
+
+  async function proxyTitle(request, response, path, body) {
+    const mode = titleMode;
+    const hold = holdNextTitle || mode === 'hold';
+    holdNextTitle = false;
+    if (mode === 'titlefailure') {
+      json(response, { error: 'PRIVATE title' }, 500);
+      return;
+    }
+    const upstreamResponse = await send(request.method, path, request.headers, body);
+    const raw = await readAll(upstreamResponse);
+    const finish = () => {
+      if (response.destroyed) return;
+      if (upstreamResponse.statusCode !== 200) {
+        response.writeHead(upstreamResponse.statusCode, forwardedHeaders(upstreamResponse.headers));
+        response.end(raw);
+        return;
+      }
+      const thread = JSON.parse(raw.toString('utf8'));
+      const metadata = { ...thread.metadata };
+      if (mode === 'missing') delete metadata.title;
+      if (mode === 'invalid') metadata.title = { invalid: true };
+      if (mode === 'literal') metadata.title = '<script>alert("title")</script>';
+      if (mode === 'long') metadata.title = 'Long authored title '.repeat(30);
+      json(response, {
+        ...thread,
+        metadata,
+        ...(mode === 'wrong-thread' ? { thread_id: randomUUID() } : {}),
+      });
+    };
+    if (!hold) return finish();
+    const held = { response, finish };
+    heldTitle = held;
+    response.on('close', () => {
+      if (heldTitle === held) heldTitle = undefined;
+    });
+  }
+
+  async function proxyState(request, response, path, body) {
+    const mode = stateMode;
+    const hold = holdNextState || mode === 'hold';
+    holdNextState = false;
+    if (mode === 'failure') {
+      json(response, { error: 'PRIVATE state' }, 500);
+      return;
+    }
+    const upstreamResponse = await send(request.method, path, request.headers, body);
+    const raw = await readAll(upstreamResponse);
+    const finish = () => {
+      if (response.destroyed) return;
+      if (upstreamResponse.statusCode !== 200) {
+        response.writeHead(upstreamResponse.statusCode, forwardedHeaders(upstreamResponse.headers));
+        response.end(raw);
+        return;
+      }
+      const state = mapState(structuredClone(JSON.parse(raw.toString('utf8'))));
+      state.values = decorateValues(state.values);
+      const messages = state.values?.messages;
+      if (mode === 'changed' && messages?.length) messages.at(-1).content = 'Changed canonical content';
+      if (mode === 'foreign' && state.checkpoint) state.checkpoint.thread_id = randomUUID();
+      if (mode === 'malformed') state.values = { ...state.values, messages: [{ type: 'human', content: { bad: true }, id: 'malformed' }] };
+      json(response, state);
+    };
+    if (!hold) return finish();
+    const held = { response, finish };
+    heldState = held;
+    response.on('close', () => {
+      if (heldState === held) heldState = undefined;
     });
   }
 
@@ -267,10 +397,12 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     let armed = Boolean(hold);
     let ended = false;
     const buffered = [];
-    const finish = async () => {
-      if (upstreamResponse.statusCode === 200 && threadId) {
-        // Saved state and title as the real server persisted them, captured
-        // before the browser sees the end of the stream so tests never race it.
+    const finish = () => {
+      if (!response.destroyed) response.end();
+      if (upstreamResponse.statusCode !== 200 || !threadId) return;
+      // Saved state and title as the real server persisted them. /__captures
+      // waits for captures in flight, so tests never race the stream end.
+      const capture = (async () => {
         const state = await upstreamJson(`/threads/${threadId}/state`).catch(() => null);
         captures.push({
           path: request.url && new URL(request.url, 'http://localhost').pathname,
@@ -280,8 +412,9 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
           titleBefore,
           titleAfter: await threadTitle(threadId).catch(() => null),
         });
-      }
-      if (!response.destroyed) response.end();
+      })();
+      pendingCaptures.add(capture);
+      void capture.finally(() => pendingCaptures.delete(capture));
     };
     const held = {
       response,
@@ -299,7 +432,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         if (ended) {
           if (pending) response.write(decorateEvent(pending));
           pending = '';
-          void finish();
+          finish();
         }
       },
     };
@@ -359,7 +492,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       ended = true;
       if (holding) return;
       if (pending) response.write(decorateEvent(pending));
-      void finish();
+      finish();
     });
     response.on('close', () => {
       if (heldStream === held) heldStream = undefined;
@@ -368,10 +501,15 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
 
   const controls = {
     '/__requests': ['GET', () => requests],
-    '/__captures': ['GET', () => captures],
+    '/__captures': ['GET', async () => {
+      await Promise.all(pendingCaptures);
+      return captures;
+    }],
     '/__lifetime': ['GET', () => ({
       activeStream: Boolean(heldStream),
       activeHistory: Boolean(heldHistory),
+      activeTitle: Boolean(heldTitle),
+      activeState: Boolean(heldState),
       openResponses,
     })],
     '/__reset': ['POST', () => { reset(); return {}; }],
@@ -393,6 +531,22 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       return {};
     }],
     '/__fail-stream': ['POST', () => { failStream = true; return {}; }],
+    '/__hold/title': ['POST', () => { holdNextTitle = true; return {}; }],
+    '/__hold/history': ['POST', () => { holdNextHistory = true; return {}; }],
+    '/__hold/state': ['POST', () => { holdNextState = true; return {}; }],
+    '/__mapped-checkpoints': ['POST', () => { mapped = true; return {}; }],
+    '/__release-state': ['POST', () => {
+      const held = heldState;
+      heldState = undefined;
+      held?.finish();
+      return {};
+    }],
+    '/__release-title': ['POST', () => {
+      const held = heldTitle;
+      heldTitle = undefined;
+      held?.finish();
+      return {};
+    }],
     '/__ready': ['POST', async () => {
       await ready();
       const answer = await send('GET', '/ok', { accept: 'application/json' }, Buffer.alloc(0));
@@ -408,6 +562,24 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       if (!['role', 'task', 'error'].includes(mode)) json(response, {}, 400);
       else {
         childFault = mode;
+        json(response, {});
+      }
+      return true;
+    }
+    if (pathname.startsWith('/__state/')) {
+      const mode = pathname.slice('/__state/'.length);
+      if (!STATE_MODES.includes(mode)) json(response, {}, 400);
+      else {
+        stateMode = mode;
+        json(response, {});
+      }
+      return true;
+    }
+    if (pathname.startsWith('/__title/')) {
+      const mode = pathname.slice('/__title/'.length);
+      if (!TITLE_MODES.includes(mode)) json(response, {}, 400);
+      else {
+        titleMode = mode;
         json(response, {});
       }
       return true;
@@ -470,6 +642,10 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
           json(response, { error: 'PRIVATE graph worker failure' }, 500);
         } else await proxyStream(request, response, path, body);
       }
+      else if (request.method === 'POST' && /\/threads\/[^/]+\/state\/checkpoint$/.test(pathname))
+        await proxyState(request, response, path, body);
+      else if (request.method === 'GET' && /^\/threads\/[^/]+$/.test(pathname.slice(prefix.length)))
+        await proxyTitle(request, response, path, body);
       else if (reasoning && request.method === 'GET' && /\/threads\/[^/]+\/state$/.test(pathname)) {
         const upstreamResponse = await send(request.method, path, request.headers, body);
         const raw = await readAll(upstreamResponse);

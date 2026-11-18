@@ -88,11 +88,13 @@ export function reactCockpitConfiguration(topic = 'streaming') {
     return Object.freeze({
       topic: 'timeline', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/timeline/react',
       base: '/chat/timeline/react/', port: 4626, project: 'cockpit-chat-timeline-react',
+      backend: aimockLanggraph('chat/timeline', 4626),
     });
   if (topic === 'chat-threads')
     return Object.freeze({
       topic: 'threads', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/threads/react',
       base: '/chat/threads/react/', port: 4625, project: 'cockpit-chat-threads-react',
+      backend: aimockLanggraph('chat/threads', 4625),
     });
   if (topic === 'chat-subagents')
     return Object.freeze({

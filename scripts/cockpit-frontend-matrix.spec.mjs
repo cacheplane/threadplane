@@ -120,6 +120,10 @@ test('Chat Timeline owns an exact native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('chat-timeline'), {
     topic: 'timeline', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/timeline/react',
     base: '/chat/timeline/react/', port: 4626, project: 'cockpit-chat-timeline-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/timeline/python',
+      fixtures: 'cockpit/chat/timeline/angular/e2e/fixtures', langgraphPort: 5626,
+    },
   });
   for (const key of ['timeline', 'chat/timeline', '../chat-timeline'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -139,6 +143,10 @@ test('Chat Threads owns an exact native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('chat-threads'), {
     topic: 'threads', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/threads/react',
     base: '/chat/threads/react/', port: 4625, project: 'cockpit-chat-threads-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/threads/python',
+      fixtures: 'cockpit/chat/threads/angular/e2e/fixtures', langgraphPort: 5625,
+    },
   });
   for (const key of ['threads', 'chat/threads', '../chat-threads'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
