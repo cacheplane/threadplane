@@ -11,7 +11,7 @@ The native React APIs on this page are experimental, private source-build packag
 
 ## Compose text and generated content
 
-The application continues to use `MessageList`, Markdown, and tool observations for the conversation. For an admitted dashboard specification it adds `RenderSpec` with a closed registry and the matching state. Keeping those paths explicit lets ordinary text remain readable while generated content uses a controlled set of components. This example waits for a confirmed layout rather than promising Angular’s progressive rendering behavior.
+The application continues to use `MessageList`, Markdown, and tool observations for the conversation. For an admitted dashboard specification it adds `RenderSpec` with a closed registry and the matching state. Keeping those paths explicit lets ordinary text remain readable while generated content uses a controlled set of components. This example waits for a confirmed layout rather than promising Angular’s progressive rendering behavior. When a spec is carried by an assistant message, `generativeUi` on `MessageList` and `Chat` renders it in the transcript, and `progressive: true` matches the Angular behavior: each element appears once its type arrives, its string props grow as they stream, and its `on` bindings wait until the whole element has finished, so no action runs with partial params.
 
 The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
