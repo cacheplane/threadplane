@@ -77,8 +77,8 @@ export function check() {
   const react = useAgent(session), angular = observeAgent(session)();
   const same: typeof react = angular;
   react.transcript; angular.subagents;
-  // @ts-expect-error No core message aggregate is manufactured.
-  react.messages;
+  // The session publishes the core fields beside its protocol evidence.
+  react.messages; angular.toolCalls;
   // @ts-expect-error Native snapshots remain readonly through Angular.
   angular.state = {};
   return same;
