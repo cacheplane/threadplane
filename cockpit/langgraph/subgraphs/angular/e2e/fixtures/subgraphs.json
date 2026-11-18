@@ -35,6 +35,63 @@
       "response": {
         "content": "Hi! I answer questions, and when one needs a factual deep dive I hand the topic to a research subgraph before replying. Ask me something specific and you'll see it happen."
       }
+    },
+    {
+      "match": {
+        "responseFormat": "json_schema",
+        "userMessage": "Hello"
+      },
+      "response": {
+        "content": {
+          "needs_research": false,
+          "topic": ""
+        }
+      }
+    },
+    {
+      "match": {
+        "responseFormat": "json_schema",
+        "userMessage": "Literal"
+      },
+      "response": {
+        "content": {
+          "needs_research": true,
+          "topic": "<script>private topic</script>"
+        }
+      }
+    },
+    {
+      "match": {
+        "responseFormat": "json_schema",
+        "userMessage": ""
+      },
+      "response": {
+        "content": {
+          "needs_research": true,
+          "topic": "Fictional checkpoint topic"
+        }
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Research Subgraph",
+        "userMessage": "Topic: <script>private topic</script>"
+      },
+      "response": { "content": "<img src=x onerror=alert(1)> CHILD-ONLY brief" }
+    },
+    {
+      "match": {
+        "systemMessage": "Research Subgraph",
+        "userMessage": "Topic: Fictional checkpoint topic"
+      },
+      "response": { "content": "CHILD-ONLY brief" }
+    },
+    {
+      "match": {
+        "systemMessage": "Orchestrator Agent",
+        "userMessage": ""
+      },
+      "response": { "content": "Parent answer" }
     }
   ]
 }

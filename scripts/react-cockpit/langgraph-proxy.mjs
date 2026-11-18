@@ -22,7 +22,8 @@
  *                             or tool evidence: args | result | name | ids |
  *                             interrupt | subgraph, or approval evidence:
  *                             mismatch | unsupported; foreign (checkpoint of
- *                             another thread); failure (= failed)
+ *                             another thread); failure (= failed); paused
+ *                             (pending with an unknown interrupt task)
  *   POST /__title/<mode>      thread metadata read: safe | hold | missing |
  *                             wrong-thread | invalid | titlefailure | literal |
  *                             long (mode captured when the read arrives)
@@ -38,6 +39,10 @@
  *                             some deployments return
  *   POST /__release-title     finish a held metadata read
  *   POST /__release-history   finish a held history read
+ *   POST /__history-values    body { set?, omit? }: the next history read's
+ *                             latest values get keys set or removed (an
+ *                             authoritative server-side correction, e.g.
+ *                             replaced or emptied messages). Injected data.
  *   POST /__hold/stream       hold the next run stream; body { afterText? } holds
  *                             after the first AI message chunk (or once the AI text
  *                             contains afterText); { beforeToolResult: true }
@@ -50,6 +55,32 @@
  *                             or a child `error|…` event carrying a private
  *                             diagnostic. Injected data, as the authored
  *                             subagents fixture did.
+ *                             { immediate: true } holds right after the first
+ *                             event (e.g. a resume whose graph emits no tokens)
+ *   POST /__interrupt/<mode>  unknown | multiple: until reset, root interrupts
+ *                             the browser receives are rewritten to an
+ *                             unsupported kind, or duplicated into a batch of
+ *                             two. Injected data: a real graph emits one
+ *                             supported interrupt per pause.
+ *   POST /__values            body { set?, omit?, persist? }: the next run's
+ *                             `values` events get keys set or removed (injected
+ *                             authoritative state a real graph won't produce:
+ *                             replaced or malformed fields, an unexpected
+ *                             pause). `persist` is written to the real thread
+ *                             before the stream ends so later turns agree.
+ *   POST /__stream/edit       body { ops }: edits to the next run stream, each
+ *                             { event: regex, op, ... } applied to matching SSE
+ *                             events: drop | patch { path?, set } | omit
+ *                             { path?, keys } | insertAfter { insert: { event,
+ *                             data } } (`$ns` in the inserted name is the
+ *                             matched event's `|namespace`; the string
+ *                             "$humanId" in data is the submitted message id).
+ *                             `once: true` applies an op to its first match only;
+ *                             `ifKey` only to events whose state has that key.
+ *                             For `checkpoints` events, ops address `values`.
+ *                             Injected data for stream shapes a real graph
+ *                             won't produce (missing/stale markers, child
+ *                             pauses, errors and tool calls).
  *   POST /__fail-stream       next run stream answers 500 without forwarding
  *                             (the graph worker is unavailable)
  *   POST /__release           flush and resume a held run stream
@@ -71,7 +102,7 @@ import { request as httpRequest } from 'node:http';
 const HISTORY_MODES = [
   'safe', 'hold', 'changed', 'missing', 'pending', 'failed',
   'args', 'result', 'name', 'ids', 'interrupt', 'subgraph',
-  'mismatch', 'unsupported', 'foreign', 'failure',
+  'mismatch', 'unsupported', 'foreign', 'failure', 'paused',
 ];
 // Rewrites of checkpoint state reads (POST /threads/<id>/state/checkpoint).
 const STATE_MODES = ['safe', 'hold', 'failure', 'changed', 'foreign', 'malformed'];
@@ -134,6 +165,10 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   let holdNextState = false;
   let heldState;
   let mapped = false;
+  let interruptMode = null;
+  let nextValues = null;
+  let nextHistoryValues = null;
+  let nextStreamEdits = null;
   let historyMode = 'safe';
   let holdNextStream = null;
   let heldStream;
@@ -169,6 +204,19 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     mapped && state && typeof state === 'object'
       ? { ...state, checkpoint: mapCheckpoint(state.checkpoint), parent_checkpoint: mapCheckpoint(state.parent_checkpoint) }
       : state;
+  const rewriteInterrupts = (value) => {
+    if (Array.isArray(value)) return value.map(rewriteInterrupts);
+    if (!value || typeof value !== 'object') return value;
+    const out = {};
+    for (const [key, entry] of Object.entries(value)) {
+      if (key === '__interrupt__' && Array.isArray(entry) && entry.length) {
+        out[key] = interruptMode === 'unknown'
+          ? entry.map((item) => ({ ...item, value: { kind: 'unknown' } }))
+          : [...entry, { ...entry[0], id: `${entry[0].id ?? 'interrupt'}-duplicate` }];
+      } else out[key] = rewriteInterrupts(entry);
+    }
+    return out;
+  };
   /** Rewrite one SSE event for an armed injection; first AI chunk per message only. */
   const decoratedChunks = new Set();
   function decorateEvent(raw) {
@@ -178,6 +226,10 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       const config = value?.config?.configurable;
       if (config?.checkpoint_id) value.config.configurable = mapCheckpoint(config);
       raw = raw.replace(dataLine, 'data: ' + JSON.stringify(value));
+    }
+    if (interruptMode && raw.includes('"__interrupt__"')) {
+      const dataLine = raw.split(/\r?\n/).find((line) => line.startsWith('data:'));
+      raw = raw.replace(dataLine, 'data: ' + JSON.stringify(rewriteInterrupts(JSON.parse(dataLine.slice(5)))));
     }
     if (!reasoning) return raw;
     const name = /^event: *(.*)$/m.exec(raw)?.[1]?.trim() ?? '';
@@ -215,6 +267,10 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     heldState?.response.destroy();
     heldState = undefined;
     mapped = false;
+    interruptMode = null;
+    nextValues = null;
+    nextHistoryValues = null;
+    nextStreamEdits = null;
     historyMode = 'safe';
     holdNextStream = null;
   }
@@ -242,12 +298,16 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     return Buffer.concat(chunks);
   }
 
-  function transformHistory(input) {
+  function transformHistory(input, rewrite) {
     const states = Array.isArray(input)
       ? input.map((state) => mapState({ ...state, values: decorateValues(state.values) }))
       : input;
     if (!Array.isArray(states) || states.length === 0) return states;
     const latest = structuredClone(states[0]);
+    if (rewrite) {
+      latest.values = { ...latest.values, ...(rewrite.set ?? {}) };
+      for (const key of rewrite.omit ?? []) delete latest.values[key];
+    }
     const messages = latest.values?.messages ?? [];
     const assistant = messages.find((m) => m.tool_calls?.length);
     const result = messages.find((m) => m.type === 'tool');
@@ -255,6 +315,10 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       messages.at(-1).content = 'Changed saved answer';
     if (historyMode === 'missing') messages.pop();
     if (historyMode === 'pending') latest.next = ['unexpected'];
+    if (historyMode === 'paused') {
+      latest.next = ['unknown'];
+      latest.tasks = [{ id: 'task', name: 'unknown', interrupts: [{ id: 'pause', value: { kind: 'unknown' } }] }];
+    }
     if (historyMode === 'args' && assistant)
       assistant.tool_calls[0].args = { flight_number: 'Changed' };
     if (historyMode === 'result' && result) result.content = 'Changed tool observation';
@@ -275,6 +339,8 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   async function proxyHistory(request, response, path, body) {
     const holdThis = holdNextHistory || historyMode === 'hold';
     holdNextHistory = false;
+    const rewrite = nextHistoryValues;
+    nextHistoryValues = null;
     if (historyMode === 'failed' || historyMode === 'failure') {
       json(response, { error: 'PRIVATE history' }, 500);
       return;
@@ -288,7 +354,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         response.end(raw);
         return;
       }
-      json(response, transformHistory(JSON.parse(raw.toString('utf8'))));
+      json(response, transformHistory(JSON.parse(raw.toString('utf8')), rewrite));
     };
     if (!holdThis) return finish();
     const held = { response, finish };
@@ -383,6 +449,83 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     holdNextStream = null;
     let fault = childFault;
     childFault = null;
+    const values = nextValues;
+    nextValues = null;
+    const edits = (nextStreamEdits ?? []).map((edit) => ({ ...edit, pattern: new RegExp(edit.event), used: false }));
+    nextStreamEdits = null;
+    let humanId = null;
+    try { humanId = JSON.parse(body.toString('utf8')).input?.messages?.at(-1)?.id ?? null; } catch { /* no input */ }
+    const withHuman = (value) => JSON.parse(JSON.stringify(value).replaceAll('"$humanId"', JSON.stringify(humanId)));
+    const at = (root, path) => {
+      let target = root;
+      for (const part of (path ?? '').split('.').filter(Boolean)) {
+        if (target == null) return null;
+        target = Array.isArray(target) ? target.at(Number(part)) : target[part];
+      }
+      return target;
+    };
+    const edit = (raw) => {
+      if (!edits.length) return raw;
+      const name = /^event: *([^\r\n]*)/m.exec(raw)?.[1]?.trim() ?? '';
+      const dataLine = raw.split(/\r?\n/).find((line) => line.startsWith('data:'));
+      const data = dataLine ? JSON.parse(dataLine.slice(5)) : null;
+      let out = null;
+      const after = [];
+      let changed = false;
+      for (const op of edits) {
+        if ((op.once && op.used) || !op.pattern.test(name)) continue;
+        // A `checkpoints` event carries state under `values`; ops address the state.
+        const state = name.startsWith('checkpoints') ? data?.values : data;
+        if (op.ifKey && !(state && typeof state === 'object' && op.ifKey in state)) continue;
+        op.used = true;
+        if (op.op === 'drop') return '';
+        if (op.op === 'patch' || op.op === 'omit') {
+          const target = at(state, op.path);
+          if (!target || typeof target !== 'object') continue;
+          if (op.op === 'patch') Object.assign(target, withHuman(op.set ?? {}));
+          else for (const key of op.keys ?? []) delete target[key];
+          changed = true;
+        }
+        if (op.op === 'insertAfter') {
+          const namespace = name.includes('|') ? name.slice(name.indexOf('|')) : '';
+          after.push(`event: ${op.insert.event.replace('$ns', namespace)}\ndata: ${JSON.stringify(withHuman(op.insert.data))}\n\n`);
+        }
+      }
+      out = changed ? raw.replace(dataLine, 'data: ' + JSON.stringify(data)) : raw;
+      return out + after.join('');
+    };
+    const apply = (state) => {
+      if (!state || typeof state !== 'object' || Array.isArray(state)) return state;
+      const out = { ...state, ...(values.set ?? {}) };
+      for (const key of values.omit ?? []) delete out[key];
+      return out;
+    };
+    const touched = (state) =>
+      state && typeof state === 'object' &&
+      [...Object.keys(values.set ?? {}), ...(values.omit ?? [])].some((key) => key in state);
+    const inject = (raw) => {
+      raw = edit(raw);
+      if (!raw) return raw;
+      if (raw.indexOf('event:') !== raw.lastIndexOf('event:'))
+        return raw.split(/(?<=\r?\n\r?\n)/).map((part) => inject2(part)).join('');
+      return inject2(raw);
+    };
+    const inject2 = (raw) => {
+      raw = decorateEvent(raw);
+      if (!values) return raw;
+      // Root graph only: `values`, node outputs in `updates`, and the values a
+      // `checkpoints` event carries, so every view of the state agrees.
+      const name = /^event: *([^\r\n]*)/m.exec(raw)?.[1]?.trim();
+      if (!['values', 'updates', 'checkpoints'].includes(name)) return raw;
+      const dataLine = raw.split(/\r?\n/).find((line) => line.startsWith('data:'));
+      let value = JSON.parse(dataLine.slice(5));
+      if (name === 'values') value = apply(value);
+      else if (name === 'checkpoints') value = { ...value, values: apply(value.values) };
+      else
+        value = Object.fromEntries(Object.entries(value).map(([node, output]) =>
+          [node, touched(output) ? apply(output) : output]));
+      return raw.replace(dataLine, 'data: ' + JSON.stringify(value));
+    };
     const threadId = /\/threads\/([^/]+)\/runs\/stream/.exec(path)?.[1];
     const titleBefore = threadId ? await threadTitle(threadId) : null;
     const upstreamResponse = await send(request.method, path, request.headers, body);
@@ -397,7 +540,16 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     let armed = Boolean(hold);
     let ended = false;
     const buffered = [];
+    let persisted = false;
     const finish = () => {
+      if (values?.persist && threadId && !persisted) {
+        persisted = true;
+        const update = Buffer.from(JSON.stringify({ values: values.persist }));
+        void send('POST', `/threads/${threadId}/state`, { 'content-type': 'application/json' }, update)
+          .then(readAll, () => undefined)
+          .finally(finish);
+        return;
+      }
       if (!response.destroyed) response.end();
       if (upstreamResponse.statusCode !== 200 || !threadId) return;
       // Saved state and title as the real server persisted them. /__captures
@@ -425,12 +577,12 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         let match;
         while ((match = /\r?\n\r?\n/.exec(rest))) {
           const end = match.index + match[0].length;
-          response.write(decorateEvent(rest.slice(0, end)));
+          response.write(inject(rest.slice(0, end)));
           rest = rest.slice(end);
         }
         pending = rest + pending;
         if (ended) {
-          if (pending) response.write(decorateEvent(pending));
+          if (pending) response.write(inject(pending));
           pending = '';
           finish();
         }
@@ -467,7 +619,13 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
           pending = raw + pending;
           break;
         }
-        response.write(decorateEvent(raw));
+        response.write(inject(raw));
+        if (armed && hold.immediate) {
+          armed = false;
+          holding = true;
+          heldStream = held;
+          continue;
+        }
         if (armed && hold.afterChildMessage && eventName.startsWith('messages|') && aiText(raw)) {
           armed = false;
           holding = true;
@@ -477,7 +635,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         const delta = aiText(raw);
         if (delta === null) continue;
         text += delta;
-        if (armed && !hold.beforeToolResult && !hold.afterChildMessage && (hold.afterText ? text.includes(hold.afterText) : true)) {
+        if (armed && !hold.beforeToolResult && !hold.afterChildMessage && !hold.immediate && (hold.afterText ? text.includes(hold.afterText) : true)) {
           armed = false;
           holding = true;
           heldStream = held;
@@ -491,7 +649,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     upstreamResponse.on('end', () => {
       ended = true;
       if (holding) return;
-      if (pending) response.write(decorateEvent(pending));
+      if (pending) response.write(inject(pending));
       finish();
     });
     response.on('close', () => {
@@ -527,10 +685,14 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         afterText: body.afterText ?? null,
         beforeToolResult: body.beforeToolResult === true,
         afterChildMessage: body.afterChildMessage === true,
+        immediate: body.immediate === true,
       };
       return {};
     }],
     '/__fail-stream': ['POST', () => { failStream = true; return {}; }],
+    '/__values': ['POST', (body) => { nextValues = body; return {}; }],
+    '/__stream/edit': ['POST', (body) => { nextStreamEdits = body.ops ?? []; return {}; }],
+    '/__history-values': ['POST', (body) => { nextHistoryValues = body; return {}; }],
     '/__hold/title': ['POST', () => { holdNextTitle = true; return {}; }],
     '/__hold/history': ['POST', () => { holdNextHistory = true; return {}; }],
     '/__hold/state': ['POST', () => { holdNextState = true; return {}; }],
@@ -562,6 +724,15 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       if (!['role', 'task', 'error'].includes(mode)) json(response, {}, 400);
       else {
         childFault = mode;
+        json(response, {});
+      }
+      return true;
+    }
+    if (pathname.startsWith('/__interrupt/')) {
+      const mode = pathname.slice('/__interrupt/'.length);
+      if (!['unknown', 'multiple'].includes(mode)) json(response, {}, 400);
+      else {
+        interruptMode = mode;
         json(response, {});
       }
       return true;

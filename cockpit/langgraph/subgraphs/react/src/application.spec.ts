@@ -241,6 +241,42 @@ it('serializes creation and keeps child observations readonly until final bindin
   });
   expect(contents(h)).toEqual(['Question', 'Parent answer']);
 });
+it('a child input checkpoint without fields precedes a confirmed nested route', async () => {
+  // A real LangGraph server streams the child's `__start__` checkpoint with
+  // `values: {}` before the child's first node writes topic and brief.
+  const h = setup(),
+    { pending, selected } = await h.start();
+  selected.replace({
+    subgraphs: [{ ...selected.child(), values: {} }],
+  });
+  selected.research();
+  selected.final();
+  selected.runs[0].resolve('success');
+  await pending;
+  expect(h.application.getSnapshot()).toMatchObject({
+    route: 'nested',
+    topic: 'Topic',
+    brief: 'Child brief',
+    canSubmit: true,
+  });
+});
+it('a child with a malformed topic stays unconfirmed', async () => {
+  const h = setup(),
+    { pending, selected } = await h.start();
+  selected.replace({
+    subgraphs: [
+      { ...selected.child(), values: { research_topic: 42, research_brief: '' } },
+    ],
+  });
+  selected.research();
+  selected.final();
+  selected.runs[0].resolve('success');
+  await pending;
+  expect(h.application.getSnapshot()).toMatchObject({
+    route: 'unconfirmed',
+    canSubmit: false,
+  });
+});
 it('research then greeting clears stale boundary and children while preserving parent history', async () => {
   const h = setup(),
     selected = await h.complete();

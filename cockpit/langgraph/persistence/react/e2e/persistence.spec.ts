@@ -1,4 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
+// Backend: aimock replays cockpit/langgraph/persistence/angular/e2e/fixtures
+// (shared with the Angular example) into a real `langgraph dev`, which saves
+// each thread's checkpoints. The React static server proxies /api to it,
+// recording requests and injecting holds, failures and server-side history
+// corrections (scripts/react-cockpit/langgraph-proxy.mjs).
 
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
@@ -71,7 +76,16 @@ test('selection reads changed server history instead of cached rows; selecting t
   request,
 }) => {
   await two(page);
-  await request.post('/__replace-first');
+  // The next history read (Conversation 1) returns a server-side correction.
+  await request.post('/__history-values', {
+    data: {
+      set: {
+        messages: [
+          { type: 'human', id: 'server-correction', content: 'Server correction: Avery likes cocoa.' },
+        ],
+      },
+    },
+  });
   await page
     .getByRole('button', { name: 'Conversation 1', exact: true })
     .click();
@@ -98,7 +112,7 @@ test('new draft keeps confirmed entries, creates lazily, and reload has an empty
   await expect(
     page.getByRole('button', { name: 'Conversation 1', exact: true })
   ).toBeVisible();
-  await send(page, 'Recall');
+  await send(page, 'Recall in a new conversation');
   await expect(transcript(page)).toContainText('No facts remembered.');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   const creates = wire.filter((entry) => entry.path.endsWith('/threads'));
@@ -116,7 +130,7 @@ test('held history blocks competing commands; Stop quarantines only the selected
   request,
 }) => {
   await two(page);
-  await request.post('/__hold-history');
+  await request.post('/__hold/history');
   await page
     .getByRole('button', { name: 'Conversation 1', exact: true })
     .click();
@@ -158,7 +172,7 @@ for (const mode of ['fail', 'pause'])
     request,
   }) => {
     await two(page);
-    await request.post('/__' + mode + '-history');
+    await request.post(mode === 'fail' ? '/__history/failed' : '/__history/paused');
     await page
       .getByRole('button', { name: 'Conversation 1', exact: true })
       .click();
@@ -183,7 +197,7 @@ for (const mode of ['fail', 'pause'])
 
 test('pagehide releases a held history read', async ({ page, request }) => {
   await two(page);
-  await request.post('/__hold-history');
+  await request.post('/__hold/history');
   await page
     .getByRole('button', { name: 'Conversation 1', exact: true })
     .click();
@@ -192,7 +206,7 @@ test('pagehide releases a held history read', async ({ page, request }) => {
   );
   await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeHistory)
     .toBe(false);
   await request.post('/__release');
   await expect(page.locator('#root')).toBeEmpty();
@@ -203,7 +217,7 @@ test('an authoritative empty history clears previous rows', async ({
   request,
 }) => {
   await two(page);
-  await request.post('/__empty-first');
+  await request.post('/__history-values', { data: { set: { messages: [] } } });
   await page
     .getByRole('button', { name: 'Conversation 1', exact: true })
     .click();
