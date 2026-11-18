@@ -541,6 +541,63 @@
 .a2ui-unsupported {
   display: contents;
 }
+/* RenderPendingFallback: a component whose data-bound props have not arrived. */
+.a2ui-surface .tp-render-pending {
+  display: block;
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: var(--a2ui-spacing-3);
+  border: 1px solid var(--a2ui-outline);
+  border-radius: var(--a2ui-shape-medium);
+  background: var(--a2ui-surface-variant);
+  color: var(--a2ui-on-surface-variant);
+  font-size: var(--a2ui-typography-label-size);
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__label {
+  display: block;
+  margin-block-end: var(--a2ui-spacing-2);
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--a2ui-spacing-2);
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__row {
+  display: block;
+  block-size: 0.625rem;
+  border-radius: var(--a2ui-shape-extra-small);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, currentColor 22%, transparent) 0%,
+    color-mix(in srgb, currentColor 10%, transparent) 50%,
+    color-mix(in srgb, currentColor 22%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: a2ui-pending-shimmer 1.4s ease-in-out infinite;
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__row:nth-child(1) {
+  inline-size: 70%;
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__row:nth-child(2) {
+  inline-size: 90%;
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__row:nth-child(3) {
+  inline-size: 50%;
+}
+@keyframes a2ui-pending-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .a2ui-surface .tp-render-pending .tp-genui-skeleton__row {
+    animation: none;
+  }
+}
 @media (forced-colors: active) {
   .a2ui-card,
   .a2ui-divider--horizontal {
@@ -554,6 +611,12 @@
   }
   .a2ui-modal {
     border-color: CanvasText;
+  }
+  .a2ui-surface .tp-render-pending {
+    border-color: CanvasText;
+  }
+  .a2ui-surface .tp-render-pending .tp-genui-skeleton__row {
+    background: GrayText;
   }
   .a2ui-tf__input,
   .a2ui-dti__input,

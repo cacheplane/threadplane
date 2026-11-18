@@ -11,8 +11,12 @@ import {
   type A2uiSurfaceSnapshot,
   type A2uiValue,
 } from '@threadplane/content/a2ui';
-import { RenderSpec, type ReactRenderRegistry } from '../render/index.js';
-import { a2uiBasicCatalog } from './catalog/index.js';
+import {
+  RenderSpec,
+  type ReactRenderRegistry,
+  type RenderSpecProps,
+} from '../render/index.js';
+import { a2uiBasicCatalog, a2uiEagerCatalog } from './catalog/index.js';
 import { A2uiDefaultFallback } from './default-fallback.js';
 import {
   A2uiActionContext,
@@ -137,6 +141,13 @@ export interface A2uiSurfaceProps {
   };
   /** Components by A2UI name. Defaults to `a2uiBasicCatalog()`; keep it stable. */
   readonly catalog?: ReactRenderRegistry;
+  /**
+   * Shown in place of a component while a data-bound prop has no value yet,
+   * such as components that arrive before the data model. Defaults to
+   * `RenderPendingFallback`; `null` mounts every component of the default
+   * catalog at once. A readiness entry in your own `catalog` still decides.
+   */
+  readonly pendingFallback?: RenderSpecProps['pendingFallback'];
   readonly className?: string;
 }
 
@@ -149,7 +160,9 @@ export interface A2uiSurfaceProps {
  * show their messages until they pass. A Button whose own `checks` fail is
  * disabled. A Button with a function-call action runs it here, through
  * `functions` or the built-in `openUrl`, without consulting `checks` on
- * inputs. Function-call props show their current value. A component the
+ * inputs. Function-call props show their current value. A component whose
+ * data-bound props have not arrived shows `pendingFallback` until they do,
+ * then stays mounted; an input's own `value` may stay unset. A component the
  * catalog lacks keeps its children. A child template is stamped once per
  * item of its list; inputs, checks and actions inside it work on that item.
  * The surface's `theme` sets the accent colour from a hex `primaryColor` and
@@ -162,6 +175,7 @@ export function A2uiSurface({
   onValidationError,
   functions,
   catalog,
+  pendingFallback,
   className,
 }: A2uiSurfaceProps) {
   const { spec, state, sources } = useMemo(
@@ -276,9 +290,13 @@ export function A2uiSurface({
         <A2uiActionContext.Provider value={actions}>
           <RenderSpec
             spec={spec}
-            registry={catalog ?? a2uiBasicCatalog()}
+            registry={
+              catalog ??
+              (pendingFallback === null ? a2uiEagerCatalog() : a2uiBasicCatalog())
+            }
             state={state}
             fallback={A2uiDefaultFallback}
+            pendingFallback={pendingFallback}
           />
         </A2uiActionContext.Provider>
       </A2uiSurfaceContext.Provider>

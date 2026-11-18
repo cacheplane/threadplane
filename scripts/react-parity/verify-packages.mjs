@@ -521,7 +521,7 @@ const SUPPORTED_EXPORTS = {
   ],
   'react/debug': ['ChatDebug', 'StateDiff', 'useAgentDevtools'],
   'react/markdown': ['Markdown', 'MarkdownComponentsProvider', 'MarkdownCopyButton'],
-  'react/render': ['RenderSpec', 'createRenderLifecycle', 'RenderDevtools'],
+  'react/render': ['RenderSpec', 'createRenderLifecycle', 'RenderDevtools', 'RenderPendingFallback'],
   'react/a2ui': ['A2uiSurface', 'a2uiBasicCatalog', 'useA2uiSurfaceWriter', 'A2uiMessageSurfaces', 'a2uiClientCapabilities'],
   'content/messages': ['createMessageContent', 'deriveDomain', 'deriveSourceType', 'deriveMonogram', 'monogramHue', 'formatPublished', 'monogramColor', 'citationTypeMeta', 'citationTypeLabel', 'citationSourceVisual'],
   'content/json': ['createJson'],
