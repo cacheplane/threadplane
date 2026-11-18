@@ -42,5 +42,7 @@ void owner.submit({ message: 'text', tools: [] });
 void owner.submit({ message: 'text', signal: new AbortController().signal });
 // @ts-expect-error captured authored state is readonly
 patch['settings'] = {};
-// @ts-expect-error core intentionally retains its string-only submit contract
+// The neutral core accepts the same text-with-state input.
 void core.submit({ message: 'text', state: {} });
+// @ts-expect-error the neutral core still rejects fields outside message and state
+void core.submit({ message: 'text', messages: [] });

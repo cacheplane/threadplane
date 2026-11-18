@@ -103,8 +103,10 @@ export function checkCandidate(signal: AbortSignal) {
   const agent: AgentSession = createAgentSession(session);
   const core: AgentSnapshot = agent.getSnapshot();
   void agent.submit('Hello', { signal });
-  // @ts-expect-error The core view submits text only; state goes through the native session.
   void agent.submit({ message: 'Hello' });
+  void agent.submit({ message: 'Hello', state: { topic: 'x' } });
+  // @ts-expect-error The core view takes a message and state only.
+  void agent.submit({ message: 'Hello', messages: [] });
   // @ts-expect-error Native resume stays on the native session.
   void agent.resume;
   // @ts-expect-error The view wraps a session, not its options.
