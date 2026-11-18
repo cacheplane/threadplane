@@ -103,6 +103,7 @@ it('requires the Scripts owner for reviewed test-only changes while allowing unr
   const scope = classifyFromAffected(['scripts/generate-shared-deployment-config.spec.ts'], []);
   for (const [key, enabled] of Object.entries(scope)) environment[`SCOPE_${key.toUpperCase()}`] = String(enabled);
   environment.RESULT_CI_SCOPE = 'success';
+  environment.RESULT_CI_GUARDS = 'success';
   for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
     const run = spawnSync('bash', ['-c', readStepRunBlock(step)], {
       encoding: 'utf8', env: { ...environment, RESULT_SCRIPTS_TESTS: result },
@@ -193,9 +194,10 @@ it('starts long verification chains before supporting runner requests without a 
   assert.deepEqual(ready.sort(), ['library-package', 'library', 'native-conversation', 'website-e2e', 'website-preview-build', 'website-preview-deploy'].sort());
   const width = ready.reduce((total, name) => {
     const axes = [...jobs.get(name).matchAll(/^ {8}\w+: \[([^\]]+)\]/gm)];
-    return total + axes.reduce((product, [, values]) => product * values.split(',').length, 1);
+    const included = [...jobs.get(name).matchAll(/^ {10}- \{/gm)].length;
+    return total + axes.reduce((product, [, values]) => product * values.split(',').length, 1) + included;
   }, 0);
-  assert.equal(width, 16, 'keep the first scheduling wave below the former33requests');
+  assert.equal(width, 18, 'keep the first scheduling wave below the former33requests');
   const visited = new Set();
   function visit(name, path = new Set()) {
     assert.ok(needs.has(name), `unknown dependency ${name}`);
@@ -287,7 +289,7 @@ it('requires early Website deployment before preview success and preserves fork 
   const script = readStepRunBlock(step);
   const environment = { ...process.env };
   for (const [, key] of step.matchAll(/^ {10}((?:RESULT|SCOPE)_[A-Z0-9_]+):/gm)) environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
-  Object.assign(environment, { RESULT_CI_SCOPE: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_BUILD: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
+  Object.assign(environment, { RESULT_CI_SCOPE: 'success', RESULT_CI_GUARDS: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_BUILD: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
   for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
     const run = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, PREVIEW_LANES_ELIGIBLE: 'true', RESULT_WEBSITE_PREVIEW_DEPLOY: result } });
     assert.equal(run.status, result === 'success' ? 0 : 1, `${result}: ${run.stdout}\n${run.stderr}`);
@@ -349,7 +351,14 @@ it('runs the production copy gate through its minimal target while retaining the
 it('groups the complete Website suite by runtime dependencies and runs production checks independently', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const suite = readJobBlock(workflow, 'website-e2e');
-  assert.match(suite, /suite: \[control-plane, agents, ag-ui, chat, render\]/);
+  assert.match(suite, /suite: \[agents, ag-ui, chat, render\]/);
+  // control-plane is split across shards; the divisor in the job name and the
+  // run step must equal the number of shard entries, or tests go unrun.
+  const shards = [...suite.matchAll(/^ {10}- \{ suite: control-plane, shard: (\d+) \}$/gm)].map(match => Number(match[1]));
+  assert.deepEqual(shards, [1, 2, 3]);
+  assert.equal([...suite.matchAll(/^ {10}- \{/gm)].length, shards.length, 'only control-plane is sharded');
+  assert.ok(suite.includes(`format(' {0}/${shards.length}', matrix.shard)`));
+  assert.ok(suite.includes(`--skip-nx-cache\${{ matrix.shard && format(' -- --shard={0}/${shards.length}', matrix.shard) || '' }}\n`));
   assert.match(suite, /fail-fast: false/);
   assert.match(suite, /npx nx run website:e2e-\$\{\{ matrix.suite \}\} --skip-nx-cache/);
   assert.doesNotMatch(suite, /Public copy boundary|Stage scroll verification|--grep/);
@@ -387,7 +396,7 @@ it('delegates local public coverage only when its required deployed preview is e
 
 it('requires reusable consumer isolation checks and owns preparation for the complete local run', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/react-cockpit\/consumer-preparation\.spec\.mjs/);
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier'), /scripts\/react-cockpit\/consumer-preparation\.spec\.mjs/);
   const step = readNamedStep(readJobBlock(workflow, 'website-e2e'), 'Run local Website suite');
   assert.match(step, /preparation=\$\(mktemp -d\)/);
   assert.match(step, /trap 'rm -rf "\$preparation"' EXIT/);
@@ -397,7 +406,7 @@ it('requires reusable consumer isolation checks and owns preparation for the com
 
 it('bounds Angular startup only in Website control-plane CI and exercises lifecycle cleanup', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/website-angular-startup\.spec\.mjs/);
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier'), /scripts\/website-angular-startup\.spec\.mjs/);
   assert.match(await readFile('scripts/vite.config.mts', 'utf8'), /'website-angular-startup\.spec\.mjs'/);
   const step = readNamedStep(readJobBlock(workflow, 'website-e2e'), 'Run local Website suite');
   assert.match(step, /WEBSITE_ANGULAR_STARTUP: \$\{\{ matrix\.suite == 'control-plane' && '2' \|\| '' \}\}/);
@@ -405,7 +414,7 @@ it('bounds Angular startup only in Website control-plane CI and exercises lifecy
 
 it('bounds Agents startup in its own CI lane with explicit Node test registration and runner capacity', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/website-agents-startup\.spec\.mjs/);
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier'), /scripts\/website-agents-startup\.spec\.mjs/);
   assert.match(await readFile('scripts/vite.config.mts', 'utf8'), /'website-agents-startup\.spec\.mjs'/);
   const job = readJobBlock(workflow, 'website-e2e');
   assert.match(readNamedStep(job, 'Run local Website suite'), /WEBSITE_AGENTS_STARTUP: \$\{\{ matrix\.suite == 'agents' && '2' \|\| '' \}\}/);
@@ -431,6 +440,7 @@ it('requires all parallel native and Website production proofs before PR success
     environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
   }
   environment.RESULT_CI_SCOPE = 'success';
+  environment.RESULT_CI_GUARDS = 'success';
   for (const [job, resultKey, scopeKey, otherResults] of [
     ['native-conversation', 'RESULT_NATIVE_CONVERSATION', 'SCOPE_LIBRARY', { RESULT_LIBRARY: 'success' }],
     ['native-conversation', 'RESULT_NATIVE_CONVERSATION', 'SCOPE_ANGULAR_COMPATIBILITY', { RESULT_LIBRARY: 'success', RESULT_LIBRARY_PACKAGE: 'success', RESULT_ANGULAR_COMPATIBILITY: 'success' }],
@@ -453,7 +463,7 @@ it('requires Library validation and its independent package producer for compati
     environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
   }
   Object.assign(environment, {
-    RESULT_CI_SCOPE: 'success', SCOPE_ANGULAR_COMPATIBILITY: 'true',
+    RESULT_CI_SCOPE: 'success', RESULT_CI_GUARDS: 'success', SCOPE_ANGULAR_COMPATIBILITY: 'true',
     RESULT_LIBRARY: 'success', RESULT_LIBRARY_PACKAGE: 'success',
     RESULT_NATIVE_CONVERSATION: 'success', RESULT_ANGULAR_COMPATIBILITY: 'success',
   });
@@ -534,7 +544,7 @@ it('requires every preview build shard before scoped PR success and preserves fo
   const script = readStepRunBlock(step);
   const environment = { ...process.env };
   for (const [, key] of step.matchAll(/^ {10}((?:RESULT|SCOPE)_[A-Z0-9_]+):/gm)) environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
-  Object.assign(environment, { RESULT_CI_SCOPE: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_DEPLOY: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
+  Object.assign(environment, { RESULT_CI_SCOPE: 'success', RESULT_CI_GUARDS: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_DEPLOY: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
   for (const key of ['RESULT_WEBSITE_PREVIEW_BUILD', 'RESULT_WEBSITE_PREVIEW_DEPLOY', 'RESULT_WEBSITE_PREVIEW_E2E']) {
     for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
       const run = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, RESULT_WEBSITE_PREVIEW_BUILD: 'success', PREVIEW_LANES_ELIGIBLE: 'true', [key]: result } });
@@ -549,7 +559,7 @@ it('requires every preview build shard before scoped PR success and preserves fo
 
 it('runs native MAF Node configuration, preparation, actual fixture and model checks in scoped CI', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  const scope = readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier');
+  const scope = readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier');
   for (const file of ['runtimes-microsoft-agent-framework-configuration.spec.mjs', 'prepare-native-maf-fixture.spec.mjs']) assert.ok(scope.includes(`scripts/react-cockpit/${file}`));
   const fleet = readJobBlock(workflow, 'cockpit-e2e');
   const step = readNamedStep(fleet, 'Verify native MAF fixture ownership');
@@ -565,7 +575,7 @@ it('runs native MAF Node configuration, preparation, actual fixture and model ch
 
 it('runs native Strands Node configuration, preparation, actual fixture and model checks in scoped CI', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  const scope = readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier');
+  const scope = readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier');
   for (const file of ['runtimes-aws-strands-configuration.spec.mjs', 'prepare-native-strands-fixture.spec.mjs']) assert.ok(scope.includes(`scripts/react-cockpit/${file}`));
   const fleet = readJobBlock(workflow, 'cockpit-e2e');
   const step = readNamedStep(fleet, 'Verify native Strands fixture ownership');
@@ -1026,6 +1036,14 @@ describe('CI workflow', () => {
       assert.match(guard, /\(github\.event_name == 'push' \|\| github\.event_name == 'workflow_dispatch'\)/);
       assert.match(guard, /needs\.ci-scope\.result == 'success' && needs\.ci-scope\.outputs\.main_run == 'true'/);
     }
+    // The guard suites no longer run inside ci-scope. `deploy` skips when any
+    // need fails; the two always() deploys must name the guards explicitly.
+    assert.ok(readJobNeeds(readJobBlock(workflow, 'deploy')).includes('ci-guards'));
+    for (const name of ['demo-deploy', 'ag-ui-demo-deploy']) {
+      const job = readJobBlock(workflow, name);
+      assert.ok(readJobNeeds(job).includes('ci-guards'), name);
+      assert.match(readJobFieldBlock(job, 'if'), /needs\.ci-guards\.result == 'success'/, name);
+    }
   });
 
   it('runs the isolated Node runtime gates and installs Chromium before packed browser checks', async () => {
@@ -1148,6 +1166,10 @@ describe('CI workflow', () => {
     return readJobBlock(await readWorkflow(), 'ci-scope');
   }
 
+  async function readCiGuardsJob() {
+    return readJobBlock(await readWorkflow(), 'ci-guards');
+  }
+
   async function readLibraryJob() {
     return readJobBlock(await readWorkflow(), 'library');
   }
@@ -1224,11 +1246,24 @@ describe('CI workflow', () => {
   }
 
   it('runs the deployment selector regressions on every pull request', async () => {
-    const job = await readCiScopeJob();
+    const job = await readCiGuardsJob();
     const step = readNamedStep(job, 'Validate CI workflow guards');
     assert.match(step, /run: node --test scripts\/ci-workflow\.spec\.mjs\s*$/);
     assert.doesNotMatch(step, /if:|continue-on-error|\|\|\s*true|--test-name-pattern/);
     assert.doesNotMatch(job, /^ {4}if:/m);
+  });
+
+  it('keeps the guard suites out of the scope job and required for PR success', async () => {
+    const scope = await readCiScopeJob();
+    const guards = await readCiGuardsJob();
+    // Every scoped job waits for ci-scope, so it must stay scope detection only.
+    assert.doesNotMatch(scope, /node --test/);
+    assert.doesNotMatch(guards, /^ {4}(?:if|needs):/m);
+    assert.doesNotMatch(guards, /continue-on-error/);
+    const required = await readRequiredPrChecksJob();
+    assert.ok(readJobNeeds(required).includes('ci-guards'));
+    assert.match(required, /RESULT_CI_GUARDS:\s*\$\{\{\s*needs\.ci-guards\.result\s*\}\}/);
+    assert.match(required, /require_always "CI guards" "\$RESULT_CI_GUARDS"/);
   });
 
   async function readProductionSmokeJob() {
@@ -1274,10 +1309,10 @@ describe('CI workflow', () => {
   }
 
   it('runs the Cockpit runtime bridge drift guard with the always-run scope tests', async () => {
-    const ciScopeJob = await readCiScopeJob();
+    const ciGuardsJob = await readCiGuardsJob();
 
     assert.match(
-      ciScopeJob,
+      ciGuardsJob,
       /name:\s*Test CI scope classifier\s+run:\s*node --test[^\n]*scripts\/cockpit-runtime-bridge-coverage\.spec\.mjs/
     );
   });
@@ -2011,6 +2046,7 @@ describe('CI workflow', () => {
       environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
     }
     environment.RESULT_CI_SCOPE = 'success';
+  environment.RESULT_CI_GUARDS = 'success';
     for (const [scope, result, expected] of [
       ['true', 'success', 0],
       ['true', 'failure', 1],
@@ -2038,6 +2074,7 @@ describe('CI workflow', () => {
     const requiredPrChecksJob = await readRequiredPrChecksJob();
     const expectedNeeds = [
       'ci-scope',
+      'ci-guards',
       'library',
       'library-package',
       'native-conversation',
@@ -2291,9 +2328,9 @@ describe('guarded current-main manual recovery', () => {
   it('preserves direct production needs, success eligibility, preview allowlist, and main concurrency', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
     const expected = {
-      deploy: ['ci-scope', 'library', 'library-package', 'native-conversation', 'website', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'cockpit-e2e-summary', 'website-e2e', 'website-production-checks', 'growth-lifecycle', 'lifecycle'],
-      'demo-deploy': ['ci-scope', 'examples-chat-smoke', 'examples-chat-e2e'],
-      'ag-ui-demo-deploy': ['ci-scope', 'examples-ag-ui-e2e'],
+      deploy: ['ci-scope', 'ci-guards', 'library', 'library-package', 'native-conversation', 'website', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'cockpit-e2e-summary', 'website-e2e', 'website-production-checks', 'growth-lifecycle', 'lifecycle'],
+      'demo-deploy': ['ci-scope', 'ci-guards', 'examples-chat-smoke', 'examples-chat-e2e'],
+      'ag-ui-demo-deploy': ['ci-scope', 'ci-guards', 'examples-ag-ui-e2e'],
       'production-smoke': ['ci-scope', 'deploy', 'demo-deploy', 'ag-ui-demo-deploy'],
     };
     for (const [name, needs] of Object.entries(expected)) {
@@ -2437,7 +2474,7 @@ it('representative smoke includes the canonical tagged Theming graph', async () 
 
 it('runs bounded Theming fixture tests in its actual React fleet lane', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  const scope = readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier');
+  const scope = readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier');
   assert.ok(scope.includes('scripts/react-cockpit/chat-theming-configuration.spec.mjs'));
   const step = readNamedStep(readJobBlock(workflow, 'cockpit-e2e'), 'Verify native Theming fixture ownership');
   assert.match(step, /if: matrix\.cap\.angular == 'cockpit-chat-theming-react'/);
@@ -2484,5 +2521,5 @@ it('bounds every Playwright dependency install and configures Ubuntu downloads f
     }
   }
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/configure-ci-apt\.spec\.mjs/);
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier'), /scripts\/configure-ci-apt\.spec\.mjs/);
 });
