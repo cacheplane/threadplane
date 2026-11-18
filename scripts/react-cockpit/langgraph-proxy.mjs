@@ -8,17 +8,33 @@
  * cannot produce on demand:
  *
  *   GET  /__requests          every /api and /developer-api request, in order
+ *   POST /__ready             200 once `langgraph dev` answers /ok (graph loaded;
+ *                             with `serve.mjs --backend`, after its lazy start)
  *   GET  /__lifetime          { activeStream, activeHistory, openResponses }
  *   GET  /__captures          per finished run: forwarded SSE text, saved
  *                             messages/next from the real server, title
  *                             before and after the run
- *   POST /__ready             200 once the backend is up (with `serve.mjs
- *                             --backend`, after its lazy start)
  *   POST /__reset             forget requests, drop held responses, clear modes
  *   POST /__fail-create       next thread creation answers 500 without forwarding
- *   POST /__history/<mode>    safe | hold | changed | missing | pending | failed
+ *   POST /__history/<mode>    safe | hold | changed | missing | pending | failed,
+ *                             or tool evidence: args | result | name | ids |
+ *                             interrupt | subgraph, or approval evidence:
+ *                             mismatch | unsupported
  *   POST /__release-history   finish a held history read
- *   POST /__hold/stream       hold the next run stream; body { afterText? }
+ *   POST /__hold/stream       hold the next run stream; body { afterText? } holds
+ *                             after the first AI message chunk (or once the AI text
+ *                             contains afterText); { beforeToolResult: true }
+ *                             holds just before the first tool result event;
+ *                             { afterChildMessage: true } holds after the first
+ *                             subgraph (namespaced `messages|…`) text chunk
+ *   POST /__child/<mode>      role | task | error: before the next run's first
+ *                             child `values|…` event, inject a malformed copy
+ *                             (unsupported subagent_type, null task_description)
+ *                             or a child `error|…` event carrying a private
+ *                             diagnostic. Injected data, as the authored
+ *                             subagents fixture did.
+ *   POST /__fail-stream       next run stream answers 500 without forwarding
+ *                             (the graph worker is unavailable)
  *   POST /__release           flush and resume a held run stream
  *   POST /__inject/reasoning  body { text }: until reset, every AI message the
  *                             browser receives (stream, history, state) carries
@@ -32,7 +48,13 @@
  */
 import { request as httpRequest } from 'node:http';
 
-const HISTORY_MODES = ['safe', 'hold', 'changed', 'missing', 'pending', 'failed'];
+// Saved-evidence rewrites of the latest history entry. Tool modes mirror the
+// authored tool-calls fixture: corrupt one piece of tool evidence each.
+const HISTORY_MODES = [
+  'safe', 'hold', 'changed', 'missing', 'pending', 'failed',
+  'args', 'result', 'name', 'ids', 'interrupt', 'subgraph',
+  'mismatch', 'unsupported',
+];
 const HOP_BY_HOP = new Set(['connection', 'keep-alive', 'transfer-encoding', 'content-length', 'host']);
 
 const json = (response, value, status = 200) => {
@@ -80,6 +102,8 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   const target = new URL(upstream);
   let requests = [];
   let failCreate = false;
+  let failStream = false;
+  let childFault = null;
   let historyMode = 'safe';
   let holdNextStream = null;
   let heldStream;
@@ -133,6 +157,8 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     reasoning = null;
     decoratedChunks.clear();
     failCreate = false;
+    failStream = false;
+    childFault = null;
     historyMode = 'safe';
     holdNextStream = null;
   }
@@ -165,21 +191,27 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       ? input.map((state) => ({ ...state, values: decorateValues(state.values) }))
       : input;
     if (!Array.isArray(states) || states.length === 0) return states;
-    const [latest, ...rest] = states;
-    let messages = latest.values?.messages ?? [];
-    if (historyMode === 'changed')
-      messages = messages.map((m, i) =>
-        i === messages.length - 1 ? { ...m, content: 'Changed saved answer' } : m,
-      );
-    if (historyMode === 'missing') messages = messages.slice(0, -1);
-    return [
-      {
-        ...latest,
-        values: { ...latest.values, messages },
-        next: historyMode === 'pending' ? ['generate'] : latest.next,
-      },
-      ...rest,
-    ];
+    const latest = structuredClone(states[0]);
+    const messages = latest.values?.messages ?? [];
+    const assistant = messages.find((m) => m.tool_calls?.length);
+    const result = messages.find((m) => m.type === 'tool');
+    if (historyMode === 'changed' && messages.length)
+      messages.at(-1).content = 'Changed saved answer';
+    if (historyMode === 'missing') messages.pop();
+    if (historyMode === 'pending') latest.next = ['unexpected'];
+    if (historyMode === 'args' && assistant)
+      assistant.tool_calls[0].args = { flight_number: 'Changed' };
+    if (historyMode === 'result' && result) result.content = 'Changed tool observation';
+    if (historyMode === 'name' && result) result.name = 'unsupported';
+    if (historyMode === 'ids' && result) result.tool_call_id = 'orphan';
+    if (historyMode === 'interrupt')
+      latest.tasks = [{ id: 'unexpected', name: 'tools', interrupts: [{ id: 'unexpected', value: { type: 'unexpected' } }] }];
+    const approval = latest.tasks?.[0]?.interrupts?.[0]?.value;
+    if (historyMode === 'mismatch' && approval?.flight) approval.flight.flight_number = 'DL999';
+    if (historyMode === 'unsupported' && approval) approval.type = 'unsupported';
+    if (historyMode === 'subgraph' && latest.checkpoint)
+      latest.checkpoint = { ...latest.checkpoint, checkpoint_ns: 'foreign:checkpoint' };
+    return [latest, ...states.slice(1)];
   }
 
   async function proxyHistory(request, response, path, body) {
@@ -219,6 +251,8 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   async function proxyStream(request, response, path, body) {
     const hold = holdNextStream;
     holdNextStream = null;
+    let fault = childFault;
+    childFault = null;
     const threadId = /\/threads\/([^/]+)\/runs\/stream/.exec(path)?.[1];
     const titleBefore = threadId ? await threadTitle(threadId) : null;
     const upstreamResponse = await send(request.method, path, request.headers, body);
@@ -279,11 +313,38 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         const end = match.index + match[0].length;
         const raw = pending.slice(0, end);
         pending = pending.slice(end);
+        const eventName = /^event: *(.*)$/m.exec(raw)?.[1]?.trim() ?? '';
+        if (fault && eventName.startsWith('values|')) {
+          const namespace = eventName.slice('values'.length);
+          const dataLine = raw.split(/\r?\n/).find((line) => line.startsWith('data:'));
+          const value = JSON.parse(dataLine.slice(5));
+          const injected = fault === 'error'
+            ? ['error' + namespace, { error: 'AuthoredChildError', message: 'PRIVATE_CHILD_DIAGNOSTIC' }]
+            : ['values' + namespace, fault === 'role'
+              ? { ...value, subagent_type: 'unsupported-specialist' }
+              : { ...value, task_description: null }];
+          response.write(`event: ${injected[0]}\ndata: ${JSON.stringify(injected[1])}\n\n`);
+          fault = null;
+        }
+        if (armed && hold.beforeToolResult && /"type": ?"tool"/.test(raw)) {
+          // Hold this event (the first carrying a tool result) and everything after.
+          armed = false;
+          holding = true;
+          heldStream = held;
+          pending = raw + pending;
+          break;
+        }
         response.write(decorateEvent(raw));
+        if (armed && hold.afterChildMessage && eventName.startsWith('messages|') && aiText(raw)) {
+          armed = false;
+          holding = true;
+          heldStream = held;
+          continue;
+        }
         const delta = aiText(raw);
         if (delta === null) continue;
         text += delta;
-        if (armed && delta && (!hold.afterText || text.includes(hold.afterText))) {
+        if (armed && !hold.beforeToolResult && !hold.afterChildMessage && (hold.afterText ? text.includes(hold.afterText) : true)) {
           armed = false;
           holding = true;
           heldStream = held;
@@ -315,8 +376,6 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     })],
     '/__reset': ['POST', () => { reset(); return {}; }],
     '/__fail-create': ['POST', () => { failCreate = true; return {}; }],
-    // Waits for the backend (with `serve.mjs --backend`, its lazy start).
-    '/__ready': ['POST', async () => { await ready(); return {}; }],
     '/__release': ['POST', () => { heldStream?.release(); return {}; }],
     '/__release-history': ['POST', () => {
       const held = heldHistory;
@@ -325,10 +384,34 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       return {};
     }],
     '/__inject/reasoning': ['POST', (body) => { reasoning = String(body.text ?? ''); return {}; }],
-    '/__hold/stream': ['POST', (body) => { holdNextStream = { afterText: body.afterText ?? null }; return {}; }],
+    '/__hold/stream': ['POST', (body) => {
+      holdNextStream = {
+        afterText: body.afterText ?? null,
+        beforeToolResult: body.beforeToolResult === true,
+        afterChildMessage: body.afterChildMessage === true,
+      };
+      return {};
+    }],
+    '/__fail-stream': ['POST', () => { failStream = true; return {}; }],
+    '/__ready': ['POST', async () => {
+      await ready();
+      const answer = await send('GET', '/ok', { accept: 'application/json' }, Buffer.alloc(0));
+      await readAll(answer);
+      if (answer.statusCode !== 200) throw new Error('LangGraph is not ready');
+      return {};
+    }],
   };
 
   return async function handle(request, response, pathname) {
+    if (pathname.startsWith('/__child/')) {
+      const mode = pathname.slice('/__child/'.length);
+      if (!['role', 'task', 'error'].includes(mode)) json(response, {}, 400);
+      else {
+        childFault = mode;
+        json(response, {});
+      }
+      return true;
+    }
     if (pathname.startsWith('/__history/')) {
       const mode = pathname.slice('/__history/'.length);
       if (!HISTORY_MODES.includes(mode)) json(response, {}, 400);
@@ -345,7 +428,11 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         return true;
       }
       const raw = (await readAll(request)).toString('utf8');
-      json(response, await run(raw ? JSON.parse(raw) : {}));
+      try {
+        json(response, await run(raw ? JSON.parse(raw) : {}));
+      } catch {
+        json(response, { error: 'Local proxy control failed' }, 500);
+      }
       return true;
     }
     const prefix = pathname.startsWith('/api/')
@@ -377,8 +464,12 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       }
       if (request.method === 'POST' && /\/threads\/[^/]+\/history$/.test(pathname))
         await proxyHistory(request, response, path, body);
-      else if (request.method === 'POST' && /\/runs\/stream$/.test(pathname))
-        await proxyStream(request, response, path, body);
+      else if (request.method === 'POST' && /\/runs\/stream$/.test(pathname)) {
+        if (failStream) {
+          failStream = false;
+          json(response, { error: 'PRIVATE graph worker failure' }, 500);
+        } else await proxyStream(request, response, path, body);
+      }
       else if (reasoning && request.method === 'GET' && /\/threads\/[^/]+\/state$/.test(pathname)) {
         const upstreamResponse = await send(request.method, path, request.headers, body);
         const raw = await readAll(upstreamResponse);

@@ -2,6 +2,27 @@
   "fixtures": [
     {
       "match": {
+        "systemMessage": "In 3-5 words, summarize",
+        "userMessage": "(title fails)"
+      },
+      "response": {
+        "error": {
+          "message": "PRIVATE title model failure",
+          "type": "server_error"
+        },
+        "status": 500
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "In 3-5 words, summarize"
+      },
+      "response": {
+        "content": "Aviation snippet title"
+      }
+    },
+    {
+      "match": {
         "userMessage": "What's the status of UA123?",
         "hasToolResult": true
       },
@@ -22,6 +43,194 @@
             }
           }
         ]
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "call-status-0"
+      },
+      "response": {
+        "content": "UA123 is on time from LAX to JFK."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "call-compare-1"
+      },
+      "response": {
+        "content": "LAX and JFK are both operating normally."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "call-seq-0"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "get_airport_info",
+            "arguments": "{\"airport_code\": \"JFK\"}",
+            "id": "call-seq-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "call-seq-1"
+      },
+      "response": {
+        "content": "UA123 lands at JFK, which is operating normally."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "call-routes-0"
+      },
+      "response": {
+        "content": "There are nonstop LAX to JFK flights tomorrow."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "call-unknown-0"
+      },
+      "response": {
+        "content": "I could not find that flight."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "call-malformed-0"
+      },
+      "response": {
+        "content": "That flight number was not valid."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "call-literal-0"
+      },
+      "response": {
+        "content": "That airport code was not recognised."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Status UA123",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_flight",
+            "arguments": "{\"flight_number\": \"UA123\"}",
+            "id": "call-status-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Compare airports",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "get_airport_info",
+            "arguments": "{\"airport_code\": \"LAX\"}",
+            "id": "call-compare-0"
+          },
+          {
+            "name": "get_airport_info",
+            "arguments": "{\"airport_code\": \"JFK\"}",
+            "id": "call-compare-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Sequential lookup",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_flight",
+            "arguments": "{\"flight_number\": \"UA123\"}",
+            "id": "call-seq-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Routes tomorrow",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "find_routes",
+            "arguments": "{\"from_code\": \"LAX\", \"to_code\": \"JFK\", \"date_offset_days\": 1}",
+            "id": "call-routes-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Unknown flight",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_flight",
+            "arguments": "{\"flight_number\": \"ZZ999\"}",
+            "id": "call-unknown-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Malformed flight",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_flight",
+            "arguments": "{\"flight_number\": 123}",
+            "id": "call-malformed-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Literal long airport",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "get_airport_info",
+            "arguments": "{\"airport_code\": \"<button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button><button>observed</button>\"}",
+            "id": "call-literal-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "No tools"
+      },
+      "response": {
+        "content": "A plain answer with no tools."
       }
     }
   ]

@@ -65,6 +65,12 @@ Playwright webServer ──► serve.mjs ── /api, /developer-api ──► l
    | `GET /__graph-proof` | in-process proof | removed; see "Guarantees" |
    | `GET /__captures` (batch 1) | authored SSE, saved messages, title updates | per finished run: forwarded SSE text, saved `messages`/`next` from the real `/state`, and thread title before and after the run, all captured before the browser sees the stream end |
    | `GET /__lifetime` child reaping (batch 1) | owned wire child processes | no per-run graph processes exist any more, so `openResponses` (proxied browser connections still open) replaces the child-reaping check |
+   | `/__hold-tool`, `/__hold-child`, `/__hold-resume`, `/__hold-stream` (batch 2) | authored stop points | `POST /__hold/stream` with `{ beforeToolResult }`, `{ afterChildMessage }`, or nothing (the next stream: a resume is just the next run) |
+   | `/__worker-failure`, `/__fail-resume` (batch 2) | graph worker closed / resume 500 | `POST /__fail-stream`: the next run stream answers 500 without reaching the graph |
+   | `/__metadata-failure` (batch 2) | `threads.get` raises | a per-prompt aimock error fixture for the title model (`… (title fails)`). `generate_title` swallows it on the same path as a metadata read failure |
+   | `/__child/<mode>` (batch 2) | malformed child `values` / child `error` event | same control on the proxy: injected data, as before |
+   | `/__history/<tool or approval mode>` (batch 2) | corrupted tool or approval evidence | the same rewrites, applied to the real history |
+   | `/__ready` (batch 2) | Python worker loaded | `langgraph dev` answers `/ok` |
    | `POST /__inject/reasoning` (batch 1) | authored `reasoning_content` | **injected data, opt-in per test**: nothing is injected unless a spec calls it, and only the theming test that styles the Reasoning region does. langchain_openai's `ChatOpenAI` does not extract `reasoning_content` from Chat Completions responses (even though aimock can send it), so the real graph never surfaces reasoning. Until reset, the control adds `additional_kwargs.reasoning_content` to every AI message the browser receives (the first stream chunk, `values`/`updates`/`checkpoints` events, history and `/state`). Possible follow-up: switch the theming graph to the Responses API with reasoning summaries, so reasoning flows for real in both frameworks. That is a product change, so it is out of scope here |
 
    Holds are now explicit controls, not magic prompt text, so every test
@@ -150,7 +156,8 @@ example needs that the pilot proxy doesn't yet provide.
 | --- | --- | --- | --- |
 | 0 (done) | chat/messages | none | pilot |
 | 1 (done) | chat/input, chat/theming | `/__captures`, `/__inject/reasoning` (theming) | |
-| 2 | chat/tool-calls, chat/subagents, chat/interrupts, chat/generative-ui | hold on a predicate (tool call, child or subgraph event, resume), `/__fail-resume`, `/__worker-failure`, `/__metadata-failure`, `/__configure` | add `afterEvent` predicates to `/__hold/stream`, plus route-matched failure injection |
+| 2 (done) | chat/tool-calls, chat/subagents, chat/interrupts | `/__hold/stream` `beforeToolResult` / `afterChildMessage`, `/__fail-stream`, `/__child/<mode>`, tool and approval `/__history` modes, `/__ready` | tool rounds key on aimock `toolCallId`; a mid-stream child model failure is aimock `truncateAfterChunks`; a title (metadata) failure is a per-prompt aimock error fixture (`… (title fails)`) |
+| 2b | chat/generative-ui | `/__configure` faults that swap graph internals: a throwing KPI tool, malformed trend data, prose injected into the `admit` node's output, partial layouts | aimock can't produce tool-code failures or node-output rewrites, so this needs a decision: move the graph-level faults to Python tests, or keep a small authored layer |
 | 3 | chat/threads, chat/timeline, chat/debug | title modes and holds, state and checkpoint holds, mapped checkpoints | history and state rewriting, holds per endpoint |
 | 4 | langgraph/{streaming, persistence, memory, interrupts, subgraphs, client-tools, deployment-runtime, time-travel, durable-execution} | `/__hold-draft`, `/__hold-extraction`, `/__hold-plan`, `/__publish-*`, `/__bad-history`, `/__unsafe-source` | `durable-execution` `/__publish-*` injects authored events that a real graph can't emit, so it keeps a small authored layer on top of the proxy |
 | 5 | deep-agents/{planning, filesystem, memory, skills, subagents} | `/__configure`, `/__raw-events`, proof-heavy `*-fixture.spec.mjs` | Angular `da-*.json` fixtures exist |

@@ -98,16 +98,19 @@ export function reactCockpitConfiguration(topic = 'streaming') {
     return Object.freeze({
       topic: 'subagents', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/subagents/react',
       base: '/chat/subagents/react/', port: 4624, project: 'cockpit-chat-subagents-react',
+      backend: aimockLanggraph('chat/subagents', 4624),
     });
   if (topic === 'chat-tool-calls')
     return Object.freeze({
       topic: 'tool-calls', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/tool-calls/react',
       base: '/chat/tool-calls/react/', port: 4623, project: 'cockpit-chat-tool-calls-react',
+      backend: aimockLanggraph('chat/tool-calls', 4623),
     });
   if (topic === 'chat-interrupts')
     return Object.freeze({
       topic: 'interrupts', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/interrupts/react',
       base: '/chat/interrupts/react/', port: 4622, project: 'cockpit-chat-interrupts-react',
+      backend: aimockLanggraph('chat/interrupts', 4622),
     });
   if (topic === 'chat-input')
     return Object.freeze({
