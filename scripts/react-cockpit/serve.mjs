@@ -18,7 +18,7 @@ import { createDurableFixture } from './durable-fixture.mjs';
 import { createSubgraphsFixture } from './subgraphs-fixture.mjs';
 import { createTimeTravelFixture } from './time-travel-fixture.mjs';
 import { createDeploymentRuntimeFixture } from './deployment-runtime-fixture.mjs';
-import { createChatMessagesFixture } from './chat-messages-fixture.mjs';
+import { createLanggraphProxy } from './langgraph-proxy.mjs';
 import { createChatThemingFixture } from './chat-theming-fixture.mjs';
 import { createChatDebugFixture } from './chat-debug-fixture.mjs';
 import { createChatInputFixture } from './chat-input-fixture.mjs';
@@ -81,7 +81,11 @@ const chatThreadsFixture = configuration.library === 'chat' && configuration.top
 const chatSubagentsFixture = configuration.library === 'chat' && configuration.topic === 'subagents' ? createChatSubagentsFixture() : null;
 const chatToolCallsFixture = configuration.library === 'chat' && configuration.topic === 'tool-calls' ? createChatToolCallsFixture() : null;
 const chatInterruptsFixture = configuration.library === 'chat' && configuration.topic === 'interrupts' ? createChatInterruptsFixture() : null;
-const chatMessagesFixture = configuration.topic === 'messages' ? createChatMessagesFixture() : null;
+// aimock-backed examples: the real graph runs under `langgraph dev` (started by
+// the Playwright global setup); this server proxies /api to it.
+const langgraphProxy = configuration.backend?.kind === 'aimock-langgraph'
+  ? createLanggraphProxy({ upstream: `http://127.0.0.1:${configuration.backend.langgraphPort}` })
+  : null;
 const chatInputFixture = configuration.topic === 'input' ? createChatInputFixture() : null;
 const agUiSubagentsFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'subagents'
@@ -245,7 +249,7 @@ const server = createServer(async (request, response) => {
   if (chatSubagentsFixture && (await chatSubagentsFixture(request, response, pathname))) return;
   if (chatToolCallsFixture && (await chatToolCallsFixture(request, response, pathname))) return;
   if (chatInterruptsFixture && (await chatInterruptsFixture(request, response, pathname))) return;
-  if (chatMessagesFixture && (await chatMessagesFixture(request, response, pathname))) return;
+  if (langgraphProxy && (await langgraphProxy(request, response, pathname))) return;
   if (chatInputFixture && (await chatInputFixture(request, response, pathname))) return;
   if (configuration.adapter === 'none') {
     if (!['GET', 'HEAD'].includes(request.method)) {
