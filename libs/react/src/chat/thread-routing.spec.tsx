@@ -130,6 +130,16 @@ describe('useThreadRouting', () => {
     expect(window.location.pathname).toBe('/embed');
   });
 
+  it('trims any number of trailing slashes from the base path', () => {
+    window.history.replaceState(null, '', '/chat/t1');
+    const { container } = render(
+      <Probe options={{ basePath: 'chat' + '/'.repeat(10000) }} />,
+    );
+    expect(shown(container)).toBe('t1');
+    act(() => latest!.setThreadId(null));
+    expect(window.location.pathname).toBe('/chat');
+  });
+
   it('ignores paths outside the base path', () => {
     window.history.replaceState(null, '', '/settings/profile');
     const { container } = render(<Probe options={{ basePath: '/embed' }} />);
