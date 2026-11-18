@@ -33,6 +33,7 @@ import type {
   LangGraphInterrupt,
   LangGraphSnapshot,
   LangGraphValues,
+  LangGraphSubgraph,
 } from './langgraph-snapshot.js';
 import { projectHistoryValues, projectValues } from './values-projection.js';
 import {
@@ -366,6 +367,31 @@ export function createSession(
   let subgraphs = initialSubgraphs(publication.getSnapshot().subgraphs);
   let state = initialMessageState();
   const reasoningTimer = createReasoningTimer();
+  // One clock per child graph: namespaces repeat message identifiers.
+  const subgraphTimers = new Map<
+    string,
+    ReturnType<typeof createReasoningTimer>
+  >();
+  function timedSubgraphs(
+    observed: readonly LangGraphSubgraph[]
+  ): readonly LangGraphSubgraph[] {
+    const present = new Set<string>();
+    let changed = false;
+    const timed = observed.map((subgraph) => {
+      const key = JSON.stringify(subgraph.namespace);
+      present.add(key);
+      let timer = subgraphTimers.get(key);
+      if (!timer) subgraphTimers.set(key, (timer = createReasoningTimer()));
+      const messages = timer.observe(subgraph.messages);
+      if (messages === subgraph.messages) return subgraph;
+      changed = true;
+      return { ...subgraph, messages };
+    });
+    // A new turn starts with no child graphs; their timings go with them.
+    for (const key of subgraphTimers.keys())
+      if (!present.has(key)) subgraphTimers.delete(key);
+    return changed ? timed : observed;
+  }
   let values: LangGraphValues | undefined;
   let interrupts: readonly LangGraphInterrupt[] =
     publication.getSnapshot().interrupts;
@@ -477,7 +503,7 @@ export function createSession(
       values,
       ...(plan ? { plan } : {}),
       interrupts,
-      subgraphs: subgraphs.subgraphs,
+      subgraphs: timedSubgraphs(subgraphs.subgraphs),
       ...(retained?.run.evidence.runId
         ? { reconnect: { runId: retained.run.evidence.runId } }
         : {}),
