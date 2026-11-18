@@ -58,6 +58,25 @@ export function Status({ session }: { session: AgentSession }) {
 }
 ```
 
+`useAgentState(session)` observes only the snapshot's `state`. The component
+renders again when the state changes, not on every streamed token. The type
+comes from the session: one created with a `stateType` yields that type,
+read-only, and any other yields plain data. The value is `undefined` until the
+session holds a state.
+
+```tsx
+import { useAgentState } from '@threadplane/react';
+
+function Todos({ session }: { session: AgentSession<Tools, { todos: string[] }> }) {
+  const todos = useAgentState(session, (state) => state?.todos ?? []);
+  return <ul>{todos.map((todo) => <li key={todo}>{todo}</li>)}</ul>;
+}
+```
+
+The optional selector runs once per state, so it may be written inline and may
+build a new value. The component then renders again only when the selected value
+changes. To change the state, send a patch with `session.submit({ message, state })`.
+
 The hook borrows the session. Rendering, subscribing, StrictMode remounts, and
 unmounting do not start runs. Unmounting releases that observer's subscription;
 it does not stop pending work or dispose the session. Multiple components can

@@ -14733,6 +14733,18 @@
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
     },
     {
+      "id": "export:libs/angular/src/public-api.ts#observeAgentState",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#Chat",
       "taskIds": [
         "T22",
@@ -14878,6 +14890,18 @@
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
     },
     {
+      "id": "export:libs/react/src/index.ts#useAgentState",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/text-transcript.ts",
       "taskIds": [
         "T12",
@@ -14924,6 +14948,18 @@
       "status": "in-progress",
       "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/angular/src/observe-agent-state.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
     },
     {
       "id": "source:libs/angular/src/public-api.ts",
@@ -15063,6 +15099,18 @@
       "status": "in-progress",
       "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/react/src/use-agent-state.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
     },
     {
       "id": "source:libs/react/vite.config.mts",
