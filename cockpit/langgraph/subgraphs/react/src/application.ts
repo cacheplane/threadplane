@@ -175,9 +175,14 @@ export function createSubgraphsApplication(options: {
         const topic = own(child.values, 'research_topic'),
           brief = own(child.values, 'research_brief');
         if (!valid()) return;
+        // A child's input checkpoint (`values: {}` before its first node)
+        // carries neither key yet; only present but malformed keys are
+        // unsafe. A nested route still needs the latest child values to
+        // match the parent's topic and brief before it is confirmed.
         if (
           child.values !== undefined &&
-          (typeof topic !== 'string' || typeof brief !== 'string')
+          ((topic !== undefined && typeof topic !== 'string') ||
+            (brief !== undefined && typeof brief !== 'string'))
         )
           selected.unsafe = true;
         selected.children.set(

@@ -4,6 +4,26 @@ import {
   type Page,
   type APIRequestContext,
 } from '@playwright/test';
+// Backend: aimock replays cockpit/langgraph/subgraphs/angular/e2e/fixtures
+// (shared with the Angular example) into a real `langgraph dev`: the router
+// decides, the research child subgraph streams under its own namespace, and
+// the answer node writes the completion markers. The React static server
+// proxies /api to it, recording requests and injecting holds, failures and
+// the route-authority faults below (scripts/react-cockpit/langgraph-proxy.mjs).
+// Root state arrives in both `values` and `checkpoints` events.
+const ROOT = '^(values|checkpoints)$';
+const routeFaults: Record<string, object[]> = {
+  'Missing marker': [{ event: ROOT, op: 'omit', keys: ['completed_turn_id'] }],
+  'Stale marker': [{ event: ROOT, op: 'patch', ifKey: 'completed_turn_id', set: { completed_turn_id: 'old-human' } }],
+  'Missing answer marker': [{ event: ROOT, op: 'omit', keys: ['completed_answer_id'] }],
+  'Equal marker': [{ event: ROOT, op: 'patch', ifKey: 'completed_answer_id', set: { completed_answer_id: '$humanId' } }],
+  'Missing child': [{ event: '\\|', op: 'drop' }],
+  'Conflicting child': [{ event: '^(values|checkpoints)\\|', op: 'patch', ifKey: 'research_brief', set: { research_brief: 'Conflicting brief' } }],
+  'Child pause': [{ event: '^values\\|', op: 'insertAfter', once: true, insert: { event: 'updates$ns', data: { __interrupt__: [{ value: 'PRIVATE pause' }] } } }],
+  'Child error': [{ event: '^values\\|', op: 'insertAfter', once: true, insert: { event: 'error$ns', data: { message: 'PRIVATE child error' } } }],
+  'Child tool': [{ event: '^messages\\|', op: 'insertAfter', once: true, insert: { event: 'messages$ns', data: [{ type: 'tool', id: 'tool-child', content: 'PRIVATE tool result', tool_call_id: 'unknown-tool' }, { langgraph_node: 'research' }] } }],
+  'Root tool': [{ event: ROOT, op: 'patch', ifKey: 'completed_answer_id', path: 'messages.-1', set: { tool_calls: [{ id: 'unknown-tool', name: 'unknown', args: {} }] } }],
+};
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
 });
@@ -14,6 +34,10 @@ const boundary = (page: Page) =>
 const children = (page: Page) =>
   page.getByRole('region', { name: 'Child observations', exact: true });
 async function send(page: Page, text: string, navigate = true) {
+  // A real graph never emits these shapes, so the proxy edits the stream the
+  // browser receives (injected data, like the authored fixture's variants).
+  if (text in routeFaults)
+    await page.request.post('/__stream/edit', { data: { ops: routeFaults[text] } });
   if (navigate) await page.goto('/langgraph/subgraphs/react/');
   await page.getByLabel('Message', { exact: true }).fill(text);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
@@ -90,10 +114,11 @@ test('a new admission clears the old route before its router runs', async ({
 }) => {
   await send(page, 'Research first');
   await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
-  await request.post('/__hold-start');
+  // Hold before the router runs: right after the run's first event.
+  await request.post('/__hold/stream', { data: { immediate: true } });
   await send(page, 'Hello', false);
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
     .toBe(true);
   await expect(boundary(page)).toContainText('Awaiting the current route.');
   await expect(boundary(page)).not.toContainText('CHILD-ONLY brief');
@@ -110,7 +135,7 @@ test('an observed child does not imply a completed route while held', async ({
   page,
   request,
 }, testInfo) => {
-  await request.post('/__hold-child');
+  await request.post('/__hold/stream', { data: { afterChildMessage: true } });
   await send(page, 'Research first');
   await expect(children(page)).toContainText('Observed child stream');
   await expect(boundary(page)).toContainText('Awaiting the current route.');
@@ -160,7 +185,7 @@ for (const action of ['Stop', 'pagehide'])
     page,
     request,
   }) => {
-    await request.post('/__hold-child');
+    await request.post('/__hold/stream', { data: { afterChildMessage: true } });
     await send(page, 'Research first');
     await expect(children(page)).toContainText('Observed child stream');
     if (action === 'Stop')
@@ -168,7 +193,7 @@ for (const action of ['Stop', 'pagehide'])
     else await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     await expect
       .poll(
-        async () => (await (await request.get('/__lifetime')).json()).active
+        async () => (await (await request.get('/__lifetime')).json()).activeStream
       )
       .toBe(false);
     await request.post('/__release');
@@ -250,7 +275,7 @@ test('literal boundary text and full namespace fit a narrow screen', async ({
     )
   ).toBe(true);
   await expect(children(page).locator('code')).toHaveText(
-    /^research:00000000-0000-0000-0000-000000000001$/
+    /^research:[0-9a-f-]{36}$/
   );
   await page.screenshot({ path: testInfo.outputPath('subgraphs-mobile.png') });
 });

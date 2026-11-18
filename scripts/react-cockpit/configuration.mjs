@@ -11,6 +11,8 @@ const aimockLanggraph = (example, port) => Object.freeze({
   fixtures: `cockpit/${example}/angular/e2e/fixtures`,
   langgraphPort: port + 1000,
 });
+/** LangGraph examples whose React e2e run on aimock + `langgraph dev`. */
+const AIMOCK_LANGGRAPH_TOPICS = new Set(['streaming', 'interrupts', 'memory', 'persistence', 'subgraphs']);
 export function reactCockpitConfiguration(topic = 'streaming') {
   if (topic === 'ag-ui-a2ui')
     return Object.freeze({
@@ -240,21 +242,25 @@ export function reactCockpitConfiguration(topic = 'streaming') {
     ].includes(topic)
   )
     throw new Error(`Unsupported React cockpit topic: ${topic}`);
+  const port = {
+    streaming: 4600,
+    interrupts: 4601,
+    memory: 4602,
+    'client-tools': 4603,
+    persistence: 4604,
+    'durable-execution': 4605,
+    subgraphs: 4606,
+    'time-travel': 4607,
+    'deployment-runtime': 4608,
+  }[topic];
   return Object.freeze({
     topic,
     appPath: `cockpit/langgraph/${topic}/react`,
     base: `/langgraph/${topic}/react/`,
-    port: {
-      streaming: 4600,
-      interrupts: 4601,
-      memory: 4602,
-      'client-tools': 4603,
-      persistence: 4604,
-      'durable-execution': 4605,
-      subgraphs: 4606,
-      'time-travel': 4607,
-      'deployment-runtime': 4608,
-    }[topic],
+    port,
     project: `cockpit-langgraph-${topic}-react`,
+    ...(AIMOCK_LANGGRAPH_TOPICS.has(topic)
+      ? { backend: aimockLanggraph(`langgraph/${topic}`, port) }
+      : {}),
   });
 }

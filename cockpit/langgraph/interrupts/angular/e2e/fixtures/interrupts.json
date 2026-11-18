@@ -31,6 +31,94 @@
       "response": {
         "content": "Understood — a $129.00 refund to cus_z19fp for a chargeback. Pausing for operator approval; no refund is issued until a human reviews and approves."
       }
+    },
+    {
+      "match": {
+        "responseFormat": "json_schema",
+        "userMessage": "Refund"
+      },
+      "response": {
+        "content": {
+          "customer_id": "cus_a8x2k",
+          "amount": 47.5,
+          "reason": "<script>literal refund reason</script>"
+        }
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Refund Authorization Assistant",
+        "userMessage": "Refund"
+      },
+      "response": { "content": "Refund draft ready for review." },
+      "chunkSize": 12,
+      "latency": 25
+    },
+    {
+      "match": {
+        "responseFormat": "json_schema",
+        "userMessage": "Unknown"
+      },
+      "response": {
+        "content": {
+          "customer_id": "cus_a8x2k",
+          "amount": 47.5,
+          "reason": "<script>literal refund reason</script>"
+        }
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Refund Authorization Assistant",
+        "userMessage": "Unknown"
+      },
+      "response": { "content": "Refund draft ready for review." },
+      "chunkSize": 12,
+      "latency": 25
+    },
+    {
+      "match": {
+        "responseFormat": "json_schema",
+        "userMessage": "Malformed"
+      },
+      "response": {
+        "content": {
+          "customer_id": "cus_a8x2k",
+          "amount": -1,
+          "reason": "<script>literal refund reason</script>"
+        }
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Refund Authorization Assistant",
+        "userMessage": "Malformed"
+      },
+      "response": { "content": "Refund draft ready for review." },
+      "chunkSize": 12,
+      "latency": 25
+    },
+    {
+      "match": {
+        "responseFormat": "json_schema",
+        "userMessage": "Multiple"
+      },
+      "response": {
+        "content": {
+          "customer_id": "cus_a8x2k",
+          "amount": 47.5,
+          "reason": "<script>literal refund reason</script>"
+        }
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Refund Authorization Assistant",
+        "userMessage": "Multiple"
+      },
+      "response": { "content": "Refund draft ready for review." },
+      "chunkSize": 12,
+      "latency": 25
     }
   ]
 }

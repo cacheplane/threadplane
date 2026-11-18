@@ -425,6 +425,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/subgraphs/react/',
     port: 4606,
     project: 'cockpit-langgraph-subgraphs-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/subgraphs/python',
+      fixtures: 'cockpit/langgraph/subgraphs/angular/e2e/fixtures', langgraphPort: 5606,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('durable-execution'), {
     topic: 'durable-execution',
@@ -439,6 +443,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/persistence/react/',
     port: 4604,
     project: 'cockpit-langgraph-persistence-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/persistence/python',
+      fixtures: 'cockpit/langgraph/persistence/angular/e2e/fixtures', langgraphPort: 5604,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('interrupts'), {
     topic: 'interrupts',
@@ -446,6 +454,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/interrupts/react/',
     port: 4601,
     project: 'cockpit-langgraph-interrupts-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/interrupts/python',
+      fixtures: 'cockpit/langgraph/interrupts/angular/e2e/fixtures', langgraphPort: 5601,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('memory'), {
     topic: 'memory',
@@ -453,6 +465,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/memory/react/',
     port: 4602,
     project: 'cockpit-langgraph-memory-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/memory/python',
+      fixtures: 'cockpit/langgraph/memory/angular/e2e/fixtures', langgraphPort: 5602,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('client-tools'), {
     topic: 'client-tools',

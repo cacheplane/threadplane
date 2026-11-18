@@ -1,9 +1,27 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
+// Backend: aimock replays cockpit/langgraph/memory/angular/e2e/fixtures (shared
+// with the Angular example) into a real `langgraph dev`, whose extract_memory
+// node merges the facts it learns. The React static server proxies /api to it,
+// recording requests and injecting holds, failures and authoritative state the
+// real graph never produces (scripts/react-cockpit/langgraph-proxy.mjs).
+const holdExtraction = (request: APIRequestContext) =>
+  request.post('/__hold/stream', { data: { afterText: 'Memory reply complete.' } });
+// The real graph only merges facts; replacement, malformed or absent memory
+// and an unexpected pause are injected into what the browser receives (and
+// persisted, so the next turn agrees).
+const authoritative: Record<string, object> = {
+  Replace: { set: { memory: { favorite_drink: 'coffee' } }, persist: { memory: { favorite_drink: 'coffee' } } },
+  Malformed: { set: { memory: null }, persist: { memory: {} } },
+  Absent: { omit: ['memory'], persist: { memory: {} } },
+  Pause: { set: { __interrupt__: [{ id: 'unexpected', value: { kind: 'unknown' } }] } },
+};
 
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
 });
 async function send(page: Page, text: string, navigate = true) {
+  if (text in authoritative)
+    await page.request.post('/__values', { data: authoritative[text] });
   if (navigate) await page.goto('/langgraph/memory/react/');
   await page.getByLabel('Message', { exact: true }).fill(text);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
@@ -17,7 +35,7 @@ test('shows a streamed reply before held extraction publishes facts', async ({
   page,
   request,
 }) => {
-  await request.post('/__hold-extraction');
+  await holdExtraction(request);
   await send(page, 'Remember Mira');
   await expect(transcript(page)).toContainText('Memory reply');
   await expect(transcript(page)).toContainText('Memory reply complete.');
@@ -26,7 +44,7 @@ test('shows a streamed reply before held extraction publishes facts', async ({
     page.getByRole('button', { name: 'New conversation' })
   ).toBeDisabled();
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
     .toBe(true);
   await request.post('/__release');
   await expect(facts(page)).toContainText('Mira');
@@ -134,7 +152,7 @@ test('duplicate send admits one run and Stop releases held extraction', async ({
   page,
   request,
 }) => {
-  await request.post('/__hold-extraction');
+  await holdExtraction(request);
   await page.goto('/langgraph/memory/react/');
   await page.getByLabel('Message', { exact: true }).fill('Remember Mira');
   await page
@@ -147,7 +165,7 @@ test('duplicate send admits one run and Stop releases held extraction', async ({
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.locator('footer').getByRole('status')).toContainText('Stopped');
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
     .toBe(false);
   await request.post('/__release');
   await expect(facts(page)).toContainText('No facts yet.');
@@ -187,7 +205,7 @@ test('pagehide disposes held extraction and fences late facts', async ({
   page,
   request,
 }) => {
-  await request.post('/__hold-extraction');
+  await holdExtraction(request);
   await send(page, 'Remember Mira');
   await expect(transcript(page)).toContainText('Memory reply');
   await page.evaluate(() =>
@@ -195,7 +213,7 @@ test('pagehide disposes held extraction and fences late facts', async ({
   );
   await expect(transcript(page)).toHaveCount(0);
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
     .toBe(false);
   await request.post('/__release');
   await expect(facts(page)).toHaveCount(0);
