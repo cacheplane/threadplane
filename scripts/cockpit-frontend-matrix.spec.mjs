@@ -149,6 +149,10 @@ test('Chat Subagents owns an exact native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('chat-subagents'), {
     topic: 'subagents', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/subagents/react',
     base: '/chat/subagents/react/', port: 4624, project: 'cockpit-chat-subagents-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/subagents/python',
+      fixtures: 'cockpit/chat/subagents/angular/e2e/fixtures', langgraphPort: 5624,
+    },
   });
   for (const key of ['subagents', 'chat/subagents', '../chat-subagents'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -159,6 +163,10 @@ test('Chat Tool Calls owns an exact native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('chat-tool-calls'), {
     topic: 'tool-calls', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/tool-calls/react',
     base: '/chat/tool-calls/react/', port: 4623, project: 'cockpit-chat-tool-calls-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/tool-calls/python',
+      fixtures: 'cockpit/chat/tool-calls/angular/e2e/fixtures', langgraphPort: 5623,
+    },
   });
   for (const key of ['tool-calls', 'chat/tool-calls', '../chat-tool-calls'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -169,6 +177,10 @@ test('Chat Interrupts owns an explicit native React identity separate from LangG
   assert.deepEqual(reactCockpitConfiguration('chat-interrupts'), {
     topic: 'interrupts', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/interrupts/react',
     base: '/chat/interrupts/react/', port: 4622, project: 'cockpit-chat-interrupts-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/interrupts/python',
+      fixtures: 'cockpit/chat/interrupts/angular/e2e/fixtures', langgraphPort: 5622,
+    },
   });
   assert.equal(reactCockpitConfiguration('interrupts').appPath, 'cockpit/langgraph/interrupts/react');
   for (const key of ['chat/interrupts', '../chat-interrupts'])

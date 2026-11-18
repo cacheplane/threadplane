@@ -2,6 +2,350 @@
   "fixtures": [
     {
       "match": {
+        "systemMessage": "In 3-5 words, summarize",
+        "userMessage": "(title fails)"
+      },
+      "response": {
+        "error": {
+          "message": "PRIVATE title model failure",
+          "type": "server_error"
+        },
+        "status": 500
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "In 3-5 words, summarize"
+      },
+      "response": {
+        "content": "Aviation snippet title"
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Research Agent",
+        "userMessage": "Research LAX to JFK for delegate sequential"
+      },
+      "response": {
+        "content": "Research suggestion: Research LAX to JFK for delegate sequential."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Booking Agent",
+        "userMessage": "Booking LAX to JFK for delegate sequential"
+      },
+      "response": {
+        "content": "Booking suggestion: Booking LAX to JFK for delegate sequential."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are an Itinerary Agent",
+        "userMessage": "Itinerary LAX to JFK for delegate sequential"
+      },
+      "response": {
+        "content": "Itinerary suggestion: Itinerary LAX to JFK for delegate sequential."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Research Agent",
+        "userMessage": "Research LAX to JFK for delegate parallel"
+      },
+      "response": {
+        "content": "Research suggestion: Research LAX to JFK for delegate parallel."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Booking Agent",
+        "userMessage": "Booking LAX to JFK for delegate parallel"
+      },
+      "response": {
+        "content": "Booking suggestion: Booking LAX to JFK for delegate parallel."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are an Itinerary Agent",
+        "userMessage": "Itinerary LAX to JFK for delegate parallel"
+      },
+      "response": {
+        "content": "Itinerary suggestion: Itinerary LAX to JFK for delegate parallel."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Research Agent",
+        "userMessage": "Research LAX to JFK for repeated task (1)"
+      },
+      "response": {
+        "content": "Research suggestion: Research LAX to JFK for repeated task (1)."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Research Agent",
+        "userMessage": "Research LAX to JFK for repeated task (2)"
+      },
+      "response": {
+        "content": "Research suggestion: Research LAX to JFK for repeated task (2)."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Research Agent",
+        "userMessage": "Research LAX to JFK for empty-child"
+      },
+      "response": {
+        "content": "Research suggestion: Research LAX to JFK for empty-child."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Booking Agent",
+        "userMessage": "Booking LAX to JFK for empty-child"
+      },
+      "response": {
+        "content": " "
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are an Itinerary Agent",
+        "userMessage": "Itinerary LAX to JFK for empty-child"
+      },
+      "response": {
+        "content": "Itinerary suggestion: Itinerary LAX to JFK for empty-child."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Research Agent",
+        "userMessage": "Research LAX to JFK for fail-child"
+      },
+      "response": {
+        "content": "Research suggestion: Research LAX to JFK for fail-child."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Booking Agent",
+        "userMessage": "Booking LAX to JFK for fail-child"
+      },
+      "response": {
+        "content": "Authored partial child output that never completes."
+      },
+      "chunkSize": 8,
+      "truncateAfterChunks": 1
+    },
+    {
+      "match": {
+        "systemMessage": "You are an Itinerary Agent",
+        "userMessage": "Itinerary LAX to JFK for fail-child"
+      },
+      "response": {
+        "content": "Itinerary suggestion: Itinerary LAX to JFK for fail-child."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Research Agent",
+        "userMessage": "Research LAX to JFK for Literal long <button>observed</button>"
+      },
+      "response": {
+        "content": "Research suggestion: Research LAX to JFK for Literal long <button>observed</button>."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are a Booking Agent",
+        "userMessage": "Booking LAX to JFK for Literal long <button>observed</button>"
+      },
+      "response": {
+        "content": "Booking suggestion: Booking LAX to JFK for Literal long <button>observed</button>."
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "You are an Itinerary Agent",
+        "userMessage": "Itinerary LAX to JFK for Literal long <button>observed</button>"
+      },
+      "response": {
+        "content": "Itinerary suggestion: Itinerary LAX to JFK for Literal long <button>observed</button>."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-seq-0"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"booking\", \"task_description\": \"Booking LAX to JFK for delegate sequential\"}",
+            "id": "task-seq-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-seq-1"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"itinerary\", \"task_description\": \"Itinerary LAX to JFK for delegate sequential\"}",
+            "id": "task-seq-2"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-seq-2"
+      },
+      "response": {
+        "content": "Here is your LAX to JFK trip plan."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-par-2"
+      },
+      "response": {
+        "content": "Here is your LAX to JFK trip plan."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-rep-1"
+      },
+      "response": {
+        "content": "Here is your LAX to JFK trip plan."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-empty-0"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"booking\", \"task_description\": \"Booking LAX to JFK for empty-child\"}",
+            "id": "task-empty-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-empty-1"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"itinerary\", \"task_description\": \"Itinerary LAX to JFK for empty-child\"}",
+            "id": "task-empty-2"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-empty-2"
+      },
+      "response": {
+        "content": "Here is your LAX to JFK trip plan."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-fail-0"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"booking\", \"task_description\": \"Booking LAX to JFK for fail-child\"}",
+            "id": "task-fail-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-fail-1"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"itinerary\", \"task_description\": \"Itinerary LAX to JFK for fail-child\"}",
+            "id": "task-fail-2"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-fail-2"
+      },
+      "response": {
+        "content": "Here is your LAX to JFK trip plan."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-literal-0"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"booking\", \"task_description\": \"Booking LAX to JFK for Literal long <button>observed</button>\"}",
+            "id": "task-literal-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-literal-1"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"itinerary\", \"task_description\": \"Itinerary LAX to JFK for Literal long <button>observed</button>\"}",
+            "id": "task-literal-2"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-literal-2"
+      },
+      "response": {
+        "content": "Here is your LAX to JFK trip plan."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "task-malformed-0"
+      },
+      "response": {
+        "content": "Here is your LAX to JFK trip plan."
+      }
+    },
+    {
+      "match": {
         "userMessage": "Plan a trip from LAX to JFK",
         "model": "gpt-5-mini",
         "turnIndex": 0,
@@ -118,6 +462,134 @@
       "metadata": {
         "systemHash": "03217c65",
         "toolsHash": "1ce7a06f"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "delegate sequential",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"research\", \"task_description\": \"Research LAX to JFK for delegate sequential\"}",
+            "id": "task-seq-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "delegate parallel",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"research\", \"task_description\": \"Research LAX to JFK for delegate parallel\"}",
+            "id": "task-par-0"
+          },
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"booking\", \"task_description\": \"Booking LAX to JFK for delegate parallel\"}",
+            "id": "task-par-1"
+          },
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"itinerary\", \"task_description\": \"Itinerary LAX to JFK for delegate parallel\"}",
+            "id": "task-par-2"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "repeated task",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"research\", \"task_description\": \"Research LAX to JFK for repeated task (1)\"}",
+            "id": "task-rep-0"
+          },
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"research\", \"task_description\": \"Research LAX to JFK for repeated task (2)\"}",
+            "id": "task-rep-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "empty-child",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"research\", \"task_description\": \"Research LAX to JFK for empty-child\"}",
+            "id": "task-empty-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "fail-child",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"research\", \"task_description\": \"Research LAX to JFK for fail-child\"}",
+            "id": "task-fail-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Literal long <button>observed</button>",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"research\", \"task_description\": \"Research LAX to JFK for Literal long <button>observed</button>\"}",
+            "id": "task-literal-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "malformed task",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"research\", \"task_description\": 123}",
+            "id": "task-malformed-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "direct answer"
+      },
+      "response": {
+        "content": "A direct answer with no specialists."
       }
     }
   ]

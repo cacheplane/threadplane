@@ -3,6 +3,7 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/chat/interrupts/react/src",
   "projectType": "application",
+  "implicitDependencies": ["cockpit-chat-interrupts-angular", "cockpit-chat-interrupts-python"],
   "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
   "targets": {
     "build": {
@@ -32,23 +33,11 @@
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
-      "dependsOn": ["build", "fixture-test"],
+      "inputs": ["default", "reactAimockBackend"],
+      "dependsOn": ["build", { "target": "test", "projects": ["cockpit-chat-interrupts-python"] }],
       "options": {
         "config": "cockpit/chat/interrupts/react/e2e/playwright.config.ts",
         "skipInstall": true
-      }
-    },
-    "fixture-test": {
-      "executor": "nx:run-commands",
-      "cache": false,
-      "dependsOn": [
-        {
-          "target": "test",
-          "projects": ["cockpit-chat-interrupts-python"]
-        }
-      ],
-      "options": {
-        "command": "node --test scripts/react-cockpit/chat-interrupts-fixture.spec.mjs"
       }
     }
   }
