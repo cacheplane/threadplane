@@ -4,9 +4,12 @@ import {
   type Page,
   type APIRequestContext,
 } from '@playwright/test';
-import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { writeFileSync } from 'node:fs';
+// Backend: aimock replays cockpit/chat/timeline/angular/e2e/fixtures (shared
+// with the Angular example) into a real `langgraph dev`, whose checkpoints,
+// history and checkpoint state reads are the real server's. The React static
+// server proxies /api to it, recording requests and injecting holds, state and
+// history rewrites, and failures (scripts/react-cockpit/langgraph-proxy.mjs).
 const base = '/chat/timeline/react/';
 const box = (page: Page) => page.getByLabel('Message', { exact: true });
 const current = (page: Page) =>
@@ -37,8 +40,8 @@ async function refresh(page: Page) {
 }
 const requests = async (request: APIRequestContext) =>
   (await request.get('/__requests')).json();
-const proofs = async (request: APIRequestContext) =>
-  (await request.get('/__graph-proof')).json();
+const captures = async (request: APIRequestContext) =>
+  (await request.get('/__captures')).json();
 const browserErrors = new WeakMap<Page, string[]>();
 test.beforeEach(async ({ request, page }) => {
   expect((await request.post('/__reset')).status()).toBe(200);
@@ -60,18 +63,6 @@ test.afterEach(async ({ request, page }) => {
       item.path.match(/\/runs\/[0-9a-f-]+$/) ? 'GET' : 'POST'
     );
   }
-  for (const proof of await proofs(request))
-    expect(proof).toMatchObject({
-      actualCompiledGraph: true,
-      networkConnectAttempts: 0,
-      titleMessageCallbacks: 0,
-      sourceSha256: createHash('sha256')
-        .update(readFileSync(resolve(__dirname, '../../python/src/graph.py')))
-        .digest('hex'),
-      lockSha256: createHash('sha256')
-        .update(readFileSync(resolve(__dirname, '../../python/uv.lock')))
-        .digest('hex'),
-    });
 });
 test('installed SDK previews A, sends C at tip, forks D from A, and extends fork with E', async ({
   page,
@@ -79,10 +70,6 @@ test('installed SDK previews A, sends C at tip, forks D from A, and extends fork
 }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  const streamed: Promise<string>[] = [];
-  page.on('response', (response) => {
-    if (response.url().endsWith('/runs/stream')) streamed.push(response.text());
-  });
   await page.goto(base);
   await expect(box(page)).toBeEnabled();
   expect(await requests(request)).toEqual([]);
@@ -96,16 +83,13 @@ test('installed SDK previews A, sends C at tip, forks D from A, and extends fork
   );
   expect(index).toBeGreaterThanOrEqual(0);
   const source = history[index].checkpoint;
-  const before = (await proofs(request)).filter(
-    (p: { op: string }) => p.op === 'submit'
-  ).length;
+  // Previewing a checkpoint reads state only: no graph run.
+  const before = (await captures(request)).length;
   await picker(page).nth(index).click();
   await expect(preview(page).locator('article')).toHaveCount(2);
   await expect(current(page).locator('article')).toHaveCount(4);
   await expect(box(page)).toHaveValue('Retained draft');
-  expect(
-    (await proofs(request)).filter((p: { op: string }) => p.op === 'submit')
-  ).toHaveLength(before);
+  expect(await captures(request)).toHaveLength(before);
   await send(page, 'C tip');
   await expect(current(page).locator('article')).toHaveCount(6);
   await expect(preview(page).locator('article')).toHaveCount(2);
@@ -140,7 +124,11 @@ test('installed SDK previews A, sends C at tip, forks D from A, and extends fork
     r.path.endsWith('/runs/stream')
   );
   expect(runs).toHaveLength(5);
-  const streamBodies = await Promise.all(streamed);
+  // The exact SSE each run delivered, as the proxy forwarded it from the real
+  // server (DevTools cannot return streamed bodies the client closes itself).
+  const streamBodies: string[] = (await captures(request)).map(
+    (capture: { sse: string }) => capture.sse.replace(/\r\n/g, '\n')
+  );
   expect(streamBodies).toHaveLength(5);
   for (let index = 0; index < 5; index++) {
     expect(runs[index].body.stream_mode).toEqual([
@@ -197,15 +185,15 @@ test('installed SDK previews A, sends C at tip, forks D from A, and extends fork
     JSON.stringify(wire, null, 2)
   );
   writeFileSync(
-    testInfo.outputPath('graph-proof.json'),
-    JSON.stringify(await proofs(request), null, 2)
+    testInfo.outputPath('run-captures.json'),
+    JSON.stringify(await captures(request), null, 2)
   );
   await testInfo.attach('request-ledger', {
     body: JSON.stringify(wire, null, 2),
     contentType: 'application/json',
   });
-  await testInfo.attach('graph-proof', {
-    body: JSON.stringify(await proofs(request), null, 2),
+  await testInfo.attach('run-captures', {
+    body: JSON.stringify(await captures(request), null, 2),
     contentType: 'application/json',
   });
   await page.screenshot({
@@ -237,7 +225,7 @@ test('held preview is read-only, cancellation fences its late response, and refr
   await send(page, 'A');
   await send(page, 'B');
   await box(page).fill('Kept draft');
-  await request.post('/__hold-state');
+  await request.post('/__hold/state');
   await selectFirst(page);
   await held(request, 'activeState');
   await expect(preview(page).getByRole('status')).toHaveText(
@@ -255,7 +243,7 @@ test('held preview is read-only, cancellation fences its late response, and refr
   await expect(preview(page).locator('article')).toHaveCount(0);
   await selectFirst(page);
   await expect(preview(page).locator('article')).toHaveCount(2);
-  await request.post('/__hold-history');
+  await request.post('/__hold/history');
   await page
     .getByRole('button', { name: 'Refresh checkpoints', exact: true })
     .click();
@@ -319,7 +307,7 @@ test('history failure and late history after New cannot restore old selection or
   ).toHaveText('Checkpoint history is unavailable.');
   await expect(current(page).locator('article')).toHaveCount(2);
   await request.post('/__history/safe');
-  await request.post('/__hold-history');
+  await request.post('/__hold/history');
   await page
     .getByRole('button', { name: 'Refresh checkpoints', exact: true })
     .click();
@@ -341,7 +329,7 @@ for (const failure of ['stop', 'failure'])
     request,
   }) => {
     await page.goto(base);
-    if (failure === 'stop') await request.post('/__hold-stream');
+    if (failure === 'stop') await request.post('/__hold/stream');
     await box(page).fill(failure === 'stop' ? 'Held' : 'fail-stream');
     await page.getByRole('button', { name: 'Send', exact: true }).click();
     if (failure === 'stop') {
@@ -378,7 +366,7 @@ test('disposing a page with held preview releases it and leaves the replacement 
 }) => {
   await page.goto(base);
   await send(page, 'Old');
-  await request.post('/__hold-state');
+  await request.post('/__hold/state');
   await selectFirst(page);
   await held(request, 'activeState');
   await page.goto('about:blank');
@@ -394,17 +382,17 @@ test('disposing a page with held preview releases it and leaves the replacement 
   await expect(preview(page).locator('article')).toHaveCount(0);
 });
 
-for (const control of ['metadata-failure', 'title-model-failure'])
-  test(`optional ${control} preserves graph answer without title message callbacks`, async ({
-    page,
-    request,
-  }) => {
-    await request.post('/__' + control);
-    await page.goto(base);
-    await send(page, 'Title optional');
-    await expect(current(page).locator('article')).toHaveCount(2);
-    await expect(current(page)).toContainText('Answer: Title optional');
-  });
+test('optional title failure preserves the graph answer without title output', async ({
+  page,
+}) => {
+  // The title model call for this prompt fails (its own aimock error fixture);
+  // generate_title swallows it, on the same path as a metadata read failure.
+  await page.goto(base);
+  await send(page, 'Title optional (title fails)');
+  await expect(current(page).locator('article')).toHaveCount(2);
+  await expect(current(page)).toContainText('Answer: Title optional');
+  await expect(current(page)).not.toContainText('PRIVATE');
+});
 
 test('literal and long content stays contained on desktop and mobile', async ({
   page,
@@ -476,7 +464,7 @@ test('developer bridge sends credentials only in headers across checkpoint opera
     JSON.stringify(wire.map((r: { body: unknown }) => r.body))
   ).not.toContain('TEST_TIMELINE_KEY');
   await expect(frame.locator('body')).not.toContainText('TEST_TIMELINE_KEY');
-  await request.post('/__hold-state');
+  await request.post('/__hold/state');
   await frame
     .getByRole('button', { name: 'Refresh checkpoints', exact: true })
     .click();
@@ -547,8 +535,8 @@ test('mapped HTTP representation carries the complete source unchanged through p
     JSON.stringify(wire, null, 2)
   );
   writeFileSync(
-    testInfo.outputPath('mapped-graph-proof.json'),
-    JSON.stringify(await proofs(request), null, 2)
+    testInfo.outputPath('mapped-run-captures.json'),
+    JSON.stringify(await captures(request), null, 2)
   );
   await testInfo.attach('mapped-representation-request-ledger', {
     body: JSON.stringify(wire, null, 2),

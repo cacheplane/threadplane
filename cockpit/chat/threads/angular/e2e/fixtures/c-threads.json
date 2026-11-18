@@ -1,10 +1,24 @@
 {
   "fixtures": [
     {
+      "match": { "systemMessage": "In 3-5 words, summarize" },
+      "response": { "content": "Aviation snippet title" }
+    },
+    {
       "match": { "userMessage": "Hello" },
       "response": {
         "content": "Hi! I'm the chat-threads demo. Switch between threads using the sidebar list to see independent conversation contexts."
       }
+    },
+    {
+      "match": { "userMessage": "fail-stream" },
+      "response": { "content": "A partial answer that never finishes streaming." },
+      "chunkSize": 3,
+      "truncateAfterChunks": 4
+    },
+    {
+      "match": { "userMessage": "" },
+      "response": { "content": "A saved answer.\n\n```typescript\nconst answer = 42;\n```" }
     }
   ]
 }

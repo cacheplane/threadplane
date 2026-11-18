@@ -4,9 +4,11 @@ import {
   type Page,
   type APIRequestContext,
 } from '@playwright/test';
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+// Backend: aimock replays cockpit/chat/threads/angular/e2e/fixtures (shared
+// with the Angular example) into a real `langgraph dev`, whose generate_title
+// node writes the real thread title. The React static server proxies /api to
+// it, recording requests and injecting holds, title and history rewrites, and
+// failures (scripts/react-cockpit/langgraph-proxy.mjs).
 type Wire = {
   path: string;
   method: string;
@@ -59,21 +61,6 @@ async function newConversation(page: Page) {
 test.beforeEach(async ({ request }) => {
   expect((await request.post('/__reset')).status()).toBe(200);
 });
-test.afterEach(async ({ request }) => {
-  const proofs = await (await request.get('/__graph-proof')).json();
-  for (const proof of proofs)
-    expect(proof).toMatchObject({
-      actualCompiledGraph: true,
-      networkConnectAttempts: 0,
-      titleMessageCallbacks: 0,
-      sourceSha256: createHash('sha256')
-        .update(readFileSync(resolve(__dirname, '../../python/src/graph.py')))
-        .digest('hex'),
-      lockSha256: createHash('sha256')
-        .update(readFileSync(resolve(__dirname, '../../python/uv.lock')))
-        .digest('hex'),
-    });
-});
 test('installed SDK switches A/B/A and extends only the selected saved conversation', async ({
   page,
   request,
@@ -85,13 +72,13 @@ test('installed SDK switches A/B/A and extends only the selected saved conversat
   expect(await (await request.get('/__requests')).json()).toEqual([]);
   await submit(page, 'A first');
   await saved(page);
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
+  await expect(picker(page).first()).toHaveText('Aviation snippet title');
   await box(page).fill('A retained draft');
   await newConversation(page);
   await expect(box(page)).toHaveValue('');
   await submit(page, 'B first');
   await saved(page);
-  await expect(picker(page).nth(1)).toHaveText('Authored conversation title');
+  await expect(picker(page).nth(1)).toHaveText('Aviation snippet title');
   await box(page).fill('B retained draft');
   await picker(page).nth(0).click();
   await loaded(page);
@@ -118,7 +105,7 @@ test('installed SDK switches A/B/A and extends only the selected saved conversat
   await expect(conversation(page)).toContainText('B first');
   await expect(conversation(page)).not.toContainText('A first');
   await expect(conversation(page)).not.toContainText(
-    'Authored conversation title'
+    'Aviation snippet title'
   );
   await expect(picker(page).nth(1)).toHaveAttribute('aria-pressed', 'true');
   await expect
@@ -307,7 +294,10 @@ test('actual graph failure is generic and never confirms or replays', async ({
   await submit(page, 'fail-stream');
   await blocked(page);
   await expect(page.locator('body')).not.toContainText('PRIVATE');
-  await expect(page.locator('body')).not.toContainText('Authored stream failure');
+  // aimock cuts the answer stream mid-way (truncateAfterChunks), so the model
+  // client raises inside the real graph; its transport error stays private.
+  await expect(page.locator('body')).not.toContainText('peer closed');
+  await expect(page.locator('body')).not.toContainText('Connection error');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(
     wire.filter((item) => item.path.endsWith('/runs/stream'))
@@ -318,7 +308,7 @@ test('held title does not block a new conversation and cannot relabel it after r
   page,
   request,
 }) => {
-  await request.post('/__hold-title');
+  await request.post('/__hold/title');
   await page.goto(base);
   await submit(page, 'A first');
   await saved(page);
@@ -337,7 +327,7 @@ test('held title does not block a new conversation and cannot relabel it after r
   await request.post('/__release-title');
   await submit(page, 'B first');
   await saved(page);
-  await expect(picker(page).nth(1)).toHaveText('Authored conversation title');
+  await expect(picker(page).nth(1)).toHaveText('Aviation snippet title');
   await expect(picker(page).first()).toHaveText('Conversation 1');
 });
 test('a late title from selected A cannot relabel B after switching', async ({
@@ -347,13 +337,13 @@ test('a late title from selected A cannot relabel B after switching', async ({
   await page.goto(base);
   await submit(page, 'A first');
   await saved(page);
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
+  await expect(picker(page).first()).toHaveText('Aviation snippet title');
   await newConversation(page);
   await submit(page, 'B first');
   await saved(page);
-  await expect(picker(page).nth(1)).toHaveText('Authored conversation title');
+  await expect(picker(page).nth(1)).toHaveText('Aviation snippet title');
   await request.post('/__title/literal');
-  await request.post('/__hold-title');
+  await request.post('/__hold/title');
   await picker(page).first().click();
   await loaded(page);
   await expect
@@ -366,8 +356,8 @@ test('a late title from selected A cannot relabel B after switching', async ({
   await loaded(page);
   await request.post('/__release-title');
   await expect(picker(page).nth(1)).toHaveAttribute('aria-pressed', 'true');
-  await expect(picker(page).nth(1)).toHaveText('Authored conversation title');
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
+  await expect(picker(page).nth(1)).toHaveText('Aviation snippet title');
+  await expect(picker(page).first()).toHaveText('Aviation snippet title');
   await expect(conversation(page)).toContainText('B first');
   await expect(conversation(page)).not.toContainText('A first');
 });
@@ -378,7 +368,7 @@ test('failed metadata refresh retains the last valid title', async ({
   await page.goto(base);
   await submit(page, 'First');
   await saved(page);
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
+  await expect(picker(page).first()).toHaveText('Aviation snippet title');
   await request.post('/__title/titlefailure');
   await submit(page, 'Second');
   await saved(page);
@@ -390,7 +380,7 @@ test('failed metadata refresh retains the last valid title', async ({
         ).length
     )
     .toBe(2);
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
+  await expect(picker(page).first()).toHaveText('Aviation snippet title');
 });
 test('literal title markup remains button text', async ({ page, request }) => {
   await request.post('/__title/literal');
@@ -433,7 +423,7 @@ test('Stop fences held streaming and preserves other records', async ({
   await submit(page, 'A first');
   await saved(page);
   await newConversation(page);
-  await request.post('/__hold-stream');
+  await request.post('/__hold/stream');
   await submit(page, 'B interrupted');
   await expect
     .poll(
@@ -458,7 +448,9 @@ for (const kind of ['history', 'title', 'stream']) {
     page,
     request,
   }) => {
-    await request.post('/__hold-' + kind);
+    await request.post(
+      kind === 'history' ? '/__history/hold' : '/__hold/' + kind
+    );
     await page.goto(base);
     await submit(page, 'First');
     const field = 'active' + kind[0].toUpperCase() + kind.slice(1);
@@ -487,11 +479,11 @@ test('worker failure stays generic and is not retried', async ({
   page,
   request,
 }) => {
-  await request.post('/__worker-failure');
+  await request.post('/__fail-stream');
   await page.goto(base);
   await submit(page, 'First');
   await blocked(page);
-  await expect(page.locator('body')).not.toContainText('Graph worker');
+  await expect(page.locator('body')).not.toContainText('PRIVATE');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(
     wire.filter((item) => item.path.endsWith('/runs/stream'))
@@ -523,7 +515,7 @@ test('developer endpoint credentials stay in headers for creation, stream, histo
   await expect(frame.getByRole('status')).toHaveText('Response saved.');
   await expect(
     frame.getByRole('navigation', { name: 'Conversations' }).getByRole('button')
-  ).toHaveText('Authored conversation title');
+  ).toHaveText('Aviation snippet title');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(wire).toHaveLength(5);
   expect(

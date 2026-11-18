@@ -22,8 +22,6 @@ import { createLanggraphProxy } from './langgraph-proxy.mjs';
 import { createAimockBackend } from './aimock-backend.mjs';
 import { createChatDebugFixture } from './chat-debug-fixture.mjs';
 import { createChatGenerativeUiFixture } from './chat-generative-ui-fixture.mjs';
-import { createChatTimelineFixture } from './chat-timeline-fixture.mjs';
-import { createChatThreadsFixture } from './chat-threads-fixture.mjs';
 import { createAgUiStreamingFixture } from './ag-ui-streaming-fixture.mjs';
 import { createAgUiInterruptsFixture } from './ag-ui-interrupts-fixture.mjs';
 import { createAgUiToolViewsFixture } from './ag-ui-tool-views-fixture.mjs';
@@ -71,8 +69,6 @@ const deepAgentsSubagentsFixture = configuration.library === 'deep-agents' && co
 const deepAgentsFilesystemFixture = configuration.library === 'deep-agents' && configuration.topic === 'filesystem' ? createDeepAgentsFilesystemFixture() : null;
 const deepAgentsPlanningFixture = configuration.library === 'deep-agents' && configuration.topic === 'planning' ? createDeepAgentsPlanningFixture() : null;
 let chatGenerativeUiFixture = configuration.library === 'chat' && configuration.topic === 'generative-ui' ? createChatGenerativeUiFixture() : null;
-const chatTimelineFixture = configuration.library === 'chat' && configuration.topic === 'timeline' ? createChatTimelineFixture() : null;
-const chatThreadsFixture = configuration.library === 'chat' && configuration.topic === 'threads' ? createChatThreadsFixture() : null;
 // aimock-backed examples: the real graph runs under `langgraph dev` (started by
 // the Playwright global setup); this server proxies /api to it.
 // `--backend` (Website previews) starts that backend here, lazily on the first
@@ -246,8 +242,6 @@ const server = createServer(async (request, response) => {
     }
   }
   if (chatGenerativeUiFixture && (await chatGenerativeUiFixture(request, response, pathname))) return;
-  if (chatTimelineFixture && (await chatTimelineFixture(request, response, pathname))) return;
-  if (chatThreadsFixture && (await chatThreadsFixture(request, response, pathname))) return;
   if (langgraphProxy && (await langgraphProxy(request, response, pathname))) return;
   if (configuration.adapter === 'none') {
     if (!['GET', 'HEAD'].includes(request.method)) {
@@ -462,7 +456,7 @@ const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]) : null;
 let closing;
 let shutdown;
-if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture || chatThreadsFixture || chatTimelineFixture) {
+if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture) {
   shutdown = (code = 0) => {
     closing ??= (async () => {
       let a2uiFailure;
@@ -475,7 +469,7 @@ if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture ||
         try { await chatA2uiFixture?.close(); }
         catch (error) { a2uiFailure = error; }
       }
-      else await (chatDebugFixture ?? nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? deepAgentsMemoryFixture ?? deepAgentsSubagentsFixture ?? deepAgentsSkillsFixture ?? deepAgentsFilesystemFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
+      else await (chatDebugFixture ?? nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? deepAgentsMemoryFixture ?? deepAgentsSubagentsFixture ?? deepAgentsSkillsFixture ?? deepAgentsFilesystemFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();
