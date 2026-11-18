@@ -107,6 +107,12 @@ export function checkCandidate(signal: AbortSignal) {
   void agent.submit({ message: 'Hello' });
   // @ts-expect-error Native resume stays on the native session.
   void agent.resume;
+  const regenerated: Promise<CompleteOutcome> | undefined =
+    session.regenerate?.('assistant-id', { signal });
+  void regenerated;
+  void agent.regenerate?.('assistant-id', { signal });
+  // @ts-expect-error Regenerate takes a message id, not an index.
+  void session.regenerate?.(1);
   // @ts-expect-error The view wraps a session, not its options.
   createAgentSession(options);
   return { session, snapshot, rows, stable, messages, toolCalls, agent, core };
