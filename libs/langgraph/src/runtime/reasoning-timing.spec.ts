@@ -233,3 +233,88 @@ describe('reasoning time through the session', () => {
     expect(f.last()).not.toHaveProperty('reasoningDurationMs');
   });
 });
+
+describe('reasoning time in child graphs', () => {
+  const inChild = (event: StreamEvent, namespace: string[]): StreamEvent => ({
+    ...event,
+    namespace,
+  });
+  const childMessage = (f: ReturnType<typeof fixture>, name: string) =>
+    f.session
+      .getSnapshot()
+      .subgraphs.find((entry) => entry.namespace[0] === name)!.messages.at(-1)!;
+
+  it('times each child graph on its own clock, even with a repeated message identifier', async () => {
+    const f = fixture();
+    f.at(1_000);
+    const run = f.session.submit('Go');
+    await f.started();
+    await f.emit(inChild(delta('step', 'Plan'), ['research']));
+    f.at(1_400);
+    await f.emit(inChild(delta('step', 'Check'), ['review']));
+    expect(childMessage(f, 'research')).not.toHaveProperty('reasoningDurationMs');
+    f.at(3_000);
+    await f.emit(inChild(delta('step', undefined, 'Found'), ['research']));
+    expect(childMessage(f, 'research')).toMatchObject({
+      reasoning: 'Plan',
+      reasoningDurationMs: 2_000,
+    });
+    expect(childMessage(f, 'review')).not.toHaveProperty('reasoningDurationMs');
+    const reviewing = f.session.getSnapshot().subgraphs.find(
+      (entry) => entry.namespace[0] === 'review'
+    );
+    f.at(3_100);
+    await f.emit(inChild(delta('step', undefined, ' it'), ['research']));
+    // A child graph with nothing new keeps its identity.
+    expect(
+      f.session.getSnapshot().subgraphs.find(
+        (entry) => entry.namespace[0] === 'review'
+      )
+    ).toBe(reviewing);
+    f.at(4_000);
+    await f.emit(inChild(delta('step', undefined, 'Fine'), ['review']));
+    expect(childMessage(f, 'review').reasoningDurationMs).toBe(2_600);
+    expect(childMessage(f, 'research').reasoningDurationMs).toBe(2_000);
+    expect(Object.isFrozen(childMessage(f, 'review'))).toBe(true);
+    // The root transcript is untouched by child timings.
+    for (const message of f.session.getSnapshot().messages)
+      expect(message).not.toHaveProperty('reasoningDurationMs');
+    f.streams[0].finish();
+    await run;
+    expect(childMessage(f, 'research').reasoningDurationMs).toBe(2_000);
+  });
+
+  it('reports no time for child reasoning delivered with its answer', async () => {
+    const f = fixture();
+    f.at(0);
+    const run = f.session.submit('Go');
+    await f.started();
+    f.at(900);
+    await f.emit(inChild(delta('step', 'Whole', 'Answer'), ['research']));
+    expect(childMessage(f, 'research')).toMatchObject({ reasoning: 'Whole' });
+    expect(childMessage(f, 'research')).not.toHaveProperty('reasoningDurationMs');
+    f.streams[0].finish();
+    await run;
+  });
+
+  it('starts a returning child graph from a fresh clock on the next submission', async () => {
+    const f = fixture();
+    f.at(0);
+    const first = f.session.submit('Go');
+    await f.started();
+    await f.emit(inChild(delta('step', 'Plan'), ['research']));
+    f.streams[0].finish();
+    await first;
+    f.at(10_000);
+    const second = f.session.submit('Again');
+    await f.started(1);
+    expect(f.session.getSnapshot().subgraphs).toEqual([]);
+    f.at(11_000);
+    await f.emit(inChild(delta('step', 'Plan'), ['research']), 1);
+    f.at(11_250);
+    await f.emit(inChild(delta('step', undefined, 'Found'), ['research']), 1);
+    expect(childMessage(f, 'research').reasoningDurationMs).toBe(250);
+    f.streams[1].finish();
+    await second;
+  });
+});
