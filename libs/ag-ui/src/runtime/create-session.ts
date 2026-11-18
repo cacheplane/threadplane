@@ -35,11 +35,16 @@ import {
   applyObservation,
   failedWithRunError,
   initialObservation,
-  type SessionSnapshot,
+  type Observation,
 } from './session-observation.js';
 import { earlierSubagents, type Subagents } from './subagents.js';
 import { createRun, httpFailure, type RunHandle } from './create-run.js';
 import { createPublication } from './session-publication.js';
+import {
+  createPresenter,
+  UNSAFE_RETRY,
+  type SessionSnapshot,
+} from './agent-session.js';
 import { createReasoningClock } from './reasoning-clock.js';
 import type { InterruptMode } from './interrupt-mode.js';
 import {
@@ -65,9 +70,8 @@ export interface SessionOptions
   readonly state?: unknown;
   /**
    * The type of the state document: `type<T>()` to declare it, or a Standard
-   * Schema to also check each state. `createAgentSession` publishes it as the
-   * typed `state` of the core snapshot. The native snapshot's `state` stays
-   * the literal document sent with each request, whatever is declared here.
+   * Schema to also check each state. The snapshot's `state` has this type.
+   * Requests still send the literal document, whatever is declared here.
    */
   readonly stateType?: StateDeclaration;
   /** Child evidence saved with this thread, published as `earlierSubagents`. Their attributed messages belong in `messages`. */
@@ -75,7 +79,7 @@ export interface SessionOptions
   readonly interruptMode?: InterruptMode;
 }
 /** A new root invocation observes no children yet; settled ones become history. */
-function nextInvocationSubagents(previous: SessionSnapshot) {
+function nextInvocationSubagents(previous: Observation) {
   const earlier = earlierSubagents(
     previous.earlierSubagents,
     previous.subagents
@@ -88,7 +92,7 @@ function nextInvocationSubagents(previous: SessionSnapshot) {
 export interface Session<TState = unknown> {
   /** The state declaration this session was created with, when it has one. */
   readonly stateType?: StateDeclaration<TState>;
-  getSnapshot(): SessionSnapshot;
+  getSnapshot(): SessionSnapshot<TState>;
   subscribe(notify: () => void): () => void;
   submit(
     input: SubmitInput<TState>,
@@ -105,10 +109,11 @@ export interface Session<TState = unknown> {
    * Sends the last submission again after its run failed with a backend
    * `RUN_ERROR`. The request carries the history and state that submission
    * sent, so no second user message is added and the failed run's output is
-   * dropped. Resolves `aborted` without sending while a run is active or when
-   * the last run was not a failed submission, and `error` without sending when
-   * the failure leaves the backend outcome open. Absent on the client-tool
-   * owner, which blocks every dispatched failure as uncertain.
+   * dropped. Resolves `aborted` without sending while a run is active, when
+   * nothing failed or when the last run was not a failed submission. Rejects
+   * without sending when the error's `recovery` is not `'retry'`: the failure
+   * leaves the backend outcome open. Absent on the client-tool owner, which
+   * blocks every dispatched failure as uncertain.
    */
   retry?(): Promise<CompleteOutcome>;
   /**
@@ -126,7 +131,7 @@ export type ClientToolSession<
   C extends Record<string, ToolContract>,
   TState = unknown
 > = Omit<Session<TState>, 'getSnapshot'> & {
-  getSnapshot(): ClientToolSessionSnapshot<C>;
+  getSnapshot(): ClientToolSessionSnapshot<C, TState>;
 };
 /** A `CUSTOM` event as an application event, read the way the Angular adapter
  * reads it: a string value that parses as JSON becomes that data. The legacy
@@ -164,7 +169,10 @@ interface Attempt {
   finished: boolean;
 }
 
-/** Private protocol owner. This does not yet implement core AgentSession. */
+/**
+ * Creates the session that owns one AG-UI thread. It is a core `AgentSession`:
+ * its snapshot is the core snapshot with the protocol evidence behind it.
+ */
 export function createSession<
   T extends Record<string, FunctionToolDefinition>,
   D extends StateDeclaration | undefined = undefined
@@ -218,7 +226,8 @@ export function createSession(
       : Object.freeze({
           ...initial,
           clientTools: Object.freeze({ calls: Object.freeze([]) }),
-        })
+        }),
+    createPresenter(stateType, true)
   );
   let active: Attempt | undefined;
   let disposed = false;
@@ -247,7 +256,7 @@ export function createSession(
     attempt.cleanup();
     if (active === attempt) {
       active = undefined;
-      const previous = publication.getSnapshot();
+      const previous = publication.getObservation();
       publication.publish(
         Object.freeze({
           ...previous,
@@ -281,7 +290,7 @@ export function createSession(
     if (!current(attempt)) return;
     let input: RunAgentInput;
     try {
-      const value = publication.getSnapshot();
+      const value = publication.getObservation();
       const decision = value.decision;
       input = {
         threadId,
@@ -319,7 +328,7 @@ export function createSession(
         if (!current(attempt)) return;
         // createRun delivers the SDK's normalized/verified union through its
         // BaseEvent callback. No second schema parse or sequence verifier.
-        const previous = publication.getSnapshot();
+        const previous = publication.getObservation();
         let next = reasoningClock.observe(
           event as AGUIEvent,
           applyObservation(previous, event as AGUIEvent, interruptMode),
@@ -365,7 +374,7 @@ export function createSession(
   };
   const admit = (
     id: string,
-    next: SessionSnapshot,
+    next: Observation,
     signal: AbortSignal | undefined,
     resolve: (outcome: CompleteOutcome) => void
   ) => {
@@ -446,7 +455,7 @@ export function createSession(
         const beforeInput = ++revision;
         let captured: readonly NativeResponse[];
         try {
-          const previous = publication.getSnapshot();
+          const previous = publication.getObservation();
           if (interruptMode !== 'native' || active)
             throw new TypeError('Resume requires a settled native owner');
           assertResumeEligible(
@@ -474,10 +483,10 @@ export function createSession(
             return;
           }
           const beforeAdmission = revision;
-          let next: SessionSnapshot;
+          let next: Observation;
           let id: string;
           try {
-            const previous = publication.getSnapshot();
+            const previous = publication.getObservation();
             if (active || interruptMode !== 'native')
               throw new TypeError('Resume requires a settled native owner');
             const decision = assertResumeEligible(
@@ -526,7 +535,7 @@ export function createSession(
           resolve('aborted');
           return;
         }
-        if (publication.getSnapshot().decision) {
+        if (publication.getObservation().decision) {
           resolve('error');
           return;
         }
@@ -551,15 +560,15 @@ export function createSession(
             resolve('aborted');
             return;
           }
-          if (publication.getSnapshot().decision) {
+          if (publication.getObservation().decision) {
             resolve('error');
             return;
           }
           const beforeCapture = revision;
-          let next: SessionSnapshot;
+          let next: Observation;
           let id: string;
           try {
-            const previous = publication.getSnapshot();
+            const previous = publication.getObservation();
             // Capture precedes queueing, but admission uses the latest state.
             // Incompatible patches fail before transferring the active run.
             const state = mergeSubmitState(previous.state, captured.state);
@@ -599,13 +608,23 @@ export function createSession(
         });
       }),
     retry: () =>
-      new Promise<CompleteOutcome>((resolve) => {
+      new Promise<CompleteOutcome>((resolve, reject) => {
         if (disposed) {
           resolve('aborted');
           return;
         }
+        // Nothing failed or a run is going: nothing runs, as for an ignored submit.
+        const published = publication.getSnapshot();
+        if (published.status !== 'error') {
+          resolve('aborted');
+          return;
+        }
+        if (published.error?.recovery !== 'retry') {
+          reject(new Error(UNSAFE_RETRY));
+          return;
+        }
         publication.command(() => {
-          const previous = publication.getSnapshot();
+          const previous = publication.getObservation();
           const last = saved;
           if (
             disposed ||
@@ -667,7 +686,9 @@ function createToolsOwner(
     Object.freeze({
       ...initial,
       clientTools: ledger.snapshot(),
-    })
+    }),
+    // This owner has no retry, so no failure is offered as retryable.
+    createPresenter(options.stateType, false)
   );
   interface Physical {
     readonly id: string;
@@ -701,9 +722,9 @@ function createToolsOwner(
     !disposed &&
     !command.controller.signal.aborted &&
     !ledger.snapshot().blocker &&
-    !publication.getSnapshot().decision;
+    !publication.getObservation().decision;
   const publishLedger = (outcome?: CompleteOutcome) => {
-    const previous = publication.getSnapshot();
+    const previous = publication.getObservation();
     publication.publish(
       Object.freeze({
         ...previous,
@@ -727,7 +748,7 @@ function createToolsOwner(
     });
   };
   const unresolvedRootIds = () => {
-    const history = publication.getSnapshot().transcript;
+    const history = publication.getObservation().transcript;
     return history.flatMap((message) =>
       message.role === 'assistant' && typeof message.subagentRunId !== 'string'
         ? (message.toolCalls ?? [])
@@ -746,7 +767,7 @@ function createToolsOwner(
   };
   const protectCancellation = (command: Command, physical: Physical) => {
     ledger.cancelIncomplete(physical.id);
-    const snapshot = publication.getSnapshot();
+    const snapshot = publication.getObservation();
     if (snapshot.decision) return;
     const terminal = snapshot.run?.terminal;
     const conclusive =
@@ -766,7 +787,7 @@ function createToolsOwner(
     command.cleanup();
     // Keep admission busy through final notification; reentrant submit cannot
     // append a new human while this command's result is being published.
-    const previous = publication.getSnapshot();
+    const previous = publication.getObservation();
     publication.publish(
       Object.freeze({
         ...previous,
@@ -871,7 +892,7 @@ function createToolsOwner(
         const completionAuthority = () =>
           revision === completionRevision && eligible(command, physical);
         try {
-          const history = publication.getSnapshot().transcript;
+          const history = publication.getObservation().transcript;
           if (error !== undefined)
             ledger.fail(
               id,
@@ -930,7 +951,7 @@ function createToolsOwner(
     physical.settled = true;
     physical.fetchInvoked = fetchInvoked;
     if (!owns(command, physical)) return;
-    const previous = publication.getSnapshot();
+    const previous = publication.getObservation();
     const terminal = previous.run?.terminal;
     if (
       previous.decision?.kind === 'native' &&
@@ -967,7 +988,7 @@ function createToolsOwner(
         finish(command, 'aborted');
         return;
       }
-      if (publication.getSnapshot().decision || outcome === 'paused') {
+      if (publication.getObservation().decision || outcome === 'paused') {
         finish(command, outcome);
         return;
       }
@@ -1030,7 +1051,7 @@ function createToolsOwner(
     let input: RunAgentInput;
     let capture: ReturnType<typeof ledger.captureRequest>;
     try {
-      const snapshot = publication.getSnapshot();
+      const snapshot = publication.getObservation();
       const resuming =
         snapshot.decision?.kind === 'native' &&
         snapshot.decision.attempt?.runId === physical.id;
@@ -1092,7 +1113,7 @@ function createToolsOwner(
             disposed
           )
             return;
-          const previous = publication.getSnapshot();
+          const previous = publication.getObservation();
           let next = reasoningClock.observe(
             event as AGUIEvent,
             applyObservation(previous, event as AGUIEvent, interruptMode),
@@ -1149,7 +1170,7 @@ function createToolsOwner(
           ledger.snapshot().blocker
         )
           return false;
-        const decision = publication.getSnapshot().decision;
+        const decision = publication.getObservation().decision;
         if (
           decision &&
           !(
@@ -1195,7 +1216,7 @@ function createToolsOwner(
     );
   };
   const startPhysical = (command: Command, id: string) => {
-    const previous = publication.getSnapshot();
+    const previous = publication.getObservation();
     const physical: Physical = {
       id,
       token: ledger.startPhysical({
@@ -1220,7 +1241,7 @@ function createToolsOwner(
     queueMicrotask(() => dispatch(command, physical));
   };
   const admit = (
-    next: SessionSnapshot,
+    next: Observation,
     id: string,
     signal: AbortSignal | undefined,
     resolve: (outcome: CompleteOutcome) => void
@@ -1302,7 +1323,7 @@ function createToolsOwner(
         if (
           active ||
           ledger.snapshot().blocker ||
-          publication.getSnapshot().decision
+          publication.getObservation().decision
         ) {
           resolve('error');
           return;
@@ -1337,13 +1358,13 @@ function createToolsOwner(
           if (
             active ||
             ledger.snapshot().blocker ||
-            publication.getSnapshot().decision
+            publication.getObservation().decision
           ) {
             resolve('error');
             return;
           }
           try {
-            const previous = publication.getSnapshot();
+            const previous = publication.getObservation();
             if (!ledger.historyIntegrity(previous.transcript)) {
               publishLedger();
               resolve('error');
@@ -1396,7 +1417,7 @@ function createToolsOwner(
           }
           if (interruptMode !== 'native')
             throw new TypeError('Native resume required');
-          const previous = publication.getSnapshot();
+          const previous = publication.getObservation();
           assertResumeEligible(
             previous.decision,
             previous.run,
@@ -1422,7 +1443,7 @@ function createToolsOwner(
             return;
           }
           try {
-            const previous = publication.getSnapshot();
+            const previous = publication.getObservation();
             const decision = assertResumeEligible(
               previous.decision,
               previous.run,

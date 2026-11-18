@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The shared wording is compared with its LangGraph source.
 import { failureProjection } from '../../../langgraph/src/runtime/stream-projection';
-import { AUTH_COPY, createAgentSession } from './agent-session';
+import { AUTH_COPY } from './agent-session';
 import { httpFailure } from './create-run';
 import { createSession } from './create-session';
 
@@ -65,7 +65,7 @@ describe.each([
 ])('the failure cause %s', (_label, tools) => {
   it('keeps the status of a rejected response and clears it on the next run', async () => {
     const session = scripted([rejected(401), finished], tools);
-    const view = createAgentSession(session);
+    const view = session;
     try {
       expect(await session.submit('Go')).toBe('error');
       expect(session.getSnapshot()).toMatchObject({
@@ -99,7 +99,7 @@ describe.each([
     try {
       expect(await session.submit('Go')).toBe('error');
       expect(session.getSnapshot().run?.failure).toEqual({ status: 503 });
-      expect(createAgentSession(session).getSnapshot().error).toEqual({
+      expect(session.getSnapshot().error).toEqual({
         kind: 'server',
         message: 'The agent request failed.',
         status: 503,
@@ -120,7 +120,7 @@ describe.each([
       ],
       tools
     );
-    const view = createAgentSession(session);
+    const view = session;
     try {
       expect(await session.submit('Go')).toBe('error');
       expect(session.getSnapshot().run?.failure).toBeUndefined();
@@ -145,7 +145,7 @@ describe.each([
       ],
       tools
     );
-    const view = createAgentSession(session);
+    const view = session;
     try {
       expect(await session.submit('Go')).toBe('error');
       expect(session.getSnapshot().run?.failure).toBeUndefined();

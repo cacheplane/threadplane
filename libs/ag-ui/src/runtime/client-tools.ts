@@ -6,7 +6,7 @@ import type {
 } from '@threadplane/core';
 import type { FunctionToolDefinition } from '@threadplane/core/tools';
 import { copyData } from '../lib/internal/copy-data.js';
-import type { SessionSnapshot } from './session-observation.js';
+import type { SessionSnapshot } from './agent-session.js';
 
 export type ClientToolCall<C extends Record<string, ToolContract>> = {
   [K in keyof C & string]: {
@@ -35,15 +35,16 @@ export interface ClientToolBlocker {
   readonly callIds: readonly string[];
 }
 
-export interface ClientToolSessionSnapshot<
-  C extends Record<string, ToolContract>
-> extends SessionSnapshot {
+export type ClientToolSessionSnapshot<
+  C extends Record<string, ToolContract>,
+  TState = unknown
+> = SessionSnapshot<TState> & {
   readonly clientTools: {
     readonly calls: readonly ClientToolCall<C>[];
     readonly blocker?: ClientToolBlocker;
     readonly commandOutcome?: CompleteOutcome;
   };
-}
+};
 
 interface CapturedClientTool {
   readonly description: string;

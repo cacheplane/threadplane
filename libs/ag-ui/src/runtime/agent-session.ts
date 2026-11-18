@@ -1,8 +1,6 @@
 import {
   readState,
   type AgentError,
-  type AgentSession,
-  type AgentSessionCustomEvent,
   type AgentSnapshot,
   type AgentUsage,
   type AgentUsageEntry,
@@ -10,45 +8,28 @@ import {
   type StateDeclaration,
   type ToolContract,
 } from '@threadplane/core';
-import type { Session } from './create-session.js';
 import { NO_STATE, ownState } from './state.js';
-import type { SubmitInput } from './submit-input.js';
 import { projectMessages, projectToolCalls } from './message-projection.js';
 import {
   failedWithRunError,
-  type SessionSnapshot,
+  type Observation,
 } from './session-observation.js';
 
-/** The native owner, with or without a client-tool catalog. */
-export type NativeSession<TState = unknown> = Pick<
-  Session<TState>,
-  | 'stateType'
-  | 'subscribe'
-  | 'submit'
-  | 'stop'
-  | 'dispose'
-  | 'retry'
-  | 'onCustomEvent'
-> & { getSnapshot(): SessionSnapshot };
-
 type Tools = Record<string, ToolContract>;
-/** The core snapshot of an AG-UI session, with the outcome of its last state check. */
-export type AgUiAgentSnapshot<TState = unknown> = AgentSnapshot<
-  Tools,
-  TState
-> & {
-  /**
-   * Why the session's state schema rejected the current state document.
-   * `state` then keeps the last document that passed. Absent while the
-   * document passes, and always absent without a schema.
-   */
-  readonly stateIssues?: readonly string[];
-};
-/** A core `AgentSession` over an AG-UI session. */
-export type AgUiAgentSession<TState = unknown> = Omit<
-  AgentSession<Tools, TState>,
-  'getSnapshot'
-> & { getSnapshot(): AgUiAgentSnapshot<TState> };
+/**
+ * What an AG-UI session publishes: the core snapshot, with the protocol
+ * evidence behind it. `state` is the typed state; the literal document a
+ * request sends is not published.
+ */
+export type SessionSnapshot<TState = unknown> = Omit<Observation, 'state'> &
+  AgentSnapshot<Tools, TState> & {
+    /**
+     * Why the session's state schema rejected the current state document.
+     * `state` then keeps the last document that passed. Absent while the
+     * document passes, and always absent without a schema.
+     */
+    readonly stateIssues?: readonly string[];
+  };
 
 /** The state to publish for one state document, and why a schema rejected it. */
 interface StateView {
@@ -109,7 +90,7 @@ export const AUTH_COPY = 'Authentication failed. Check your credentials.';
  * reason this view cannot name, such as a host that could not be reached.
  */
 function failure(
-  native: SessionSnapshot,
+  native: Observation,
   canRetry: boolean,
   previous?: AgentError
 ): AgentError {
@@ -166,7 +147,7 @@ const usageViews = new WeakMap<object, AgentUsage | null>();
  * per provider and model. Only labels and finite counts are read. The terminal
  * is owned and frozen, so one terminal always yields the same projection.
  */
-function usage(native: SessionSnapshot): AgentUsage | undefined {
+function usage(native: Observation): AgentUsage | undefined {
   if (native.status === 'running') return undefined;
   const terminal = native.run?.terminal;
   if (!terminal || terminal.type === 'CUSTOM') return undefined;
@@ -196,11 +177,11 @@ function usage(native: SessionSnapshot): AgentUsage | undefined {
 }
 
 function project(
-  native: SessionSnapshot,
+  native: Observation,
   canRetry: boolean,
   view: StateView,
-  previous?: AgUiAgentSnapshot
-): AgUiAgentSnapshot {
+  previous?: SessionSnapshot
+): SessionSnapshot {
   const messages = projectMessages(native, previous?.messages);
   const toolCalls = projectToolCalls(native, previous?.toolCalls);
   const error =
@@ -208,24 +189,12 @@ function project(
       ? failure(native, canRetry, previous?.error)
       : undefined;
   const used = usage(native);
-  if (
-    previous &&
-    previous.status === native.status &&
-    previous.messages === messages &&
-    previous.toolCalls === toolCalls &&
-    previous.error === error &&
-    previous.plan === native.plan &&
-    previous.usage === used &&
-    previous.state === view.state &&
-    previous.stateIssues === view.issues
-  )
-    return previous;
+  const { state: _document, ...evidence } = native;
   return Object.freeze({
-    status: native.status,
+    ...evidence,
     messages,
     toolCalls,
     ...(error && { error }),
-    ...(native.plan && { plan: native.plan }),
     ...(used && { usage: used }),
     ...(view.state !== undefined && { state: view.state }),
     ...(view.issues && { stateIssues: view.issues }),
@@ -233,75 +202,37 @@ function project(
 }
 
 /**
- * A core `AgentSession` view of a native AG-UI session, so components written
- * for core sessions can observe and drive it.
+ * Builds the snapshot a session publishes from each observation. Messages,
+ * tool calls, the error, usage and state keep their references until they
+ * change, and one observation always yields the same snapshot.
  *
- * It is a view, not a second owner. The snapshot is derived from the native
- * snapshot on read and keeps its reference until something a core observer can
- * see changes; subscribers are told about those changes only. `submit`, `stop`,
- * `dispose` and, when the native session has it, `retry` go straight to the
- * native session, so disposing the view disposes the session. `retry` rejects
- * unless the error is `recovery: 'retry'`. Custom event listeners pass straight
- * through to the native session too, when it has them. Native resume and
- * client-tool evidence have no core equivalent: keep the native session for
- * those.
- *
- * `state` is the session's state document, typed by the `stateType` the session
- * was created with. With a schema, each document is checked once and `state`
- * holds the schema's output; a rejected document leaves `state` at the last
- * one that passed and lists the reasons in `stateIssues`, and the run goes on.
- * A session created without a state has none until the application submits
- * one or the backend reports one.
+ * `state` is the session's state document, typed by its `stateType`. With a
+ * schema, each document is checked once and `state` holds the schema's output;
+ * a rejected document leaves `state` at the last one that passed and lists the
+ * reasons in `stateIssues`, and the run goes on. A session created without a
+ * state has none until the application submits one or the backend reports one.
  */
-export function createAgentSession<TState = unknown>(
-  session: NativeSession<TState>
-): AgUiAgentSession<TState> {
-  let seen: SessionSnapshot | undefined;
-  let current: AgUiAgentSnapshot | undefined;
-  const retry = session.retry;
-  const listen = session.onCustomEvent;
-  const readView = stateReader(session.stateType);
-  const read = (): AgUiAgentSnapshot => {
-    const native = session.getSnapshot();
-    if (native !== seen || !current) {
-      current = project(native, !!retry, readView(native.state), current);
-      seen = native;
+export function createPresenter(
+  declaration: StateDeclaration | undefined,
+  canRetry: boolean
+): (observation: Observation) => SessionSnapshot {
+  const readView = stateReader(declaration);
+  let seen: Observation | undefined;
+  let current: SessionSnapshot | undefined;
+  return (observation) => {
+    if (observation !== seen || !current) {
+      current = project(
+        observation,
+        canRetry,
+        readView(observation.state),
+        current
+      );
+      seen = observation;
     }
     return current;
   };
-  // The declaration is the only evidence of TState, as for any typed session.
-  const getSnapshot = read as () => AgUiAgentSnapshot<TState>;
-  return {
-    getSnapshot,
-    subscribe(notify) {
-      let last = getSnapshot();
-      return session.subscribe(() => {
-        const next = getSnapshot();
-        if (next === last) return;
-        last = next;
-        notify();
-      });
-    },
-    // Events are not state, so they pass straight through to the native owner.
-    ...(listen && {
-      onCustomEvent: (listener: (event: AgentSessionCustomEvent) => void) =>
-        listen.call(session, listener),
-    }),
-    submit: (input, options) =>
-      session.submit(input as SubmitInput<TState>, options),
-    stop: () => session.stop(),
-    dispose: () => session.dispose(),
-    ...(retry && {
-      async retry() {
-        const snapshot = getSnapshot();
-        // Nothing failed or a run is going: nothing runs, as for an ignored submit.
-        if (snapshot.status !== 'error') return 'aborted' as const;
-        if (snapshot.error?.recovery !== 'retry')
-          throw new Error(
-            'This failure cannot be retried: the backend may already have done the work.'
-          );
-        return retry.call(session);
-      },
-    }),
-  };
 }
+
+/** Why `retry` rejects after a failure that leaves the backend outcome open. */
+export const UNSAFE_RETRY =
+  'This failure cannot be retried: the backend may already have done the work.';

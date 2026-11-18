@@ -1,7 +1,7 @@
 import { createSession } from './create-session';
 import { createRun } from './create-run';
 import type { InterruptMode } from './interrupt-mode';
-import type { SessionSnapshot } from './session-observation';
+import type { Observation } from './session-observation';
 
 const mode: InterruptMode = 'native';
 createSession({ threadId: 't', url: 'unused', interruptMode: mode });
@@ -16,7 +16,7 @@ createRun({ url: 'unused', interruptMode: 'legacy-observation' });
 createRun({ url: 'unused', interruptMode: 'mastra' });
 // @ts-expect-error resume interpretation is not supported
 createSession({ threadId: 't', url: 'unused', interruptMode: 'legacy-resume' });
-declare const snapshot: SessionSnapshot;
+declare const snapshot: Observation;
 if (snapshot.run?.legacyInterrupt) {
   const name: string = snapshot.run.legacyInterrupt.name;
   // @ts-expect-error selected notice evidence is readonly

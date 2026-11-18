@@ -3,10 +3,10 @@ import { EventType as E, type AGUIEvent, type Message } from '@ag-ui/client';
 import {
   applyObservation,
   initialObservation,
-  type SessionSnapshot,
+  type Observation,
 } from './session-observation';
 
-const running = (): SessionSnapshot =>
+const running = (): Observation =>
   Object.freeze({
     ...initialObservation(),
     status: 'running',

@@ -7,7 +7,16 @@ import {
   type ToolCall,
 } from '@threadplane/core';
 import { copyData } from '../lib/internal/copy-data.js';
-import type { SessionSnapshot } from './session-observation.js';
+import type { Observation } from './session-observation.js';
+
+/**
+ * What the selectors read. Both a session's published snapshot and the
+ * observation behind it qualify; the published `state` may be absent.
+ */
+export type Projectable = Pick<
+  Observation,
+  'status' | 'transcript' | 'reasoningDurations' | 'run'
+> & { readonly state?: unknown };
 import type { Transcript } from './transcript.js';
 
 const empty: readonly Message[] = Object.freeze([]);
@@ -46,7 +55,7 @@ const textOf = (content: unknown): string =>
  * object or array (more fragments could not keep it valid). Until then the call
  * is withheld, so a view never sees half an argument object.
  */
-function selectCalls(snapshot: SessionSnapshot) {
+function selectCalls(snapshot: Projectable) {
   const { transcript } = snapshot;
   const running = snapshot.status === 'running';
   const results = new Map<string, ToolRecord>();
@@ -118,7 +127,7 @@ const sources = new WeakMap<
  * `previous` is an optional identity hint, as in `projectMessages`.
  */
 export function projectToolCalls(
-  snapshot: SessionSnapshot,
+  snapshot: Projectable,
   previous: readonly ToolCall[] = noCalls
 ): readonly ToolCall[] {
   const running = snapshot.status === 'running';
@@ -285,7 +294,7 @@ interface Pending {
  * list, are returned as the same references. Selection is O(N).
  */
 export function projectMessages(
-  snapshot: SessionSnapshot,
+  snapshot: Projectable,
   previous: readonly Message[] = empty
 ): readonly Message[] {
   const durations = snapshot.reasoningDurations;

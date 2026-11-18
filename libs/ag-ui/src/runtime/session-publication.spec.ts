@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { initialObservation } from './session-observation';
 import { createPublication } from './session-publication';
+/** A publication that publishes its observation as it is. */
+const observed = (initial: Parameters<typeof createPublication>[0]) =>
+  createPublication(initial, (observation) => observation);
 describe('private session publication', () => {
   it('publishes owned references and independent registrations without notifying on reads or same reference', () => {
     const initial = initialObservation();
-    const store = createPublication(initial);
+    const store = observed(initial);
     const listener = vi.fn();
     const off = store.subscribe(listener);
     store.subscribe(listener);
@@ -27,7 +30,7 @@ describe('private session publication', () => {
     const initial = initialObservation();
     const next = initialObservation([], 1);
     const last = initialObservation([], 2);
-    const store = createPublication(initial);
+    const store = observed(initial);
     const seen: unknown[] = [];
     let remove = () => undefined as void;
     store.subscribe(() => {

@@ -1,5 +1,4 @@
 import {
-  createAgentSession,
   decisionState,
   type DecisionState,
   createSession,
@@ -101,20 +100,19 @@ export function checkCandidate(signal: AbortSignal) {
   }
   // @ts-expect-error An unsupported pause carries no token to answer.
   if (pending?.kind === 'unsupported') void pending.id;
-  const agent: AgentSession = createAgentSession(session);
+  const agent: AgentSession = session;
   const core: AgentSnapshot = agent.getSnapshot();
   void agent.submit('Hello', { signal });
   void agent.submit({ message: 'Hello' });
   void agent.submit({ message: 'Hello', state: { topic: 'x' } });
-  // @ts-expect-error The core view takes a message and state only.
+  // @ts-expect-error A submission takes a message and state only.
   void agent.submit({ message: 'Hello', messages: [] });
-  // @ts-expect-error Native resume stays on the native session.
+  // @ts-expect-error Resume is not part of the core contract.
   void agent.resume;
-  // @ts-expect-error The view wraps a session, not its options.
-  createAgentSession(options);
-  const typed = createAgentSession(
-    createSession({ ...options, stateType: type<{ topic: string }>() })
-  );
+  const typed = createSession({
+    ...options,
+    stateType: type<{ topic: string }>(),
+  });
   const topic: string | undefined = typed.getSnapshot().state?.topic;
   void topic;
   void typed.submit({ message: 'Hello', state: { topic: 'x' } });
@@ -151,7 +149,7 @@ export function checkClientTools(options: SessionOptions) {
   const blocker: ClientToolBlocker | undefined = snapshot.clientTools.blocker;
   void outcome;
   void blocker;
-  const view: AgentSession = createAgentSession(owner);
+  const view: AgentSession = owner;
   void view;
   for (const call of calls) {
     const name: 'get_weather' | 'book' = call.name;
@@ -185,7 +183,7 @@ export function checkClientTools(options: SessionOptions) {
   void empty.getSnapshot().clientTools.blocker;
   // @ts-expect-error No catalog keeps the original exact snapshot.
   createSession(options).getSnapshot().clientTools;
-  // @ts-expect-error Native snapshots do not manufacture core aggregates.
-  snapshot.messages;
+  // The client-tool session publishes the core fields too.
+  void [snapshot.messages, snapshot.toolCalls];
   return owner;
 }

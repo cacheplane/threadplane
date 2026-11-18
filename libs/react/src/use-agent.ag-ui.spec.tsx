@@ -132,7 +132,8 @@ describe('useAgent native AG-UI owner', () => {
     ]);
     expect(second.result.current.status).toBe('running');
     expect(second.result.current.run?.outcome).toBeUndefined();
-    expect(second.result.current).not.toHaveProperty('toolCalls');
+    // The core tool calls withhold a call whose arguments are still arriving.
+    expect(second.result.current.toolCalls).toEqual([]);
     const detached = first.result.current;
     first.unmount();
     expect(exchange.aborts).toBe(0);

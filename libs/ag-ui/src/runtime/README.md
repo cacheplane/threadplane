@@ -128,43 +128,42 @@ The test-only candidate package entry exports both selectors next to
 `createSession`. They are still private source: the published package root does
 not export them.
 
-## Core session view
+## Core session
 
-`createAgentSession(session)` wraps a native session, with or without a
-client-tool catalog, as a core `AgentSession`, so a component written for core
-sessions can observe and drive an AG-UI conversation:
+The session `createSession` returns, with or without a client-tool catalog, is a
+core `AgentSession`, so a component written for core sessions observes and
+drives an AG-UI conversation directly:
 
 ```tsx
-const native = createSession({ threadId, url });
-const session = createAgentSession(native);
+const session = createSession({ threadId, url });
 <Chat session={session} />;
 ```
 
-- It is a view, not a second owner. `getSnapshot` derives
-  `{ status, messages, toolCalls, error?, plan?, usage?, state?, stateIssues? }`
-  from the native snapshot with the two selectors above and keeps its reference
-  until one of those fields changes. Subscribers hear about those changes only,
-  so a native publication that touches only child evidence or a decision is
-  silent here.
-- `submit` takes text, or `{ message, state? }` with a state patch, and goes
-  straight to the native session, as do `stop` and
-  `dispose`. Disposing the view disposes the session. `retry` goes to the native
-  session too, when it has one (see "Retry" below).
+- `getSnapshot` returns the core snapshot,
+  `{ status, messages, toolCalls, error?, plan?, usage?, state?, stateIssues? }`,
+  together with the protocol evidence behind it: `transcript`, `subagents`,
+  `earlierSubagents`, `decision`, `reasoningDurations` and `run`. `messages` and
+  `toolCalls` are what the two selectors above return, and keep their
+  references until they change. One publication always reads as one snapshot.
+- Every publication notifies subscribers, including one that changes only
+  protocol evidence such as a decision or a child.
+- `submit` takes text, or `{ message, state? }` with a state patch. `resume`
+  and the client-tool evidence are AG-UI additions to the core contract.
 - A failed run becomes `snapshot.error`. A backend `RUN_ERROR` is a `server`
   error carrying the backend's message. A stream that ended without a terminal
   is `interrupted`. A response that was not OK carries its HTTP status: 401 and
   403 are an `auth` error, any other status a generic `server` error. The
   response body is never shown. A request that got no response, such as an
   unreachable host, is a generic `server` error without a status.
-- The native snapshot records that status as `run.failure.status` when a
+- The snapshot records that status as `run.failure.status` when a
   response that was not OK is why the run failed, and clears it with the next
   run.
 - A backend `RUN_ERROR` for a submission is `retryable: true` with
-  `recovery: 'retry'` when the native session has `retry`. Every other error has
+  `recovery: 'retry'` when the session has `retry`. Every other error has
   `retryable: false` and `recovery: 'none'`: a stream that ended without a
   terminal, a response that was not OK and a request that got no response leave
   open whether the backend did the work.
-- The view has no `checkStatus`. AG-UI defines no read-only way to ask a backend
+- The session has no `checkStatus`. AG-UI defines no read-only way to ask a backend
   what became of a run: `HttpAgent` only posts new runs, and it does not
   implement the client's optional `connect` hook. Reconciling an uncertain run
   would therefore mean sending a request, which a status check must never do.
@@ -172,28 +171,24 @@ const session = createAgentSession(native);
   reported, one entry per provider and model, with only the provider and model
   labels and finite counts copied. It is absent while a run is going and after a
   run that reported none, so it never carries over from an earlier run. The
-  native snapshot keeps the event's own `usage` on `run.terminal`.
-- Native resume and client-tool evidence have no core equivalent. Keep the
-  native session for those; both can be used together.
-  While a native decision is waiting, `submit` resolves `error` without sending,
-  and nothing in the core snapshot says why. Show the decision instead, as
-  below.
+  event's own `usage` stays on `run.terminal`.
+- While a decision is waiting, `submit` resolves `error` without sending, and
+  nothing in the core fields says why. Show the decision instead, as below.
 
 ### State
 
-The view's `snapshot.state` is the session's state document. Declare its type
-with `stateType` when creating the session:
+`snapshot.state` is the session's state document. Declare its type with
+`stateType` when creating the session:
 
 ```ts
 import { type } from '@threadplane/core';
 
-const native = createSession({
+const session = createSession({
   threadId,
   url,
   state: { topic: 'billing', notes: [] },
   stateType: type<{ topic: string; notes: string[] }>(),
 });
-const session = createAgentSession(native);
 session.getSnapshot().state?.topic; // string | undefined
 await session.submit({ message: 'Go on', state: { topic: 'refunds' } });
 ```
@@ -210,20 +205,20 @@ await session.submit({ message: 'Go on', state: { topic: 'refunds' } });
 - A session created without `state` reports none, and its schema is not asked,
   until the application submits a patch or the backend sends a state. The
   request still carries `{}` until then.
-- The native snapshot's `state` is always the literal document, the one each
-  request sends, whatever is declared. The schema's output is never sent to the
-  backend. A typed session's native `submit` accepts the declared keys too.
+- Each request sends the literal document, whatever is declared. The schema's
+  output is never sent to the backend, and the literal document is not
+  published.
 
 ### Retry
 
-The plain native owner has `retry()`. It sends the last submission again after
-its run failed with a backend `RUN_ERROR`, rebuilding the request from exactly the
-history and state that submission sent. No second user message is added, and the
-failed run's output and state changes are dropped. It resolves `aborted` without
-sending while a run is active or when the last run was not a failed submission,
-and `error` without sending when the failure leaves the backend outcome open. The
-view's `retry` resolves `aborted` in the first case, rejects in the second, and
-otherwise resolves with the native re-run's outcome.
+The session created without a client-tool catalog has `retry()`. It sends the
+last submission again after its run failed with a backend `RUN_ERROR`,
+rebuilding the request from exactly the history and state that submission sent.
+No second user message is added, and the failed run's output and state changes
+are dropped. It resolves `aborted` without sending while a run is active, when
+nothing failed or when the last run was not a failed submission. It rejects
+without sending when the error's `recovery` is not `'retry'`, because the
+failure leaves the backend outcome open.
 
 - A failed resume is not retried. Its decision stays `uncertain`, as described
   under "Correlated native resume".
@@ -234,12 +229,12 @@ otherwise resolves with the native re-run's outcome.
 
 ### Approvals
 
-`decisionState(snapshot)` reads the native snapshot's pending decision and how
-far it has got, so an app can show it in `Chat`'s `approval` slot and answer it
-on the native session:
+`decisionState(snapshot)` reads the snapshot's pending decision and how far it
+has got, so an app can show it in `Chat`'s `approval` slot and answer it with
+`resume`:
 
 ```tsx
-const pending = decisionState(useAgent(native));
+const pending = decisionState(useAgent(session));
 <Chat
   session={session}
   approval={
@@ -251,7 +246,7 @@ const pending = decisionState(useAgent(native));
             id: 'approve',
             label: 'Issue refund',
             onSelect: () =>
-              void native.resume(pending.id, [
+              void session.resume(pending.id, [
                 { interruptId: pending.interrupts[0].id, status: 'resolved' },
               ]),
           },
@@ -292,8 +287,7 @@ commands a listener issues wait until the current event finishes, so a listener
 that disposes the session does not stop the rest of that one delivery.
 
 The method is optional on the `Session` type so hand-written sessions need not
-supply it; the factory always does. `createAgentSession` forwards it when the
-native session has one.
+supply it; the factory always does.
 
 ## Interruption evidence
 

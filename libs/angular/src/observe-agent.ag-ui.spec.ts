@@ -142,7 +142,8 @@ describe('observeAgent native AG-UI owner', () => {
     ]);
     expect(second.snapshot().status).toBe('running');
     expect(second.snapshot().run?.outcome).toBeUndefined();
-    expect(second.snapshot()).not.toHaveProperty('toolCalls');
+    // The core tool calls withhold a call whose arguments are still arriving.
+    expect(second.snapshot().toolCalls).toEqual([]);
     const detached = first.snapshot();
     first.destroy();
     expect(exchange.aborts).toBe(0);
