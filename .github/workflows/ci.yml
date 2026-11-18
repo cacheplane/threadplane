@@ -39,8 +39,13 @@ jobs:
   ci-scope:
     name: CI scope
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      # Read-only lookup of this commit's merge-queue run (see the queue step).
+      actions: read
     outputs:
       main_run: ${{ steps.scope.outputs.main_run }}
+      queue_verified: ${{ steps.queue.outputs.queue_verified }}
       library: ${{ steps.scope.outputs.library }}
       angular_compatibility: ${{ steps.scope.outputs.angular_compatibility }}
       website: ${{ steps.scope.outputs.website }}
@@ -102,6 +107,20 @@ jobs:
       # Every other job waits for this job's outputs, so it carries only what
       # scope detection needs. The always-run guard suites live in ci-guards.
       - run: npm ci
+      # The merge queue fast-forwards main to the candidate commit it verified,
+      # so a push run would repeat that verification on the same tree with the
+      # same workflow file. When the candidate's run passed `CI — required`,
+      # every verification job below skips and the deploy jobs proceed on that
+      # evidence. The candidate was scoped to its changes and ran no preview
+      # lanes; a push without this evidence (a direct push, an API error) and
+      # every manual recovery run still verify everything here.
+      - name: Look for merge-queue verification of this commit
+        id: queue
+        if: github.event_name == 'push'
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci-queue-evidence.mjs --repo "$GITHUB_REPOSITORY" --sha "$GITHUB_SHA" --output "$GITHUB_OUTPUT"
       - name: Detect changed CI surfaces
         id: scope
         run: |
@@ -157,7 +176,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/configure-ci-apt.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-dependencies.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
+        run: node --test scripts/configure-ci-apt.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-queue-evidence.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-dependencies.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
       - name: Test Debug static configuration without Python workers
         run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Validate CI workflow guards
@@ -169,6 +188,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.scripts_tests == 'true')
     runs-on: ubuntu-24.04
     steps:
@@ -193,7 +213,7 @@ jobs:
   library-package:
     name: Library — production packages
     needs: ci-scope
-    if: github.event_name == 'push' || needs.ci-scope.outputs.angular_compatibility == 'true'
+    if: needs.ci-scope.outputs.queue_verified != 'true' && (github.event_name == 'push' || needs.ci-scope.outputs.angular_compatibility == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
@@ -219,7 +239,7 @@ jobs:
   library:
     name: 'Library — ${{ matrix.lane }}'
     needs: ci-scope
-    if: github.event_name == 'push' || needs.ci-scope.outputs.library == 'true' || needs.ci-scope.outputs.angular_compatibility == 'true'
+    if: needs.ci-scope.outputs.queue_verified != 'true' && (github.event_name == 'push' || needs.ci-scope.outputs.library == 'true' || needs.ci-scope.outputs.angular_compatibility == 'true')
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -438,7 +458,7 @@ jobs:
   native-conversation:
     name: 'Native conversation — ${{ matrix.framework }}'
     needs: ci-scope
-    if: github.event_name == 'push' || needs.ci-scope.outputs.library == 'true' || needs.ci-scope.outputs.angular_compatibility == 'true'
+    if: needs.ci-scope.outputs.queue_verified != 'true' && (github.event_name == 'push' || needs.ci-scope.outputs.library == 'true' || needs.ci-scope.outputs.angular_compatibility == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
@@ -481,7 +501,7 @@ jobs:
   angular-compatibility:
     name: 'Angular ${{ matrix.angular }} — packaged consumer'
     needs: [ci-scope, library-package]
-    if: github.event_name == 'push' || needs.ci-scope.outputs.angular_compatibility == 'true'
+    if: needs.ci-scope.outputs.queue_verified != 'true' && (github.event_name == 'push' || needs.ci-scope.outputs.angular_compatibility == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -532,6 +552,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.website == 'true')
     runs-on: ubuntu-24.04
     permissions:
@@ -563,6 +584,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.growth_lifecycle == 'true')
     runs-on: ubuntu-24.04
     steps:
@@ -583,6 +605,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.growth_lifecycle == 'true')
     runs-on: ubuntu-24.04
     steps:
@@ -606,6 +629,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.growth_research == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -627,6 +651,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.cockpit == 'true')
     runs-on: ubuntu-24.04
     steps:
@@ -664,6 +689,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.cockpit_examples == 'true')
     runs-on: ubuntu-24.04
     steps:
@@ -698,6 +724,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.cockpit_smoke == 'true')
     runs-on: ubuntu-24.04
     steps:
@@ -720,6 +747,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.examples_chat == 'true')
     runs-on: ubuntu-24.04
     steps:
@@ -751,6 +779,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.examples_chat == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -812,7 +841,7 @@ jobs:
   examples-chat-e2e-summary:
     name: 'examples/chat — e2e'
     needs: [ci-scope, examples-chat-e2e]
-    if: always() && (github.event_name == 'push' || needs.ci-scope.outputs.examples_chat == 'true')
+    if: always() && needs.ci-scope.outputs.queue_verified != 'true' && (github.event_name == 'push' || needs.ci-scope.outputs.examples_chat == 'true')
     runs-on: ubuntu-24.04
     steps:
       - name: Aggregate matrix outcome
@@ -829,6 +858,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.examples_ag_ui == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 35
@@ -901,6 +931,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.cockpit_e2e == 'true')
     runs-on: ubuntu-24.04
     outputs:
@@ -969,6 +1000,7 @@ jobs:
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
       needs.cockpit-e2e-dispatcher.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.cockpit_e2e == 'true')
     runs-on: ubuntu-24.04
     strategy:
@@ -1165,7 +1197,7 @@ jobs:
   cockpit-e2e-summary:
     name: 'Cockpit — e2e'
     needs: [ci-scope, cockpit-e2e]
-    if: always() && (github.event_name == 'push' || needs.ci-scope.outputs.cockpit_e2e == 'true')
+    if: always() && needs.ci-scope.outputs.queue_verified != 'true' && (github.event_name == 'push' || needs.ci-scope.outputs.cockpit_e2e == 'true')
     runs-on: ubuntu-24.04
     steps:
       - name: Aggregate matrix outcome
@@ -1179,7 +1211,7 @@ jobs:
   website-e2e:
     name: "Website — e2e (${{ matrix.suite }}${{ matrix.shard && format(' {0}/3', matrix.shard) || '' }})"
     needs: ci-scope
-    if: github.event_name == 'push' || needs.ci-scope.outputs.website_e2e == 'true'
+    if: needs.ci-scope.outputs.queue_verified != 'true' && (github.event_name == 'push' || needs.ci-scope.outputs.website_e2e == 'true')
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -1246,6 +1278,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.website_e2e == 'true')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -1774,8 +1807,17 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       runtime_parent_preview_origin: ${{ steps.deploy_website.outputs.preview_origin }}
-    # Only verified main push/manual runs may enter the existing production path
-    if: needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    # Only verified main push/manual runs may enter the existing production path.
+    # Verified means every job in `needs` succeeded in this run, or the merge
+    # queue verified this exact commit and the verification jobs skipped here.
+    # always() is required to evaluate that with skipped needs, so failure and
+    # cancellation are refused explicitly.
+    if: >-
+      always() && !cancelled() &&
+      needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.ci-guards.result == 'success' &&
+      !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') &&
+      (needs.ci-scope.outputs.queue_verified == 'true' || !contains(needs.*.result, 'skipped'))
     permissions:
       # Needed to advance refs/deploy/last-promoted (see "Resolve deploy
       # baseline"). Nothing else in this job writes to the repo.
@@ -2095,12 +2137,16 @@ jobs:
     if: ${{ always() && !cancelled() && needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && needs.ci-guards.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Require demo prerequisite jobs
+        env:
+          # A skipped prerequisite is accepted only when the merge queue
+          # verified this exact commit.
+          ACCEPTED_SKIP: ${{ needs.ci-scope.outputs.queue_verified == 'true' && 'skipped' || 'success' }}
         run: |
-          if [ "${{ needs.examples-chat-smoke.result }}" != "success" ]; then
+          if [ "${{ needs.examples-chat-smoke.result }}" != "success" ] && [ "${{ needs.examples-chat-smoke.result }}" != "$ACCEPTED_SKIP" ]; then
             echo "::error::examples/chat — python smoke finished with ${{ needs.examples-chat-smoke.result }}; refusing to deploy the canonical demo."
             exit 1
           fi
-          if [ "${{ needs.examples-chat-e2e.result }}" != "success" ]; then
+          if [ "${{ needs.examples-chat-e2e.result }}" != "success" ] && [ "${{ needs.examples-chat-e2e.result }}" != "$ACCEPTED_SKIP" ]; then
             echo "::error::examples/chat — e2e finished with ${{ needs.examples-chat-e2e.result }}; refusing to deploy the canonical demo."
             exit 1
           fi
@@ -2206,8 +2252,12 @@ jobs:
       contents: write
     steps:
       - name: Require AG-UI demo prerequisite jobs
+        env:
+          # A skipped prerequisite is accepted only when the merge queue
+          # verified this exact commit.
+          ACCEPTED_SKIP: ${{ needs.ci-scope.outputs.queue_verified == 'true' && 'skipped' || 'success' }}
         run: |
-          if [ "${{ needs.examples-ag-ui-e2e.result }}" != "success" ]; then
+          if [ "${{ needs.examples-ag-ui-e2e.result }}" != "success" ] && [ "${{ needs.examples-ag-ui-e2e.result }}" != "$ACCEPTED_SKIP" ]; then
             echo "::error::examples/ag-ui — e2e finished with ${{ needs.examples-ag-ui-e2e.result }}; refusing to deploy the AG-UI demo."
             exit 1
           fi
@@ -2419,6 +2469,7 @@ jobs:
     if: >-
       always() && !cancelled() &&
       needs.ci-scope.result == 'success' &&
+      needs.ci-scope.outputs.queue_verified != 'true' &&
       (github.event_name == 'push' || needs.ci-scope.outputs.posthog == 'true')
     runs-on: ubuntu-24.04
     steps:
