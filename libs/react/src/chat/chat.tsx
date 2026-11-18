@@ -28,6 +28,7 @@ import {
   type MessageListProps,
 } from './message-list.js';
 import { ScrollBubble } from './scroll-bubble.js';
+import { Select, type SelectOption } from './select.js';
 import { ThreadList, type ThreadListItem } from './thread-list.js';
 
 /** Supplies an app-owned agent session, optional transcript projector, and message/composer presentation options. */
@@ -59,8 +60,8 @@ export interface ChatProps
   /**
    * Interactive client tools from `createClientTools`. While one of its calls waits for the person,
    * its view is drawn below the message's tool calls and the call keeps its row; the answer
-   * becomes the tool result, the view goes, and focus returns to the composer. The
-   * app passes `clientTools.tools` to the session; Chat never runs a tool. Off unless set.
+   * becomes the tool result, the view goes, and focus moves to the next view still waiting, or to
+   * the composer when none is. The app passes `clientTools.tools` to the session; Chat never runs a tool. Off unless set.
    */
   readonly clientTools?: ChatClientTools;
   /** Child agents shown as subagent cards in place of the tool calls that started them. Keep stable. */
@@ -123,6 +124,13 @@ export interface ChatProps
   /** App-owned content below the composer; see `ChatInputProps.footer`. */
   readonly inputFooter?: ChatInputProps['footer'];
   /**
+   * A model picker in the composer, before `inputTrailing`. The app owns the
+   * value: `onValueChange` reports a choice and nothing is sent to the session,
+   * so pass the chosen model to your backend yourself. Hidden while `options`
+   * is empty. Off unless set.
+   */
+  readonly modelPicker?: ChatModelPicker;
+  /**
    * A greeting shown while the conversation is empty: a centred title above the
    * composer and optional suggestions below it. `true` uses the default title;
    * an object replaces the title (null omits it) and adds `suggestions`, such as
@@ -143,7 +151,45 @@ export interface ChatProps
   readonly runStatus?: boolean;
 }
 
+/** The options, controlled value and labels of the composer's model picker. */
+export interface ChatModelPicker {
+  readonly options: readonly SelectOption[];
+  /** The chosen option's value; one that matches no option shows `placeholder`. */
+  readonly value: string;
+  readonly onValueChange: (value: string) => void;
+  /** Names the list for assistive technology. Defaults to "Model". */
+  readonly label?: string;
+  /** Shown while no option matches `value`. Defaults to "Choose a model". */
+  readonly placeholder?: string;
+  readonly disabled?: boolean;
+}
+
 const ignore = () => undefined;
+
+/** Holds the open state so the app controls only the value. */
+function ModelPicker({
+  options,
+  value,
+  onValueChange,
+  label = 'Model',
+  placeholder = 'Choose a model',
+  disabled,
+}: ChatModelPicker) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Select
+      className="tp-chat__model-picker"
+      options={options}
+      value={value}
+      onValueChange={(next) => onValueChange(next)}
+      open={open}
+      onOpenChange={setOpen}
+      label={label}
+      placeholder={placeholder}
+      disabled={disabled}
+    />
+  );
+}
 
 /** Transcript, error and composer wired to an app-owned `AgentSession`. */
 export function Chat({
@@ -169,6 +215,7 @@ export function Chat({
   inputLeading,
   inputTrailing,
   inputFooter,
+  modelPicker,
   approval,
   approvalRecords,
   messageActions,
@@ -227,7 +274,8 @@ export function Chat({
   const disabled = input.disabled ?? false;
   // An answered client tool leaves the transcript the same way.
   const renderPrompt = useClientToolCalls(clientTools);
-  const asked = usePendingClientToolCalls(clientTools).length > 0;
+  const waiting = usePendingClientToolCalls(clientTools).length;
+  const asked = waiting > 0;
   const awaited = pending || asked;
   const hadApproval = useRef(awaited);
   const focusOwed = useRef(false);
@@ -240,6 +288,22 @@ export function Chat({
       composer.current?.focus();
     }
   }, [awaited, disabled]);
+  // One of several asks ended and took its focused control with it: continue in
+  // the next one still waiting, unless focus already sits somewhere else.
+  const root = useRef<HTMLDivElement>(null);
+  const hadWaiting = useRef(waiting);
+  useEffect(() => {
+    const fewer = waiting > 0 && waiting < hadWaiting.current;
+    hadWaiting.current = waiting;
+    if (!fewer) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && active.isConnected) return;
+    root.current
+      ?.querySelector<HTMLElement>(
+        '[data-tool-prompt] :is(button, input, select, textarea, a[href], [tabindex]):not(:disabled, [tabindex="-1"])'
+      )
+      ?.focus();
+  }, [waiting]);
   const rows = useMessageContent(snapshot, session, content);
   // A failed call already shows these words, and the notice would add no action or detail of its own.
   // A custom renderMessage owns that display, so the notice stays whenever one is in use.
@@ -302,6 +366,7 @@ export function Chat({
   }, [greeted]);
   const chat = (
     <div
+      ref={root}
       className={['tp-chat', greeting && 'tp-chat--welcome', className]
         .filter(Boolean)
         .join(' ')}
@@ -410,7 +475,16 @@ export function Chat({
           pending ? 'Answer the approval to continue' : input.placeholder
         }
         leading={inputLeading}
-        trailing={inputTrailing}
+        trailing={
+          modelPicker && modelPicker.options.length > 0 ? (
+            <>
+              <ModelPicker {...modelPicker} />
+              {inputTrailing}
+            </>
+          ) : (
+            inputTrailing
+          )
+        }
         footer={inputFooter}
         busy={snapshot.status === 'running'}
         onSubmit={(text) => {

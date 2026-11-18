@@ -262,6 +262,39 @@ paused. The preflight detects already-observed consumption, but it is not an ato
 server claim. Applications must coordinate responders to the same task. Distinct
 checkpoint branches do not provide independent opposing decisions on one task.
 
+## Thread directory
+
+`createLangGraphThreadDirectory` in `thread-directory.ts` implements the
+`ThreadDirectory` contract from `@threadplane/core` for a deployment's saved
+conversations, and backs the React `ThreadSidebar`. It is a store with
+`getSnapshot` and `subscribe`, so a framework binding observes it the same way
+it observes a session. Pass `apiUrl` (with optional `clientOptions`) to have it
+build its own protected SDK client with `maxRetries: 0`, or `client` to reuse an
+existing one. With `browserOrigin`, a cross-origin `apiUrl` is rejected.
+
+An entry is read from thread metadata: `title` (trimmed, else `titleFallback`,
+default "New chat"), `archived`, `pinned`, `pinnedOrder` and `projectId`.
+`threads` holds the active conversations, pinned ones first in their saved
+order; `archived` holds the rest. Nothing is read until `refresh()` is called.
+A failed read never rejects: it is published as `status: 'error'` and the lists
+keep the last successful result. `status` is `'loading'` only until the first
+successful read or while recovering from an error.
+
+Mutations (`create`, `rename`, `remove`, `setArchived`, `setPinned`,
+`reorderPinned`, `setProject`) apply optimistically, roll back and reject with a
+safe error on failure, and confirm with a later read. A read that started before
+a mutation settled never undoes it, and error bodies are never read.
+
+Project names live in the LangGraph Store (`project-store.ts`), namespace
+`['threadplane', 'projects']`, one item per project with value `{ name }`. Pass
+`projects: false` to turn them off. When the Store API is unavailable, threads
+still list and `projects` is absent.
+
+The shared suite in `testing/thread-directory-conformance.ts` runs against this
+directory and the Angular `LangGraphThreadsAdapter.directory`. Limits: one page
+of 50 conversations, no paging or search, and no refresh when another tab
+changes a thread; `refreshDirectoryOnRunEnd` refreshes after each run.
+
 ## Verification
 
 Run `langgraph:runtime-quality`, `langgraph:runtime-type-tests` and

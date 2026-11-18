@@ -1093,8 +1093,9 @@ test('React render requires exactly the RenderSpec, lifecycle recorder and Rende
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {} }), /a2uiBasicCatalog/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {} }), /useA2uiSurfaceWriter/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {} }), /A2uiMessageSurfaces/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {} }));
-  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {}, surfaceToSpec() {} }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {} }), /a2uiClientCapabilities/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {}, a2uiClientCapabilities() {} }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', { A2uiSurface() {}, a2uiBasicCatalog() {}, useA2uiSurfaceWriter() {}, A2uiMessageSurfaces() {}, a2uiClientCapabilities() {}, surfaceToSpec() {} }), /unexpected/);
   const RenderDevtools = () => null;
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', {}), /RenderSpec/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec }), /createRenderLifecycle/);
