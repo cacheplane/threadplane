@@ -15,6 +15,7 @@ import {
   type ClientToolBlocker,
 } from '@threadplane/ag-ui';
 import type { CheckedTools, ToolContracts } from '@threadplane/core/tools';
+import { type } from '@threadplane/core';
 import type {
   AgentSession,
   AgentSnapshot,
@@ -111,6 +112,14 @@ export function checkCandidate(signal: AbortSignal) {
   void agent.resume;
   // @ts-expect-error The view wraps a session, not its options.
   createAgentSession(options);
+  const typed = createAgentSession(
+    createSession({ ...options, stateType: type<{ topic: string }>() })
+  );
+  const topic: string | undefined = typed.getSnapshot().state?.topic;
+  void topic;
+  void typed.submit({ message: 'Hello', state: { topic: 'x' } });
+  // @ts-expect-error A typed session takes its declared state keys only.
+  void typed.submit({ message: 'Hello', state: { other: 1 } });
   return { session, snapshot, rows, stable, messages, toolCalls, agent, core };
 }
 export function checkClientTools(options: SessionOptions) {
