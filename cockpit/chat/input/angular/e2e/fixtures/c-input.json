@@ -1,10 +1,24 @@
 {
   "fixtures": [
     {
+      "match": { "systemMessage": "In 3-5 words, summarize" },
+      "response": { "content": "Aviation snippet title" }
+    },
+    {
       "match": { "userMessage": "Hello" },
       "response": {
         "content": "Hi! I'm the chat-input demo. Try Enter to send, Shift+Enter for newline, and watch the sidebar reflect the streaming status."
       }
+    },
+    {
+      "match": { "userMessage": "Stream a TypeScript code fence" },
+      "response": { "content": "Here is the snippet:\n\n```typescript\nconst answer = 42;\n```\n\nThe constant is available for later use." },
+      "chunkSize": 3,
+      "latency": 25
+    },
+    {
+      "match": { "userMessage": "" },
+      "response": { "content": "Saved answer for the chat-input demo." }
     }
   ]
 }

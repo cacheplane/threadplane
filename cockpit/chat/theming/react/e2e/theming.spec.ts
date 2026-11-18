@@ -55,31 +55,21 @@ async function submit(page: Page, text: string) {
 }
 test.beforeEach(async ({ request }) => {
   await control(request, '/__reset');
+  // Real ChatOpenAI never surfaces reasoning; inject it so palettes reach the
+  // Reasoning region (scripts/react-cockpit/langgraph-proxy.mjs).
+  expect(
+    (await request.post('/__inject/reasoning', {
+      data: { text: 'Considering the aviation question.' },
+    })).ok()
+  ).toBe(true);
 });
 test.afterEach(async ({ page, request }, info) => {
+  // Every browser connection through the proxy closes and nothing stays held.
+  // (No per-run graph child processes exist any more: the graph is `langgraph dev`.)
   await page.goto('about:blank');
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
-    .toEqual({ children: 0, streams: 0, histories: 0, handlers: 0 });
-  await expect
-    .poll(
-      async () => (await (await request.get('/__lifetime')).json()).responseOpen
-    )
-    .toBe(0);
-  const lifetime = await (await request.get('/__lifetime')).json();
-  for (const child of lifetime.children) {
-    expect(child.reaped).toBe(true);
-    expect(() => process.kill(child.pid, 0)).toThrow(/ESRCH/);
-    expect(() => process.kill(-child.pgid, 0)).toThrow(/ESRCH/);
-  }
-  await writeFile(
-    info.outputPath('observed-child-absence.json'),
-    JSON.stringify(
-      { children: lifetime.children, observedPidAndPgidAbsence: 'ESRCH' },
-      null,
-      2
-    )
-  );
+    .poll(async () => (await request.get('/__lifetime')).json())
+    .toEqual({ activeStream: false, activeHistory: false, openResponses: 0 });
   for (const path of ['/__requests', '/__captures', '/__lifetime']) {
     const body = JSON.stringify(
       await (await request.get(path)).json(),
@@ -222,28 +212,38 @@ for (const width of [1280, 390]) {
     );
     expect(runs.every((r) => r.body.assistant_id === 'c-theming')).toBe(true);
     expect(wire.filter((r) => r.path.endsWith('/history'))).toHaveLength(2);
-    const captures = await (await request.get('/__captures')).json();
+    const captures: {
+      sse: string;
+      savedMessages: { type: string; content: string }[];
+      titleBefore: string | null;
+      titleAfter: string | null;
+    }[] = await (await request.get('/__captures')).json();
     expect(captures).toHaveLength(2);
+    // The title model's reply (its own aimock fixture) never streams as answer
+    // content. (It does appear in later runs' metadata: thread metadata.)
+    const streamedContent = (sse: string) =>
+      sse
+        .split(/\r?\n\r?\n/)
+        .filter((event) => /^event: messages/m.test(event))
+        .map((event) => JSON.parse(event.split(/\r?\n/).find((l) => l.startsWith('data:'))!.slice(5))[0].content)
+        .join('');
     for (const c of captures) {
-      expect(c.proof).toMatchObject({
-        actualCompiledGraph: true,
-        networkConnectAttempts: 0,
-        titleMessageCallbacks: 0,
-      });
-      expect(c.sse).not.toContain('Authored metadata title');
+      expect(streamedContent(c.sse)).toContain('upward force');
+      expect(streamedContent(c.sse)).not.toContain('Aviation snippet title');
     }
     expect(
-      captures[0].savedMessages.find(
-        (m: { type: string }) => m.type === 'human'
-      ).content
+      captures[0].savedMessages.find((m) => m.type === 'human')?.content
     ).toBe('Explain lift ✈ café');
     expect(
       captures[1].savedMessages
-        .filter((m: { type: string }) => m.type === 'human')
-        .map((m: { content: string }) => m.content)
+        .filter((m) => m.type === 'human')
+        .map((m) => m.content)
     ).toEqual(['Explain lift ✈ café', 'Continue lift — aérodrome']);
-    expect(captures[0].titleUpdates).toHaveLength(1);
-    expect(captures[1].titleUpdates).toHaveLength(0);
+    // The title is written once, on the first turn, and kept on the second.
+    expect(captures[0].titleBefore).toBeNull();
+    expect(captures[0].titleAfter).toBe('Aviation snippet title');
+    expect(captures[1].titleBefore).toBe('Aviation snippet title');
+    expect(captures[1].titleAfter).toBe('Aviation snippet title');
     await page.getByRole('button', { name: 'New conversation' }).click();
     await expect(page.getByRole('status')).toHaveText('Ready.');
     await expect(page.locator('article')).toHaveCount(0);
@@ -258,8 +258,9 @@ for (const width of [1280, 390]) {
     request,
   }) => {
     await page.setViewportSize({ width, height: 900 });
+    await control(request, '/__hold/stream');
     await page.goto('/chat/theming/react/');
-    await submit(page, 'Hold');
+    await submit(page, 'Hello');
     await expect(page.getByRole('status')).toHaveText('Receiving response…');
     await page
       .getByLabel('Message', { exact: true })
@@ -297,9 +298,9 @@ for (const phase of ['stream', 'history'])
     page,
     request,
   }) => {
-    if (phase === 'history') await control(request, '/__history/hold');
+    await control(request, phase === 'history' ? '/__history/hold' : '/__hold/stream');
     await page.goto('/chat/theming/react/');
-    await submit(page, phase === 'stream' ? 'Hold' : 'Explain lift');
+    await submit(page, 'Hello');
     await expect(page.getByRole('status')).toHaveText(
       phase === 'stream' ? 'Receiving response…' : 'Confirming saved response…'
     );
@@ -321,8 +322,9 @@ test('pagehide closes the original stream and remount never replays it', async (
   page,
   request,
 }) => {
+  await control(request, '/__hold/stream');
   await page.goto('/chat/theming/react/');
-  await submit(page, 'Hold');
+  await submit(page, 'Hello');
   await expect(page.getByRole('status')).toHaveText('Receiving response…');
   await page.goto('about:blank');
   await expect
@@ -330,9 +332,9 @@ test('pagehide closes the original stream and remount never replays it', async (
       async () =>
         (
           await (await request.get('/__lifetime')).json()
-        ).active.streams
+        ).activeStream
     )
-    .toBe(0);
+    .toBe(false);
   const before = await requests(request);
   await page.goto('/chat/theming/react/');
   await expect(page.getByRole('status')).toHaveText('Ready.');

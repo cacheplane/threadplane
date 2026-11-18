@@ -179,6 +179,10 @@ test('Chat Input owns a closed native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('chat-input'), {
     topic: 'input', adapter: 'langgraph', appPath: 'cockpit/chat/input/react',
     base: '/chat/input/react/', port: 4621, project: 'cockpit-chat-input-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/input/python',
+      fixtures: 'cockpit/chat/input/angular/e2e/fixtures', langgraphPort: 5621,
+    },
   });
   for (const key of ['input', 'chat/input', '../chat-input'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -624,4 +628,27 @@ test('AG-UI Client Tools selects the two native frontends and one canonical back
   assert.deepEqual(frontends.filter(cap => cap.frontend === 'react').map(cap => cap.project).sort(), deriveCockpitCaps(root).filter(cap => cap.angular.endsWith('-react')).map(cap => cap.angular).sort());
   assert.equal(frontends.filter(cap => cap.frontend === 'angular').length, 41);
   assert.equal(frontends.find(cap => cap.project === 'cockpit-ag-ui-client-tools-react')?.runtimePath, 'ag-ui/client-tools/react');
+});
+test('aimock-backed React e2e setups match their closed configuration backends', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  const { readdirSync, readFileSync, existsSync } = await import('node:fs');
+  const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? walk(`${dir}/${entry.name}`) : entry.name === 'global-setup-impl.ts' && dir.endsWith('/react/e2e') ? [`${dir}/${entry.name}`] : []);
+  const setups = walk('cockpit');
+  assert.ok(setups.length > 0);
+  for (const file of setups) {
+    const call = /reactAimockGlobalSetup\(\{ example: '([^']+)', port: (\d+) \}\)/.exec(readFileSync(file, 'utf8'));
+    assert.ok(call, `${file} uses reactAimockGlobalSetup`);
+    const [, example, port] = call;
+    const serve = /serve\.mjs ([a-z0-9-]+)/.exec(readFileSync(file.replace('global-setup-impl.ts', 'playwright.config.ts'), 'utf8'))[1];
+    const configuration = reactCockpitConfiguration(serve);
+    assert.equal(configuration.port, Number(port), file);
+    assert.deepEqual(configuration.backend, {
+      kind: 'aimock-langgraph',
+      python: `cockpit/${example}/python`,
+      fixtures: `cockpit/${example}/angular/e2e/fixtures`,
+      langgraphPort: Number(port) + 1000,
+    }, file);
+    assert.ok(existsSync(configuration.backend.fixtures), configuration.backend.fixtures);
+  }
 });

@@ -63,9 +63,24 @@ Playwright webServer ──► serve.mjs ── /api, /developer-api ──► l
    | `POST /__release` | emit the rest | flushes the buffer and resumes piping |
    | `GET /__lifetime` | held stream or history | same (`activeStream`, `activeHistory`) |
    | `GET /__graph-proof` | in-process proof | removed; see "Guarantees" |
+   | `GET /__captures` (batch 1) | authored SSE, saved messages, title updates | per finished run: forwarded SSE text, saved `messages`/`next` from the real `/state`, and thread title before and after the run, all captured before the browser sees the stream end |
+   | `GET /__lifetime` child reaping (batch 1) | owned wire child processes | no per-run graph processes exist any more, so `openResponses` (proxied browser connections still open) replaces the child-reaping check |
+   | `POST /__inject/reasoning` (batch 1) | authored `reasoning_content` | **injected data**. `ChatOpenAI` over Chat Completions never surfaces reasoning, so a real graph can't produce it. Until reset, the control adds `additional_kwargs.reasoning_content` to every AI message the browser receives (the first stream chunk, `values`/`updates`/`checkpoints` events, history and `/state`), so the theming palette checks still reach the Reasoning region |
 
    Holds are now explicit controls, not magic prompt text, so every test
    prompt can be a shared fixture prompt.
+
+   Prompts that only exercise the client (raw whitespace, multiline drafts,
+   IME guards) are answered by a **catch-all fixture**,
+   `{ "match": { "userMessage": "" } }`. It goes last in the file, because
+   aimock matches `userMessage` by substring and the first match wins.
+   Prompts whose reply matters keep their own fixture.
+
+   Each migrated example has the same one-line `e2e/global-setup-impl.ts`
+   (`reactAimockGlobalSetup('<topic>')` from
+   `cockpit/shared/react-aimock-setup.ts`), and its `configuration.mjs`
+   entry gets `backend: aimockLanggraph('<example>', <port>)`, where the
+   langgraph port is the app port + 1000.
 
 ## Guarantees: kept, moved, or replaced
 
@@ -115,7 +130,7 @@ example needs that the pilot proxy doesn't yet provide.
 | Batch | Examples | Controls beyond the generic proxy | Notes |
 | --- | --- | --- | --- |
 | 0 (done) | chat/messages | none | pilot |
-| 1 | chat/input, chat/theming | `/__captures` (theming) | generic set otherwise |
+| 1 (done) | chat/input, chat/theming | `/__captures`, `/__inject/reasoning` (theming) | |
 | 2 | chat/tool-calls, chat/subagents, chat/interrupts, chat/generative-ui | hold on a predicate (tool call, child or subgraph event, resume), `/__fail-resume`, `/__worker-failure`, `/__metadata-failure`, `/__configure` | add `afterEvent` predicates to `/__hold/stream`, plus route-matched failure injection |
 | 3 | chat/threads, chat/timeline, chat/debug | title modes and holds, state and checkpoint holds, mapped checkpoints | history and state rewriting, holds per endpoint |
 | 4 | langgraph/{streaming, persistence, memory, interrupts, subgraphs, client-tools, deployment-runtime, time-travel, durable-execution} | `/__hold-draft`, `/__hold-extraction`, `/__hold-plan`, `/__publish-*`, `/__bad-history`, `/__unsafe-source` | `durable-execution` `/__publish-*` injects authored events that a real graph can't emit, so it keeps a small authored layer on top of the proxy |

@@ -13,6 +13,10 @@ test('theming is an exact closed native LangGraph topic', () => {
     base: '/chat/theming/react/',
     port: 4644,
     project: 'cockpit-chat-theming-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/theming/python',
+      fixtures: 'cockpit/chat/theming/angular/e2e/fixtures', langgraphPort: 5644,
+    },
   });
   assert.ok(Object.isFrozen(reactCockpitConfiguration('chat-theming')));
   for (const topic of [
@@ -40,9 +44,9 @@ test('theming production inputs exclude local fixture and controls', () => {
   for (const path of visit(root))
     assert.doesNotMatch(
       readFileSync(path, 'utf8'),
-      /chat-theming-(?:wire|fixture)|\/__(?:release|history|requests|graph-proof|lifetime)/
+      /langgraph-proxy|\/__(?:release|history|requests|captures|graph-proof|lifetime)/
     );
   const build = readFileSync('scripts/react-cockpit/build.mjs', 'utf8');
   assert.match(build, /cpSync\(join\(root, appPath, 'src'\)/);
-  assert.doesNotMatch(build, /chat-theming-fixture|chat-theming-wire/);
+  assert.doesNotMatch(build, /langgraph-proxy/);
 });
