@@ -104,6 +104,24 @@ export class FetchStreamTransport implements AgentTransport {
     yield* this.iterateSdkRun(run, signal);
   }
 
+  /** Create an empty thread, as `stream` does when it has no thread id. */
+  async createThread(signal: AbortSignal): Promise<string> {
+    let thread: Awaited<ReturnType<Client['threads']['create']>>;
+    try {
+      thread = await this.client.threads.create({ signal });
+    } catch (error) {
+      return this.rethrowOperationError(error, signal);
+    }
+    try {
+      const id = thread.thread_id;
+      if (typeof id !== 'string' || !id)
+        throw new Error('Invalid LangGraph thread response.');
+      return id;
+    } catch (error) {
+      return this.rethrowLocalError(error, signal);
+    }
+  }
+
   /** Join an already-started run without creating a new thread. */
   async *joinStream(
     threadId: string,
