@@ -262,9 +262,7 @@ describe('Theming fixture files through actual Nx attribution', () => {
   const root = fileURLToPath(new URL('../', import.meta.url));
   const project = 'cockpit-chat-theming-react';
   for (const file of [
-    'scripts/react-cockpit/chat-theming-fixture.mjs',
-    'scripts/react-cockpit/chat-theming-wire.py',
-    'scripts/react-cockpit/chat-theming-fixture.spec.mjs',
+    'scripts/react-cockpit/langgraph-proxy.mjs',
     'scripts/cockpit-matrix.spec.mjs',
   ]) test(`attributes ${file} without forcing the fleet`, () => {
     const affected = new Set(JSON.parse(execFileSync(process.execPath, [

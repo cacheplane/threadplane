@@ -59,7 +59,7 @@ it('reuses only same-run dependencies while preserving every isolated Cockpit pr
   const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step))
     .map(step => step === nodeSetup ? { ...step, with: { ...step.with, 'node-version': 22 } } : step);
   assert.equal(createHash('sha256').update(JSON.stringify(originalSteps)).digest('hex'),
-    '47b703c5eebce05e9b71f4e06acf7865a59a03587296b28752e88ab463389323',
+    '7b4549c58f77e6432e7788891dc793c976c5072b54f669d323503baaf517bde2',
     'all original setup, Python, source, fixture, browser and artifact steps remain identical except the verified Node patch pin');
 });
 
@@ -2615,14 +2615,15 @@ it('representative smoke includes the canonical tagged Theming graph', async () 
   assert.match(ci, /--projects=[^\n]*cockpit-chat-theming-python/);
 });
 
-it('runs bounded Theming fixture tests in its actual React fleet lane', async () => {
+it('runs Theming configuration and network-free graph tests for its aimock React lane', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const scope = readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier');
   assert.ok(scope.includes('scripts/react-cockpit/chat-theming-configuration.spec.mjs'));
-  const step = readNamedStep(readJobBlock(workflow, 'cockpit-e2e'), 'Verify native Theming fixture ownership');
-  assert.match(step, /if: matrix\.cap\.angular == 'cockpit-chat-theming-react'/);
-  assert.match(step, /npx nx run cockpit-chat-theming-python:test --skip-nx-cache/);
-  assert.match(step, /node --test --test-concurrency=1 scripts\/react-cockpit\/chat-theming-fixture.spec.mjs/);
+  // The authored fixture server is gone: e2e runs the real graph on aimock, and
+  // the network-free compiled-graph proof is the Python test e2e depends on.
+  assert.doesNotMatch(workflow, /chat-theming-fixture\.spec\.mjs/);
+  const project = JSON.parse(await readFile('cockpit/chat/theming/react/project.json', 'utf8'));
+  assert.deepEqual(project.targets.e2e.dependsOn.at(-1), { target: 'test', projects: ['cockpit-chat-theming-python'] });
   assert.match(readJobBlock(workflow, 'cockpit-e2e'), /output\/playwright\/chat-theming-react\//);
 });
 

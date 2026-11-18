@@ -1149,11 +1149,6 @@ jobs:
           npx nx run cockpit-runtimes-aws-strands-react:prepare-fixture --skip-nx-cache
           node --test --test-concurrency=1 scripts/react-cockpit/native-strands-fixture.spec.mjs fixtures/react-parity/native-strands-react/server.spec.mjs
           python -m unittest discover -s fixtures/react-parity/native-strands-react -p test_model.py
-      - name: Verify native Theming fixture ownership
-        if: matrix.cap.angular == 'cockpit-chat-theming-react'
-        run: |
-          npx nx run cockpit-chat-theming-python:test --skip-nx-cache
-          node --test --test-concurrency=1 scripts/react-cockpit/chat-theming-fixture.spec.mjs
       - name: Verify native Debug fixture and installed session ownership
         if: matrix.cap.angular == 'cockpit-chat-debug-react'
         run: |

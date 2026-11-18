@@ -8,13 +8,22 @@
  * cannot produce on demand:
  *
  *   GET  /__requests          every /api and /developer-api request, in order
- *   GET  /__lifetime          { activeStream, activeHistory }
+ *   GET  /__lifetime          { activeStream, activeHistory, openResponses }
+ *   GET  /__captures          per finished run: forwarded SSE text, saved
+ *                             messages/next from the real server, title
+ *                             before and after the run
  *   POST /__reset             forget requests, drop held responses, clear modes
  *   POST /__fail-create       next thread creation answers 500 without forwarding
  *   POST /__history/<mode>    safe | hold | changed | missing | pending | failed
  *   POST /__release-history   finish a held history read
  *   POST /__hold/stream       hold the next run stream; body { afterText? }
  *   POST /__release           flush and resume a held run stream
+ *   POST /__inject/reasoning  body { text }: until reset, every AI message the
+ *                             browser receives (stream, history, state) carries
+ *                             additional_kwargs.reasoning_content = text.
+ *                             Injected data: ChatOpenAI over Chat Completions
+ *                             never surfaces reasoning, so a real graph can't
+ *                             produce it for the reasoning-styling checks.
  *
  * Nothing here is reachable from a production build: only
  * scripts/react-cockpit/serve.mjs imports it.
@@ -73,12 +82,54 @@ export function createLanggraphProxy({ upstream }) {
   let holdNextStream = null;
   let heldStream;
   let heldHistory;
+  let captures = [];
+  let openResponses = 0;
+  let reasoning = null;
+
+  const withReasoning = (message) =>
+    reasoning && message?.type === 'ai'
+      ? { ...message, additional_kwargs: { ...message.additional_kwargs, reasoning_content: reasoning } }
+      : message;
+  const decorateValues = (values) =>
+    reasoning && Array.isArray(values?.messages)
+      ? { ...values, messages: values.messages.map(withReasoning) }
+      : values;
+  // `updates` and `checkpoints` events carry saved messages nested under node
+  // names or checkpoint values; decorate every `messages` array they hold.
+  const decorateDeep = (value) => {
+    if (Array.isArray(value)) return value.map(decorateDeep);
+    if (!value || typeof value !== 'object') return value;
+    const out = {};
+    for (const [key, entry] of Object.entries(value))
+      out[key] = key === 'messages' && Array.isArray(entry) ? entry.map(withReasoning) : decorateDeep(entry);
+    return out;
+  };
+  /** Rewrite one SSE event for an armed injection; first AI chunk per message only. */
+  const decoratedChunks = new Set();
+  function decorateEvent(raw) {
+    if (!reasoning) return raw;
+    const name = /^event: *(.*)$/m.exec(raw)?.[1]?.trim() ?? '';
+    const dataLine = raw.split(/\r?\n/).find((line) => line.startsWith('data:'));
+    if (!dataLine) return raw;
+    let value;
+    try { value = JSON.parse(dataLine.slice(5)); } catch { return raw; }
+    if (name.startsWith('messages') && Array.isArray(value) && String(value[0]?.type ?? '').startsWith('AI')) {
+      if (decoratedChunks.has(value[0].id)) return raw;
+      decoratedChunks.add(value[0].id);
+      value = [{ ...value[0], additional_kwargs: { ...value[0].additional_kwargs, reasoning_content: reasoning } }, ...value.slice(1)];
+    } else if (/^(values|updates|checkpoints)\b/.test(name)) value = decorateDeep(value);
+    else return raw;
+    return raw.replace(dataLine, 'data: ' + JSON.stringify(value));
+  }
 
   function reset() {
     heldStream?.response.destroy();
     heldHistory?.response.destroy();
     heldStream = heldHistory = undefined;
     requests = [];
+    captures = [];
+    reasoning = null;
+    decoratedChunks.clear();
     failCreate = false;
     historyMode = 'safe';
     holdNextStream = null;
@@ -107,7 +158,10 @@ export function createLanggraphProxy({ upstream }) {
     return Buffer.concat(chunks);
   }
 
-  function transformHistory(states) {
+  function transformHistory(input) {
+    const states = Array.isArray(input)
+      ? input.map((state) => ({ ...state, values: decorateValues(state.values) }))
+      : input;
     if (!Array.isArray(states) || states.length === 0) return states;
     const [latest, ...rest] = states;
     let messages = latest.values?.messages ?? [];
@@ -150,35 +204,72 @@ export function createLanggraphProxy({ upstream }) {
     });
   }
 
+  async function upstreamJson(path) {
+    const answer = await send('GET', path, { accept: 'application/json' }, Buffer.alloc(0));
+    const raw = await readAll(answer);
+    return answer.statusCode === 200 ? JSON.parse(raw.toString('utf8')) : null;
+  }
+
+  async function threadTitle(threadId) {
+    return (await upstreamJson(`/threads/${threadId}`))?.metadata?.title ?? null;
+  }
+
   async function proxyStream(request, response, path, body) {
     const hold = holdNextStream;
     holdNextStream = null;
+    const threadId = /\/threads\/([^/]+)\/runs\/stream/.exec(path)?.[1];
+    const titleBefore = threadId ? await threadTitle(threadId) : null;
     const upstreamResponse = await send(request.method, path, request.headers, body);
     response.writeHead(upstreamResponse.statusCode, forwardedHeaders(upstreamResponse.headers));
     response.flushHeaders();
-    const abort = () => upstreamResponse.destroy();
-    response.on('close', abort);
-    if (!hold) {
-      upstreamResponse.pipe(response);
-      return;
-    }
-    // Forward whole SSE events until the hold condition is met, then buffer.
+    response.on('close', () => upstreamResponse.destroy());
+    // Forward whole SSE events; when a hold is armed, buffer after its condition.
     let pending = '';
     let text = '';
+    let sse = '';
     let holding = false;
-    let armed = true;
+    let armed = Boolean(hold);
+    let ended = false;
     const buffered = [];
+    const finish = async () => {
+      if (upstreamResponse.statusCode === 200 && threadId) {
+        // Saved state and title as the real server persisted them, captured
+        // before the browser sees the end of the stream so tests never race it.
+        const state = await upstreamJson(`/threads/${threadId}/state`).catch(() => null);
+        captures.push({
+          path: request.url && new URL(request.url, 'http://localhost').pathname,
+          sse,
+          savedMessages: state?.values?.messages ?? [],
+          next: state?.next ?? [],
+          titleBefore,
+          titleAfter: await threadTitle(threadId).catch(() => null),
+        });
+      }
+      if (!response.destroyed) response.end();
+    };
     const held = {
       response,
       release() {
         if (heldStream === held) heldStream = undefined;
         holding = false;
-        for (const chunk of buffered.splice(0)) response.write(chunk);
-        if (upstreamResponse.readableEnded) response.end();
+        let rest = buffered.splice(0).join('');
+        let match;
+        while ((match = /\r?\n\r?\n/.exec(rest))) {
+          const end = match.index + match[0].length;
+          response.write(decorateEvent(rest.slice(0, end)));
+          rest = rest.slice(end);
+        }
+        pending = rest + pending;
+        if (ended) {
+          if (pending) response.write(decorateEvent(pending));
+          pending = '';
+          void finish();
+        }
       },
     };
     upstreamResponse.setEncoding('utf8');
     upstreamResponse.on('data', (chunk) => {
+      sse += chunk;
       if (holding) return void buffered.push(chunk);
       pending += chunk;
       let match;
@@ -186,7 +277,7 @@ export function createLanggraphProxy({ upstream }) {
         const end = match.index + match[0].length;
         const raw = pending.slice(0, end);
         pending = pending.slice(end);
-        response.write(raw);
+        response.write(decorateEvent(raw));
         const delta = aiText(raw);
         if (delta === null) continue;
         text += delta;
@@ -202,9 +293,10 @@ export function createLanggraphProxy({ upstream }) {
       }
     });
     upstreamResponse.on('end', () => {
+      ended = true;
       if (holding) return;
-      if (pending) response.write(pending);
-      response.end();
+      if (pending) response.write(decorateEvent(pending));
+      void finish();
     });
     response.on('close', () => {
       if (heldStream === held) heldStream = undefined;
@@ -213,7 +305,12 @@ export function createLanggraphProxy({ upstream }) {
 
   const controls = {
     '/__requests': ['GET', () => requests],
-    '/__lifetime': ['GET', () => ({ activeStream: Boolean(heldStream), activeHistory: Boolean(heldHistory) })],
+    '/__captures': ['GET', () => captures],
+    '/__lifetime': ['GET', () => ({
+      activeStream: Boolean(heldStream),
+      activeHistory: Boolean(heldHistory),
+      openResponses,
+    })],
     '/__reset': ['POST', () => { reset(); return {}; }],
     '/__fail-create': ['POST', () => { failCreate = true; return {}; }],
     '/__release': ['POST', () => { heldStream?.release(); return {}; }],
@@ -223,6 +320,7 @@ export function createLanggraphProxy({ upstream }) {
       held?.finish();
       return {};
     }],
+    '/__inject/reasoning': ['POST', (body) => { reasoning = String(body.text ?? ''); return {}; }],
     '/__hold/stream': ['POST', (body) => { holdNextStream = { afterText: body.afterText ?? null }; return {}; }],
   };
 
@@ -253,6 +351,8 @@ export function createLanggraphProxy({ upstream }) {
         : null;
     if (!prefix) return false;
 
+    openResponses += 1;
+    response.once('close', () => { openResponses -= 1; });
     const body = await readAll(request);
     const search = new URL(request.url, 'http://localhost').search;
     const path = pathname.slice(prefix.length) + search;
@@ -274,7 +374,17 @@ export function createLanggraphProxy({ upstream }) {
         await proxyHistory(request, response, path, body);
       else if (request.method === 'POST' && /\/runs\/stream$/.test(pathname))
         await proxyStream(request, response, path, body);
-      else {
+      else if (reasoning && request.method === 'GET' && /\/threads\/[^/]+\/state$/.test(pathname)) {
+        const upstreamResponse = await send(request.method, path, request.headers, body);
+        const raw = await readAll(upstreamResponse);
+        if (upstreamResponse.statusCode !== 200) {
+          response.writeHead(upstreamResponse.statusCode, forwardedHeaders(upstreamResponse.headers));
+          response.end(raw);
+        } else {
+          const state = JSON.parse(raw.toString('utf8'));
+          json(response, { ...state, values: decorateValues(state.values) });
+        }
+      } else {
         const upstreamResponse = await send(request.method, path, request.headers, body);
         response.writeHead(upstreamResponse.statusCode, forwardedHeaders(upstreamResponse.headers));
         upstreamResponse.pipe(response);

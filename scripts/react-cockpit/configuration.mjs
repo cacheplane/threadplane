@@ -1,4 +1,16 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
+
+/**
+ * aimock-backed example: the real graph runs under `langgraph dev` against the
+ * Angular example's aimock fixtures (see docs/superpowers/specs/
+ * 2026-11-18-react-cockpit-aimock-design.md). Convention: langgraph = port + 1000.
+ */
+const aimockLanggraph = (example, port) => Object.freeze({
+  kind: 'aimock-langgraph',
+  python: `cockpit/${example}/python`,
+  fixtures: `cockpit/${example}/angular/e2e/fixtures`,
+  langgraphPort: port + 1000,
+});
 export function reactCockpitConfiguration(topic = 'streaming') {
   if (topic === 'ag-ui-a2ui')
     return Object.freeze({
@@ -23,6 +35,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       topic: 'theming', library: 'chat', adapter: 'langgraph',
       appPath: 'cockpit/chat/theming/react', base: '/chat/theming/react/',
       port: 4644, project: 'cockpit-chat-theming-react',
+      backend: aimockLanggraph('chat/theming', 4644),
     });
   if (topic === 'runtimes-aws-strands')
     return Object.freeze({
@@ -100,6 +113,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
     return Object.freeze({
       topic: 'input', adapter: 'langgraph', appPath: 'cockpit/chat/input/react',
       base: '/chat/input/react/', port: 4621, project: 'cockpit-chat-input-react',
+      backend: aimockLanggraph('chat/input', 4621),
     });
   if (topic === 'chat-messages')
     return Object.freeze({
@@ -109,13 +123,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/chat/messages/react/',
       port: 4620,
       project: 'cockpit-chat-messages-react',
-      // Same aimock fixtures and `langgraph dev` path as the Angular example.
-      backend: Object.freeze({
-        kind: 'aimock-langgraph',
-        python: 'cockpit/chat/messages/python',
-        fixtures: 'cockpit/chat/messages/angular/e2e/fixtures',
-        langgraphPort: 5620,
-      }),
+      backend: aimockLanggraph('chat/messages', 4620),
     });
   if (topic === 'render-computed-functions')
     return Object.freeze({

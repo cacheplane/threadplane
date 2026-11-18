@@ -19,9 +19,7 @@ import { createSubgraphsFixture } from './subgraphs-fixture.mjs';
 import { createTimeTravelFixture } from './time-travel-fixture.mjs';
 import { createDeploymentRuntimeFixture } from './deployment-runtime-fixture.mjs';
 import { createLanggraphProxy } from './langgraph-proxy.mjs';
-import { createChatThemingFixture } from './chat-theming-fixture.mjs';
 import { createChatDebugFixture } from './chat-debug-fixture.mjs';
-import { createChatInputFixture } from './chat-input-fixture.mjs';
 import { createChatInterruptsFixture } from './chat-interrupts-fixture.mjs';
 import { createChatToolCallsFixture } from './chat-tool-calls-fixture.mjs';
 import { createChatSubagentsFixture } from './chat-subagents-fixture.mjs';
@@ -66,7 +64,6 @@ const releaseA2uiStreams = (cancel = false) => {
   }
 };
 const chatDebugFixture = configuration.library === 'chat' && configuration.topic === 'debug' ? createChatDebugFixture() : null;
-const chatThemingFixture = configuration.library === 'chat' && configuration.topic === 'theming' ? createChatThemingFixture() : null;
 const nativeStrandsFixture = configuration.library === 'runtimes' && configuration.topic === 'aws-strands' ? createNativeStrandsFixture() : null;
 const nativeMafFixture = configuration.library === 'runtimes' && configuration.topic === 'microsoft-agent-framework' ? createNativeMafFixture() : null;
 const nativeMastraFixture = configuration.library === 'runtimes' && configuration.topic === 'mastra' ? createNativeMastraFixture() : null;
@@ -86,7 +83,6 @@ const chatInterruptsFixture = configuration.library === 'chat' && configuration.
 const langgraphProxy = configuration.backend?.kind === 'aimock-langgraph'
   ? createLanggraphProxy({ upstream: `http://127.0.0.1:${configuration.backend.langgraphPort}` })
   : null;
-const chatInputFixture = configuration.topic === 'input' ? createChatInputFixture() : null;
 const agUiSubagentsFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'subagents'
     ? createAgUiSubagentsFixture()
@@ -223,7 +219,6 @@ const server = createServer(async (request, response) => {
     if (await chatDebugFixture.handle(request, response, pathname)) return;
     if (pathname.startsWith('/developer-api/')) return json(response, {}, 404);
   }
-  if (chatThemingFixture && (await chatThemingFixture(request, response, pathname))) return;
   if (nativeStrandsFixture && (await nativeStrandsFixture(request, response, pathname))) return;
   if (nativeMafFixture && (await nativeMafFixture(request, response, pathname))) return;
   if (nativeMastraFixture && (await nativeMastraFixture(request, response, pathname))) return;
@@ -250,7 +245,6 @@ const server = createServer(async (request, response) => {
   if (chatToolCallsFixture && (await chatToolCallsFixture(request, response, pathname))) return;
   if (chatInterruptsFixture && (await chatInterruptsFixture(request, response, pathname))) return;
   if (langgraphProxy && (await langgraphProxy(request, response, pathname))) return;
-  if (chatInputFixture && (await chatInputFixture(request, response, pathname))) return;
   if (configuration.adapter === 'none') {
     if (!['GET', 'HEAD'].includes(request.method)) {
       response.writeHead(405, { allow: 'GET, HEAD' });
@@ -464,7 +458,7 @@ const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]) : null;
 let closing;
 let shutdown;
-if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || chatThemingFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
+if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture || chatInterruptsFixture || chatToolCallsFixture || chatSubagentsFixture || chatThreadsFixture || chatTimelineFixture) {
   shutdown = (code = 0) => {
     closing ??= (async () => {
       let a2uiFailure;
@@ -477,18 +471,17 @@ if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || chatThemingFixture || n
         try { await chatA2uiFixture?.close(); }
         catch (error) { a2uiFailure = error; }
       }
-      else await (chatDebugFixture ?? chatThemingFixture ?? nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? deepAgentsMemoryFixture ?? deepAgentsSubagentsFixture ?? deepAgentsSkillsFixture ?? deepAgentsFilesystemFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture ?? chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
+      else await (chatDebugFixture ?? nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? deepAgentsMemoryFixture ?? deepAgentsSubagentsFixture ?? deepAgentsSkillsFixture ?? deepAgentsFilesystemFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture ?? chatInterruptsFixture ?? chatToolCallsFixture ?? chatSubagentsFixture ?? chatThreadsFixture ?? chatTimelineFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();
       })));
-      if (chatThemingFixture) console.log(JSON.stringify({ serverPid: process.pid, chatThemingFixtureClosed: chatThemingFixture.receipt(), listenersClosed: true }));
       if (chatDebugFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), chatDebugFixtureClosed: chatDebugFixture.receipt(), listenersClosed: true }));
       if (chatA2uiFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), chatA2uiFixtureClosed: a2uiReceipt(), listenersClosed: true }));
       if (agUiA2uiFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), agUiA2uiFixtureClosed: agUiA2uiFixture.receipt(), bufferedCanonicalWire: true, listenersClosed: true }));
       if (a2uiFailure) throw a2uiFailure;
     })();
-    if (agUiA2uiFixture || isChatA2ui || chatThemingFixture || chatDebugFixture) void closing.then(() => process.exit(code), () => process.exit(1));
+    if (agUiA2uiFixture || isChatA2ui || chatDebugFixture) void closing.then(() => process.exit(code), () => process.exit(1));
     else void closing.finally(() => process.exit(code));
   };
   process.once('SIGINT', () => shutdown());

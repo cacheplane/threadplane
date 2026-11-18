@@ -1,15 +1,6 @@
-import { resolve } from 'node:path';
-import { createLanggraphGlobalSetup } from '@threadplane-internal/e2e-harness';
-// eslint-disable-next-line @nx/enforce-module-boundaries -- Closed React cockpit identity shared with the static server.
-import { reactCockpitConfiguration } from '../../../../../scripts/react-cockpit/configuration.mjs';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Shared aimock setup for the React cockpit examples.
+import { reactAimockGlobalSetup } from '../../../../shared/react-aimock-setup';
 
-const { project, backend } = reactCockpitConfiguration('chat-messages');
-
-// aimock replays the Angular example's fixtures; `langgraph dev` runs the real
-// graph against it. The static server (webServer) proxies /api here.
-export default createLanggraphGlobalSetup({
-  stateKey: project,
-  langgraphCwd: backend.python,
-  langgraphPort: backend.langgraphPort,
-  fixturesDir: resolve(__dirname, '../../../../..', backend.fixtures),
-});
+// aimock replays the Angular example's fixtures into a real `langgraph dev`;
+// the static server (webServer) proxies /api to it.
+export default reactAimockGlobalSetup({ example: 'chat/messages', port: 4620 });
