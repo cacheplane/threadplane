@@ -17,7 +17,7 @@ const observation = (
       delivery: { generation: 'one', phase: 'complete', outcome: 'success' },
     },
   ],
-  values: undefined,
+  state: undefined,
   interrupts: [],
 });
 afterEach(cleanup);

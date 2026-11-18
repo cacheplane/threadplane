@@ -227,12 +227,12 @@ test(
     const before = structuredClone(session.getSnapshot());
     const saved = await f.client.threads.getState(f.thread);
     assert.deepEqual(
-      before.values.skills_metadata,
+      before.state.skills_metadata,
       saved.values.skills_metadata
     );
     await session.load();
     assert.deepEqual(
-      session.getSnapshot().values.skills_metadata,
+      session.getSnapshot().state.skills_metadata,
       saved.values.skills_metadata
     );
     assert.equal(await session.submit('Followup assessment'), 'success');

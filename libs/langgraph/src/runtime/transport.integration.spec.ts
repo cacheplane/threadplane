@@ -109,7 +109,7 @@ describe('neutral real SDK transport', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(handler).not.toHaveBeenCalled();
     const snapshot = session.getSnapshot();
-    expect(snapshot.values).toEqual({ root: true });
+    expect(snapshot.state).toEqual({ root: true });
     expect(snapshot.interrupts).toEqual([]);
     expect(snapshot.toolCalls).toEqual([]);
     expect(snapshot.messages.map((message) => message.content)).toEqual([
@@ -125,7 +125,7 @@ describe('neutral real SDK transport', () => {
       content: '',
       delivery: { outcome: 'success' },
     });
-    expect(snapshot.subgraphs[0].values).toEqual({ child: { owned: true } });
+    expect(snapshot.subgraphs[0].state).toEqual({ child: { owned: true } });
     expect(snapshot.subgraphs[0].interrupts).toEqual([
       { id: 'child-ask', value: 'Continue?' },
     ]);
@@ -268,7 +268,7 @@ describe('neutral real SDK transport', () => {
             ]
           : []
       );
-      expect(session.getSnapshot().values).toEqual({ model: 'server' });
+      expect(session.getSnapshot().state).toEqual({ model: 'server' });
       await session.submit('Independent');
       expect(
         Object.keys(requests.at(-1)?.body?.['input'] as object).sort()
@@ -760,7 +760,7 @@ describe('neutral real SDK transport', () => {
         { id: 'history-a', value: false },
         { id: 'history-b', value: 0 },
       ]);
-      expect(session.getSnapshot().values).toEqual({ count: 2 });
+      expect(session.getSnapshot().state).toEqual({ count: 2 });
       expect(session.getSnapshot().messages[0].delivery).toMatchObject({
         outcome: 'paused',
       });
@@ -801,7 +801,7 @@ describe('neutral real SDK transport', () => {
     try {
       expect(await session.submit('Go')).toBe('success');
       expect(session.getSnapshot()).toMatchObject({
-        values: { type: 'domain', namespace: ['application'], stage: 'root' },
+        state: { type: 'domain', namespace: ['application'], stage: 'root' },
       });
       expect(session.getSnapshot().messages.at(-1)?.content).toBe('Root');
       expect(request).toHaveBeenCalledTimes(1);
@@ -841,7 +841,7 @@ describe('neutral real SDK transport', () => {
       expect(text).toContain('Second');
       expect(text).not.toContain('FirstSecond');
       expect(session.getSnapshot()).toMatchObject({
-        values: { messageMetadata: { domain: true }, count: 'Second' },
+        state: { messageMetadata: { domain: true }, count: 'Second' },
       });
       expect(request).toHaveBeenCalledTimes(1);
     } finally {

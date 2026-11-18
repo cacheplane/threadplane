@@ -648,7 +648,7 @@ const childState = (
   generation = 'live'
 ) => ({
   namespace: [namespace],
-  values: { subagent_type: 'research', task_description: 'Plan' },
+  state: { subagent_type: 'research', task_description: 'Plan' },
   interrupts: [],
   messages: [message('child-answer', 'assistant', content, generation)],
 });

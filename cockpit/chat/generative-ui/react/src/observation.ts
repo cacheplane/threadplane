@@ -1,8 +1,13 @@
-import type { AgentSnapshot, Message, ToolCall } from '@threadplane/core';
+import type {
+  AgentSnapshot,
+  Message,
+  PlainValue,
+  ToolCall,
+} from '@threadplane/core';
 import { copyData, dataKey } from './dashboard-data';
 import { renderResult, validToolArgs } from './tool-evidence';
-export type GenerativeUiState = AgentSnapshot & {
-  readonly values?: Readonly<Record<string, unknown>>;
+export type GenerativeUiState = Omit<AgentSnapshot, 'state'> & {
+  readonly state?: Readonly<Record<string, PlainValue>>;
   readonly history?: readonly {
     readonly checkpoint: unknown;
     readonly next: readonly string[];
@@ -207,7 +212,7 @@ export function createObservation(
     if (
       saved &&
       (!live ||
-        dataKey(live.values) !== dataKey(state.values) ||
+        dataKey(live.state) !== dataKey(state.state) ||
         live.messages.length !== ms.length ||
         live.messages.some((m, i) => messageKey(m) !== messageKey(ms[i])))
     )

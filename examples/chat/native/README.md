@@ -1010,7 +1010,8 @@ reference. These controls do not read history, execute a run, change the selecte
 conversation or persist data. This baseline is an observed value, not a saved
 checkpoint or execution target.
 
-The runtime's observed application values exclude root transcript messages and
+The runtime's observed application state (the session snapshot's `state`)
+excludes root transcript messages and
 interrupt control fields. Those remain owned by their existing conversation
 views; comparison does not reconstruct the backend's raw state envelope.
 
