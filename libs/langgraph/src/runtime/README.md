@@ -279,6 +279,34 @@ including in the middle of a delivery, and later registrations are inert. Owned
 streams always request `custom` mode; a supplied transport delivers what its own
 stream modes produce.
 
+## Lifecycle timestamps
+
+`session.lifecycle` is a small observable beside the snapshot, for a debug
+panel or telemetry: `getSnapshot()` returns a frozen `LangGraphLifecycle` and
+`subscribe(notify)` reports each change, so React reads it with `useAgent` or
+`useSyncExternalStore`. Each value is epoch milliseconds on this clock, null
+until its milestone happens.
+
+| Value                 | Stamped                                                        |
+| --------------------- | -------------------------------------------------------------- |
+| `streamStartedAt`     | The first event to arrive on any run's stream.                 |
+| `streamErrorAt`       | The most recent published failure, as `{ at, kind }`.          |
+| `interruptReceivedAt` | The first time the session held a pending interrupt.           |
+| `interruptResolvedAt` | The most recent `resume` the session accepted.                 |
+| `threadPersistedAt`   | The first history read that returned saved checkpoints.        |
+| `toolCallStartedAt`   | The first time the session held a tool call.                   |
+| `toolCallCompletedAt` | The first time a tool call was complete or failed.             |
+
+A session serves one thread, so nothing is reset: where the Angular adapter
+clears its `AgentLifecycle` on `switchThread()`, a session for another thread
+starts again from null. There is no `threadCreatedAt`, because a session never
+creates its thread. Interrupts and tool calls restored from saved history are
+stamped when they are read, not when they first happened. The same failure
+published again keeps its time; a different one, or one that returns after
+clearing, is stamped again. The timestamps are kept apart from the snapshot, so
+they never cause a transcript render, and they are neither stored nor sent.
+Disposal releases every listener and later subscriptions are inert.
+
 ## Dynamic pauses
 
 Branch resume reads the exact retained pause before sending a decision. Task and

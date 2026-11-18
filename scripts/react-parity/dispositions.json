@@ -19295,6 +19295,16 @@
       "note": "Reasoning first seen already settled (saved history, or delivered whole) stays unmeasured. Nothing is stored, so a new session knows no durations. Subgraph messages are not timed. Rich blocks, event-only retention and full T09/T15 parity remain open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/lifecycle.ts",
+      "taskIds": [
+        "T08"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral lifecycle timestamps for a session: first stream event, latest failure with its kind, first interrupt, latest resume, first saved-history read, and first tool call start and finish, as an observable beside the snapshot.",
+      "note": "Staged in the private session. The Angular AgentLifecycle signals and registry are unchanged and not built on it. No threadCreatedAt, since a session never creates its thread; nothing resets, since a session serves one thread."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/thread-directory.ts",
       "taskIds": [
         "T11"

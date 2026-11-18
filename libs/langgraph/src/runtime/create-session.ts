@@ -23,6 +23,10 @@ import {
   type MessageState,
 } from './message-reducer.js';
 import { createReasoningTimer } from './reasoning-timing.js';
+import {
+  createLifecycleRecorder,
+  type LangGraphLifecycleSource,
+} from './lifecycle.js';
 import { createPublication } from './publication.js';
 import {
   observeHistoryInvocations,
@@ -62,6 +66,10 @@ import {
   type LangGraphRunOptions,
 } from './run-options.js';
 export type { LangGraphRunOptions } from './run-options.js';
+export type {
+  LangGraphLifecycle,
+  LangGraphLifecycleSource,
+} from './lifecycle.js';
 import {
   advanceCursor,
   captureRun,
@@ -160,6 +168,8 @@ export type LangGraphSession<
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
   /** Always present here: `custom` stream frames as application events. */
   onCustomEvent(listener: (event: AgentSessionCustomEvent) => void): () => void;
+  /** When this session first saw each milestone; see `LangGraphLifecycle`. */
+  readonly lifecycle: LangGraphLifecycleSource;
 };
 
 interface HistoryRead {
@@ -452,6 +462,7 @@ export function createSession(
       if (!present.has(key)) subgraphTimers.delete(key);
     return changed ? timed : observed;
   }
+  const lifecycle = createLifecycleRecorder();
   let values: LangGraphValues | undefined;
   let interrupts: readonly LangGraphInterrupt[] =
     publication.getSnapshot().interrupts;
@@ -588,6 +599,11 @@ export function createSession(
       error = invocationConflictError();
     }
     const plan = agentPlanFromState(values);
+    lifecycle.observe({
+      error,
+      interrupts,
+      toolCalls: state.toolCalls,
+    });
     publication.publish({
       status,
       history: historyPage,
@@ -612,6 +628,8 @@ export function createSession(
         : state.toolCalls,
       ...(error ? { error } : {}),
     });
+    // Last, so a lifecycle listener runs where a snapshot listener would.
+    lifecycle.flush();
   }
   function invalidateCheck() {
     revision += 1;
@@ -1184,6 +1202,7 @@ export function createSession(
             settle(attempt, 'interrupted', invocationConflictError());
             return;
           }
+          lifecycle.mark('streamStartedAt');
           publish('running');
           // publish drains observer commands before returning. Never dispatch or
           // read on behalf of an attempt a listener just stopped/superseded.
@@ -1573,7 +1592,10 @@ export function createSession(
       external.addEventListener('abort', abort, { once: true });
       if (external.aborted) abort();
     }
-    if (owns(created)) publish('running');
+    if (owns(created)) {
+      if (input.kind === 'resume') lifecycle.mark('interruptResolvedAt');
+      publish('running');
+    }
     checking?.abort();
     if (previous) close(previous, true);
     closeLoad(reading);
@@ -2034,6 +2056,7 @@ export function createSession(
         authoredTools.clear();
         loading = undefined;
         read.resolve();
+        if (history.length > 0) lifecycle.mark('threadPersistedAt');
         publish(
           unsettledTools.size ? 'error' : 'idle',
           unsettledTools.size ? unsettledToolError() : undefined
@@ -2334,6 +2357,11 @@ export function createSession(
       disposed ? () => undefined : publication.subscribe(notify),
     onCustomEvent: (listener) =>
       disposed ? () => undefined : publication.onCustomEvent(listener),
+    lifecycle: {
+      getSnapshot: lifecycle.source.getSnapshot,
+      subscribe: (notify) =>
+        disposed ? () => undefined : lifecycle.source.subscribe(notify),
+    },
     submit,
     fork,
     ...(canRegenerate ? { regenerate } : {}),
@@ -2362,6 +2390,7 @@ export function createSession(
         recoveryAttempt = undefined;
         publish('idle');
         publication.clearListeners();
+        lifecycle.clearListeners();
         checking?.abort();
         if (attempt) close(attempt, true);
         closeLoad(reading);
