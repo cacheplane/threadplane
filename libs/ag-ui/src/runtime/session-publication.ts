@@ -3,7 +3,7 @@ import {
   type AgentPlanStep,
   type AgentSessionCustomEvent,
 } from '@threadplane/core';
-import type { SessionSnapshot } from './session-observation.js';
+import type { Observation } from './session-observation.js';
 
 type Plan = readonly AgentPlanStep[];
 
@@ -27,9 +27,9 @@ const freezeStep = (step: AgentPlanStep) => Object.freeze({ ...step });
  * changes state (server snapshots and deltas, submitted patches, restore) also
  * keeps the plan current. Unchanged state keeps the previous plan reference.
  */
-function withPlan<T extends SessionSnapshot>(
+function withPlan<T extends Observation>(
   next: T,
-  previous: SessionSnapshot | undefined
+  previous: Observation | undefined
 ): T {
   const plan =
     previous && Object.is(next.state, previous.state)
@@ -40,7 +40,15 @@ function withPlan<T extends SessionSnapshot>(
   return Object.freeze(plan ? { ...rest, plan } : rest) as T;
 }
 
-export function createPublication(initial: SessionSnapshot) {
+/**
+ * Owns the session's observation and tells subscribers when it changes.
+ * `present` turns an observation into the snapshot the session publishes; it
+ * is asked once per observation, on the first read.
+ */
+export function createPublication<TSnapshot>(
+  initial: Observation,
+  present: (observation: Observation) => TSnapshot
+) {
   let current = withPlan(initial, undefined);
   const listeners = new Set<{ notify: () => void }>();
   const eventListeners = new Set<{
@@ -62,7 +70,7 @@ export function createPublication(initial: SessionSnapshot) {
     commands.push(action);
     drain();
   };
-  const publish = (next: SessionSnapshot) => {
+  const publish = (next: Observation) => {
     if (notifying) {
       command(() => publish(next));
       return;
@@ -85,7 +93,10 @@ export function createPublication(initial: SessionSnapshot) {
     }
   };
   return {
-    getSnapshot: () => current,
+    /** The published snapshot. */
+    getSnapshot: () => present(current),
+    /** What the owner reduces events into, including the literal state document. */
+    getObservation: () => current,
     subscribe: (notify: () => void): (() => void) => {
       const registration = { notify };
       listeners.add(registration);

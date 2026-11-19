@@ -438,7 +438,7 @@ describe('canonical A2UI native regression CI ownership', () => {
   it('runs the frozen closed-environment regression in the PR Library lane after its build prerequisites', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
     const library = selectedLibraryLane(workflow, 'packages');
-    assert.match(library, /if: github.event_name == 'push' \|\| needs.ci-scope.outputs.library == 'true'/);
+    assert.match(library, /if: needs\.ci-scope\.outputs\.queue_verified != 'true' && \(github\.event_name == 'push' \|\| needs\.ci-scope\.outputs\.library == 'true'/);
     const setup = library.indexOf('uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57');
     assert.ok(setup >= 0);
     assert.match(library.slice(setup).split('      - name:')[0], /python-version: '3.12'/);

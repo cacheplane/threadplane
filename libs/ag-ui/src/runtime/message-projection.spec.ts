@@ -4,15 +4,15 @@ import { projectMessages, projectToolCalls } from './message-projection';
 import { createReasoningClock } from './reasoning-clock';
 import {
   initialObservation,
-  type SessionSnapshot,
+  type Observation,
 } from './session-observation';
 import { bindingFixture } from './testing/binding-fixture';
 
 type Records = NonNullable<Parameters<typeof initialObservation>[0]>;
 const observed = (
   messages: Records,
-  extra: Partial<SessionSnapshot> = {}
-): SessionSnapshot =>
+  extra: Partial<Observation> = {}
+): Observation =>
   Object.freeze({ ...initialObservation(messages), ...extra });
 const turn: Records = [
   { id: 'system', role: 'system', content: 'Policy' },
@@ -160,7 +160,7 @@ describe('projectMessages', () => {
   });
 
   it('streams only the message built from the last root record while running', () => {
-    const phases = (messages: Records, extra: Partial<SessionSnapshot>) =>
+    const phases = (messages: Records, extra: Partial<Observation>) =>
       projectMessages(observed(messages, extra)).map((message) =>
         message.delivery.phase === 'complete'
           ? message.delivery.outcome
@@ -695,7 +695,9 @@ describe('citations from application state', () => {
         type: 'STATE_DELTA',
         delta: [{ op: 'add', path: '/citations', value: { saved: [{ id: 'doc', title: 'Doc' }] } }],
       });
-      await fixture.changed((snapshot) => 'citations' in (snapshot.state as object));
+      await fixture.changed(
+        (snapshot) => 'citations' in ((snapshot.state ?? {}) as object)
+      );
       // The listing is keyed by the saved identifier, which the stream has not used yet.
       expect('citations' in view().at(-1)!).toBe(false);
       exchange.emit({

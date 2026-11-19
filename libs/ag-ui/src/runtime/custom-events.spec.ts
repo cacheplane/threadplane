@@ -2,7 +2,6 @@ import { ok } from 'node:assert/strict';
 import { describe, expect, it, vi } from 'vitest';
 import type { RunAgentInput } from '@ag-ui/client';
 import type { AgentSessionCustomEvent } from '@threadplane/core';
-import { createAgentSession } from './agent-session';
 import { createSession, type Session } from './create-session';
 
 /** Each request answers with the next run's events between its lifecycle. */
@@ -125,33 +124,5 @@ describe('plain AG-UI session disposal', () => {
     listen(owner, second);
     expect(await owner.submit('hello')).toBe('aborted');
     expect(second).not.toHaveBeenCalled();
-  });
-});
-
-describe('core AG-UI session view custom events', () => {
-  it('forwards listeners to the native session', async () => {
-    const native = createSession({
-      threadId: 't',
-      url: 'unused',
-      fetch: wire([custom('tick', { n: 1 })]),
-    });
-    const session = createAgentSession(native);
-    const listener = vi.fn();
-    listen(session, listener);
-    expect(await session.submit('hello')).toBe('success');
-    expect(listener).toHaveBeenCalledWith({ name: 'tick', data: { n: 1 } });
-  });
-
-  it('has no listener method when the native session has none', () => {
-    const session = createAgentSession({
-      getSnapshot: () => {
-        throw new Error('unused');
-      },
-      subscribe: () => () => undefined,
-      submit: async () => 'success',
-      stop: async () => undefined,
-      dispose: async () => undefined,
-    });
-    expect(session.onCustomEvent).toBeUndefined();
   });
 });

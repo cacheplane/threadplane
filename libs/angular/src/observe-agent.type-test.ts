@@ -10,7 +10,7 @@ import type { bindingFixture } from '../../langgraph/src/runtime/testing/binding
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Type-only admission proof for the actual private native owner, not a production dependency.
 import type { createSession } from '../../ag-ui/src/runtime/create-session';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The private native snapshot is inferred without a core display projection.
-import type { SessionSnapshot } from '../../ag-ui/src/runtime/session-observation';
+import type { SessionSnapshot } from '../../ag-ui/src/runtime/agent-session';
 
 export function observeInferredRuntime(
   session: ReturnType<typeof bindingFixture>['session']
@@ -182,8 +182,8 @@ export function observeNativeSession(
   snapshot.transcript.push({ id: 'new', role: 'user', content: 'mutable' });
   // @ts-expect-error Child start evidence remains readonly.
   snapshot.subagents[0].started.name = 'changed';
-  // @ts-expect-error The native owner does not fabricate executable core tools.
-  void snapshot.toolCalls;
+  // The session publishes the core fields beside its protocol evidence.
+  void [snapshot.messages, snapshot.toolCalls];
   // @ts-expect-error Commands belong to the session, not its snapshot.
   snapshot.submit('Hello');
   // @ts-expect-error The native state field is readonly.

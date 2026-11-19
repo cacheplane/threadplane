@@ -180,11 +180,11 @@ function fixture(t) {
   mkdirSync(join(source, 'libs/ag-ui/src/runtime'), { recursive: true });
   writeFileSync(
     join(source, entry + '.ts'),
-    "export { createSession } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport type { Session, SessionOptions, ClientToolSession } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport type { ClientToolSessionSnapshot, ClientToolCall, ClientToolBlocker } from '../../../libs/ag-ui/src/runtime/client-tools.js';\nexport { projectTextTranscript } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\nexport type { TextTranscriptRow } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\nexport { projectMessages, projectToolCalls } from '../../../libs/ag-ui/src/runtime/message-projection.js';\nexport { createAgentSession } from '../../../libs/ag-ui/src/runtime/agent-session.js';\nexport { decisionState } from '../../../libs/ag-ui/src/runtime/decision.js';\nexport type { DecisionState } from '../../../libs/ag-ui/src/runtime/decision.js';\n"
+    "export { createSession } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport type { Session, SessionOptions, ClientToolSession } from '../../../libs/ag-ui/src/runtime/create-session.js';\nexport type { ClientToolSessionSnapshot, ClientToolCall, ClientToolBlocker } from '../../../libs/ag-ui/src/runtime/client-tools.js';\nexport { projectTextTranscript } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\nexport type { TextTranscriptRow } from '../../../libs/ag-ui/src/runtime/text-transcript.js';\nexport { projectMessages, projectToolCalls } from '../../../libs/ag-ui/src/runtime/message-projection.js';\nexport { decisionState } from '../../../libs/ag-ui/src/runtime/decision.js';\nexport type { DecisionState } from '../../../libs/ag-ui/src/runtime/decision.js';\n"
   );
   writeFileSync(
     join(source, 'libs/ag-ui/src/runtime/create-session.ts'),
-    'export interface SessionOptions { threadId: string }\nexport interface Session { value: string }\nexport type ClientToolSession = Session;\nexport function createSession(options: SessionOptions): Session { return { value: options.threadId }; }'
+    "import { createPresenter } from './agent-session.js';\nexport interface SessionOptions { threadId: string }\nexport interface Session { value: string }\nexport type ClientToolSession = Session;\nexport function createSession(options: SessionOptions): Session { return { value: createPresenter()(options.threadId) }; }"
   );
   writeFileSync(
     join(source, 'libs/ag-ui/src/runtime/client-tools.ts'),
@@ -200,7 +200,7 @@ function fixture(t) {
   );
   writeFileSync(
     join(source, 'libs/ag-ui/src/runtime/agent-session.ts'),
-    'export function createAgentSession(session: object) { return session; }'
+    'export function createPresenter() { return (value: string) => value; }'
   );
   writeFileSync(
     join(source, 'libs/ag-ui/src/runtime/decision.ts'),

@@ -49,7 +49,7 @@ export type OwnedRootTerminal = DeepReadonly<
     >
   | Pick<CustomEvent, 'type' | 'name' | 'value' | 'timestamp' | 'metadata'>
 >;
-export interface SessionSnapshot {
+export interface Observation {
   readonly status: 'idle' | 'running' | 'error';
   readonly transcript: Transcript;
   readonly state: PlainValue;
@@ -85,7 +85,7 @@ export interface SessionSnapshot {
  * that ended without a terminal, a response that was not OK and a request that
  * got no response all leave open whether the backend did the work.
  */
-export function failedWithRunError(snapshot: SessionSnapshot): boolean {
+export function failedWithRunError(snapshot: Observation): boolean {
   return (
     snapshot.status === 'error' &&
     snapshot.run?.terminal?.type === 'RUN_ERROR' &&
@@ -110,7 +110,7 @@ export function initialObservation(
   messages: readonly Message[] | Transcript = [],
   state?: unknown,
   subagents?: unknown
-): SessionSnapshot {
+): Observation {
   const transcript = ownTranscript(messages);
   assertTranscriptIdentity(transcript);
   const earlier = ownSubagents(subagents);
@@ -127,10 +127,10 @@ export function initialObservation(
  * RAW, STEP, REASONING_START/END and other CUSTOM events have no retained
  * projection in this slice. The session owner times reasoning messages itself. Child state still updates the one shared document. */
 export function applyObservation(
-  previous: SessionSnapshot,
+  previous: Observation,
   event: AGUIEvent,
   interruptMode: InterruptMode = 'native'
-): SessionSnapshot {
+): Observation {
   assertAttribution(previous.transcript, event);
   let { transcript, state, subagents, run } = previous;
   switch (event.type) {

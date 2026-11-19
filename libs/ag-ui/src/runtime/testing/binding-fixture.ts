@@ -1,7 +1,6 @@
 import type { RunAgentInput } from '@ag-ui/client';
 import type { StateDeclaration } from '@threadplane/core';
 import { createSession, type SessionOptions } from '../create-session';
-import type { SessionSnapshot } from '../session-observation';
 
 // Consumer specs assert the declared protocol version without depending on @ag-ui/* directly.
 export { PROTOCOL_VERSION } from '@ag-ui/client';
@@ -108,6 +107,7 @@ export function bindingFixture<
       return exchange.response;
     },
   });
+  type Published = ReturnType<typeof session.getSnapshot>;
   return {
     session,
     exchanges,
@@ -121,10 +121,10 @@ export function bindingFixture<
       }
       return start.promise;
     },
-    changed(predicate: (snapshot: SessionSnapshot) => boolean) {
+    changed(predicate: (snapshot: Published) => boolean) {
       const snapshot = session.getSnapshot();
       if (predicate(snapshot)) return Promise.resolve(snapshot);
-      return new Promise<SessionSnapshot>((resolve) => {
+      return new Promise<Published>((resolve) => {
         const release = session.subscribe(() => {
           const next = session.getSnapshot();
           if (predicate(next)) {

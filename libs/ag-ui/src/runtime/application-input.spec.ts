@@ -9,7 +9,7 @@ import {
 } from '@ag-ui/client';
 import { Observable } from 'rxjs';
 import { createSession, type Session } from './create-session';
-import type { SessionSnapshot } from './session-observation';
+import type { SessionSnapshot } from './agent-session';
 import type { ApplicationState, SubmitInput } from './submit-input';
 import { bindingFixture } from './testing/binding-fixture';
 
