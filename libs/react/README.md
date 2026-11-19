@@ -93,10 +93,10 @@ responsible for immutable snapshots; the hook neither freezes mutable data nor
 adds deep readonly types to caller-authored mutable fields.
 
 Keep the concrete session type when observing backend-specific fields. The private
-LangGraph fixture exposes a broad readonly `values` map on its snapshot: `undefined`
-means no current application-values map is observed, while `{}` is an observed
-empty map. The hook preserves that field without inferring an application schema,
-validating values, or issuing extra reads. Values and messages arrive in the same
+LangGraph fixture exposes the graph state as a readonly `state` record on its
+snapshot: `undefined` means no state is observed yet, while `{}` is an observed
+empty record. The hook preserves that field and its declared type without
+validating it or issuing extra reads. State and messages arrive in the same
 immutable snapshot. This does not make the private backend factory public or add
 state-writing support.
 
@@ -637,6 +637,33 @@ The picker sits before `inputTrailing` and is hidden while `options` is empty.
 You hold the value: `Chat` sends nothing about it to the session, so pass the
 chosen model to your backend yourself. `label` (default "Model") names the list
 and `placeholder` (default "Choose a model") shows while no option matches.
+
+`Chat` also reports its own lifecycle, for a badge, a debug panel or telemetry.
+Content you render inside it, such as `header`, the `welcome` suggestions or a
+composer slot, reads the values with `useChatLifecycle()`:
+
+```tsx
+function SentBadge() {
+  const lifecycle = useChatLifecycle();
+  return <span>{lifecycle?.messageCount ?? 0} sent</span>;
+}
+
+<Chat session={session} inputFooter={<SentBadge />} />;
+```
+
+| Value              | Meaning                                                                    |
+| ------------------ | -------------------------------------------------------------------------- |
+| `componentReady`   | True once the `Chat` has mounted.                                          |
+| `firstMessageSent` | True after the first composer submit, or once a run is seen running.       |
+| `messageCount`     | Messages sent from the composer.                                           |
+| `inputSubmittedAt` | Epoch milliseconds of the latest composer submit, or null before the first. |
+
+`messageCount` and `inputSubmittedAt` start again when you pass another
+`session`. `firstMessageSent` stays true for as long as the `Chat` is mounted.
+Only the composer counts: a message your own code sends with `session.submit`
+sets `firstMessageSent` when its run starts and leaves the other two alone.
+The hook returns null outside a `Chat`. From there, pass `onLifecycleChange`,
+which is called with all four values each time one changes.
 
 Slot content sits inside the composer form and is otherwise untouched: it keeps
 its own state across drafts and submissions, stays enabled while the composer is
@@ -1766,7 +1793,7 @@ visited data is unavailable. Plain app-owned data excludes executable objects,
 accessors and proxies; this view is not an SDK validation boundary.
 
 The panel's own data/default props produce deterministic server markup and can
-hydrate independently of `useAgent`; this does not extend the hook's SSR contract.
+hydrate independently of `useAgent`.
 After hydration, a supplied application-scoped `storageKey` restores only open,
 dock and tab preferences, tolerating denied storage. Defaults never overwrite saved
 preferences during hydration. State, history, IDs, target and selection are never
@@ -2145,7 +2172,11 @@ import { A2uiSurface } from '@threadplane/react/a2ui';
 import type { A2uiSurfaces } from '@threadplane/content/a2ui';
 
 export function Surfaces({ surfaces }: { readonly surfaces: A2uiSurfaces }) {
-  const snapshot = useSyncExternalStore(surfaces.subscribe, surfaces.getSnapshot);
+  const snapshot = useSyncExternalStore(
+    surfaces.subscribe,
+    surfaces.getSnapshot,
+    surfaces.getSnapshot
+  );
   return snapshot.surfaces.map((surface) => (
     <A2uiSurface key={surface.surfaceId} surface={surface} surfaces={surfaces} />
   ));

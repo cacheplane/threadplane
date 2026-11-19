@@ -19,9 +19,9 @@ Keep content projection in this owner. `createMessageContent` manages Markdown d
 
 ## Preserve backend-specific meaning
 
-The private LangGraph session exposes a readonly `values` map. `undefined` means no current application-values map is observed; an empty object means an empty map was observed. The hook preserves this distinction and the concrete session type.
+The private LangGraph session exposes the graph state as a readonly `state` record. `undefined` means no state is observed yet; an empty object means an empty record was observed. The hook preserves this distinction and the concrete session type.
 
-Observing values does not validate their schema, write backend state, or issue additional reads. Narrow unknown application values at the application boundary before presenting them. See the [state-related runtime examples](/docs/react/langgraph/guides/memory) for an authored backend contract.
+Observing state does not write backend state or issue additional reads. A session created without a `stateType` reports a broad record, so narrow its fields at the application boundary before presenting them. Pass `stateType: type<T>()` to give `state` a declared type, or pass a Standard Schema, such as a Zod object, to also check each state the backend reports. A state the schema rejects is withheld at the last valid one and described in `stateIssues`. See the [state-related runtime examples](/docs/react/langgraph/guides/memory) for an authored backend contract.
 
 ## Keep local choices local
 

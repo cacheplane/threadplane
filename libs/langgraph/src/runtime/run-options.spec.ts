@@ -94,7 +94,7 @@ describe('owned run options', () => {
     for (const getter of [signal, config, context, metadata])
       expect(getter).toHaveBeenCalledTimes(1);
     expect(Object.isFrozen(f.stream.mock.calls[0][4]?.config?.tags)).toBe(true);
-    expect(f.session.getSnapshot().values).toEqual({});
+    expect(f.session.getSnapshot().state).toEqual({});
     await f.session.submit('Later');
     expect(f.stream.mock.calls[1][4]).toBeUndefined();
   });

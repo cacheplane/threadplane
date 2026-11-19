@@ -10,7 +10,7 @@ import {
 
 export interface DurableSession extends Omit<AgentSession, 'getSnapshot'> {
   getSnapshot(): AgentSnapshot & {
-    readonly values?: Readonly<Record<string, unknown>>;
+    readonly state?: Readonly<Record<string, unknown>>;
     readonly interrupts: readonly { readonly value?: unknown }[];
   };
 }
@@ -140,7 +140,7 @@ export function createDurableApplication(options: {
     state: ReturnType<DurableSession['getSnapshot']>,
     key: string
   ) {
-    const values = state.values;
+    const values = state.state;
     return values && Object.hasOwn(values, key) ? values[key] : undefined;
   }
   function checkable(

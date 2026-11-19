@@ -9,7 +9,9 @@ import {
 import type {
   AgentSessionCustomEvent,
   CompleteOutcome,
+  InferState,
   PlainValue,
+  StateDeclaration,
   ToolContract,
 } from '@threadplane/core';
 import type {
@@ -61,6 +63,13 @@ export interface SessionOptions
   readonly threadId: string;
   readonly messages?: readonly Message[] | Transcript;
   readonly state?: unknown;
+  /**
+   * The type of the state document: `type<T>()` to declare it, or a Standard
+   * Schema to also check each state. `createAgentSession` publishes it as the
+   * typed `state` of the core snapshot. The native snapshot's `state` stays
+   * the literal document sent with each request, whatever is declared here.
+   */
+  readonly stateType?: StateDeclaration;
   /** Child evidence saved with this thread, published as `earlierSubagents`. Their attributed messages belong in `messages`. */
   readonly subagents?: Subagents;
   readonly interruptMode?: InterruptMode;
@@ -76,11 +85,13 @@ function nextInvocationSubagents(previous: SessionSnapshot) {
     ...(earlier && { earlierSubagents: earlier }),
   };
 }
-export interface Session {
+export interface Session<TState = unknown> {
+  /** The state declaration this session was created with, when it has one. */
+  readonly stateType?: StateDeclaration<TState>;
   getSnapshot(): SessionSnapshot;
   subscribe(notify: () => void): () => void;
   submit(
-    input: SubmitInput,
+    input: SubmitInput<TState>,
     options?: { readonly signal?: AbortSignal }
   ): Promise<CompleteOutcome>;
   resume(
@@ -126,10 +137,10 @@ export interface Session {
     listener: (event: AgentSessionCustomEvent) => void
   ): () => void;
 }
-export type ClientToolSession<C extends Record<string, ToolContract>> = Omit<
-  Session,
-  'getSnapshot'
-> & {
+export type ClientToolSession<
+  C extends Record<string, ToolContract>,
+  TState = unknown
+> = Omit<Session<TState>, 'getSnapshot'> & {
   getSnapshot(): ClientToolSessionSnapshot<C>;
 };
 /** A `CUSTOM` event as an application event, read the way the Angular adapter
@@ -169,11 +180,18 @@ interface Attempt {
 }
 
 /** Private protocol owner. This does not yet implement core AgentSession. */
-export function createSession<T extends Record<string, FunctionToolDefinition>>(
-  options: SessionOptions,
+export function createSession<
+  T extends Record<string, FunctionToolDefinition>,
+  D extends StateDeclaration | undefined = undefined
+>(
+  options: Omit<SessionOptions, 'stateType'> & { readonly stateType?: D },
   tools: T & CheckedTools<T>
-): ClientToolSession<ToolContracts<T>>;
-export function createSession(options: SessionOptions): Session;
+): ClientToolSession<ToolContracts<T>, InferState<D>>;
+export function createSession<
+  D extends StateDeclaration | undefined = undefined
+>(
+  options: Omit<SessionOptions, 'stateType'> & { readonly stateType?: D }
+): Session<InferState<D>>;
 export function createSession(
   options: SessionOptions,
   tools?: Record<string, FunctionToolDefinition>
@@ -185,6 +203,7 @@ export function createSession(
     fetch,
     messages,
     state,
+    stateType,
     subagents,
     interruptMode = 'native',
   } = options;
@@ -199,6 +218,7 @@ export function createSession(
         fetch,
         messages,
         state,
+        stateType,
         subagents,
         interruptMode,
       },
@@ -418,6 +438,7 @@ export function createSession(
     });
   };
   return {
+    ...(stateType !== undefined && { stateType }),
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
@@ -1333,6 +1354,7 @@ function createToolsOwner(
     );
   };
   return {
+    ...(options.stateType !== undefined && { stateType: options.stateType }),
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),

@@ -38,7 +38,7 @@ const observer: AgentSession = session;
 // @ts-expect-error Backend resume is absent from the borrowed core contract.
 observer.resume(true);
 const values: Readonly<Record<string, PlainValue>> | undefined =
-  session.getSnapshot().values;
+  session.getSnapshot().state;
 for (const call of session.getSnapshot().toolCalls) {
   if (call.status === 'complete') {
     const doubled: number = call.result.doubled;

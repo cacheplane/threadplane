@@ -151,7 +151,7 @@ export function projectSubgraphs(
       {
         namespace: entry?.namespace ?? namespace,
         messages: state.messages,
-        values: entry?.values,
+        state: entry?.state,
         interrupts: entry?.interrupts ?? [],
         error: failureProjection(undefined, true, true, false),
       }
@@ -181,14 +181,14 @@ export function projectSubgraphs(
     projection = rebased.projection;
   }
   const projected = projectStream(state, projection, event);
-  const values = projectValues(entry?.values, event);
+  const values = projectValues(entry?.state, event);
   const priorInterrupts = entry?.interrupts ?? [];
   const observedInterrupts = observeInterrupts(
     active ? priorInterrupts : [],
     event
   );
   const activity =
-    projected.state.messages !== state.messages || values !== entry?.values;
+    projected.state.messages !== state.messages || values !== entry?.state;
   // A new physical projection retains old controls until fresh data or a valid
   // new control batch supplies evidence, including an authoritative empty batch.
   const interrupts =
@@ -210,7 +210,7 @@ export function projectSubgraphs(
   return replace(previous, namespace, projected, {
     namespace: entry?.namespace ?? namespace,
     messages: projected.state.messages,
-    values,
+    state: values,
     interrupts,
     ...(!messageActivity && entry?.error ? { error: entry.error } : {}),
   });

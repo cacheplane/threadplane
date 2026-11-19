@@ -42,7 +42,7 @@ export interface FilesystemSnapshot {
   readonly subgraphs: readonly unknown[];
   readonly messages: readonly Message[];
   readonly toolCalls: readonly ToolCall[];
-  readonly values?: unknown;
+  readonly state?: unknown;
   readonly history?: readonly unknown[];
 }
 export interface AuthorityInput {
@@ -182,7 +182,7 @@ export function captureAuthority(input: AuthorityInput): Authority {
   try {
     inspectJson(input.loadedCheckpoint, false, [['values']]);
     inspectJson(input.observedValues, false, [[]]);
-    inspectJson(input.snapshot, true, [['values'], ['history', '0', 'values']]);
+    inspectJson(input.snapshot, true, [['state'], ['history', '0', 'values']]);
     const sourceValues = ownValue(input.loadedCheckpoint as object, 'values');
     const workspace = workspaceState(sourceValues);
     if (workspace.kind === 'invalid') return unconfirmed;
@@ -201,7 +201,7 @@ export function captureAuthority(input: AuthorityInput): Authority {
     const turn = copyJson(input.turn, true),
       state = copyJson(
         {
-          ...except(input.snapshot, ['values', 'history']),
+          ...except(input.snapshot, ['state', 'history']),
           ...(history === undefined ? {} : { history }),
         },
         true
@@ -278,7 +278,7 @@ export function captureAuthority(input: AuthorityInput): Authority {
       !plainRecord(values) ||
       !clean(values) ||
       !sameJson(values, withoutTransient(observed)) ||
-      !sameJson(projectedValues(values), ownValue(input.snapshot, 'values')) ||
+      !sameJson(projectedValues(values), ownValue(input.snapshot, 'state')) ||
       !Array.isArray(values.messages) ||
       !Array.isArray(state.messages) ||
       !Array.isArray(state.toolCalls)

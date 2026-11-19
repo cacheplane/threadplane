@@ -37,7 +37,7 @@ export interface PlanningSnapshot {
   readonly subgraphs: readonly unknown[];
   readonly messages: readonly Message[];
   readonly toolCalls: readonly ToolCall[];
-  readonly values?: unknown;
+  readonly state?: unknown;
   readonly history?: readonly unknown[];
 }
 export interface TerminalInput {
@@ -274,7 +274,7 @@ export function captureTerminal(input: TerminalInput): Confirmation {
       !plainRecord(values) ||
       !clean(values) ||
       !sameJson(values, observed) ||
-      !sameJson(projectValues(values), state.values) ||
+      !sameJson(projectValues(values), state.state) ||
       !Array.isArray(values.messages) ||
       !Array.isArray(state.messages) ||
       !Array.isArray(state.toolCalls) ||

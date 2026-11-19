@@ -3,6 +3,7 @@ import type {
   AgentSnapshot,
   CompleteOutcome,
   Message,
+  PlainValue,
 } from '@threadplane/core';
 import { createSubgraphsApplication } from './application';
 
@@ -21,12 +22,12 @@ async function tick() {
 type Child = {
   namespace: readonly string[];
   messages: readonly Message[];
-  values?: Readonly<Record<string, unknown>>;
+  state?: Readonly<Record<string, unknown>>;
   interrupts: readonly { value?: unknown }[];
   error?: AgentSnapshot['error'];
 };
-type State = AgentSnapshot & {
-  values?: Readonly<Record<string, unknown>>;
+type State = Omit<AgentSnapshot, 'state'> & {
+  state?: Readonly<Record<string, PlainValue>>;
   interrupts: readonly { value?: unknown }[];
   subgraphs: readonly Child[];
 };
@@ -104,14 +105,14 @@ function setup() {
       return {
         namespace,
         messages: [],
-        values: { research_topic: topic, research_brief: brief },
+        state: { research_topic: topic, research_brief: brief },
         interrupts: [],
       };
     }
     function research() {
       replace({
-        values: {
-          ...state.values,
+        state: {
+          ...state.state,
           research_topic: 'Topic',
           research_brief: 'Child brief',
         },
@@ -127,7 +128,7 @@ function setup() {
         {
           status: 'idle',
           error: undefined,
-          values: {
+          state: {
             research_topic: route === 'nested' ? 'Topic' : '',
             research_brief: route === 'nested' ? 'Child brief' : '',
             completed_turn_id: human.id,
@@ -328,7 +329,7 @@ for (const fault of [
       { pending, selected } = await h.start();
     selected.final('nested', {}, false);
     const state = selected.session.getSnapshot(),
-      values = { ...state.values },
+      values = { ...state.state },
       messages = [...state.messages];
     if (fault === 'missing-human') delete values.completed_turn_id;
     if (fault === 'stale-human') values.completed_turn_id = 'old';
@@ -337,7 +338,7 @@ for (const fault of [
     if (fault === 'inherited') {
       delete values.completed_answer_id;
       Object.setPrototypeOf(values, {
-        completed_answer_id: state.values!.completed_answer_id,
+        completed_answer_id: state.state!.completed_answer_id,
       });
     }
     if (fault === 'duplicate-human') messages.push(messages[0]);
@@ -356,7 +357,7 @@ for (const fault of [
         },
       };
     if (fault === 'wrong-role') messages[1] = { ...messages[1], role: 'user' };
-    selected.replace({ values, messages });
+    selected.replace({ state: values, messages });
     selected.runs[0].resolve('success');
     await pending;
     expect(h.application.getSnapshot()).toMatchObject({
@@ -378,7 +379,7 @@ for (const fault of [
       { pending, selected } = await h.start();
     selected.final('nested', {}, false);
     const state = selected.session.getSnapshot(),
-      values = { ...state.values };
+      values = { ...state.state };
     let children = [...state.subgraphs];
     if (fault === 'missing-topic') delete values.research_topic;
     if (fault === 'inherited-topic') {
@@ -390,7 +391,7 @@ for (const fault of [
       children = [selected.child(undefined, 'Other')];
     if (fault === 'no-child') children = [];
     if (fault === 'empty-namespace') children = [selected.child([])];
-    selected.replace({ values, subgraphs: children });
+    selected.replace({ state: values, subgraphs: children });
     selected.runs[0].resolve('success');
     await pending;
     expect(h.application.getSnapshot()).toMatchObject({

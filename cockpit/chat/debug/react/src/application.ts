@@ -111,7 +111,7 @@ function captureNative(
       }) as unknown as Message;
     })
   );
-  const values = captureInspectionValues(ownField(raw, 'values'));
+  const values = captureInspectionValues(ownField(raw, 'state'));
   const rawHistory = ownField(raw, 'history');
   let history: readonly unknown[] | undefined;
   if (rawHistory !== undefined) {
@@ -142,7 +142,7 @@ function captureNative(
     ) as AgentSnapshot['toolCalls'],
     interrupts: captureData(ownField(raw, 'interrupts')) as readonly unknown[],
     subgraphs: captureData(ownField(raw, 'subgraphs')) as readonly unknown[],
-    values: values.kind === 'available' ? values.values : undefined,
+    state: values.kind === 'available' ? values.values : undefined,
     history,
   });
 }
