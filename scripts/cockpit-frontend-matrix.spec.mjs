@@ -48,7 +48,12 @@ test('Memory backend changes select its two actual registered frontends and exac
 test('Memory owns exact closed native root metadata without changing ordinary LangGraph Memory', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   const config = reactCockpitConfiguration('deep-agents-memory');
-  assert.deepEqual(config, { topic: 'memory', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/memory/react', base: '/deep-agents/memory/react/', port: 4632, project: 'cockpit-deep-agents-memory-react' });
+  assert.deepEqual(config, { topic: 'memory', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/memory/react', base: '/deep-agents/memory/react/', port: 4632, project: 'cockpit-deep-agents-memory-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/deep-agents/memory/python',
+      fixtures: 'cockpit/deep-agents/memory/angular/e2e/fixtures', langgraphPort: 5632,
+    },
+  });
   assert.equal(Object.isFrozen(config), true);
   assert.equal(reactCockpitConfiguration('memory').appPath, 'cockpit/langgraph/memory/react');
 });

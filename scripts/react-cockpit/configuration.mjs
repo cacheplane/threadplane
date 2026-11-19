@@ -64,6 +64,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       topic: 'memory', library: 'deep-agents', adapter: 'langgraph',
       appPath: 'cockpit/deep-agents/memory/react', base: '/deep-agents/memory/react/',
       port: 4632, project: 'cockpit-deep-agents-memory-react',
+      backend: aimockLanggraph('deep-agents/memory', 4632),
     });
   if (topic === 'deep-agents-skills')
     return Object.freeze({

@@ -109,6 +109,13 @@
  *                             the next history read gains copies of entries,
  *                             with dotted paths overwritten (duplicate, child
  *                             namespace or malformed references). Injected.
+ *   POST /__stream/cut        body { beforePattern, error }: the next run's
+ *                             browser stream ends with `event: error` (data
+ *                             `error`) just before the first event whose raw
+ *                             text matches beforePattern; the real run upstream
+ *                             still finishes. Injected data: stands in for a
+ *                             failure inside the graph (e.g. a store read) at
+ *                             that point, which aimock can't cause.
  *   POST /__fail-stream       next run stream answers 500 without forwarding
  *                             (the graph worker is unavailable)
  *   POST /__release           flush and resume a held run stream (and finish a
@@ -223,6 +230,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   let requests = [];
   let failCreate = false;
   let failStream = false;
+  let nextStreamCut = null;
   let childFault = null;
   let titleMode = 'safe';
   let holdNextTitle = false;
@@ -329,6 +337,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     decoratedChunks.clear();
     failCreate = false;
     failStream = false;
+    nextStreamCut = null;
     childFault = null;
     titleMode = 'safe';
     holdNextTitle = false;
@@ -540,6 +549,9 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   async function proxyStream(request, response, path, body) {
     const hold = holdNextStream;
     holdNextStream = null;
+    const cut = nextStreamCut;
+    nextStreamCut = null;
+    let cutDone = false;
     let fault = childFault;
     childFault = null;
     const values = nextValues;
@@ -634,7 +646,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
           .finally(finish);
         return;
       }
-      if (!response.destroyed) response.end();
+      if (!response.destroyed && !response.writableEnded) response.end();
       if (upstreamResponse.statusCode !== 200 || !threadId) return;
       // Saved state and title as the real server persisted them. /__captures
       // waits for captures in flight, so tests never race the stream end.
@@ -675,6 +687,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     upstreamResponse.setEncoding('utf8');
     upstreamResponse.on('data', (chunk) => {
       sse += chunk;
+      if (cutDone) return;
       if (holding) return void buffered.push(chunk);
       pending += chunk;
       let match;
@@ -683,6 +696,12 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         const raw = pending.slice(0, end);
         pending = pending.slice(end);
         const eventName = /^event: *(.*)$/m.exec(raw)?.[1]?.trim() ?? '';
+        if (cut && new RegExp(cut.beforePattern).test(raw)) {
+          cutDone = true;
+          response.end(`event: error\ndata: ${JSON.stringify(cut.error)}\n\n`);
+          pending = '';
+          break;
+        }
         if (fault && eventName.startsWith('values|')) {
           const namespace = eventName.slice('values'.length);
           const dataLine = raw.split(/\r?\n/).find((line) => line.startsWith('data:'));
@@ -746,6 +765,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     upstreamResponse.on('end', () => {
       ended = true;
       if (holding) return;
+      if (cutDone) return void finish();
       if (pending) response.write(inject(pending));
       finish();
     });
@@ -796,6 +816,10 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       return {};
     }],
     '/__fail-stream': ['POST', () => { failStream = true; return {}; }],
+    '/__stream/cut': ['POST', (body) => {
+      nextStreamCut = { beforePattern: String(body.beforePattern), error: body.error ?? {} };
+      return {};
+    }],
     '/__values': ['POST', (body) => { nextValues = body; return {}; }],
     '/__stream/edit': ['POST', (body) => {
       nextStreamEdits = { ops: body.ops ?? [], state: body.state === true, anonymous: body.anonymous === true };
