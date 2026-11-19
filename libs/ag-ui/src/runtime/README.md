@@ -2,7 +2,7 @@
 
 The test-only [candidate package proof](../../../../fixtures/react-parity/ag-ui-candidate/README.md)
 emits this actual owner, its text selector, its core message and tool-call
-selectors and its core session view with complete declarations, then runs
+selectors and its core session with complete declarations, then runs
 the existing browser and local-provider oracles against installed tarballs. It
 does not change this private API's status or the current published Angular root.
 
