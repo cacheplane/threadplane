@@ -23,6 +23,11 @@ import {
 import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
 import {
+  ChatLifecycleContext,
+  createChatLifecycleStore,
+  type ChatLifecycle,
+} from './lifecycle.js';
+import {
   MessageList,
   repeatsToolFailure,
   type MessageListProps,
@@ -162,6 +167,12 @@ export interface ChatProps
    * `approval` is left to those to announce. Off unless set.
    */
   readonly runStatus?: boolean;
+  /**
+   * Called with the chat's lifecycle each time one of its values changes,
+   * starting with `componentReady` after mount. Content rendered inside the
+   * chat reads the same values with `useChatLifecycle`.
+   */
+  readonly onLifecycleChange?: (lifecycle: ChatLifecycle) => void;
 }
 
 /** What `renderRunActivity` receives while a run has no assistant message yet. */
@@ -249,9 +260,23 @@ export function Chat({
   renderRunActivity,
   welcome,
   runStatus = false,
+  onLifecycleChange,
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
+  const lifecycleChanged = useRef(onLifecycleChange);
+  lifecycleChanged.current = onLifecycleChange;
+  const [lifecycle] = useState(() =>
+    createChatLifecycleStore((next) => lifecycleChanged.current?.(next))
+  );
+  // Another session is another conversation: its counts start again.
+  useEffect(() => {
+    lifecycle.set({
+      componentReady: true,
+      messageCount: 0,
+      inputSubmittedAt: null,
+    });
+  }, [lifecycle, session]);
   // A session that can regenerate gets the built-in action, unless the app
   // handles it itself. Built-in actions stay off until `messageActions` is set.
   const actions = useMemo(() => {
@@ -353,6 +378,10 @@ export function Chat({
         : welcome
       : null;
   const running = snapshot.status === 'running';
+  // A run the composer did not start still means a message was sent.
+  useEffect(() => {
+    if (running) lifecycle.set({ firstMessageSent: true });
+  }, [lifecycle, running]);
   const showStopped =
     runStatus && !running && endedStopped(snapshot, session, stopped);
   // A new run clears the stopped turn and the last announcement, so a repeat is read again.
@@ -530,6 +559,11 @@ export function Chat({
         footer={inputFooter}
         busy={snapshot.status === 'running'}
         onSubmit={(text) => {
+          lifecycle.set({
+            firstMessageSent: true,
+            messageCount: lifecycle.getSnapshot().messageCount + 1,
+            inputSubmittedAt: Date.now(),
+          });
           session.submit(text.trim()).catch(ignore);
         }}
         onStop={stop}
@@ -553,20 +587,28 @@ export function Chat({
     </div>
   );
   // The prop's presence, not its length, decides the wrapper, so a list that loads later never remounts the chat.
-  if (threads === undefined) return chat;
+  if (threads === undefined) {
+    return (
+      <ChatLifecycleContext.Provider value={lifecycle}>
+        {chat}
+      </ChatLifecycleContext.Provider>
+    );
+  }
   return (
-    <div className="tp-chat-shell">
-      {threads.length > 0 ? (
-        <aside className="tp-chat tp-chat-shell__sidebar">
-          <ThreadList
-            threads={threads}
-            activeThreadId={activeThreadId}
-            onSelect={onThreadSelect}
-          />
-        </aside>
-      ) : null}
-      {chat}
-    </div>
+    <ChatLifecycleContext.Provider value={lifecycle}>
+      <div className="tp-chat-shell">
+        {threads.length > 0 ? (
+          <aside className="tp-chat tp-chat-shell__sidebar">
+            <ThreadList
+              threads={threads}
+              activeThreadId={activeThreadId}
+              onSelect={onThreadSelect}
+            />
+          </aside>
+        ) : null}
+        {chat}
+      </div>
+    </ChatLifecycleContext.Provider>
   );
 }
 

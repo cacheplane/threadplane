@@ -69,6 +69,24 @@
       "reason": "One call waiting for an answer, by name and arguments; Angular exposes pending client tool calls on the agent capability."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#useChatLifecycle",
+      "taskIds": ["T03", "T04"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "Reads the lifecycle of the enclosing Chat, or null outside one; Angular injects the CHAT_LIFECYCLE token from content projected into the chat."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatLifecycle",
+      "taskIds": ["T03", "T04"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "The four lifecycle values as plain readonly fields; Angular's ChatLifecycle holds the same four as signals."
+    },
+    {
+      "id": "source:libs/react/src/chat/lifecycle.ts",
+      "taskIds": ["T03", "T04"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "Chat lifecycle for React: componentReady, firstMessageSent, messageCount and inputSubmittedAt as plain values, read inside Chat with useChatLifecycle and outside it through onLifecycleChange. Angular provides the same four as signals on the CHAT_LIFECYCLE token. Counts start again when the session prop changes, where Angular resets them in clearThread. The LangGraph agent lifecycle timestamps are separate and not covered."
+    },
+    {
       "id": "source:libs/react/src/chat/client-tools.ts",
       "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
       "target": "libs/react/src/chat/client-tools.ts",
