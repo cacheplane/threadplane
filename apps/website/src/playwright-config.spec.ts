@@ -85,7 +85,7 @@ it('scopes Chat Theming Website to two owned servers with zero retries and focus
   const servers = Array.isArray(config.webServer) ? config.webServer : [];
   expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4308', 'http://127.0.0.1:4644']);
   expect(servers.every(server => server.reuseExistingServer === false)).toBe(true);
-  expect(servers[1]).toMatchObject({ command: 'node scripts/react-cockpit/serve.mjs chat-theming --no-parent', gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 } });
+  expect(servers[1]).toMatchObject({ command: 'node scripts/react-cockpit/serve.mjs chat-theming --no-parent --backend', gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 } });
   const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
   expect(project.implicitDependencies).toContain('cockpit-chat-theming-react');
   expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === 'build').projects).toContain('cockpit-chat-theming-react');
@@ -517,7 +517,7 @@ describe('Website Playwright configuration', () => {
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-element-rendering --no-parent',url:'http://127.0.0.1:4618'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-computed-functions --no-parent',url:'http://127.0.0.1:4619'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-messages-python:smoke && node scripts/react-cockpit/serve.mjs chat-messages --no-parent',url:'http://127.0.0.1:4620'}),
-      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-theming --no-parent',url:'http://127.0.0.1:4644'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-theming --no-parent --backend',url:'http://127.0.0.1:4644'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-debug --no-parent',url:'http://127.0.0.1:4645'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-a2ui --no-parent',url:'http://127.0.0.1:4646'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-input-python:smoke && node scripts/react-cockpit/serve.mjs chat-input --no-parent',url:'http://127.0.0.1:4621'}),
