@@ -101,6 +101,21 @@ export interface Session {
    */
   retry?(): Promise<CompleteOutcome>;
   /**
+   * Answers the prompt behind one assistant message again, as the Angular
+   * adapter's `regenerate` does. Takes the `id` of a root assistant record (or
+   * of the reasoning record a reasoning-only answer is shown under), drops
+   * every record after the user message that precedes it, and sends a run
+   * with that history and the current state. The prompt is not added again.
+   * Rejects without sending while a run is active, while a decision is
+   * waiting, after disposal, for an id that is not an assistant record, and
+   * when no user message precedes it. `retry` can send a failed regenerate
+   * again. Absent on the client-tool owner, whose ledger owns its history.
+   */
+  regenerate?(
+    messageId: string,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome>;
+  /**
    * Listens for `CUSTOM` events other than `on_interrupt` while runs stream.
    * The factory always supplies it; it is optional so hand-written sessions
    * need not. Returns an idempotent release. Nothing is replayed to a later
@@ -615,6 +630,61 @@ export function createSession(
               run: Object.freeze({ id }),
             }),
             undefined,
+            resolve
+          );
+        });
+      }),
+    regenerate: (messageId, options) =>
+      new Promise<CompleteOutcome>((resolve, reject) => {
+        const signal = options?.signal;
+        publication.command(() => {
+          const previous = publication.getSnapshot();
+          let prompt = -1;
+          try {
+            if (disposed) throw new Error('The session is disposed.');
+            if (active)
+              throw new Error('Cannot regenerate while a response is running.');
+            if (previous.decision)
+              throw new Error('Cannot regenerate while a decision is waiting.');
+            const { transcript } = previous;
+            const root = (index: number) =>
+              typeof transcript[index].subagentRunId !== 'string';
+            const at = transcript.findIndex(
+              (record, index) =>
+                record.id === messageId &&
+                (record.role === 'assistant' || record.role === 'reasoning') &&
+                root(index)
+            );
+            if (at < 0)
+              throw new Error('Regenerate needs the id of an assistant message.');
+            for (let index = at - 1; index >= 0 && prompt < 0; index--)
+              if (transcript[index].role === 'user' && root(index))
+                prompt = index;
+            if (prompt < 0) throw new Error('No prompt precedes that message.');
+          } catch (error) {
+            reject(error);
+            return;
+          }
+          if (signal?.aborted) {
+            resolve('aborted');
+            return;
+          }
+          const id = crypto.randomUUID();
+          // Keep the prompt: it ends the history and is the next run's input.
+          const transcript = Object.freeze(
+            previous.transcript.slice(0, prompt + 1)
+          );
+          saved = { runId: id, transcript, state: previous.state };
+          admit(
+            id,
+            Object.freeze({
+              ...previous,
+              status: 'running',
+              transcript,
+              ...nextInvocationSubagents(previous),
+              run: Object.freeze({ id }),
+            }),
+            signal,
             resolve
           );
         });
