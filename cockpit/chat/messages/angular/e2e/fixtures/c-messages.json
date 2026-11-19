@@ -1,6 +1,10 @@
 {
   "fixtures": [
     {
+      "match": { "systemMessage": "In 3-5 words, summarize" },
+      "response": { "content": "Aviation snippet title" }
+    },
+    {
       "match": { "userMessage": "Mobile long response" },
       "response": {
         "content": "Paragraph one explains how to keep a mobile conversation readable as the response arrives.\n\nParagraph two continues the aviation example with a second section of useful details.\n\nParagraph three describes the available flight information and safe demo data.\n\nParagraph four gives the reader enough history to scroll back and inspect earlier answers.\n\nParagraph five explains that new content should follow only while the reader stays at the bottom.\n\nParagraph six keeps the composer available while the transcript grows.\n\nParagraph seven makes this response longer than a reduced mobile viewport.\n\nParagraph eight completes the response with the final details."
@@ -19,6 +23,12 @@
       },
       "chunkSize": 3,
       "latency": 25
+    },
+    {
+      "match": { "userMessage": "Visual `contract`" },
+      "response": {
+        "content": "The visual contract answer has a paragraph and a code block.\n\n```typescript\nconst answer = 42;\n```"
+      }
     }
   ]
 }

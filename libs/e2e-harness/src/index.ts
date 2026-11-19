@@ -5,5 +5,12 @@ export {
   clickInterruptActionAndWaitFinal,
   submitAndWaitForResponse,
 } from './test-helpers';
-export { createGlobalSetup, type CreateGlobalSetupOpts } from './global-setup-factory';
+export {
+  createGlobalSetup,
+  createLanggraphGlobalSetup,
+  startLanggraphBackend,
+  type CreateGlobalSetupOpts,
+  type CreateLanggraphGlobalSetupOpts,
+  type LanggraphBackend,
+} from './global-setup-factory';
 export { createAgUiGlobalSetup, type CreateAgUiGlobalSetupOpts } from './ag-ui-global-setup-factory';

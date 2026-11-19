@@ -513,6 +513,7 @@ const SUPPORTED_EXPORTS = {
     'useClientToolCalls',
     'usePendingClientToolCalls',
     'useThreadRouting',
+    'useChatLifecycle',
     'ToolObservation',
     'SubagentCard',
     'subagentsFromEvidence',

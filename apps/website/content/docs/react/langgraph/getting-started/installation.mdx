@@ -37,4 +37,4 @@ The preview's runtime bridge selects the shared development target or a develope
 
 Keep model and provider credentials server-side. If your production browser needs authenticated access, supply an application-controlled endpoint and an appropriate user authentication boundary. Do not bundle provider secrets into React source.
 
-Continue with [Quickstart](/docs/react/langgraph/getting-started/quickstart). The binding is client-side; server rendering and hydration are not supported by `useAgent`.
+Continue with [Quickstart](/docs/react/langgraph/getting-started/quickstart). Creating a session performs no network I/O, so `useAgent` can render on the server: it renders the snapshot the session holds at that moment and subscribes only in the browser. Hydration matches only when the browser session holds the same snapshot as the server session, which is normally the empty initial snapshot.

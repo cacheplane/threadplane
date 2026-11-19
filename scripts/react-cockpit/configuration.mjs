@@ -109,6 +109,13 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/chat/messages/react/',
       port: 4620,
       project: 'cockpit-chat-messages-react',
+      // Same aimock fixtures and `langgraph dev` path as the Angular example.
+      backend: Object.freeze({
+        kind: 'aimock-langgraph',
+        python: 'cockpit/chat/messages/python',
+        fixtures: 'cockpit/chat/messages/angular/e2e/fixtures',
+        langgraphPort: 5620,
+      }),
     });
   if (topic === 'render-computed-functions')
     return Object.freeze({

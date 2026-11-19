@@ -251,7 +251,7 @@ describe('Debug actual CI owners', () => {
 
   it('splits Node-only static preflight from the Python-equipped full Debug proof', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-    const scope = workflow.split('  ci-scope:')[1].split('\n  scripts-tests:')[0];
+    const scope = workflow.split('\n  ci-guards:')[1].split('\n  scripts-tests:')[0];
     assert.match(scope, /node --test --test-name-pattern='\^debug ' scripts\/react-cockpit\/chat-debug-configuration.spec.mjs/);
     const debugPreflight = scope.split('\n').filter(line => line.includes('chat-debug-configuration.spec.mjs'));
     assert.equal(debugPreflight.length, 1, 'Exactly one filtered Debug static preflight');

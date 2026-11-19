@@ -1,4 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
+// Backend: aimock replays cockpit/chat/messages/angular/e2e/fixtures (shared
+// with the Angular example) into a real `langgraph dev`; the React static
+// server proxies /api to it, recording requests and injecting the holds and
+// failures below (scripts/react-cockpit/langgraph-proxy.mjs).
+const FENCE = 'Stream a TypeScript code fence';
+const HELLO = 'Hello';
 type Wire = {
   path: string;
   method: string;
@@ -19,19 +25,20 @@ async function send(page: Page, text: string) {
 const conversation = (page: Page) =>
   page.getByRole('region', { name: 'Conversation', exact: true });
 
-test('installed runtime renders compiled graph code fences, isolates titles and confirms each continued turn', async ({
+test('real graph renders code fences, isolates titles and confirms each continued turn', async ({
   page,
   request,
 }) => {
   await page.goto('/chat/messages/react/');
   await expect(page.getByRole('status')).toHaveText('Ready.');
   expect(await (await request.get('/__requests')).json()).toEqual([]);
-  await send(page, 'Explain the aviation example');
+  await send(page, FENCE);
   await expect(conversation(page).locator('pre code')).toHaveText(
     'const answer = 42;'
   );
-  await expect(conversation(page)).not.toContainText('Authored metadata title');
-  await send(page, 'Continue with the same conversation');
+  // The title node's reply (its own aimock fixture) must never enter the transcript.
+  await expect(conversation(page)).not.toContainText('Aviation snippet title');
+  await send(page, HELLO);
   await expect(conversation(page).locator('article')).toHaveCount(4);
   const wire: Wire[] = await (await request.get('/__requests')).json();
   const creates = wire.filter((r) => r.path.endsWith('/threads')),
@@ -44,18 +51,21 @@ test('installed runtime renders compiled graph code fences, isolates titles and 
   ).toBe(true);
   expect(wire.filter((r) => r.path.endsWith('/history'))).toHaveLength(2);
   expect(wire.filter((r) => r.method === 'GET')).toHaveLength(2);
-  const proofs = await (await request.get('/__graph-proof')).json();
-  expect(proofs).toHaveLength(2);
-  for (const proof of proofs)
-    expect(proof).toMatchObject({
-      actualCompiledGraph: true,
-      networkConnectAttempts: 0,
-      titleMessageCallbacks: 0,
-    });
   await page.getByRole('button', { name: 'New conversation' }).click();
   await expect(page.getByRole('status')).toHaveText('Ready.');
   await expect(conversation(page).locator('article')).toHaveCount(0);
   expect(await (await request.get('/__requests')).json()).toEqual(wire);
+});
+test('a code fence streamed in 3-char chunks renders as a code block', async ({
+  page,
+}) => {
+  // Same fixture and assertion as cockpit/chat/messages/angular/e2e/c-messages.spec.ts.
+  await page.goto('/chat/messages/react/');
+  await send(page, FENCE);
+  const answer = conversation(page).locator('article').last();
+  await expect(answer.locator('pre code')).toHaveCount(1);
+  await expect(answer.locator('pre code')).toContainText('const answer = 42;');
+  await expect(answer).not.toContainText('```');
 });
 test('held canonical read disables competing commands and cannot restore authority after Stop', async ({
   page,
@@ -63,7 +73,7 @@ test('held canonical read disables competing commands and cannot restore authori
 }) => {
   await request.post('/__history/hold');
   await page.goto('/chat/messages/react/');
-  await submit(page, 'Confirm once');
+  await submit(page, HELLO);
   await expect(page.getByRole('status')).toHaveText(
     'Confirming saved response…'
   );
@@ -83,8 +93,9 @@ test('held response Stop fences the run and explicit reset remains local', async
   page,
   request,
 }) => {
+  await request.post('/__hold/stream');
   await page.goto('/chat/messages/react/');
-  await submit(page, 'Hold');
+  await submit(page, HELLO);
   await expect(page.getByRole('status')).toHaveText('Receiving response…');
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText(
@@ -97,12 +108,13 @@ test('held response Stop fences the run and explicit reset remains local', async
   await expect(page.getByRole('status')).toHaveText('Ready.');
   expect(await (await request.get('/__requests')).json()).toEqual(before);
 });
-test('renders actual graph output inside an unfinished code fence before release', async ({
+test('renders streamed graph output inside an unfinished code fence before release', async ({
   page,
   request,
 }) => {
+  await request.post('/__hold/stream', { data: { afterText: 'const answer' } });
   await page.goto('/chat/messages/react/');
-  await submit(page, 'Hold fence');
+  await submit(page, FENCE);
   await expect(page.getByRole('status')).toHaveText('Receiving response…');
   await expect(conversation(page).locator('pre code')).toContainText(
     'const answer'
@@ -126,8 +138,9 @@ test('pagehide closes an active installed transport and a new page never replays
   page,
   request,
 }) => {
+  await request.post('/__hold/stream');
   await page.goto('/chat/messages/react/');
-  await submit(page, 'Hold');
+  await submit(page, HELLO);
   await expect(page.getByRole('status')).toHaveText('Receiving response…');
   expect(await (await request.get('/__lifetime')).json()).toMatchObject({
     activeStream: true,
@@ -155,7 +168,7 @@ for (const mode of ['changed', 'missing', 'pending', 'failed'])
   }) => {
     await request.post('/__history/' + mode);
     await page.goto('/chat/messages/react/');
-    await submit(page, 'Confirm the saved answer');
+    await submit(page, HELLO);
     await expect(page.getByRole('status')).toHaveText(
       'Start a new conversation to continue.'
     );
@@ -171,7 +184,7 @@ test('unconfirmed creation is not retried and does not dispatch a model run', as
 }) => {
   await request.post('/__fail-create');
   await page.goto('/chat/messages/react/');
-  await submit(page, 'Question');
+  await submit(page, HELLO);
   await expect(page.getByRole('status')).toHaveText(
     'Start a new conversation to continue.'
   );
@@ -200,7 +213,7 @@ test('authored developer connection routes only to its configured target', async
     });</script><iframe id="pilot" title="Chat Messages React" style="width:100%;height:700px" src="http://127.0.0.1:4620/chat/messages/react/"></iframe></body></html>`);
   await expect(page.locator('#state')).toHaveText('Ready');
   const frame = page.frameLocator('#pilot');
-  await frame.getByLabel('Message', { exact: true }).fill('Developer question');
+  await frame.getByLabel('Message', { exact: true }).fill(HELLO);
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(frame.getByRole('status')).toHaveText('Response complete.');
   const wire: Wire[] = await (await request.get('/__requests')).json();
