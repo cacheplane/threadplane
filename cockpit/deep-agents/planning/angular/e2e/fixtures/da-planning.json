@@ -126,6 +126,239 @@
           }
         ]
       }
+    },
+    {
+      "match": { "toolCallId": "plan-normal-initial" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_field_elevation",
+            "arguments": "{\"airport\": \"KASE\"}",
+            "id": "plan-normal-elevation"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "plan-normal-elevation" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"Check departure weather\", \"status\": \"completed\"}, {\"content\": \"Check destination elevation\", \"status\": \"completed\"}, {\"content\": \"Check runway\", \"status\": \"completed\"}, {\"content\": \"Assess mountain conditions\", \"status\": \"in_progress\"}]}",
+            "id": "plan-normal-revision"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "plan-normal-revision" },
+      "response": { "content": "The plan is up to date." }
+    },
+    {
+      "match": { "toolCallId": "plan-empty-clear" },
+      "response": { "content": "The plan is up to date." }
+    },
+    {
+      "match": { "toolCallId": "plan-duplicates-old" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"Duplicate\", \"status\": \"completed\"}, {\"content\": \"Duplicate\", \"status\": \"in_progress\"}, {\"content\": \"First\", \"status\": \"pending\"}]}",
+            "id": "plan-duplicates-replace"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "plan-duplicates-replace" },
+      "response": { "content": "The plan is up to date." }
+    },
+    {
+      "match": { "toolCallId": "plan-parallel-parallel-b" },
+      "response": { "content": "The plan is up to date." }
+    },
+    {
+      "match": { "toolCallId": "plan-recovery-parallel-b" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"Recovered\", \"status\": \"in_progress\"}]}",
+            "id": "plan-recovery-recover"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "plan-recovery-recover" },
+      "response": { "content": "The plan is up to date." }
+    },
+    {
+      "match": { "toolCallId": "plan-schema-invalid" },
+      "response": { "content": "The plan is up to date." }
+    },
+    {
+      "match": { "toolCallId": "plan-oversized-oversized" },
+      "response": { "content": "The plan is up to date." }
+    },
+    {
+      "match": { "toolCallId": "plan-empty-content-empty-content" },
+      "response": { "content": "The plan is up to date." }
+    },
+    {
+      "match": { "toolCallId": "plan-long-content-long-content" },
+      "response": { "content": "The plan is up to date." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:normal]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"Check departure weather\", \"status\": \"pending\"}, {\"content\": \"Check destination elevation\", \"status\": \"pending\"}, {\"content\": \"Check runway\", \"status\": \"pending\"}, {\"content\": \"Assess mountain conditions\", \"status\": \"pending\"}]}",
+            "id": "plan-normal-initial"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:empty]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": []}",
+            "id": "plan-empty-clear"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:duplicates]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"Old\", \"status\": \"pending\"}, {\"content\": \"Removed\", \"status\": \"pending\"}]}",
+            "id": "plan-duplicates-old"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:parallel]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"Rejected A\", \"status\": \"pending\"}]}",
+            "id": "plan-parallel-parallel-a"
+          },
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"Rejected B\", \"status\": \"pending\"}]}",
+            "id": "plan-parallel-parallel-b"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:recovery]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"Rejected A\", \"status\": \"pending\"}]}",
+            "id": "plan-recovery-parallel-a"
+          },
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"Rejected B\", \"status\": \"pending\"}]}",
+            "id": "plan-recovery-parallel-b"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:schema]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"Invalid\", \"status\": \"invented\"}]}",
+            "id": "plan-schema-invalid"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "userMessage": "[scenario:no-write]" },
+      "response": { "content": "An answer with no plan change." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:oversized]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"Item 0\", \"status\": \"pending\"}, {\"content\": \"Item 1\", \"status\": \"pending\"}, {\"content\": \"Item 2\", \"status\": \"pending\"}, {\"content\": \"Item 3\", \"status\": \"pending\"}, {\"content\": \"Item 4\", \"status\": \"pending\"}, {\"content\": \"Item 5\", \"status\": \"pending\"}, {\"content\": \"Item 6\", \"status\": \"pending\"}, {\"content\": \"Item 7\", \"status\": \"pending\"}, {\"content\": \"Item 8\", \"status\": \"pending\"}, {\"content\": \"Item 9\", \"status\": \"pending\"}, {\"content\": \"Item 10\", \"status\": \"pending\"}, {\"content\": \"Item 11\", \"status\": \"pending\"}, {\"content\": \"Item 12\", \"status\": \"pending\"}, {\"content\": \"Item 13\", \"status\": \"pending\"}, {\"content\": \"Item 14\", \"status\": \"pending\"}, {\"content\": \"Item 15\", \"status\": \"pending\"}, {\"content\": \"Item 16\", \"status\": \"pending\"}, {\"content\": \"Item 17\", \"status\": \"pending\"}, {\"content\": \"Item 18\", \"status\": \"pending\"}, {\"content\": \"Item 19\", \"status\": \"pending\"}, {\"content\": \"Item 20\", \"status\": \"pending\"}, {\"content\": \"Item 21\", \"status\": \"pending\"}, {\"content\": \"Item 22\", \"status\": \"pending\"}, {\"content\": \"Item 23\", \"status\": \"pending\"}, {\"content\": \"Item 24\", \"status\": \"pending\"}, {\"content\": \"Item 25\", \"status\": \"pending\"}, {\"content\": \"Item 26\", \"status\": \"pending\"}, {\"content\": \"Item 27\", \"status\": \"pending\"}, {\"content\": \"Item 28\", \"status\": \"pending\"}, {\"content\": \"Item 29\", \"status\": \"pending\"}, {\"content\": \"Item 30\", \"status\": \"pending\"}, {\"content\": \"Item 31\", \"status\": \"pending\"}, {\"content\": \"Item 32\", \"status\": \"pending\"}, {\"content\": \"Item 33\", \"status\": \"pending\"}, {\"content\": \"Item 34\", \"status\": \"pending\"}, {\"content\": \"Item 35\", \"status\": \"pending\"}, {\"content\": \"Item 36\", \"status\": \"pending\"}, {\"content\": \"Item 37\", \"status\": \"pending\"}, {\"content\": \"Item 38\", \"status\": \"pending\"}, {\"content\": \"Item 39\", \"status\": \"pending\"}, {\"content\": \"Item 40\", \"status\": \"pending\"}, {\"content\": \"Item 41\", \"status\": \"pending\"}, {\"content\": \"Item 42\", \"status\": \"pending\"}, {\"content\": \"Item 43\", \"status\": \"pending\"}, {\"content\": \"Item 44\", \"status\": \"pending\"}, {\"content\": \"Item 45\", \"status\": \"pending\"}, {\"content\": \"Item 46\", \"status\": \"pending\"}, {\"content\": \"Item 47\", \"status\": \"pending\"}, {\"content\": \"Item 48\", \"status\": \"pending\"}, {\"content\": \"Item 49\", \"status\": \"pending\"}, {\"content\": \"Item 50\", \"status\": \"pending\"}]}",
+            "id": "plan-oversized-oversized"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:empty-content]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"\", \"status\": \"pending\"}]}",
+            "id": "plan-empty-content-empty-content"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:long-content]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_todos",
+            "arguments": "{\"todos\": [{\"content\": \"<script>literal</script>xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\", \"status\": \"pending\"}]}",
+            "id": "plan-long-content-long-content"
+          }
+        ]
+      }
     }
   ]
 }

@@ -80,6 +80,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
     return Object.freeze({
       topic: 'planning', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/planning/react',
       base: '/deep-agents/planning/react/', port: 4628, project: 'cockpit-deep-agents-planning-react',
+      backend: aimockLanggraph('deep-agents/planning', 4628),
     });
   if (topic === 'chat-generative-ui')
     return Object.freeze({

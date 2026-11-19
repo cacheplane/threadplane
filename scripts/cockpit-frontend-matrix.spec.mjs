@@ -63,6 +63,10 @@ test('Planning owns an exact closed native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('deep-agents-planning'), {
     topic: 'planning', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/planning/react',
     base: '/deep-agents/planning/react/', port: 4628, project: 'cockpit-deep-agents-planning-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/deep-agents/planning/python',
+      fixtures: 'cockpit/deep-agents/planning/angular/e2e/fixtures', langgraphPort: 5628,
+    },
   });
   for (const key of ['planning', 'deep-agents/planning', '../deep-agents-planning', 'deep-agents-planning/../memory'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
