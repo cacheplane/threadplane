@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { reactCockpitConfiguration } from './configuration.mjs';
-import { createChatA2uiFixture, fixtureConfiguration } from './chat-a2ui-fixture.mjs';
 import { createNativeMastraFixture } from './native-mastra-fixture.mjs';
 import { createNativeStrandsFixture } from './native-strands-fixture.mjs';
 import { createNativeMafFixture } from './native-maf-fixture.mjs';
@@ -14,28 +13,6 @@ import { createAimockBackend } from './aimock-backend.mjs';
 
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
-const isChatA2ui = configuration.library === 'chat' && configuration.topic === 'a2ui';
-let chatA2uiFixture = null;
-let chatA2uiConfiguration;
-// Local failure controls own only these responses; production builds never import this server.
-let holdA2uiStreams = false;
-const heldA2uiStreams = new Map();
-const a2uiStreamCloses = [];
-const a2uiClosedWorkers = [];
-const a2uiReceipt = () => ({ ...chatA2uiFixture.receipt(), closedWorkers: [...a2uiClosedWorkers], heldStreams: heldA2uiStreams.size, heldCompleted: [...heldA2uiStreams.values()].filter(held => held.finished !== null).length, streamCloses: [...a2uiStreamCloses] });
-const releaseA2uiStreams = (cancel = false) => {
-  holdA2uiStreams = false;
-  for (const [response, held] of heldA2uiStreams) {
-    if (cancel) response.destroy();
-    else {
-      heldA2uiStreams.delete(response);
-      response.write = held.write;
-      response.end = held.end;
-      for (const chunk of held.chunks) response.write(...chunk);
-      if (held.finished) response.end(...held.finished);
-    }
-  }
-};
 const nativeStrandsFixture = configuration.library === 'runtimes' && configuration.topic === 'aws-strands' ? createNativeStrandsFixture() : null;
 const nativeMafFixture = configuration.library === 'runtimes' && configuration.topic === 'microsoft-agent-framework' ? createNativeMafFixture() : null;
 const nativeMastraFixture = configuration.library === 'runtimes' && configuration.topic === 'mastra' ? createNativeMastraFixture() : null;
@@ -76,48 +53,6 @@ const json = (response, value, status = 200) => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
-  if (chatA2uiFixture) {
-    if (pathname.startsWith('/__')) {
-      const controls = {
-        '/__requests': ['GET', () => chatA2uiFixture.receipt().requests],
-        '/__captures': ['GET', () => chatA2uiFixture.receipt().proofs],
-        '/__lifetime': ['GET', a2uiReceipt],
-        '/__hold/stream': ['POST', () => { holdA2uiStreams = true; return {}; }],
-        '/__release': ['POST', () => { releaseA2uiStreams(); return {}; }],
-        '/__reset': ['POST', async () => {
-          releaseA2uiStreams(true);
-          await chatA2uiFixture.close();
-          a2uiClosedWorkers.push(chatA2uiFixture.receipt());
-          chatA2uiFixture = createChatA2uiFixture({ configuration: chatA2uiConfiguration });
-          return {};
-        }],
-      };
-      const control = Object.hasOwn(controls, pathname) ? controls[pathname] : undefined;
-      if (!control) return json(response, {}, 404);
-      if (request.method !== control[0]) return json(response, {}, 405);
-      try { return json(response, await control[1]()); }
-      catch { return json(response, { error: 'Local fixture control failed' }, 500); }
-    }
-    if (holdA2uiStreams && request.method === 'POST' && /^\/api\/threads\/[^/]+\/runs\/stream$/.test(pathname)) {
-      const held = { write: response.write, end: response.end, chunks: [], finished: null, bytes: 0 };
-      heldA2uiStreams.set(response, held);
-      response.write = (...args) => {
-        held.bytes += Buffer.byteLength(args[0]);
-        if (held.bytes > 32 * 1024 * 1024) { response.destroy(); return false; }
-        if (response.destroyed) return false;
-        response.flushHeaders();
-        held.chunks.push(args);
-        return true;
-      };
-      response.end = (...args) => { held.finished = args; return response; };
-      response.once('close', () => {
-        const wasHeld = heldA2uiStreams.delete(response);
-        a2uiStreamCloses.push({ path: pathname, held: wasHeld, destroyed: response.destroyed });
-      });
-    }
-    if (await chatA2uiFixture(request, response, pathname)) return;
-    if (pathname.startsWith('/developer-api/')) return json(response, {}, 404);
-  }
   if (nativeStrandsFixture && (await nativeStrandsFixture(request, response, pathname))) return;
   if (nativeMafFixture && (await nativeMafFixture(request, response, pathname))) return;
   if (nativeMastraFixture && (await nativeMastraFixture(request, response, pathname))) return;
@@ -188,25 +123,16 @@ const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]) : null;
 let closing;
 let shutdown;
-if (isChatA2ui || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture) {
+if (nativeStrandsFixture || nativeMafFixture || nativeMastraFixture) {
   shutdown = (code = 0) => {
     closing ??= (async () => {
-      let a2uiFailure;
-      if (isChatA2ui) {
-        releaseA2uiStreams(true);
-        try { await chatA2uiFixture?.close(); }
-        catch (error) { a2uiFailure = error; }
-      }
-      else await (nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture).close();
+      await (nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();
       })));
-      if (chatA2uiFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), chatA2uiFixtureClosed: a2uiReceipt(), listenersClosed: true }));
-      if (a2uiFailure) throw a2uiFailure;
     })();
-    if (isChatA2ui) void closing.then(() => process.exit(code), () => process.exit(1));
-    else void closing.finally(() => process.exit(code));
+    void closing.finally(() => process.exit(code));
   };
   process.once('SIGINT', () => shutdown());
   process.once('SIGTERM', () => shutdown());
@@ -223,13 +149,6 @@ if (aimockBackend && !shutdown) {
 // Own signals, errors, workers and both listeners before tooling discovery or proof.
 // Only dependency tooling is reused; each reset still owns a fresh graph process.
 try {
-  if (isChatA2ui) {
-    chatA2uiConfiguration = Object.freeze(fixtureConfiguration());
-    if (!closing) {
-      chatA2uiFixture = createChatA2uiFixture({ configuration: chatA2uiConfiguration });
-      await chatA2uiFixture.configure({});
-    }
-  }
   if (!closing) {
     server.listen(configuration.port, '127.0.0.1');
     parentServer?.listen(3000, '127.0.0.1');

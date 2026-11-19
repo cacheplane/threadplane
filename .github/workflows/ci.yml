@@ -328,7 +328,7 @@ jobs:
       - name: Verify production builds strip the devtools hook
         if: matrix.lane == 'packages'
         run: npx nx run chat:test-devtools-bundle
-      - name: Verify canonical A2UI native fixtures
+      - name: Verify canonical A2UI native graph
         if: matrix.lane == 'packages'
         timeout-minutes: 15
         env:
@@ -351,10 +351,9 @@ jobs:
             PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
             "$A2UI_FIXTURE_ENV/bin/python" -E -B -m unittest discover -s cockpit/chat/a2ui/python/tests -p test_booking_form.py
           env -i HOME="$fixture_home" PATH="$fixture_path" LANG=C.UTF-8 \
-            A2UI_FIXTURE_UV="$uv_path" A2UI_FIXTURE_PYTHON="$python_path" \
-            A2UI_FIXTURE_ENV="$A2UI_FIXTURE_ENV" A2UI_FIXTURE_CACHE="$A2UI_FIXTURE_CACHE" \
+            UV_CACHE_DIR="$A2UI_FIXTURE_CACHE" UV_PYTHON="$python_path" \
             PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
-            "$node_path" --test --test-concurrency=1 scripts/react-cockpit/chat-a2ui-fixture.spec.mjs scripts/react-cockpit/chat-a2ui-configuration.spec.mjs scripts/react-cockpit/chat-a2ui-host.spec.mjs scripts/react-cockpit/chat-a2ui-readiness.spec.mjs
+            "$node_path" --test --test-concurrency=1 --test-force-exit scripts/react-cockpit/chat-a2ui-configuration.spec.mjs scripts/react-cockpit/chat-a2ui-native-probe.spec.mjs
       - name: Configure bounded Ubuntu package downloads
         if: matrix.lane == 'packages'
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs

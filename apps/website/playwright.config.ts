@@ -464,7 +464,7 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs chat-a2ui --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs chat-a2ui --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4646',
                   reuseExistingServer: false,

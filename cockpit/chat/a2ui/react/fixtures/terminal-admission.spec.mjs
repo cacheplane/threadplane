@@ -6,7 +6,7 @@ test(
   'installed actual application helpers admit four canonical native graph turns',
   { timeout: 180000 },
   async () => {
-    // runNativeProbe explicitly prepares the existing frozen Python fixture configuration.
+    // The installed consumer runs against aimock + a real `langgraph dev`, behind the recording proxy.
     const report = await runNativeProbe({ mode: 'application-admission' });
     assert.equal(report.mode, 'application-admission');
     assert.equal(report.compiler.claim, 'actual application admission helpers');
@@ -38,6 +38,10 @@ test(
     assert.ok(report.receipt.cleanup.every((row) => row.closed));
     assert.equal(report.closure.processAbsent, true);
     assert.equal(report.closure.groupAbsent, true);
-    assert.equal(report.receipt.fixture.worker.pythonAbsent, true);
+    // The real backend (aimock + `langgraph dev`) was the one the consumer
+    // drove, and its process tree was gone when the consumer closed it.
+    assert.equal(report.receipt.backend.kind, 'aimock-langgraph');
+    assert.equal(report.receipt.backend.python, 'cockpit/chat/a2ui/python');
+    assert.ok(report.receipt.cleanup.some((row) => row.name === 'backend' && row.closed));
   }
 );

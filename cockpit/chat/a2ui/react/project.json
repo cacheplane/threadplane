@@ -18,6 +18,7 @@
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
+      "inputs": ["default", "reactAimockBackend"],
       "dependsOn": ["build", "fixture-test"],
       "options": {
         "config": "cockpit/chat/a2ui/react/e2e/playwright.config.ts",

@@ -41,6 +41,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       topic: 'a2ui', library: 'chat', adapter: 'langgraph',
       appPath: 'cockpit/chat/a2ui/react', base: '/chat/a2ui/react/',
       port: 4646, project: 'cockpit-chat-a2ui-react',
+      backend: aimockLanggraph('chat/a2ui', 4646),
     });
   if (topic === 'chat-debug')
     return Object.freeze({
