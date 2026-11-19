@@ -27,7 +27,7 @@ const listedScalarFields = {
   blockquote: [],
   list: ['ordered', 'start', 'tight', 'markerCol', 'contentCol'],
   'list-item': [],
-  'code-block': ['variant', 'language', 'text'],
+  'code-block': ['variant', 'language', 'meta', 'text'],
   'thematic-break': [],
   text: ['text'],
   emphasis: [],

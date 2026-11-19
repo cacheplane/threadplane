@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { AgentSession } from '@threadplane/core';
+import type { AgentSession, AgentSnapshot } from '@threadplane/core';
 import type { MessageContent } from '@threadplane/content/messages';
 import { useAgent } from '../use-agent.js';
 import {
@@ -50,6 +50,8 @@ export interface ChatProps
   readonly renderMessage?: MessageListProps['renderMessage'];
   readonly className?: string;
   readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];
+  /** Generative UI dispatcher tools whose rows stay hidden; see `MessageListProps.genuiToolNames`. Keep stable. */
+  readonly genuiToolNames?: MessageListProps['genuiToolNames'];
   readonly toolLabel?: MessageListProps['toolLabel'];
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; execution and business confirmation remain app-owned. */
   readonly toolOutcome?: MessageListProps['toolOutcome'];
@@ -111,12 +113,23 @@ export interface ChatProps
   readonly renderMessageActivity?: MessageListProps['renderMessageActivity'];
   /** One reasoning disclosure per multi-step turn; see `MessageListProps.mergeReasoning`. Defaults to true. */
   readonly mergeReasoning?: MessageListProps['mergeReasoning'];
+  /** Shows an A2UI action sent as a user message by its label; see `MessageListProps.a2uiActionLabels`. Defaults to true. */
+  readonly a2uiActionLabels?: MessageListProps['a2uiActionLabels'];
   /**
    * The waiting indicator in the transcript; see `MessageListProps.typingIndicator`. Pass
    * `{ announce: false }` when the app already announces progress, such as a status in
    * `inputFooter`, so the run is not read twice.
    */
   readonly typingIndicator?: MessageListProps['typingIndicator'];
+  /**
+   * Replaces the typing indicator between a submit and the run's first
+   * assistant message, which can be long when the first model call is slow.
+   * It receives the current run's messages (those after the last user message)
+   * and renders in a polite status region after the last message. Once an
+   * assistant message arrives it leaves, and the message's own reasoning and
+   * tool area takes over. Define it outside render or keep it stable.
+   */
+  readonly renderRunActivity?: (context: ChatRunActivityContext) => ReactNode;
   /** App-owned content before the draft; see `ChatInputProps.leading`. */
   readonly inputLeading?: ChatInputProps['leading'];
   /** App-owned controls before Stop and Send; see `ChatInputProps.trailing`. */
@@ -149,6 +162,12 @@ export interface ChatProps
    * `approval` is left to those to announce. Off unless set.
    */
   readonly runStatus?: boolean;
+}
+
+/** What `renderRunActivity` receives while a run has no assistant message yet. */
+export interface ChatRunActivityContext {
+  /** The current run's messages: every message after the last user message. */
+  readonly messages: AgentSnapshot['messages'];
 }
 
 /** The options, controlled value and labels of the composer's model picker. */
@@ -198,6 +217,7 @@ export function Chat({
   renderMessage,
   className,
   groupRelatedTools,
+  genuiToolNames,
   toolLabel,
   toolOutcome,
   renderToolCall,
@@ -223,8 +243,10 @@ export function Chat({
   generativeUi,
   markdownComponents,
   mergeReasoning,
+  a2uiActionLabels,
   renderMessageActivity,
   typingIndicator,
+  renderRunActivity,
   welcome,
   runStatus = false,
   ...input
@@ -364,6 +386,19 @@ export function Chat({
     suggestionFocus.current = false;
     composer.current?.focus();
   }, [greeted]);
+  // The run's messages keep their identity while only later snapshots change.
+  const messages = snapshot.messages;
+  const runMessages = useMemo(() => {
+    let from = messages.length;
+    while (from > 0 && messages[from - 1].role !== 'user') from--;
+    return messages.slice(from);
+  }, [messages]);
+  const runActivity =
+    renderRunActivity &&
+    snapshot.status === 'running' &&
+    !runMessages.some((message) => message.role === 'assistant')
+      ? renderRunActivity({ messages: runMessages })
+      : null;
   const chat = (
     <div
       ref={root}
@@ -388,6 +423,7 @@ export function Chat({
         rows={rows}
         renderMessage={renderMessage}
         groupRelatedTools={groupRelatedTools}
+        genuiToolNames={genuiToolNames}
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
         renderToolCall={renderToolCall}
@@ -404,8 +440,9 @@ export function Chat({
         generativeUi={generativeUi}
         markdownComponents={markdownComponents}
         mergeReasoning={mergeReasoning}
+        a2uiActionLabels={a2uiActionLabels}
         renderMessageActivity={renderMessageActivity}
-        typingIndicator={typingIndicator}
+        typingIndicator={runActivity === null ? typingIndicator : false}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
             <ScrollBubble
@@ -418,6 +455,11 @@ export function Chat({
           )
         }
       >
+        {runActivity === null ? null : (
+          <div className="tp-chat__run-activity" role="status" aria-atomic="false">
+            {runActivity}
+          </div>
+        )}
         {pending ? approval : null}
         {showStopped ? (
           <p className="tp-chat__stopped">

@@ -1,9 +1,18 @@
 import type { AgentSnapshot } from './agent-snapshot.js';
 import type { CompleteOutcome } from './delivery.js';
+import type { AgentStateUpdate } from './state.js';
 import type { PlainValue, ToolContract } from './tool.js';
 
-/** The initial neutral session supports text submission only. */
-export type AgentSubmitInput = string;
+/**
+ * What a caller submits: the message text, or the text with a partial state the
+ * backend merges before the run. A session that holds no state ignores `state`.
+ */
+export type AgentSubmitInput<TState = unknown> =
+  | string
+  | {
+      readonly message: string;
+      readonly state?: AgentStateUpdate<TState>;
+    };
 
 /** Per-submission cancellation signal supplied by the caller. */
 export interface AgentSubmitOptions {
@@ -27,10 +36,11 @@ export type AgentSession<
   TTools extends { [K in keyof TTools]: ToolContract } = Record<
     string,
     ToolContract
-  >
+  >,
+  TState = unknown
 > = TTools extends unknown
   ? {
-      getSnapshot(): AgentSnapshot<TTools>;
+      getSnapshot(): AgentSnapshot<TTools, TState>;
       /** Changes only. Read the initial aggregate through getSnapshot. */
       subscribe(notify: () => void): () => void;
       /**
@@ -42,7 +52,7 @@ export type AgentSession<
         listener: (event: AgentSessionCustomEvent) => void
       ): () => void;
       submit(
-        input: AgentSubmitInput,
+        input: AgentSubmitInput<TState>,
         options?: AgentSubmitOptions
       ): Promise<CompleteOutcome>;
       stop(): Promise<void>;

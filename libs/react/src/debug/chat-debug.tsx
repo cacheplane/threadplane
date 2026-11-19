@@ -26,11 +26,15 @@ export function ChatDebug(props: ChatDebugProps) {
       }
     | undefined
   >(undefined);
-  const [ui, setUi] = useState<DebugPreferences>({
+  const [stored, setUi] = useState<DebugPreferences>({
     open: props.defaultOpen ?? false,
-    dock: 'right',
+    dock: props.defaultDock ?? 'right',
     tab: 'state',
   });
+  // An owner that passes `open` drives visibility; its request is reported
+  // through `onOpenChange` and takes effect only when the owner changes `open`.
+  const ui: DebugPreferences =
+    props.open === undefined ? stored : { ...stored, open: props.open };
   useEffect(() => {
     if (preferences.current?.key === props.storageKey && preferences.current)
       return;
@@ -43,12 +47,14 @@ export function ChatDebug(props: ChatDebugProps) {
     const owner = createDebugPreferences(
       props.storageKey ?? '',
       storage,
-      props.defaultOpen
+      props.defaultOpen,
+      props.defaultDock
     );
     preferences.current = { key: props.storageKey, owner };
     setUi(owner.restore());
-  }, [props.storageKey, props.defaultOpen]);
+  }, [props.storageKey, props.defaultOpen, props.defaultDock]);
   const change = (next: DebugPreferences) => {
+    if (next.open !== ui.open) props.onOpenChange?.(next.open);
     setUi(next);
     preferences.current?.owner.write(next);
   };
@@ -74,6 +80,7 @@ export function ChatDebug(props: ChatDebugProps) {
         dismissal = setTimeout(() => {
           dismissal = undefined;
           if (!active || preferences.current?.owner !== owner) return;
+          props.onOpenChange?.(false);
           setUi(next);
           owner?.write(next);
         }, 0);
@@ -117,15 +124,17 @@ export function ChatDebug(props: ChatDebugProps) {
       ref={root}
       className={['tp-debug', props.className].filter(Boolean).join(' ')}
     >
-      <button
-        ref={launcher}
-        type="button"
-        aria-expanded={ui.open}
-        aria-controls={`${id}-panel`}
-        onClick={() => change({ ...ui, open: !ui.open })}
-      >
-        {ui.open ? 'Hide debug panel' : 'Open debug panel'}
-      </button>
+      {props.launcher !== 'none' && (
+        <button
+          ref={launcher}
+          type="button"
+          aria-expanded={ui.open}
+          aria-controls={`${id}-panel`}
+          onClick={() => change({ ...ui, open: !ui.open })}
+        >
+          {ui.open ? 'Hide debug panel' : 'Open debug panel'}
+        </button>
+      )}
       {ui.open && (
         <section
           id={`${id}-panel`}

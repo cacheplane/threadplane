@@ -14,7 +14,7 @@ class HostComponent {
   node = signal<MarkdownCodeBlockNode>({
     id: 0, type: 'code-block', status: 'complete',
     parent: null, index: null,
-    variant: 'fenced', language: 'ts', text: 'const x = 1;',
+    variant: 'fenced', language: 'ts', meta: '', text: 'const x = 1;',
   });
 }
 
@@ -55,14 +55,14 @@ describe('MarkdownCodeBlockComponent', () => {
     fixture.componentInstance.node.set({
       id: 0, type: 'code-block', status: 'streaming',
       parent: null, index: null,
-      variant: 'fenced', language: 'ts', text: 'const',
+      variant: 'fenced', language: 'ts', meta: '', text: 'const',
     });
     fixture.detectChanges();
     expect(copyButton(fixture.nativeElement)).toBeNull();
     fixture.componentInstance.node.set({
       id: 0, type: 'code-block', status: 'complete',
       parent: null, index: null,
-      variant: 'fenced', language: 'ts', text: 'const x = 1;',
+      variant: 'fenced', language: 'ts', meta: '', text: 'const x = 1;',
     });
     fixture.detectChanges();
     expect(copyButton(fixture.nativeElement)).not.toBeNull();
@@ -97,7 +97,7 @@ describe('MarkdownCodeBlockComponent', () => {
     fixture.componentInstance.node.set({
       id: 0, type: 'code-block', status: 'complete',
       parent: null, index: null,
-      variant: 'fenced', language: '', text: 'plain',
+      variant: 'fenced', language: '', meta: '', text: 'plain',
     });
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('pre code')?.className).toBe('');

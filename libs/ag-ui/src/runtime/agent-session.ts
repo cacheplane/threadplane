@@ -3,6 +3,7 @@ import type {
   AgentSession,
   AgentSessionCustomEvent,
   AgentSnapshot,
+  AgentSubmitOptions,
   AgentUsage,
   AgentUsageEntry,
 } from '@threadplane/core';
@@ -16,7 +17,13 @@ import {
 /** The native owner, with or without a client-tool catalog. */
 export type NativeSession = Pick<
   Session,
-  'subscribe' | 'submit' | 'stop' | 'dispose' | 'retry' | 'onCustomEvent'
+  | 'subscribe'
+  | 'submit'
+  | 'stop'
+  | 'dispose'
+  | 'retry'
+  | 'regenerate'
+  | 'onCustomEvent'
 > & { getSnapshot(): SessionSnapshot };
 
 /**
@@ -165,10 +172,11 @@ function project(
  * It is a view, not a second owner. The snapshot is derived from the native
  * snapshot on read and keeps its reference until something a core observer can
  * see changes; subscribers are told about those changes only. `submit`, `stop`,
- * `dispose` and, when the native session has it, `retry` go straight to the
- * native session, so disposing the view disposes the session. `retry` rejects
- * unless the error is `recovery: 'retry'`. Custom event listeners pass straight
- * through to the native session too, when it has them. Application state,
+ * `dispose` and, when the native session has them, `retry` and `regenerate`
+ * go straight to the native session, so disposing the view disposes the
+ * session. `retry` rejects unless the error is `recovery: 'retry'`. Custom
+ * event listeners pass straight through to the native session too, when it
+ * has them. Application state,
  * native resume and client-tool evidence have no core equivalent: keep the
  * native session for those.
  */
@@ -176,6 +184,7 @@ export function createAgentSession(session: NativeSession): AgentSession {
   let seen: SessionSnapshot | undefined;
   let current: AgentSnapshot | undefined;
   const retry = session.retry;
+  const regenerate = session.regenerate;
   const listen = session.onCustomEvent;
   const getSnapshot = (): AgentSnapshot => {
     const native = session.getSnapshot();
@@ -204,6 +213,12 @@ export function createAgentSession(session: NativeSession): AgentSession {
     submit: (input, options) => session.submit(input, options),
     stop: () => session.stop(),
     dispose: () => session.dispose(),
+    // The native owner rejects what it cannot regenerate, as the core
+    // contract asks, so the command passes straight through.
+    ...(regenerate && {
+      regenerate: (messageId: string, options?: AgentSubmitOptions) =>
+        regenerate.call(session, messageId, options),
+    }),
     ...(retry && {
       async retry() {
         const snapshot = getSnapshot();

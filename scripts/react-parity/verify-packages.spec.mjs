@@ -980,8 +980,10 @@ test('installed native contracts reject the former empty scaffold exports', () =
   assert.equal(typeof packageVerifier.assertSupportedExports, 'function');
   assert.throws(() => packageVerifier.assertSupportedExports('core', {}), /completeDelivery/);
   assert.throws(() => packageVerifier.assertSupportedExports('react', {}), /useAgent/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react', { useAgent: () => undefined }));
-  assert.throws(() => packageVerifier.assertSupportedExports('react', { useAgent: () => undefined, OverflowMenu: () => undefined }), /unexpected/);
+  const react = { useAgent: () => undefined, useAgentState: () => undefined };
+  assert.throws(() => packageVerifier.assertSupportedExports('react', { useAgent: () => undefined }), /useAgentState/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react', react));
+  assert.throws(() => packageVerifier.assertSupportedExports('react', { ...react, OverflowMenu: () => undefined }), /unexpected/);
 });
 
 function fixture(t, change = {}) {

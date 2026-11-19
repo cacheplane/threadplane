@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { completeDelivery, staticDelivery, streamingDelivery } from '../index';
+import {
+  completeDelivery,
+  staticDelivery,
+  streamingDelivery,
+  type,
+  type StandardSchemaV1,
+} from '../index';
 import { createFakeAgentSession } from './index';
 
 describe('createFakeAgentSession', () => {
@@ -90,7 +96,7 @@ describe('createFakeAgentSession', () => {
           content: 'You said ',
           delivery: streamingDelivery('r'),
         });
-        reply.append(input);
+        reply.append(typeof input === 'string' ? input : input.message);
         reply.complete();
         reply.append(' ignored');
       },
@@ -203,5 +209,102 @@ describe('createFakeAgentSession', () => {
     });
     const call = fake.session.getSnapshot().toolCalls[0];
     expect(call.name === 'weather' && call.args.city).toBe('Oslo');
+  });
+
+  it('holds no state until one is set, then publishes an owned frozen copy', () => {
+    const fake = createFakeAgentSession({
+      stateType: type<{ todos: string[]; draft?: string }>(),
+    });
+    expect('state' in fake.session.getSnapshot()).toBe(false);
+    const notify = vi.fn();
+    fake.session.subscribe(notify);
+    const authored = { todos: ['a'] };
+    fake.setState(authored);
+    const state = fake.session.getSnapshot().state;
+    expect(state).toEqual({ todos: ['a'] });
+    expect(state).not.toBe(authored);
+    expect(Object.isFrozen(state)).toBe(true);
+    expect(Object.isFrozen(state?.todos)).toBe(true);
+    expect(notify).toHaveBeenCalledTimes(1);
+    fake.push({ role: 'assistant', content: 'Later' });
+    expect(fake.session.getSnapshot().state).toBe(state);
+    fake.setState(undefined);
+    expect('state' in fake.session.getSnapshot()).toBe(false);
+  });
+
+  it('starts with an initial state and replaces it whole through set', () => {
+    const fake = createFakeAgentSession({
+      stateType: type<{ count: number; label?: string }>(),
+      state: { count: 1, label: 'one' },
+    });
+    expect(fake.session.getSnapshot().state).toEqual({
+      count: 1,
+      label: 'one',
+    });
+    fake.set({ state: { count: 2 } });
+    expect(fake.session.getSnapshot().state).toEqual({ count: 2 });
+  });
+
+  it('merges submitted state into the snapshot and records the input as passed', async () => {
+    const inputs: unknown[] = [];
+    const fake = createFakeAgentSession({
+      stateType: type<{ count: number; label?: string }>(),
+      state: { count: 1 },
+      onSubmit: (input, session) => {
+        inputs.push(input, session.session.getSnapshot().state);
+      },
+    });
+    await fake.session.submit({ message: 'Go', state: { label: 'one' } });
+    const snapshot = fake.session.getSnapshot();
+    expect(snapshot.state).toEqual({ count: 1, label: 'one' });
+    expect(snapshot.messages.map((m) => [m.role, m.content])).toEqual([
+      ['user', 'Go'],
+    ]);
+    expect(fake.submits).toEqual([
+      { input: { message: 'Go', state: { label: 'one' } } },
+    ]);
+    expect(inputs).toEqual([
+      { message: 'Go', state: { label: 'one' } },
+      { count: 1, label: 'one' },
+    ]);
+    const before = snapshot.state;
+    await fake.session.submit({ message: 'Again' });
+    await fake.session.submit('Text');
+    expect(fake.session.getSnapshot().state).toBe(before);
+  });
+
+  it('creates state from a submission when none was held', async () => {
+    const fake = createFakeAgentSession();
+    await fake.session.submit({ message: 'Go', state: { topic: 'x' } });
+    expect(fake.session.getSnapshot().state).toEqual({ topic: 'x' });
+  });
+
+  it('checks every state against a schema declaration', async () => {
+    const stateType: StandardSchemaV1<unknown, { count: number }> = {
+      '~standard': {
+        version: 1,
+        vendor: 'test',
+        validate: (value) =>
+          typeof (value as { count?: unknown } | null)?.count === 'number'
+            ? { value: { count: (value as { count: number }).count } }
+            : { issues: [{ message: 'count must be a number' }] },
+      },
+    };
+    expect(() =>
+      createFakeAgentSession({ stateType, state: { count: 'x' } as never })
+    ).toThrow(/does not match its schema: count must be a number/);
+    const fake = createFakeAgentSession({ stateType, state: { count: 1 } });
+    const notify = vi.fn();
+    fake.session.subscribe(notify);
+    expect(() => fake.setState({ count: 'x' } as never)).toThrow(TypeError);
+    expect(fake.session.getSnapshot().state).toEqual({ count: 1 });
+    expect(notify).not.toHaveBeenCalled();
+    // The schema's output is what the snapshot holds: extra keys it drops are gone.
+    fake.setState({ count: 2, stray: true } as never);
+    expect(fake.session.getSnapshot().state).toEqual({ count: 2 });
+    await expect(
+      fake.session.submit({ message: 'Go', state: { count: 'x' } as never })
+    ).rejects.toThrow(/does not match its schema/);
+    expect(fake.session.getSnapshot().messages).toHaveLength(0);
   });
 });

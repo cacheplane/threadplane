@@ -21,6 +21,8 @@ Labels customize the navigation, launcher, close, expand, and collapse controls.
 
 `onSearch` adds a search control. Set `searchShortcut` to enable Ctrl/Command+K, and `toggleShortcut` for Ctrl/Command+B outside drawer mode. Shortcuts respect editable targets, composition, and already handled events.
 
+Pass `devtools` with the session and a `render` function that returns `<ChatDebug {...panel} />` to add a footer Devtools button, with a dot while the session runs, that opens the debug panel docked to the bottom; production builds omit it, and the panel loads only on first press.
+
 `ChatSidenavScrim` is a separate controlled backdrop with `open`, `onDismiss`, and an optional accessible `label`. The application decides whether dismissal closes the drawer. This navigation is not a modal-dialog contract.
 
 ## Follow the native implementation
