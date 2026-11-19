@@ -161,6 +161,9 @@ export { ChatWindow, type ChatWindowProps } from './window.js';
 export { ChatSidebar, type ChatSidebarProps } from './chat-sidebar.js';
 export {
   ChatSidenav,
+  type ChatSidenavDevtools,
+  type ChatSidenavDevtoolsPanel,
+  type ChatSidenavDevtoolsSource,
   type ChatSidenavMode,
   type ChatSidenavProps,
 } from './chat-sidenav.js';

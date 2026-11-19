@@ -88,6 +88,17 @@ export interface ChatDebugProps {
   /** Adds a Fork button to each inspectable row, in the same way. */
   readonly onFork?: (selection: DebugSelection) => undefined;
   readonly defaultOpen?: boolean;
+  /** Where the panel docks until the user picks another edge. Defaults to `right`. */
+  readonly defaultDock?: 'left' | 'right' | 'bottom';
+  /**
+   * Makes the owner control visibility. While set, the panel shows exactly this
+   * value and reports each request to open or close through `onOpenChange`.
+   */
+  readonly open?: boolean;
+  /** Reports a request to open or close, from the launcher, Close button, Escape or an outside click. */
+  readonly onOpenChange?: (open: boolean) => void;
+  /** `none` omits the built-in launcher button, for an owner that supplies its own. */
+  readonly launcher?: 'default' | 'none';
   readonly storageKey?: string;
   readonly className?: string;
 }

@@ -19207,6 +19207,16 @@
       "note": "Reasoning first seen already settled (saved history, or delivered whole) stays unmeasured. Nothing is stored, so a new session knows no durations. Subgraph messages are not timed. Rich blocks, event-only retention and full T09/T15 parity remain open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/thread-directory.ts",
+      "taskIds": [
+        "T11"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral directory of a deployment's saved conversations: an observable list read from thread metadata (title, archived, pinned, pinned order, project) with create, rename, delete, archive, pin, move and reorder commands that write metadata and read the list again.",
+      "note": "Staged beside the private session; not exported from a published entry. The Angular LangGraphThreadsAdapter is unchanged and not yet built on it. Reads one page of the configured size; no paging, search or cross-tab refresh."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/agent-session.ts",
       "taskIds": [
         "T12",
@@ -19415,6 +19425,33 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Turns RenderSpec lifecycle, stateChange and handler events into first-mount, mount-count and latest-activity timings, the React counterpart of Angular RENDER_LIFECYCLE."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtools",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Opt-in `devtools` prop on ChatSidenav: a session plus a render function for the panel; the React counterpart of Angular's [agent] input, omitted from production builds."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtoolsPanel",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Props the sidenav Devtools button spreads onto ChatDebug: controlled open, bottom dock and no built-in launcher."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtoolsSource",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Structural session slice (status snapshot and subscribe) that drives the Devtools button's streaming dot."
     }
   ]
 }

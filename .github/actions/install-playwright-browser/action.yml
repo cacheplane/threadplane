@@ -1,0 +1,37 @@
+name: Install Playwright browser
+description: >-
+  Installs one Playwright browser and its Ubuntu host packages from workflow
+  caches, falling back to the network only for what the caches lack. Run
+  `npm ci` and scripts/configure-ci-apt.mjs first.
+inputs:
+  browser:
+    description: Playwright browser to install (chromium, firefox, or webkit).
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Resolve Playwright version
+      id: version
+      shell: bash
+      run: echo "playwright=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"
+    - name: Cache Playwright ${{ inputs.browser }} binaries
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-browser-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.playwright }}-${{ inputs.browser }}
+    - name: Restore ${{ inputs.browser }} host packages
+      id: debs
+      uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      with:
+        path: ~/.cache/threadplane-playwright-debs/${{ inputs.browser }}
+        key: playwright-host-debs-${{ env.ImageOS || runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.playwright }}-${{ inputs.browser }}
+    - name: Install ${{ inputs.browser }} and missing host packages
+      id: install
+      shell: bash
+      run: node scripts/install-playwright-browser.mjs "${{ inputs.browser }}" "$HOME/.cache/threadplane-playwright-debs/${{ inputs.browser }}"
+    - name: Save ${{ inputs.browser }} host packages
+      if: steps.install.outputs.downloaded == 'true' && steps.debs.outputs.cache-hit != 'true'
+      uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      with:
+        path: ~/.cache/threadplane-playwright-debs/${{ inputs.browser }}
+        key: ${{ steps.debs.outputs.cache-primary-key }}
