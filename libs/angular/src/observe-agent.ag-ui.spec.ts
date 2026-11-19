@@ -130,7 +130,8 @@ describe('observeAgent native AG-UI owner', () => {
       {
         id: 'child',
         name: 'worker',
-        status: 'complete',
+        // The child finished suspended: it paused and can continue.
+        status: 'running',
         messages: [],
         toolCalls: [],
         started: {

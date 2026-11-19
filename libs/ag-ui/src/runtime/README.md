@@ -149,16 +149,23 @@ const session = createSession({ threadId, url });
   is sent. Each entry is the protocol's interrupt, so it has the core `id`,
   `reason`, `message` and `toolCallId` and any other field the backend sent. It
   is absent when nothing is waiting, and for a pause this session cannot answer.
-- `subagents` lists the current run's children as core child agents: `id`,
-  `name`, `description`, `toolCallId`, `parentId`, `status`, and the child's own
-  `messages` and `toolCalls`, which the root lists do not repeat. The protocol
-  evidence stays on each child as `started` and `terminal`. A child with
-  finished evidence is `complete`, one with error evidence is `error` and
-  carries its message, and one with neither is `running` while the root run is
-  going and `unknown` after it. A child keeps its reference until its evidence,
-  status or records change. Children of earlier runs are bare evidence in
-  `earlierSubagents`. Records are matched by run id, so a later child that
-  reuses an id also lists the earlier child's records.
+- `subagents` lists every child the session knows as a core child agent:
+  children of earlier root runs first, marked `earlier`, then the current run's,
+  each in start order. A child has `id`, `name`, `description`, `toolCallId`,
+  `parentId`, `status`, and its own `messages` and `toolCalls`, which the root
+  lists do not repeat. The protocol evidence stays on each child as `started`
+  and `terminal`. `earlierSubagents` still holds the earlier children's bare
+  evidence.
+  - Error evidence is `error` and carries its message. Finished evidence is
+    `complete`, unless the child finished `suspended`: it paused and can
+    continue, so it is `running` in its own run and while a later run is going,
+    and `unknown` once a later run ends without continuing it. A child with no
+    ending is `running` while the root run is going and `unknown` after it.
+  - A child lists the records attributed to its run id within its own run. A
+    child that starts again after pausing continues: it is one child, and keeps
+    the records from before the pause. Any other child that reuses a run id
+    replaces the earlier one and starts with none of its records.
+  - A child keeps its reference until its evidence, status or records change.
 - Every publication notifies subscribers, including one that changes only
   protocol evidence such as a decision or a child.
 - `submit` takes text, or `{ message, state? }` with a state patch.

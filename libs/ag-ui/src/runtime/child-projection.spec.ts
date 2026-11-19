@@ -141,6 +141,102 @@ describe('core interrupts and child agents on the AG-UI snapshot', () => {
     }
   });
 
+  it('keeps a paused child running and continues it with its records after resume', async () => {
+    const fixture = bindingFixture();
+    try {
+      const run = fixture.session.submit('Book it');
+      const exchange = await fixture.started();
+      const paused = fixture.changed(
+        (snapshot) => snapshot.subagents[0]?.terminal !== undefined
+      );
+      exchange.emit({
+        type: 'SUBAGENT_STARTED',
+        subagentRunId: 'child',
+        name: 'booker',
+      });
+      exchange.emit({
+        type: 'TEXT_MESSAGE_START',
+        messageId: 'before',
+        role: 'assistant',
+        subagentRunId: 'child',
+      });
+      exchange.emit({
+        type: 'TEXT_MESSAGE_CONTENT',
+        messageId: 'before',
+        delta: 'Need approval',
+      });
+      exchange.emit({ type: 'TEXT_MESSAGE_END', messageId: 'before' });
+      exchange.emit({
+        type: 'SUBAGENT_FINISHED',
+        subagentRunId: 'child',
+        outcome: { type: 'suspended', interruptIds: ['approval'] },
+      });
+      await paused;
+      exchange.emit({
+        type: 'RUN_FINISHED',
+        threadId: exchange.body.threadId,
+        runId: exchange.body.runId,
+        outcome: {
+          type: 'interrupt',
+          interrupts: [{ id: 'approval', reason: 'approve' }],
+        },
+      });
+      await expect(run).resolves.toBe('paused');
+      // Paused is not finished: the child can continue.
+      expect(fixture.session.getSnapshot().subagents[0].status).toBe('running');
+
+      const resumed = fixture.session.resume([
+        { interruptId: 'approval', status: 'resolved' },
+      ]);
+      const next = await fixture.started(1);
+      // Between the answer and the child's restart it is history, still going.
+      expect(fixture.session.getSnapshot().subagents).toMatchObject([
+        { id: 'child', status: 'running', earlier: true },
+      ]);
+      const continued = fixture.changed(
+        (snapshot) =>
+          snapshot.subagents.length === 1 &&
+          snapshot.subagents[0].messages.length === 2
+      );
+      next.emit({
+        type: 'SUBAGENT_STARTED',
+        subagentRunId: 'child',
+        name: 'booker',
+      });
+      next.emit({
+        type: 'TEXT_MESSAGE_START',
+        messageId: 'after',
+        role: 'assistant',
+        subagentRunId: 'child',
+      });
+      next.emit({
+        type: 'TEXT_MESSAGE_CONTENT',
+        messageId: 'after',
+        delta: 'Booked',
+      });
+      next.emit({ type: 'TEXT_MESSAGE_END', messageId: 'after' });
+      // One child, not two, and it keeps what it said before the pause.
+      const child = (await continued).subagents[0];
+      expect(child).not.toHaveProperty('earlier');
+      expect(child.messages.map((message) => message.content)).toEqual([
+        'Need approval',
+        'Booked',
+      ]);
+      next.emit({ type: 'SUBAGENT_FINISHED', subagentRunId: 'child' });
+      next.emit({
+        type: 'RUN_FINISHED',
+        threadId: next.body.threadId,
+        runId: next.body.runId,
+      });
+      await expect(resumed).resolves.toBe('success');
+      expect(fixture.session.getSnapshot().subagents[0].status).toBe(
+        'complete'
+      );
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
   it('lists pending interrupts until an answer is sent, and answers them by id', async () => {
     const fixture = bindingFixture();
     try {

@@ -99,3 +99,10 @@ void observer.resume?.([
 ]);
 // @ts-expect-error the core contract has no pause token
 void observer.resume?.(pause, [resolved]);
+
+// Child agents of earlier root runs are marked, so a view can tell them apart.
+const earlierChild: true | undefined =
+  session.getSnapshot().subagents[0]?.earlier;
+// @ts-expect-error The mark is derived, not assigned.
+session.getSnapshot().subagents[0].earlier = true;
+void earlierChild;

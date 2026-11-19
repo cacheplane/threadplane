@@ -19239,7 +19239,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private projection of the current run's child evidence into the core contract's child agents: each child's id, name, task, status and its own messages and tool calls, with the protocol evidence kept alongside.",
-      "note": "Covered by runtime specs over the real owner. Children of earlier runs stay bare evidence in earlierSubagents, and a child that reuses a run id also lists the earlier child's records."
+      "note": "Covered by runtime specs over the real owner. Children of earlier runs are listed first and marked earlier. A child that restarts after pausing continues with its records; any other reuse of a run id starts a separate child."
     },
     {
       "id": "source:libs/ag-ui/src/runtime/message-projection.ts",

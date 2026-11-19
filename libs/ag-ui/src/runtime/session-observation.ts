@@ -12,7 +12,11 @@ import type {
   PlainValue,
 } from '@threadplane/core';
 import { ownTranscript, type Transcript } from './transcript.js';
-import { applySubagent, ownSubagents, type Subagents } from './subagents.js';
+import {
+  applySubagent,
+  restoredSubagents,
+  type Subagents,
+} from './subagents.js';
 import { NO_STATE, ownState, applyState } from './state.js';
 import { reconcileTranscript } from './reconcile-transcript.js';
 import { applyTextMessage } from './text-messages.js';
@@ -113,7 +117,7 @@ export function initialObservation(
 ): Observation {
   const transcript = ownTranscript(messages);
   assertTranscriptIdentity(transcript);
-  const earlier = ownSubagents(subagents);
+  const earlier = restoredSubagents(subagents, transcript.length);
   return Object.freeze({
     status: 'idle',
     transcript,
