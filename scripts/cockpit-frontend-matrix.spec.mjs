@@ -411,6 +411,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/deployment-runtime/react/',
     port: 4608,
     project: 'cockpit-langgraph-deployment-runtime-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/deployment-runtime/python',
+      fixtures: 'cockpit/langgraph/deployment-runtime/angular/e2e/fixtures', langgraphPort: 5608,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('time-travel'), {
     topic: 'time-travel',
@@ -476,6 +480,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/client-tools/react/',
     port: 4603,
     project: 'cockpit-langgraph-client-tools-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/client-tools/python',
+      fixtures: 'cockpit/langgraph/client-tools/angular/e2e/fixtures', langgraphPort: 5603,
+    },
   });
   for (const topic of [
     'unknown',

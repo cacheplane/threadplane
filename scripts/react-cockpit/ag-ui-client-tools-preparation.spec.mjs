@@ -34,7 +34,8 @@ test('website browser job prepares its own canonical worker after existing pinne
 test('proof routing scopes native and retained LangGraph fixtures and shutdown to owned handles', () => {
   const serve=read('scripts/react-cockpit/serve.mjs');
   assert.match(serve,/configuration.adapter === 'ag-ui' && configuration.topic === 'client-tools' \? createAgUiClientToolsFixture/);
-  assert.match(serve,/configuration.adapter !== 'ag-ui' && configuration.topic === 'client-tools' \? createClientToolsFixture/);
+  // LangGraph client-tools runs on aimock + `langgraph dev` through the proxy.
+  assert.match(serve,/configuration.backend\?\.kind === 'aimock-langgraph'\s*\? createLanggraphProxy/);
   assert.match(serve,/await \(chatDebugFixture \?\? nativeStrandsFixture \?\? nativeMafFixture \?\? nativeMastraFixture \?\? agUiClientToolsFixture \?\? [^\n]+\)\.close\(\);/);
   assert.match(read('cockpit/ag-ui/client-tools/react/e2e/playwright.config.ts'),/prepare-ag-ui-client-tools-fixture.mjs --serve/);
   assert.match(read('scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs'),/'ag-ui-client-tools', '--no-parent'/);
