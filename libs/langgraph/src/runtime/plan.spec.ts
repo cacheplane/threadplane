@@ -44,7 +44,7 @@ describe('session plan', () => {
     expect(Object.isFrozen(plan)).toBe(true);
     // Other values change; the plan keeps its identity.
     f.streams[0].release({ type: 'values', data: { todos, round: 2 } });
-    await vi.waitFor(() => expect(f.session.getSnapshot().values).toMatchObject({ round: 2 }));
+    await vi.waitFor(() => expect(f.session.getSnapshot().state).toMatchObject({ round: 2 }));
     expect(f.session.getSnapshot().plan).toBe(plan);
     f.streams[0].release({
       type: 'values',

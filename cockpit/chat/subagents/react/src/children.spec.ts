@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ChildObservations } from './children';
 const child = (namespace = 'namespace', text = 'Observed suggestion') => ({
   namespace: [namespace],
-  values: { subagent_type: 'research', task_description: 'Plan LAX to JFK' },
+  state: { subagent_type: 'research', task_description: 'Plan LAX to JFK' },
   messages: [
     {
       id: 'child',
@@ -24,7 +24,7 @@ describe('local child observations without inferred parent binding', () => {
     (field) => {
       const store = new ChildObservations('view', 'turn');
       const malformed = child();
-      Object.assign(malformed.values, { [field]: undefined });
+      Object.assign(malformed.state, { [field]: undefined });
       expect(store.observe([malformed], context)).toBe(false);
       expect(store.observe([child()], context)).toBe(false);
     }
@@ -62,7 +62,7 @@ describe('local child observations without inferred parent binding', () => {
     const store = new ChildObservations('view', 'turn');
     expect(
       store.observe(
-        [{ namespace: ['a'], values: {}, messages: [], interrupts: [] }],
+        [{ namespace: ['a'], state: {}, messages: [], interrupts: [] }],
         context
       )
     ).toBe(true);
@@ -119,9 +119,9 @@ describe('local child observations without inferred parent binding', () => {
     let terminal = false;
     if (mode === 'empty-namespace') a.namespace = [];
     if (mode === 'duplicate-namespace') children = [a, a];
-    if (mode === 'wrong-role') a.values.subagent_type = 'other';
-    if (mode === 'empty-task') a.values.task_description = '';
-    if (mode === 'extra-value') Object.assign(a.values, { other: true });
+    if (mode === 'wrong-role') a.state.subagent_type = 'other';
+    if (mode === 'empty-task') a.state.task_description = '';
+    if (mode === 'extra-value') Object.assign(a.state, { other: true });
     if (mode === 'duplicate-message') a.messages.push(a.messages[0]);
     if (mode === 'root-collision') a.messages[0].id = 'root';
     if (mode === 'foreign-generation')
@@ -136,7 +136,7 @@ describe('local child observations without inferred parent binding', () => {
       terminal = true;
     }
     if (mode === 'missing-terminal-values') {
-      Object.assign(a, { values: {} });
+      Object.assign(a, { state: {} });
       terminal = true;
     }
     if (mode === 'missing-terminal-message') {
@@ -158,8 +158,8 @@ describe('local child observations without inferred parent binding', () => {
     const store = new ChildObservations('view', 'turn');
     expect(store.observe([child()], context)).toBe(true);
     const a = child();
-    if (mode === 'role') a.values.subagent_type = 'booking';
-    if (mode === 'task') a.values.task_description = 'Changed';
+    if (mode === 'role') a.state.subagent_type = 'booking';
+    if (mode === 'task') a.state.task_description = 'Changed';
     if (mode === 'completed-text') a.messages[0].content = 'Changed';
     if (mode === 'message-id') a.messages[0].id = 'replaced';
     if (mode === 'phase-regression') a.messages[0].delivery.phase = 'streaming';
@@ -205,7 +205,7 @@ describe('local child observations without inferred parent binding', () => {
       getter,
       hook,
       Object.create(child()),
-      { ...child(), values: { n: NaN } },
+      { ...child(), state: { n: NaN } },
       cyclic,
     ]) {
       const store = new ChildObservations('view', 'turn');

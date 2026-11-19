@@ -74,7 +74,7 @@ export function setup() {
       toolCalls: [],
       interrupts: [],
       subgraphs: [],
-      values: { analysis: copy(t.analysis) },
+      state: { analysis: copy(t.analysis) },
       history: staticDelivery
         ? [{ checkpoint: copy(t.checkpoint), next: [], tasks: [] }]
         : index

@@ -181,15 +181,47 @@ export function parseServers(value) {
         (!Number.isFinite(server.timeout) || server.timeout <= 0))
     )
       invalid();
+    // CI serves the built app; `ng serve` per app exhausted runner memory.
+    const project = match[1].replace(/:serve:cockpit$/, '');
     return {
-      command: 'npx',
-      args: ['nx', 'run', match[1], '--port', match[2]],
+      command: process.execPath,
+      args: ['scripts/website-angular-static.mjs', project, match[2]],
       cwd: resolve(fileURLToPath(new URL('..', import.meta.url))),
       url: server.url,
       timeout: server.timeout ?? 60_000,
       name: match[1],
+      project,
     };
   });
+}
+
+/** Build every pooled app once, two at a time, before any server starts. */
+export function buildArgs(entries) {
+  return [
+    'nx',
+    'run-many',
+    '--targets=build',
+    '--configuration=cockpit',
+    `--projects=${entries.map((entry) => entry.project).join(',')}`,
+    '--parallel=2',
+  ];
+}
+
+async function build(entries) {
+  const started = Date.now();
+  const child = spawn('npx', buildArgs(entries), {
+    cwd: entries[0].cwd,
+    stdio: ['ignore', 'inherit', 'inherit'],
+  });
+  const [code, signal] = await new Promise((done) => {
+    child.on('error', () => done([1, null]));
+    child.on('exit', (exitCode, exitSignal) => done([exitCode, exitSignal]));
+  });
+  if (code !== 0)
+    throw new Error(`Angular build failed (code ${code}, signal ${signal})`);
+  console.error(
+    `[Angular pool] built ${entries.length} apps in ${Date.now() - started}ms`
+  );
 }
 
 if (
@@ -197,7 +229,9 @@ if (
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
   try {
-    await runPool(parseServers(process.env.WEBSITE_ANGULAR_SERVERS));
+    const entries = parseServers(process.env.WEBSITE_ANGULAR_SERVERS);
+    await build(entries);
+    await runPool(entries);
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

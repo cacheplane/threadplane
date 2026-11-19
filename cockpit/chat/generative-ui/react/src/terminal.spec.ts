@@ -49,7 +49,7 @@ it('rejects matching loaded and raw dashboard unsupported by current data tools'
     dashboard = { on_time: { value: 999, delta: null } };
   expect(
     captureTerminal(
-      { ...e.saved, values: { ...e.saved.values, dashboard } },
+      { ...e.saved, state: { ...e.saved.state, dashboard } },
       { ...e.raw, values: { ...e.raw.values, dashboard } },
       'thread',
       e.o,

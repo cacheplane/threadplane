@@ -8,7 +8,7 @@
   "sideEffects": false,
   "dependencies": {
     "@cacheplane/json-stream": "0.1.1",
-    "@cacheplane/partial-markdown": "0.5.13"
+    "@cacheplane/partial-markdown": "0.6.0"
   },
   "peerDependencies": {
     "@threadplane/a2ui": "^0.3.2",

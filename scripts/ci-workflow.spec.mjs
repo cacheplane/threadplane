@@ -10,6 +10,13 @@ import { deriveCockpitCaps } from './cockpit-matrix.mjs';
 import { classifyFromAffected } from './ci-scope.mjs';
 import { parse as parseYaml } from 'yaml';
 
+// Every workflow installs Playwright browsers through one composite action, which
+// restores cached browsers and host packages before touching an apt mirror.
+const BROWSER_INSTALL_ACTION = 'uses: ./.github/actions/install-playwright-browser';
+const CHROMIUM_INSTALL = `${BROWSER_INSTALL_ACTION}\n        with:\n          browser: chromium`;
+const browserInstallPattern = (browser) => new RegExp(`uses: \\./\\.github/actions/install-playwright-browser\\n\\s+with:\\n\\s+browser: ${browser}\\n`);
+const CHROMIUM_INSTALL_PATTERN = browserInstallPattern('chromium');
+
 it('reuses only same-run dependencies while preserving every isolated Cockpit proof step', async () => {
   const workflow = parseYaml(await readFile('.github/workflows/ci.yml', 'utf8'));
   const producer = workflow.jobs['cockpit-e2e-dispatcher'];
@@ -52,7 +59,7 @@ it('reuses only same-run dependencies while preserving every isolated Cockpit pr
   const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step))
     .map(step => step === nodeSetup ? { ...step, with: { ...step.with, 'node-version': 22 } } : step);
   assert.equal(createHash('sha256').update(JSON.stringify(originalSteps)).digest('hex'),
-    '0cb74a71f4184d40e2cd4eb979724ef70dc560d54dbe57ba84fe700ef2af1eb0',
+    '47b703c5eebce05e9b71f4e06acf7865a59a03587296b28752e88ab463389323',
     'all original setup, Python, source, fixture, browser and artifact steps remain identical except the verified Node patch pin');
 });
 
@@ -103,6 +110,7 @@ it('requires the Scripts owner for reviewed test-only changes while allowing unr
   const scope = classifyFromAffected(['scripts/generate-shared-deployment-config.spec.ts'], []);
   for (const [key, enabled] of Object.entries(scope)) environment[`SCOPE_${key.toUpperCase()}`] = String(enabled);
   environment.RESULT_CI_SCOPE = 'success';
+  environment.RESULT_CI_GUARDS = 'success';
   for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
     const run = spawnSync('bash', ['-c', readStepRunBlock(step)], {
       encoding: 'utf8', env: { ...environment, RESULT_SCRIPTS_TESTS: result },
@@ -193,9 +201,10 @@ it('starts long verification chains before supporting runner requests without a 
   assert.deepEqual(ready.sort(), ['library-package', 'library', 'native-conversation', 'website-e2e', 'website-preview-build', 'website-preview-deploy'].sort());
   const width = ready.reduce((total, name) => {
     const axes = [...jobs.get(name).matchAll(/^ {8}\w+: \[([^\]]+)\]/gm)];
-    return total + axes.reduce((product, [, values]) => product * values.split(',').length, 1);
+    const included = [...jobs.get(name).matchAll(/^ {10}- \{/gm)].length;
+    return total + axes.reduce((product, [, values]) => product * values.split(',').length, 1) + included;
   }, 0);
-  assert.equal(width, 16, 'keep the first scheduling wave below the former33requests');
+  assert.equal(width, 18, 'keep the first scheduling wave below the former33requests');
   const visited = new Set();
   function visit(name, path = new Set()) {
     assert.ok(needs.has(name), `unknown dependency ${name}`);
@@ -287,7 +296,7 @@ it('requires early Website deployment before preview success and preserves fork 
   const script = readStepRunBlock(step);
   const environment = { ...process.env };
   for (const [, key] of step.matchAll(/^ {10}((?:RESULT|SCOPE)_[A-Z0-9_]+):/gm)) environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
-  Object.assign(environment, { RESULT_CI_SCOPE: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_BUILD: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
+  Object.assign(environment, { RESULT_CI_SCOPE: 'success', RESULT_CI_GUARDS: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_BUILD: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
   for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
     const run = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, PREVIEW_LANES_ELIGIBLE: 'true', RESULT_WEBSITE_PREVIEW_DEPLOY: result } });
     assert.equal(run.status, result === 'success' ? 0 : 1, `${result}: ${run.stdout}\n${run.stderr}`);
@@ -349,7 +358,14 @@ it('runs the production copy gate through its minimal target while retaining the
 it('groups the complete Website suite by runtime dependencies and runs production checks independently', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const suite = readJobBlock(workflow, 'website-e2e');
-  assert.match(suite, /suite: \[control-plane, agents, ag-ui, chat, render\]/);
+  assert.match(suite, /suite: \[agents, ag-ui, chat, render\]/);
+  // control-plane is split across shards; the divisor in the job name and the
+  // run step must equal the number of shard entries, or tests go unrun.
+  const shards = [...suite.matchAll(/^ {10}- \{ suite: control-plane, shard: (\d+) \}$/gm)].map(match => Number(match[1]));
+  assert.deepEqual(shards, [1, 2, 3]);
+  assert.equal([...suite.matchAll(/^ {10}- \{/gm)].length, shards.length, 'only control-plane is sharded');
+  assert.ok(suite.includes(`format(' {0}/${shards.length}', matrix.shard)`));
+  assert.ok(suite.includes(`--skip-nx-cache\${{ matrix.shard && format(' -- --shard={0}/${shards.length}', matrix.shard) || '' }}\n`));
   assert.match(suite, /fail-fast: false/);
   assert.match(suite, /npx nx run website:e2e-\$\{\{ matrix.suite \}\} --skip-nx-cache/);
   assert.doesNotMatch(suite, /Public copy boundary|Stage scroll verification|--grep/);
@@ -357,7 +373,7 @@ it('groups the complete Website suite by runtime dependencies and runs productio
   assert.deepEqual(readJobNeeds(production), ['ci-scope', 'library-package']);
   assert.match(readJobFieldBlock(production, 'if'), /needs\.ci-scope\.outputs\.website_e2e == 'true'/);
   assert.doesNotMatch(production, /setup-uv|prepare-.*fixture|nx e2e website/);
-  assert.match(production, /npx playwright install --with-deps chromium/);
+  assert.match(production, CHROMIUM_INSTALL_PATTERN);
 });
 
 it('delegates local public coverage only when its required deployed preview is eligible', async () => {
@@ -387,17 +403,61 @@ it('delegates local public coverage only when its required deployed preview is e
 
 it('requires reusable consumer isolation checks and owns preparation for the complete local run', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/react-cockpit\/consumer-preparation\.spec\.mjs/);
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier'), /scripts\/react-cockpit\/consumer-preparation\.spec\.mjs/);
   const step = readNamedStep(readJobBlock(workflow, 'website-e2e'), 'Run local Website suite');
   assert.match(step, /preparation=\$\(mktemp -d\)/);
-  assert.match(step, /trap 'rm -rf "\$preparation"' EXIT/);
+  assert.match(step, /trap 'kill "\$sampler" 2>\/dev\/null; rm -rf "\$preparation"' EXIT/);
   assert.match(step, /export WEBSITE_RUNTIME_PREPARATION="\$preparation"/);
   assert.match(step, /npx nx run website:e2e-\$\{\{ matrix.suite \}\} --skip-nx-cache/);
 });
 
+it('samples Website runner resources during the local suite and always reports them', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const job = readJobBlock(workflow, 'website-e2e');
+  const step = readNamedStep(job, 'Run local Website suite');
+  assert.match(step, /scripts\/website-e2e-resources\.sh sample "\$RUNNER_TEMP\/website-e2e-resources\.log" &\n\s+sampler=\$!/);
+  assert.ok(step.indexOf('sampler=$!') < step.indexOf('npx nx run website:e2e-'), 'sampling starts before the suite');
+  const report = readNamedStep(job, 'Report Website runner resources');
+  assert.match(report, /if: always\(\)/);
+  assert.match(report, /scripts\/website-e2e-resources\.sh report "\$RUNNER_TEMP\/website-e2e-resources\.log"/);
+  assert.ok(job.indexOf('Run local Website suite') < job.indexOf('Report Website runner resources'));
+});
+
+it('summarises Website runner resource samples without failing the job', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'website-resources-'));
+  try {
+    const log = join(directory, 'resources.log');
+    await writeFile(log, [
+      '=== 2026-11-15T07:30:20Z',
+      'mem total_mb=15984 avail_mb=4000 swap_used_mb=10 psi_some10=0.00 psi_full10=0.00 load="3 3 3" website="200 0.010s"',
+      'ps 4100 4000 Sl 5120MB 80.0% 300s next-server (v16.2.12)',
+      '=== 2026-11-15T07:30:35Z',
+      'mem total_mb=15984 avail_mb=300 swap_used_mb=3900 psi_some10=40.00 psi_full10=22.50 load="9 5 3" website="000 5.001s"',
+      'ps 4100 4000 Rl 9120MB 99.0% 315s next-server (v16.2.12)',
+      'stuck website probe status=000',
+      'stuck State: R (running)',
+      '',
+    ].join('\n'));
+    const run = spawnSync('bash', ['scripts/website-e2e-resources.sh', 'report', log], { encoding: 'utf8' });
+    assert.equal(run.status, 0, run.stderr);
+    assert.match(run.stdout, /\(2 samples\)/);
+    assert.match(run.stdout, /lowest MemAvailable: 300 MB of 15984 MB at 2026-11-15T07:30:35Z/);
+    assert.match(run.stdout, /highest swap used: 3900 MB/);
+    assert.match(run.stdout, /highest memory pressure \(full avg10\): 22\.5/);
+    assert.match(run.stdout, /website probe failures: 1, first at 2026-11-15T07:30:35Z/);
+    assert.match(run.stdout, /9120 MB at 2026-11-15T07:30:35Z: next-server \(v16\.2\.12\)/);
+    assert.match(run.stdout, /stuck State: R \(running\)/);
+    const empty = spawnSync('bash', ['scripts/website-e2e-resources.sh', 'report', join(directory, 'missing.log')], { encoding: 'utf8' });
+    assert.equal(empty.status, 0, empty.stderr);
+    assert.match(empty.stdout, /No resource samples were recorded/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 it('bounds Angular startup only in Website control-plane CI and exercises lifecycle cleanup', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/website-angular-startup\.spec\.mjs/);
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier'), /scripts\/website-angular-startup\.spec\.mjs/);
   assert.match(await readFile('scripts/vite.config.mts', 'utf8'), /'website-angular-startup\.spec\.mjs'/);
   const step = readNamedStep(readJobBlock(workflow, 'website-e2e'), 'Run local Website suite');
   assert.match(step, /WEBSITE_ANGULAR_STARTUP: \$\{\{ matrix\.suite == 'control-plane' && '2' \|\| '' \}\}/);
@@ -405,7 +465,7 @@ it('bounds Angular startup only in Website control-plane CI and exercises lifecy
 
 it('bounds Agents startup in its own CI lane with explicit Node test registration and runner capacity', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/website-agents-startup\.spec\.mjs/);
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier'), /scripts\/website-agents-startup\.spec\.mjs/);
   assert.match(await readFile('scripts/vite.config.mts', 'utf8'), /'website-agents-startup\.spec\.mjs'/);
   const job = readJobBlock(workflow, 'website-e2e');
   assert.match(readNamedStep(job, 'Run local Website suite'), /WEBSITE_AGENTS_STARTUP: \$\{\{ matrix\.suite == 'agents' && '2' \|\| '' \}\}/);
@@ -431,6 +491,7 @@ it('requires all parallel native and Website production proofs before PR success
     environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
   }
   environment.RESULT_CI_SCOPE = 'success';
+  environment.RESULT_CI_GUARDS = 'success';
   for (const [job, resultKey, scopeKey, otherResults] of [
     ['native-conversation', 'RESULT_NATIVE_CONVERSATION', 'SCOPE_LIBRARY', { RESULT_LIBRARY: 'success' }],
     ['native-conversation', 'RESULT_NATIVE_CONVERSATION', 'SCOPE_ANGULAR_COMPATIBILITY', { RESULT_LIBRARY: 'success', RESULT_LIBRARY_PACKAGE: 'success', RESULT_ANGULAR_COMPATIBILITY: 'success' }],
@@ -453,7 +514,7 @@ it('requires Library validation and its independent package producer for compati
     environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
   }
   Object.assign(environment, {
-    RESULT_CI_SCOPE: 'success', SCOPE_ANGULAR_COMPATIBILITY: 'true',
+    RESULT_CI_SCOPE: 'success', RESULT_CI_GUARDS: 'success', SCOPE_ANGULAR_COMPATIBILITY: 'true',
     RESULT_LIBRARY: 'success', RESULT_LIBRARY_PACKAGE: 'success',
     RESULT_NATIVE_CONVERSATION: 'success', RESULT_ANGULAR_COMPATIBILITY: 'success',
   });
@@ -534,7 +595,7 @@ it('requires every preview build shard before scoped PR success and preserves fo
   const script = readStepRunBlock(step);
   const environment = { ...process.env };
   for (const [, key] of step.matchAll(/^ {10}((?:RESULT|SCOPE)_[A-Z0-9_]+):/gm)) environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
-  Object.assign(environment, { RESULT_CI_SCOPE: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_DEPLOY: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
+  Object.assign(environment, { RESULT_CI_SCOPE: 'success', RESULT_CI_GUARDS: 'success', SCOPE_WEBSITE_E2E: 'true', RESULT_WEBSITE_E2E: 'success', RESULT_WEBSITE_PRODUCTION: 'success', RESULT_WEBSITE_PREVIEW_DEPLOY: 'success', RESULT_WEBSITE_PREVIEW_E2E: 'success' });
   for (const key of ['RESULT_WEBSITE_PREVIEW_BUILD', 'RESULT_WEBSITE_PREVIEW_DEPLOY', 'RESULT_WEBSITE_PREVIEW_E2E']) {
     for (const result of ['success', 'failure', 'cancelled', 'skipped']) {
       const run = spawnSync('bash', ['-c', script], { encoding: 'utf8', env: { ...environment, RESULT_WEBSITE_PREVIEW_BUILD: 'success', PREVIEW_LANES_ELIGIBLE: 'true', [key]: result } });
@@ -549,7 +610,7 @@ it('requires every preview build shard before scoped PR success and preserves fo
 
 it('runs native MAF Node configuration, preparation, actual fixture and model checks in scoped CI', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  const scope = readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier');
+  const scope = readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier');
   for (const file of ['runtimes-microsoft-agent-framework-configuration.spec.mjs', 'prepare-native-maf-fixture.spec.mjs']) assert.ok(scope.includes(`scripts/react-cockpit/${file}`));
   const fleet = readJobBlock(workflow, 'cockpit-e2e');
   const step = readNamedStep(fleet, 'Verify native MAF fixture ownership');
@@ -565,7 +626,7 @@ it('runs native MAF Node configuration, preparation, actual fixture and model ch
 
 it('runs native Strands Node configuration, preparation, actual fixture and model checks in scoped CI', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  const scope = readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier');
+  const scope = readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier');
   for (const file of ['runtimes-aws-strands-configuration.spec.mjs', 'prepare-native-strands-fixture.spec.mjs']) assert.ok(scope.includes(`scripts/react-cockpit/${file}`));
   const fleet = readJobBlock(workflow, 'cockpit-e2e');
   const step = readNamedStep(fleet, 'Verify native Strands fixture ownership');
@@ -923,7 +984,7 @@ describe('CI workflow', () => {
     assert.doesNotMatch(production, /buildConsumer|captureVerification|runBrowserProofs/, 'the production case must not duplicate the CLI build or browser proofs');
     for (const prerequisite of [
       'run-many -t build --projects=core,content,angular,react,chat,langgraph,ag-ui,render,a2ui,telemetry,middleware',
-      'npx playwright install --with-deps chromium',
+      CHROMIUM_INSTALL,
     ]) assert.ok(job.indexOf(prerequisite) >= 0 && job.indexOf(step) > job.indexOf(prerequisite));
     assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|set\s+\+e|if:|--grep|--test-name-pattern/);
     assert.doesNotMatch(job, /continue-on-error/);
@@ -959,7 +1020,7 @@ describe('CI workflow', () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const early = job.indexOf('node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs');
     const build = job.indexOf('Build and validate private React foundations');
-    const chromium = job.indexOf('npx playwright install --with-deps chromium');
+    const chromium = job.indexOf(CHROMIUM_INSTALL);
     const review = job.indexOf('node scripts/react-parity/review-native-ag-ui.mjs --verify');
     assert.ok(early >= 0 && early < build);
     assert.ok(review > build && review > chromium);
@@ -969,7 +1030,7 @@ describe('CI workflow', () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const candidate = job.indexOf('node scripts/react-parity/verify-langgraph-candidate.mjs');
     assert.ok(candidate > job.indexOf('Build and validate private React foundations'));
-    assert.ok(candidate > job.indexOf('npx playwright install --with-deps chromium'));
+    assert.ok(candidate > job.indexOf(CHROMIUM_INSTALL));
     const step = readNamedStep(job, 'Verify real LangGraph candidate package');
     assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|if:/);
     assert.match(step, /run: node scripts\/react-parity\/verify-langgraph-candidate\.mjs\s*$/);
@@ -991,7 +1052,7 @@ describe('CI workflow', () => {
   it('requires the real AG-UI candidate after build, Chromium and service setup without replacing source proofs', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const candidate = job.indexOf('node scripts/react-parity/verify-ag-ui-candidate.mjs');
-    for (const prerequisite of ['Build and validate private React foundations', 'npx playwright install --with-deps chromium', 'npm ci --prefix deployments/ag-ui-mastra', 'npm test --prefix deployments/ag-ui-mastra']) assert.ok(candidate > job.indexOf(prerequisite));
+    for (const prerequisite of ['Build and validate private React foundations', CHROMIUM_INSTALL, 'npm ci --prefix deployments/ag-ui-mastra', 'npm test --prefix deployments/ag-ui-mastra']) assert.ok(candidate > job.indexOf(prerequisite));
     const step = readNamedStep(job, 'Verify real AG-UI candidate package');
     assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|if:/);
     assert.match(step, /run: node scripts\/react-parity\/verify-ag-ui-candidate\.mjs\s*$/);
@@ -1026,6 +1087,14 @@ describe('CI workflow', () => {
       assert.match(guard, /\(github\.event_name == 'push' \|\| github\.event_name == 'workflow_dispatch'\)/);
       assert.match(guard, /needs\.ci-scope\.result == 'success' && needs\.ci-scope\.outputs\.main_run == 'true'/);
     }
+    // The guard suites no longer run inside ci-scope. `deploy` skips when any
+    // need fails; the two always() deploys must name the guards explicitly.
+    assert.ok(readJobNeeds(readJobBlock(workflow, 'deploy')).includes('ci-guards'));
+    for (const name of ['demo-deploy', 'ag-ui-demo-deploy']) {
+      const job = readJobBlock(workflow, name);
+      assert.ok(readJobNeeds(job).includes('ci-guards'), name);
+      assert.match(readJobFieldBlock(job, 'if'), /needs\.ci-guards\.result == 'success'/, name);
+    }
   });
 
   it('runs the isolated Node runtime gates and installs Chromium before packed browser checks', async () => {
@@ -1036,7 +1105,7 @@ describe('CI workflow', () => {
     assert.match(job, /npx nx run ag-ui:runtime-quality/);
     assert.match(job, /npx nx run ag-ui:runtime-type-tests/);
     assert.match(job, /npx nx run ag-ui:type-tests/);
-    const install = job.indexOf('npx playwright install --with-deps chromium');
+    const install = job.indexOf(CHROMIUM_INSTALL);
     assert.ok(install >= 0, 'library browser checks need Chromium and OS dependencies');
     for (const script of ['verify-packages.mjs', 'verify-angular-package.mjs']) {
       assert.ok(install < job.indexOf(`node scripts/react-parity/${script}`));
@@ -1148,6 +1217,10 @@ describe('CI workflow', () => {
     return readJobBlock(await readWorkflow(), 'ci-scope');
   }
 
+  async function readCiGuardsJob() {
+    return readJobBlock(await readWorkflow(), 'ci-guards');
+  }
+
   async function readLibraryJob() {
     return readJobBlock(await readWorkflow(), 'library');
   }
@@ -1224,11 +1297,24 @@ describe('CI workflow', () => {
   }
 
   it('runs the deployment selector regressions on every pull request', async () => {
-    const job = await readCiScopeJob();
+    const job = await readCiGuardsJob();
     const step = readNamedStep(job, 'Validate CI workflow guards');
     assert.match(step, /run: node --test scripts\/ci-workflow\.spec\.mjs\s*$/);
     assert.doesNotMatch(step, /if:|continue-on-error|\|\|\s*true|--test-name-pattern/);
     assert.doesNotMatch(job, /^ {4}if:/m);
+  });
+
+  it('keeps the guard suites out of the scope job and required for PR success', async () => {
+    const scope = await readCiScopeJob();
+    const guards = await readCiGuardsJob();
+    // Every scoped job waits for ci-scope, so it must stay scope detection only.
+    assert.doesNotMatch(scope, /node --test/);
+    assert.doesNotMatch(guards, /^ {4}(?:if|needs):/m);
+    assert.doesNotMatch(guards, /continue-on-error/);
+    const required = await readRequiredPrChecksJob();
+    assert.ok(readJobNeeds(required).includes('ci-guards'));
+    assert.match(required, /RESULT_CI_GUARDS:\s*\$\{\{\s*needs\.ci-guards\.result\s*\}\}/);
+    assert.match(required, /require_always "CI guards" "\$RESULT_CI_GUARDS"/);
   });
 
   async function readProductionSmokeJob() {
@@ -1274,10 +1360,10 @@ describe('CI workflow', () => {
   }
 
   it('runs the Cockpit runtime bridge drift guard with the always-run scope tests', async () => {
-    const ciScopeJob = await readCiScopeJob();
+    const ciGuardsJob = await readCiGuardsJob();
 
     assert.match(
-      ciScopeJob,
+      ciGuardsJob,
       /name:\s*Test CI scope classifier\s+run:\s*node --test[^\n]*scripts\/cockpit-runtime-bridge-coverage\.spec\.mjs/
     );
   });
@@ -1638,7 +1724,7 @@ describe('CI workflow', () => {
     assert.ok(
       productionSmokeJob.indexOf('Verify shared LangGraph backend') <
         productionSmokeJob.indexOf(
-          'npx playwright install --with-deps chromium'
+          CHROMIUM_INSTALL
         )
     );
   });
@@ -1773,7 +1859,7 @@ describe('CI workflow', () => {
 
     assert.match(
       websiteE2eJob,
-      /npx playwright install(?:\s+--with-deps)?\s+chromium\b/,
+      CHROMIUM_INSTALL_PATTERN,
       'Website e2e should install Chromium'
     );
     assert.match(
@@ -1789,7 +1875,7 @@ describe('CI workflow', () => {
     );
     assert.doesNotMatch(
       cockpitJob,
-      /npx playwright install/,
+      /npx playwright install|install-playwright-browser/,
       'cockpit job should not install a browser for retired shell e2e'
     );
   });
@@ -1860,7 +1946,7 @@ describe('CI workflow', () => {
     );
     assert.match(job, /name:\s*threadplane-library-dist/);
     assert.match(job, /path:\s*dist\/libs/);
-    assert.match(job, /npx playwright install --with-deps chromium/);
+    assert.match(job, CHROMIUM_INSTALL_PATTERN);
     assert.match(
       job,
       /node examples\/chat\/smoke\/cli\.mjs[\s\S]*--install --build --runtime/
@@ -2011,6 +2097,7 @@ describe('CI workflow', () => {
       environment[key] = key.startsWith('RESULT_') ? 'skipped' : 'false';
     }
     environment.RESULT_CI_SCOPE = 'success';
+  environment.RESULT_CI_GUARDS = 'success';
     for (const [scope, result, expected] of [
       ['true', 'success', 0],
       ['true', 'failure', 1],
@@ -2038,6 +2125,7 @@ describe('CI workflow', () => {
     const requiredPrChecksJob = await readRequiredPrChecksJob();
     const expectedNeeds = [
       'ci-scope',
+      'ci-guards',
       'library',
       'library-package',
       'native-conversation',
@@ -2291,9 +2379,9 @@ describe('guarded current-main manual recovery', () => {
   it('preserves direct production needs, success eligibility, preview allowlist, and main concurrency', async () => {
     const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
     const expected = {
-      deploy: ['ci-scope', 'library', 'library-package', 'native-conversation', 'website', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'cockpit-e2e-summary', 'website-e2e', 'website-production-checks', 'growth-lifecycle', 'lifecycle'],
-      'demo-deploy': ['ci-scope', 'examples-chat-smoke', 'examples-chat-e2e'],
-      'ag-ui-demo-deploy': ['ci-scope', 'examples-ag-ui-e2e'],
+      deploy: ['ci-scope', 'ci-guards', 'library', 'library-package', 'native-conversation', 'website', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke', 'examples-chat-smoke', 'examples-chat-e2e', 'cockpit-e2e-summary', 'website-e2e', 'website-production-checks', 'growth-lifecycle', 'lifecycle'],
+      'demo-deploy': ['ci-scope', 'ci-guards', 'examples-chat-smoke', 'examples-chat-e2e'],
+      'ag-ui-demo-deploy': ['ci-scope', 'ci-guards', 'examples-ag-ui-e2e'],
       'production-smoke': ['ci-scope', 'deploy', 'demo-deploy', 'ag-ui-demo-deploy'],
     };
     for (const [name, needs] of Object.entries(expected)) {
@@ -2437,7 +2525,7 @@ it('representative smoke includes the canonical tagged Theming graph', async () 
 
 it('runs bounded Theming fixture tests in its actual React fleet lane', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  const scope = readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier');
+  const scope = readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier');
   assert.ok(scope.includes('scripts/react-cockpit/chat-theming-configuration.spec.mjs'));
   const step = readNamedStep(readJobBlock(workflow, 'cockpit-e2e'), 'Verify native Theming fixture ownership');
   assert.match(step, /if: matrix\.cap\.angular == 'cockpit-chat-theming-react'/);
@@ -2456,7 +2544,7 @@ it('requires installed native React readiness immediately after owned render sta
   const owner = readNamedStep(job, 'Verify installed owned render state');
   assert.match(owner, /run: node scripts\/react-parity\/verify-render-state\.mjs/);
   assert.equal(job.slice(job.indexOf(owner) + owner.length, job.indexOf(step)).trim(), '', 'readiness immediately follows owner proof');
-  for (const prerequisite of ['Build and validate private React foundations', 'Install Chromium for packed runtime consumers', 'npx playwright install --with-deps chromium']) assert.ok(job.indexOf(prerequisite) >= 0 && job.indexOf(prerequisite) < job.indexOf(step));
+  for (const prerequisite of ['Build and validate private React foundations', 'Install Chromium for packed runtime consumers', CHROMIUM_INSTALL]) assert.ok(job.indexOf(prerequisite) >= 0 && job.indexOf(prerequisite) < job.indexOf(step));
 });
 
 
@@ -2465,7 +2553,7 @@ it('runs the Angular list wrapper regression in Firefox on the first chat shard'
   const install = readNamedStep(job, 'Install Firefox for the Angular list layout regression');
   const regression = readNamedStep(job, 'Verify Angular list wrappers in Firefox');
   for (const step of [install, regression]) assert.match(step, /if: matrix\.shard == 1/);
-  assert.match(install, /npx playwright install --with-deps firefox/);
+  assert.match(install, browserInstallPattern('firefox'));
   assert.match(regression, /npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --browser=firefox --grep="ordinary list paragraphs"/);
   assert.ok(job.indexOf(install) < job.indexOf(regression));
 });
@@ -2474,7 +2562,8 @@ it('bounds every Playwright dependency install and configures Ubuntu downloads f
   for (const file of ['ci.yml', 'aimock-drift.yml']) {
     const workflow = withoutYamlCommentLines(await readFile(`.github/workflows/${file}`, 'utf8'));
     const steps = workflow.split(/(?=^      - )/m);
-    const installs = steps.map((step, index) => ({ step, index })).filter(({ step }) => /npx playwright install.*--with-deps/.test(step));
+    const installs = steps.map((step, index) => ({ step, index })).filter(({ step }) => step.includes(BROWSER_INSTALL_ACTION));
+    assert.doesNotMatch(workflow, /npx playwright install/, `${file} installs browsers only through ${BROWSER_INSTALL_ACTION}`);
     assert.equal(installs.length, file === 'ci.yml' ? 12 : 1, `enumerate actual install callers in ${file}`);
     for (const { step, index } of installs) {
       assert.match(step, /timeout-minutes: 10/);
@@ -2484,5 +2573,5 @@ it('bounds every Playwright dependency install and configures Ubuntu downloads f
     }
   }
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
-  assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/configure-ci-apt\.spec\.mjs/);
+  assert.match(readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier'), /scripts\/configure-ci-apt\.spec\.mjs/);
 });

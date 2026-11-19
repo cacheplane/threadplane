@@ -89,7 +89,7 @@ function setup() {
     toolCalls: [
       { id: 'write', name: 'write_file', args, status: 'complete', result },
     ],
-    values: {
+    state: {
       files: {},
       memory_contents: values.memory_contents,
       memory_scope_owner: SCOPE,
@@ -351,7 +351,7 @@ it('valid custom plus malformed terminal Memory cannot confirm or enter catalog'
     x.set(x.native);
     x.observe(x.event);
     x.saved.values.memory_contents = { '/foreign': 'wrong' } as never;
-    x.native.values.memory_contents = x.saved.values.memory_contents;
+    x.native.state.memory_contents = x.saved.values.memory_contents;
     return 'success';
   });
   await x.app.submit('Teach memory.');
@@ -407,11 +407,11 @@ it.each([
       x.native.toolCalls[0].args = { content: 'altered' } as never;
     if (kind === 'result') x.native.toolCalls[0].result = 'altered';
     if (kind === 'checkpoint') x.saved.checkpoint.checkpoint_ns = 'child';
-    if (kind === 'ordinary-values') delete (x.native.values as any).files;
+    if (kind === 'ordinary-values') delete (x.native.state as any).files;
     if (kind === 'loaded-private')
       x.session.load.mockImplementation(async () => {
         const native = structuredClone(x.native);
-        delete (native.values as any).memory_scope_owner;
+        delete (native.state as any).memory_scope_owner;
         x.set(native);
       });
     await x.app.submit('Teach memory.');
@@ -424,8 +424,8 @@ it('filtered live private values are allowed but actual loaded values must conta
   const x = setup();
   x.session.submit.mockImplementation(async () => {
     const native = structuredClone(x.native);
-    delete (native.values as any).memory_scope_owner;
-    delete (native.values as any).memory_contents;
+    delete (native.state as any).memory_scope_owner;
+    delete (native.state as any).memory_contents;
     x.set(native);
     x.observe(x.event);
     return 'success';
@@ -507,7 +507,7 @@ it('catalog bounds aggregate retained raw/native text', async () => {
   const contents = 'x'.repeat(60000);
   x.saved.values.memory_contents['/memories/AGENTS.md'] = contents;
   x.event.data.memory_contents = x.saved.values.memory_contents;
-  x.native.values.memory_contents = x.saved.values.memory_contents;
+  x.native.state.memory_contents = x.saved.values.memory_contents;
   let count = 0;
   x.client.createThread.mockImplementation(async () => {
     x.saved.checkpoint.thread_id = `large-${++count}`;

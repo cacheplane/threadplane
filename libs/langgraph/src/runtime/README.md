@@ -13,6 +13,30 @@ builds. Commands, frozen manual review and dependency/type limitations are in
 This does not change the published package root or narrow the current custom
 transport declaration into a final public contract.
 
+## Thread creation
+
+`threadId` is optional. A session created without one (or with `null`) starts
+empty and sends no request until its first submit, which calls
+`transport.createThread(signal)` once, before the run. The owned SDK transport
+implements it with `client.threads.create()`, the call the Angular transport
+makes, under the owned `maxRetries` policy (0 unless a number is supplied). A
+supplied transport without `createThread` makes construction throw. The created id
+is reported once through `onThreadId` and is read from `session.threadId`; a
+throwing callback does not affect the run. The id is not part of the snapshot.
+
+- A submit that replaces a submit waiting on creation shares the same request,
+  so one session never creates two threads. Stop leaves the request running and
+  keeps a thread it creates; dispose aborts it and reports nothing.
+- A failed creation settles the submit as `error` with the generic request
+  message. Only an unprotected SDK error's numeric status is read (401 and 403
+  report `auth`), never its message or body. No run started, so the error is
+  `recovery: 'retry'` when `retry()` exists and `none` otherwise; the next submit
+  or `retry()` makes a new creation request.
+- Before the thread exists, `load()` and `checkStatus()` resolve without a
+  request, `fork()` and `regenerate()` reject, and `reconnect()` and `resume()`
+  reject as they do with nothing to join or answer.
+- There is no thread switch: a session still belongs to one thread once it has one.
+
 ## Visible text
 
 The shared private wire helper preserves a top-level string verbatim. Arrays join
@@ -95,7 +119,12 @@ step delivered whole with its answer, were never observed arriving. The field is
 then absent, never zero. A correction that removes the reasoning removes its time.
 The measurement lives outside the deterministic reducer, is not stored or sent, and
 is lost with the session, so a reloaded conversation shows no durations. A network
-stall counts as reasoning time. Subgraph messages are not timed.
+stall counts as reasoning time.
+
+Assistant steps in `snapshot.subgraphs` are timed the same way, each child graph
+on its own clock, since namespaces can repeat message identifiers. A child
+graph's timings last as long as the session lists it: a new submission starts
+with no child graphs, so their durations go with them.
 
 ## Completed checkpoint forks
 
@@ -164,7 +193,8 @@ undispatched (a browser `TypeError: fetch failed` carries no cause, and a reset
 after the server accepted the request looks identical to one that never left), so
 a pre-response failure is an `interrupted` error too, not a retryable
 `connection` one. The only `retry` the runtime emits is for a run the backend
-itself reports as failed (see "Retry" below).
+itself reports as failed (see "Retry" below), and for a first submit whose thread
+could not be created, which started no run (see "Thread creation" above).
 
 `recovery: 'check'` is offered exactly when `transport.getHistory` exists for an
 ordinary submit, with or without a captured run id, and `checkStatus()` is exposed
@@ -208,7 +238,8 @@ run so the two surfaces cannot disagree.
 when the transport has `getRunStatus`, because only the exact run's status can
 settle a failure. It sends a command again when, and only when, the backend
 reported that command's run as `error` or `timeout`, at close or through
-`checkStatus()`. That error carries `retryable: true` and `recovery: 'retry'`.
+`checkStatus()`, or when the command's thread could not be created. That error
+carries `retryable: true` and `recovery: 'retry'`.
 
 - The transcript and values return to what they were before the command, and the
   command's captured input is sent again. A submission keeps its user message id,
@@ -234,6 +265,36 @@ The interruption copy is a bounded duplicate of `AGENT_RECOVERY_MESSAGES` and
 import; `runtime-recovery-copy.spec.ts` under the Angular test target fails when
 they drift.
 
+## Graph state
+
+`snapshot.state` is the root graph state the backend last reported, without
+`messages` and `__interrupt__`, or `undefined` before any is observed. Each
+`snapshot.subgraphs[]` entry has its own `state`.
+
+A session created without `stateType` reports a broad readonly record. Declare
+the type to read fields directly:
+
+```ts
+import { type } from '@threadplane/core';
+
+const session = createSession({
+  assistantId,
+  threadId,
+  stateType: type<{ todos: Todo[]; draft?: string }>(),
+});
+session.getSnapshot().state?.todos; // readonly Todo[]
+await session.submit({ message: 'Go', state: { draft: 'Notes' } });
+```
+
+`type<T>()` checks nothing at runtime. Pass a Standard Schema, such as a Zod
+object, to check each reported state as well. `state` is then the schema's
+output, which must be a plain data record. A state the schema rejects does not
+fail the run: `state` stays at the last one that passed and
+`snapshot.stateIssues` lists what was wrong until a valid state arrives. A run
+often reports partial state before the graph has written every field, so make
+fields the graph fills in later optional. The declaration covers the root graph
+only; child graph state stays a broad record.
+
 ## Custom events
 
 `session.onCustomEvent(listener)` delivers each `custom` stream frame, from the
@@ -247,6 +308,34 @@ does not affect the run or other listeners. Disposal releases every listener,
 including in the middle of a delivery, and later registrations are inert. Owned
 streams always request `custom` mode; a supplied transport delivers what its own
 stream modes produce.
+
+## Lifecycle timestamps
+
+`session.lifecycle` is a small observable beside the snapshot, for a debug
+panel or telemetry: `getSnapshot()` returns a frozen `LangGraphLifecycle` and
+`subscribe(notify)` reports each change, so React reads it with `useAgent` or
+`useSyncExternalStore`. Each value is epoch milliseconds on this clock, null
+until its milestone happens.
+
+| Value                 | Stamped                                                        |
+| --------------------- | -------------------------------------------------------------- |
+| `streamStartedAt`     | The first event to arrive on any run's stream.                 |
+| `streamErrorAt`       | The most recent published failure, as `{ at, kind }`.          |
+| `interruptReceivedAt` | The first time the session held a pending interrupt.           |
+| `interruptResolvedAt` | The most recent `resume` the session accepted.                 |
+| `threadPersistedAt`   | The first history read that returned saved checkpoints.        |
+| `toolCallStartedAt`   | The first time the session held a tool call.                   |
+| `toolCallCompletedAt` | The first time a tool call was complete or failed.             |
+
+A session serves one thread, so nothing is reset: where the Angular adapter
+clears its `AgentLifecycle` on `switchThread()`, a session for another thread
+starts again from null. There is no `threadCreatedAt`, because a session never
+creates its thread. Interrupts and tool calls restored from saved history are
+stamped when they are read, not when they first happened. The same failure
+published again keeps its time; a different one, or one that returns after
+clearing, is stamped again. The timestamps are kept apart from the snapshot, so
+they never cause a transcript render, and they are neither stored nor sent.
+Disposal releases every listener and later subscriptions are inert.
 
 ## Dynamic pauses
 

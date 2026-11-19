@@ -227,6 +227,26 @@ failure leaves the backend outcome open.
 - A `RUN_ERROR` settles that the run failed, not that it did nothing. Work the
   backend did before failing can be repeated.
 
+### Regenerate
+
+A session without a client-tool catalog has `regenerate(messageId, options?)`,
+with the same semantics as the Angular adapter's `regenerate`. It takes the `id`
+of a root assistant record, or of the reasoning record a reasoning-only answer is
+shown under, which is the `id` the snapshot's `messages` give that message. It keeps the history
+up to and including the user message before that record, drops everything after
+it, and sends a run with that history and the current state. The prompt is not
+added again. Regenerating an earlier answer drops every later turn.
+
+- It rejects without sending after disposal, while a run is active, while a
+  decision is waiting, for an id that is not an assistant record, and when no
+  user message precedes it.
+- A regenerate that fails with a backend `RUN_ERROR` can be sent again with
+  `retry`, from the same trimmed history.
+- It is the core session's `regenerate`, so React `Chat` offers Regenerate on
+  assistant messages.
+- The client-tool session has no `regenerate`: its ledger owns the history of the
+  calls it ran, and trimming that history is not supported.
+
 ### Approvals
 
 `decisionState(snapshot)` reads the snapshot's pending decision and how far it
@@ -332,7 +352,11 @@ if (
   snapshot.run?.outcome
 ) {
   await session.resume(snapshot.decision.id, [
-    { interruptId: 'approval', status: 'resolved', payload: { approved: true } },
+    {
+      interruptId: 'approval',
+      status: 'resolved',
+      payload: { approved: true },
+    },
   ]);
 }
 ```

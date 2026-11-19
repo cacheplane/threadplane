@@ -50,6 +50,6 @@ npx nx test react
 npx nx run react:type-tests
 ~~~
 
-The binding observes client-side owners; `useAgent` does not support server rendering or hydration. Keep backend credentials on the server and make browser authentication an application responsibility.
+`useAgent` renders the snapshot its session holds on the server and subscribes only in the browser, so hydration matches when the browser session holds the same snapshot. Keep backend credentials on the server and make browser authentication an application responsibility.
 
 Continue with [Quickstart](/docs/react/chat/getting-started/quickstart).

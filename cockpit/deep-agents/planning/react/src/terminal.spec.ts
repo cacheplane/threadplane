@@ -113,7 +113,7 @@ function example(write = true, items = todos) {
         status: 'complete' as const,
         result: 'Python repr prose',
       })),
-      values: { files: {}, todos: items },
+      state: { files: {}, todos: items },
       history: [raw],
     },
   };
@@ -179,7 +179,7 @@ describe('owned terminal saved plan', () => {
     for (const values of [
       input.observedValues,
       input.loadedCheckpoint.values,
-      input.snapshot.values,
+      input.snapshot.state,
     ])
       delete (values as { todos?: unknown }).todos;
     expect(captureTerminal(input)).toMatchObject({ plan: { kind: 'missing' } });

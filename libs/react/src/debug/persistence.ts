@@ -16,12 +16,13 @@ export interface DebugStorage {
 export function createDebugPreferences(
   key: string,
   storage?: DebugStorage,
-  defaultOpen = false
+  defaultOpen = false,
+  defaultDock: DebugDock = 'right'
 ) {
   let restored = false;
   let initial: DebugPreferences = Object.freeze({
     open: defaultOpen,
-    dock: 'right',
+    dock: defaultDock,
     tab: 'state',
   });
   return {

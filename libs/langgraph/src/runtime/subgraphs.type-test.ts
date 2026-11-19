@@ -19,7 +19,7 @@ const observer: AgentSession = session;
 const snapshot = session.getSnapshot();
 const children: readonly LangGraphSubgraph[] = snapshot.subgraphs;
 const messages: readonly Message[] = children[0].messages;
-const payload: PlainValue = children[0].values?.['any'];
+const payload: PlainValue = children[0].state?.['any'];
 // @ts-expect-error Observation collection is readonly.
 snapshot.subgraphs = [];
 // @ts-expect-error Observation arrays are readonly.

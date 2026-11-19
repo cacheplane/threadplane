@@ -109,6 +109,12 @@ export function checkCandidate(signal: AbortSignal) {
   void agent.submit({ message: 'Hello', messages: [] });
   // @ts-expect-error Resume is not part of the core contract.
   void agent.resume;
+  const regenerated: Promise<CompleteOutcome> | undefined =
+    session.regenerate?.('assistant-id', { signal });
+  void regenerated;
+  void agent.regenerate?.('assistant-id', { signal });
+  // @ts-expect-error Regenerate takes a message id, not an index.
+  void session.regenerate?.(1);
   const typed = createSession({
     ...options,
     stateType: type<{ topic: string }>(),

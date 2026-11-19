@@ -112,7 +112,7 @@ export class ChildObservations {
           child.namespace.some((s) => !text(s) || s.length > 1024) ||
           !Array.isArray(child.messages) ||
           !Array.isArray(child.interrupts) ||
-          (child.values !== undefined && !record(child.values))
+          (child.state !== undefined && !record(child.state))
         )
           throw new Error('Unavailable child data');
         const namespace = child.namespace as string[],

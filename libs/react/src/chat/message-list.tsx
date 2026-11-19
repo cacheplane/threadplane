@@ -26,6 +26,7 @@ import {
   withoutStaleRetry,
 } from './tool-outcome.js';
 import { Reasoning } from './reasoning.js';
+import { a2uiActionLabel } from './internal/a2ui-action-label.js';
 import { isTyping, TypingIndicator } from './typing-indicator.js';
 import {
   BuiltInActions,
@@ -104,6 +105,14 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
   readonly className?: string;
   /** Group built-in tool activity by default. False renders separate tools; custom renderers keep full ownership. */
   readonly groupRelatedTools?: boolean;
+  /**
+   * Names of generative UI dispatcher tools, such as `render_spec`, whose calls produce a rendered
+   * surface instead of visible text. The default rendering shows no tool row for them and hides the
+   * tool rows that answer them; a custom `renderMessage` still receives every call. Defaults to
+   * `generate_a2ui_schema`, `generate_json_render_spec` and `render_spec`; pass `[]` to show them.
+   * Keep stable like `renderMessage`.
+   */
+  readonly genuiToolNames?: readonly string[];
   /** Steps the agent declared (`snapshot.plan`); the current turn's running group lists the pending ones. */
   readonly plan?: readonly AgentPlanStep[];
   /** Stops the run; the current turn's running group offers it beside the elapsed time. */
@@ -190,6 +199,14 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    * reasoning on its own message. Custom renderMessage retains full row ownership.
    */
   readonly mergeReasoning?: boolean;
+  /**
+   * Shows a user message that is a serialized A2UI action as the pressed
+   * control's label ("Search flights") in place of its JSON. Without a label
+   * the action name is put in plain words. Defaults to true; false shows the
+   * JSON as sent. Other messages are unchanged, and custom renderMessage
+   * retains full row ownership.
+   */
+  readonly a2uiActionLabels?: boolean;
   /** Typesets math in message text; see `MarkdownProps.math`. Keep stable; custom renderMessage retains full ownership. */
   readonly math?: MarkdownProps['math'];
   /**
@@ -271,6 +288,15 @@ export function repeatsToolFailure(
 }
 const NONE: ReadonlySet<string> = new Set();
 /**
+ * Dispatcher tools whose calls produce a generated UI surface instead of visible text: the A2UI and
+ * json-render schema tools. Chat hides their tool rows by default, like the Angular chat.
+ */
+const DEFAULT_GENUI_TOOL_NAMES: readonly string[] = Object.freeze([
+  'generate_a2ui_schema',
+  'generate_json_render_spec',
+  'render_spec',
+]);
+/**
  * Tool rows whose call an earlier row already shows. That row's activity, or the subagent card in its place,
  * carries the result, so the default rendering skips the literal tool row instead of printing it twice.
  * A tool row whose call no earlier row shows keeps its literal row, so no result goes missing.
@@ -282,6 +308,7 @@ function toolRowsShownElsewhere(
   let hidden: Set<string> | undefined;
   for (const row of rows) {
     if (row.role !== 'tool') {
+      // A hidden dispatcher call counts as shown here, so the row that answers it hides too.
       for (const call of row.toolCalls) shown.add(call.id);
       continue;
     }
@@ -375,6 +402,7 @@ function RowView<TRow extends MessageRow>({
   prevRole,
   renderMessage,
   groupRelatedTools,
+  genuiToolNames,
   toolLabel,
   toolOutcome,
   renderToolCall,
@@ -393,8 +421,10 @@ function RowView<TRow extends MessageRow>({
   generativeUi,
   markdownComponents,
   mergeReasoning,
+  a2uiActionLabels,
   renderMessageActivity,
 }: {
+  readonly a2uiActionLabels?: boolean;
   readonly renderMessageActivity?: (
     context: MessageActivityContext<TRow>
   ) => ReactNode;
@@ -411,6 +441,7 @@ function RowView<TRow extends MessageRow>({
     context: MessageListRowContext
   ) => ReactNode;
   readonly groupRelatedTools?: boolean;
+  readonly genuiToolNames: ReadonlySet<string>;
   readonly toolLabel?: (name: string, args?: unknown) => string | undefined;
   readonly toolOutcome?: (
     activity: ToolActivityInfo
@@ -445,9 +476,13 @@ function RowView<TRow extends MessageRow>({
   const stale = new Set(staleRetries ? staleRetries.split('\n') : []);
   // A call that started a child is shown as that child's card, not as a tool row.
   const delegated = new Set(subagents.map((subagent) => subagent.toolCallId));
-  const calls = delegated.size
-    ? row.toolCalls.filter((call) => !delegated.has(call.id))
-    : row.toolCalls;
+  // A dispatcher call is shown as the generated surface it produces, not as a tool row.
+  const calls =
+    delegated.size || genuiToolNames.size
+      ? row.toolCalls.filter(
+          (call) => !delegated.has(call.id) && !genuiToolNames.has(call.name)
+        )
+      : row.toolCalls;
   const repeating = new Set(retrying ? retrying.split('\n') : []);
   // Read the declared label before a running retry withdraws it.
   const retryingLeads = new Map<string, string>();
@@ -525,14 +560,23 @@ function RowView<TRow extends MessageRow>({
   });
   // The plan and Stop belong to the row's last built-in group, the one the turn is still running.
   const planGroup = [...runs].reverse().find((run) => 'activities' in run);
-  const text = (
-    <Markdown
-      snapshot={row.markdown}
-      citations={row.role === 'assistant' ? row.message.citations : undefined}
-      math={math}
-      components={markdownComponents}
-    />
-  );
+  const actionLabel =
+    a2uiActionLabels !== false && row.role === 'user'
+      ? a2uiActionLabel(row.message.content)
+      : null;
+  const text =
+    actionLabel !== null ? (
+      <div className="tp-markdown" data-a2ui-action="">
+        <p>{actionLabel}</p>
+      </div>
+    ) : (
+      <Markdown
+        snapshot={row.markdown}
+        citations={row.role === 'assistant' ? row.message.citations : undefined}
+        math={math}
+        components={markdownComponents}
+      />
+    );
   return (
     <ChatMessage
       role={row.role}
@@ -667,6 +711,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   label = 'Conversation',
   className,
   groupRelatedTools = true,
+  genuiToolNames,
   toolLabel,
   toolOutcome,
   renderToolCall,
@@ -684,6 +729,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   generativeUi,
   markdownComponents,
   mergeReasoning,
+  a2uiActionLabels,
   renderMessageActivity,
   children,
   renderScrollControl,
@@ -719,6 +765,10 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   const hidden = useMemo(
     () => (renderMessage ? NONE : toolRowsShownElsewhere(rows)),
     [renderMessage, rows]
+  );
+  const genuiNames = useMemo<ReadonlySet<string>>(
+    () => new Set(genuiToolNames ?? DEFAULT_GENUI_TOOL_NAMES),
+    [genuiToolNames]
   );
   // Position and the preceding role count only the rows that render.
   let lastShown = rows.length - 1;
@@ -826,6 +876,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   prevRole={prevRole}
                   renderMessage={renderMessage}
                   groupRelatedTools={groupRelatedTools}
+                  genuiToolNames={genuiNames}
                   toolLabel={toolLabel}
                   toolOutcome={toolOutcome}
                   renderToolCall={renderToolCall}
@@ -851,6 +902,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
                   generativeUi={generativeUi}
                   markdownComponents={markdownComponents}
                   mergeReasoning={mergeReasoning !== false}
+                  a2uiActionLabels={a2uiActionLabels}
                   renderMessageActivity={renderMessageActivity}
                 />
                 {renderApprovalRecords(recordsAfter, row.id)}

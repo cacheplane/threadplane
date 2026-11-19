@@ -124,6 +124,13 @@ export interface AgentTransport {
     options?: LangGraphSubmitOptions
   ): AsyncIterable<StreamEvent>;
 
+  /**
+   * Optional: create an empty thread once and resolve its id. A session
+   * created without a `threadId` calls this on its first submit, before the
+   * run starts. Make a single request: the session never retries it.
+   */
+  createThread?(signal: AbortSignal): Promise<string>;
+
   /** Optional: join an already-started run without creating a new one. */
   joinStream?(
     threadId: string,

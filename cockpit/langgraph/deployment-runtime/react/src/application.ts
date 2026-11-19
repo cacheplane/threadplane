@@ -16,7 +16,7 @@ import {
 
 export interface DeploymentSession extends Omit<AgentSession, 'getSnapshot'> {
   getSnapshot(): AgentSnapshot & {
-    readonly values?: Readonly<Record<string, unknown>>;
+    readonly state?: Readonly<Record<string, unknown>>;
     readonly interrupts: readonly unknown[];
   };
 }
@@ -109,7 +109,7 @@ export function createDeploymentApplication(options: {
     if (!valid()) return;
     const interrupts = root.interrupts;
     if (!valid()) return;
-    const values = root.values;
+    const values = root.state;
     if (!valid()) return;
     if (
       !Array.isArray(messages) ||

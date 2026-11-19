@@ -18,7 +18,7 @@ const actualSequence = [
         },
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
   {
@@ -44,7 +44,7 @@ const actualSequence = [
         },
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
   {
@@ -75,7 +75,7 @@ const actualSequence = [
         ],
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
   {
@@ -119,7 +119,7 @@ const actualSequence = [
           '0db062fb-a2e1-463c-9c7c-d7e2976600a9-lookup_field_elevation',
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
   {
@@ -175,7 +175,7 @@ const actualSequence = [
         toolCallId: '0db062fb-a2e1-463c-9c7c-d7e2976600a9-lookup_runway_length',
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
   {
@@ -241,7 +241,7 @@ const actualSequence = [
         },
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
   {
@@ -307,7 +307,7 @@ const actualSequence = [
         },
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
   {
@@ -373,7 +373,7 @@ const actualSequence = [
         },
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
   {
@@ -440,7 +440,7 @@ const actualSequence = [
         },
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
   {
@@ -507,7 +507,7 @@ const actualSequence = [
         },
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
   {
@@ -576,7 +576,7 @@ const actualSequence = [
         toolCallIds: [],
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
   {
@@ -646,7 +646,7 @@ const actualSequence = [
         toolCallIds: [],
       },
     ],
-    values: { files: {} },
+    state: { files: {} },
     interrupts: [],
   },
 ];
@@ -794,7 +794,7 @@ const grounded = {
       toolCallIds: [],
     },
   ],
-  values: { files: {} },
+  state: { files: {} },
   interrupts: [],
 };
 const clone = <T>(x: T): T => structuredClone(x);

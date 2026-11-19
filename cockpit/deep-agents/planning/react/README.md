@@ -18,7 +18,7 @@ and authoritative raw `write_todos` result status and arguments. A core tool
 status `complete` means its result arrived; it does not prove the write applied.
 The exact raw checkpoint read supplies both the candidate values and raw loaded
 state; independent corroboration comes from native submit, messages, tool calls,
-values, and history. No tool-result prose is parsed.
+state, and history. No tool-result prose is parsed.
 
 Response completion never completes unfinished todos. A saved `in_progress`
 item records plan status; it does not imply continued execution. Stop retains
