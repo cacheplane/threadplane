@@ -168,17 +168,10 @@ try {
       const before = await journal();
       // Provider routing diagnostic only; application decisions never accept
       // an arbitrary ID or raw resume value. The session rejects an ID that
-      // is not pending before sending, so the ID-keyed command goes through
-      // the provider client.
+      // is not pending before sending (its own specs cover that), so the
+      // ID-keyed command goes through the provider client.
       const session = own(thread.thread_id);
       assert.ok(session.load);
-      await assert.rejects(
-        session.resume(
-          [{ interruptId: unmatched, status: 'resolved', value: 'denied' }],
-          { signal }
-        ),
-        TypeError
-      );
       for await (const event of api.runs.stream(thread.thread_id, 'chat', {
         input: null,
         command: { resume: { [unmatched]: 'denied' } },
