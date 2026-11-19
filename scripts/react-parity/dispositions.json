@@ -19856,6 +19856,26 @@
       "status": "in-progress",
       "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
       "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderPendingFallback",
+      "taskIds": [
+        "T20",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Default placeholder RenderSpec shows while a registered element has an undefined resolved prop, the React counterpart of Angular DefaultFallbackComponent and A2uiDefaultFallbackComponent. Uses the GenerativeUiSkeleton markup."
+    },
+    {
+      "id": "source:libs/react/src/render/pending-fallback.tsx",
+      "taskIds": [
+        "T20",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "RenderPendingFallback: the default readiness placeholder for every registered component, mirroring Angular defineAngularRegistry's DefaultFallbackComponent."
     }
   ]
 }

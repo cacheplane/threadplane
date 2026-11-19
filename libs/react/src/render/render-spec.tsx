@@ -26,6 +26,7 @@ import type {
 import { ownRenderValue } from './values.js';
 import { ownRenderFunctions } from './functions.js';
 import { ReadinessGate } from './readiness.js';
+import { RenderPendingFallback } from './pending-fallback.js';
 import { RenderDevtoolsMark, RenderDevtoolsScope } from './devtools.js';
 import type {
   RenderReadinessEntry,
@@ -42,8 +43,12 @@ const EMPTY_STATE = Object.freeze({});
 const NO_STORE = Object.freeze({});
 const noSubscription = () => () => undefined;
 declare const process: { readonly env: { readonly NODE_ENV?: string } };
+/** The default admission: every resolved prop has a value, as in Angular's renderer. */
+const allPropsDefined: RenderReadinessEntry['isReady'] = (props) =>
+  Object.values(props).every((value) => value !== undefined);
 interface ElementProps
   extends Pick<RenderSpecProps, 'registry' | 'loading' | 'fallback'> {
+  readonly pendingFallback: RenderSpecProps['pendingFallback'];
   readonly spec: NonNullable<RenderSpecProps['spec']>;
   readonly elementKey: string;
   readonly context: PropResolutionContext;
@@ -74,6 +79,7 @@ function Element({
   registry,
   loading,
   fallback,
+  pendingFallback,
   context,
   ancestors,
   interaction,
@@ -89,10 +95,10 @@ function Element({
     )
   )
     return null;
-  const entry =
-    (Object.hasOwn(registry, element.type)
-      ? registry[element.type]
-      : undefined) ?? fallback;
+  const registered = Object.hasOwn(registry, element.type)
+    ? registry[element.type]
+    : undefined;
+  const entry = registered ?? fallback;
   if (!entry) return null;
   const rawProps = ownRenderValue(element.props, true) as Record<
     string,
@@ -117,6 +123,7 @@ function Element({
         registry={registry}
         loading={loading}
         fallback={fallback}
+        pendingFallback={pendingFallback}
         context={childContext}
         ancestors={nextAncestors}
         interaction={interaction}
@@ -178,16 +185,40 @@ function Element({
     },
   };
   const Component = entry as Exclude<typeof entry, RenderReadinessEntry>;
+  // As in Angular, a registered component waits while any resolved prop is
+  // undefined, and a readiness entry without its own fallback shows the tree's
+  // placeholder. `pendingFallback={null}` turns both off. The unknown-type
+  // `fallback` is not a registry entry and mounts at once.
+  const placeholder =
+    pendingFallback === null
+      ? undefined
+      : pendingFallback ?? RenderPendingFallback;
+  const own =
+    Object.hasOwn(entry, 'kind') &&
+    (entry as RenderReadinessEntry).kind === 'readiness'
+      ? (entry as RenderReadinessEntry)
+      : undefined;
+  const gate: RenderReadinessEntry | undefined = own
+    ? own.fallback !== undefined || placeholder === undefined
+      ? own
+      : { ...own, fallback: placeholder }
+    : registered !== undefined && placeholder !== undefined
+    ? {
+        kind: 'readiness',
+        component: Component,
+        isReady: allPropsDefined,
+        fallback: placeholder,
+      }
+    : undefined;
   return (
     <ElementLifecycle
       interaction={interaction}
       elementKey={elementKey}
       elementType={element.type}
     >
-      {Object.hasOwn(entry, 'kind') &&
-      (entry as RenderReadinessEntry).kind === 'readiness' ? (
+      {gate !== undefined ? (
         <ReadinessGate
-          entry={entry as RenderReadinessEntry}
+          entry={gate}
           type={element.type}
           {...view}
         />
@@ -238,6 +269,7 @@ export function RenderSpec({
   functions,
   loading,
   fallback,
+  pendingFallback,
   handlers,
   onEvent,
 }: RenderSpecProps) {
@@ -299,6 +331,7 @@ export function RenderSpec({
       registry={registry}
       loading={loading}
       fallback={fallback}
+      pendingFallback={pendingFallback}
       context={{ stateModel, functions: ownRenderFunctions(functions) }}
       ancestors={new Set()}
       interaction={interaction}

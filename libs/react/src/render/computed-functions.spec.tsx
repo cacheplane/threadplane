@@ -221,7 +221,9 @@ describe('RenderSpec computed functions', () => {
           {...{ functions: {} }}
         />
       );
-      expect(view.container.querySelector('p')?.textContent).toBe('');
+      // An unknown function resolves to undefined, so the element waits.
+      expect(view.container.querySelector('p')).toBeNull();
+      expect(view.getByRole('status')).toBeTruthy();
     }
   );
 

@@ -194,13 +194,31 @@ describe('MessageList generativeUi interaction', () => {
     const view = render(
       <MessageList rows={at(FORM.indexOf(',"state"'))} generativeUi={options} />
     );
-    expect(echoes(view.container)).toEqual(['']);
+    // Bound props wait for the state, behind the render placeholder.
+    expect(echoes(view.container)).toEqual([]);
+    expect(view.container.querySelector('.tp-render-pending')).not.toBeNull();
     view.rerender(<MessageList rows={at(FORM.length, false)} generativeUi={options} />);
+    expect(view.container.querySelector('.tp-render-pending')).toBeNull();
     expect(echoes(view.container)).toEqual(['Ada']);
     fireEvent.change(view.getByRole('textbox', { name: 'Guest' }), {
       target: { value: 'Grace' },
     });
     expect(echoes(view.container)).toEqual(['Grace']);
+  });
+
+  it('mounts bound elements at once with pendingFallback null', () => {
+    const content = createMessageContent();
+    const rows = content.project(
+      snapshot([assistant(FORM.slice(0, FORM.indexOf(',"state"')), 'a', true)])
+    );
+    const options: MessageGenerativeUi = {
+      registry,
+      handlers: {},
+      pendingFallback: null,
+    };
+    const view = render(<MessageList rows={rows} generativeUi={options} />);
+    expect(echoes(view.container)).toEqual(['']);
+    expect(view.container.querySelector('.tp-render-pending')).toBeNull();
   });
 
   describe('progressive', () => {
@@ -257,7 +275,9 @@ describe('MessageList generativeUi interaction', () => {
       const view = render(
         <MessageList rows={at(NOTED.indexOf('"note":"') + 9)} generativeUi={options} />
       );
-      expect(echoes(view.container)).toEqual(['Ada', '']);
+      // The note value has not streamed yet, so the default placeholder stands in.
+      expect(echoes(view.container)).toEqual(['Ada']);
+      expect(view.container.querySelectorAll('.tp-render-pending')).toHaveLength(1);
       fireEvent.change(view.getByRole('textbox', { name: 'Guest' }), {
         target: { value: 'Grace' },
       });
