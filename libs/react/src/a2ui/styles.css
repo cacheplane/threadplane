@@ -87,6 +87,41 @@
     --a2ui-surface-variant: #262a33;
   }
 }
+/* Theme attribute, as in Angular chat: data-theme or data-threadplane-chat-theme
+   on an ancestor forces a scheme over prefers-color-scheme. A theme file
+   (:root .a2ui-surface) still outranks these. */
+:where([data-theme="light"], [data-threadplane-chat-theme="light"]) .a2ui-surface,
+.a2ui-surface:where([data-theme="light"], [data-threadplane-chat-theme="light"]) {
+  --a2ui-surface: #ffffff;
+  --a2ui-on-surface: #1a1d23;
+  --a2ui-on-surface-variant: rgba(0, 0, 0, 0.6);
+  --a2ui-outline: rgba(0, 0, 0, 0.12);
+  --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --a2ui-elevation-4: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --a2ui-primary: #2f6fed;
+  --a2ui-error: #b3261e;
+  --a2ui-scrim: rgba(0, 0, 0, 0.4);
+  --a2ui-input-bg: #ffffff;
+  --a2ui-on-primary: #ffffff;
+  --a2ui-primary-hover: #245bd0;
+  --a2ui-surface-variant: #f1f3f6;
+}
+:where([data-theme="dark"], [data-threadplane-chat-theme="dark"]) .a2ui-surface,
+.a2ui-surface:where([data-theme="dark"], [data-threadplane-chat-theme="dark"]) {
+  --a2ui-surface: #1a1d23;
+  --a2ui-on-surface: #ffffff;
+  --a2ui-on-surface-variant: rgba(255, 255, 255, 0.7);
+  --a2ui-outline: rgba(255, 255, 255, 0.1);
+  --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --a2ui-elevation-4: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --a2ui-primary: #8ab4ff;
+  --a2ui-error: #f2b8b5;
+  --a2ui-scrim: rgba(0, 0, 0, 0.6);
+  --a2ui-input-bg: #12141a;
+  --a2ui-on-primary: #0b1220;
+  --a2ui-primary-hover: #a9c7ff;
+  --a2ui-surface-variant: #262a33;
+}
 .a2ui-text-h1,
 .a2ui-text-h2,
 .a2ui-text-h3,
