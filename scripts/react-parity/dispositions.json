@@ -19560,16 +19560,6 @@
       "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
     },
     {
-      "id": "source:libs/langgraph/src/runtime/thread-directory.ts",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Framework-neutral directory of a deployment's saved conversations: an observable list read from thread metadata (title, archived, pinned, pinned order, project) with create, rename, delete, archive, pin, move and reorder commands that write metadata and read the list again.",
-      "note": "Staged beside the private session; not exported from a published entry. The Angular LangGraphThreadsAdapter is unchanged and not yet built on it. Reads one page of the configured size; no paging, search or cross-tab refresh."
-    },
-    {
       "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtools",
       "taskIds": [
         "T30"
