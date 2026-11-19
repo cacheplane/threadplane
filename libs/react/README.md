@@ -1766,7 +1766,7 @@ visited data is unavailable. Plain app-owned data excludes executable objects,
 accessors and proxies; this view is not an SDK validation boundary.
 
 The panel's own data/default props produce deterministic server markup and can
-hydrate independently of `useAgent`; this does not extend the hook's SSR contract.
+hydrate independently of `useAgent`.
 After hydration, a supplied application-scoped `storageKey` restores only open,
 dock and tab preferences, tolerating denied storage. Defaults never overwrite saved
 preferences during hydration. State, history, IDs, target and selection are never
@@ -2145,7 +2145,11 @@ import { A2uiSurface } from '@threadplane/react/a2ui';
 import type { A2uiSurfaces } from '@threadplane/content/a2ui';
 
 export function Surfaces({ surfaces }: { readonly surfaces: A2uiSurfaces }) {
-  const snapshot = useSyncExternalStore(surfaces.subscribe, surfaces.getSnapshot);
+  const snapshot = useSyncExternalStore(
+    surfaces.subscribe,
+    surfaces.getSnapshot,
+    surfaces.getSnapshot
+  );
   return snapshot.surfaces.map((surface) => (
     <A2uiSurface key={surface.surfaceId} surface={surface} surfaces={surfaces} />
   ));
