@@ -1,3 +1,6 @@
+// The preview server (`serve.mjs <example> --backend`) runs the real graph under
+// `langgraph dev` on aimock fixtures shared with the Angular example; controls
+// come from scripts/react-cockpit/langgraph-proxy.mjs.
 import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
@@ -27,6 +30,7 @@ test('public React client tools aligns the canonical Chat guide, source, runtime
 test('switching away disposes pending browser decisions and returning starts empty', async ({ page, request }) => {
   test.skip(Boolean(process.env['BASE_URL']), 'Local browser decision ownership is verified before deployment');
   await request.post('http://127.0.0.1:4603/__reset');
+  await request.post('http://127.0.0.1:4603/__ready', { timeout: 180000 });
   await page.goto('/docs/react/chat/guides/client-tools?mode=run');
   const frame = page.frameLocator('iframe');
   await frame.getByLabel('Message', { exact: true }).fill('Bookings');
