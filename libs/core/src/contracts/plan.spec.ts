@@ -18,7 +18,10 @@ describe('agentPlanFromState', () => {
       { label: 'Write', status: 'pending' },
     ]);
   });
-  it.each([undefined, null, 'x', {}, { todos: 'no' }])('is undefined without a todos list (%s)', (state) => {
-    expect(agentPlanFromState(state)).toBeUndefined();
-  });
+  it.each([undefined, null, 'x', {}, { todos: 'no' }])(
+    'is undefined without a todos list (%s)',
+    (state) => {
+      expect(agentPlanFromState(state)).toBeUndefined();
+    }
+  );
 });

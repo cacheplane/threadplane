@@ -5,6 +5,9 @@ export type {
   FakeAgentSnapshotPatch,
   FakeAssistantStream,
   FakeMessageInput,
+  FakeResumeCall,
+  FakeResumeHandler,
+  FakeSubagentInput,
   FakeSubmitCall,
   FakeSubmitHandler,
 } from './fake-agent-session.js';
