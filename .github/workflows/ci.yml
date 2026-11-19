@@ -1187,7 +1187,11 @@ jobs:
       - name: Run local Website suite
         run: |
           preparation=$(mktemp -d)
-          trap 'rm -rf "$preparation"' EXIT
+          # The suite has stalled and lost its runner without a cause in the
+          # log; sample memory, pressure and the Website server while it runs.
+          scripts/website-e2e-resources.sh sample "$RUNNER_TEMP/website-e2e-resources.log" &
+          sampler=$!
+          trap 'kill "$sampler" 2>/dev/null; rm -rf "$preparation"' EXIT
           export WEBSITE_RUNTIME_PREPARATION="$preparation"
           npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache
         timeout-minutes: 45
@@ -1198,6 +1202,9 @@ jobs:
           WEBSITE_E2E_DEPLOYED_OWNER: ${{ github.event_name == 'pull_request' && needs.ci-scope.outputs.website_e2e == 'true' && github.event.pull_request.head.repo.full_name == github.repository }}
           WEBSITE_ANGULAR_STARTUP: ${{ matrix.suite == 'control-plane' && '2' || '' }}
           WEBSITE_AGENTS_STARTUP: ${{ matrix.suite == 'agents' && '2' || '' }}
+      - name: Report Website runner resources
+        if: always()
+        run: scripts/website-e2e-resources.sh report "$RUNNER_TEMP/website-e2e-resources.log"
 
   website-production-checks:
     name: Website — production copy / stage

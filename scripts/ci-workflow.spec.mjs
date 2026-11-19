@@ -397,9 +397,53 @@ it('requires reusable consumer isolation checks and owns preparation for the com
   assert.match(readNamedStep(readJobBlock(workflow, 'ci-scope'), 'Test CI scope classifier'), /scripts\/react-cockpit\/consumer-preparation\.spec\.mjs/);
   const step = readNamedStep(readJobBlock(workflow, 'website-e2e'), 'Run local Website suite');
   assert.match(step, /preparation=\$\(mktemp -d\)/);
-  assert.match(step, /trap 'rm -rf "\$preparation"' EXIT/);
+  assert.match(step, /trap 'kill "\$sampler" 2>\/dev\/null; rm -rf "\$preparation"' EXIT/);
   assert.match(step, /export WEBSITE_RUNTIME_PREPARATION="\$preparation"/);
   assert.match(step, /npx nx run website:e2e-\$\{\{ matrix.suite \}\} --skip-nx-cache/);
+});
+
+it('samples Website runner resources during the local suite and always reports them', async () => {
+  const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+  const job = readJobBlock(workflow, 'website-e2e');
+  const step = readNamedStep(job, 'Run local Website suite');
+  assert.match(step, /scripts\/website-e2e-resources\.sh sample "\$RUNNER_TEMP\/website-e2e-resources\.log" &\n\s+sampler=\$!/);
+  assert.ok(step.indexOf('sampler=$!') < step.indexOf('npx nx run website:e2e-'), 'sampling starts before the suite');
+  const report = readNamedStep(job, 'Report Website runner resources');
+  assert.match(report, /if: always\(\)/);
+  assert.match(report, /scripts\/website-e2e-resources\.sh report "\$RUNNER_TEMP\/website-e2e-resources\.log"/);
+  assert.ok(job.indexOf('Run local Website suite') < job.indexOf('Report Website runner resources'));
+});
+
+it('summarises Website runner resource samples without failing the job', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'website-resources-'));
+  try {
+    const log = join(directory, 'resources.log');
+    await writeFile(log, [
+      '=== 2026-11-15T07:30:20Z',
+      'mem total_mb=15984 avail_mb=4000 swap_used_mb=10 psi_some10=0.00 psi_full10=0.00 load="3 3 3" website="200 0.010s"',
+      'ps 4100 4000 Sl 5120MB 80.0% 300s next-server (v16.2.12)',
+      '=== 2026-11-15T07:30:35Z',
+      'mem total_mb=15984 avail_mb=300 swap_used_mb=3900 psi_some10=40.00 psi_full10=22.50 load="9 5 3" website="000 5.001s"',
+      'ps 4100 4000 Rl 9120MB 99.0% 315s next-server (v16.2.12)',
+      'stuck website probe status=000',
+      'stuck State: R (running)',
+      '',
+    ].join('\n'));
+    const run = spawnSync('bash', ['scripts/website-e2e-resources.sh', 'report', log], { encoding: 'utf8' });
+    assert.equal(run.status, 0, run.stderr);
+    assert.match(run.stdout, /\(2 samples\)/);
+    assert.match(run.stdout, /lowest MemAvailable: 300 MB of 15984 MB at 2026-11-15T07:30:35Z/);
+    assert.match(run.stdout, /highest swap used: 3900 MB/);
+    assert.match(run.stdout, /highest memory pressure \(full avg10\): 22\.5/);
+    assert.match(run.stdout, /website probe failures: 1, first at 2026-11-15T07:30:35Z/);
+    assert.match(run.stdout, /9120 MB at 2026-11-15T07:30:35Z: next-server \(v16\.2\.12\)/);
+    assert.match(run.stdout, /stuck State: R \(running\)/);
+    const empty = spawnSync('bash', ['scripts/website-e2e-resources.sh', 'report', join(directory, 'missing.log')], { encoding: 'utf8' });
+    assert.equal(empty.status, 0, empty.stderr);
+    assert.match(empty.stdout, /No resource samples were recorded/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 it('bounds Angular startup only in Website control-plane CI and exercises lifecycle cleanup', async () => {

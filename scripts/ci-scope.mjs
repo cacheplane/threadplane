@@ -46,6 +46,7 @@ const GLOBAL_CI_FILES = new Set([
   // The Website server owner and cleanup checks must exercise browser CI.
   'scripts/website-angular-startup.mjs',
   'scripts/website-angular-startup.spec.mjs',
+  'scripts/website-angular-static.mjs',
   'scripts/website-agents-startup.mjs',
   'scripts/website-agents-startup.spec.mjs',
 ]);
