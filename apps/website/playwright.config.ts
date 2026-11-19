@@ -6,6 +6,9 @@ type WebsitePlaywrightEnvironment = Readonly<
   Record<string, string | undefined>
 >;
 
+const oneOrMore = (files: string[]) =>
+  files.length === 0 ? undefined : files.length === 1 ? files[0] : files;
+
 export const createWebsitePlaywrightConfig = (
   environment: WebsitePlaywrightEnvironment = process.env
 ) => {
@@ -74,7 +77,7 @@ export const createWebsitePlaywrightConfig = (
       ? '**/custom-runtime-bfcache.spec.ts'
       : undefined,
     testIgnore,
-    globalSetup: [
+    globalSetup: oneOrMore([
       ...(runtimeBypass
         ? [resolve(__dirname, 'e2e', 'runtime-bypass-setup.ts')]
         : []),
@@ -83,7 +86,7 @@ export const createWebsitePlaywrightConfig = (
       ...(shouldStartLocalServer && !productionMode && !bfcacheRuntimeTest
         ? [resolve(__dirname, 'e2e', 'dev-warmup-setup.ts')]
         : []),
-    ],
+    ]),
     fullyParallel: true,
     // Match the cockpit configs: 2 retries on CI to absorb transient Next.js
     // dev-server startup flake; 0 locally for fast feedback.

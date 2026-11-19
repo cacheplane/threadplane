@@ -185,10 +185,10 @@ describe('bounded Angular startup', () => {
 });
 
 describe('bounded Agents startup', () => {
-  it('rejects missing, duplicate or interleaved smoke/server chains', () => {
+  it('rejects missing, duplicate or interleaved preview servers', () => {
     const config = createWebsiteSuitePlaywrightConfig('agents', { CI: 'true' });
     const servers = Array.isArray(config.webServer) ? config.webServer : [];
-    const first = servers.findIndex(s => s.command.startsWith('npx nx run cockpit-deep-agents-'));
+    const first = servers.findIndex(s => s.command.startsWith('node scripts/react-cockpit/serve.mjs deep-agents-'));
     expect(first).toBeGreaterThan(0);
     expect(() => poolAgentServers(servers.filter((_, i) => i !== first))).toThrow(/five/);
     const duplicates = [...servers];
@@ -199,7 +199,7 @@ describe('bounded Agents startup', () => {
     expect(() => poolAgentServers(interleaved)).toThrow(/contiguous/);
   });
 
-  it('preserves all five complete smoke/server commands, startup barriers and browser settings', () => {
+  it('preserves all five complete preview server commands, startup barriers and browser settings', () => {
     const environment = { CI: 'true', WEBSITE_E2E_DEPLOYED_OWNER: 'true' };
     const original = createWebsiteSuitePlaywrightConfig('agents', environment);
     const pooled = createWebsiteSuitePlaywrightConfig('agents', {
@@ -212,7 +212,7 @@ describe('bounded Agents startup', () => {
     expect(children).toHaveLength(5);
     expect(servers.flatMap(s => s === pool ? children : [s])).toEqual(original.webServer);
     expect(children.map((s: { url: string }) => new URL(s.url).port).sort()).toEqual(['4628', '4629', '4630', '4631', '4632']);
-    expect(children.every((s: { command: string; timeout: number }) => s.command.includes(':smoke && node ') && s.timeout === 180_000)).toBe(true);
+    expect(children.every((s: { command: string; timeout: number }) => s.command.endsWith(' --no-parent --backend') && s.timeout === 180_000)).toBe(true);
     expect(pool).toMatchObject({
       cwd: '../..', timeout: 900_000,
       wait: { stdout: /Website Agents servers ready/ },
