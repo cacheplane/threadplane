@@ -148,8 +148,9 @@ const session = createAgentSession(native);
   silent here.
 - `submit` takes text, or `{ message, state? }` with a state patch, and goes
   straight to the native session, as do `stop` and
-  `dispose`. Disposing the view disposes the session. `retry` goes to the native
-  session too, when it has one (see "Retry" below).
+  `dispose`. Disposing the view disposes the session. `retry` and `regenerate`
+  go to the native session too, when it has them (see "Retry" and
+  "Regenerate" below).
 - A failed run becomes `snapshot.error`. A backend `RUN_ERROR` is a `server`
   error carrying the backend's message. A stream that ended without a terminal
   is `interrupted`. A response that was not OK carries its HTTP status: 401 and
@@ -231,6 +232,26 @@ otherwise resolves with the native re-run's outcome.
   was sent as uncertain and blocks further commands, so nothing could be retried.
 - A `RUN_ERROR` settles that the run failed, not that it did nothing. Work the
   backend did before failing can be repeated.
+
+### Regenerate
+
+The plain native owner has `regenerate(messageId, options?)`, with the same
+semantics as the Angular adapter's `regenerate`. It takes the `id` of a root
+assistant record, or of the reasoning record a reasoning-only answer is shown
+under, which is the `id` the core view gives that message. It keeps the history
+up to and including the user message before that record, drops everything after
+it, and sends a run with that history and the current state. The prompt is not
+added again. Regenerating an earlier answer drops every later turn.
+
+- It rejects without sending after disposal, while a run is active, while a
+  decision is waiting, for an id that is not an assistant record, and when no
+  user message precedes it.
+- A regenerate that fails with a backend `RUN_ERROR` can be sent again with
+  `retry`, from the same trimmed history.
+- The core view forwards it as the core session's `regenerate`, so React `Chat`
+  offers Regenerate on assistant messages.
+- The client-tool owner has no `regenerate`: its ledger owns the history of the
+  calls it ran, and trimming that history is not supported.
 
 ### Approvals
 

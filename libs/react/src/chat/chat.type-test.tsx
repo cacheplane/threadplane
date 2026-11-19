@@ -45,6 +45,17 @@ ok.className = 'x';
 <Chat session={session} header={() => null} />;
 <Chat
   session={session}
+  renderRunActivity={({ messages }) => <p>{messages.length} so far</p>}
+/>;
+// @ts-expect-error Run activity is a render function, not content.
+<Chat session={session} renderRunActivity={<p />} />;
+<Chat
+  session={session}
+  // @ts-expect-error The run's messages are readonly.
+  renderRunActivity={({ messages }) => messages.push(messages[0])}
+/>;
+<Chat
+  session={session}
   renderMessageActivity={({ row, toolCalls, subagents }) =>
     toolCalls.length + subagents.length > 0 ? <p>{row.id}</p> : undefined
   }
@@ -71,6 +82,9 @@ ok.className = 'x';
 <Chat session={session} modelPicker={{ options: [], value: 'a' }} />;
 // @ts-expect-error Options are value and label records, not strings.
 <Chat session={session} modelPicker={{ options: ['a'], value: 'a', onValueChange: () => undefined }} />;
+<Chat session={session} a2uiActionLabels={false} />;
+// @ts-expect-error Action labels are a switch, not a renderer.
+<Chat session={session} a2uiActionLabels={() => 'Go'} />;
 void missing;
 
 import type { ReactNode } from 'react';

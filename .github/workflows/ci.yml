@@ -99,11 +99,9 @@ jobs:
       # the npm cache warm; ~60s cold. This is the one-time-per-PR cost of using
       # nx's project graph as the source of truth instead of a hand-maintained
       # classifier walk.
+      # Every other job waits for this job's outputs, so it carries only what
+      # scope detection needs. The always-run guard suites live in ci-guards.
       - run: npm ci
-      - name: Test CI scope classifier
-        run: node --test scripts/configure-ci-apt.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-dependencies.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
-      - name: Test Debug static configuration without Python workers
-        run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Detect changed CI surfaces
         id: scope
         run: |
@@ -139,6 +137,29 @@ jobs:
             --base "$base_sha" \
             --head "$head_sha" \
             --output "$GITHUB_OUTPUT"
+
+  # The always-run guard suites: the scope classifier's own tests, the static
+  # configuration specs, and the workflow contract. They run beside the scoped
+  # jobs rather than ahead of them, so a guard failure no longer stops other
+  # jobs from starting; `CI — required` and every production deploy still
+  # demand this job's success.
+  ci-guards:
+    name: CI guards
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Test CI scope classifier
+        run: node --test scripts/configure-ci-apt.spec.mjs scripts/install-playwright-browser.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-dependencies.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
+      - name: Test Debug static configuration without Python workers
+        run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Validate CI workflow guards
         run: node --test scripts/ci-workflow.spec.mjs
 
@@ -159,7 +180,7 @@ jobs:
       - run: npm ci
       # Vitest suites for the root deployment/proxy generators (drift checks,
       # framework-adapter branching, requirements unions, rate limits). The
-      # node:test suites in scripts/ run in ci-scope and library instead —
+      # node:test suites in scripts/ run in ci-guards and library instead —
       # see scripts/vite.config.mts for the split.
       - run: npx nx test scripts
       - run: npx nx test tool-rendering-benchmark
@@ -320,7 +341,9 @@ jobs:
       - name: Install Chromium for packed runtime consumers
         if: matrix.lane == 'packages'
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: chromium
       - name: Verify native same-document session bindings
         if: matrix.lane == 'packages'
         run: node scripts/react-parity/review-native-ag-ui.mjs --verify
@@ -441,7 +464,9 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: chromium
       - name: Verify native conversation example
         run: |
           # React workers reuse verified output with independent fixture ports.
@@ -483,7 +508,9 @@ jobs:
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: chromium
       - name: Generate, install, build, and run consumer
         run: >-
           npm exec --yes --package=npm@11.6.0 -- node examples/chat/smoke/cli.mjs
@@ -755,18 +782,13 @@ jobs:
           key: uv-venv-${{ github.repository }}-${{ runner.os }}-py3.12-${{ hashFiles('examples/chat/python/uv.lock') }}
       - working-directory: examples/chat/python
         run: uv sync
-      - name: Cache Playwright browsers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
       - name: Configure bounded Ubuntu package downloads
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: chromium
       - run: npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --shard=${{ matrix.shard }}/4
       - name: Configure bounded Ubuntu package downloads
         if: matrix.shard == 1
@@ -774,7 +796,9 @@ jobs:
       - name: Install Firefox for the Angular list layout regression
         if: matrix.shard == 1
         timeout-minutes: 10
-        run: npx playwright install --with-deps firefox
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: firefox
       - name: Verify Angular list wrappers in Firefox
         if: matrix.shard == 1
         run: npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --browser=firefox --grep="ordinary list paragraphs"
@@ -851,18 +875,13 @@ jobs:
             echo "::error::examples/ag-ui/python/requirements.txt is stale — the Railway image installs from this file, not uv.lock. Run 'uv export --no-hashes -o requirements.txt' in examples/ag-ui/python and commit the result."
             exit 1
           fi
-      - name: Cache Playwright browsers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
       - name: Configure bounded Ubuntu package downloads
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: chromium
       - run: npx nx e2e examples-ag-ui-angular --skip-nx-cache --skipInstall
       - name: Upload Playwright trace on failure
         if: failure()
@@ -1049,18 +1068,13 @@ jobs:
             echo "::error::${{ matrix.cap.python }}/requirements.txt is stale relative to uv.lock — deployments/ag-ui-dev is generated from this file. Run 'uv export --no-hashes -o requirements.txt' in ${{ matrix.cap.python }} and commit the result."
             exit 1
           fi
-      - name: Cache Playwright browsers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
       - name: Configure bounded Ubuntu package downloads
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: chromium
       - name: Verify React cockpit source
         if: endsWith(matrix.cap.angular, '-react')
         run: |
@@ -1156,14 +1170,22 @@ jobs:
           echo "All cockpit-e2e matrix expansions passed."
 
   website-e2e:
-    name: 'Website — e2e (${{ matrix.suite }})'
+    name: "Website — e2e (${{ matrix.suite }}${{ matrix.shard && format(' {0}/3', matrix.shard) || '' }})"
     needs: ci-scope
     if: github.event_name == 'push' || needs.ci-scope.outputs.website_e2e == 'true'
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        suite: [control-plane, agents, ag-ui, chat, render]
+        suite: [agents, ag-ui, chat, render]
+        # control-plane is the longest Website suite, so its tests are split
+        # across three runners. Each shard builds and starts the same runtimes;
+        # only the test list is divided. Keep the divisor in the job name and
+        # the run step equal to the number of entries here.
+        include:
+          - { suite: control-plane, shard: 1 }
+          - { suite: control-plane, shard: 2 }
+          - { suite: control-plane, shard: 3 }
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -1184,24 +1206,23 @@ jobs:
       - name: Prepare frozen canonical A2UI browser producer
         if: matrix.suite == 'ag-ui'
         run: node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs
-      - name: Cache Playwright browsers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
       - name: Configure bounded Ubuntu package downloads
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: chromium
       - name: Run local Website suite
         run: |
           preparation=$(mktemp -d)
-          trap 'rm -rf "$preparation"' EXIT
+          # The suite has stalled and lost its runner without a cause in the
+          # log; sample memory, pressure and the Website server while it runs.
+          scripts/website-e2e-resources.sh sample "$RUNNER_TEMP/website-e2e-resources.log" &
+          sampler=$!
+          trap 'kill "$sampler" 2>/dev/null; rm -rf "$preparation"' EXIT
           export WEBSITE_RUNTIME_PREPARATION="$preparation"
-          npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache
+          npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache${{ matrix.shard && format(' -- --shard={0}/3', matrix.shard) || '' }}
         timeout-minutes: 45
         env:
           # Delegate reviewed public surfaces only when the required preview
@@ -1210,6 +1231,9 @@ jobs:
           WEBSITE_E2E_DEPLOYED_OWNER: ${{ github.event_name == 'pull_request' && needs.ci-scope.outputs.website_e2e == 'true' && github.event.pull_request.head.repo.full_name == github.repository }}
           WEBSITE_ANGULAR_STARTUP: ${{ matrix.suite == 'control-plane' && '2' || '' }}
           WEBSITE_AGENTS_STARTUP: ${{ matrix.suite == 'agents' && '2' || '' }}
+      - name: Report Website runner resources
+        if: always()
+        run: scripts/website-e2e-resources.sh report "$RUNNER_TEMP/website-e2e-resources.log"
 
   website-production-checks:
     name: Website — production copy / stage
@@ -1227,18 +1251,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Cache Playwright browsers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
       - name: Configure bounded Ubuntu package downloads
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: chromium
       # The public-copy gate reads served output, and `next dev` serves a
       # different bundle than production. Run it a second time against a real
       # production build so a claim that only appears in the built output — in a
@@ -1463,18 +1482,13 @@ jobs:
         with:
           python-version: '3.12'
       - run: npm ci
-      - name: Cache Playwright browsers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
       - name: Configure bounded Ubuntu package downloads
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: chromium
       - name: Derive deterministic preview aliases
         id: aliases
         run: |
@@ -1547,6 +1561,7 @@ jobs:
     name: CI — required
     needs:
       - ci-scope
+      - ci-guards
       - library
       - library-package
       - native-conversation
@@ -1578,6 +1593,7 @@ jobs:
       - name: Verify scoped CI jobs
         env:
           RESULT_CI_SCOPE: ${{ needs.ci-scope.result }}
+          RESULT_CI_GUARDS: ${{ needs.ci-guards.result }}
           RESULT_LIBRARY: ${{ needs.library.result }}
           RESULT_LIBRARY_PACKAGE: ${{ needs.library-package.result }}
           RESULT_NATIVE_CONVERSATION: ${{ needs.native-conversation.result }}
@@ -1678,6 +1694,7 @@ jobs:
           }
 
           require_always "CI scope" "$RESULT_CI_SCOPE"
+          require_always "CI guards" "$RESULT_CI_GUARDS"
           require_scoped "library" "Library — lint / test / build" "$RESULT_LIBRARY" "$SCOPE_LIBRARY"
           # Compatibility-only changes still require all Library validation,
           # even though the consumer matrix can now start from the early build.
@@ -1724,6 +1741,7 @@ jobs:
     timeout-minutes: 45 # bounded headroom for Website assembly and preview verification
     needs:
       - ci-scope
+      - ci-guards
       - library
       - library-package
       - native-conversation
@@ -1919,21 +1937,15 @@ jobs:
           fi
 
           echo "website=$website_changed" >> "$GITHUB_OUTPUT"
-      - name: Cache Playwright browsers
-        if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
       - name: Configure bounded Ubuntu package downloads
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Playwright browsers
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: chromium
       - name: Prepare website Vercel project
         if: steps.freshness.outputs.stale != 'true' && steps.affected.outputs.website == 'true'
         run: |
@@ -2057,9 +2069,9 @@ jobs:
   demo-deploy:
     name: Canonical demo → Vercel
     timeout-minutes: 30 # fail fast instead of blocking the main concurrency group on a hang
-    needs: [ci-scope, examples-chat-smoke, examples-chat-e2e]
+    needs: [ci-scope, ci-guards, examples-chat-smoke, examples-chat-e2e]
     runs-on: ubuntu-24.04
-    if: ${{ always() && !cancelled() && needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    if: ${{ always() && !cancelled() && needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && needs.ci-guards.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Require demo prerequisite jobs
         run: |
@@ -2164,9 +2176,9 @@ jobs:
   ag-ui-demo-deploy:
     name: AG-UI demo → Vercel
     timeout-minutes: 30 # fail fast instead of blocking the main concurrency group on a hang
-    needs: [ci-scope, examples-ag-ui-e2e]
+    needs: [ci-scope, ci-guards, examples-ag-ui-e2e]
     runs-on: ubuntu-24.04
-    if: ${{ always() && !cancelled() && needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    if: ${{ always() && !cancelled() && needs.ci-scope.result == 'success' && needs.ci-scope.outputs.main_run == 'true' && needs.ci-guards.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     permissions:
       # Needed to advance refs/deploy/ag-ui-demo-last-promoted. Nothing else in
       # this job writes to the repo.
@@ -2338,18 +2350,13 @@ jobs:
         run: npx tsx scripts/verify-shared-deployment.ts
         env:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
-      - name: Cache Playwright browsers
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
       - name: Configure bounded Ubuntu package downloads
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        uses: ./.github/actions/install-playwright-browser
+        with:
+          browser: chromium
       - name: Run production smoke tests
         run: npx playwright test apps/website/e2e/platform-production-smoke.spec.ts --config apps/website/playwright.config.ts --reporter=list
         env:

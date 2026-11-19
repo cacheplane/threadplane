@@ -160,13 +160,17 @@ test('full local Website execution has a finite enclosing Nx step budget', () =>
     )
   );
   const job = workflow.jobs['website-e2e'];
-  assert.deepEqual(job.strategy.matrix.suite, ['control-plane', 'agents', 'ag-ui', 'chat', 'render']);
+  assert.deepEqual(job.strategy.matrix.suite, ['agents', 'ag-ui', 'chat', 'render']);
+  assert.deepEqual(
+    job.strategy.matrix.include,
+    [1, 2, 3].map((shard) => ({ suite: 'control-plane', shard }))
+  );
   assert.equal(job.strategy['fail-fast'], false);
   const steps = job.steps;
   const runs = steps.filter(
     (step) =>
       step.run?.split('\n').includes(
-        'npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache'
+        "npx nx run website:e2e-${{ matrix.suite }} --skip-nx-cache${{ matrix.shard && format(' -- --shard={0}/3', matrix.shard) || '' }}"
       )
   );
   assert.equal(runs.length, 1);

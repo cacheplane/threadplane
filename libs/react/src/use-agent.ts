@@ -12,5 +12,6 @@ export function useAgent<TSnapshot>(session: {
     (notify: () => void) => session.subscribe(notify),
     [session]
   );
-  return useSyncExternalStore(subscribe, getSnapshot);
+  // A session does no I/O until it is used, so its current snapshot is also the server snapshot.
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

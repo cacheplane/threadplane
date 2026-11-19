@@ -47,6 +47,24 @@ describe('owned canonical Markdown projection', () => {
     expect(work.arrays).toBe(0);
     expect(work.definitions).toBe(0);
   });
+  it('projects the code-block info-string meta, empty for indented blocks', () => {
+    const parser = createPartialMarkdownParser();
+    parser.push('```ts title="a.ts"\nconst x = 1;\n```\n\n    indented\n');
+    parser.finish();
+    const blocks = walk(createProjection()(parser.root)).filter(
+      (node) => node.type === 'code-block'
+    );
+    expect(
+      blocks.map((node) =>
+        node.type === 'code-block'
+          ? [node.variant, node.language, node.meta, node.text]
+          : null
+      )
+    ).toEqual([
+      ['fenced', 'ts', 'title="a.ts"', 'const x = 1;'],
+      ['indented', '', '', 'indented'],
+    ]);
+  });
   it('keeps an empty root null, including after finish', () => {
     const parser = createPartialMarkdownParser(),
       project = createProjection();

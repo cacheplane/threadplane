@@ -701,3 +701,29 @@ it.each([false, true])(
     expect.soft(copyButton().disabled).toBe(false);
   }
 );
+
+it('can be driven by its owner: controlled open, initial dock and no launcher', () => {
+  const onOpenChange = vi.fn();
+  const v = render(
+    <ChatDebug
+      {...base}
+      defaultOpen={false}
+      open
+      launcher="none"
+      defaultDock="bottom"
+      onOpenChange={onOpenChange}
+    />
+  );
+  expect(
+    v.getByRole('region', { name: 'Chat debug' }).getAttribute('data-dock')
+  ).toBe('bottom');
+  expect(v.queryByRole('button', { name: /^(Open|Hide) debug panel$/ })).toBeNull();
+  fireEvent.click(v.getByRole('button', { name: 'Close debug panel' }));
+  expect(onOpenChange).toHaveBeenCalledWith(false);
+  // The owner has not changed `open`, so the panel stays open.
+  expect(v.getByRole('region', { name: 'Chat debug' })).toBeTruthy();
+  fireEvent.click(v.getByRole('button', { name: 'Dock left' }));
+  expect(
+    v.getByRole('region', { name: 'Chat debug' }).getAttribute('data-dock')
+  ).toBe('left');
+});

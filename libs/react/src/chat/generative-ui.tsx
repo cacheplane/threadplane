@@ -65,11 +65,23 @@ export interface MessageGenerativeUi {
   /**
    * Views by component name. With it, an assistant message whose content is a
    * json-render spec (`{ "root": …, "elements": … }`) renders as that tree in
-   * place of its text. Elements appear as each one finishes streaming, and a
-   * placeholder stands in until the root element has. The tree is read-only
-   * unless `handlers`, `store` or `onRenderEvent` is set.
+   * place of its text. Elements appear as each one finishes streaming (see
+   * `progressive`), and a placeholder stands in until the root element has.
+   * The tree is read-only unless `handlers`, `store` or `onRenderEvent` is set.
    */
   readonly registry?: ReactRenderRegistry;
+  /**
+   * Renders a streaming spec as it arrives instead of one finished element at
+   * a time. An element appears once its `type` has finished, its string props
+   * grow as they stream, and other props, child IDs, `visible` and `repeat`
+   * apply once each has finished. Its `on` bindings apply only once the whole
+   * element has, so no action runs with half-written params. A spec's own
+   * `state` is seeded one top-level path at a time as each value finishes,
+   * and a value a view has already written is kept. Views can tell a partial
+   * element by `loading`. A finished spec renders the same either way. Off
+   * unless set.
+   */
+  readonly progressive?: boolean;
   /** Computed functions for spec props; see `RenderSpecProps.functions`. */
   readonly functions?: ReactRenderFunctions;
   /** Rendered for a spec component the registry lacks; see `RenderSpecProps.fallback`. */
@@ -160,13 +172,66 @@ function props(value: unknown): Record<string, unknown> {
   );
 }
 
+type JsonValue = Extract<JsonNode, { kind: 'object' }>['value'][string];
+const finished = (node: JsonNode | undefined): boolean =>
+  node?.status === 'complete';
+
+/** Props that are safe to render mid-stream: finished values, and strings as far as they have arrived. */
+function partialProps(node: JsonNode | undefined): JsonValue {
+  if (node === undefined) return undefined;
+  if (node.kind !== 'object') return finished(node) ? node.value : undefined;
+  const ready: Record<string, JsonValue> = {};
+  for (const [name, prop] of Object.entries(node.children))
+    if (finished(prop) || (prop.kind === 'string' && prop.value !== undefined))
+      ready[name] = prop.value;
+  return ready;
+}
+
+/**
+ * The part of a streaming element that may render now, or null while its type
+ * or an open `visible` or `repeat` would change what it is. Its `on` bindings
+ * wait for the whole element, so an action never runs with partial params.
+ */
+function partialElement(
+  node: Extract<JsonNode, { kind: 'object' }>
+): Readonly<Record<string, JsonValue>> | null {
+  if (finished(node)) return node.value;
+  const { type, props, children, visible, repeat } = node.children;
+  if (type?.kind !== 'string' || !finished(type)) return null;
+  if ((visible && !finished(visible)) || (repeat && !finished(repeat)))
+    return null;
+  return {
+    type: type.value,
+    props: partialProps(props),
+    children:
+      children?.kind === 'array'
+        ? children.children.filter(finished).map((child) => child.value)
+        : undefined,
+    ...(visible ? { visible: visible.value } : {}),
+    ...(repeat ? { repeat: repeat.value } : {}),
+  };
+}
+
+/** The top-level `state` entries whose values have finished, in arrival order. */
+function partialState(node: JsonNode | undefined): SpecState | undefined {
+  if (node?.kind !== 'object') return undefined;
+  if (finished(node)) return node.value as SpecState;
+  return Object.fromEntries(
+    Object.entries(node.children)
+      .filter(([, value]) => finished(value))
+      .map(([key, value]) => [key, value.value])
+  ) as SpecState;
+}
+
 /**
  * The renderable part of a spec that may still be streaming: the elements
- * whose JSON is finished, once the root key and the root element are. A child
- * that has not arrived yet is simply absent, and renders nothing.
+ * whose JSON is finished (or, when `progressive`, each element as far as it
+ * may render), once the root key and the root element are. A child that has
+ * not arrived yet is simply absent, and renders nothing.
  */
 function renderable(
-  root: JsonNode | null
+  root: JsonNode | null,
+  progressive: boolean
 ): { readonly spec: RenderSpecData; readonly state?: SpecState } | null {
   if (root?.kind !== 'object') return null;
   const key = root.children['root'];
@@ -180,12 +245,18 @@ function renderable(
     return null;
   const elements: Record<string, RenderElementData> = Object.create(null);
   for (const [id, node] of Object.entries(nodes.children)) {
-    if (node.kind !== 'object' || node.status !== 'complete') continue;
-    const { type, children, visible, repeat, on } = node.value;
+    if (node.kind !== 'object') continue;
+    const value = progressive
+      ? partialElement(node)
+      : finished(node)
+      ? node.value
+      : null;
+    if (value === null) continue;
+    const { type, children, visible, repeat, on } = value;
     if (typeof type !== 'string') continue;
     elements[id] = {
       type,
-      props: props(node.value['props']),
+      props: props(value['props']),
       children: Array.isArray(children)
         ? [...new Set(children.filter((child) => typeof child === 'string'))]
         : [],
@@ -197,12 +268,14 @@ function renderable(
     } as RenderElementData;
   }
   if (!Object.hasOwn(elements, key.value)) return null;
-  const state = root.children['state'];
+  const state = progressive
+    ? partialState(root.children['state'])
+    : finished(root.children['state']) && root.children['state'].kind === 'object'
+    ? (root.children['state'].value as SpecState)
+    : undefined;
   return {
     spec: { root: key.value, elements },
-    ...(state?.kind === 'object' && state.status === 'complete'
-      ? { state: state.value as SpecState }
-      : {}),
+    ...(state === undefined ? {} : { state }),
   };
 }
 
@@ -274,6 +347,7 @@ function SpecSurface({
 }) {
   const { content, delivery } = row.message;
   const streaming = delivery.phase === 'streaming';
+  const progressive = options.progressive === true;
   // Parsed again per change: a spec is small, and the row re-renders only when it changes.
   const tree = useMemo(() => {
     const json = createJson({
@@ -283,23 +357,33 @@ function SpecSurface({
     });
     const { root } = json.getSnapshot();
     json.dispose();
-    return renderable(root);
-  }, [content, delivery.generation, delivery.phase]);
+    return renderable(root, progressive);
+  }, [content, delivery.generation, delivery.phase, progressive]);
   const { handlers, onRenderEvent } = options;
   const interactive =
     handlers !== undefined ||
     options.store !== undefined ||
     onRenderEvent !== undefined;
-  // A spec's own state arrives once, when its `state` object finishes.
+  // A spec's own state arrives once, when its `state` object finishes, or,
+  // when progressive, one top-level path at a time.
   const seed = tree?.state;
-  const seeded = seed !== undefined;
-  const own = useRef<{ readonly seeded: boolean; readonly store: RenderStore }>(
+  const seeded = progressive
+    ? Object.keys(seed ?? {}).join('/')
+    : String(seed !== undefined);
+  const own = useRef<{ readonly seeded: string; readonly store: RenderStore }>(
     undefined
   );
   let store = options.store;
   if (interactive && store === undefined) {
     if (own.current?.seeded !== seeded)
-      own.current = { seeded, store: createRenderState(seed) };
+      own.current = {
+        seeded,
+        // A new store, not writes to the old one, so seeding reports no
+        // state change; what a view already wrote wins over a later seed.
+        store: createRenderState(
+          progressive ? { ...seed, ...own.current?.store.getSnapshot() } : seed
+        ),
+      };
     store = own.current.store;
   }
   const messageId = row.message.id;

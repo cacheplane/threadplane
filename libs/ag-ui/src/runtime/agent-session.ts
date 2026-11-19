@@ -4,6 +4,7 @@ import {
   type AgentSession,
   type AgentSessionCustomEvent,
   type AgentSnapshot,
+  type AgentSubmitOptions,
   type AgentUsage,
   type AgentUsageEntry,
   type PlainValue,
@@ -28,6 +29,7 @@ export type NativeSession<TState = unknown> = Pick<
   | 'stop'
   | 'dispose'
   | 'retry'
+  | 'regenerate'
   | 'onCustomEvent'
 > & { getSnapshot(): SessionSnapshot };
 
@@ -239,12 +241,12 @@ function project(
  * It is a view, not a second owner. The snapshot is derived from the native
  * snapshot on read and keeps its reference until something a core observer can
  * see changes; subscribers are told about those changes only. `submit`, `stop`,
- * `dispose` and, when the native session has it, `retry` go straight to the
- * native session, so disposing the view disposes the session. `retry` rejects
- * unless the error is `recovery: 'retry'`. Custom event listeners pass straight
- * through to the native session too, when it has them. Native resume and
- * client-tool evidence have no core equivalent: keep the native session for
- * those.
+ * `dispose` and, when the native session has them, `retry` and `regenerate`
+ * go straight to the native session, so disposing the view disposes the
+ * session. `retry` rejects unless the error is `recovery: 'retry'`. Custom
+ * event listeners pass straight through to the native session too, when it
+ * has them. Native resume and client-tool evidence have no core equivalent:
+ * keep the native session for those.
  *
  * `state` is the session's state document, typed by the `stateType` the session
  * was created with. With a schema, each document is checked once and `state`
@@ -259,6 +261,7 @@ export function createAgentSession<TState = unknown>(
   let seen: SessionSnapshot | undefined;
   let current: AgUiAgentSnapshot | undefined;
   const retry = session.retry;
+  const regenerate = session.regenerate;
   const listen = session.onCustomEvent;
   const readView = stateReader(session.stateType);
   const read = (): AgUiAgentSnapshot => {
@@ -291,6 +294,12 @@ export function createAgentSession<TState = unknown>(
       session.submit(input as SubmitInput<TState>, options),
     stop: () => session.stop(),
     dispose: () => session.dispose(),
+    // The native owner rejects what it cannot regenerate, as the core
+    // contract asks, so the command passes straight through.
+    ...(regenerate && {
+      regenerate: (messageId: string, options?: AgentSubmitOptions) =>
+        regenerate.call(session, messageId, options),
+    }),
     ...(retry && {
       async retry() {
         const snapshot = getSnapshot();

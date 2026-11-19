@@ -29,8 +29,9 @@ interface SharedState {
   /** Present when the backend is a uvicorn AG-UI server. */
   backend?: ChildProcess;
   backendPort?: number;
-  angular: ChildProcess;
-  angularPort: number;
+  /** Absent for backend-only setups (React cockpit serves its own build). */
+  angular?: ChildProcess;
+  angularPort?: number;
 }
 
 declare global {
@@ -52,59 +53,127 @@ async function waitForPort(url: string, timeoutMs: number, label: string): Promi
   throw new Error(`[${label}] not ready at ${url} within ${timeoutMs}ms`);
 }
 
-function repoRoot(opts: CreateGlobalSetupOpts): string {
+function repoRoot(fixturesDir: string): string {
   // The factory is called from per-example playwright configs that themselves
   // live many levels deep. We compute REPO_ROOT relative to the fixturesDir
   // (which the consumer passes as an absolute path) so the consumer doesn't
   // need to pass it explicitly. The repo root is the nearest ancestor that
   // contains a `cockpit/` directory; for our layout, walking up from any
   // per-example fixturesDir hits the repo root in 5 levels.
-  let dir = opts.fixturesDir;
+  let dir = fixturesDir;
   for (let i = 0; i < 10; i++) {
     if (require('node:fs').existsSync(require('node:path').join(dir, 'cockpit'))) {
       return dir;
     }
     dir = require('node:path').dirname(dir);
   }
-  throw new Error('repo root not found from fixturesDir; passed: ' + opts.fixturesDir);
+  throw new Error('repo root not found from fixturesDir; passed: ' + fixturesDir);
+}
+
+export interface LanggraphBackend {
+  aimock: AimockHandle;
+  langgraph: ChildProcess;
+  langgraphPort: number;
+}
+
+/**
+ * Start aimock (replay or record, per AIMOCK_MODE) and a real `langgraph dev`
+ * whose OpenAI client targets it. Shared by the Angular dev-server setup and
+ * the React static-build setup so both frameworks exercise the same graph,
+ * wire format and per-prompt fixtures.
+ */
+export async function startLanggraphBackend(opts: {
+  root: string;
+  langgraphCwd: string;
+  langgraphPort: number;
+  fixturesDir: string;
+  langgraphReadyTimeoutMs?: number;
+}): Promise<LanggraphBackend> {
+  const launch = resolveAimockLaunch(opts.fixturesDir);
+  const aimock = await startAimock(launch.startOptions);
+  // eslint-disable-next-line no-console
+  console.log(`[aimock-harness] aimock listening at ${aimock.baseUrl}`);
+
+  const langgraph = spawn(
+    'uv',
+    ['run', 'langgraph', 'dev', '--port', String(opts.langgraphPort), '--no-browser'],
+    {
+      cwd: resolve(opts.root, opts.langgraphCwd),
+      env: {
+        ...process.env,
+        OPENAI_BASE_URL: aimock.baseUrl,
+        OPENAI_API_KEY: launch.openaiApiKey,
+      },
+      stdio: 'pipe',
+      // detached:true puts the process in its own group so teardown can
+      // kill the whole tree (uv → python → langgraph dev) via process.kill(-pid).
+      // Without this, SIGTERM to `uv` doesn't propagate to the Python child
+      // and the langgraph server keeps holding the port through teardown.
+      detached: true,
+    },
+  );
+  langgraph.stdout?.on('data', (b) => process.stdout.write(`[langgraph] ${b}`));
+  langgraph.stderr?.on('data', (b) => process.stderr.write(`[langgraph] ${b}`));
+
+  await waitForPort(
+    `http://localhost:${opts.langgraphPort}/ok`,
+    opts.langgraphReadyTimeoutMs ?? 90_000,
+    'langgraph',
+  );
+  // eslint-disable-next-line no-console
+  console.log(`[aimock-harness] langgraph ready on :${opts.langgraphPort}`);
+  return { aimock, langgraph, langgraphPort: opts.langgraphPort };
+}
+
+function registerState(key: string, state: SharedState): void {
+  if (!globalThis.__AIMOCK_HARNESS_STATE__) {
+    globalThis.__AIMOCK_HARNESS_STATE__ = new Map();
+  }
+  globalThis.__AIMOCK_HARNESS_STATE__.set(key, state);
+}
+
+export interface CreateLanggraphGlobalSetupOpts {
+  /** Key for the teardown registry; use the frontend's Nx project name. */
+  stateKey: string;
+  /** Repo-relative path to the python langgraph project. */
+  langgraphCwd: string;
+  langgraphPort: number;
+  /** Absolute path to the fixtures dir (may be shared with another framework). */
+  fixturesDir: string;
+  langgraphReadyTimeoutMs?: number;
+}
+
+/**
+ * Backend-only global setup: aimock + `langgraph dev`, no frontend. Used by
+ * React cockpit e2e, whose Playwright `webServer` serves the built app and
+ * proxies `/api` to this langgraph (scripts/react-cockpit/langgraph-proxy.mjs).
+ */
+export function createLanggraphGlobalSetup(opts: CreateLanggraphGlobalSetupOpts): () => Promise<void> {
+  return async function globalSetup(): Promise<void> {
+    const backend = await startLanggraphBackend({
+      root: repoRoot(opts.fixturesDir),
+      langgraphCwd: opts.langgraphCwd,
+      langgraphPort: opts.langgraphPort,
+      fixturesDir: opts.fixturesDir,
+      langgraphReadyTimeoutMs: opts.langgraphReadyTimeoutMs,
+    });
+    registerState(opts.stateKey, backend);
+  };
 }
 
 export function createGlobalSetup(opts: CreateGlobalSetupOpts): () => Promise<void> {
   const langgraphPort = opts.langgraphPort ?? 8123;
-  const langgraphTimeout = opts.langgraphReadyTimeoutMs ?? 90_000;
   const angularTimeout = opts.angularReadyTimeoutMs ?? 120_000;
 
   return async function globalSetup(): Promise<void> {
-    const root = repoRoot(opts);
-    const launch = resolveAimockLaunch(opts.fixturesDir);
-    const aimock = await startAimock(launch.startOptions);
-    // eslint-disable-next-line no-console
-    console.log(`[aimock-harness] aimock listening at ${aimock.baseUrl}`);
-
-    const langgraph = spawn(
-      'uv',
-      ['run', 'langgraph', 'dev', '--port', String(langgraphPort), '--no-browser'],
-      {
-        cwd: resolve(root, opts.langgraphCwd),
-        env: {
-          ...process.env,
-          OPENAI_BASE_URL: aimock.baseUrl,
-          OPENAI_API_KEY: launch.openaiApiKey,
-        },
-        stdio: 'pipe',
-        // detached:true puts the process in its own group so teardown can
-        // kill the whole tree (uv → python → langgraph dev) via process.kill(-pid).
-        // Without this, SIGTERM to `uv` doesn't propagate to the Python child
-        // and the langgraph server keeps holding the port through teardown.
-        detached: true,
-      },
-    );
-    langgraph.stdout?.on('data', (b) => process.stdout.write(`[langgraph] ${b}`));
-    langgraph.stderr?.on('data', (b) => process.stderr.write(`[langgraph] ${b}`));
-
-    await waitForPort(`http://localhost:${langgraphPort}/ok`, langgraphTimeout, 'langgraph');
-    // eslint-disable-next-line no-console
-    console.log(`[aimock-harness] langgraph ready on :${langgraphPort}`);
+    const root = repoRoot(opts.fixturesDir);
+    const backend = await startLanggraphBackend({
+      root,
+      langgraphCwd: opts.langgraphCwd,
+      langgraphPort,
+      fixturesDir: opts.fixturesDir,
+      langgraphReadyTimeoutMs: opts.langgraphReadyTimeoutMs,
+    });
 
     const angular = spawn(
       'npx',
@@ -125,15 +194,6 @@ export function createGlobalSetup(opts: CreateGlobalSetupOpts): () => Promise<vo
     // eslint-disable-next-line no-console
     console.log(`[aimock-harness] angular ready on :${opts.angularPort} (${opts.angularProject})`);
 
-    if (!globalThis.__AIMOCK_HARNESS_STATE__) {
-      globalThis.__AIMOCK_HARNESS_STATE__ = new Map();
-    }
-    globalThis.__AIMOCK_HARNESS_STATE__.set(opts.angularProject, {
-      aimock,
-      langgraph,
-      langgraphPort,
-      angular,
-      angularPort: opts.angularPort,
-    });
+    registerState(opts.angularProject, { ...backend, angular, angularPort: opts.angularPort });
   };
 }
