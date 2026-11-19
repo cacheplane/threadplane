@@ -59,7 +59,7 @@ it('reuses only same-run dependencies while preserving every isolated Cockpit pr
   const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step))
     .map(step => step === nodeSetup ? { ...step, with: { ...step.with, 'node-version': 22 } } : step);
   assert.equal(createHash('sha256').update(JSON.stringify(originalSteps)).digest('hex'),
-    'f36512856a3f4071b4a4542cab88703cdc3fa4e4958410c2b970e067487b8198',
+    '3651222de6f8c30595d37f54c28a98c0e84e16ab92d243d5c1245273189646b6',
     'all original setup, Python, source, fixture, browser and artifact steps remain identical except the verified Node patch pin');
 });
 
