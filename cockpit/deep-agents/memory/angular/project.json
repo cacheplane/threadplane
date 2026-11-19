@@ -89,6 +89,7 @@
     },
     "e2e": {
       "executor": "@nx/playwright:playwright",
+      "inputs": ["default", "reactAimockBackend"],
       "options": {
         "config": "cockpit/deep-agents/memory/angular/e2e/playwright.config.ts"
       }
