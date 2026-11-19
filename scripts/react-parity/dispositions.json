@@ -19435,6 +19435,113 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "RenderPendingFallback: the default readiness placeholder for every registered component, mirroring Angular defineAngularRegistry's DefaultFallbackComponent."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#observeAgentState",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatRunActivityContext",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "The current run's messages passed to Chat's renderRunActivity, which replaces the typing indicator until the run's first assistant message.",
+      "note": "The window, the status region, typing-indicator replacement, the hand-off to the first assistant message and a continued run are verified with real DOM tests."
+    },
+    {
+      "id": "export:libs/react/src/index.ts#useAgentState",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "source:libs/angular/src/observe-agent-state.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/a2ui-action-label.ts",
+      "taskIds": [
+        "T22",
+        "T27"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Internal reader giving the words for a user message that is a serialized A2UI action: its stamped label, or the action name in plain words; not exported.",
+      "note": "Verified through the MessageList and Chat DOM tests: default label, opt-out, name fallback, untouched non-action and assistant messages, and text-only rendering. Not part of the public surface."
+    },
+    {
+      "id": "source:libs/react/src/use-agent-state.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/thread-directory.ts",
+      "taskIds": [
+        "T11"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral directory of a deployment's saved conversations: an observable list read from thread metadata (title, archived, pinned, pinned order, project) with create, rename, delete, archive, pin, move and reorder commands that write metadata and read the list again.",
+      "note": "Staged beside the private session; not exported from a published entry. The Angular LangGraphThreadsAdapter is unchanged and not yet built on it. Reads one page of the configured size; no paging, search or cross-tab refresh."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtools",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Opt-in `devtools` prop on ChatSidenav: a session plus a render function for the panel; the React counterpart of Angular's [agent] input, omitted from production builds."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtoolsPanel",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Props the sidenav Devtools button spreads onto ChatDebug: controlled open, bottom dock and no built-in launcher."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtoolsSource",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Structural session slice (status snapshot and subscribe) that drives the Devtools button's streaming dot."
     }
   ]
 }

@@ -464,7 +464,7 @@ const SUPPORTED_EXPORTS = {
     'projectAgentError',
   ],
   'core/testing': ['createFakeAgentSession'],
-  react: ['useAgent'],
+  react: ['useAgent', 'useAgentState'],
   'react/chat': [
     'ApprovalCard',
     'ApprovalRecord',

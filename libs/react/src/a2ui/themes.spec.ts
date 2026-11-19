@@ -30,6 +30,15 @@ describe('A2UI theme stylesheets', () => {
     expect(declared(darkBlock ?? '').size).toBeGreaterThan(8);
   });
 
+  it('forces the same dark and light values from the theme attributes', () => {
+    const rules = [...base.matchAll(/:where\(\[data-theme="(light|dark)"\][^{]*\{([^}]*)\}/g)];
+    const byScheme = new Map(rules.map((m) => [m[1], declared(m[2])]));
+    const dark = declared(darkBlock ?? '');
+    expect([...(byScheme.get('dark') ?? new Map())]).toEqual([...dark]);
+    const light = byScheme.get('light') ?? new Map();
+    for (const token of dark.keys()) expect(light.has(token)).toBe(true);
+  });
+
   it.each(names)('%s is one rule that outranks the base tokens', (name) => {
     const css = read(`themes/${name}.css`).replace(/\/\*[\s\S]*?\*\//g, '');
     const rules = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)];

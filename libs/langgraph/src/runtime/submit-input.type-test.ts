@@ -40,8 +40,10 @@ void session.submit({ message: 'Text', state: { value: new Date() } });
 void session.submit('Text', { state });
 void session.submit('Text', { config: {} });
 const observer: AgentSession = session;
-// @ts-expect-error The neutral core still accepts text only.
+// The neutral core accepts the same text-with-state input.
 void observer.submit(input);
+// @ts-expect-error The neutral core still takes plain data only.
+void observer.submit({ message: 'Text', state: { value: new Date() } });
 interface ItineraryStop {
   readonly city: string;
   readonly day: number;

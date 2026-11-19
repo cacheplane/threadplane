@@ -1,6 +1,43 @@
 'use client';
-import { useId, useRef, type ReactNode } from 'react';
+import {
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
+import type { AgentStatus } from '@threadplane/core';
 import { useIsomorphicLayoutEffect } from './internal/isomorphic-layout-effect.js';
+
+declare const process: { readonly env: { readonly NODE_ENV?: string } };
+
+/** What the Devtools button reads from a session: its status, as `AgentSession` provides. */
+export interface ChatSidenavDevtoolsSource {
+  getSnapshot(): { readonly status: AgentStatus };
+  subscribe(notify: () => void): () => void;
+}
+
+/** The props to spread onto `ChatDebug` so the sidenav button drives it. */
+export interface ChatSidenavDevtoolsPanel {
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+  readonly defaultDock: 'bottom';
+  readonly launcher: 'none';
+}
+
+/** Adds a footer Devtools button that opens a debug panel docked to the bottom. */
+export interface ChatSidenavDevtools {
+  /** The session whose `running` status lights the button's streaming dot. */
+  readonly session: ChatSidenavDevtoolsSource;
+  /**
+   * Renders the panel, typically `<ChatDebug {...panel} ... />`. It is not
+   * called until the button is first pressed, so the application can load
+   * `@threadplane/react/debug` lazily.
+   */
+  readonly render: (panel: ChatSidenavDevtoolsPanel) => ReactNode;
+  readonly label?: string;
+  readonly buttonLabel?: string;
+}
 
 /** Navigation presentation: expanded body, collapsed content, or a drawer controlled by open. */
 export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';
@@ -23,6 +60,11 @@ export interface ChatSidenavProps {
   readonly onSearch?: () => void;
   readonly searchLabel?: string;
   readonly searchShortcut?: boolean;
+  /**
+   * Opt-in footer Devtools button, as Angular's `[agent]` input adds. Omitted
+   * from production builds (`process.env.NODE_ENV === 'production'`).
+   */
+  readonly devtools?: ChatSidenavDevtools;
 }
 
 function composedParent(element: Element): Element | null {
@@ -48,6 +90,74 @@ export function shortcutTargetIsEditable(event: KeyboardEvent): boolean {
   return editable === true;
 }
 
+/** Production builds drop the Devtools button, as Angular does outside dev mode. */
+const chatDevtoolsIncluded = process.env.NODE_ENV !== 'production';
+
+function SidenavDevtools({
+  devtools,
+  collapsed,
+}: {
+  readonly devtools: ChatSidenavDevtools;
+  readonly collapsed: boolean;
+}) {
+  const { session } = devtools;
+  const running =
+    useSyncExternalStore(
+      session.subscribe,
+      () => session.getSnapshot().status,
+      () => session.getSnapshot().status
+    ) === 'running';
+  const [open, setOpen] = useState(false);
+  // The panel mounts on first press and stays mounted so its state survives.
+  const [opened, setOpened] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
+  const label = devtools.label ?? 'Devtools';
+  const buttonLabel = devtools.buttonLabel ?? 'Open chat devtools';
+  const change = (next: boolean) => {
+    setOpen(next);
+    if (next) setOpened(true);
+  };
+  const wasOpen = useRef(false);
+  useIsomorphicLayoutEffect(() => {
+    const closed = wasOpen.current && !open;
+    wasOpen.current = open;
+    // Closing from inside the panel unmounts the focused control; focus the
+    // button then, but never take focus from an outside control.
+    const document = button.current?.ownerDocument;
+    if (closed && document?.activeElement === document?.body)
+      button.current?.focus();
+  }, [open]);
+  return (
+    <div className="tp-chat-sidenav__footer">
+      <button
+        ref={button}
+        type="button"
+        className="tp-chat-sidenav__devtools"
+        aria-label={buttonLabel}
+        title={buttonLabel}
+        aria-expanded={open}
+        onClick={() => change(!open)}
+      >
+        <span
+          className="tp-chat-sidenav__devtools-dot"
+          data-streaming={running ? 'true' : 'false'}
+          aria-hidden="true"
+        />
+        {!collapsed && (
+          <span className="tp-chat-sidenav__devtools-label">{label}</span>
+        )}
+      </button>
+      {opened &&
+        devtools.render({
+          open,
+          onOpenChange: change,
+          defaultDock: 'bottom',
+          launcher: 'none',
+        })}
+    </div>
+  );
+}
+
 /** Controlled navigation presentation; children remain mounted in every mode. */
 export function ChatSidenav({
   mode,
@@ -66,6 +176,7 @@ export function ChatSidenav({
   onSearch,
   searchLabel = 'Search conversations',
   searchShortcut,
+  devtools,
 }: ChatSidenavProps) {
   const id = useId();
   const navId = `${id}-nav`;
@@ -339,6 +450,9 @@ export function ChatSidenav({
           >
             {collapsedContent}
           </div>
+        )}
+        {devtools && chatDevtoolsIncluded && (
+          <SidenavDevtools devtools={devtools} collapsed={collapsed} />
         )}
       </nav>
     </div>

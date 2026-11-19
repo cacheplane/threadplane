@@ -13,6 +13,30 @@ builds. Commands, frozen manual review and dependency/type limitations are in
 This does not change the published package root or narrow the current custom
 transport declaration into a final public contract.
 
+## Thread creation
+
+`threadId` is optional. A session created without one (or with `null`) starts
+empty and sends no request until its first submit, which calls
+`transport.createThread(signal)` once, before the run. The owned SDK transport
+implements it with `client.threads.create()`, the call the Angular transport
+makes, under the owned `maxRetries` policy (0 unless a number is supplied). A
+supplied transport without `createThread` makes construction throw. The created id
+is reported once through `onThreadId` and is read from `session.threadId`; a
+throwing callback does not affect the run. The id is not part of the snapshot.
+
+- A submit that replaces a submit waiting on creation shares the same request,
+  so one session never creates two threads. Stop leaves the request running and
+  keeps a thread it creates; dispose aborts it and reports nothing.
+- A failed creation settles the submit as `error` with the generic request
+  message. Only an unprotected SDK error's numeric status is read (401 and 403
+  report `auth`), never its message or body. No run started, so the error is
+  `recovery: 'retry'` when `retry()` exists and `none` otherwise; the next submit
+  or `retry()` makes a new creation request.
+- Before the thread exists, `load()` and `checkStatus()` resolve without a
+  request, `fork()` and `regenerate()` reject, and `reconnect()` and `resume()`
+  reject as they do with nothing to join or answer.
+- There is no thread switch: a session still belongs to one thread once it has one.
+
 ## Visible text
 
 The shared private wire helper preserves a top-level string verbatim. Arrays join
@@ -95,7 +119,12 @@ step delivered whole with its answer, were never observed arriving. The field is
 then absent, never zero. A correction that removes the reasoning removes its time.
 The measurement lives outside the deterministic reducer, is not stored or sent, and
 is lost with the session, so a reloaded conversation shows no durations. A network
-stall counts as reasoning time. Subgraph messages are not timed.
+stall counts as reasoning time.
+
+Assistant steps in `snapshot.subgraphs` are timed the same way, each child graph
+on its own clock, since namespaces can repeat message identifiers. A child
+graph's timings last as long as the session lists it: a new submission starts
+with no child graphs, so their durations go with them.
 
 ## Completed checkpoint forks
 
@@ -164,7 +193,8 @@ undispatched (a browser `TypeError: fetch failed` carries no cause, and a reset
 after the server accepted the request looks identical to one that never left), so
 a pre-response failure is an `interrupted` error too, not a retryable
 `connection` one. The only `retry` the runtime emits is for a run the backend
-itself reports as failed (see "Retry" below).
+itself reports as failed (see "Retry" below), and for a first submit whose thread
+could not be created, which started no run (see "Thread creation" above).
 
 `recovery: 'check'` is offered exactly when `transport.getHistory` exists for an
 ordinary submit, with or without a captured run id, and `checkStatus()` is exposed
@@ -208,7 +238,8 @@ run so the two surfaces cannot disagree.
 when the transport has `getRunStatus`, because only the exact run's status can
 settle a failure. It sends a command again when, and only when, the backend
 reported that command's run as `error` or `timeout`, at close or through
-`checkStatus()`. That error carries `retryable: true` and `recovery: 'retry'`.
+`checkStatus()`, or when the command's thread could not be created. That error
+carries `retryable: true` and `recovery: 'retry'`.
 
 - The transcript and values return to what they were before the command, and the
   command's captured input is sent again. A submission keeps its user message id,
@@ -261,6 +292,37 @@ first decision even though checkpoint values and interrupt metadata still look
 paused. The preflight detects already-observed consumption, but it is not an atomic
 server claim. Applications must coordinate responders to the same task. Distinct
 checkpoint branches do not provide independent opposing decisions on one task.
+
+## Thread directory
+
+`createThreadDirectory` in `thread-directory.ts` lists a deployment's saved
+conversations for a sidebar. It is a store with `getSnapshot` and `subscribe`,
+so a framework binding observes it the same way it observes a session, and it
+holds no framework dependency. Pass `apiUrl` (with optional `clientOptions`) to
+have it build its own SDK client, or `threads` to reuse an existing
+`client.threads`.
+
+An entry is read from thread metadata: `title` (or `titleFallback`),
+`archived`, `pinned`, `pinnedOrder` and `projectId`. `threads` holds the
+conversations that are not archived, pinned ones first in their saved order;
+`archived` holds the rest. Nothing is read until `refresh()` is called. A failed
+read never rejects: it is published as `status: 'error'` with the failure, and
+the lists keep the last successful result. When two reads overlap, the later
+call's result is kept.
+
+`create`, `delete`, `rename`, `archive`, `unarchive`, `pin`, `unpin`,
+`moveToProject` and `reorderPinned` write metadata and then read the list
+again. A failed write rejects with the SDK's error and leaves the list as it
+was, which lets a list that shows the change optimistically put the row back.
+The command names and arguments match the conversation-list action adapters, so
+the directory can be passed as the adapter. `get` resolves null for an unknown
+(404) or malformed (422) ID and rejects for any other failure.
+
+Limits: one page of `limit` conversations (default 50), no paging or search,
+and no refresh when another tab or a run changes a thread; the application
+calls `refresh()`. The directory is staged here with the session and is not
+exported from a published entry. The Angular `LangGraphThreadsAdapter` is
+unchanged and is not built on it yet.
 
 ## Verification
 

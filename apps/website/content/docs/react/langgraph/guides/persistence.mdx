@@ -36,6 +36,20 @@ export async function openConversation(apiUrl: string, confirmedThreadId: string
 }
 ~~~
 
+## Start a conversation without a thread
+
+Omit `threadId` to start an empty session. It sends no request until the first submit, which creates the thread before the run starts and reports its ID through `onThreadId`. A **New chat** that the user never sends leaves no empty thread behind. Record the reported ID; `session.threadId` holds it after creation.
+
+~~~tsx
+import { createSession } from '@threadplane/langgraph';
+
+export function startConversation(apiUrl: string, remember: (threadId: string) => void) {
+  return createSession({ apiUrl, assistantId: 'persistence', onThreadId: remember });
+}
+~~~
+
+Before that thread exists, `load()` and `checkStatus()` resolve without a request, and `fork()` and `regenerate()` reject. A second submit while the thread is being created waits for the same thread. If creation fails, the session reports a request error and stays usable: retry or send again. The session still belongs to one thread once it has one, so open a new session for another conversation.
+
 The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Create and revisit conversations
