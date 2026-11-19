@@ -55,14 +55,19 @@ async function submit(page: Page, text: string) {
 }
 test.beforeEach(async ({ request }) => {
   await control(request, '/__reset');
-  // Real ChatOpenAI never surfaces reasoning; inject it so palettes reach the
-  // Reasoning region (scripts/react-cockpit/langgraph-proxy.mjs).
+});
+/**
+ * Injected data, opted into only by the test that styles the Reasoning
+ * region: langchain_openai's ChatOpenAI does not extract `reasoning_content`
+ * from Chat Completions responses, so the real graph never surfaces reasoning
+ * (scripts/react-cockpit/langgraph-proxy.mjs, /__inject/reasoning).
+ */
+const injectReasoning = async (request: APIRequestContext) =>
   expect(
     (await request.post('/__inject/reasoning', {
       data: { text: 'Considering the aviation question.' },
     })).ok()
   ).toBe(true);
-});
 test.afterEach(async ({ page, request }, info) => {
   // Every browser connection through the proxy closes and nothing stays held.
   // (No per-run graph child processes exist any more: the graph is `langgraph dev`.)
@@ -88,6 +93,7 @@ for (const width of [1280, 390]) {
     page,
     request,
   }, info) => {
+    await injectReasoning(request);
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/chat/theming/react/');
     await expect(page.getByRole('status')).toHaveText('Ready.');

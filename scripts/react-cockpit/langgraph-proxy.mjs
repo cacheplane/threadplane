@@ -12,6 +12,8 @@
  *   GET  /__captures          per finished run: forwarded SSE text, saved
  *                             messages/next from the real server, title
  *                             before and after the run
+ *   POST /__ready             200 once the backend is up (with `serve.mjs
+ *                             --backend`, after its lazy start)
  *   POST /__reset             forget requests, drop held responses, clear modes
  *   POST /__fail-create       next thread creation answers 500 without forwarding
  *   POST /__history/<mode>    safe | hold | changed | missing | pending | failed
@@ -74,7 +76,7 @@ function aiText(rawEvent) {
   }
 }
 
-export function createLanggraphProxy({ upstream }) {
+export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   const target = new URL(upstream);
   let requests = [];
   let failCreate = false;
@@ -313,6 +315,8 @@ export function createLanggraphProxy({ upstream }) {
     })],
     '/__reset': ['POST', () => { reset(); return {}; }],
     '/__fail-create': ['POST', () => { failCreate = true; return {}; }],
+    // Waits for the backend (with `serve.mjs --backend`, its lazy start).
+    '/__ready': ['POST', async () => { await ready(); return {}; }],
     '/__release': ['POST', () => { heldStream?.release(); return {}; }],
     '/__release-history': ['POST', () => {
       const held = heldHistory;
@@ -353,6 +357,7 @@ export function createLanggraphProxy({ upstream }) {
 
     openResponses += 1;
     response.once('close', () => { openResponses -= 1; });
+    await ready();
     const body = await readAll(request);
     const search = new URL(request.url, 'http://localhost').search;
     const path = pathname.slice(prefix.length) + search;

@@ -65,7 +65,7 @@ Playwright webServer ──► serve.mjs ── /api, /developer-api ──► l
    | `GET /__graph-proof` | in-process proof | removed; see "Guarantees" |
    | `GET /__captures` (batch 1) | authored SSE, saved messages, title updates | per finished run: forwarded SSE text, saved `messages`/`next` from the real `/state`, and thread title before and after the run, all captured before the browser sees the stream end |
    | `GET /__lifetime` child reaping (batch 1) | owned wire child processes | no per-run graph processes exist any more, so `openResponses` (proxied browser connections still open) replaces the child-reaping check |
-   | `POST /__inject/reasoning` (batch 1) | authored `reasoning_content` | **injected data**. `ChatOpenAI` over Chat Completions never surfaces reasoning, so a real graph can't produce it. Until reset, the control adds `additional_kwargs.reasoning_content` to every AI message the browser receives (the first stream chunk, `values`/`updates`/`checkpoints` events, history and `/state`), so the theming palette checks still reach the Reasoning region |
+   | `POST /__inject/reasoning` (batch 1) | authored `reasoning_content` | **injected data, opt-in per test**: nothing is injected unless a spec calls it, and only the theming test that styles the Reasoning region does. langchain_openai's `ChatOpenAI` does not extract `reasoning_content` from Chat Completions responses (even though aimock can send it), so the real graph never surfaces reasoning. Until reset, the control adds `additional_kwargs.reasoning_content` to every AI message the browser receives (the first stream chunk, `values`/`updates`/`checkpoints` events, history and `/state`). Possible follow-up: switch the theming graph to the Responses API with reasoning summaries, so reasoning flows for real in both frameworks. That is a product change, so it is out of scope here |
 
    Holds are now explicit controls, not magic prompt text, so every test
    prompt can be a shared fixture prompt.
@@ -81,6 +81,25 @@ Playwright webServer ──► serve.mjs ── /api, /developer-api ──► l
    `cockpit/shared/react-aimock-setup.ts`), and its `configuration.mjs`
    entry gets `backend: aimockLanggraph('<example>', <port>)`, where the
    langgraph port is the app port + 1000.
+
+## Website previews
+
+Website e2e (`apps/website/playwright.config.ts`) reuses the React examples as
+live previews and drives several of them through the same controls. Each
+batch that deletes an authored fixture server moves the website previews and
+specs that used it onto aimock in the same PR, so every PR is green by itself.
+There is no second, authored backend.
+
+- `serve.mjs <example> --backend` starts that example's aimock + `langgraph
+  dev` itself (`scripts/react-cockpit/aimock-backend.mjs`), lazily on the
+  first request for the app or its API. Website suites already start only the
+  preview servers they own, so a suite pays only for the previews it drives.
+  The backend stays in the server's process group and stops with it.
+- Preview specs call `POST /__ready` before driving a preview; it waits out the
+  lazy start.
+- One `langgraph dev` per example, not a shared `langgraph.json`: each example
+  is its own Python project with its own locked dependencies and graph module,
+  so a shared server would need one merged environment.
 
 ## Guarantees: kept, moved, or replaced
 
