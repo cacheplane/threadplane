@@ -7,6 +7,30 @@
       "response": {
         "content": "The user sent a simple greeting (\"Hello\"), so the immediate goal is to acknowledge the greeting and invite them to continue (e.g., ask how I can help or what they'd like to discuss)."
       }
+    },
+    {
+      "match": {
+        "systemMessage": "ANALYZE step"
+      },
+      "response": {
+        "content": "Analysis draft"
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "PLAN step"
+      },
+      "response": {
+        "content": "Plan draft"
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "GENERATE step"
+      },
+      "response": {
+        "content": "Final answer"
+      }
     }
   ]
 }

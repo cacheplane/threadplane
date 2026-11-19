@@ -10,8 +10,6 @@ import { createNativeMastraFixture } from './native-mastra-fixture.mjs';
 import { createNativeStrandsFixture } from './native-strands-fixture.mjs';
 import { createNativeMafFixture } from './native-maf-fixture.mjs';
 import { createAgUiClientToolsFixture } from './ag-ui-client-tools-fixture.mjs';
-import { createDurableFixture } from './durable-fixture.mjs';
-import { createTimeTravelFixture } from './time-travel-fixture.mjs';
 import { createLanggraphProxy } from './langgraph-proxy.mjs';
 import { createAimockBackend } from './aimock-backend.mjs';
 import { createChatDebugFixture } from './chat-debug-fixture.mjs';
@@ -99,10 +97,6 @@ const agUiInterruptsFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'interrupts'
     ? createAgUiInterruptsFixture()
     : null;
-const timeTravelFixture =
-  configuration.topic === 'time-travel' ? createTimeTravelFixture() : null;
-const durableFixture =
-  configuration.topic === 'durable-execution' ? createDurableFixture() : null;
 const agUiClientToolsFixture = configuration.adapter === 'ag-ui' && configuration.topic === 'client-tools' ? createAgUiClientToolsFixture() : null;
 
 const root = resolve(
@@ -241,13 +235,6 @@ const server = createServer(async (request, response) => {
     agUiStreamingFixture &&
     (await agUiStreamingFixture(request, response, pathname))
   )
-    return;
-  if (
-    timeTravelFixture &&
-    (await timeTravelFixture(request, response, pathname))
-  )
-    return;
-  if (durableFixture && (await durableFixture(request, response, pathname)))
     return;
   if (
     pathname.startsWith('/api/') ||

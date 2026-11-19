@@ -422,6 +422,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/time-travel/react/',
     port: 4607,
     project: 'cockpit-langgraph-time-travel-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/time-travel/python',
+      fixtures: 'cockpit/langgraph/time-travel/angular/e2e/fixtures', langgraphPort: 5607,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('subgraphs'), {
     topic: 'subgraphs',
@@ -440,6 +444,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/durable-execution/react/',
     port: 4605,
     project: 'cockpit-langgraph-durable-execution-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/durable-execution/python',
+      fixtures: 'cockpit/langgraph/durable-execution/angular/e2e/fixtures', langgraphPort: 5605,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('persistence'), {
     topic: 'persistence',
