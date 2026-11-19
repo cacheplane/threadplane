@@ -486,7 +486,7 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
-                  command: 'npx nx run cockpit-deep-agents-filesystem-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-filesystem --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs deep-agents-filesystem --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4629',
                   reuseExistingServer,

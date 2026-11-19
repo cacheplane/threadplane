@@ -53,17 +53,16 @@ it('wires native Subagents build, fixture and website coverage to the shared Pyt
   expect(config).toContain('cockpit-deep-agents-subagents-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-subagents --no-parent');
   expect(config).toContain("url: 'http://127.0.0.1:4630'");
 });
-it('wires native Filesystem build, fixture and website coverage to the shared Python graph', () => {
+it('wires native Filesystem build, aimock e2e and website coverage to the shared Python graph', () => {
   const read = (path: string) => JSON.parse(readFileSync(join(repoRoot, path), 'utf8'));
   const react = read('cockpit/deep-agents/filesystem/react/project.json');
   expect(react.tags).toEqual(expect.arrayContaining(['framework:react', 'scope:cockpit-e2e', 'scope:cockpit-examples']));
   expect(react.targets.build.options.command).toBe('node scripts/react-cockpit/build.mjs deep-agents-filesystem');
-  expect(react.targets.e2e.dependsOn).toEqual(['build', 'fixture-test']);
-  expect(react.targets['fixture-test'].dependsOn).toContainEqual({ target: 'test', projects: ['cockpit-deep-agents-filesystem-python'] });
+  expect(react.targets.e2e.dependsOn).toEqual(['build', { target: 'test', projects: ['cockpit-deep-agents-filesystem-python'] }]);
   const website = read('apps/website/project.json');
   expect(websiteBuildProjects(website)).toContain('cockpit-deep-agents-filesystem-react');
   const config = readFileSync(join(repoRoot, 'apps/website/playwright.config.ts'), 'utf8');
-  expect(config).toContain('cockpit-deep-agents-filesystem-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-filesystem --no-parent');
+  expect(config).toContain('node scripts/react-cockpit/serve.mjs deep-agents-filesystem --no-parent --backend');
   expect(config).toContain("url: 'http://127.0.0.1:4629'");
 });
 import { basename, dirname, join, relative, resolve } from 'node:path';

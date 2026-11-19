@@ -93,6 +93,10 @@ test('Filesystem owns an exact closed native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('deep-agents-filesystem'), {
     topic: 'filesystem', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/filesystem/react',
     base: '/deep-agents/filesystem/react/', port: 4629, project: 'cockpit-deep-agents-filesystem-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/deep-agents/filesystem/python',
+      fixtures: 'cockpit/deep-agents/filesystem/angular/e2e/fixtures', langgraphPort: 5629,
+    },
   });
   for (const key of ['filesystem', 'deep-agents/filesystem', '../deep-agents-filesystem', 'deep-agents-filesystem/../memory'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);

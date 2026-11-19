@@ -19,7 +19,6 @@ import { createAgUiInterruptsFixture } from './ag-ui-interrupts-fixture.mjs';
 import { createAgUiToolViewsFixture } from './ag-ui-tool-views-fixture.mjs';
 import { createAgUiJsonRenderFixture } from './ag-ui-json-render-fixture.mjs';
 import { createAgUiSubagentsFixture } from './ag-ui-subagents-fixture.mjs';
-import { createDeepAgentsFilesystemFixture } from './deep-agents-filesystem-fixture.mjs';
 import { createDeepAgentsPlanningFixture } from './deep-agents-planning-fixture.mjs';
 
 import { createDeepAgentsMemoryFixture } from './deep-agents-memory-fixture.mjs';
@@ -58,7 +57,6 @@ const nativeMastraFixture = configuration.library === 'runtimes' && configuratio
 const deepAgentsMemoryFixture = configuration.library === 'deep-agents' && configuration.topic === 'memory' ? createDeepAgentsMemoryFixture() : null;
 const deepAgentsSkillsFixture = configuration.library === 'deep-agents' && configuration.topic === 'skills' ? createDeepAgentsSkillsFixture() : null;
 const deepAgentsSubagentsFixture = configuration.library === 'deep-agents' && configuration.topic === 'subagents' ? createDeepAgentsSubagentsFixture() : null;
-const deepAgentsFilesystemFixture = configuration.library === 'deep-agents' && configuration.topic === 'filesystem' ? createDeepAgentsFilesystemFixture() : null;
 const deepAgentsPlanningFixture = configuration.library === 'deep-agents' && configuration.topic === 'planning' ? createDeepAgentsPlanningFixture() : null;
 let chatGenerativeUiFixture = configuration.library === 'chat' && configuration.topic === 'generative-ui' ? createChatGenerativeUiFixture() : null;
 // aimock-backed examples: the real graph runs under `langgraph dev` (started by
@@ -183,7 +181,6 @@ const server = createServer(async (request, response) => {
   if (deepAgentsMemoryFixture && (await deepAgentsMemoryFixture(request, response, pathname))) return;
   if (deepAgentsSkillsFixture && (await deepAgentsSkillsFixture(request, response, pathname))) return;
   if (deepAgentsSubagentsFixture && (await deepAgentsSubagentsFixture(request, response, pathname))) return;
-  if (deepAgentsFilesystemFixture && (await deepAgentsFilesystemFixture(request, response, pathname))) return;
   if (deepAgentsPlanningFixture && (await deepAgentsPlanningFixture(request, response, pathname))) return;
   if (chatGenerativeUiFixture && pathname === '/__reset') {
     if (request.method !== 'POST') return json(response, {}, 405);
@@ -287,7 +284,7 @@ const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]) : null;
 let closing;
 let shutdown;
-if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsFilesystemFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture) {
+if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || deepAgentsMemoryFixture || deepAgentsSubagentsFixture || deepAgentsSkillsFixture || deepAgentsPlanningFixture || chatGenerativeUiFixture) {
   shutdown = (code = 0) => {
     closing ??= (async () => {
       let a2uiFailure;
@@ -300,7 +297,7 @@ if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture ||
         try { await chatA2uiFixture?.close(); }
         catch (error) { a2uiFailure = error; }
       }
-      else await (chatDebugFixture ?? nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? deepAgentsMemoryFixture ?? deepAgentsSubagentsFixture ?? deepAgentsSkillsFixture ?? deepAgentsFilesystemFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture).close();
+      else await (chatDebugFixture ?? nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? deepAgentsMemoryFixture ?? deepAgentsSubagentsFixture ?? deepAgentsSkillsFixture ?? deepAgentsPlanningFixture ?? chatGenerativeUiFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();
