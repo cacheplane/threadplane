@@ -330,14 +330,14 @@ test('Spec Rendering has a closed local fifteenth React identity', async () => {
 });
 test('Subagents has a closed fourteenth React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
-  assert.deepEqual(reactCockpitConfiguration('ag-ui-subagents'), { topic: 'subagents', adapter: 'ag-ui', appPath: 'cockpit/ag-ui/subagents/react', base: '/ag-ui/subagents/react/', port: 4613, project: 'cockpit-ag-ui-subagents-react' });
+  assert.deepEqual(reactCockpitConfiguration('ag-ui-subagents'), { topic: 'subagents', adapter: 'ag-ui', appPath: 'cockpit/ag-ui/subagents/react', base: '/ag-ui/subagents/react/', port: 4613, project: 'cockpit-ag-ui-subagents-react', backend: {'kind': 'aimock-ag-ui', 'python': 'cockpit/ag-ui/subagents/python', 'fixtures': 'cockpit/ag-ui/subagents/angular/e2e/fixtures', 'backendPort': 5613, 'agentPath': '/agent'} });
   for (const key of ['subagents', 'ag-ui/subagents', '../ag-ui-subagents']) assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
 });
 
 test('JSON Render has a closed thirteenth React identity and all routes remain unique',async()=>{
   const {reactCockpitConfiguration}=await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('ag-ui-json-render'),{
-    topic:'json-render',adapter:'ag-ui',appPath:'cockpit/ag-ui/json-render/react',base:'/ag-ui/json-render/react/',port:4612,project:'cockpit-ag-ui-json-render-react',
+    topic:'json-render',adapter:'ag-ui',appPath:'cockpit/ag-ui/json-render/react',base:'/ag-ui/json-render/react/',port:4612,project:'cockpit-ag-ui-json-render-react', backend: {'kind': 'aimock-ag-ui', 'python': 'cockpit/ag-ui/json-render/python', 'fixtures': 'cockpit/ag-ui/json-render/angular/e2e/fixtures', 'backendPort': 5612, 'agentPath': '/agent'},
   });
   const configurations=['streaming','interrupts','memory','client-tools','persistence','durable-execution','subgraphs','time-travel','deployment-runtime','ag-ui-streaming','ag-ui-interrupts','ag-ui-tool-views','ag-ui-json-render','ag-ui-subagents'].map(reactCockpitConfiguration);
   for(const field of ['appPath','base','port','project'])assert.equal(new Set(configurations.map(configuration=>configuration[field])).size,14);
@@ -348,7 +348,7 @@ test('AG-UI Tool Views has a closed twelfth identity with no overlapping runtime
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('ag-ui-tool-views'), {
     topic: 'tool-views', adapter: 'ag-ui', appPath: 'cockpit/ag-ui/tool-views/react',
-    base: '/ag-ui/tool-views/react/', port: 4611, project: 'cockpit-ag-ui-tool-views-react',
+    base: '/ag-ui/tool-views/react/', port: 4611, project: 'cockpit-ag-ui-tool-views-react', backend: {'kind': 'aimock-ag-ui', 'python': 'cockpit/ag-ui/tool-views/python', 'fixtures': 'cockpit/ag-ui/tool-views/angular/e2e/fixtures', 'backendPort': 5611, 'agentPath': '/agent'},
   });
   const configurations = [
     'streaming', 'interrupts', 'memory', 'client-tools', 'persistence',
@@ -371,7 +371,7 @@ test('AG-UI Streaming has a closed React identity distinct from LangGraph Stream
     appPath: 'cockpit/ag-ui/streaming/react',
     base: '/ag-ui/streaming/react/',
     port: 4609,
-    project: 'cockpit-ag-ui-streaming-react',
+    project: 'cockpit-ag-ui-streaming-react', backend: {'kind': 'aimock-ag-ui', 'python': 'cockpit/ag-ui/streaming/python', 'fixtures': 'cockpit/ag-ui/streaming/angular/e2e/fixtures', 'backendPort': 5609, 'agentPath': '/agent'},
   });
   assert.equal(
     reactCockpitConfiguration('streaming').appPath,
@@ -398,7 +398,7 @@ test('AG-UI Interrupts has a closed identity and all eleven React previews remai
     appPath: 'cockpit/ag-ui/interrupts/react',
     base: '/ag-ui/interrupts/react/',
     port: 4610,
-    project: 'cockpit-ag-ui-interrupts-react',
+    project: 'cockpit-ag-ui-interrupts-react', backend: {'kind': 'aimock-ag-ui', 'python': 'cockpit/ag-ui/interrupts/python', 'fixtures': 'cockpit/ag-ui/interrupts/angular/e2e/fixtures', 'backendPort': 5610, 'agentPath': '/agent/native'},
   });
   assert.equal(
     reactCockpitConfiguration('interrupts').appPath,
@@ -723,18 +723,20 @@ test('aimock-backed React e2e setups match their closed configuration backends',
   const setups = walk('cockpit');
   assert.ok(setups.length > 0);
   for (const file of setups) {
-    const call = /reactAimockGlobalSetup\(\{ example: '([^']+)', port: (\d+) \}\)/.exec(readFileSync(file, 'utf8'));
-    assert.ok(call, `${file} uses reactAimockGlobalSetup`);
-    const [, example, port] = call;
+    const call = /reactAimock(AgUi)?GlobalSetup\(\{ example: '([^']+)', port: (\d+) \}\)/.exec(readFileSync(file, 'utf8'));
+    assert.ok(call, `${file} uses reactAimockGlobalSetup or reactAimockAgUiGlobalSetup`);
+    const [, agUi, example, port] = call;
     const serve = /serve\.mjs ([a-z0-9-]+)/.exec(readFileSync(file.replace('global-setup-impl.ts', 'playwright.config.ts'), 'utf8'))[1];
     const configuration = reactCockpitConfiguration(serve);
     assert.equal(configuration.port, Number(port), file);
-    assert.deepEqual(configuration.backend, {
-      kind: 'aimock-langgraph',
-      python: `cockpit/${example}/python`,
-      fixtures: `cockpit/${example}/angular/e2e/fixtures`,
-      langgraphPort: Number(port) + 1000,
-    }, file);
+    const shared = { python: `cockpit/${example}/python`, fixtures: `cockpit/${example}/angular/e2e/fixtures` };
+    if (agUi) {
+      const { aimockPort, agentPath, ...rest } = configuration.backend;
+      assert.deepEqual(rest, { kind: 'aimock-ag-ui', ...shared, backendPort: Number(port) + 1000 }, file);
+      if (aimockPort !== undefined) assert.equal(aimockPort, Number(port) + 2000, file);
+      assert.match(agentPath, /^\/agent(\/[a-z]+)?$/, file);
+    } else
+      assert.deepEqual(configuration.backend, { kind: 'aimock-langgraph', ...shared, langgraphPort: Number(port) + 1000 }, file);
     assert.ok(existsSync(configuration.backend.fixtures), configuration.backend.fixtures);
   }
 });
