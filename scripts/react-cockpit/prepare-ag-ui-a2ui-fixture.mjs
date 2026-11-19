@@ -20,13 +20,10 @@ export function parsePreparationArguments(args) {
   assert.ok(
     Array.isArray(args) &&
       args.length <= 1 &&
-      args.every((flag) => ['--serve', '--verify-application'].includes(flag)),
-    'Choose preparation, --serve or --verify-application'
+      args.every((flag) => flag === '--verify-application'),
+    'Choose preparation or --verify-application'
   );
-  return {
-    serve: args[0] === '--serve',
-    verifyApplication: args[0] === '--verify-application',
-  };
+  return { verifyApplication: args[0] === '--verify-application' };
 }
 function tool(name, override) {
   const choices = override
@@ -497,29 +494,6 @@ export async function prepareAgUiA2uiFixture({
         retain: attempt,
         name: 'public-package-cache',
       });
-      // This opt-in child is the bounded actual manager proof; pure specs keep it skipped.
-      await execute({
-        executable: process.execPath,
-        args: [
-          '--test',
-          '--test-timeout=60000',
-          '--test-name-pattern=^actual canonical manager',
-          join(root, 'scripts/react-cockpit/ag-ui-a2ui-fixture.spec.mjs'),
-        ],
-        env: {
-          ...env,
-          THREADPLANE_AGUI_A2UI_MANAGER_OPTIONS: JSON.stringify({
-            retain: join(attempt, 'canonical-manager'),
-            python: paths.python,
-            environment: paths.environment,
-            home: paths.home,
-            tmpdir: paths.tmpdir,
-          }),
-        },
-        timeoutMs: 90000,
-        retain: attempt,
-        name: 'actual-canonical-manager',
-      });
       const options = {
         root,
         retain: paths.retain,
@@ -560,33 +534,6 @@ export async function prepareAgUiA2uiFixture({
   }
 }
 
-/** Own only the already-prepared browser service; preparation has its own deadline. */
-export const BROWSER_SERVER_FALLBACK_MS = 35 * 60 * 1000;
-export function servePreparedAgUiA2uiFixture(result, { run = runPreparationStage } = {}) {
-  return run({
-    executable: process.execPath,
-    args: [
-      join(root, 'scripts/react-cockpit/serve.mjs'),
-      'ag-ui-a2ui',
-      '--no-parent',
-    ],
-    env: {
-      ...result.env,
-      THREADPLANE_AGUI_A2UI_BROWSER_RUNTIME: JSON.stringify({
-        python: result.python,
-        environment: result.environment,
-        home: result.home,
-        tmpdir: result.tmpdir,
-      }),
-      THREADPLANE_AGUI_A2UI_BROWSER_RETAIN: join(result.attempt, 'browser'),
-    },
-    timeoutMs: BROWSER_SERVER_FALLBACK_MS,
-    retain: result.attempt,
-    name: 'browser-server',
-    allowInterrupt: true,
-  });
-}
-
 if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
@@ -601,9 +548,6 @@ if (
         installedApplication: mode.verifyApplication,
       })
     );
-    if (mode.serve) {
-      await servePreparedAgUiA2uiFixture(result);
-    }
   } catch {
     console.error(
       'Native A2UI preparation or owned closure failed; retained attempt contains diagnostics.'

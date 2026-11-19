@@ -410,10 +410,10 @@ describe('Website Playwright configuration', () => {
         url: 'http://localhost:4300',
       }),
       expect.objectContaining({
-        command: 'node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs --serve',
+        command: 'node scripts/react-cockpit/serve.mjs ag-ui-a2ui --no-parent --backend',
         url: 'http://127.0.0.1:4647',
         reuseExistingServer: false,
-        timeout: 330_000,
+        timeout: 180_000,
       }),
       expect.objectContaining({
         command: expect.stringContaining(
@@ -605,7 +605,7 @@ it('scopes native AG-UI A2UI checks to Website and the prepared owned React serv
   const servers = Array.isArray(config.webServer) ? config.webServer : [];
   expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://127.0.0.1:4647']);
   expect(servers.every(server => server.reuseExistingServer === false)).toBe(true);
-  expect(servers[1]?.command).toBe('node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs --serve');
+  expect(servers[1]?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-a2ui --no-parent --backend');
   expect(config.testMatch).toBe('**/react-ag-ui-a2ui-preview.spec.ts');
   expect(config.workers).toBe(1);
   expect(config.retries).toBe(0);

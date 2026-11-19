@@ -1085,7 +1085,7 @@ jobs:
           mkdirSync(retain, { recursive: true });
           writeFileSync(join(retain, 'provenance.json'), JSON.stringify(provenance, null, 2) + '\n', { flag: 'wx' });
           NODE
-          timeout 1200s node --test --test-concurrency=1 --test-timeout=120000 scripts/react-cockpit/ag-ui-a2ui-configuration.spec.mjs scripts/react-cockpit/ag-ui-a2ui-preparation.spec.mjs scripts/react-cockpit/ag-ui-a2ui-fixture.spec.mjs scripts/react-cockpit/ag-ui-a2ui-native-probe.spec.mjs
+          timeout 1200s node --test --test-concurrency=1 --test-timeout=120000 scripts/react-cockpit/ag-ui-a2ui-configuration.spec.mjs scripts/react-cockpit/ag-ui-a2ui-preparation.spec.mjs scripts/react-cockpit/ag-ui-a2ui-native-probe.spec.mjs
       - name: Verify native MAF fixture ownership
         if: matrix.cap.angular == 'cockpit-runtimes-microsoft-agent-framework-react'
         run: |
@@ -1168,9 +1168,6 @@ jobs:
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
         with:
           python-version: '3.12'
-      - name: Prepare frozen canonical A2UI browser producer
-        if: matrix.suite == 'ag-ui'
-        run: node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs
       - name: Cache Playwright browsers
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:

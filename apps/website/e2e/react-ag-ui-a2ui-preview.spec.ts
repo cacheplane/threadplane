@@ -37,10 +37,10 @@ test.afterEach(async ({ page, request }, testInfo) => {
   });
   expect(observed?.requests).toEqual([]);
   expect(observed?.errors).toEqual([]);
-  const lifetimeReceipt = await (
-    await request.get('http://127.0.0.1:4647/__lifetime')
-  ).json();
-  expect(lifetimeReceipt.current.requests).toEqual([]);
+  // The recording proxy saw no agent request (scripts/react-cockpit/ag-ui-proxy.mjs).
+  expect(
+    await (await request.get('http://127.0.0.1:4647/__requests')).json()
+  ).toEqual([]);
   expect((await request.post('http://127.0.0.1:4647/__reset')).ok()).toBe(true);
 });
 

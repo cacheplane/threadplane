@@ -184,7 +184,7 @@ describe('native AG-UI A2UI actual Nx proof ownership', () => {
   for (const file of [
     'fixtures/react-parity/native-ag-ui-a2ui/server.mjs',
     'fixtures/react-parity/native-ag-ui-a2ui/compiled_worker.py',
-    'scripts/react-cockpit/ag-ui-a2ui-fixture.mjs',
+    'scripts/react-cockpit/ag-ui-proxy.mjs',
     'scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs',
     'scripts/react-cockpit/ag-ui-a2ui-native-probe.mjs',
     'libs/cockpit-a2ui-react/src/surface.ts',

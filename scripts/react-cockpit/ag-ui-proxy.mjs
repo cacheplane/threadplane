@@ -28,6 +28,7 @@
  *                             `fromRequest: n` starts with the nth request
  *                             (0-based). /__requests marks a held run.
  *   POST /__release           flush and resume a held stream
+ *   POST /__hold/off          cancel a pending (or persistent) hold
  *   POST /__fail-stream       next agent POST answers 500 unforwarded (the
  *                             server is unavailable)
  *   POST /__stream/edit       body { ops }: edits to the next run stream, each
@@ -392,6 +393,7 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', mo
       return {};
     }],
     '/__release': [['POST'], () => { held?.release(); return {}; }],
+    '/__hold/off': [['POST'], () => { holdNext = null; return {}; }],
     '/__fail-stream': [['POST'], () => { failNext = true; return {}; }],
     '/__stream/edit': [['POST'], (body) => {
       if (body.persist) stickyEdits = body.ops ?? [];

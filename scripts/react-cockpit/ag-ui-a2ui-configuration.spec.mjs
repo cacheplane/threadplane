@@ -12,6 +12,14 @@ test('native AG-UI A2UI has one closed authored frontend allocation', () => {
     base: '/ag-ui/a2ui/react/',
     port: 4647,
     project: 'cockpit-ag-ui-a2ui-react',
+    backend: {
+      kind: 'aimock-ag-ui',
+      python: 'cockpit/ag-ui/a2ui/python',
+      fixtures: 'cockpit/ag-ui/a2ui/angular/e2e/fixtures',
+      backendPort: 5647,
+      aimockPort: 6647,
+      agentPath: '/agent',
+    },
   });
   assert.ok(Object.isFrozen(reactCockpitConfiguration('ag-ui-a2ui')));
   for (const key of [
@@ -43,11 +51,9 @@ test('native A2UI owns uncached preparation and exactly one installed proof depe
   assert.deepEqual(project.targets['fixture-test'].dependsOn, [
     { target: 'build', projects: ['core', 'content', 'react', 'a2ui'] },
   ]);
-  assert.deepEqual(project.targets.e2e.dependsOn, [
-    'prepare-fixture',
-    'build',
-    'fixture-test',
-  ]);
+  // The browser e2e runs on aimock + the real AG-UI server; the installed
+  // application proof (fixture-test) still runs first.
+  assert.deepEqual(project.targets.e2e.dependsOn, ['build', 'fixture-test']);
   assert.ok(
     project.namedInputs?.nativeA2uiFixture?.includes(
       '{workspaceRoot}/fixtures/react-parity/native-ag-ui-a2ui/**/*'
@@ -99,12 +105,10 @@ test('native A2UI capability CI owns one installed proof with retained partial a
   assert.equal(artifact.with['include-hidden-files'], true);
   assert.equal(artifact.with['retention-days'], 7);
   const website = workflow.jobs['website-e2e'].steps;
+  // The Website preview runs on aimock + the real AG-UI server (`uv run`
+  // syncs its environment), so the Website job no longer prepares A2UI.
   assert.ok(
-    website.some(
-      (step) =>
-        step.run === 'node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs' &&
-        step.if === "matrix.suite == 'ag-ui'"
-    )
+    !website.some((step) => step.run?.includes('prepare-ag-ui-a2ui-fixture.mjs'))
   );
   assert.ok(
     !website.some((step) =>
