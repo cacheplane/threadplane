@@ -785,6 +785,15 @@ and `skeletonLabel` replaces the placeholder text.
 Finished content that is not a spec stays text, and a view that throws gives
 way to the message text instead of taking the transcript down.
 
+Set `progressive: true` to render a streaming spec as it arrives, as Angular
+does, instead of one finished element at a time. An element appears once its
+`type` has finished and its string props grow as they stream; other props,
+child IDs, `visible` and `repeat` apply once each has finished, and its `on`
+bindings only once the whole element has, so no action runs with half-written
+params. A spec's own `state` is seeded one top-level path at a time as each
+value finishes, keeping anything a view already wrote. A finished spec renders
+the same either way.
+
 The tree is read-only until you set `handlers`, `store` or `onRenderEvent`.
 With any of them, views get `emit` and `set`, as they do from `RenderSpec` with
 a `store`:

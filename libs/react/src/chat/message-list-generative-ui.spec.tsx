@@ -219,6 +219,113 @@ describe('MessageList generativeUi', () => {
     expect(view.container.textContent).toBe('custom a');
   });
 
+  describe('progressive', () => {
+    const progressive: MessageGenerativeUi = { registry, progressive: true };
+    const streamed = () => {
+      const content = createMessageContent();
+      return (text: string, length: number, streaming = true) =>
+        content.project(snapshot([assistant(text.slice(0, length), streaming)]));
+    };
+
+    it('renders an element before it finishes, its string props growing in place', () => {
+      const at = streamed();
+      // The element type is still open: nothing to render yet.
+      const view = render(
+        <MessageList
+          rows={at(SPEC, SPEC.indexOf('Card') + 2)}
+          generativeUi={progressive}
+        />
+      );
+      expect(view.getByRole('status').textContent).toBe('Building UI…');
+
+      view.rerender(
+        <MessageList
+          rows={at(SPEC, SPEC.indexOf('Lyon') + 2)}
+          generativeUi={progressive}
+        />
+      );
+      expect(view.queryByRole('status')).toBeNull();
+      const card = view.container.querySelector('[data-view="card"]') as HTMLElement;
+      expect(card.querySelector('h3')?.textContent).toBe('Ly');
+      expect(card.getAttribute('data-loading')).toBe('true');
+
+      view.rerender(
+        <MessageList
+          rows={at(SPEC, SPEC.indexOf('Lyon') + 9)}
+          generativeUi={progressive}
+        />
+      );
+      expect(view.container.querySelector('[data-view="card"]')).toBe(card);
+      expect(card.querySelector('h3')?.textContent).toBe('Lyon trip');
+
+      // A child appears while its own JSON is still open.
+      view.rerender(
+        <MessageList
+          rows={at(SPEC, SPEC.indexOf('09:4') + 2)}
+          generativeUi={progressive}
+        />
+      );
+      expect(view.container.querySelector('[data-view="card"]')).toBe(card);
+      expect(
+        [...card.querySelectorAll('[data-view="line"]')].map((p) => p.textContent)
+      ).toEqual(['09']);
+    });
+
+    it('waits for a child ID to finish before rendering it', () => {
+      const at = streamed();
+      const view = render(
+        <MessageList
+          rows={at(SPEC, SPEC.indexOf('"when"') + 3)}
+          generativeUi={progressive}
+        />
+      );
+      const card = view.container.querySelector('[data-view="card"]') as HTMLElement;
+      expect(card).not.toBeNull();
+      expect(card.querySelectorAll('[data-view="line"]')).toHaveLength(0);
+    });
+
+    it('seeds state path by path as each value finishes', () => {
+      const STATEFUL = JSON.stringify({
+        root: 'card',
+        elements: {
+          card: { type: 'Card', props: { title: 'Trip' }, children: ['who', 'where'] },
+          who: { type: 'Line', props: { text: { statePath: '/guest' } } },
+          where: { type: 'Line', props: { text: { $state: '/city' } } },
+        },
+        state: { guest: 'Ada', city: 'Lyon' },
+      });
+      const at = streamed();
+      const lines = (container: HTMLElement) =>
+        [...container.querySelectorAll('[data-view="line"]')].map((p) => p.textContent);
+      const view = render(
+        <MessageList
+          rows={at(STATEFUL, STATEFUL.indexOf('"city"') + 9)}
+          generativeUi={progressive}
+        />
+      );
+      expect(lines(view.container)).toEqual(['Ada', 'undefined']);
+      view.rerender(
+        <MessageList rows={at(STATEFUL, STATEFUL.length, false)} generativeUi={progressive} />
+      );
+      expect(lines(view.container)).toEqual(['Ada', 'Lyon']);
+    });
+
+    it('renders a finished spec exactly as the default does', () => {
+      const plain = render(
+        <MessageList rows={rows(assistant(SPEC))} generativeUi={specs} />
+      ).container.innerHTML;
+      cleanup();
+      const at = streamed();
+      const view = render(
+        <MessageList rows={at(SPEC, SPEC.length / 2)} generativeUi={progressive} />
+      );
+      view.rerender(
+        <MessageList rows={at(SPEC, SPEC.length, false)} generativeUi={progressive} />
+      );
+      expect(view.container.innerHTML).toBe(plain);
+    });
+  });
+
   describe('renderA2ui', () => {
     const A2UI = '---a2ui_JSON---\n{"version":"v0.9","createSurface":{"surfaceId":"trip"}}\n';
     const calls: MessageA2uiContent[] = [];
