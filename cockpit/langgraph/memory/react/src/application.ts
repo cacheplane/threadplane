@@ -10,7 +10,7 @@ import {
 
 export interface MemorySession extends Omit<AgentSession, 'getSnapshot'> {
   getSnapshot(): AgentSnapshot & {
-    readonly values?: unknown;
+    readonly state?: unknown;
     readonly interrupts: readonly { readonly value?: unknown }[];
   };
 }
@@ -96,7 +96,7 @@ export function createMemoryApplication(options: {
     const state = session.getSnapshot();
     return {
       rows: content.project(state),
-      facts: projectFacts(state.values, snapshot.facts),
+      facts: projectFacts(state.state, snapshot.facts),
     };
   }
   function observe() {

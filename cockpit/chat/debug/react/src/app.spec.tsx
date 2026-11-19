@@ -96,7 +96,7 @@ function setup() {
     toolCalls: [],
     interrupts: [],
     subgraphs: [],
-    values: { analysis: t.analysis },
+    state: { analysis: t.analysis },
     history: saved
       ? [{ checkpoint: t.checkpoint, next: [], tasks: [] }]
       : undefined,
@@ -153,7 +153,7 @@ function setup() {
         toolCalls: [],
         interrupts: [],
         subgraphs: [],
-        values: { analysis: turn.analysis },
+        state: { analysis: turn.analysis },
       };
       update(s);
       return pending;
@@ -175,7 +175,7 @@ function setup() {
         toolCalls: [],
         interrupts: [],
         subgraphs: [],
-        values: { analysis: turn.analysis },
+        state: { analysis: turn.analysis },
       });
       run.resolve('success');
       await pending;

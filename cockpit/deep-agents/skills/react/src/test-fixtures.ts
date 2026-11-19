@@ -78,7 +78,7 @@ export function authorityInput(
     toolCalls: [
       { id: 'read', name: 'read_file', args, status: 'complete', result },
     ],
-    values: { skills_metadata: values.skills_metadata, files: {} },
+    state: { skills_metadata: values.skills_metadata, files: {} },
     interrupts: [],
     subgraphs: [],
   };

@@ -88,7 +88,7 @@ function example(paused = true, rejected = false): any {
       status: 'idle',
       interrupts: paused ? [pause] : [],
       subgraphs: [],
-      values: { files },
+      state: { files },
       history: [{ checkpoint: cp, next }],
       messages: messages.map((m) => ({
         id: m.id,
@@ -135,7 +135,7 @@ describe('exact native checkpoint authority', () => {
       expect(captureAuthority(input).kind).toBe('terminal');
       input.loadedCheckpoint.values.files = {};
       input.observedValues = input.loadedCheckpoint.values;
-      input.snapshot.values = { files: {} };
+      input.snapshot.state = { files: {} };
       const empty = captureAuthority(input);
       if (empty.kind !== 'terminal')
         throw new Error('Expected terminal authority');
@@ -197,7 +197,7 @@ describe('exact native checkpoint authority', () => {
         i.observedValues = { ...i.observedValues, files: {} };
       },
       (i) => {
-        i.snapshot.values = { files: {} };
+        i.snapshot.state = { files: {} };
       },
       (i) => {
         i.loadedCheckpoint.values.files = null;
@@ -453,7 +453,7 @@ describe('exact native checkpoint authority', () => {
       const input = example(paused);
       input.loadedCheckpoint.values.files = files;
       input.observedValues.files = files;
-      input.snapshot.values = { files };
+      input.snapshot.state = { files };
       input.snapshot.history[0].values = input.loadedCheckpoint.values;
       const result = captureAuthority(input);
       expect(result.kind).toBe(paused ? 'paused' : 'terminal');

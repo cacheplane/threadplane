@@ -11,8 +11,9 @@ interface SharedState {
   /** Present when the backend is a uvicorn AG-UI server. */
   backend?: ChildProcess;
   backendPort?: number;
-  angular: ChildProcess;
-  angularPort: number;
+  /** Absent for backend-only setups (React cockpit serves its own build). */
+  angular?: ChildProcess;
+  angularPort?: number;
 }
 
 declare global {
@@ -83,12 +84,13 @@ export default async function globalTeardown(): Promise<void> {
   const states = globalThis.__AIMOCK_HARNESS_STATE__;
   if (!states) return;
   for (const state of states.values()) {
-    killGroup(state.angular);
+    if (state.angular) killGroup(state.angular);
     // Kill whichever backend variant is present (langgraph dev or uvicorn AG-UI).
     if (state.langgraph) killGroup(state.langgraph);
     if (state.backend) killGroup(state.backend);
     await state.aimock.stop();
-    const portWaits: Promise<void>[] = [waitForPortFree(state.angularPort)];
+    const portWaits: Promise<void>[] = [];
+    if (state.angularPort != null) portWaits.push(waitForPortFree(state.angularPort));
     if (state.langgraphPort != null) portWaits.push(waitForPortFree(state.langgraphPort));
     if (state.backendPort != null) portWaits.push(waitForPortFree(state.backendPort));
     await Promise.all(portWaits);
