@@ -143,3 +143,13 @@ const renderToolCall: NonNullable<ChatProps['renderToolCall']> = (
 <Chat session={session} renderToolCall={renderToolCall} />;
 // @ts-expect-error A tool-call renderer is a function.
 <Chat session={session} renderToolCall="weather" />;
+<Chat
+  session={session}
+  onLifecycleChange={(lifecycle) => {
+    const sent: number = lifecycle.messageCount;
+    const at: number | null = lifecycle.inputSubmittedAt;
+    void [sent, at, lifecycle.componentReady, lifecycle.firstMessageSent];
+  }}
+/>;
+// @ts-expect-error The lifecycle is reported to a function.
+<Chat session={session} onLifecycleChange={true} />;

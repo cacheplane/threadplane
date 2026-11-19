@@ -75,7 +75,7 @@ class Chat {
     return JSON.stringify(this.snapshot().messages.at(-1)?.delivery);
   }
   get values() {
-    return JSON.stringify(this.snapshot().values) ?? 'unobserved';
+    return JSON.stringify(this.snapshot().state) ?? 'unobserved';
   }
   get tools() {
     return JSON.stringify(this.snapshot().toolCalls);
@@ -188,7 +188,7 @@ describe('observeAgent borrowed session', () => {
     view.detectChanges();
     const refreshed = view.componentInstance.snapshot();
     expect(refreshed.interrupts).toBe(snapshot.interrupts);
-    expect(refreshed.values?.['stable']).toBe(snapshot.values?.['stable']);
+    expect(refreshed.state?.['stable']).toBe(snapshot.state?.['stable']);
     expect(
       JSON.parse(
         view.nativeElement.querySelector('[data-testid="values"]').textContent
@@ -204,7 +204,7 @@ describe('observeAgent borrowed session', () => {
     f.history.value = [];
     await f.session.load();
     expect(f.session.getSnapshot().messages).toEqual([]);
-    expect(f.session.getSnapshot().values).toBeUndefined();
+    expect(f.session.getSnapshot().state).toBeUndefined();
     expect(f.session.getSnapshot().interrupts).toEqual([]);
     expect(f.history.reads).toBe(4);
     expect(f.handlerCalls).toBe(0);

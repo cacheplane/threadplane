@@ -49,7 +49,7 @@ function turn() {
       message('a1', 'assistant', 'saved'),
     ],
     history: [{ checkpoint, next: [] }],
-    values: {},
+    state: {},
   };
   const raw: any = {
     checkpoint,

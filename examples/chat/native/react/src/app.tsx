@@ -940,7 +940,7 @@ function Conversation({
                   key={`state-comparison:${selection.id}`}
                   application={application}
                   threadId={selection.id ?? ''}
-                  values={snapshot.runtime?.values}
+                  state={snapshot.runtime?.state}
                 />
               </>
             )}

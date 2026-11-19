@@ -74,7 +74,7 @@ describe('application submit input', () => {
     expect(readState).toHaveBeenCalledTimes(1);
     expect(signal).toHaveBeenCalledTimes(1);
     expect(observed.length).toBeGreaterThan(0);
-    expect(observed.every((snapshot) => snapshot.values === undefined)).toBe(
+    expect(observed.every((snapshot) => snapshot.state === undefined)).toBe(
       true
     );
     f.streams[0].release({
@@ -86,17 +86,17 @@ describe('application submit input', () => {
     });
     f.streams[0].finish();
     expect(await run).toBe('success');
-    expect(f.session.getSnapshot().values).toEqual({ model: 'server' });
-    const prior = f.session.getSnapshot().values;
+    expect(f.session.getSnapshot().state).toEqual({ model: 'server' });
+    const prior = f.session.getSnapshot().state;
     const later = f.session.submit({
       message: 'Next',
       state: { model: 'next' },
     });
     await f.started(1);
-    expect(f.session.getSnapshot().values).toBe(prior);
+    expect(f.session.getSnapshot().state).toBe(prior);
     expect(
       observed.every(
-        (snapshot) => snapshot.values === undefined || snapshot.values === prior
+        (snapshot) => snapshot.state === undefined || snapshot.state === prior
       )
     ).toBe(true);
     await f.session.stop();

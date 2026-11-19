@@ -3,6 +3,7 @@ import type {
   AgentSnapshot,
   CompleteOutcome,
   Message,
+  PlainValue,
 } from '@threadplane/core';
 import { createDurableApplication } from './application';
 
@@ -18,8 +19,8 @@ function deferred<T>() {
 async function tick() {
   for (let n = 0; n < 8; n++) await Promise.resolve();
 }
-type State = AgentSnapshot & {
-  values?: Readonly<Record<string, unknown>>;
+type State = Omit<AgentSnapshot, 'state'> & {
+  state?: Readonly<Record<string, PlainValue>>;
   interrupts: readonly { value?: unknown }[];
 };
 function setup() {
@@ -97,7 +98,7 @@ function setup() {
     }
     function step(value: string) {
       replace({
-        values: { ...state.values, step: value },
+        state: { ...state.state, step: value },
         messages: [...state.messages, assistant(value)],
       });
     }
@@ -106,7 +107,7 @@ function setup() {
         {
           status: 'idle',
           error: undefined,
-          values: {
+          state: {
             step: 'generate',
             completed_turn_id: human!.id,
             completed_answer_id: assistant('Final answer').id,
@@ -282,7 +283,7 @@ it.each([undefined, 'previous-turn', 'wrong-turn'])(
     const h = setup();
     const { pending, selected } = await h.start();
     selected.final({
-      values: {
+      state: {
         step: 'generate',
         completed_answer_id: 'Final answer-' + selected.human().id,
         ...(marker ? { completed_turn_id: marker } : {}),
@@ -297,11 +298,11 @@ it.each([undefined, 'previous-turn', 'wrong-turn'])(
 it('old generate values and a newly success-stamped analysis cannot claim final completion', async () => {
   const h = setup(),
     selected = await h.complete(),
-    oldValues = selected.session.getSnapshot().values;
+    oldValues = selected.session.getSnapshot().state;
   const pending = h.application.submit('Second');
   await tick();
   selected.final({
-    values: oldValues,
+    state: oldValues,
     messages: [
       selected.human(),
       {
@@ -325,7 +326,7 @@ it('an exact answer binding with wrong-generation delivery is not a final proof'
   const h = setup(),
     { pending, selected } = await h.start();
   selected.final({
-    values: {
+    state: {
       step: 'generate',
       completed_turn_id: selected.human().id,
       completed_answer_id: 'old',
@@ -455,7 +456,7 @@ it.each([undefined, 'unrelated-turn'])(
       pending = h.application.checkStatus();
     await tick();
     selected.final({
-      values: {
+      state: {
         step: 'generate',
         completed_turn_id: marker,
         completed_answer_id: 'Final answer-' + selected.human().id,
@@ -638,7 +639,7 @@ it('reentrant New during the initial safety read cannot admit a second thread', 
 it('inherited checkpoint fields cannot display completed pipeline nodes', async () => {
   const h = setup(),
     { selected } = await h.start();
-  selected.replace({ values: Object.create({ step: 'analyze' }) });
+  selected.replace({ state: Object.create({ step: 'analyze' }) });
   expect(steps(h)).toEqual(pendingSteps);
   expect(h.application.getSnapshot().latestCheckpoint).toBeNull();
   await h.application.stop();
@@ -647,7 +648,7 @@ it('an inherited completion marker grants no final authority', async () => {
   const h = setup(),
     { pending, selected } = await h.start();
   selected.final({
-    values: Object.assign(
+    state: Object.assign(
       Object.create({ completed_turn_id: selected.human().id }),
       {
         step: 'generate',
@@ -692,7 +693,7 @@ for (const fault of [
       { pending, selected } = await h.start();
     selected.final();
     const state = selected.session.getSnapshot();
-    const values = { ...state.values };
+    const values = { ...state.state };
     if (fault === 'missing') delete values.completed_answer_id;
     if (fault === 'stale') values.completed_answer_id = 'previous-answer';
     if (fault === 'same-as-human')
@@ -704,7 +705,7 @@ for (const fault of [
       });
     }
     selected.replace({
-      values,
+      state: values,
       messages: [
         ...state.messages,
         ...(fault === 'duplicate-answer'

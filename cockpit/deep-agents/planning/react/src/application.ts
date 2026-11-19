@@ -194,7 +194,7 @@ export function createPlanningApplication(client: PlanningClient) {
           humanContent: run.text,
         });
     }
-    const plan = planState(state.values),
+    const plan = planState(state.state),
       rows = selected.content.project(state);
     if (!current(run)) return;
     // Live observation only: the saved plan keeps its own confirmation below.
@@ -366,7 +366,7 @@ export function createPlanningApplication(client: PlanningClient) {
       if (!current(run) || !latest) return false;
       // Raw observedValues and loadedCheckpoint deliberately share this exact
       // owned SDK read. Independent corroboration is native success, current
-      // human/prefix, canonical messages/tools, native values and history.
+      // human/prefix, canonical messages/tools, native state and history.
       const confirmation = captureTerminal({
         turn: run.turn,
         owner: selected.identity,

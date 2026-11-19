@@ -570,7 +570,7 @@ test(
       semanticMessages(live.messages),
       semanticMessages(saved.messages)
     );
-    assert.deepEqual(live.values, saved.values);
+    assert.deepEqual(live.state, saved.state);
     assert.deepEqual(liveRender.args, savedRender.args);
     const normalizeCalls = (calls) =>
       calls.map((call) =>

@@ -19,7 +19,7 @@ import { useAgent } from '@threadplane/react';
 
 export function MemoryState({ session }: { session: LangGraphSession }) {
   const snapshot = useAgent(session);
-  return <pre>{JSON.stringify(snapshot.values, null, 2)}</pre>;
+  return <pre>{JSON.stringify(snapshot.state, null, 2)}</pre>;
 }
 ~~~
 

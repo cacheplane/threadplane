@@ -125,7 +125,7 @@ afterEach(async () => {
 describe('session application values', () => {
   it('starts unobserved and publishes values-only changes in one coherent aggregate', async () => {
     const f = fixture();
-    expect(f.snapshot()).toHaveProperty('values', undefined);
+    expect(f.snapshot()).toHaveProperty('state', undefined);
     const run = f.session.submit('Go');
     await f.started();
     const observed: LangGraphSnapshot[] = [];
@@ -139,7 +139,7 @@ describe('session application values', () => {
       })
     );
     expect(observed).toHaveLength(1);
-    expect(observed[0].values).toEqual({
+    expect(observed[0].state).toEqual({
       count: 1,
       removed: true,
       stable: { x: 1 },
@@ -149,8 +149,8 @@ describe('session application values', () => {
     await f.emit(full({ count: 2, stable: { x: 1 } }));
     expect(observed).toHaveLength(2);
     expect(f.snapshot().messages).toBe(first.messages);
-    expect(f.snapshot().values).toEqual({ count: 2, stable: { x: 1 } });
-    expect(f.snapshot().values?.['stable']).toBe(first.values?.['stable']);
+    expect(f.snapshot().state).toEqual({ count: 2, stable: { x: 1 } });
+    expect(f.snapshot().state?.['stable']).toBe(first.state?.['stable']);
     const same = f.snapshot();
     await f.emit(full({ count: 2, stable: { x: 1 } }));
     expect(f.snapshot()).toBe(same);
@@ -162,10 +162,10 @@ describe('session application values', () => {
   it('retains values through tokens, ignored envelopes, stop, failure and disposal', async () => {
     const f = fixture();
     await seed(f);
-    const values = f.snapshot().values;
+    const values = f.snapshot().state;
     const run = f.session.submit('Go');
     await f.started();
-    expect(f.snapshot().values).toBe(values);
+    expect(f.snapshot().state).toBe(values);
     for (const event of [
       {
         type: 'messages',
@@ -179,7 +179,7 @@ describe('session application values', () => {
       { type: 'values|child', data: { changed: true } },
     ] satisfies StreamEvent[]) {
       await f.emit(event);
-      expect(f.snapshot().values).toBe(values);
+      expect(f.snapshot().state).toBe(values);
     }
     await f.session.stop();
     expect(await run).toBe('aborted');
@@ -187,9 +187,9 @@ describe('session application values', () => {
     await f.started(1);
     await f.emit({ type: 'error', data: { message: 'Unavailable' } }, 1);
     expect(await failed).toBe('error');
-    expect(f.snapshot().values).toBe(values);
+    expect(f.snapshot().state).toBe(values);
     await f.session.dispose();
-    expect(f.snapshot().values).toBe(values);
+    expect(f.snapshot().state).toBe(values);
   });
 
   it('uses root checkpoints authoritatively even with interrupt metadata', async () => {
@@ -203,7 +203,7 @@ describe('session application values', () => {
         values: { count: 2, __interrupt__: [], messages: [ai('Checkpoint')] },
       },
     });
-    expect(f.snapshot().values).toEqual({ count: 2 });
+    expect(f.snapshot().state).toEqual({ count: 2 });
     f.streams[0].finish();
     expect(await run).toBe('paused');
     expect(f.snapshot().interrupts).toEqual([{ when: 'breakpoint' }]);
@@ -255,7 +255,7 @@ describe('session application values', () => {
       expect(f.snapshot().messages.map((message) => message.content)).toEqual(
         prior.messages.map((message) => message.content)
       );
-      expect(f.snapshot().values).toBe(prior.values);
+      expect(f.snapshot().state).toBe(prior.state);
       expect(f.snapshot().toolCalls).toBe(prior.toolCalls);
       expect(f.handler).not.toHaveBeenCalled();
       expect(f.acquire).not.toHaveBeenCalled();
@@ -297,7 +297,7 @@ describe('session application values', () => {
       })
     );
     await run;
-    expect(f.snapshot().values).toBe(prior.values);
+    expect(f.snapshot().state).toBe(prior.state);
     expect(
       f.snapshot().messages.some((message) => message.content === 'Bad')
     ).toBe(false);
@@ -307,7 +307,7 @@ describe('session application values', () => {
     it(`discards live candidates when a values getter invokes ${action}`, async () => {
       const f = fixture();
       await seed(f);
-      const prior = f.snapshot().values;
+      const prior = f.snapshot().state;
       const run = f.session.submit('Old');
       await f.started();
       let fired = false;
@@ -328,7 +328,7 @@ describe('session application values', () => {
       await f.emit(full(data));
       expect(fired).toBe(true);
       await run;
-      expect(f.snapshot().values).toBe(prior);
+      expect(f.snapshot().state).toBe(prior);
       expect(
         f.snapshot().messages.some((message) => message.content === 'Stale')
       ).toBe(false);
@@ -369,7 +369,7 @@ describe('session application values', () => {
     await Promise.resolve();
     expect(f.snapshot()).toBe(before);
     await f.session.load?.();
-    expect(f.snapshot().values).toBeUndefined();
+    expect(f.snapshot().state).toBeUndefined();
     expect(f.snapshot().messages).toEqual([]);
     expect(changed).toHaveBeenCalledTimes(1);
   });
@@ -377,7 +377,7 @@ describe('session application values', () => {
   it('guards load candidates after a values getter submits a new request', async () => {
     const f = fixture();
     await seed(f);
-    const prior = f.snapshot().values;
+    const prior = f.snapshot().state;
     let run: Promise<unknown> | undefined;
     f.history.mockResolvedValueOnce([
       checkpoint({
@@ -391,7 +391,7 @@ describe('session application values', () => {
     await f.session.load?.();
     expect(run).toBeDefined();
     await f.started();
-    expect(f.snapshot().values).toBe(prior);
+    expect(f.snapshot().state).toBe(prior);
     expect(
       f.snapshot().messages.some((message) => message.content === 'Stale load')
     ).toBe(false);
@@ -418,7 +418,7 @@ describe('session application values', () => {
         f.streams[0].finish();
         expect(await run).toBe('paused');
       } else await f.session.checkStatus?.();
-      expect(f.snapshot().values).toEqual({ count: 3 });
+      expect(f.snapshot().state).toEqual({ count: 3 });
       expect(f.snapshot().interrupts).toEqual([{ when: 'breakpoint' }]);
       expect(f.snapshot().messages.at(-1)?.delivery).toMatchObject({
         outcome: 'paused',
@@ -428,7 +428,7 @@ describe('session application values', () => {
         seen.every(
           (snapshot) =>
             snapshot.messages.at(-1)?.content !== 'Recovered' ||
-            snapshot.values?.['count'] === 3
+            snapshot.state?.['count'] === 3
         )
       ).toBe(true);
     });
@@ -437,7 +437,7 @@ describe('session application values', () => {
   it('does not change values from unrelated or inconclusive recovery checkpoints', async () => {
     const f = fixture();
     await seed(f);
-    const prior = f.snapshot().values;
+    const prior = f.snapshot().state;
     const run = f.session.submit('Go');
     await f.started();
     f.history.mockResolvedValueOnce([
@@ -451,14 +451,14 @@ describe('session application values', () => {
     f.history.mockResolvedValueOnce([inconclusive]);
     await f.session.checkStatus?.();
     expect(f.snapshot()).toBe(interrupted);
-    expect(f.snapshot().values).toBe(prior);
+    expect(f.snapshot().state).toBe(prior);
   });
 
   for (const action of ['stop', 'submit', 'dispose'] as const) {
     it(`discards close-time recovery candidates after a getter invokes ${action}`, async () => {
       const f = fixture();
       await seed(f);
-      const prior = f.snapshot().values;
+      const prior = f.snapshot().state;
       const run = f.session.submit('Old');
       await f.started();
       let nested: Promise<unknown> | undefined;
@@ -480,7 +480,7 @@ describe('session application values', () => {
       f.streams[0].finish();
       expect(await run).toBe(action === 'submit' ? 'interrupted' : 'aborted');
       expect(fired).toBe(true);
-      expect(f.snapshot().values).toBe(prior);
+      expect(f.snapshot().state).toBe(prior);
       expect(
         f.snapshot().messages.some((message) => message.content === 'Recovered')
       ).toBe(false);
@@ -510,7 +510,7 @@ describe('session application values', () => {
         f.streams[0].finish();
         expect(await run).toBe('interrupted');
       } else await expect(f.session.checkStatus?.()).rejects.toThrow(TypeError);
-      expect(f.snapshot().values).toBe(before.values);
+      expect(f.snapshot().state).toBe(before.state);
       expect(f.snapshot().messages.map((message) => message.content)).toEqual(
         before.messages.map((message) => message.content)
       );
@@ -519,7 +519,7 @@ describe('session application values', () => {
         f.turn({ recovered: true }),
       ]);
       await f.session.checkStatus?.();
-      expect(f.snapshot().values).toEqual({ recovered: true });
+      expect(f.snapshot().state).toEqual({ recovered: true });
     });
   }
 
@@ -549,7 +549,7 @@ describe('session application values', () => {
     ]);
     f.streams[1].finish();
     expect(await run).toBe('interrupted');
-    expect(f.snapshot().values).toEqual({});
+    expect(f.snapshot().state).toEqual({});
     const handoff = (f.stream.mock.calls[1][2] as { messages: unknown[] })
       .messages[0];
     const invalid = f.session.submit('Retry');
@@ -598,7 +598,7 @@ describe('session application values', () => {
       ]);
       f.history.mockReturnValueOnce(replacement.promise);
       await f.session.checkStatus?.();
-      expect(f.snapshot().values).toBe(prior.values);
+      expect(f.snapshot().state).toBe(prior.state);
       expect(
         f.snapshot().messages.some((message) => message.content === 'Recovered')
       ).toBe(false);
@@ -610,7 +610,7 @@ describe('session application values', () => {
       }
       await nested;
       if (action === 'checkStatus')
-        expect(f.snapshot().values).toEqual({ count: 4 });
+        expect(f.snapshot().state).toEqual({ count: 4 });
     });
   }
 
@@ -618,10 +618,10 @@ describe('session application values', () => {
     const first = fixture();
     const second = fixture();
     await seed(first);
-    expect(second.snapshot()).toHaveProperty('values', undefined);
+    expect(second.snapshot()).toHaveProperty('state', undefined);
     second.history.mockResolvedValueOnce([checkpoint({ other: 2 })]);
     await second.session.load?.();
-    expect(second.snapshot().values).toEqual({ other: 2 });
-    expect(first.snapshot().values?.['count']).toBe(1);
+    expect(second.snapshot().state).toEqual({ other: 2 });
+    expect(first.snapshot().state?.['count']).toBe(1);
   });
 });

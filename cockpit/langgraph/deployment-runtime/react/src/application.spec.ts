@@ -19,7 +19,7 @@ async function tick() {
   for (let n = 0; n < 8; n++) await Promise.resolve();
 }
 type State = AgentSnapshot & {
-  values?: Readonly<Record<string, unknown>>;
+  state?: Readonly<Record<string, unknown>>;
   interrupts: readonly unknown[];
 };
 function setup() {
@@ -93,7 +93,7 @@ function setup() {
           interrupts: [],
           toolCalls: [],
           messages: canonical,
-          values: {
+          state: {
             completed_turn_id: human!.id,
             completed_answer_id: answer.id,
             completed_message_ids: canonical.map((row) => row.id),
@@ -235,16 +235,16 @@ it.each(['error', 'paused', 'aborted', 'interrupted'] as const)(
   }
 );
 it.each([
-  { values: undefined },
+  { state: undefined },
   {
-    values: {
+    state: {
       completed_turn_id: 'old',
       completed_answer_id: 'old-answer',
       completed_message_ids: ['old', 'old-answer'],
     },
   },
   {
-    values: {
+    state: {
       completed_turn_id: 'human-1',
       completed_answer_id: 'answer-human-1',
       completed_message_ids: ['answer-human-1', 'human-1'],
@@ -269,7 +269,7 @@ it('a correct current pair cannot hide a missing older canonical prefix', async 
     pending = h.application.submit('B');
   await tick();
   selected.final({
-    values: {
+    state: {
       completed_turn_id: 'human-2',
       completed_answer_id: 'answer-human-2',
       completed_message_ids: ['human-2', 'answer-human-2'],
