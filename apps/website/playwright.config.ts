@@ -434,7 +434,7 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs chat-theming --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs chat-theming --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4644',
                   reuseExistingServer: false,

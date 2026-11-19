@@ -19,6 +19,7 @@ import { createSubgraphsFixture } from './subgraphs-fixture.mjs';
 import { createTimeTravelFixture } from './time-travel-fixture.mjs';
 import { createDeploymentRuntimeFixture } from './deployment-runtime-fixture.mjs';
 import { createLanggraphProxy } from './langgraph-proxy.mjs';
+import { createAimockBackend } from './aimock-backend.mjs';
 import { createChatDebugFixture } from './chat-debug-fixture.mjs';
 import { createChatInterruptsFixture } from './chat-interrupts-fixture.mjs';
 import { createChatToolCallsFixture } from './chat-tool-calls-fixture.mjs';
@@ -80,8 +81,19 @@ const chatToolCallsFixture = configuration.library === 'chat' && configuration.t
 const chatInterruptsFixture = configuration.library === 'chat' && configuration.topic === 'interrupts' ? createChatInterruptsFixture() : null;
 // aimock-backed examples: the real graph runs under `langgraph dev` (started by
 // the Playwright global setup); this server proxies /api to it.
+// `--backend` (Website previews) starts that backend here, lazily on the first
+// request for the app or its API; cockpit e2e starts it from global setup.
+const aimockBackend = configuration.backend?.kind === 'aimock-langgraph' && process.argv.includes('--backend')
+  ? createAimockBackend({
+      root: resolve(dirname(fileURLToPath(import.meta.url)), '../..'),
+      backend: configuration.backend,
+    })
+  : null;
 const langgraphProxy = configuration.backend?.kind === 'aimock-langgraph'
-  ? createLanggraphProxy({ upstream: `http://127.0.0.1:${configuration.backend.langgraphPort}` })
+  ? createLanggraphProxy({
+      upstream: `http://127.0.0.1:${configuration.backend.langgraphPort}`,
+      ready: aimockBackend ? () => aimockBackend.ensure() : undefined,
+    })
   : null;
 const agUiSubagentsFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'subagents'
@@ -153,6 +165,7 @@ const release = () => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
+  if (aimockBackend && pathname !== '/') void aimockBackend.ensure().catch(() => undefined);
   if (agUiA2uiFixture && (await agUiA2uiFixture(request, response, pathname))) return;
   if (chatA2uiFixture) {
     if (pathname.startsWith('/__')) {
@@ -488,6 +501,12 @@ if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture ||
   process.once('SIGTERM', () => shutdown());
   server.once('error', () => shutdown(1));
   parentServer?.once('error', () => shutdown(1));
+}
+
+if (aimockBackend && !shutdown) {
+  const stop = () => { void aimockBackend.close().finally(() => process.exit(0)); };
+  process.once('SIGINT', stop);
+  process.once('SIGTERM', stop);
 }
 
 // Own signals, errors, workers and both listeners before tooling discovery or proof.
