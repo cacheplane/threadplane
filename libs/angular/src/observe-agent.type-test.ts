@@ -212,3 +212,38 @@ export function observeStructuralContract() {
   observeAgent({ getSnapshot: () => 1, subscribe: () => undefined });
   return exact;
 }
+
+import type { ToolContract } from '@threadplane/core';
+import { observeAgentState } from './public-api.js';
+interface Board {
+  todos: string[];
+  owner?: string;
+}
+type Same<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B
+  ? 1
+  : 2
+  ? true
+  : false;
+type Expect<T extends true> = T;
+type ReadonlyBoard = { readonly todos: readonly string[]; readonly owner?: string };
+export function observeTypedState(
+  typed: AgentSession<Record<string, ToolContract>, Board>,
+  untyped: AgentSession
+) {
+  const state = observeAgentState(typed);
+  type State = Expect<Same<typeof state, Signal<ReadonlyBoard | undefined>>>;
+  const todos = observeAgentState(typed, (board) => board?.todos ?? []);
+  type Todos = Expect<Same<typeof todos, Signal<readonly string[]>>>;
+  const owner: string | undefined = observeAgent(typed)().state?.owner;
+  // @ts-expect-error State is read-only.
+  state()?.todos.push('x');
+  // @ts-expect-error Only declared keys exist.
+  void state()?.missing;
+  const plain: PlainValue | undefined = observeAgentState(untyped)();
+  // @ts-expect-error Plain data has no known keys.
+  void observeAgentState(untyped)()?.todos;
+  // @ts-expect-error The snapshot must be able to hold state.
+  observeAgentState({ getSnapshot: () => 1, subscribe: () => () => undefined });
+  void [owner, plain];
+  return {} as [State, Todos];
+}
