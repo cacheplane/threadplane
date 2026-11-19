@@ -153,7 +153,12 @@ export {
   type ApprovalRecordEntry,
   type ApprovalRecordProps,
 } from './approval-card.js';
-export { Chat, type ChatModelPicker, type ChatProps } from './chat.js';
+export {
+  Chat,
+  type ChatModelPicker,
+  type ChatProps,
+  type ChatRunActivityContext,
+} from './chat.js';
 export { ChatError, type ChatErrorProps } from './error.js';
 export { ChatPopup, type ChatPopupProps } from './chat-popup.js';
 export { LauncherButton, type LauncherButtonProps } from './launcher-button.js';
@@ -161,6 +166,9 @@ export { ChatWindow, type ChatWindowProps } from './window.js';
 export { ChatSidebar, type ChatSidebarProps } from './chat-sidebar.js';
 export {
   ChatSidenav,
+  type ChatSidenavDevtools,
+  type ChatSidenavDevtoolsPanel,
+  type ChatSidenavDevtoolsSource,
   type ChatSidenavMode,
   type ChatSidenavProps,
 } from './chat-sidenav.js';

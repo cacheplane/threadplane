@@ -1,3 +1,15 @@
+/* Theme attribute. Same selectors and meaning as Angular chat: data-theme or
+   data-threadplane-chat-theme on any ancestor (or the chat itself) forces that
+   scheme over prefers-color-scheme. The nearest attribute wins because the
+   value travels as an inherited custom property, and the dark rule comes last
+   so dark wins when both attributes sit on one element, as in Angular. An
+   explicit --tp-chat-color-scheme on a chat root still wins over both. */
+:where([data-theme="light"], [data-threadplane-chat-theme="light"]) {
+  --tp-chat-theme-scheme: light;
+}
+:where([data-theme="dark"], [data-threadplane-chat-theme="dark"]) {
+  --tp-chat-theme-scheme: dark;
+}
 :where(
     .tp-chat,
     .tp-chat-list:not(.tp-chat .tp-chat-list),
@@ -61,7 +73,7 @@
   --tp-chat-radius-message: var(--tplane-chat-radius-bubble, 0.9375rem);
   --tp-chat-radius-input: var(--tplane-chat-radius-input, 9999px);
   --tp-chat-reading-width: var(--tplane-chat-max-width, 48rem);
-  color-scheme: var(--tp-chat-color-scheme, light dark);
+  color-scheme: var(--tp-chat-color-scheme, var(--tp-chat-theme-scheme, light dark));
   color: var(--tp-chat-text);
   font-family: var(--tp-chat-font-family);
 }
@@ -584,6 +596,10 @@
 @media (forced-colors: active) {
   .tp-approval-card .tp-approval-card__action--primary,
   .tp-approval-card .tp-approval-card__action--danger { border: 1px solid ButtonText; }
+}
+.tp-chat__run-activity {
+  display: block;
+  min-inline-size: 0;
 }
 .tp-chat__header {
   display: flex;
@@ -1983,6 +1999,48 @@
 .tp-chat-sidenav .tp-chat-sidenav__close:focus-visible {
   outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent));
   outline-offset: 3px;
+}
+.tp-chat-sidenav .tp-chat-sidenav__footer {
+  display: flex;
+  flex-shrink: 0;
+  padding: 0.5rem;
+  border-block-start: 1px solid var(--tp-chat-border);
+}
+.tp-chat-sidenav .tp-chat-sidenav__devtools {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0.5rem;
+  border: 1px solid var(--tp-chat-border);
+  border-radius: 0.5rem;
+  background: var(--tp-chat-surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.tp-chat-sidenav--collapsed .tp-chat-sidenav__devtools {
+  justify-content: center;
+}
+.tp-chat-sidenav .tp-chat-sidenav__devtools:focus-visible {
+  outline: 2px solid var(--tplane-chat-focus-ring, var(--tp-chat-accent));
+  outline-offset: 3px;
+}
+.tp-chat-sidenav .tp-chat-sidenav__devtools-dot {
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--tp-chat-muted, var(--tplane-chat-text-muted, CanvasText));
+}
+.tp-chat-sidenav .tp-chat-sidenav__devtools-dot[data-streaming='true'] {
+  background: var(--tp-chat-accent);
+  animation: tp-chat-message-pulse 1.2s infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tp-chat-sidenav .tp-chat-sidenav__devtools-dot[data-streaming='true'] {
+    animation: none;
+  }
 }
 .tp-chat-sidenav [hidden] {
   display: none;

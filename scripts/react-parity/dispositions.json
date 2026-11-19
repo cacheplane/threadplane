@@ -19657,6 +19657,55 @@
       "status": "in-progress",
       "target": "libs/react/src/chat/thread-list.tsx",
       "reason": "App command appended to each conversation row menu; mirrors the React ThreadList extraActions item shape."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatRunActivityContext",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "The current run's messages passed to Chat's renderRunActivity, which replaces the typing indicator until the run's first assistant message.",
+      "note": "The window, the status region, typing-indicator replacement, the hand-off to the first assistant message and a continued run are verified with real DOM tests."
+    },
+    {
+      "id": "source:libs/react/src/chat/internal/a2ui-action-label.ts",
+      "taskIds": [
+        "T22",
+        "T27"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Internal reader giving the words for a user message that is a serialized A2UI action: its stamped label, or the action name in plain words; not exported.",
+      "note": "Verified through the MessageList and Chat DOM tests: default label, opt-out, name fallback, untouched non-action and assistant messages, and text-only rendering. Not part of the public surface."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtools",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Opt-in `devtools` prop on ChatSidenav: a session plus a render function for the panel; the React counterpart of Angular's [agent] input, omitted from production builds."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtoolsPanel",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Props the sidenav Devtools button spreads onto ChatDebug: controlled open, bottom dock and no built-in launcher."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtoolsSource",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Structural session slice (status snapshot and subscribe) that drives the Devtools button's streaming dot."
     }
   ]
 }

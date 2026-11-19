@@ -562,6 +562,10 @@ composer, scrollable tables and native task-checkbox semantics. Override
 `--tp-chat-font-family`, `--tp-chat-font-size-base`, or the
 `--tp-chat-radius-*` properties on the composed part to customize it. An explicit
 `color-scheme` or `--tp-chat-color-scheme` selects the host's light/dark treatment.
+Without one, a `data-theme="light|dark"` or `data-threadplane-chat-theme="light|dark"`
+attribute on the chat or any ancestor forces that scheme, as in Angular chat (the
+nearest attribute wins); otherwise the system `prefers-color-scheme` applies. The A2UI
+surface stylesheet follows the same attributes.
 User bubbles use the neutral inverted palette; override `--tp-chat-user-bg` and
 `--tp-chat-user-text` on the composed part to supply a different color pair.
 Custom message renderers retain their own layout and need their own integration.
@@ -781,6 +785,15 @@ and `skeletonLabel` replaces the placeholder text.
 Finished content that is not a spec stays text, and a view that throws gives
 way to the message text instead of taking the transcript down.
 
+Set `progressive: true` to render a streaming spec as it arrives, as Angular
+does, instead of one finished element at a time. An element appears once its
+`type` has finished and its string props grow as they stream; other props,
+child IDs, `visible` and `repeat` apply once each has finished, and its `on`
+bindings only once the whole element has, so no action runs with half-written
+params. A spec's own `state` is seeded one top-level path at a time as each
+value finishes, keeping anything a view already wrote. A finished spec renders
+the same either way.
+
 The tree is read-only until you set `handlers`, `store` or `onRenderEvent`.
 With any of them, views get `emit` and `set`, as they do from `RenderSpec` with
 a `store`:
@@ -838,6 +851,20 @@ appears. The composer is the same element before and after, so a draft and
 focus survive, and when a chosen suggestion disappears with the greeting, focus
 moves to the composer. It is off unless set, and `--tp-welcome-max-width`,
 `--tp-welcome-gap` and `--tp-welcome-padding` adjust it.
+
+`renderRunActivity` replaces the typing indicator between a submit and the
+run's first assistant message, a window that can be long when the first model
+call is slow. It receives the current run's messages (those after the last
+user message) and renders in a polite status region after the last message.
+Once an assistant message arrives it leaves, and that message's reasoning and
+tool area takes over. Returning `null` keeps the typing indicator.
+
+```tsx
+<Chat
+  session={session}
+  renderRunActivity={({ messages }) => <TurnActivity messages={messages} />}
+/>
+```
 
 `renderMessageActivity` (on `Chat` and `MessageList`) replaces the reasoning
 disclosure and tool-call area of an assistant message with your own content,
@@ -2150,6 +2177,17 @@ carries the whole current data model as `a2uiClientDataModel`. Transport,
 retries and what the conversation shows are your application's decisions.
 `createA2uiActionMessage(surface, componentId)` from
 `@threadplane/content/a2ui` builds the same message outside React.
+
+When an application sends the message as the next user turn, `Chat` and
+`MessageList` do not show its JSON. A user message that is a serialized action
+shows the `label` instead ("Search flights"), or the action name in plain
+words when there is none (`bookingSubmit` reads "Booking submit"). The stored
+message is unchanged, and every other message renders as before. Pass
+`a2uiActionLabels={false}` to show the message as sent.
+
+```tsx
+<Chat session={session} a2uiActionLabels={false} />
+```
 
 A Button with an event action is disabled when there is no `onAction`. A
 Button with no action, or whose `disabled` prop is true, is disabled too. A

@@ -263,7 +263,7 @@ Application fields go directly into the initial run's input. They are not resent
 on tool continuations, owned-run reconnect, or subsequent independent submits:
 server reducers may accumulate repeated values. Input state never changes
 snapshot `values` optimistically; only backend observations do. Core sessions
-remain text-only, while the private backend method accepts this extension.
+accept the same `{ message, state }` input, typed by their state declaration.
 
 Tool and Drop in the review apps send fixed model, reasoning, UI-mode and
 itinerary choices. The strict fixture requires them on those initial requests
