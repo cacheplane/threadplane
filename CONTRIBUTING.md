@@ -217,6 +217,26 @@ own Protection Bypass for Automation secret:
 flight does not reach that run; re-run after provisioning. Never pass
 `--skip-domain` to a preview deploy; Vercel requires it to accompany `--prod`.
 
+### Main reuses the merge queue's verification
+
+The merge queue runs CI on a candidate commit and then fast-forwards `main` to
+that same commit. The push run on `main` therefore sees a tree and a workflow
+file the queue has already verified. `CI scope` looks for that candidate's run
+(`scripts/ci-queue-evidence.mjs`); when it finds a successful merge-queue run
+of `ci.yml` for the exact commit in which `CI — required` passed, every
+verification job skips and the deploy jobs proceed on that evidence.
+
+What this trades away: the candidate run is scoped to the change and runs no
+preview lanes, where a push run used to run every job unscoped. Deploy-only
+failures are still caught by the deploy jobs' own build, policy checks and
+deployed e2e, and by `Production smoke`.
+
+The push run verifies everything itself, as before, when there is no such
+evidence: a direct push to `main`, an API error during the lookup, or a
+candidate whose gate did not pass. A manual recovery run (`workflow_dispatch`)
+never reuses evidence. To force full verification of the current `main`, use
+that manual run.
+
 ## Docs pages and example code
 
 A docs page whose capability ships a runnable example (the page shows Run and
