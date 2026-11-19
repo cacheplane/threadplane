@@ -1,6 +1,9 @@
 import { Client } from '@langchain/langgraph-sdk';
-import { createSession } from '@threadplane/langgraph';
-import type { AgentSession } from '@threadplane/core';
+import {
+  createLangGraphThreadDirectory,
+  createSession,
+} from '@threadplane/langgraph';
+import type { AgentSession, ThreadDirectory } from '@threadplane/core';
 import type { ThreadsState } from './authority';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Internal bridge is copied by the isolated build.
 import type { RuntimeBridgeConfiguration } from '../../../../../libs/cockpit-runtime-bridge/src/index';
@@ -15,7 +18,6 @@ export interface ThreadsConnection {
 export interface ThreadsClient {
   createThread(signal: AbortSignal): Promise<string>;
   sessionFactory(threadId: string): ThreadsSession;
-  readTitle(threadId: string, signal: AbortSignal): Promise<unknown>;
 }
 /** Resolve the shared proxy or the explicitly authored developer target. */
 export function threadsConnection(configuration: RuntimeBridgeConfiguration): {
@@ -108,14 +110,22 @@ export function createThreadsClient(
         throw new Error('Runtime session is unavailable.');
       }
     },
-    async readTitle(threadId, signal) {
-      if (!known.has(threadId) || signal.aborted) return undefined;
-      try {
-        const raw = await client.threads.get(threadId, { signal });
-        return signal.aborted ? undefined : raw;
-      } catch {
-        return undefined;
-      }
-    },
   };
+}
+/**
+ * The sidebar's thread directory: the server's thread list, row commands and
+ * Store API project names on the same target and headers, never retried.
+ */
+export function createThreadsDirectory(
+  connection: ThreadsConnection
+): ThreadDirectory {
+  return createLangGraphThreadDirectory({
+    client: new Client({
+      apiUrl: connection.apiUrl,
+      apiKey: null,
+      defaultHeaders: connection.headers,
+      callerOptions: { maxRetries: 0 },
+    }),
+    titleFallback: 'Untitled conversation',
+  });
 }

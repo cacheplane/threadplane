@@ -77,6 +77,18 @@ export interface ThreadActionAdapter {
   reorderPinned?(threadId: string, beforeId: string | null): Promise<void>;
 }
 
+/**
+ * An app command appended to each conversation row menu. `run` receives the
+ * thread id; a rejected promise is settled by the list and changes nothing.
+ */
+export interface ThreadRowAction {
+  readonly id: string;
+  readonly label: string;
+  readonly run: (threadId: string) => void | Promise<void>;
+}
+
+const EXTRA_ACTION_PREFIX = 'extra:';
+
 /** Lists selectable conversations with custom templates and optional thread management actions. */
 @Component({
   selector: 'chat-thread-list',
@@ -102,9 +114,9 @@ export interface ThreadActionAdapter {
           (dragend)="onDragEnd()"
           (contextmenu)="onRowContextMenu(thread.id, $event)"
         >
-          @if (templateRef()) {
+          @if (rowTemplate()) {
             <ng-container
-              [ngTemplateOutlet]="templateRef()!"
+              [ngTemplateOutlet]="rowTemplate()!"
               [ngTemplateOutletContext]="{ $implicit: thread, isActive: thread.id === activeThreadId() }"
             />
           } @else if (editingThreadId() === thread.id) {
@@ -199,11 +211,19 @@ export class ChatThreadListComponent {
   readonly actions = input<ThreadActionAdapter | null>(null);
   readonly mode = input<'active' | 'archived'>('active');
   readonly projects = input<Project[] | null>(null);
+  /** App commands appended to each row menu, in both modes. Rows drawn by a
+   *  projected template get no kebab button. */
+  readonly extraActions = input<readonly ThreadRowAction[] | null>(null);
 
   readonly threadSelected = output<string>();
   readonly newThreadRequested = output<void>();
 
   readonly templateRef = contentChild(TemplateRef);
+  /** Row template supplied by a wrapping component; a projected
+   *  `<ng-template>` takes precedence. Context: `$implicit` thread and
+   *  `isActive`. Rows drawn by a template get no kebab button. */
+  readonly itemTemplate = input<TemplateRef<{ $implicit: Thread; isActive: boolean }> | null>(null);
+  protected readonly rowTemplate = computed(() => this.templateRef() ?? this.itemTemplate());
 
   protected readonly editingThreadId = signal<string | null>(null);
   protected readonly editingValue = signal<string>('');
@@ -275,8 +295,12 @@ export class ChatThreadListComponent {
   protected readonly currentMenuItems = computed<OverflowMenuItem[]>(() => {
     const id = this.menuOpenForId();
     if (!id) return [];
+    const extras: OverflowMenuItem[] = (this.extraActions() ?? []).map((action) => ({
+      id: `${EXTRA_ACTION_PREFIX}${action.id}`,
+      label: action.label,
+    }));
     const a = this.actions();
-    if (!a) return [];
+    if (!a) return extras;
     const items: OverflowMenuItem[] = [];
     if (this.mode() === 'active') {
       const thread = this.threads().find((t) => t.id === id);
@@ -301,7 +325,7 @@ export class ChatThreadListComponent {
       if (a.unarchive) items.push({ id: 'unarchive', label: 'Unarchive' });
       if (a.delete) items.push({ id: 'delete', label: 'Delete', tone: 'destructive' });
     }
-    return items;
+    return [...items, ...extras];
   });
 
   private readonly editInput = viewChild<ElementRef<HTMLInputElement>>('editInput');
@@ -325,6 +349,7 @@ export class ChatThreadListComponent {
   }
 
   protected showKebab(): boolean {
+    if ((this.extraActions() ?? []).length > 0) return true;
     const a = this.actions();
     if (!a) return false;
     if (this.mode() === 'active') {
@@ -371,6 +396,14 @@ export class ChatThreadListComponent {
     this.menuOpenForId.set(null);
     if (!threadId) return;
 
+    if (id.startsWith(EXTRA_ACTION_PREFIX)) {
+      const action = (this.extraActions() ?? []).find(
+        (candidate) => `${EXTRA_ACTION_PREFIX}${candidate.id}` === id,
+      );
+      if (action) void this.runExtraAction(action, threadId);
+      return;
+    }
+
     if (id === 'rename') {
       const t = this.threads().find((x) => x.id === threadId);
       this.editingValue.set(typeof t?.title === 'string' ? t.title : '');
@@ -393,6 +426,10 @@ export class ChatThreadListComponent {
     } else if (id === 'move-down') {
       void this.performMoveDown(threadId);
     }
+  }
+
+  private async runExtraAction(action: ThreadRowAction, threadId: string): Promise<void> {
+    try { await action.run(threadId); } catch { /* app command failed; the row stays as supplied */ }
   }
 
   protected async performPin(threadId: string): Promise<void> {
