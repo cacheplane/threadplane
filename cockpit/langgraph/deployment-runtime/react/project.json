@@ -3,6 +3,7 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/langgraph/deployment-runtime/react/src",
   "projectType": "application",
+  "implicitDependencies": ["cockpit-langgraph-deployment-runtime-angular", "cockpit-langgraph-deployment-runtime-python"],
   "tags": [
     "scope:cockpit-examples",
     "scope:cockpit-e2e",
@@ -42,6 +43,7 @@
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
+      "inputs": ["default", "reactAimockBackend"],
       "dependsOn": [
         "build"
       ],
