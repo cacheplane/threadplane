@@ -10,6 +10,17 @@ export type {
   AgentUsage,
   AgentUsageEntry,
 } from './contracts/agent-snapshot.js';
+export { readState, type } from './contracts/state.js';
+export type {
+  AgentStateUpdate,
+  InferState,
+  StandardSchemaResult,
+  StandardSchemaV1,
+  StateDeclaration,
+  StateReading,
+  StateTypeCheck,
+  StateWitness,
+} from './contracts/state.js';
 export type { AgentPlanStep } from './contracts/plan.js';
 export { agentPlanFromState } from './contracts/plan.js';
 export type { Message, Role } from './contracts/message.js';

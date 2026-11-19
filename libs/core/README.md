@@ -11,12 +11,29 @@ acquire/settle invocation-ownership contract. `@threadplane/core/testing` export
 `createFakeAgentSession`, a transport-free session whose test controls publish frozen
 snapshots, stream assistant text and record submit, stop and dispose calls.
 
-Sessions accept text and an optional standard `AbortSignal`. Read and subscribe are
+Sessions accept text, optionally with a partial state, and an optional standard `AbortSignal`. Read and subscribe are
 inert; subscribe notifies changes only. Implementations must publish owned, deeply
 readonly plain snapshot data and keep references stable between changes. Raw errors,
 causes, controllers, SDK instances and arbitrary extras belong to effect boundaries.
 `projectAgentError` copies already classified display fields; it does not classify
 transport failures. Tool failures carry a plain error string instead.
+
+`AgentSession<TTools, TState>` carries an optional application state type. The
+snapshot's `state` is deeply readonly, and absent until the backend reports one. A
+session is told its state type by one declaration: `type<T>()` for the type alone, or
+any Standard Schema value, such as a Zod object, to also check each state as it
+arrives. `InferState` reads the type from either form. `type<T>()` rejects functions,
+class instances, arrays and primitives with a sentence naming the problem. A typed
+session is still assignable wherever an untyped `AgentSession` is expected, and
+without a declaration `state` is plain data.
+
+`submit` takes the message text, or `{ message, state }` where `state` is a partial
+state the backend merges before the run: the declared keys for a typed session, any
+plain record otherwise. `readState(declaration, value)` is for session
+implementations. It returns the schema's output or the issue messages, never throws,
+and treats a schema that validates asynchronously as invalid because a snapshot is
+published synchronously. This package defines the contract; whether a backend session
+supplies `state` is that session's choice.
 
 `Message.citations` optionally contains readonly `Citation` source metadata: stable
 IDs/order, title, URL, snippet, source type, icon URL, primitive publication time,
