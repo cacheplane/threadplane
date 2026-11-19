@@ -476,7 +476,7 @@ describe('Website Playwright configuration', () => {
       }),
       expect.objectContaining({
         command:
-          'node scripts/react-cockpit/serve.mjs durable-execution --no-parent',
+          'node scripts/react-cockpit/serve.mjs durable-execution --no-parent --backend',
         url: 'http://127.0.0.1:4605',
       }),
       expect.objectContaining({
@@ -484,7 +484,7 @@ describe('Website Playwright configuration', () => {
         url: 'http://127.0.0.1:4606',
       }),
       expect.objectContaining({
-        command: 'node scripts/react-cockpit/serve.mjs time-travel --no-parent',
+        command: 'node scripts/react-cockpit/serve.mjs time-travel --no-parent --backend',
         url: 'http://127.0.0.1:4607',
       }),
       expect.objectContaining({
