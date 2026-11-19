@@ -147,7 +147,7 @@ describe('Website Playwright configuration', () => {
     const nativeServer = servers.find(
       server => server.url === 'http://127.0.0.1:4600'
     );
-    expect(nativeServer?.command).toBe('node scripts/react-cockpit/serve.mjs');
+    expect(nativeServer?.command).toBe('node scripts/react-cockpit/serve.mjs streaming --backend');
     expect(nativeServer?.timeout).toBe(180_000);
     expect(nativeServer?.reuseExistingServer).toBe(false);
   });
@@ -454,15 +454,15 @@ describe('Website Playwright configuration', () => {
         url: 'http://127.0.0.1:4399/health',
       }),
       expect.objectContaining({
-        command: 'node scripts/react-cockpit/serve.mjs',
+        command: 'node scripts/react-cockpit/serve.mjs streaming --backend',
         url: 'http://127.0.0.1:4600',
       }),
       expect.objectContaining({
-        command: 'node scripts/react-cockpit/serve.mjs interrupts --no-parent',
+        command: 'node scripts/react-cockpit/serve.mjs interrupts --no-parent --backend',
         url: 'http://127.0.0.1:4601',
       }),
       expect.objectContaining({
-        command: 'node scripts/react-cockpit/serve.mjs memory --no-parent',
+        command: 'node scripts/react-cockpit/serve.mjs memory --no-parent --backend',
         url: 'http://127.0.0.1:4602',
       }),
       expect.objectContaining({
@@ -471,7 +471,7 @@ describe('Website Playwright configuration', () => {
         url: 'http://127.0.0.1:4603',
       }),
       expect.objectContaining({
-        command: 'node scripts/react-cockpit/serve.mjs persistence --no-parent',
+        command: 'node scripts/react-cockpit/serve.mjs persistence --no-parent --backend',
         url: 'http://127.0.0.1:4604',
       }),
       expect.objectContaining({
@@ -480,7 +480,7 @@ describe('Website Playwright configuration', () => {
         url: 'http://127.0.0.1:4605',
       }),
       expect.objectContaining({
-        command: 'node scripts/react-cockpit/serve.mjs subgraphs --no-parent',
+        command: 'node scripts/react-cockpit/serve.mjs subgraphs --no-parent --backend',
         url: 'http://127.0.0.1:4606',
       }),
       expect.objectContaining({
