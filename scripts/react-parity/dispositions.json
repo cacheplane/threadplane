@@ -15029,6 +15029,17 @@
       "note": "Verified through the Chat DOM tests: owned disposal on unmount and session change, StrictMode recreation, and app-passed content never disposed. Not part of the public surface."
     },
     {
+      "id": "source:libs/react/src/chat/internal/a2ui-action-label.ts",
+      "taskIds": [
+        "T22",
+        "T27"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Internal reader giving the words for a user message that is a serialized A2UI action: its stamped label, or the action name in plain words; not exported.",
+      "note": "Verified through the MessageList and Chat DOM tests: default label, opt-out, name fallback, untouched non-action and assistant messages, and text-only rendering. Not part of the public surface."
+    },
+    {
       "id": "source:libs/react/src/chat/message-list.tsx",
       "taskIds": [
         "T22",

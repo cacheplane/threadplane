@@ -2165,6 +2165,17 @@ retries and what the conversation shows are your application's decisions.
 `createA2uiActionMessage(surface, componentId)` from
 `@threadplane/content/a2ui` builds the same message outside React.
 
+When an application sends the message as the next user turn, `Chat` and
+`MessageList` do not show its JSON. A user message that is a serialized action
+shows the `label` instead ("Search flights"), or the action name in plain
+words when there is none (`bookingSubmit` reads "Booking submit"). The stored
+message is unchanged, and every other message renders as before. Pass
+`a2uiActionLabels={false}` to show the message as sent.
+
+```tsx
+<Chat session={session} a2uiActionLabels={false} />
+```
+
 A Button with an event action is disabled when there is no `onAction`. A
 Button with no action, or whose `disabled` prop is true, is disabled too. A
 Button used as a `Modal` trigger opens the modal and needs no action.
