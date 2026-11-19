@@ -250,7 +250,7 @@ export const createWebsitePlaywrightConfig = (
                     // website:e2e builds every installed React example first,
                     // outside the server-readiness budget. Direct local
                     // Playwright runs require those build outputs too.
-                    'node scripts/react-cockpit/serve.mjs',
+                    'node scripts/react-cockpit/serve.mjs streaming --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4600',
                   reuseExistingServer,
@@ -258,7 +258,7 @@ export const createWebsitePlaywrightConfig = (
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs interrupts --no-parent',
+                    'node scripts/react-cockpit/serve.mjs interrupts --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4601',
                   reuseExistingServer,
@@ -266,7 +266,7 @@ export const createWebsitePlaywrightConfig = (
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs memory --no-parent',
+                    'node scripts/react-cockpit/serve.mjs memory --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4602',
                   reuseExistingServer,
@@ -282,7 +282,7 @@ export const createWebsitePlaywrightConfig = (
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs persistence --no-parent',
+                    'node scripts/react-cockpit/serve.mjs persistence --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4604',
                   reuseExistingServer,
@@ -298,7 +298,7 @@ export const createWebsitePlaywrightConfig = (
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs subgraphs --no-parent',
+                    'node scripts/react-cockpit/serve.mjs subgraphs --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4606',
                   reuseExistingServer,

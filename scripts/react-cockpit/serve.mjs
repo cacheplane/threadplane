@@ -298,18 +298,21 @@ const server = createServer(async (request, response) => {
     response.writeHead(404);
     return response.end();
   }
+  let content;
   try {
-    response.writeHead(200, {
-      'content-type':
-        { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' }[
-          extname(file)
-        ] ?? 'application/octet-stream',
-    });
-    response.end(readFileSync(file));
+    // Read before answering: a missing build output is a 404, not a crash.
+    content = readFileSync(file);
   } catch {
     response.writeHead(404);
-    response.end();
+    return response.end();
   }
+  response.writeHead(200, {
+    'content-type':
+      { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' }[
+        extname(file)
+      ] ?? 'application/octet-stream',
+  });
+  response.end(content);
 });
 const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]) : null;
