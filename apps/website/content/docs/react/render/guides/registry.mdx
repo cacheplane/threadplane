@@ -22,6 +22,27 @@ export const tripViews: ReactRenderRegistry = {
 };
 ~~~
 
+## Wait for bound props
+
+As in the Angular renderer, a registered component does not mount while any of its resolved props is `undefined`, such as a `$state` binding whose path has not arrived. RenderSpec shows `RenderPendingFallback` in its place, a labelled shimmer card that uses the generative UI skeleton classes. Once every prop has a value, the component mounts and stays mounted for that element, even if a value later goes missing. Each repeat row waits on its own props.
+
+Pass a component as `pendingFallback` to show something else, or pass `null` to mount every component at once. To let one component mount with undefined props, register it as a readiness entry whose predicate always accepts:
+
+~~~tsx
+import type { ReactRenderRegistry } from '@threadplane/react/render';
+
+export const views: ReactRenderRegistry = {
+  Heading: ({ props }) => <h2>{String(props['text'] ?? '')}</h2>,
+  Note: {
+    kind: 'readiness',
+    component: ({ props }) => <p>{String(props['text'] ?? '')}</p>,
+    isReady: () => true,
+  },
+};
+~~~
+
+A readiness entry decides with its own predicate. Without its own `fallback`, it shows the tree's `pendingFallback`. The element reports `mounted` to `onEvent` once, when the placeholder first renders, which matches the Angular renderer.
+
 The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Try each registry mode

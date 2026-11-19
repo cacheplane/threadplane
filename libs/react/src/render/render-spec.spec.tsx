@@ -352,7 +352,14 @@ describe('RenderSpec', () => {
       },
     };
     const before = JSON.stringify({ state, spec });
-    render(<RenderSpec spec={spec} registry={{ Capture }} state={state} />);
+    render(
+      <RenderSpec
+        spec={spec}
+        registry={{ Capture }}
+        state={state}
+        pendingFallback={null}
+      />
+    );
     if (!captured) throw new Error('Capture view did not render');
     expect(captured.props['missing']).toBeUndefined();
     const payload = captured.props['payload'] as {

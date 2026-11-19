@@ -19466,6 +19466,26 @@
       "note": "Turns RenderSpec lifecycle, stateChange and handler events into first-mount, mount-count and latest-activity timings, the React counterpart of Angular RENDER_LIFECYCLE."
     },
     {
+      "id": "export:libs/react/src/render/index.ts#RenderPendingFallback",
+      "taskIds": [
+        "T20",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Default placeholder RenderSpec shows while a registered element has an undefined resolved prop, the React counterpart of Angular DefaultFallbackComponent and A2uiDefaultFallbackComponent. Uses the GenerativeUiSkeleton markup."
+    },
+    {
+      "id": "source:libs/react/src/render/pending-fallback.tsx",
+      "taskIds": [
+        "T20",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "RenderPendingFallback: the default readiness placeholder for every registered component, mirroring Angular defineAngularRegistry's DefaultFallbackComponent."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#useThreadRouting",
       "taskIds": ["T29"], "treatment": "react", "status": "in-progress",
       "target": "libs/react/src/chat/thread-routing.ts",

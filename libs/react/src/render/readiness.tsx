@@ -24,6 +24,20 @@ function sameContract(left: Contract, right: Contract): boolean {
   );
 }
 
+function admit(
+  entry: RenderReadinessEntry,
+  props: RenderViewProps['props']
+): boolean {
+  if (typeof entry.isReady !== 'function')
+    throw new TypeError('Render readiness isReady must be a function.');
+  const result = entry.isReady(props);
+  if (typeof result !== 'boolean')
+    throw new TypeError(
+      'Render readiness isReady must return a synchronous boolean.'
+    );
+  return result;
+}
+
 /** A gate is unmounted by the renderer's normal missing/hidden/direct paths. */
 export function ReadinessGate({
   entry,
@@ -39,24 +53,17 @@ export function ReadinessGate({
     component: entry.component,
     isReady: entry.isReady,
   };
+  // A first render that is ready starts admitted, so the real view renders once
+  // rather than again from the layout effect. An abandoned mount discards it.
   const [committed, setCommitted] = useState<Committed>(() => ({
     contract,
     generation: 0,
-    mounted: false,
+    mounted: admit(entry, view.props),
   }));
   const unchanged = sameContract(committed.contract, contract);
   const generation = committed.generation + (unchanged ? 0 : 1);
   let ready = unchanged && committed.mounted;
-  if (!ready) {
-    if (typeof entry.isReady !== 'function')
-      throw new TypeError('Render readiness isReady must be a function.');
-    const result = entry.isReady(view.props);
-    if (typeof result !== 'boolean')
-      throw new TypeError(
-        'Render readiness isReady must return a synchronous boolean.'
-      );
-    ready = result;
-  }
+  if (!ready) ready = admit(entry, view.props);
   // Only a successful commit of this subtree records admission. Suspended or
   // abandoned candidates cannot latch; a committed pending contract retires A.
   useLayoutEffect(() => {

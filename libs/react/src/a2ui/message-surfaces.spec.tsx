@@ -158,8 +158,12 @@ describe('A2uiMessageSurfaces', () => {
     expect(view.queryByRole('status')).not.toBeNull();
     expect(surfaceIds(view.container)).toEqual([]);
     view.rerender(<A2uiMessageSurfaces content={content(CREATE + COMPONENTS)} />);
-    expect(view.queryByRole('status')).toBeNull();
     expect(surfaceIds(view.container)).toEqual(['trip']);
+    // The surface is live; only its Text bound to /title waits for the data model.
+    expect(view.getByRole('status').closest('.a2ui-surface')).not.toBeNull();
+    view.rerender(<A2uiMessageSurfaces content={content(CREATE + COMPONENTS + title('Lyon'))} />);
+    expect(view.queryByRole('status')).toBeNull();
+    expect(view.container.textContent).toContain('Lyon');
   });
 
   it('renders nothing for a finished message with no surface', () => {

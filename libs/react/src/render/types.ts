@@ -131,7 +131,15 @@ interface RenderSpecBaseProps {
   readonly registry: ReactRenderRegistry;
   readonly functions?: ReactRenderFunctions;
   readonly loading?: boolean;
+  /** Renders an element whose type the registry does not name. Without it, such elements are left out. */
   readonly fallback?: ComponentType<RenderViewProps>;
+  /**
+   * Shown in place of a registered component while any of the element's resolved props is
+   * undefined, such as a state path that has not arrived. Once the props resolve, the component
+   * mounts and stays mounted for that element. Defaults to `RenderPendingFallback`; `null` mounts
+   * every component at once. A readiness entry decides for itself and uses its own `fallback`.
+   */
+  readonly pendingFallback?: ComponentType<RenderViewProps> | null;
   /** Actions the spec's `on` bindings may run. Without them, events do nothing. */
   readonly handlers?: ReactRenderHandlers;
   /** Notified when an action runs, the store changes, or a view reports a result. */
