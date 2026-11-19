@@ -3,6 +3,10 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/ag-ui/streaming/react/src",
   "projectType": "application",
+  "implicitDependencies": [
+    "cockpit-ag-ui-streaming-angular",
+    "cockpit-ag-ui-streaming-python"
+  ],
   "tags": [
     "scope:cockpit-examples",
     "scope:cockpit-e2e",
@@ -27,7 +31,12 @@
             "react"
           ]
         },
-        { "target": "react-ag-ui", "projects": ["website-runtime-preparation"] }
+        {
+          "target": "react-ag-ui",
+          "projects": [
+            "website-runtime-preparation"
+          ]
+        }
       ],
       "outputs": [
         "{workspaceRoot}/dist/cockpit/ag-ui/streaming/react"
@@ -48,7 +57,11 @@
       "options": {
         "config": "cockpit/ag-ui/streaming/react/e2e/playwright.config.ts",
         "skipInstall": true
-      }
+      },
+      "inputs": [
+        "default",
+        "reactAimockBackend"
+      ]
     }
   }
 }

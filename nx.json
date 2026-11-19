@@ -19,6 +19,7 @@
     "reactAimockBackend": [
       "{workspaceRoot}/scripts/react-cockpit/langgraph-proxy.mjs",
       "{workspaceRoot}/scripts/react-cockpit/aimock-backend.mjs",
+      "{workspaceRoot}/scripts/react-cockpit/ag-ui-proxy.mjs",
       "{workspaceRoot}/scripts/react-cockpit/serve.mjs",
       "{workspaceRoot}/scripts/react-cockpit/configuration.mjs",
       "{workspaceRoot}/cockpit/shared/react-aimock-setup.ts"

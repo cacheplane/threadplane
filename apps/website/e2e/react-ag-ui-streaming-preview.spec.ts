@@ -78,6 +78,8 @@ test('switching away releases the held AG-UI Streaming stream and returning stay
   );
   const origin = 'http://127.0.0.1:4609';
   await request.post(origin + '/__reset');
+  // Hold the real stream after its first answer chunk (scripts/react-cockpit/ag-ui-proxy.mjs).
+  await request.post(origin + '/__hold/stream');
   await page.goto(
     '/docs/react/ag-ui/reference/event-mapping?mode=run'
   );
@@ -89,7 +91,7 @@ test('switching away releases the held AG-UI Streaming stream and returning stay
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(
     frame.getByRole('region', { name: 'Conversation', exact: true })
-  ).toContainText('Live partial');
+  ).toContainText('Reply to');
   const oldFrame = await page.locator('iframe').elementHandle();
   await selectFramework(page, 'angular');
   await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);

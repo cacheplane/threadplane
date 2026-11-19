@@ -1,7 +1,49 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
+// Backend: aimock replays cockpit/ag-ui/streaming/angular/e2e/fixtures into
+// the example's real AG-UI server (ag-ui-langgraph). The recording proxy
+// (scripts/react-cockpit/ag-ui-proxy.mjs) holds, fails or edits the next run.
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
 });
+/**
+ * Arms the protocol fault a scenario needs on the next run. All but
+ * `HTTP error` and `Run error` are injected data: stream shapes a correct
+ * server won't produce, for the client's fault handling.
+ */
+async function fault(request: APIRequestContext, text: string) {
+  const edit = (ops: object[]) => request.post('/__stream/edit', { data: { ops } });
+  const finished = (set: object) => edit([{ type: '^RUN_FINISHED$', op: 'patch', set }]);
+  if (text === 'HTTP error') await request.post('/__fail-stream');
+  // `Model failure` is real: its fixture fails the model call, and the server
+  // drops the stream with no terminal event.
+  if (text === 'Run error')
+    await edit([
+      { type: '^TEXT_MESSAGE_START$', op: 'insertBefore', event: { type: 'RUN_ERROR', message: 'PRIVATE model failure', code: 'TEST' } },
+      { type: '^TEXT_MESSAGE_START$', op: 'end' },
+    ]);
+  if (text === 'Interrupt')
+    await finished({ outcome: { type: 'interrupt', interrupts: [{ id: 'pause', reason: 'approval' }] } });
+  if (text === 'Cancelled') await finished({ outcome: { type: 'cancelled' } });
+  if (text === 'Pending tools')
+    await finished({ outcome: { type: 'success', pendingToolCallIds: ['call'] } });
+  if (text === 'Wrong terminal') await finished({ runId: 'different-run' });
+  if (text === 'Notice EOF')
+    await edit([
+      { type: '^MESSAGES_SNAPSHOT$', op: 'insertBefore', event: { type: 'CUSTOM', name: 'on_interrupt', value: { note: 'notice' } } },
+      { type: '^MESSAGES_SNAPSHOT$', op: 'end' },
+    ]);
+  if (text === 'Child')
+    await edit([
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'worker' } },
+    ]);
+  const snapshot = {
+    Tool: 'tool-call',
+    'Duplicate identity': 'duplicate-identity',
+    'Truncated prefix': 'truncated-prefix',
+    'Old pair': 'old-pair',
+  }[text];
+  if (snapshot) await edit([{ type: '^MESSAGES_SNAPSHOT$', op: 'snapshot', mode: snapshot }]);
+}
 const conversation = (page: Page) =>
   page.getByRole('region', { name: 'Conversation', exact: true });
 async function send(page: Page, text: string) {
@@ -36,13 +78,17 @@ test('installed AG-UI client sends full native history on one lazy UUID and New 
   await expect(conversation(page).locator('li')).toHaveCount(4);
   const before: Wire[] = await (await request.get('/__requests')).json();
   expect(before).toHaveLength(2);
+  // The client returns the server's last STATE_SNAPSHOT as the next run's state.
+  const [firstRun] = await (await request.get('/__captures')).json();
+  const snapshot = firstRun.events.filter((e: { type: string }) => e.type === 'STATE_SNAPSHOT').at(-1).snapshot;
+  expect(before[0].body.state).toEqual({});
+  expect(before[1].body.state).toEqual(snapshot);
   for (const entry of before) {
     expect(entry.path).toBe('/ag-ui/streaming/agent');
     expect(entry.method).toBe('POST');
     expect(entry.body.protocolVersion).toBe('1.0');
     expect(entry.body.tools).toEqual([]);
     expect(entry.body.context).toEqual([]);
-    expect(entry.body.state).toEqual({});
     expect(entry.body.forwardedProps).toEqual({});
   }
   expect(before[0].body.messages.map((x) => [x.role, x.content])).toEqual([
@@ -73,21 +119,24 @@ test('native incremental partial settles to one canonical final row', async ({
   request,
 }) => {
   await page.goto('/ag-ui/streaming/react/');
+  // The answer streams in 9-character chunks; hold after the first one.
+  await request.post('/__hold/stream');
   await send(page, 'Hold');
-  await expect(conversation(page)).toContainText('Live partial');
+  await expect(conversation(page)).toContainText('Reply to');
+  await expect(conversation(page)).not.toContainText('settled');
   await expect(
     page.getByRole('button', { name: 'New conversation' })
   ).toBeDisabled();
   await request.post('/__release');
   await expect(page.getByRole('status')).toHaveText('Response complete.');
   await expect(conversation(page).locator('li')).toHaveCount(2);
-  await expect(conversation(page)).toContainText('Reply to Hold');
-  await expect(conversation(page)).not.toContainText('Live partial');
+  await expect(conversation(page)).toContainText('Reply to Hold, settled.');
 });
 
 for (const text of [
   'HTTP error',
   'Run error',
+  'Model failure',
   'Interrupt',
   'Cancelled',
   'Notice EOF',
@@ -108,6 +157,7 @@ for (const text of [
       await send(page, 'Alpha');
       await expect(page.getByRole('status')).toHaveText('Response complete.');
     }
+    await fault(request, text);
     await send(page, text);
     await expect(page.getByRole('status')).toHaveText(
       'Start a new conversation to continue.'
@@ -134,8 +184,9 @@ for (const exit of ['Stop', 'pagehide']) {
     request,
   }) => {
     await page.goto('/ag-ui/streaming/react/');
+    await request.post('/__hold/stream');
     await send(page, 'Hold');
-    await expect(conversation(page)).toContainText('Live partial');
+    await expect(conversation(page)).toContainText('Reply to');
     expect((await (await request.get('/__lifetime')).json()).active).toBe(true);
     if (exit === 'Stop') {
       await page.getByRole('button', { name: 'Stop', exact: true }).click();
@@ -156,7 +207,7 @@ for (const exit of ['Stop', 'pagehide']) {
     await request.post('/__release');
     expect(await (await request.get('/__requests')).json()).toHaveLength(1);
     if (exit === 'Stop')
-      await expect(conversation(page)).not.toContainText('Reply to Hold');
+      await expect(conversation(page)).not.toContainText('settled');
     else await expect(conversation(page)).toHaveCount(0);
   });
 }
