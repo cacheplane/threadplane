@@ -57,6 +57,41 @@ The shared backend runs c-interrupts by default. Runtime settings can select a d
 
 Moving between Code and Run preserves the mounted example and unsent draft. Reloading starts an empty page-local conversation.
 
+## Answer session interrupts from Chat
+
+A session that can pause lists what it waits on in `snapshot.interrupts`. `Chat` shows nothing for an interrupt by itself, because which value answers an interrupt is the backend's contract. Pass `renderInterrupt` to draw each one, and call `respond.resolve(value)` or `respond.cancel()` from your card:
+
+```tsx
+import { ApprovalCard, Chat } from '@threadplane/react/chat';
+
+<Chat
+  session={session}
+  renderInterrupt={(interrupt, respond) => (
+    <ApprovalCard
+      disabled={respond.sending || respond.answered}
+      actions={[
+        {
+          id: 'approve',
+          label: 'Approve',
+          onSelect: () => respond.resolve({ approved: true }),
+        },
+        {
+          id: 'decline',
+          label: 'Decline',
+          onSelect: () => respond.resolve({ approved: false }),
+        },
+      ]}
+    >
+      {interrupt.message ?? interrupt.reason}
+    </ApprovalCard>
+  )}
+/>;
+```
+
+The cards take the place of the `approval` slot, so the composer reads "Answer the approval to continue" while they are pending and focus returns to it afterwards. `Chat` holds each answer until every pending interrupt has one, then sends them together with one `session.resume`, because a paused run continues once. `respond.answered` is true for an interrupt whose answer waits on the others, and `respond.sending` is true while the answers are on their way.
+
+If `session.resume` rejects, the answers are dropped so the person can answer again, and the failure goes to `onInterruptError`. `renderInterrupt` is ignored while `approval` is set and on a session that has no `resume`.
+
 ## Build from source
 
 From a Threadplane checkout with dependencies installed:

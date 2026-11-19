@@ -19109,6 +19109,36 @@
       "reason": "Readonly child-agent presentation matching the Angular subagent card: name, status, message count, and the child's messages and tool activity behind one closed disclosure. MessageList places a card in the tool call that started the child. Status and messages are borrowed; execution, sessions and restored child history remain application-owned. This does not certify whole-framework parity."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#InterruptResponder",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-interrupts.tsx",
+      "reason": "React-only opt-in view of the interrupts a core session reports. Chat draws nothing by itself: the application returns each card from renderInterrupt, and Chat holds the answers until every pending interrupt has one, then sends them with one session.resume. No built-in card and no answer values."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#RenderInterrupt",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-interrupts.tsx",
+      "reason": "React-only opt-in view of the interrupts a core session reports. Chat draws nothing by itself: the application returns each card from renderInterrupt, and Chat holds the answers until every pending interrupt has one, then sends them with one session.resume. No built-in card and no answer values."
+    },
+    {
+      "id": "source:libs/react/src/chat/session-interrupts.tsx",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-interrupts.tsx",
+      "reason": "React-only opt-in view of the interrupts a core session reports. Chat draws nothing by itself: the application returns each card from renderInterrupt, and Chat holds the answers until every pending interrupt has one, then sends them with one session.resume. No built-in card and no answer values."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#sessionSubagents",
       "taskIds": [
         "T28"

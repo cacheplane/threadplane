@@ -58,6 +58,10 @@ export {
   type SubagentEvidenceRecord,
   type SubagentProjection,
 } from './subagent-evidence.js';
+export type {
+  InterruptResponder,
+  RenderInterrupt,
+} from './session-interrupts.js';
 export {
   sessionSubagents,
   type SessionSubagentOptions,
