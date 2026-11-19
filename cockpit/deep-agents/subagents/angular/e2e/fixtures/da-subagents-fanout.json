@@ -2,6 +2,360 @@
   "fixtures": [
     {
       "match": {
+        "userMessage": "Research KSFO dispatch.",
+        "systemMessage": "You research airport field data",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_field_elevation",
+            "arguments": "{\"airport\": \"KSFO\"}"
+          },
+          {
+            "name": "lookup_runway_length",
+            "arguments": "{\"airport\": \"KSFO\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Research KSFO dispatch.",
+        "systemMessage": "You research airport field data",
+        "hasToolResult": true
+      },
+      "response": { "content": "Observed lookup: KSFO field elevation and runway length." }
+    },
+    {
+      "match": {
+        "userMessage": "Research KSFO dispatch.",
+        "systemMessage": "You read weather for a dispatch desk",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_weather",
+            "arguments": "{\"airport\": \"KSFO\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Research KSFO dispatch.",
+        "systemMessage": "You read weather for a dispatch desk",
+        "hasToolResult": true
+      },
+      "response": { "content": "Observed lookup: KSFO weather." }
+    },
+    {
+      "match": {
+        "userMessage": "Research KASE dispatch.",
+        "systemMessage": "You research airport field data",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_field_elevation",
+            "arguments": "{\"airport\": \"KASE\"}"
+          },
+          {
+            "name": "lookup_runway_length",
+            "arguments": "{\"airport\": \"KASE\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Research KASE dispatch.",
+        "systemMessage": "You research airport field data",
+        "hasToolResult": true
+      },
+      "response": { "content": "Observed lookup: KASE field elevation and runway length." }
+    },
+    {
+      "match": {
+        "userMessage": "Research KASE dispatch.",
+        "systemMessage": "You read weather for a dispatch desk",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_weather",
+            "arguments": "{\"airport\": \"KASE\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Research KASE dispatch.",
+        "systemMessage": "You read weather for a dispatch desk",
+        "hasToolResult": true
+      },
+      "response": { "content": "Observed lookup: KASE weather." }
+    },
+    {
+      "match": {
+        "userMessage": "Research KDEN dispatch.",
+        "systemMessage": "You research airport field data",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_field_elevation",
+            "arguments": "{\"airport\": \"KDEN\"}"
+          },
+          {
+            "name": "lookup_runway_length",
+            "arguments": "{\"airport\": \"KDEN\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Research KDEN dispatch.",
+        "systemMessage": "You research airport field data",
+        "hasToolResult": true
+      },
+      "response": { "content": "Observed lookup: KDEN field elevation and runway length." }
+    },
+    {
+      "match": {
+        "userMessage": "Research KDEN dispatch.",
+        "systemMessage": "You read weather for a dispatch desk",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_weather",
+            "arguments": "{\"airport\": \"KDEN\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Research KDEN dispatch.",
+        "systemMessage": "You read weather for a dispatch desk",
+        "hasToolResult": true
+      },
+      "response": { "content": "Observed lookup: KDEN weather." }
+    },
+    {
+      "match": {
+        "userMessage": "Invalid lookup KSFO dispatch.",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_field_elevation",
+            "arguments": "{}"
+          },
+          {
+            "name": "lookup_runway_length",
+            "arguments": "{}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Invalid lookup KSFO dispatch.",
+        "hasToolResult": true
+      },
+      "response": { "content": "Observed lookup: Error invoking tool 'lookup_field_elevation' (airport: Field required)." }
+    },
+    {
+      "match": { "userMessage": "General-purpose local report." },
+      "response": { "content": "General-purpose local report ready." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:single]",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dispatch assessment: the specialists reported back." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:single]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"description\": \"Research KSFO dispatch.\", \"subagent_type\": \"field-researcher\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:parallel]",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dispatch assessment: the specialists reported back." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:parallel]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"description\": \"Research KASE dispatch.\", \"subagent_type\": \"field-researcher\"}"
+          },
+          {
+            "name": "task",
+            "arguments": "{\"description\": \"Research KASE dispatch.\", \"subagent_type\": \"weather-analyst\"}"
+          },
+          {
+            "name": "task",
+            "arguments": "{\"description\": \"Research KDEN dispatch.\", \"subagent_type\": \"field-researcher\"}"
+          },
+          {
+            "name": "task",
+            "arguments": "{\"description\": \"Research KDEN dispatch.\", \"subagent_type\": \"weather-analyst\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:duplicates]",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dispatch assessment: the specialists reported back." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:duplicates]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"description\": \"Research KASE dispatch.\", \"subagent_type\": \"field-researcher\"}"
+          },
+          {
+            "name": "task",
+            "arguments": "{\"description\": \"Research KASE dispatch.\", \"subagent_type\": \"field-researcher\"}"
+          },
+          {
+            "name": "task",
+            "arguments": "{\"description\": \"Research KASE dispatch.\", \"subagent_type\": \"field-researcher\"}"
+          },
+          {
+            "name": "task",
+            "arguments": "{\"description\": \"Research KASE dispatch.\", \"subagent_type\": \"field-researcher\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:tool-error]",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dispatch assessment: the specialists reported back." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:tool-error]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"description\": \"Invalid lookup KSFO dispatch.\", \"subagent_type\": \"field-researcher\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:general-purpose]",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dispatch assessment: the specialists reported back." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:general-purpose]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"description\": \"General-purpose local report.\", \"subagent_type\": \"general-purpose\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:default-tool]",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dispatch assessment: the specialists reported back." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:default-tool]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "ls",
+            "arguments": "{\"path\": \"/\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:root-tool-error]",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dispatch assessment: the specialists reported back." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:root-tool-error]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\": \"field-researcher\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "userMessage": "[scenario:no-task]" },
+      "response": { "content": "No delegation requested." }
+    },
+    {
+      "match": {
         "userMessage": "Analyze the current weather conditions at Denver International Airport (KDEN) and explain the operational impact for departures and arrivals.",
         "hasToolResult": true,
         "turnIndex": 1
