@@ -479,7 +479,7 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
-                  command: 'npx nx run cockpit-deep-agents-planning-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-planning --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs deep-agents-planning --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4628',
                   reuseExistingServer,
