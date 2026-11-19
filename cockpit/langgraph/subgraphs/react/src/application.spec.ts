@@ -247,7 +247,7 @@ it('a child input checkpoint without fields precedes a confirmed nested route', 
   const h = setup(),
     { pending, selected } = await h.start();
   selected.replace({
-    subgraphs: [{ ...selected.child(), values: {} }],
+    subgraphs: [{ ...selected.child(), state: {} }],
   });
   selected.research();
   selected.final();
@@ -265,7 +265,7 @@ it('a child with a malformed topic stays unconfirmed', async () => {
     { pending, selected } = await h.start();
   selected.replace({
     subgraphs: [
-      { ...selected.child(), values: { research_topic: 42, research_brief: '' } },
+      { ...selected.child(), state: { research_topic: 42, research_brief: '' } },
     ],
   });
   selected.research();
