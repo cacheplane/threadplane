@@ -3,6 +3,10 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/deep-agents/subagents/react/src",
   "projectType": "application",
+  "implicitDependencies": [
+    "cockpit-deep-agents-subagents-angular",
+    "cockpit-deep-agents-subagents-python"
+  ],
   "tags": [
     "scope:cockpit-examples",
     "scope:cockpit-e2e",
@@ -21,7 +25,12 @@
             "react"
           ]
         },
-        { "target": "react-langgraph", "projects": ["website-runtime-preparation"] }
+        {
+          "target": "react-langgraph",
+          "projects": [
+            "website-runtime-preparation"
+          ]
+        }
       ],
       "outputs": [
         "{workspaceRoot}/dist/cockpit/deep-agents/subagents/react"
@@ -30,27 +39,21 @@
         "command": "node scripts/react-cockpit/build.mjs deep-agents-subagents"
       }
     },
-    "fixture-test": {
-      "executor": "nx:run-commands",
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
       "cache": false,
+      "inputs": [
+        "default",
+        "reactAimockBackend"
+      ],
       "dependsOn": [
+        "build",
         {
           "target": "test",
           "projects": [
             "cockpit-deep-agents-subagents-python"
           ]
         }
-      ],
-      "options": {
-        "command": "node --test scripts/react-cockpit/deep-agents-subagents-fixture.spec.mjs scripts/react-cockpit/deep-agents-subagents-configuration.spec.mjs"
-      }
-    },
-    "e2e": {
-      "executor": "@nx/playwright:playwright",
-      "cache": false,
-      "dependsOn": [
-        "build",
-        "fixture-test"
       ],
       "options": {
         "config": "cockpit/deep-agents/subagents/react/e2e/playwright.config.ts",

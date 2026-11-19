@@ -20,7 +20,6 @@ import { createAgUiToolViewsFixture } from './ag-ui-tool-views-fixture.mjs';
 import { createAgUiJsonRenderFixture } from './ag-ui-json-render-fixture.mjs';
 import { createAgUiSubagentsFixture } from './ag-ui-subagents-fixture.mjs';
 
-import { createDeepAgentsSubagentsFixture } from './deep-agents-subagents-fixture.mjs';
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
 const agUiA2uiFixture = configuration.library === 'ag-ui' && configuration.adapter === 'ag-ui' && configuration.topic === 'a2ui'
@@ -51,7 +50,6 @@ const chatDebugFixture = configuration.library === 'chat' && configuration.topic
 const nativeStrandsFixture = configuration.library === 'runtimes' && configuration.topic === 'aws-strands' ? createNativeStrandsFixture() : null;
 const nativeMafFixture = configuration.library === 'runtimes' && configuration.topic === 'microsoft-agent-framework' ? createNativeMafFixture() : null;
 const nativeMastraFixture = configuration.library === 'runtimes' && configuration.topic === 'mastra' ? createNativeMastraFixture() : null;
-const deepAgentsSubagentsFixture = configuration.library === 'deep-agents' && configuration.topic === 'subagents' ? createDeepAgentsSubagentsFixture() : null;
 let chatGenerativeUiFixture = configuration.library === 'chat' && configuration.topic === 'generative-ui' ? createChatGenerativeUiFixture() : null;
 // aimock-backed examples: the real graph runs under `langgraph dev` (started by
 // the Playwright global setup); this server proxies /api to it.
@@ -172,7 +170,6 @@ const server = createServer(async (request, response) => {
   if (nativeMafFixture && (await nativeMafFixture(request, response, pathname))) return;
   if (nativeMastraFixture && (await nativeMastraFixture(request, response, pathname))) return;
   if (agUiClientToolsFixture && (await agUiClientToolsFixture(request, response, pathname))) return;
-  if (deepAgentsSubagentsFixture && (await deepAgentsSubagentsFixture(request, response, pathname))) return;
   if (chatGenerativeUiFixture && pathname === '/__reset') {
     if (request.method !== 'POST') return json(response, {}, 405);
     try {
@@ -275,7 +272,7 @@ const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]) : null;
 let closing;
 let shutdown;
-if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || deepAgentsSubagentsFixture || chatGenerativeUiFixture) {
+if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || chatGenerativeUiFixture) {
   shutdown = (code = 0) => {
     closing ??= (async () => {
       let a2uiFailure;
@@ -288,7 +285,7 @@ if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture ||
         try { await chatA2uiFixture?.close(); }
         catch (error) { a2uiFailure = error; }
       }
-      else await (chatDebugFixture ?? nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? deepAgentsSubagentsFixture ?? chatGenerativeUiFixture).close();
+      else await (chatDebugFixture ?? nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? chatGenerativeUiFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();

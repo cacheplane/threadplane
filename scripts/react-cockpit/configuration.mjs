@@ -75,7 +75,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       backend: aimockLanggraph('deep-agents/skills', 4631),
     });
   if (topic === 'deep-agents-subagents')
-    return Object.freeze({topic:'subagents',library:'deep-agents',adapter:'langgraph',appPath:'cockpit/deep-agents/subagents/react',base:'/deep-agents/subagents/react/',port:4630,project:'cockpit-deep-agents-subagents-react'});
+    return Object.freeze({topic:'subagents',library:'deep-agents',adapter:'langgraph',appPath:'cockpit/deep-agents/subagents/react',base:'/deep-agents/subagents/react/',port:4630,project:'cockpit-deep-agents-subagents-react',backend:aimockLanggraph('deep-agents/subagents', 4630)});
   if (topic === 'deep-agents-filesystem')
     return Object.freeze({topic:'filesystem',library:'deep-agents',adapter:'langgraph',appPath:'cockpit/deep-agents/filesystem/react',base:'/deep-agents/filesystem/react/',port:4629,project:'cockpit-deep-agents-filesystem-react',backend:aimockLanggraph('deep-agents/filesystem', 4629)});
   if (topic === 'deep-agents-planning')
