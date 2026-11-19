@@ -10,11 +10,13 @@ import {
 } from '@threadplane/core';
 import type {
   LangGraphInterrupt,
+  LangGraphPublication,
   LangGraphWireInterrupt,
   LangGraphSnapshot,
   LangGraphSubgraph,
   LangGraphState,
 } from './langgraph-snapshot.js';
+import { projectSubagents } from './subagent-projection.js';
 
 // Only objects projected here are trusted. Object.isFrozen on external input is
 // insufficient: its children may still be mutable. The weak set retains no data.
@@ -324,7 +326,7 @@ export function ownSnapshot(
 
 /** One backend aggregate, composing the core fields and owned application data. */
 export function ownLangGraphSnapshot(
-  input: LangGraphSnapshot,
+  input: LangGraphPublication,
   previous?: LangGraphSnapshot
 ): LangGraphSnapshot {
   const core = ownSnapshot(input, previous);
@@ -333,6 +335,12 @@ export function ownLangGraphSnapshot(
     previous?.history as PlainValue
   ) as LangGraphSnapshot['history'];
   const subgraphs = ownSubgraphs(input.subgraphs, previous?.subgraphs);
+  // Derived here, so the children always agree with the published child graphs.
+  const subagents = projectSubagents(
+    subgraphs,
+    core.status,
+    previous?.subagents
+  );
   const state = ownValueWithSharing(input.state, previous?.state) as
     | LangGraphState
     | undefined;
@@ -355,6 +363,7 @@ export function ownLangGraphSnapshot(
     stateIssues === previous?.stateIssues &&
     interrupts === previous?.interrupts &&
     subgraphs === previous?.subgraphs &&
+    subagents === previous?.subagents &&
     reconnect === previous?.reconnect
   )
     return previous;
@@ -371,6 +380,7 @@ export function ownLangGraphSnapshot(
     ...(stateIssues ? { stateIssues } : {}),
     interrupts,
     subgraphs,
+    subagents,
     ...(reconnect ? { reconnect } : {}),
   });
 }
@@ -390,6 +400,13 @@ export function ownSubgraph(
     ownMessage,
     sameMessage
   );
+  // A restored child graph may predate `toolCalls`.
+  const toolCalls = ownArray(
+    input.toolCalls ?? [],
+    previous?.toolCalls,
+    ownToolCall,
+    sameToolCall
+  );
   const state = ownValueWithSharing(input.state, previous?.state) as
     | LangGraphState
     | undefined;
@@ -404,6 +421,7 @@ export function ownSubgraph(
     previous &&
     namespace === previous.namespace &&
     messages === previous.messages &&
+    toolCalls === previous.toolCalls &&
     state === previous.state &&
     interrupts === previous.interrupts &&
     error === previous.error
@@ -412,6 +430,7 @@ export function ownSubgraph(
   return freeze({
     namespace,
     messages,
+    toolCalls,
     state,
     interrupts,
     ...(error ? { error } : {}),
@@ -430,6 +449,7 @@ export function ownSubgraphs(
       a === b ||
       (a.namespace === b.namespace &&
         a.messages === b.messages &&
+        a.toolCalls === b.toolCalls &&
         a.state === b.state &&
         a.interrupts === b.interrupts &&
         sameError(a.error, b.error))

@@ -77,6 +77,7 @@ describe('neutral session ownership', () => {
       state: undefined,
       interrupts: [],
       subgraphs: [],
+      subagents: [],
     });
     expect(first).not.toHaveBeenCalled();
     expect(a.stream).not.toHaveBeenCalled();
