@@ -69,16 +69,24 @@ export function createAimockBackend({ root, backend }) {
       starting ??= start();
       return starting;
     },
+    /** The `uv run langgraph dev` process, once started. */
+    get pid() {
+      return child?.pid ?? null;
+    },
     async close() {
       // `uv run` does not forward signals to the server it started: stop the
-      // server processes under it first, then uv itself.
-      if (child?.pid && child.exitCode === null) {
+      // server processes under it first, then uv itself, and wait for it.
+      if (child?.pid && child.exitCode === null && child.signalCode === null) {
+        const exited = new Promise((done) => child.once('exit', done));
         try {
           execFileSync('pkill', ['-TERM', '-P', String(child.pid)]);
         } catch {
           // no children left
         }
         child.kill('SIGTERM');
+        const timeout = setTimeout(() => child.kill('SIGKILL'), 10_000);
+        await exited;
+        clearTimeout(timeout);
       }
       await mock?.stop();
     },

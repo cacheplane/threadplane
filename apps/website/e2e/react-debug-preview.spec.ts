@@ -2,7 +2,6 @@ import { selectWorkspaceMode } from './fixtures/workspace-controls';
 import { selectFramework } from './fixtures/framework-controls';
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 
 const origin = 'http://127.0.0.1:4645';
@@ -49,17 +48,11 @@ test.describe('native Debug Website', () => {
     await page.goto('about:blank');
     expect((await request.post(origin + '/__release')).ok()).toBe(true);
     expect((await request.post(origin + '/__reset')).ok()).toBe(true);
-    await expect.poll(async () => (await read(request, '/__lifetime')).active).toEqual({ children: 0, streams: 0, reads: 0, handlers: 0, responses: 0 });
+    // No proxied connection, held read or held stream outlives the test.
+    await expect.poll(async () => (await read(request, '/__lifetime')).openResponses).toBe(0);
     const lifetime = await read(request, '/__lifetime');
-    for (const child of lifetime.children) {
-      expect(child.reaped).toBe(true);
-      for (const id of [child.pid, -child.pgid]) {
-        let code;
-        try { process.kill(id, 0); } catch (error) { code = (error as NodeJS.ErrnoException).code; }
-        expect(code).toBe('ESRCH');
-      }
-    }
-    await writeFile(info.outputPath('observed-child-absence.json'), JSON.stringify(lifetime, null, 2));
+    expect(lifetime).toMatchObject({ activeStream: false, activeHistory: false, activeState: false });
+    await writeFile(info.outputPath('observed-lifetime.json'), JSON.stringify(lifetime, null, 2));
     expect(observations.get(page)?.errors).toEqual([]);
   });
 
@@ -146,16 +139,16 @@ test.describe('native Debug Website', () => {
     const captures = await read(request, '/__captures');
     expect(captures).toHaveLength(1);
     const capture = captures[0];
-    expect(capture.proof).toMatchObject({ actualCompiledGraph: true, networkAttempts: 0, providerVariant: 'natural' });
-    expect(capture.localCapturedReplay).toBe(true);
-    expect(capture.sseSha256).toBe(createHash('sha256').update(capture.sse).digest('hex'));
-    expect(capture.state.values.messages.filter((message: { type: string }) => message.type === 'ai')).toHaveLength(3);
-    const answer = capture.state.values.messages[1].content;
-    expect(capture.state.values.analysis).toEqual({ characters: [...answer].length, words: answer.split(' ').length });
+    // The real server's stream and saved state (scripts/react-cockpit/langgraph-proxy.mjs).
+    const runId = /"run_id": ?"([^"]+)"/.exec(capture.sse)?.[1];
+    expect(runId).toBeTruthy();
+    expect(capture.values.messages.filter((message: { type: string }) => message.type === 'ai')).toHaveLength(3);
+    const answer = capture.values.messages[1].content;
+    expect(capture.values.analysis).toEqual({ characters: [...answer].length, words: answer.split(' ').length });
     await frame.getByLabel('Message', { exact: true }).fill('Retained follow-up draft ✈ café');
     await frame.getByRole('button', { name: 'Open debug panel', exact: true }).click();
     await frame.getByRole('tab', { name: 'State', exact: true }).click();
-    await expect.poll(async () => JSON.parse(await frame.locator('.tp-debug__value pre').first().textContent() ?? 'null')).toEqual({ analysis: capture.state.values.analysis });
+    await expect.poll(async () => JSON.parse(await frame.locator('.tp-debug__value pre').first().textContent() ?? 'null')).toEqual({ analysis: capture.values.analysis });
     const historyResponse = page.waitForResponse(response => frameURL.test(response.frame().url()) && response.url().endsWith('/history'));
     await frame.getByRole('button', { name: 'Refresh checkpoints' }).click();
     const history = await (await historyResponse).json();
@@ -172,15 +165,15 @@ test.describe('native Debug Website', () => {
     await expect(region.locator('.tp-debug__value pre')).toHaveText('{}');
     await region.getByText('Compare selected checkpoint with current state', { exact: true }).click();
     await expect.poll(async () => JSON.parse(await region.getByLabel('Selected checkpoint to current state JSON', { exact: true }).textContent() ?? 'null')).toEqual([
-      { kind: 'added', path: '/analysis', after: capture.state.values.analysis },
+      { kind: 'added', path: '/analysis', after: capture.values.analysis },
     ]);
-    await expect.poll(async () => JSON.parse(await frame.locator('.tp-debug__value pre').first().textContent() ?? 'null')).toEqual({ analysis: capture.state.values.analysis });
+    await expect.poll(async () => JSON.parse(await frame.locator('.tp-debug__value pre').first().textContent() ?? 'null')).toEqual({ analysis: capture.values.analysis });
     const ledger = await read(request, '/__requests');
-    const thread = capture.state.checkpoint.thread_id;
+    const thread = capture.checkpoint.thread_id;
     expect(ledger.map((entry: { method: string; path: string }) => [entry.method, entry.path])).toEqual([
       ['POST', '/api/threads'],
       ['POST', `/api/threads/${thread}/runs/stream`],
-      ['GET', `/api/threads/${thread}/runs/${capture.runId}`],
+      ['GET', `/api/threads/${thread}/runs/${runId}`],
       ['GET', `/api/threads/${thread}/state`],
       ['POST', `/api/threads/${thread}/state/checkpoint`],
       ['POST', `/api/threads/${thread}/history`],
@@ -191,7 +184,7 @@ test.describe('native Debug Website', () => {
     expect(ledger[1].body.input.messages[0].content).toBe('Explain lift ✈ café');
     expect(ledger[6].body).toMatchObject({ limit: 10 });
     expect(ledger[7].body.checkpoint).toEqual(history[early].checkpoint);
-    await writeFile(info.outputPath('observed-selection.json'), JSON.stringify({ history, selected, current: capture.state, ledger }, null, 2));
+    await writeFile(info.outputPath('observed-selection.json'), JSON.stringify({ history, selected, current: { values: capture.values, checkpoint: capture.checkpoint }, ledger }, null, 2));
     await page.screenshot({ path: info.outputPath('run-inspection.png') });
     await frame.getByRole('button', { name: 'Close debug panel', exact: true }).click();
     for (const name of ['Code', 'Docs', 'Run'] as const) await mode(page, name);

@@ -231,10 +231,10 @@ describe('Debug proof files through actual Nx attribution and classification', (
   const root = fileURLToPath(new URL('../', import.meta.url));
   const project = JSON.parse(readFileSync(new URL('../cockpit/chat/debug/react/project.json', import.meta.url), 'utf8'));
   for (const file of [
-    'scripts/react-cockpit/chat-debug-fixture.mjs',
-    'scripts/react-cockpit/chat-debug-wire.py',
-    'scripts/react-cockpit/chat-debug-fixture.spec.mjs',
     'scripts/react-cockpit/chat-debug-configuration.spec.mjs',
+    'scripts/react-cockpit/aimock-backend.mjs',
+    'scripts/react-cockpit/langgraph-proxy.mjs',
+    'cockpit/chat/debug/angular/e2e/fixtures/c-debug.json',
     'scripts/react-cockpit/configuration.mjs',
     'scripts/react-cockpit/serve.mjs',
     'scripts/react-cockpit/chat-debug-native-session-probe.mjs',

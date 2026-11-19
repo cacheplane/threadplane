@@ -31,6 +31,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       topic: 'debug', library: 'chat', adapter: 'langgraph',
       appPath: 'cockpit/chat/debug/react', base: '/chat/debug/react/',
       port: 4645, project: 'cockpit-chat-debug-react',
+      backend: aimockLanggraph('chat/debug', 4645),
     });
   if (topic === 'chat-theming')
     return Object.freeze({

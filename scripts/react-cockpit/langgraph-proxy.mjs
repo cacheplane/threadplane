@@ -15,7 +15,8 @@
  *   GET  /__lifetime          { activeStream, activeHistory, activeTitle,
  *                               activeState, openResponses }
  *   GET  /__captures          per finished run: forwarded SSE text, saved
- *                             messages/next from the real server, title
+ *                             messages/values/checkpoint/next from the real
+ *                             server, title
  *                             before and after the run (waits for captures
  *                             still being read)
  *   POST /__reset             forget requests, drop held responses, clear modes
@@ -91,6 +92,8 @@
  *                             "$humanId" in data is the submitted message id).
  *                             `once: true` applies an op to its first match only;
  *                             `ifKey` only to events whose state has that key.
+ *                             `dataPattern` only to events whose raw data
+ *                             line matches that regex.
  *                             `unlessKey` skips events whose state has that key.
  *                             `anonymous: true` withholds the run identity (the
  *                             metadata event and Content-Location header).
@@ -575,6 +578,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       let changed = false;
       for (const op of edits) {
         if ((op.once && op.used) || !op.pattern.test(name)) continue;
+        if (op.dataPattern && !new RegExp(op.dataPattern).test(dataLine ?? '')) continue;
         // A `checkpoints` event carries state under `values`; ops address the state.
         const state = name.startsWith('checkpoints') ? data?.values : data;
         if (op.ifKey && !(state && typeof state === 'object' && op.ifKey in state)) continue;
@@ -658,6 +662,8 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
           path: request.url && new URL(request.url, 'http://localhost').pathname,
           sse,
           savedMessages: state?.values?.messages ?? [],
+          values: state?.values ?? null,
+          checkpoint: state?.checkpoint ?? null,
           next: state?.next ?? [],
           titleBefore,
           titleAfter: await threadTitle(threadId).catch(() => null),

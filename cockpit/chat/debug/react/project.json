@@ -3,6 +3,10 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/chat/debug/react/src",
   "projectType": "application",
+  "implicitDependencies": [
+    "cockpit-chat-debug-angular",
+    "cockpit-chat-debug-python"
+  ],
   "tags": [
     "scope:cockpit-examples",
     "scope:cockpit-e2e",
@@ -27,7 +31,12 @@
             "react"
           ]
         },
-        { "target": "react-langgraph", "projects": ["website-runtime-preparation"] }
+        {
+          "target": "react-langgraph",
+          "projects": [
+            "website-runtime-preparation"
+          ]
+        }
       ],
       "outputs": [
         "{workspaceRoot}/dist/cockpit/chat/debug/react"
@@ -44,7 +53,8 @@
       "cache": false,
       "inputs": [
         "default",
-        "debugFixture"
+        "reactAimockBackend",
+        "debugProbe"
       ],
       "dependsOn": [
         "build",
@@ -62,22 +72,11 @@
     }
   },
   "namedInputs": {
-    "debugFixture": [
+    "debugProbe": [
       "{workspaceRoot}/scripts/react-cockpit/chat-debug-configuration.spec.mjs",
-      "{workspaceRoot}/scripts/react-cockpit/configuration.mjs",
-      "{workspaceRoot}/scripts/react-cockpit/serve.mjs",
-      "{workspaceRoot}/scripts/react-cockpit/chat-debug-fixture.mjs",
-      "{workspaceRoot}/scripts/react-cockpit/chat-debug-wire.py",
-      "{workspaceRoot}/scripts/react-cockpit/chat-debug-fixture.spec.mjs",
       "{workspaceRoot}/scripts/react-cockpit/chat-debug-native-session-probe.mjs",
-      "{workspaceRoot}/cockpit/chat/debug/python/src/graph.py",
-      "{workspaceRoot}/cockpit/chat/debug/python/tests/providers.py",
-      "{workspaceRoot}/cockpit/chat/debug/python/pyproject.toml",
-      "{workspaceRoot}/cockpit/chat/debug/python/uv.lock",
       "{workspaceRoot}/fixtures/react-parity/langgraph-candidate/chat-debug-native-session.mjs",
-      "{workspaceRoot}/cockpit/chat/debug/python/tests/test_streaming.py",
-      "{workspaceRoot}/cockpit/chat/debug/python/prompts/debug.md",
-      "{workspaceRoot}/cockpit/chat/debug/python/langgraph.json"
+      "{workspaceRoot}/cockpit/chat/debug/angular/e2e/fixtures/c-debug.json"
     ]
   }
 }

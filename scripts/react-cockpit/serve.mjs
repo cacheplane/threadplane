@@ -12,7 +12,6 @@ import { createNativeMafFixture } from './native-maf-fixture.mjs';
 import { createAgUiClientToolsFixture } from './ag-ui-client-tools-fixture.mjs';
 import { createLanggraphProxy } from './langgraph-proxy.mjs';
 import { createAimockBackend } from './aimock-backend.mjs';
-import { createChatDebugFixture } from './chat-debug-fixture.mjs';
 import { createChatGenerativeUiFixture } from './chat-generative-ui-fixture.mjs';
 import { createAgUiStreamingFixture } from './ag-ui-streaming-fixture.mjs';
 import { createAgUiInterruptsFixture } from './ag-ui-interrupts-fixture.mjs';
@@ -46,7 +45,6 @@ const releaseA2uiStreams = (cancel = false) => {
     }
   }
 };
-const chatDebugFixture = configuration.library === 'chat' && configuration.topic === 'debug' ? createChatDebugFixture() : null;
 const nativeStrandsFixture = configuration.library === 'runtimes' && configuration.topic === 'aws-strands' ? createNativeStrandsFixture() : null;
 const nativeMafFixture = configuration.library === 'runtimes' && configuration.topic === 'microsoft-agent-framework' ? createNativeMafFixture() : null;
 const nativeMastraFixture = configuration.library === 'runtimes' && configuration.topic === 'mastra' ? createNativeMastraFixture() : null;
@@ -140,29 +138,6 @@ const server = createServer(async (request, response) => {
       });
     }
     if (await chatA2uiFixture(request, response, pathname)) return;
-    if (pathname.startsWith('/developer-api/')) return json(response, {}, 404);
-  }
-  if (chatDebugFixture) {
-    // Closed local controls, excluded from application inputs and bundles.
-    const controls = {
-      '/__requests': ['GET', () => chatDebugFixture.requests],
-      '/__captures': ['GET', () => chatDebugFixture.captures],
-      '/__lifetime': ['GET', () => chatDebugFixture.receipt()],
-      '/__reset': ['POST', async () => { await chatDebugFixture.reset(); return chatDebugFixture.receipt(); }],
-      '/__release': ['POST', () => { chatDebugFixture.release(); return {}; }],
-      '/__hold/stream': ['POST', () => { chatDebugFixture.holdStreams(true); return {}; }],
-      '/__hold/current': ['POST', () => { chatDebugFixture.holdReads('current'); return {}; }],
-      '/__hold/history': ['POST', () => { chatDebugFixture.holdReads('history'); return {}; }],
-      '/__hold/checkpoint': ['POST', () => { chatDebugFixture.holdReads('checkpoint'); return {}; }],
-    };
-    if (pathname.startsWith('/__')) {
-      const control = Object.hasOwn(controls, pathname) ? controls[pathname] : undefined;
-      if (!control) return json(response, {}, 404);
-      if (request.method !== control[0]) return json(response, {}, 405);
-      try { return json(response, await control[1]()); }
-      catch { return json(response, { error: 'Local fixture control failed' }, 500); }
-    }
-    if (await chatDebugFixture.handle(request, response, pathname)) return;
     if (pathname.startsWith('/developer-api/')) return json(response, {}, 404);
   }
   if (nativeStrandsFixture && (await nativeStrandsFixture(request, response, pathname))) return;
@@ -271,7 +246,7 @@ const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]) : null;
 let closing;
 let shutdown;
-if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || chatGenerativeUiFixture) {
+if (agUiA2uiFixture || isChatA2ui || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || chatGenerativeUiFixture) {
   shutdown = (code = 0) => {
     closing ??= (async () => {
       let a2uiFailure;
@@ -284,17 +259,16 @@ if (agUiA2uiFixture || isChatA2ui || chatDebugFixture || nativeStrandsFixture ||
         try { await chatA2uiFixture?.close(); }
         catch (error) { a2uiFailure = error; }
       }
-      else await (chatDebugFixture ?? nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? chatGenerativeUiFixture).close();
+      else await (nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? chatGenerativeUiFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();
       })));
-      if (chatDebugFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), chatDebugFixtureClosed: chatDebugFixture.receipt(), listenersClosed: true }));
       if (chatA2uiFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), chatA2uiFixtureClosed: a2uiReceipt(), listenersClosed: true }));
       if (agUiA2uiFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), agUiA2uiFixtureClosed: agUiA2uiFixture.receipt(), bufferedCanonicalWire: true, listenersClosed: true }));
       if (a2uiFailure) throw a2uiFailure;
     })();
-    if (agUiA2uiFixture || isChatA2ui || chatDebugFixture) void closing.then(() => process.exit(code), () => process.exit(1));
+    if (agUiA2uiFixture || isChatA2ui) void closing.then(() => process.exit(code), () => process.exit(1));
     else void closing.finally(() => process.exit(code));
   };
   process.once('SIGINT', () => shutdown());
