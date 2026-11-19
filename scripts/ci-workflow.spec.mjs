@@ -10,6 +10,13 @@ import { deriveCockpitCaps } from './cockpit-matrix.mjs';
 import { classifyFromAffected } from './ci-scope.mjs';
 import { parse as parseYaml } from 'yaml';
 
+// Every workflow installs Playwright browsers through one composite action, which
+// restores cached browsers and host packages before touching an apt mirror.
+const BROWSER_INSTALL_ACTION = 'uses: ./.github/actions/install-playwright-browser';
+const CHROMIUM_INSTALL = `${BROWSER_INSTALL_ACTION}\n        with:\n          browser: chromium`;
+const browserInstallPattern = (browser) => new RegExp(`uses: \\./\\.github/actions/install-playwright-browser\\n\\s+with:\\n\\s+browser: ${browser}\\n`);
+const CHROMIUM_INSTALL_PATTERN = browserInstallPattern('chromium');
+
 it('reuses only same-run dependencies while preserving every isolated Cockpit proof step', async () => {
   const workflow = parseYaml(await readFile('.github/workflows/ci.yml', 'utf8'));
   const producer = workflow.jobs['cockpit-e2e-dispatcher'];
@@ -52,7 +59,7 @@ it('reuses only same-run dependencies while preserving every isolated Cockpit pr
   const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step))
     .map(step => step === nodeSetup ? { ...step, with: { ...step.with, 'node-version': 22 } } : step);
   assert.equal(createHash('sha256').update(JSON.stringify(originalSteps)).digest('hex'),
-    '0cb74a71f4184d40e2cd4eb979724ef70dc560d54dbe57ba84fe700ef2af1eb0',
+    '47b703c5eebce05e9b71f4e06acf7865a59a03587296b28752e88ab463389323',
     'all original setup, Python, source, fixture, browser and artifact steps remain identical except the verified Node patch pin');
 });
 
@@ -357,7 +364,7 @@ it('groups the complete Website suite by runtime dependencies and runs productio
   assert.deepEqual(readJobNeeds(production), ['ci-scope', 'library-package']);
   assert.match(readJobFieldBlock(production, 'if'), /needs\.ci-scope\.outputs\.website_e2e == 'true'/);
   assert.doesNotMatch(production, /setup-uv|prepare-.*fixture|nx e2e website/);
-  assert.match(production, /npx playwright install --with-deps chromium/);
+  assert.match(production, CHROMIUM_INSTALL_PATTERN);
 });
 
 it('delegates local public coverage only when its required deployed preview is eligible', async () => {
@@ -923,7 +930,7 @@ describe('CI workflow', () => {
     assert.doesNotMatch(production, /buildConsumer|captureVerification|runBrowserProofs/, 'the production case must not duplicate the CLI build or browser proofs');
     for (const prerequisite of [
       'run-many -t build --projects=core,content,angular,react,chat,langgraph,ag-ui,render,a2ui,telemetry,middleware',
-      'npx playwright install --with-deps chromium',
+      CHROMIUM_INSTALL,
     ]) assert.ok(job.indexOf(prerequisite) >= 0 && job.indexOf(step) > job.indexOf(prerequisite));
     assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|set\s+\+e|if:|--grep|--test-name-pattern/);
     assert.doesNotMatch(job, /continue-on-error/);
@@ -959,7 +966,7 @@ describe('CI workflow', () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const early = job.indexOf('node --test scripts/react-parity/*.spec.mjs fixtures/react-parity/traces.spec.mjs');
     const build = job.indexOf('Build and validate private React foundations');
-    const chromium = job.indexOf('npx playwright install --with-deps chromium');
+    const chromium = job.indexOf(CHROMIUM_INSTALL);
     const review = job.indexOf('node scripts/react-parity/review-native-ag-ui.mjs --verify');
     assert.ok(early >= 0 && early < build);
     assert.ok(review > build && review > chromium);
@@ -969,7 +976,7 @@ describe('CI workflow', () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const candidate = job.indexOf('node scripts/react-parity/verify-langgraph-candidate.mjs');
     assert.ok(candidate > job.indexOf('Build and validate private React foundations'));
-    assert.ok(candidate > job.indexOf('npx playwright install --with-deps chromium'));
+    assert.ok(candidate > job.indexOf(CHROMIUM_INSTALL));
     const step = readNamedStep(job, 'Verify real LangGraph candidate package');
     assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|if:/);
     assert.match(step, /run: node scripts\/react-parity\/verify-langgraph-candidate\.mjs\s*$/);
@@ -991,7 +998,7 @@ describe('CI workflow', () => {
   it('requires the real AG-UI candidate after build, Chromium and service setup without replacing source proofs', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
     const candidate = job.indexOf('node scripts/react-parity/verify-ag-ui-candidate.mjs');
-    for (const prerequisite of ['Build and validate private React foundations', 'npx playwright install --with-deps chromium', 'npm ci --prefix deployments/ag-ui-mastra', 'npm test --prefix deployments/ag-ui-mastra']) assert.ok(candidate > job.indexOf(prerequisite));
+    for (const prerequisite of ['Build and validate private React foundations', CHROMIUM_INSTALL, 'npm ci --prefix deployments/ag-ui-mastra', 'npm test --prefix deployments/ag-ui-mastra']) assert.ok(candidate > job.indexOf(prerequisite));
     const step = readNamedStep(job, 'Verify real AG-UI candidate package');
     assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|if:/);
     assert.match(step, /run: node scripts\/react-parity\/verify-ag-ui-candidate\.mjs\s*$/);
@@ -1036,7 +1043,7 @@ describe('CI workflow', () => {
     assert.match(job, /npx nx run ag-ui:runtime-quality/);
     assert.match(job, /npx nx run ag-ui:runtime-type-tests/);
     assert.match(job, /npx nx run ag-ui:type-tests/);
-    const install = job.indexOf('npx playwright install --with-deps chromium');
+    const install = job.indexOf(CHROMIUM_INSTALL);
     assert.ok(install >= 0, 'library browser checks need Chromium and OS dependencies');
     for (const script of ['verify-packages.mjs', 'verify-angular-package.mjs']) {
       assert.ok(install < job.indexOf(`node scripts/react-parity/${script}`));
@@ -1638,7 +1645,7 @@ describe('CI workflow', () => {
     assert.ok(
       productionSmokeJob.indexOf('Verify shared LangGraph backend') <
         productionSmokeJob.indexOf(
-          'npx playwright install --with-deps chromium'
+          CHROMIUM_INSTALL
         )
     );
   });
@@ -1773,7 +1780,7 @@ describe('CI workflow', () => {
 
     assert.match(
       websiteE2eJob,
-      /npx playwright install(?:\s+--with-deps)?\s+chromium\b/,
+      CHROMIUM_INSTALL_PATTERN,
       'Website e2e should install Chromium'
     );
     assert.match(
@@ -1789,7 +1796,7 @@ describe('CI workflow', () => {
     );
     assert.doesNotMatch(
       cockpitJob,
-      /npx playwright install/,
+      /npx playwright install|install-playwright-browser/,
       'cockpit job should not install a browser for retired shell e2e'
     );
   });
@@ -1860,7 +1867,7 @@ describe('CI workflow', () => {
     );
     assert.match(job, /name:\s*threadplane-library-dist/);
     assert.match(job, /path:\s*dist\/libs/);
-    assert.match(job, /npx playwright install --with-deps chromium/);
+    assert.match(job, CHROMIUM_INSTALL_PATTERN);
     assert.match(
       job,
       /node examples\/chat\/smoke\/cli\.mjs[\s\S]*--install --build --runtime/
@@ -2456,7 +2463,7 @@ it('requires installed native React readiness immediately after owned render sta
   const owner = readNamedStep(job, 'Verify installed owned render state');
   assert.match(owner, /run: node scripts\/react-parity\/verify-render-state\.mjs/);
   assert.equal(job.slice(job.indexOf(owner) + owner.length, job.indexOf(step)).trim(), '', 'readiness immediately follows owner proof');
-  for (const prerequisite of ['Build and validate private React foundations', 'Install Chromium for packed runtime consumers', 'npx playwright install --with-deps chromium']) assert.ok(job.indexOf(prerequisite) >= 0 && job.indexOf(prerequisite) < job.indexOf(step));
+  for (const prerequisite of ['Build and validate private React foundations', 'Install Chromium for packed runtime consumers', CHROMIUM_INSTALL]) assert.ok(job.indexOf(prerequisite) >= 0 && job.indexOf(prerequisite) < job.indexOf(step));
 });
 
 
@@ -2465,7 +2472,7 @@ it('runs the Angular list wrapper regression in Firefox on the first chat shard'
   const install = readNamedStep(job, 'Install Firefox for the Angular list layout regression');
   const regression = readNamedStep(job, 'Verify Angular list wrappers in Firefox');
   for (const step of [install, regression]) assert.match(step, /if: matrix\.shard == 1/);
-  assert.match(install, /npx playwright install --with-deps firefox/);
+  assert.match(install, browserInstallPattern('firefox'));
   assert.match(regression, /npx nx e2e examples-chat-angular --skip-nx-cache --skipInstall -- --browser=firefox --grep="ordinary list paragraphs"/);
   assert.ok(job.indexOf(install) < job.indexOf(regression));
 });
@@ -2474,7 +2481,8 @@ it('bounds every Playwright dependency install and configures Ubuntu downloads f
   for (const file of ['ci.yml', 'aimock-drift.yml']) {
     const workflow = withoutYamlCommentLines(await readFile(`.github/workflows/${file}`, 'utf8'));
     const steps = workflow.split(/(?=^      - )/m);
-    const installs = steps.map((step, index) => ({ step, index })).filter(({ step }) => /npx playwright install.*--with-deps/.test(step));
+    const installs = steps.map((step, index) => ({ step, index })).filter(({ step }) => step.includes(BROWSER_INSTALL_ACTION));
+    assert.doesNotMatch(workflow, /npx playwright install/, `${file} installs browsers only through ${BROWSER_INSTALL_ACTION}`);
     assert.equal(installs.length, file === 'ci.yml' ? 12 : 1, `enumerate actual install callers in ${file}`);
     for (const { step, index } of installs) {
       assert.match(step, /timeout-minutes: 10/);
