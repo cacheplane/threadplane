@@ -57,7 +57,7 @@ function harness(files: unknown = {}) {
         toolCalls: [],
         interrupts: [],
         subgraphs: [],
-        values: { files },
+        state: { files },
         history: [{ checkpoint, next: [] }],
       });
       return 'success' as const;
@@ -154,7 +154,7 @@ it('disposal prevents late native subscriber publications', async () => {
     toolCalls: [],
     interrupts: [],
     subgraphs: [],
-    values: { files: { '/late': { content: 'late' } } },
+    state: { files: { '/late': { content: 'late' } } },
   });
   expect(h.app.getSnapshot()).toBe(saved);
 });

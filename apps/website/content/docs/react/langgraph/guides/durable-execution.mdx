@@ -21,7 +21,7 @@ export function SavedProgress({ session }: { session: LangGraphSession }) {
   const snapshot = useAgent(session);
   return <section aria-label="Observed progress">
     <p>{snapshot.status}</p>
-    <pre>{JSON.stringify(snapshot.values, null, 2)}</pre>
+    <pre>{JSON.stringify(snapshot.state, null, 2)}</pre>
   </section>;
 }
 ~~~

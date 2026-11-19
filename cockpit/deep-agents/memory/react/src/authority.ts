@@ -170,7 +170,7 @@ export interface NativeSnapshot {
   readonly status: string;
   readonly messages: readonly Message[];
   readonly toolCalls: readonly ToolCall[];
-  readonly values?: unknown;
+  readonly state?: unknown;
   readonly interrupts: readonly unknown[];
   readonly subgraphs: readonly unknown[];
   readonly error?: unknown;
@@ -649,8 +649,8 @@ export function captureAuthority(input: unknown): Authority {
       !raw ||
       !matchesRoot(raw, before, prefix.length) ||
       !matchesRoot(raw, after, prefix.length) ||
-      !matchesLiveValues(captured.snapshot.values, otherValues) ||
-      !sameData(captured.loadedSnapshot.values, otherValues)
+      !matchesLiveValues(captured.snapshot.state, otherValues) ||
+      !sameData(captured.loadedSnapshot.state, otherValues)
     )
       return unavailable;
     return Object.freeze({

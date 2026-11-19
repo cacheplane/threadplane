@@ -159,14 +159,11 @@ try {
     assert.deepEqual(setup.next, ['generate']);
     let application = own(threadId);
     await waitFor(application, admitted);
-    assert.deepEqual(
-      application.getSnapshot().runtime!.values?.backups,
-      seeded
-    );
+    assert.deepEqual(application.getSnapshot().runtime!.state?.backups, seeded);
     assert.equal(application.submit(prompts[scenario]), true);
     const paused = await waitFor(application, settled);
     assert.equal(paused.submission.outcome, 'paused');
-    assert.deepEqual(paused.runtime!.values?.backups, seeded);
+    assert.deepEqual(paused.runtime!.state?.backups, seeded);
     assert.equal(paused.runtime!.interrupts.length, 1);
     const decision = paused.decision;
     assert.ok(decision?.canRespond);
@@ -191,7 +188,7 @@ try {
     const completed = await waitFor(application, settled);
     assert.equal(completed.submission.outcome, 'success');
     assert.equal(completed.decision, null);
-    assert.deepEqual(completed.runtime!.values?.backups, remaining(scenario));
+    assert.deepEqual(completed.runtime!.state?.backups, remaining(scenario));
     const after = await api.threads.getState(threadId, undefined, { signal });
     assertTranscript(completed, after.values);
     assert.deepEqual(after.next, []);
@@ -206,7 +203,7 @@ try {
       assert.equal(application.submit(listPrompt), true);
       const listed = await waitFor(application, settled);
       assert.equal(listed.submission.outcome, 'success');
-      assert.deepEqual(listed.runtime!.values?.backups, []);
+      assert.deepEqual(listed.runtime!.state?.backups, []);
       final = await api.threads.getState(threadId, undefined, { signal });
       assertTranscript(listed, final.values);
       assert.deepEqual(final.values.backups, []);
@@ -232,7 +229,7 @@ try {
     application = own(threadId);
     const restored = await waitFor(application, admitted);
     assertTranscript(restored, final.values);
-    assert.deepEqual(restored.runtime!.values?.backups, remaining(scenario));
+    assert.deepEqual(restored.runtime!.state?.backups, remaining(scenario));
     assert.deepEqual(rawTools(restored), savedTools(final.values));
     assert.equal(restored.decision, null);
     assert.ok(restored.messages.every((row) => row.tripSummaries.length === 0));
@@ -251,7 +248,7 @@ try {
       saved: after,
       final,
       restored: {
-        backups: restored.runtime!.values?.backups,
+        backups: restored.runtime!.state?.backups,
         tools: rawTools(restored),
         cards: restored.messages.flatMap((row) => row.tripSummaries).length,
       },

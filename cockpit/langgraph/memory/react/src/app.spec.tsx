@@ -102,7 +102,7 @@ it('shows the reply while extraction is pending, then literal facts without HTML
   expect(h.view.getByText('Hello Mira')).toBeTruthy();
   expect(h.view.getByText('No facts yet.')).toBeTruthy();
   await h.replace({
-    values: {
+    state: {
       memory: JSON.parse(
         '{"__proto__":"literal","a.b":"<script>tea</script>"}'
       ),
@@ -165,7 +165,7 @@ it('reset releases the old owner and clears both transcript and facts', async ()
   const h = setup();
   await h.send();
   await h.replace({
-    values: { memory: { name: 'Mira' } },
+    state: { memory: { name: 'Mira' } },
     messages: [
       {
         id: 'reply',

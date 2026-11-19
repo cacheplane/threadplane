@@ -265,6 +265,36 @@ The interruption copy is a bounded duplicate of `AGENT_RECOVERY_MESSAGES` and
 import; `runtime-recovery-copy.spec.ts` under the Angular test target fails when
 they drift.
 
+## Graph state
+
+`snapshot.state` is the root graph state the backend last reported, without
+`messages` and `__interrupt__`, or `undefined` before any is observed. Each
+`snapshot.subgraphs[]` entry has its own `state`.
+
+A session created without `stateType` reports a broad readonly record. Declare
+the type to read fields directly:
+
+```ts
+import { type } from '@threadplane/core';
+
+const session = createSession({
+  assistantId,
+  threadId,
+  stateType: type<{ todos: Todo[]; draft?: string }>(),
+});
+session.getSnapshot().state?.todos; // readonly Todo[]
+await session.submit({ message: 'Go', state: { draft: 'Notes' } });
+```
+
+`type<T>()` checks nothing at runtime. Pass a Standard Schema, such as a Zod
+object, to check each reported state as well. `state` is then the schema's
+output, which must be a plain data record. A state the schema rejects does not
+fail the run: `state` stays at the last one that passed and
+`snapshot.stateIssues` lists what was wrong until a valid state arrives. A run
+often reports partial state before the graph has written every field, so make
+fields the graph fills in later optional. The declaration covers the root graph
+only; child graph state stays a broad record.
+
 ## Custom events
 
 `session.onCustomEvent(listener)` delivers each `custom` stream frame, from the

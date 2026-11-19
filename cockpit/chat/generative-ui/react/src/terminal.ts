@@ -130,7 +130,7 @@ export function captureTerminal(
         ([k]) => k !== 'messages' && k !== '__interrupt__'
       )
     );
-    if (dataKey(projected) !== dataKey(state.values)) return;
+    if (dataKey(projected) !== dataKey(state.state)) return;
     const ms = state.messages,
       ts = state.toolCalls;
     if (
