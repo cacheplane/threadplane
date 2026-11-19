@@ -447,13 +447,25 @@ export async function verifyReadinessBrowser(
       }))
         assert.equal(await view.getAttribute(attr), expected, attr);
     }
-    if (visible)
+    if (visible) {
       for (const name of ['direct-memo', 'direct-forward'])
         assert.equal(
           await page.getByTestId(name).textContent(),
           'undefined',
-          'Direct exotic component preserves undefined'
+          'Direct exotic component preserves undefined with pendingFallback null'
         );
+      const wait = page.getByTestId('default-wait');
+      assert.equal(
+        await wait.locator('.tp-render-pending[role="status"]').count(),
+        1,
+        'Default placeholder stands in for an unresolved binding'
+      );
+      assert.equal(
+        await page.getByTestId('default-wait-real').count(),
+        0,
+        'Default wait withholds the component'
+      );
+    }
   };
   const screenshot = async (action, index) => {
     if (directory)
@@ -599,8 +611,18 @@ export async function verifyReadinessBrowser(
       if (action === 'Missing while hidden') current = { real: false };
       if (action === 'Show pending')
         current = { real: false, pending: true, value: null };
-      if (['Null fallback', 'Remount pending'].includes(action))
+      if (['Null fallback', 'Remount pending'].includes(action)) {
         current = { real: false };
+        // A readiness entry without its own fallback shows the tree's default placeholder.
+        assert.equal(
+          await page
+            .getByTestId('main-tree')
+            .locator('.tp-render-pending[role="status"]')
+            .count(),
+          1,
+          'Absent readiness fallback uses the default placeholder'
+        );
+      }
       if (action === 'Ready after remount') {
         current = {
           real: true,

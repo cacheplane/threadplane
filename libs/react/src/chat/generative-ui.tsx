@@ -87,6 +87,11 @@ export interface MessageGenerativeUi {
   /** Rendered for a spec component the registry lacks; see `RenderSpecProps.fallback`. */
   readonly fallback?: ComponentType<RenderViewProps>;
   /**
+   * Shown in place of a spec element while a bound prop has no value yet; see
+   * `RenderSpecProps.pendingFallback`. `null` mounts every element at once.
+   */
+  readonly pendingFallback?: ComponentType<RenderViewProps> | null;
+  /**
    * Actions a spec's `on` bindings may run; see `RenderSpecProps.handlers`. A
    * binding that names an action missing here does nothing. Setting this
    * makes spec trees interactive: views get `emit`, and `set` to write state.
@@ -398,6 +403,7 @@ function SpecSurface({
     registry: options.registry,
     functions: options.functions,
     fallback: options.fallback,
+    pendingFallback: options.pendingFallback,
     loading: streaming,
   };
   return (

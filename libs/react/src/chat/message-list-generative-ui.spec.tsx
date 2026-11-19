@@ -303,7 +303,9 @@ describe('MessageList generativeUi', () => {
           generativeUi={progressive}
         />
       );
-      expect(lines(view.container)).toEqual(['Ada', 'undefined']);
+      // The city value has not streamed yet, so the default placeholder stands in.
+      expect(lines(view.container)).toEqual(['Ada']);
+      expect(view.container.querySelectorAll('.tp-render-pending')).toHaveLength(1);
       view.rerender(
         <MessageList rows={at(STATEFUL, STATEFUL.length, false)} generativeUi={progressive} />
       );

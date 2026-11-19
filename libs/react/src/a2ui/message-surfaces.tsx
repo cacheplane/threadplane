@@ -25,7 +25,12 @@ export interface A2uiMessageContent {
 export interface A2uiMessageSurfacesProps
   extends Pick<
     A2uiSurfaceProps,
-    'onAction' | 'onValidationError' | 'functions' | 'catalog' | 'className'
+    | 'onAction'
+    | 'onValidationError'
+    | 'functions'
+    | 'catalog'
+    | 'pendingFallback'
+    | 'className'
   > {
   readonly content: A2uiMessageContent;
 }

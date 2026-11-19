@@ -313,7 +313,7 @@ describe('A2UI DateTimeInput', () => {
   });
 
   it('maps min and max to the native bounds in the same format', () => {
-    const { element } = input({ min: '2026-03-01T00:00:00', max: { path: '/latest' } }, '2026-03-04');
+    const { element } = input({ min: '2026-03-01T00:00:00' }, '2026-03-04');
     expect([element.min, element.max]).toEqual(['2026-03-01', '']);
     cleanup();
     const surfaces = store(

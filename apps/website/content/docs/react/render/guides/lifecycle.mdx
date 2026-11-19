@@ -21,7 +21,7 @@ These protections do not validate your application schema. Admit untrusted view 
 
 Use stable element keys and registry component identities across updates. Container views must place the provided `children` where they belong. [Repeat loops](/docs/react/render/guides/repeat-loops) need meaningful unique identities when items can reorder.
 
-A readiness registry entry can defer its component until its synchronous predicate accepts the props. Follow the [registry guide](/docs/react/render/guides/registry) for that mounted-view boundary. Readiness is presentation admission, not a network completion signal.
+A registered component waits behind `RenderPendingFallback` while any resolved prop is undefined, and a readiness registry entry can defer its component until its synchronous predicate accepts the props. Follow the [registry guide](/docs/react/render/guides/registry) for that mounted-view boundary. Readiness is presentation admission, not a network completion signal.
 
 ## Retire owned work
 
