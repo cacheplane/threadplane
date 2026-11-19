@@ -18,6 +18,7 @@ export default defineConfig({
     include: ['*.spec.ts', '*.spec.mjs', 'examples/**/*.spec.ts'],
     exclude: [
       // node:test suites — run by ci.yml directly, not by vitest.
+      'ci-queue-evidence.spec.mjs',
       'ci-scope.spec.mjs',
       'ci-workflow.spec.mjs',
       'commit-staged-via-api.spec.mjs',

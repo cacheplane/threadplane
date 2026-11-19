@@ -2388,7 +2388,8 @@ describe('guarded current-main manual recovery', () => {
       const job = readJobBlock(workflow, name); const guard = readJobFieldBlock(job, 'if');
       assert.deepEqual(readJobNeeds(job), needs);
       for (const text of ["needs.ci-scope.result == 'success'", "needs.ci-scope.outputs.main_run == 'true'", "github.ref == 'refs/heads/main'", "(github.event_name == 'push' || github.event_name == 'workflow_dispatch')"]) assert.ok(guard.includes(text), `${name}: ${text}`);
-      if (name === 'deploy' || name === 'production-smoke') assert.doesNotMatch(guard, /always\(/);
+      if (name === 'production-smoke') assert.doesNotMatch(guard, /always\(/);
+      else if (name === 'deploy') assert.match(guard, /always\(\) && !cancelled\(\)/);
       else {
         assert.match(guard, /always\(\) && !cancelled\(\)/);
         assert.ok(job.indexOf('prerequisite jobs') < job.indexOf('uses: actions/checkout@'));
@@ -2398,6 +2399,97 @@ describe('guarded current-main manual recovery', () => {
     assert.match(readJobFieldBlock(readJobBlock(workflow, 'required-pr-checks'), 'if'), /github.event_name == 'pull_request'.*github.event_name == 'merge_group'/);
     assert.match(workflow, /group: \$\{\{ github.workflow \}\}-\$\{\{ github.event_name == 'pull_request' && github.event.pull_request.number \|\| github.ref \}\}/);
     assert.match(workflow, /cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}/);
+  });
+  const verificationJobs = [
+    'scripts-tests', 'library-package', 'library', 'native-conversation', 'angular-compatibility', 'website',
+    'growth-lifecycle', 'lifecycle', 'growth-research', 'cockpit', 'cockpit-examples-build', 'cockpit-smoke',
+    'examples-chat-smoke', 'examples-chat-e2e', 'examples-chat-e2e-summary', 'examples-ag-ui-e2e',
+    'cockpit-e2e-dispatcher', 'cockpit-e2e', 'cockpit-e2e-summary', 'website-e2e', 'website-production-checks',
+    'posthog-sync-plan',
+  ];
+  function evaluateJobIf(workflow, name, { github, needs, cancelled = false }) {
+    const guard = readJobFieldBlock(readJobBlock(workflow, name), 'if')
+      .replace(/^ {4}if:\s*(?:>-)?/, '').replace(/^\s*\$\{\{|\}\}\s*$/g, '').trim();
+    const condition = guard
+      .replace(/needs\.\*\.result/g, 'results')
+      .replace(/needs\.([a-z0-9-]+)\./g, (_, key) => `needs[${JSON.stringify(key)}].`);
+    const contains = (values, value) => values.includes(value);
+    return Boolean(Function('github', 'needs', 'results', 'contains', 'always', 'cancelled', `return (${condition});`)(
+      github, needs, Object.values(needs).map(need => need.result), contains, () => true, () => cancelled
+    ));
+  }
+  it('skips every verification job on a push the merge queue already verified, and only then', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const names = [...workflow.split('\njobs:\n')[1].matchAll(/^ {2}([A-Za-z0-9_-]+):\s*$/gm)].map(match => match[1]);
+    // Every job is either a verification job, or one that must still run.
+    assert.deepEqual(
+      names.filter(name => !verificationJobs.includes(name)).sort(),
+      ['ag-ui-demo-deploy', 'ci-guards', 'ci-scope', 'demo-deploy', 'deploy', 'production-smoke', 'required-pr-checks',
+        'website-preview-build', 'website-preview-deploy', 'website-preview-e2e'].sort()
+    );
+    for (const name of verificationJobs) {
+      const job = readJobBlock(workflow, name);
+      const parents = /^ {4}needs:/m.test(job) ? readJobNeeds(job) : [];
+      const needs = (queueVerified) => Object.fromEntries(parents.map(parent => [parent, {
+        result: 'success',
+        outputs: new Proxy({}, { get: (_, key) => (key === 'queue_verified' ? queueVerified : 'true') }),
+      }]));
+      for (const event of ['push', 'workflow_dispatch', 'pull_request', 'merge_group']) {
+        assert.equal(evaluateJobIf(workflow, name, { github: { event_name: event }, needs: needs('true') }), false, `${name} ${event} verified`);
+        for (const value of ['false', '', undefined]) {
+          assert.equal(evaluateJobIf(workflow, name, { github: { event_name: event }, needs: needs(value) }), true, `${name} ${event} ${value}`);
+        }
+      }
+    }
+    const scope = readJobBlock(workflow, 'ci-scope');
+    assert.match(scope, /queue_verified: \$\{\{ steps\.queue\.outputs\.queue_verified \}\}/);
+    const step = readNamedStep(scope, 'Look for merge-queue verification of this commit');
+    // Manual recovery promises full verification, so only a push may reuse evidence.
+    assert.match(step, /^ {8}if: github\.event_name == 'push'$/m);
+    assert.match(step, /run: node scripts\/ci-queue-evidence\.mjs --repo "\$GITHUB_REPOSITORY" --sha "\$GITHUB_SHA" --output "\$GITHUB_OUTPUT"/);
+    assert.doesNotMatch(step, /continue-on-error/);
+    assert.match(scope, /^ {4}permissions:\n {6}contents: read\n {6}actions: read$/m);
+    assert.match(readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier'), /scripts\/ci-queue-evidence\.spec\.mjs/);
+    assert.match(await readFile('scripts/vite.config.mts', 'utf8'), /'ci-queue-evidence\.spec\.mjs'/);
+  });
+  it('deploys only after full success in this run or merge-queue evidence for this commit', async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    const parents = readJobNeeds(readJobBlock(workflow, 'deploy'));
+    const main = { ref: 'refs/heads/main', event_name: 'push' };
+    const build = (queueVerified, overrides = {}) => Object.fromEntries(parents.map(parent => [parent, {
+      result: overrides[parent] ?? (queueVerified === 'true' && !['ci-scope', 'ci-guards'].includes(parent) ? 'skipped' : 'success'),
+      outputs: { main_run: 'true', queue_verified: queueVerified },
+    }]));
+    const run = (needs, github = main, cancelled = false) => evaluateJobIf(workflow, 'deploy', { github, needs, cancelled });
+    assert.equal(run(build('false')), true, 'full success');
+    assert.equal(run(build('true')), true, 'queue evidence with skipped verification');
+    assert.equal(run(build('true'), main, true), false, 'cancelled run');
+    for (const github of [{ ...main, ref: 'refs/heads/other' }, { ...main, event_name: 'pull_request' }, { ...main, event_name: 'merge_group' }]) {
+      assert.equal(run(build('true'), github), false, JSON.stringify(github));
+    }
+    for (const parent of parents) {
+      for (const result of ['failure', 'cancelled']) {
+        for (const verified of ['true', 'false']) assert.equal(run(build(verified, { [parent]: result })), false, `${parent} ${result} ${verified}`);
+      }
+      // Without evidence a skipped need blocks; with it, only scope and guards may not skip.
+      assert.equal(run(build('false', { [parent]: 'skipped' })), false, `${parent} skipped unverified`);
+      assert.equal(run(build('true', { [parent]: 'skipped' })), !['ci-scope', 'ci-guards'].includes(parent), `${parent} skipped verified`);
+    }
+  });
+  for (const [job, step, prerequisites] of [
+    ['demo-deploy', 'Require demo prerequisite jobs', ['examples-chat-smoke', 'examples-chat-e2e']],
+    ['ag-ui-demo-deploy', 'Require AG-UI demo prerequisite jobs', ['examples-ag-ui-e2e']],
+  ]) it(`${job} accepts a skipped prerequisite only with merge-queue evidence`, async () => {
+    const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
+    assert.match(readNamedStep(readJobBlock(workflow, job), step), /ACCEPTED_SKIP: \$\{\{ needs\.ci-scope\.outputs\.queue_verified == 'true' && 'skipped' \|\| 'success' \}\}/);
+    for (const prerequisite of prerequisites) {
+      const skipped = { [`needs.${prerequisite}.result`]: 'skipped' };
+      assert.equal((await runRecoveryBlock(job, step, { expressions: skipped, env: { ACCEPTED_SKIP: 'skipped' } })).result.status, 0);
+      assertBlocked(await runRecoveryBlock(job, step, { expressions: skipped, env: { ACCEPTED_SKIP: 'success' } }));
+      for (const result of ['failure', 'cancelled']) {
+        assertBlocked(await runRecoveryBlock(job, step, { expressions: { [`needs.${prerequisite}.result`]: result }, env: { ACCEPTED_SKIP: 'skipped' } }));
+      }
+    }
   });
   for (const [job, step, prerequisites] of [
     ['demo-deploy', 'Require demo prerequisite jobs', ['examples-chat-smoke', 'examples-chat-e2e']],
