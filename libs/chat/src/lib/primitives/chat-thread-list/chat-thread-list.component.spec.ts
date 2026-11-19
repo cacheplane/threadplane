@@ -773,4 +773,38 @@ describe('ChatThreadListComponent', () => {
       expect(initial.textContent?.trim()).toBe('T');
     });
   });
+
+  describe('extra actions', () => {
+    function openFirstMenu(fixture: ReturnType<typeof render>): string[] {
+      (fixture.nativeElement.querySelector('.chat-thread-list__kebab') as HTMLElement).click();
+      fixture.detectChanges();
+      return Array.from(document.querySelectorAll('.chat-overflow-menu__item')).map(
+        (el) => (el as HTMLElement).textContent?.trim() ?? '',
+      );
+    }
+
+    it('appends extra actions after the built-in commands and runs them', () => {
+      const run = vi.fn();
+      const fixture = render({ actions: { delete: noop } });
+      fixture.componentRef.setInput('extraActions', [{ id: 'share', label: 'Share', run }]);
+      fixture.detectChanges();
+      expect(openFirstMenu(fixture)).toEqual(['Delete', 'Share']);
+      const share = Array.from(document.querySelectorAll('.chat-overflow-menu__item')).find(
+        (el) => (el as HTMLElement).textContent?.trim() === 'Share',
+      ) as HTMLElement;
+      share.click();
+      expect(run).toHaveBeenCalledWith('t1');
+    });
+
+    it('offers extra actions without an adapter and settles a rejected one', async () => {
+      const run = vi.fn().mockRejectedValue(new Error('refused'));
+      const fixture = render({ actions: null });
+      fixture.componentRef.setInput('extraActions', [{ id: 'share', label: 'Share', run }]);
+      fixture.detectChanges();
+      expect(openFirstMenu(fixture)).toEqual(['Share']);
+      (document.querySelector('.chat-overflow-menu__item') as HTMLElement).click();
+      await new Promise((r) => setTimeout(r, 0));
+      expect(run).toHaveBeenCalledWith('t1');
+    });
+  });
 });

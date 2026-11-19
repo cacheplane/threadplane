@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { cleanup, fireEvent, render } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThreadList, type ThreadListItem } from './index';
 
 afterEach(() => {
@@ -815,4 +815,54 @@ it('leaves omitted and already claimed context input alone', () => {
   expect(
     fireEvent.keyDown(view.getByRole('button'), { key: 'ContextMenu' })
   ).toBe(true);
+});
+
+describe('ThreadList extra actions', () => {
+  beforeEach(() => {
+    vi.spyOn(HTMLElement.prototype, 'getClientRects').mockImplementation(
+      function (this: HTMLElement) {
+        return [this.getBoundingClientRect()] as unknown as DOMRectList;
+      }
+    );
+  });
+
+  it('appends app actions to the row menu and runs them with the thread id', () => {
+    const run = vi.fn(async () => undefined);
+    const view = render(
+      <ThreadList
+        threads={[{ id: 'a', title: 'Alpha' }]}
+        onSelect={vi.fn()}
+        actions={{ rename: vi.fn() }}
+        extraActions={[{ id: 'share', label: 'Share', run }]}
+      />
+    );
+    fireEvent.click(
+      view.getByRole('button', { name: 'More actions for Alpha' })
+    );
+    expect(
+      view.getAllByRole('menuitem').map((item) => item.textContent)
+    ).toEqual(['Rename', 'Share']);
+    fireEvent.click(view.getByRole('menuitem', { name: 'Share' }));
+    expect(run.mock.calls).toEqual([['a']]);
+  });
+
+  it('offers a menu for app actions alone and survives a rejected action', async () => {
+    const run = vi.fn(async () => {
+      throw new Error('refused');
+    });
+    const view = render(
+      <ThreadList
+        threads={[{ id: 'a', title: 'Alpha' }]}
+        onSelect={vi.fn()}
+        extraActions={[{ id: 'delete', label: 'Export', run }]}
+      />
+    );
+    fireEvent.click(
+      view.getByRole('button', { name: 'More actions for Alpha' })
+    );
+    fireEvent.click(view.getByRole('menuitem', { name: 'Export' }));
+    await Promise.resolve();
+    expect(run.mock.calls).toEqual([['a']]);
+    expect(view.getByRole('button', { name: 'Alpha' })).not.toBeNull();
+  });
 });

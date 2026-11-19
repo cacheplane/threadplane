@@ -69,24 +69,6 @@
       "reason": "One call waiting for an answer, by name and arguments; Angular exposes pending client tool calls on the agent capability."
     },
     {
-      "id": "export:libs/react/src/chat/index.ts#useChatLifecycle",
-      "taskIds": ["T03", "T04"], "treatment": "react", "status": "in-progress",
-      "target": "libs/react/src/chat/lifecycle.ts",
-      "reason": "Reads the lifecycle of the enclosing Chat, or null outside one; Angular injects the CHAT_LIFECYCLE token from content projected into the chat."
-    },
-    {
-      "id": "export:libs/react/src/chat/index.ts#ChatLifecycle",
-      "taskIds": ["T03", "T04"], "treatment": "react", "status": "in-progress",
-      "target": "libs/react/src/chat/lifecycle.ts",
-      "reason": "The four lifecycle values as plain readonly fields; Angular's ChatLifecycle holds the same four as signals."
-    },
-    {
-      "id": "source:libs/react/src/chat/lifecycle.ts",
-      "taskIds": ["T03", "T04"], "treatment": "react", "status": "in-progress",
-      "target": "libs/react/src/chat/lifecycle.ts",
-      "reason": "Chat lifecycle for React: componentReady, firstMessageSent, messageCount and inputSubmittedAt as plain values, read inside Chat with useChatLifecycle and outside it through onLifecycleChange. Angular provides the same four as signals on the CHAT_LIFECYCLE token. Counts start again when the session prop changes, where Angular resets them in clearThread. The LangGraph agent lifecycle timestamps are separate and not covered."
-    },
-    {
       "id": "source:libs/react/src/chat/client-tools.ts",
       "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
       "target": "libs/react/src/chat/client-tools.ts",
@@ -19225,26 +19207,6 @@
       "note": "Reasoning first seen already settled (saved history, or delivered whole) stays unmeasured. Nothing is stored, so a new session knows no durations. Subgraph messages are not timed. Rich blocks, event-only retention and full T09/T15 parity remain open."
     },
     {
-      "id": "source:libs/langgraph/src/runtime/lifecycle.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Framework-neutral lifecycle timestamps for a session: first stream event, latest failure with its kind, first interrupt, latest resume, first saved-history read, and first tool call start and finish, as an observable beside the snapshot.",
-      "note": "Staged in the private session. The Angular AgentLifecycle signals and registry are unchanged and not built on it. No threadCreatedAt, since a session never creates its thread; nothing resets, since a session serves one thread."
-    },
-    {
-      "id": "source:libs/langgraph/src/runtime/thread-directory.ts",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Framework-neutral directory of a deployment's saved conversations: an observable list read from thread metadata (title, archived, pinned, pinned order, project) with create, rename, delete, archive, pin, move and reorder commands that write metadata and read the list again.",
-      "note": "Staged beside the private session; not exported from a published entry. The Angular LangGraphThreadsAdapter is unchanged and not yet built on it. Reads one page of the configured size; no paging, search or cross-tab refresh."
-    },
-    {
       "id": "source:libs/ag-ui/src/runtime/agent-session.ts",
       "taskIds": [
         "T12",
@@ -19455,71 +19417,246 @@
       "note": "Turns RenderSpec lifecycle, stateChange and handler events into first-mount, mount-count and latest-activity timings, the React counterpart of Angular RENDER_LIFECYCLE."
     },
     {
-      "id": "export:libs/react/src/render/index.ts#RenderPendingFallback",
+      "id": "export:libs/chat/src/public-api.ts#ProjectEntry",
       "taskIds": [
-        "T20",
-        "T24"
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadDirectory",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadDirectoryError",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadDirectorySnapshot",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadDirectoryStatus",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadEntry",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "source:libs/chat/src/lib/thread-directory/thread-directory.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular copy of the core ThreadDirectory contract; replaced by a re-export when the Angular packages export core. A type spec in libs/langgraph pins it to @threadplane/core."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/project-store.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset: framework-neutral thread directory and LangGraph Store project names behind the React ThreadSidebar."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/thread-directory.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset: framework-neutral thread directory and LangGraph Store project names behind the React ThreadSidebar."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/thread-metadata.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private staged LangGraph runtime subset: framework-neutral thread directory and LangGraph Store project names behind the React ThreadSidebar."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/fake-threads-client.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private test fixture: in-memory LangGraph threads/store client and the shared ThreadDirectory conformance suite run against both the runtime directory and the Angular adapter."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/thread-directory-conformance.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private test fixture: in-memory LangGraph threads/store client and the shared ThreadDirectory conformance suite run against both the runtime directory and the Angular adapter."
+    },
+    {
+      "id": "source:libs/langgraph/src/lib/threads/thread-entries.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular-side copy of the runtime thread metadata projection and publication helpers behind LangGraphThreadsAdapter.directory; deleted when the adapter is rebuilt on the shared directory in phase 2."
+    },
+    {
+      "id": "source:libs/langgraph/src/lib/threads/thread-projects.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Phase 1 Angular-side copy of the runtime LangGraph Store project store behind LangGraphThreadsAdapter.directory; deleted when the adapter is rebuilt on the shared directory in phase 2."
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-sidebar.tsx",
+      "taskIds": [
+        "T30"
       ],
       "treatment": "react",
       "status": "in-progress",
-      "note": "Default placeholder RenderSpec shows while a registered element has an undefined resolved prop, the React counterpart of Angular DefaultFallbackComponent and A2uiDefaultFallbackComponent. Uses the GenerativeUiSkeleton markup."
+      "reason": "Connected conversation sidebar: reads a ThreadDirectory through useSyncExternalStore, refreshes on mount and after each run, and composes ChatSidenavSections with action adapters derived from the directory commands and feature switches. Never disposes the app-owned directory."
     },
     {
-      "id": "source:libs/react/src/render/pending-fallback.tsx",
+      "id": "export:libs/react/src/chat/index.ts#ThreadSidebar",
       "taskIds": [
-        "T20",
-        "T24"
+        "T30"
       ],
       "treatment": "react",
       "status": "in-progress",
-      "note": "RenderPendingFallback: the default readiness placeholder for every registered component, mirroring Angular defineAngularRegistry's DefaultFallbackComponent."
+      "reason": "Connected sidebar over a ThreadDirectory with New chat, Projects, Recent and Archived, load error with Retry, empty state, row slots and before and after sections."
     },
     {
-      "id": "export:libs/react/src/chat/index.ts#useThreadRouting",
-      "taskIds": ["T29"], "treatment": "react", "status": "in-progress",
-      "target": "libs/react/src/chat/thread-routing.ts",
-      "reason": "Keeps the active thread in the URL like Angular injectThreadRouting: restores it on load, pushes a history entry on selection, follows back and forward, and replaces a thread that exists rejects with the bare URL. React has no single router, so the URL binding is an adapter; the default reads window.location and history and reads nothing on the server."
-    },
-    {
-      "id": "export:libs/react/src/chat/index.ts#ThreadRouting",
-      "taskIds": ["T29"], "treatment": "react", "status": "in-progress",
-      "target": "libs/react/src/chat/thread-routing.ts",
-      "reason": "The active thread id from the URL and its setter, the React counterpart of the app-owned threadId signal Angular binds."
-    },
-    {
-      "id": "export:libs/react/src/chat/index.ts#ThreadRoutingAdapter",
-      "taskIds": ["T29"], "treatment": "react", "status": "in-progress",
-      "target": "libs/react/src/chat/thread-routing.ts",
-      "reason": "React-only seam: read, write and subscribe for the URL so React Router or Next.js applications bind their own location, where Angular uses the Router directly."
-    },
-    {
-      "id": "export:libs/react/src/chat/index.ts#ThreadRoutingOptions",
-      "taskIds": ["T29"], "treatment": "react", "status": "in-progress",
-      "target": "libs/react/src/chat/thread-routing.ts",
-      "reason": "Adapter, base path or query parameter, and an optional existence check, the counterparts of Angular toCommands, threadIdFromUrl and validate."
-    },
-    {
-      "id": "export:libs/react/src/chat/index.ts#ThreadRoutingWriteMode",
-      "taskIds": ["T29"], "treatment": "react", "status": "in-progress",
-      "target": "libs/react/src/chat/thread-routing.ts",
-      "reason": "Push for a selection and replace for a missing thread, matching the navigate and replaceUrl calls Angular makes."
-    },
-    {
-      "id": "source:libs/react/src/chat/thread-routing.ts",
-      "taskIds": ["T29"], "treatment": "react", "status": "in-progress",
-      "note": "useThreadRouting and its default browser adapter, the React counterpart of libs/chat/src/lib/routing/thread-routing.ts."
-    },
-    {
-      "id": "export:libs/angular/src/public-api.ts#observeAgentState",
+      "id": "export:libs/react/src/chat/index.ts#ThreadSidebarProps",
       "taskIds": [
-        "T06",
-        "T22",
-        "T23"
+        "T30"
       ],
-      "treatment": "angular-only",
+      "treatment": "react",
       "status": "in-progress",
-      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
-      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+      "reason": "Readonly directory, optional session, selection callbacks, feature switches, row override, extra row actions, before and after content, labels and className."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadSidebarFeatures",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Readonly optional switches for projects, archive, pin, reorder, rename and remove; each defaults to on when the directory supports it."
+    },
+    {
+      "id": "source:libs/chat/src/lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component.ts",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Connected Angular conversation sidebar: reads a ThreadDirectory through a signal bumped by subscribe, refreshes on mount and when the agent leaves running, and composes chat-thread-list and chat-project-list with action adapters derived from the directory commands and feature switches. Never disposes the app-owned directory."
+    },
+    {
+      "id": "component:libs/chat/src/lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component.ts#ChatThreadSidebarComponent",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Angular counterpart of ThreadSidebar with New chat, Projects, Recent and Archived, load error with Retry, empty state, row template, extra actions and before and after content."
+    },
+    {
+      "id": "component:libs/chat/src/lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component.ts#ChatThreadRowTemplateDirective",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Row override for chat-thread-sidebar; React passes renderThread. Rows drawn by the template get no row menu, as in React."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatThreadSidebarComponent",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Connected sidebar over a ThreadDirectory with New chat, Projects, Recent and Archived, load error with Retry, empty state, row slots and before and after sections."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatThreadRowTemplateDirective",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "ng-template[chatThreadRow] row override; React passes renderThread."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ChatThreadRowTemplateContext",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Row template context with the thread and isActive; mirrors the renderThread arguments."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadSidebarFeatures",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-sidebar.tsx",
+      "reason": "Readonly optional switches for projects, archive, pin, reorder, rename and remove; same shape as the React ThreadSidebarFeatures."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#ThreadRowAction",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-list.tsx",
+      "reason": "App command appended to each conversation row menu; mirrors the React ThreadList extraActions item shape."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatRunActivityContext",
@@ -19533,30 +19670,6 @@
       "note": "The window, the status region, typing-indicator replacement, the hand-off to the first assistant message and a continued run are verified with real DOM tests."
     },
     {
-      "id": "export:libs/react/src/index.ts#useAgentState",
-      "taskIds": [
-        "T06",
-        "T22",
-        "T23"
-      ],
-      "treatment": "react",
-      "status": "in-progress",
-      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
-      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
-    },
-    {
-      "id": "source:libs/angular/src/observe-agent-state.ts",
-      "taskIds": [
-        "T06",
-        "T22",
-        "T23"
-      ],
-      "treatment": "angular-only",
-      "status": "in-progress",
-      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
-      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
-    },
-    {
       "id": "source:libs/react/src/chat/internal/a2ui-action-label.ts",
       "taskIds": [
         "T22",
@@ -19566,18 +19679,6 @@
       "status": "in-progress",
       "reason": "Internal reader giving the words for a user message that is a serialized A2UI action: its stamped label, or the action name in plain words; not exported.",
       "note": "Verified through the MessageList and Chat DOM tests: default label, opt-out, name fallback, untouched non-action and assistant messages, and text-only rendering. Not part of the public surface."
-    },
-    {
-      "id": "source:libs/react/src/use-agent-state.ts",
-      "taskIds": [
-        "T06",
-        "T22",
-        "T23"
-      ],
-      "treatment": "react",
-      "status": "in-progress",
-      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
-      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtools",
@@ -19605,6 +19706,176 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Structural session slice (status snapshot and subscribe) that drives the Devtools button's streaming dot."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#useChatLifecycle",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "Reads the lifecycle of the enclosing Chat, or null outside one; Angular injects the CHAT_LIFECYCLE token from content projected into the chat."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatLifecycle",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "The four lifecycle values as plain readonly fields; Angular's ChatLifecycle holds the same four as signals."
+    },
+    {
+      "id": "source:libs/react/src/chat/lifecycle.ts",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "Chat lifecycle for React: componentReady, firstMessageSent, messageCount and inputSubmittedAt as plain values, read inside Chat with useChatLifecycle and outside it through onLifecycleChange. Angular provides the same four as signals on the CHAT_LIFECYCLE token. Counts start again when the session prop changes, where Angular resets them in clearThread. The LangGraph agent lifecycle timestamps are separate and not covered."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/lifecycle.ts",
+      "taskIds": [
+        "T08"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral lifecycle timestamps for a session: first stream event, latest failure with its kind, first interrupt, latest resume, first saved-history read, and first tool call start and finish, as an observable beside the snapshot.",
+      "note": "Staged in the private session. The Angular AgentLifecycle signals and registry are unchanged and not built on it. No threadCreatedAt, since a session never creates its thread; nothing resets, since a session serves one thread."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#useThreadRouting",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-routing.ts",
+      "reason": "Keeps the active thread in the URL like Angular injectThreadRouting: restores it on load, pushes a history entry on selection, follows back and forward, and replaces a thread that exists rejects with the bare URL. React has no single router, so the URL binding is an adapter; the default reads window.location and history and reads nothing on the server."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRouting",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-routing.ts",
+      "reason": "The active thread id from the URL and its setter, the React counterpart of the app-owned threadId signal Angular binds."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRoutingAdapter",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-routing.ts",
+      "reason": "React-only seam: read, write and subscribe for the URL so React Router or Next.js applications bind their own location, where Angular uses the Router directly."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRoutingOptions",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-routing.ts",
+      "reason": "Adapter, base path or query parameter, and an optional existence check, the counterparts of Angular toCommands, threadIdFromUrl and validate."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRoutingWriteMode",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-routing.ts",
+      "reason": "Push for a selection and replace for a missing thread, matching the navigate and replaceUrl calls Angular makes."
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-routing.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "useThreadRouting and its default browser adapter, the React counterpart of libs/chat/src/lib/routing/thread-routing.ts."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#observeAgentState",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "export:libs/react/src/index.ts#useAgentState",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "source:libs/angular/src/observe-agent-state.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "source:libs/react/src/use-agent-state.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "export:libs/react/src/render/index.ts#RenderPendingFallback",
+      "taskIds": [
+        "T20",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "Default placeholder RenderSpec shows while a registered element has an undefined resolved prop, the React counterpart of Angular DefaultFallbackComponent and A2uiDefaultFallbackComponent. Uses the GenerativeUiSkeleton markup."
+    },
+    {
+      "id": "source:libs/react/src/render/pending-fallback.tsx",
+      "taskIds": [
+        "T20",
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "RenderPendingFallback: the default readiness placeholder for every registered component, mirroring Angular defineAngularRegistry's DefaultFallbackComponent."
     }
   ]
 }

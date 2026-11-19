@@ -44,3 +44,11 @@ export type {
   ToolCallStatus,
   ToolContract,
 } from './contracts/tool.js';
+export type {
+  ProjectEntry,
+  ThreadDirectory,
+  ThreadDirectorySnapshot,
+  ThreadDirectoryStatus,
+  ThreadEntry,
+} from './contracts/thread-directory.js';
+export { refreshDirectoryOnRunEnd } from './contracts/thread-directory.js';

@@ -31,7 +31,6 @@ import {
   messageKey,
   type ThreadsState,
 } from './authority';
-import { decodeTitle } from './titles';
 
 /** Own page-local records and one selected session; only matching saved evidence permits continuation. */
 export function createThreadsApplication(options: ThreadsClient) {
@@ -53,20 +52,12 @@ export function createThreadsApplication(options: ThreadsClient) {
     selecting: boolean;
     turn?: Turn;
   };
-  type TitleRead = {
-    key: string;
-    version: number;
-    view: number;
-    controller: AbortController;
-    timer: ReturnType<typeof setTimeout>;
-  };
   const records = new ConversationRecords(),
     listeners = new Set<() => void>(),
     cleanups = new Set<Promise<void>>();
   let key = records.create().key,
     owner: Owner | undefined,
-    operation: AbortController | undefined,
-    titleRead: TitleRead | undefined;
+    operation: AbortController | undefined;
   let disposed = false,
     disposal: Promise<void> | undefined;
   let snapshot: ThreadsSnapshot = Object.freeze({
@@ -137,71 +128,6 @@ export function createThreadsApplication(options: ThreadsClient) {
     const previous = owner;
     owner = undefined;
     return previous ? close(previous) : Promise.resolve();
-  }
-  function cancelTitle() {
-    const previous = titleRead;
-    titleRead = undefined;
-    if (records.get(key)) records.invalidate(key);
-    if (previous) {
-      clearTimeout(previous.timer);
-      previous.controller.abort();
-    }
-  }
-  function startTitle(selected: Owner) {
-    const record = records.get(selected.key);
-    if (
-      disposed ||
-      owner !== selected ||
-      selected.closed ||
-      snapshot.busy ||
-      !snapshot.canSubmit ||
-      !record?.threadId ||
-      record.availability !== 'available'
-    )
-      return;
-    const controller = new AbortController(),
-      version = records.invalidate(selected.key),
-      view = snapshot.viewGeneration;
-    const pending: TitleRead = {
-      key: selected.key,
-      version,
-      view,
-      controller,
-      timer: setTimeout(() => {
-        if (titleRead === pending) {
-          titleRead = undefined;
-          controller.abort();
-        }
-      }, 5000),
-    };
-    titleRead = pending;
-    const current = () =>
-      !disposed &&
-      titleRead === pending &&
-      !controller.signal.aborted &&
-      owner === selected &&
-      !selected.closed &&
-      key === pending.key &&
-      snapshot.viewGeneration === view &&
-      records.get(key)?.version === version;
-    void Promise.resolve()
-      .then(async () => {
-        if (!current()) return;
-        const raw = await options.readTitle(
-          record.threadId as string,
-          controller.signal
-        );
-        if (!current()) return;
-        const title = decodeTitle(raw, record.threadId as string);
-        if (!current()) return;
-        if (title !== undefined && records.setTitle(key, title, version))
-          publish();
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        clearTimeout(pending.timer);
-        if (titleRead === pending) titleRead = undefined;
-      });
   }
   function block(selected?: Owner) {
     if (selected) selected.unsafe = true;
@@ -392,7 +318,6 @@ export function createThreadsApplication(options: ThreadsClient) {
       outcome: null,
       confirmation: null,
     });
-    if (current()) cancelTitle();
     return { admitted, current };
   }
   function finish(admitted: AbortController) {
@@ -412,7 +337,6 @@ export function createThreadsApplication(options: ThreadsClient) {
       return;
     records.setDraft(key, '');
     const { admitted, current } = admit(owner ? 'running' : 'creating');
-    let succeeded: Owner | undefined;
     try {
       if (!current()) return;
       if (!owner) {
@@ -489,12 +413,10 @@ export function createThreadsApplication(options: ThreadsClient) {
       records.confirm(key, canonical, turn.generation);
       selected.turn = undefined;
       publish({ canSubmit: true, outcome: 'success', confirmation: 'saved' });
-      if (valid()) succeeded = selected;
     } catch {
       if (current()) block(owner);
     } finally {
       finish(admitted);
-      if (succeeded) startTitle(succeeded);
     }
   }
   async function select(nextKey: string) {
@@ -509,7 +431,6 @@ export function createThreadsApplication(options: ThreadsClient) {
     )
       return;
     const { admitted, current } = admit('loading');
-    let succeeded: Owner | undefined;
     try {
       if (!current()) return;
       const cleanup = detach();
@@ -545,12 +466,10 @@ export function createThreadsApplication(options: ThreadsClient) {
       }
       selected.selecting = false;
       publish({ canSubmit: true, outcome: 'success', confirmation: 'loaded' });
-      if (valid()) succeeded = selected;
     } catch {
       if (current()) block(owner);
     } finally {
       finish(admitted);
-      if (succeeded) startTitle(succeeded);
     }
   }
   async function newConversation() {
@@ -578,14 +497,10 @@ export function createThreadsApplication(options: ThreadsClient) {
   async function stop() {
     if (disposed) return;
     const previous = operation;
-    if (!previous) {
-      cancelTitle();
-      return;
-    }
+    if (!previous) return;
     const stopped = new AbortController();
     operation = stopped;
     previous.abort();
-    cancelTitle();
     const selected = owner,
       cleanup = detach();
     records.markUnavailable(key);
@@ -618,7 +533,6 @@ export function createThreadsApplication(options: ThreadsClient) {
     const previous = operation;
     operation = undefined;
     previous?.abort();
-    cancelTitle();
     void detach();
     listeners.clear();
     disposal = Promise.all([...cleanups]).then(() => undefined);

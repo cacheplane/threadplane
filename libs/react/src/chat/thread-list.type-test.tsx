@@ -166,9 +166,23 @@ export type CompletePropsContract = Assert<
       readonly projects?:
         | readonly { readonly id: string; readonly name: string }[]
         | null;
+      readonly extraActions?:
+        | readonly {
+            readonly id: string;
+            readonly label: string;
+            readonly run: (threadId: string) => Promise<unknown> | void;
+          }[]
+        | null;
     }
   >
 >;
+<ThreadList
+  {...props}
+  extraActions={[{ id: 'share', label: 'Share', run: (id) => void id }]}
+/>;
+const unlabeled = [{ id: 'share', run: () => undefined }] as const;
+// @ts-expect-error Extra actions need a label.
+<ThreadList {...props} extraActions={unlabeled} />;
 const adapter: ThreadActionAdapter = {
   rename: async (id, title) => void [id.length, title.length],
   delete: (id) => void id,

@@ -154,3 +154,32 @@ describe('ChatSidenavSections', () => {
     expect(view.container.querySelector('.tp-chat-sidenav-sections')).toBe(sections);
   });
 });
+
+describe('ChatSidenavSections row slots', () => {
+  it('passes row overrides and extra actions to the lists, and labels an empty Recent', () => {
+    const run = vi.fn();
+    const view = render(
+      <ChatSidenavSections
+        threads={threads}
+        renderThread={(thread) => <span>{`custom ${thread.title}`}</span>}
+      />
+    );
+    expect(view.getByText('custom Alpha')).not.toBeNull();
+    view.rerender(
+      <ChatSidenavSections
+        threads={threads}
+        extraThreadActions={[{ id: 'share', label: 'Share', run }]}
+      />
+    );
+    fireEvent.click(
+      view.getByRole('button', { name: 'More actions for Beta' })
+    );
+    fireEvent.click(view.getByRole('menuitem', { name: 'Share' }));
+    expect(run).toHaveBeenCalledWith('b');
+    view.rerender(
+      <ChatSidenavSections threads={[]} recentEmptyLabel="Nothing yet" />
+    );
+    expect(view.getByText('Nothing yet')).not.toBeNull();
+    expect(view.queryByRole('list')).toBeNull();
+  });
+});

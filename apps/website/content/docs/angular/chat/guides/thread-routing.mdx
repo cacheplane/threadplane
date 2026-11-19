@@ -16,7 +16,7 @@ Start with one active-thread value, then decide where it lives: page memory for 
 
 The Run tab shows the prebuilt `<chat>` composition with a thread sidebar beside it. Ask the aviation assistant about a route — a flight from LAX to JFK, for instance — and the backend allocates a thread. The sidebar row starts out labeled `Untitled` and picks up a short generated title once the run finishes.
 
-Press "+ New" above the list to open a second conversation, then move between the rows and watch the transcript swap. Each row also carries a menu with Rename, Archive, and Delete, and every one of those round-trips through the LangGraph Threads API. Archiving a thread moves it out of the top list and into a second one headed Archived, whose rows offer Unarchive, so the round trip is reachable from the page.
+Press "New chat" at the top of the sidebar to open a second conversation, then move between the rows and watch the transcript swap. Each row also carries a menu with Rename, Pin, Move to project, Archive, and Delete, and pinned rows can be dragged into a new order. Every one of those round-trips through the LangGraph Threads API, and project names are kept in the LangGraph Store. Archived threads move into a collapsible Archived section whose rows offer Unarchive.
 
 ## How it is built
 
@@ -70,39 +70,99 @@ Use a confirmed backend thread: one reported through `onThreadId`, or one create
 
 ### The sidebar and the thread list
 
-The `<chat>` composition owns the transcript, the input, and the loading and error states, so the template adds the lists beside it. `<chat>` can also render a `<chat-thread-list>` of its own, in a sidebar shown at widths of 768px and up whenever its `[threads]` input is non-empty, and it re-emits that list's `threadSelected`. The demo leaves those inputs unbound and mounts explicit lists instead, so that they can carry the row actions shown below: one over `threads()` in the default `active` mode, and a second over `archivedThreads()` in `archived` mode that renders only when something has been archived.
+The `<chat>` composition owns the transcript, the input, and the loading and error states, so the template adds the sidebar beside it. `<chat-thread-sidebar>` is connected: it takes the adapter's `directory` and draws New chat, Projects, Recent, and Archived with the row commands the directory supports. It refreshes the directory when it mounts, after each row command, and, given `[agent]`, each time a run ends.
 
 <ExampleCode file="threads.component.ts" region="chat-and-sidebar" title="threads.component.ts — the template" />
 
-Both `<chat>` and `<chat-thread-list>` emit `threadSelected`, so either surface can drive the switch.
+The sidebar emits `threadSelected` when a row is chosen. The template listens to `(newChat)`, so New chat runs the same handler as the header's "New conversation" button and clears the unsent draft. Selecting a project emits `projectSelected`; the component keeps the selection in a signal bound to `[selectedProjectId]`, so the sidebar lists only that project's conversations until the project is selected again.
 
 ### Row actions
 
-`ThreadActionAdapter` is how the list asks the application to perform a rename, an archive, or a delete. The framework owns the row interactions around each call — the inline rename field, the delete confirmation dialog, and the optimistic row update — so the adapter only has to perform the write.
+The sidebar performs each row command through the directory. The framework owns the interactions around each call (the inline rename field, the delete confirmation dialog, and the optimistic row update), so the component only handles the one event that changes its own state: the active conversation was deleted.
 
-<ExampleCode file="threads.component.ts" region="thread-actions" title="threads.component.ts — the action adapter" />
+<ExampleCode file="threads.component.ts" region="thread-actions" title="threads.component.ts — the removed active thread" />
 
-Deleting or archiving the active conversation clears the signal, which returns the surface to its empty state.
+Clearing the signal and calling `switchThread(null)` returns the surface to a new chat.
 
 <Callout type="info" title="Which menu entries appear">
-`<chat-thread-list>` builds its menu from the keys the adapter defines, and then filters by mode. The demo's first list runs in the default `active` mode, so it offers Rename, Archive, and Delete; `unarchive` surfaces only in a list rendered with `[mode]="'archived'"`, which is the second list. One adapter serves both. Each adapter method refreshes the store on success, which the framework relies on to clear its optimistic overrides.
+The sidebar offers a command only when the directory can perform it, and the `features` input turns built-in commands off. The adapter's directory supports them all. It is owned by the application: the sidebar unsubscribes when it is destroyed but never disposes it.
 </Callout>
 
 ### Refreshing after a run
 
-The store is a snapshot, not a subscription, so something has to re-fetch it. `refreshOnRunEnd()` calls back on every transition out of the running state, which is precisely when the title node has finished writing.
+The store is a snapshot, not a subscription, so something has to re-fetch it. Given `[agent]`, the sidebar refreshes on every transition out of the running state, which is precisely when the title node has finished writing.
 
-<ExampleCode file="threads.component.ts" region="refresh-on-run-end" title="threads.component.ts — initial fetch and refresh" />
+<ExampleCode file="threads.component.ts" region="refresh-on-run-end" title="threads.component.ts — refresh" />
 
-`refreshOnRunEnd()` must run inside an injection context, because it uses an Angular effect; `refresh()` is a plain async call.
+Apps that draw their own list can call `refreshOnRunEnd(agent, () => threads.refresh())` inside an injection context instead.
 
 ### Switching and creating
 
-Two handlers close the loop. Selecting a row tells the agent to load that thread and updates the signal; the "+ New" button asks the store for a thread and then activates it. `create()` returns `null` when the request fails, which is why the result is checked before it is used.
+Two handlers close the loop. Selecting a row tells the agent to load that thread and updates the signal; New chat in the sidebar and the header's "New conversation" button both ask the store for a thread and then activate it. `create()` returns `null` when the request fails, which is why the result is checked before it is used.
 
 <ExampleCode file="threads.component.ts" region="switch-and-create" title="threads.component.ts — switching and creating" />
 
 Each handler calls both `agent.switchThread(id)` and `activeThreadId.set(id)` because the two calls serve different consumers: the adapter watches the `activeThreadId` signal to drive the sidebar highlight, while `switchThread(id)` resets the agent's own derived state and re-fetches that thread's server-side history.
+
+## Connected sidebar
+
+`<chat-thread-sidebar>` from `@threadplane/chat` draws New chat, Projects, Recent and Archived for any `ThreadDirectory`. `LangGraphThreadsAdapter` exposes one as `directory`, so the minimal setup is the adapter plus the component:
+
+```typescript
+import { Component, inject, signal } from '@angular/core';
+import { ChatThreadSidebarComponent } from '@threadplane/chat';
+import { injectAgent, LangGraphThreadsAdapter } from '@threadplane/langgraph';
+
+@Component({
+  selector: 'app-threads',
+  imports: [ChatThreadSidebarComponent],
+  template: `
+    <chat-thread-sidebar
+      [directory]="threads.directory"
+      [agent]="agent"
+      [activeThreadId]="activeThreadId()"
+      [selectedProjectId]="projectId()"
+      (threadSelected)="activeThreadId.set($event)"
+      (projectSelected)="selectProject($event)"
+      (activeThreadRemoved)="activeThreadId.set(null)" />
+  `,
+})
+export class ThreadsPanelComponent {
+  protected readonly threads = inject(LangGraphThreadsAdapter);
+  protected readonly agent = injectAgent();
+  protected readonly activeThreadId = signal<string | null>(null);
+  protected readonly projectId = signal<string | null>(null);
+
+  protected selectProject(id: string | null): void {
+    this.projectId.update((current) => (current === id ? null : id));
+  }
+}
+```
+
+With no listener on `(newChat)`, New chat calls `directory.create()` and emits `threadSelected` with the new identifier. The directory belongs to the application: the sidebar unsubscribes when it is destroyed but never disposes it.
+
+### Projects
+
+Project names are stored in the LangGraph Store under the namespace `['threadplane', 'projects']`. Each project is one item whose key is the project identifier and whose value is `{ name }`. A thread joins a project through its `projectId` metadata. To turn projects off, set `projects: false` in the `LANGGRAPH_THREADS_CONFIG` value; to keep them in another namespace, set `projects: { namespace: [...] }`. A server without the Store API still lists threads: the adapter's `projects` signal is `undefined`, the sidebar hides the Projects section and project commands fail without affecting the thread list.
+
+`[selectedProjectId]` is controlled by the application. When it holds a project identifier, Recent and Archived list only that project's conversations; `null` lists every conversation. `(projectSelected)` emits the project the user picked so the component above clears the selection when the selected project is picked again. The sidebar lists every conversation when the selected identifier matches no project in the directory, and it emits `(projectSelected)` with `null` after the selected project is deleted from the sidebar.
+
+The adapter also exposes `status`, `error` and `projects` signals for applications that draw their own list. `status` is `'loading'` until the first successful load, `'error'` after a failed load and `'idle'` otherwise. The adapter's `refresh()` resolves once the thread list is published and loads project names in the background; `directory.refresh()` resolves after both.
+
+### Refreshing the sidebar after a run
+
+The sidebar loads the directory when it mounts and again after each row command. Pass `[agent]` and it also refreshes every time a run ends, which is when the graph has written a generated title.
+
+### The active thread
+
+The sidebar never owns the selection. Bind `[activeThreadId]` to highlight a row and handle `(threadSelected)` to switch. When the user deletes the conversation that is active, `(activeThreadRemoved)` fires after the delete succeeds, so the application can return to a new chat.
+
+### Four levels of customization
+
+1. **Features and labels.** The `[features]` input turns built-in behavior off: `projects`, `archive`, `pin`, `reorder`, `rename` and `remove`. Each defaults to on when the directory supports it. The `[labels]` input replaces text for `newChat`, `projects`, `recent`, `archived`, `archivedEmpty`, `loadError`, `retry` and `empty`.
+2. **Slots.** An `ng-template[chatThreadRow]` replaces each conversation row, with the thread as `let-thread` and `isActive` in the context. `[extraActions]` appends application commands to each row menu, and content marked `chatThreadSidebarBefore` or `chatThreadSidebarAfter` places sections around the built-in ones. Rows drawn by a template get no row menu.
+3. **Your own directory.** `[directory]` accepts any object that meets `ThreadDirectory`, so an application without a LangGraph server can supply its own list and commands. The sidebar offers a command only when the directory implements it.
+4. **Lower-level pieces.** `<chat-thread-list>`, `<chat-project-list>` and `<chat-sidenav>` remain public for applications that want full control over layout and behavior.
 
 ## Routing a URL to a thread
 

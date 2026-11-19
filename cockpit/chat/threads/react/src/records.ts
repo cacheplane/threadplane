@@ -3,13 +3,10 @@ export interface ConversationRecord {
   readonly key: string;
   readonly ordinal: number;
   readonly threadId: string | null;
-  readonly label: string;
-  readonly title?: string;
   readonly draft: string;
   readonly availability: 'available' | 'unavailable';
   readonly canonical: Canonical | null;
   readonly generations: readonly string[];
-  readonly version: number;
 }
 /** Retains plain page-local records without keeping session or content owners alive. */
 export class ConversationRecords {
@@ -37,12 +34,10 @@ export class ConversationRecords {
       key: 'local-' + ordinal,
       ordinal,
       threadId: null,
-      label: 'Conversation ' + ordinal,
       draft: '',
       availability: 'available',
       canonical: null,
       generations: Object.freeze([]),
-      version: 0,
     });
     this.records.set(record.key, record);
     return record;
@@ -100,32 +95,9 @@ export class ConversationRecords {
       generations: Object.freeze([...record.generations, generation]),
     });
   }
-  /** Invalidate optional metadata work without changing conversation authority. */
-  invalidate(key: string): number {
-    const version = this.require(key).version + 1;
-    this.update(key, { version });
-    return version;
-  }
-  /** Apply presentation metadata only to its still-current known record version. */
-  setTitle(key: string, title: string, version: number): boolean {
-    const record = this.records.get(key);
-    if (
-      !record?.threadId ||
-      record.availability !== 'available' ||
-      record.version !== version ||
-      typeof title !== 'string' ||
-      !title.trim()
-    )
-      return false;
-    this.update(key, { title, label: title });
-    return true;
-  }
   /** Permanently withhold continuation after uncertain work in this record. */
   markUnavailable(key: string): void {
-    const record = this.require(key);
-    this.update(key, {
-      availability: 'unavailable',
-      version: record.version + 1,
-    });
+    this.require(key);
+    this.update(key, { availability: 'unavailable' });
   }
 }

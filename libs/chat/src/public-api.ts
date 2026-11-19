@@ -86,7 +86,15 @@ export { resolveToolOutcome, toolOutcomes } from './lib/primitives/chat-tool-act
 export { ChatStatusPanelComponent, type ChatStatusPanelTone } from './lib/primitives/chat-status-panel/chat-status-panel.component';
 export { ChatSubagentsComponent } from './lib/primitives/chat-subagents/chat-subagents.component';
 export { ChatThreadListComponent } from './lib/primitives/chat-thread-list/chat-thread-list.component';
-export type { Thread, ThreadActionAdapter } from './lib/primitives/chat-thread-list/chat-thread-list.component';
+export type { Thread, ThreadActionAdapter, ThreadRowAction } from './lib/primitives/chat-thread-list/chat-thread-list.component';
+export type {
+  ProjectEntry,
+  ThreadDirectory,
+  ThreadDirectoryError,
+  ThreadDirectorySnapshot,
+  ThreadDirectoryStatus,
+  ThreadEntry,
+} from './lib/thread-directory/thread-directory';
 export { ChatProjectListComponent } from './lib/primitives/chat-project-list/chat-project-list.component';
 export type { Project, ProjectActionAdapter } from './lib/primitives/chat-project-list/chat-project-list.component';
 export { ChatGenuiSkeletonComponent } from './lib/primitives/chat-genui-skeleton/chat-genui-skeleton.component';
@@ -131,6 +139,14 @@ export { ChatPopupComponent } from './lib/compositions/chat-popup/chat-popup.com
 export { ChatSidebarComponent } from './lib/compositions/chat-sidebar/chat-sidebar.component';
 export { ChatTimelineSliderComponent } from './lib/compositions/chat-timeline-slider/chat-timeline-slider.component';
 export { ChatSidenavComponent } from './lib/compositions/chat-sidenav/chat-sidenav.component';
+export {
+  ChatThreadSidebarComponent,
+  ChatThreadRowTemplateDirective,
+} from './lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component';
+export type {
+  ThreadSidebarFeatures,
+  ChatThreadRowTemplateContext,
+} from './lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component';
 export { ChatSidenavScrimComponent } from './lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component';
 export type { ChatSidenavMode } from './lib/compositions/chat-sidenav/chat-sidenav.component';
 export { ChatInterruptPanelComponent } from './lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component';

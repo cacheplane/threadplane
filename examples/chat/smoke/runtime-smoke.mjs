@@ -318,6 +318,15 @@ function createBackendRouteController() {
           });
           return;
         }
+        if (method === 'POST' && pathname.endsWith('/store/items/search')) {
+          // LangGraphThreadsAdapter loads project names after the thread list.
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: '{"items":[]}',
+          });
+          return;
+        }
         if (method === 'POST' && pathname.endsWith('/ingest')) {
           await route.fulfill({ status: 204, body: '' });
           return;

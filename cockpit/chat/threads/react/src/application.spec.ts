@@ -23,12 +23,7 @@ afterEach(async () => {
 function setup() {
   let serial = 0;
   const creations: ReturnType<typeof deferred<string>>[] = [],
-    sessions: ReturnType<typeof makeSession>[] = [],
-    titles: {
-      id: string;
-      signal: AbortSignal;
-      result: ReturnType<typeof deferred<unknown>>;
-    }[] = [];
+    sessions: ReturnType<typeof makeSession>[] = [];
   const savedStates = new Map<string, ThreadsState>();
   function makeSession(id: string) {
     let state: ThreadsState = {
@@ -88,15 +83,9 @@ function setup() {
     sessions.push(selected);
     return selected.session;
   });
-  const readTitle = vi.fn((id: string, signal: AbortSignal) => {
-    const result = deferred<unknown>();
-    titles.push({ id, signal, result });
-    return result.promise;
-  });
   const app = createThreadsApplication({
     createThread,
     sessionFactory,
-    readTitle,
   });
   applications.push(app);
   async function start(text: string, id?: string) {
@@ -178,10 +167,8 @@ function setup() {
     app,
     creations,
     sessions,
-    titles,
     createThread,
     sessionFactory,
-    readTitle,
     start,
     confirm,
     send,
@@ -207,7 +194,6 @@ it('keeps mount, blank Send and New free of remote work', async () => {
   expect(h.app.getSnapshot().selectedKey).not.toBe(initial.selectedKey);
   expect(h.createThread).not.toHaveBeenCalled();
   expect(h.sessionFactory).not.toHaveBeenCalled();
-  expect(h.readTitle).not.toHaveBeenCalled();
 });
 it('clears only the accepted draft synchronously and preserves text typed during creation', async () => {
   const h = setup(),
@@ -248,7 +234,6 @@ it('waits for canonical history and does not clear newly typed text on completio
     outcome: 'success',
     busy: false,
   });
-  expect(h.titles).toHaveLength(1);
 });
 it('restores A/B/A through fresh sessions and preserves independent drafts and prefixes', async () => {
   const h = setup();
@@ -298,31 +283,6 @@ it('cannot treat a fulfilled empty selection load as saved authority', async () 
   ).toBe('unavailable');
   await h.app.submit('Replay');
   expect(current.runs).toHaveLength(0);
-});
-it('keeps title requests nonblocking and ignores a late title after New', async () => {
-  const h = setup();
-  await h.send('A question', 'A');
-  const key = h.app.getSnapshot().selectedKey;
-  expect(h.app.getSnapshot().canSubmit).toBe(true);
-  expect(h.titles).toHaveLength(1);
-  await h.app.newConversation();
-  expect(h.titles[0].signal.aborted).toBe(true);
-  h.titles[0].result.resolve({ thread_id: 'A', metadata: { title: 'Late' } });
-  await tick();
-  expect(
-    h.app.getSnapshot().conversations.find((c) => c.key === key)?.label
-  ).toBe('Conversation 1');
-});
-it('applies a literal current title without changing continuation authority', async () => {
-  const h = setup();
-  await h.send('Question', 'A');
-  h.titles[0].result.resolve({
-    thread_id: 'A',
-    metadata: { title: ' <b>Literal</b> ' },
-  });
-  await tick();
-  expect(h.app.getSnapshot().conversations[0].label).toBe('<b>Literal</b>');
-  expect(h.app.getSnapshot().canSubmit).toBe(true);
 });
 it('detaches Stop during creation and never dispatches the late confirmed ID', async () => {
   const h = setup(),
@@ -490,51 +450,6 @@ it('bounds a never-settling Stop and disposal, releasing observation immediately
   h.confirm(turn.current);
   await turn.pending;
 });
-it('cancels optional title reads after five seconds without blocking the saved conversation', async () => {
-  vi.useFakeTimers();
-  const h = setup();
-  await h.send('Question', 'A');
-  expect(h.app.getSnapshot().canSubmit).toBe(true);
-  await vi.advanceTimersByTimeAsync(5000);
-  expect(h.titles[0].signal.aborted).toBe(true);
-  h.titles[0].result.resolve({
-    thread_id: 'A',
-    metadata: { title: 'Too late' },
-  });
-  await tick();
-  expect(h.app.getSnapshot().conversations[0].label).toBe('Conversation 1');
-  expect(h.app.getSnapshot().canSubmit).toBe(true);
-});
-it.each([
-  undefined,
-  { thread_id: 'B', metadata: { title: 'Foreign' } },
-  { thread_id: 'A', metadata: { title: 42 } },
-  { thread_id: 'A', metadata: { title: '' } },
-])('ignores optional malformed metadata %#', async (raw) => {
-  const h = setup();
-  await h.send('Question', 'A');
-  h.titles[0].result.resolve(raw);
-  await tick();
-  expect(h.app.getSnapshot().canSubmit).toBe(true);
-  expect(h.app.getSnapshot().conversations[0].label).toBe('Conversation 1');
-});
-it('fences cancellation triggered during metadata capture', async () => {
-  const h = setup();
-  await h.send('Question', 'A');
-  const raw = new Proxy(
-    { thread_id: 'A', metadata: { title: 'Cancelled' } },
-    {
-      ownKeys(target) {
-        void h.app.stop();
-        return Reflect.ownKeys(target);
-      },
-    }
-  );
-  h.titles[0].result.resolve(raw);
-  await tick();
-  expect(h.app.getSnapshot().conversations[0].label).toBe('Conversation 1');
-  expect(h.app.getSnapshot().canSubmit).toBe(true);
-});
 it('fences Stop triggered during canonical data capture', async () => {
   const h = setup(),
     turn = await h.start('Question', 'A');
@@ -552,15 +467,6 @@ it('fences Stop triggered during canonical data capture', async () => {
   expect(h.app.getSnapshot().canSubmit).toBe(false);
   expect(h.app.getSnapshot().confirmation).toBeNull();
 });
-it('keeps failed optional metadata separate from saved authority', async () => {
-  const h = setup();
-  await h.send('Question', 'A');
-  h.titles[0].result.reject(new Error('PRIVATE metadata failure'));
-  await tick();
-  expect(h.app.getSnapshot().canSubmit).toBe(true);
-  expect(h.app.getSnapshot().error).toBeNull();
-});
-
 it.each([
   'tools',
   'children',
@@ -706,34 +612,6 @@ it('ignores unknown and already selected keys without additional history reads',
   expect(h.sessionFactory).toHaveBeenCalledTimes(1);
   expect(h.sessions[0].loads).toHaveLength(1);
 });
-it('preserves the last valid title when a later optional read fails', async () => {
-  const h = setup();
-  await h.send('Question', 'A');
-  h.titles[0].result.resolve({
-    thread_id: 'A',
-    metadata: { title: 'First title' },
-  });
-  await tick();
-  await h.send('Follow up');
-  h.titles[1].result.reject(new Error('PRIVATE metadata'));
-  await tick();
-  expect(h.app.getSnapshot().conversations[0].label).toBe('First title');
-  expect(h.app.getSnapshot().canSubmit).toBe(true);
-});
-it('cancels a prior title read on a new explicit turn', async () => {
-  const h = setup();
-  await h.send('Question', 'A');
-  await h.send('Follow up');
-  expect(h.titles[0].signal.aborted).toBe(true);
-  h.titles[0].result.resolve({ thread_id: 'A', metadata: { title: 'Stale' } });
-  h.titles[1].result.resolve({
-    thread_id: 'A',
-    metadata: { title: 'Current' },
-  });
-  await tick();
-  expect(h.app.getSnapshot().conversations[0].label).toBe('Current');
-});
-
 it.each(['pending', 'foreign', 'changed-checkpoint', 'generation'])(
   'quarantines conflicting idle %s evidence before another submit',
   async (mode) => {

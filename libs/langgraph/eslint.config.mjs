@@ -17,6 +17,9 @@ export default [
             // package. Its neutral source graph is checked separately; do not
             // add unpublished core peers to the legacy production manifest.
             '{projectRoot}/src/runtime/**',
+            // Phase 1 contract pin: this type-only spec imports private
+            // @threadplane/core types to check the Angular ThreadDirectory copy.
+            '{projectRoot}/src/lib/threads/thread-directory-contract.type-spec.ts',
           ],
           ignoredDependencies: ['vite', '@nx/vite'],
         },

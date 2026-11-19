@@ -54,35 +54,15 @@ body {
   flex: 1;
 }
 .conversation-picker {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.5rem;
   min-width: 0;
 }
-.conversation-picker h2 {
-  font-size: 1rem;
-  margin: 0 0 0.25rem;
-}
-.conversation-picker p {
+.conversation-notice {
+  margin: 0.5rem 0 0;
   font-size: 0.85rem;
   color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
 }
-.conversation-picker button {
-  padding: 0.6rem 0.75rem;
-  border: 1px solid var(--ds-border, light-dark(#cbd2da, #666666));
-  border-radius: 0.4rem;
-  background: var(--ds-surface, light-dark(#fff, #1c1c1c));
-  color: inherit;
-  text-align: left;
-  overflow-wrap: anywhere;
-}
-.conversation-picker button[aria-pressed='true'] {
-  border-color: var(--ds-border, light-dark(#415873, #9dc1ff));
-  background: var(--ds-surface-tinted, light-dark(#eaf0f6, #182638));
-}
-.conversation-picker button:disabled {
-  color: var(--ds-text-secondary, light-dark(#606b76, #b5b5b5));
+.conversation-notice:empty {
+  display: none;
 }
 .conversation-panel {
   display: flex;
@@ -108,17 +88,6 @@ body {
   }
   .threads-layout {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .conversation-picker {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .conversation-picker h2,
-  .conversation-picker p {
-    flex-basis: 100%;
-  }
-  .conversation-picker button {
-    max-width: 100%;
   }
   .conversation-panel .tp-chat-list {
     max-height: 55dvh;

@@ -105,6 +105,7 @@ export function createChatThreadsFixture({
     closed = false,
     closing;
   let requests = [],
+    directoryRequests = [],
     proofs = [],
     injections = [];
   let historyMode = 'safe',
@@ -114,7 +115,10 @@ export function createChatThreadsFixture({
     holds = new Set(),
     threads = new Set(),
     runs = new Map(),
-    operations = new Set();
+    operations = new Set(),
+    // Sidebar directory state: metadata written by PATCH and Store API items.
+    metadata = new Map(),
+    store = new Map();
   const uuid =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const json = (response, value, status = 200) => {
@@ -172,13 +176,134 @@ export function createChatThreadsFixture({
     queue = Promise.resolve();
     operations.clear();
     requests = [];
+    directoryRequests = [];
     proofs = [];
     injections = [];
     threads.clear();
     runs.clear();
+    metadata.clear();
+    store.clear();
     historyMode = titleMode = 'safe';
     failCreate = false;
     await previous?.close();
+  }
+  const namespaceKey = (namespace, key) =>
+    Array.isArray(namespace) &&
+    namespace.length > 0 &&
+    namespace.every((part) => typeof part === 'string' && part) &&
+    typeof key === 'string' &&
+    key
+      ? JSON.stringify([namespace, key])
+      : null;
+  /** Server metadata as search reports it: the graph-authored title shaped by
+   *  the authored title mode, then the sidebar's own writes. */
+  async function searchMetadata(threadId) {
+    let authored = {};
+    try {
+      authored = { ...(await operate({ op: 'title', threadId })).thread.metadata };
+    } catch {
+      /* Title unavailable: the sidebar shows its fallback. */
+    }
+    if (titleMode === 'missing') delete authored.title;
+    if (titleMode === 'invalid') authored.title = { invalid: true };
+    if (titleMode === 'literal')
+      authored.title = '<script>alert("title")</script>';
+    if (titleMode === 'long')
+      authored.title = 'Long authored title '.repeat(30);
+    return { ...authored, ...metadata.get(threadId) };
+  }
+  async function directory(request, response, pathname, body) {
+    const route =
+      /^\/(?:api|developer-api)\/(threads\/search|threads\/([^/]+)|store\/items(?:\/search)?)$/.exec(
+        pathname
+      );
+    if (!route) return false;
+    const method = request.method,
+      threadId = route[2];
+    const known =
+      (route[1] === 'threads/search' && method === 'POST') ||
+      (threadId !== undefined &&
+        threadId !== 'search' &&
+        ['PATCH', 'DELETE'].includes(method)) ||
+      (route[1] === 'store/items' && ['PUT', 'DELETE'].includes(method)) ||
+      (route[1] === 'store/items/search' && method === 'POST');
+    if (!known) return false;
+    directoryRequests.push({
+      path: pathname,
+      method,
+      body,
+      key: request.headers['x-api-key'] ?? null,
+    });
+    if (route[1] === 'threads/search') {
+      const ids = [...threads];
+      const offset = Number.isInteger(body.offset) ? body.offset : 0,
+        limit = Number.isInteger(body.limit) ? body.limit : 10;
+      const page = [];
+      for (const id of ids.slice(offset, offset + limit))
+        page.push({
+          thread_id: id,
+          status: 'idle',
+          metadata: await searchMetadata(id),
+        });
+      json(response, page);
+      return true;
+    }
+    if (threadId !== undefined) {
+      if (!threads.has(threadId)) {
+        json(response, {}, 404);
+        return true;
+      }
+      if (method === 'DELETE') {
+        threads.delete(threadId);
+        metadata.delete(threadId);
+        response.writeHead(204);
+        response.end();
+        return true;
+      }
+      if (
+        body.metadata === null ||
+        typeof body.metadata !== 'object' ||
+        Array.isArray(body.metadata)
+      ) {
+        json(response, {}, 400);
+        return true;
+      }
+      const next = { ...metadata.get(threadId), ...body.metadata };
+      metadata.set(threadId, next);
+      json(response, { thread_id: threadId, status: 'idle', metadata: next });
+      return true;
+    }
+    if (route[1] === 'store/items/search') {
+      const prefix = body.namespace_prefix ?? [];
+      const items = [...store.values()].filter(
+        (item) =>
+          Array.isArray(prefix) &&
+          prefix.every((part, index) => item.namespace[index] === part)
+      );
+      json(response, { items: items.slice(0, body.limit ?? 10) });
+      return true;
+    }
+    const id = namespaceKey(body.namespace, body.key);
+    if (
+      !id ||
+      (method === 'PUT' &&
+        (body.value === null ||
+          typeof body.value !== 'object' ||
+          Array.isArray(body.value)))
+    ) {
+      json(response, {}, 400);
+      return true;
+    }
+    if (method === 'PUT')
+      store.set(id, {
+        namespace: [...body.namespace],
+        key: body.key,
+        value: body.value,
+      });
+    else store.delete(id);
+    response.writeHead(204);
+    response.end();
+    return true;
   }
   const handle = async (request, response, pathname) => {
     if (pathname === '/__lifetime') {
@@ -207,6 +332,10 @@ export function createChatThreadsFixture({
       }
       if (pathname === '/__requests') {
         json(response, requests);
+        return true;
+      }
+      if (pathname === '/__directory-requests') {
+        json(response, directoryRequests);
         return true;
       }
       if (pathname === '/__graph-proof') {
@@ -298,6 +427,9 @@ export function createChatThreadsFixture({
       for await (const chunk of request) input += chunk;
       const body = input ? JSON.parse(input) : {},
         captured = epoch;
+      // The thread sidebar's directory traffic is logged apart from the
+      // conversation runtime wire so each log proves its own contract.
+      if (await directory(request, response, pathname, body)) return true;
       requests.push({
         path: pathname,
         method: request.method,
@@ -367,6 +499,7 @@ export function createChatThreadsFixture({
         const mode = titleMode,
           wire = await operate({ op: 'title', threadId }),
           value = wire.thread;
+        value.metadata = { ...value.metadata, ...metadata.get(threadId) };
         if (!['safe', 'hold'].includes(mode))
           injections.push({ kind: 'title', mode, threadId });
         if (mode === 'titlefailure') throw new Error('Title unavailable');

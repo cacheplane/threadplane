@@ -69,11 +69,13 @@ test('handles allowed API routes and reports unexpected ones through the main fl
   });
 
   await controller.handle(route('POST', '/api/threads/search'));
+  await controller.handle(route('POST', '/api/store/items/search'));
   await controller.handle(route('POST', '/api/ingest'));
   await controller.handle(route('GET', '/api/ingest'));
 
   assert.deepEqual(fulfilled, [
     { status: 200, contentType: 'application/json', body: '[]' },
+    { status: 200, contentType: 'application/json', body: '{"items":[]}' },
     { status: 204, body: '' },
   ]);
   assert.deepEqual(aborted, ['failed']);
