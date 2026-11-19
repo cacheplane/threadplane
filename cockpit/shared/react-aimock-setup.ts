@@ -33,7 +33,8 @@ export function reactAimockGlobalSetup(options: {
  * The AG-UI flavor: aimock replays the Angular example's fixtures into the
  * example's uvicorn AG-UI server (`src/server.py`); the static server proxies
  * the agent endpoint to it through scripts/react-cockpit/ag-ui-proxy.mjs.
- * Mirrors `aimockAgUi()` in scripts/react-cockpit/configuration.mjs.
+ * Mirrors `aimockAgUi()` in scripts/react-cockpit/configuration.mjs
+ * (backend port + 1000, aimock port + 2000).
  */
 export function reactAimockAgUiGlobalSetup(options: {
   /** e.g. 'ag-ui/streaming' */
@@ -45,6 +46,8 @@ export function reactAimockAgUiGlobalSetup(options: {
     stateKey: `cockpit-${options.example.replace('/', '-')}-react`,
     pythonCwd: `cockpit/${options.example}/python`,
     backendPort: options.port + 1000,
+    // The proxy reads model requests from aimock's journal on this port.
+    aimockPort: options.port + 2000,
     fixturesDir: resolve(__dirname, '..', options.example, 'angular/e2e/fixtures'),
   });
 }

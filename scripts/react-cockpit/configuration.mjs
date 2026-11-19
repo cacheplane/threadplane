@@ -14,13 +14,15 @@ const aimockLanggraph = (example, port) => Object.freeze({
 /**
  * aimock-backed AG-UI example: the example's uvicorn `src/server.py`
  * (ag-ui-langgraph) against the Angular example's aimock fixtures.
- * Convention: backend = port + 1000.
+ * Convention: backend = port + 1000, aimock = port + 2000.
  */
 const aimockAgUi = (example, port, agentPath = '/agent') => Object.freeze({
   kind: 'aimock-ag-ui',
   python: `cockpit/${example}/python`,
   fixtures: `cockpit/${example}/angular/e2e/fixtures`,
   backendPort: port + 1000,
+  // Fixed, so the proxy can read aimock's request journal (/__model-requests).
+  aimockPort: port + 2000,
   // The server route the React example talks to (src/server.py).
   agentPath,
 });
@@ -219,6 +221,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       appPath: 'cockpit/ag-ui/client-tools/react',
       base: '/ag-ui/client-tools/react/', port: 4640,
       project: 'cockpit-ag-ui-client-tools-react',
+      backend: aimockAgUi('ag-ui/client-tools', 4640),
     });
   if (topic === 'ag-ui-tool-views')
     return Object.freeze({

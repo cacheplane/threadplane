@@ -19,6 +19,11 @@ export interface AimockStartOptions {
   fixturePath?: string;
   /** Record: directory where captured fixtures are written. Required in record mode. */
   recordDir?: string;
+  /**
+   * Replay: a fixed port, for tests that read aimock's request journal
+   * (`GET /__aimock/journal`). Default: any free port.
+   */
+  port?: number;
 }
 
 // Raw JSON entry shape passes through to aimock's FixtureFileEntry — the
@@ -73,7 +78,7 @@ export async function startAimock(opts: AimockStartOptions): Promise<AimockHandl
     // variance tables and by fixtures that opt into small per-fixture
     // chunkSize/latency values (see the fence fixture in
     // cockpit/chat/messages/angular/e2e/fixtures/c-messages.json).
-    mock = new LLMock({ port: 0, chunkSize: 4096 });
+    mock = new LLMock({ port: opts.port ?? 0, chunkSize: 4096 });
     if (entries.length > 0) {
       mock.addFixturesFromJSON(entries as never);
     }

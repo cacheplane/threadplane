@@ -130,7 +130,6 @@ export async function createClientToolsServer({
   root = defaultRoot,
   mode = 'nonstream',
   holdTerminal = false,
-  scenario,
   holdAfterRequest = 0,
   holdReceipt = false,
   environment = process.env.THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT ??
@@ -138,7 +137,6 @@ export async function createClientToolsServer({
 } = {}) {
   root = realpathSync(root);
   assert.ok(['nonstream', 'stream', 'unknown'].includes(mode));
-  assert.ok(scenario === undefined || scenario === 'cockpit');
   assert.equal(typeof holdReceipt, 'boolean');
   assert.ok(Number.isSafeInteger(holdAfterRequest) && holdAfterRequest >= 0 && holdAfterRequest < 12);
   const env = Object.fromEntries(
@@ -167,7 +165,6 @@ export async function createClientToolsServer({
       'python',
       worker,
       mode,
-      ...(scenario ? [scenario] : []),
     ],
     { cwd: root, env, stdio: ['pipe', 'pipe', 'pipe'], detached: true }
   );
@@ -426,7 +423,6 @@ export async function createClientToolsServer({
     }
     ownedGroupMembers(inventory, child.pid, ownedProcesses);
     assert.equal(ready.mode, mode);
-    assert.equal(ready.scenario, scenario ?? null);
     assert.equal(realpathSync(ready.environment), realpathSync(environment));
     assert.match(ready.python, /^3\.12\./);
     assert.equal(ready.versions['ag-ui-langgraph'], '0.0.45');
