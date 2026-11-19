@@ -208,13 +208,19 @@ test('reload clears an unsent React draft without runtime requests', async ({
   expect(observations.get(page)?.requests).toEqual(before);
 });
 
-test('the aviation suggestion sends its exact prompt', async ({ page }) => {
+test('the aviation suggestion sends its exact prompt', async ({ page, request }) => {
   // Sending starts a model run; deployed targets (preview and production)
   // keep previews request-free, so the send is verified locally only.
   test.skip(
     Boolean(process.env['BASE_URL']),
     'Welcome suggestion sends are verified against the local agents suite'
   );
+  test.setTimeout(240_000);
+  // The preview's aimock + `langgraph dev` start on its first API request;
+  // wait them out here rather than inside the send's response timeout.
+  expect(
+    (await request.post('http://127.0.0.1:4628/__ready', { timeout: 180_000 })).ok()
+  ).toBe(true);
   await page.goto(reactRoute + '?mode=run', {
     waitUntil: 'domcontentloaded',
   });

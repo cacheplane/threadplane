@@ -113,8 +113,11 @@ There is no second, authored backend.
 
 - `serve.mjs <example> --backend` starts that example's aimock + `langgraph
   dev` itself (`scripts/react-cockpit/aimock-backend.mjs`), lazily on the
-  first request for the app or its API. Website suites already start only the
-  preview servers they own, so a suite pays only for the previews it drives.
+  first API or control request (the proxy awaits the start). Loading a preview
+  page boots nothing: an early version started it on asset requests too, and
+  under parallel workers those Python boots starved `next dev`'s first
+  compiles. Website suites already start only the preview servers they own, so
+  a suite pays only for the previews it actually drives.
   The backend stays in the server's process group and stops with it.
 - Preview specs call `POST /__ready` before driving a preview; it waits out the
   lazy start.

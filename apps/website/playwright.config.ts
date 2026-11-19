@@ -74,9 +74,16 @@ export const createWebsitePlaywrightConfig = (
       ? '**/custom-runtime-bfcache.spec.ts'
       : undefined,
     testIgnore,
-    globalSetup: runtimeBypass
-      ? resolve(__dirname, 'e2e', 'runtime-bypass-setup.ts')
-      : undefined,
+    globalSetup: [
+      ...(runtimeBypass
+        ? [resolve(__dirname, 'e2e', 'runtime-bypass-setup.ts')]
+        : []),
+      // `next dev` compiles routes on first request; compile the shared docs
+      // route once before parallel workers race for it.
+      ...(shouldStartLocalServer && !productionMode && !bfcacheRuntimeTest
+        ? [resolve(__dirname, 'e2e', 'dev-warmup-setup.ts')]
+        : []),
+    ],
     fullyParallel: true,
     // Match the cockpit configs: 2 retries on CI to absorb transient Next.js
     // dev-server startup flake; 0 locally for fast feedback.
@@ -251,8 +258,12 @@ export const createWebsitePlaywrightConfig = (
                     // outside the server-readiness budget. Direct local
                     // Playwright runs require those build outputs too.
                     'node scripts/react-cockpit/serve.mjs streaming --backend',
+                  // Previews whose specs drive the backend wait on /__ready:
+                  // its aimock + `langgraph dev` boot during startup, not
+                  // mid-run beside other workers' page renders. Previews only
+                  // rendered (no API traffic) never boot a backend.
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4600',
+                  url: 'http://127.0.0.1:4600/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -260,7 +271,7 @@ export const createWebsitePlaywrightConfig = (
                   command:
                     'node scripts/react-cockpit/serve.mjs interrupts --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4601',
+                  url: 'http://127.0.0.1:4601/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -268,7 +279,7 @@ export const createWebsitePlaywrightConfig = (
                   command:
                     'node scripts/react-cockpit/serve.mjs memory --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4602',
+                  url: 'http://127.0.0.1:4602/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -276,7 +287,7 @@ export const createWebsitePlaywrightConfig = (
                   command:
                     'node scripts/react-cockpit/serve.mjs client-tools --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4603',
+                  url: 'http://127.0.0.1:4603/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -284,7 +295,7 @@ export const createWebsitePlaywrightConfig = (
                   command:
                     'node scripts/react-cockpit/serve.mjs persistence --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4604',
+                  url: 'http://127.0.0.1:4604/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -292,7 +303,7 @@ export const createWebsitePlaywrightConfig = (
                   command:
                     'node scripts/react-cockpit/serve.mjs durable-execution --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4605',
+                  url: 'http://127.0.0.1:4605/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -300,7 +311,7 @@ export const createWebsitePlaywrightConfig = (
                   command:
                     'node scripts/react-cockpit/serve.mjs subgraphs --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4606',
+                  url: 'http://127.0.0.1:4606/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -308,7 +319,7 @@ export const createWebsitePlaywrightConfig = (
                   command:
                     'node scripts/react-cockpit/serve.mjs time-travel --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4607',
+                  url: 'http://127.0.0.1:4607/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -316,7 +327,7 @@ export const createWebsitePlaywrightConfig = (
                   command:
                     'node scripts/react-cockpit/serve.mjs deployment-runtime --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4608',
+                  url: 'http://127.0.0.1:4608/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -436,7 +447,7 @@ export const createWebsitePlaywrightConfig = (
                 {
                   command: 'node scripts/react-cockpit/serve.mjs chat-theming --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4644',
+                  url: 'http://127.0.0.1:4644/__ready',
                   reuseExistingServer: false,
                   gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 },
                   timeout: 180_000,
@@ -481,7 +492,7 @@ export const createWebsitePlaywrightConfig = (
                 {
                   command: 'node scripts/react-cockpit/serve.mjs deep-agents-planning --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4628',
+                  url: 'http://127.0.0.1:4628/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -495,7 +506,7 @@ export const createWebsitePlaywrightConfig = (
                 {
                   command: 'node scripts/react-cockpit/serve.mjs deep-agents-subagents --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4630',
+                  url: 'http://127.0.0.1:4630/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -593,7 +604,7 @@ export const createWebsitePlaywrightConfig = (
     config.retries = 0;
     config.outputDir = resolve(__dirname, '../../output/playwright/chat-theming-website');
     if (Array.isArray(config.webServer)) {
-      config.webServer = config.webServer.filter(server => [localURL, 'http://127.0.0.1:4644'].includes(server.url ?? '')).map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 } }));
+      config.webServer = config.webServer.filter(server => [localURL, 'http://127.0.0.1:4644/__ready'].includes(server.url ?? '')).map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 } }));
     }
   }
   if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'chat-debug') {

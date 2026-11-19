@@ -8,6 +8,13 @@ const repoRoot = fileURLToPath(new URL('../', import.meta.url)).replace(
   ''
 );
 
+// Previews whose Website specs send a message wait for their aimock +
+// `langgraph dev` during startup (GET /__ready); the others only render and
+// never boot a backend.
+const backendDriven = new Set(['planning', 'subagents']);
+export const agentServerUrl = (topic) =>
+  `http://127.0.0.1:${4628 + topics.indexOf(topic)}${backendDriven.has(topic) ? '/__ready' : ''}`;
+
 /** Validate the complete original Playwright descriptors before launching any chain. */
 export function parseAgentServers(value) {
   const invalid = () => {
@@ -35,7 +42,7 @@ export function parseAgentServers(value) {
     )
       invalid();
     const match =
-      /^npx nx run cockpit-deep-agents-(planning|filesystem|subagents|skills|memory)-python:smoke && node scripts\/react-cockpit\/serve\.mjs deep-agents-\1 --no-parent$/.exec(
+      /^node scripts\/react-cockpit\/serve\.mjs deep-agents-(planning|filesystem|subagents|skills|memory) --no-parent --backend$/.exec(
         server.command
       );
     if (!match) invalid();
@@ -43,7 +50,7 @@ export function parseAgentServers(value) {
     if (
       seen.has(topic) ||
       server.cwd !== '../..' ||
-      server.url !== `http://127.0.0.1:${4628 + topics.indexOf(topic)}` ||
+      server.url !== agentServerUrl(topic) ||
       server.reuseExistingServer !== false ||
       server.timeout !== 180000
     )

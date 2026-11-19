@@ -5,8 +5,9 @@
  * Cockpit e2e starts the same backend from its Playwright global setup
  * (libs/e2e-harness). Website e2e reuses the React examples as previews and
  * has no per-example setup, so the static server starts the backend itself,
- * lazily on the first request for the app or its API: a Website suite only
- * pays for the previews it actually drives. The child stays in this process's
+ * lazily on the first API or control request (the proxy awaits it): loading a
+ * preview page boots nothing, so only specs that drive a preview pay for it,
+ * and a suite's page loads don't compete with a Python boot for CPU. The child stays in this process's
  * group, so Playwright's webServer teardown stops it with the server.
  */
 import { execFileSync, spawn } from 'node:child_process';
