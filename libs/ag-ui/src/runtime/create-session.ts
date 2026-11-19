@@ -9,7 +9,9 @@ import {
 import type {
   AgentSessionCustomEvent,
   CompleteOutcome,
+  InferState,
   PlainValue,
+  StateDeclaration,
   ToolContract,
 } from '@threadplane/core';
 import type {
@@ -61,6 +63,13 @@ export interface SessionOptions
   readonly threadId: string;
   readonly messages?: readonly Message[] | Transcript;
   readonly state?: unknown;
+  /**
+   * The type of the state document: `type<T>()` to declare it, or a Standard
+   * Schema to also check each state. `createAgentSession` publishes it as the
+   * typed `state` of the core snapshot. The native snapshot's `state` stays
+   * the literal document sent with each request, whatever is declared here.
+   */
+  readonly stateType?: StateDeclaration;
   /** Child evidence saved with this thread, published as `earlierSubagents`. Their attributed messages belong in `messages`. */
   readonly subagents?: Subagents;
   readonly interruptMode?: InterruptMode;
@@ -76,11 +85,13 @@ function nextInvocationSubagents(previous: SessionSnapshot) {
     ...(earlier && { earlierSubagents: earlier }),
   };
 }
-export interface Session {
+export interface Session<TState = unknown> {
+  /** The state declaration this session was created with, when it has one. */
+  readonly stateType?: StateDeclaration<TState>;
   getSnapshot(): SessionSnapshot;
   subscribe(notify: () => void): () => void;
   submit(
-    input: SubmitInput,
+    input: SubmitInput<TState>,
     options?: { readonly signal?: AbortSignal }
   ): Promise<CompleteOutcome>;
   resume(
@@ -101,6 +112,21 @@ export interface Session {
    */
   retry?(): Promise<CompleteOutcome>;
   /**
+   * Answers the prompt behind one assistant message again, as the Angular
+   * adapter's `regenerate` does. Takes the `id` of a root assistant record (or
+   * of the reasoning record a reasoning-only answer is shown under), drops
+   * every record after the user message that precedes it, and sends a run
+   * with that history and the current state. The prompt is not added again.
+   * Rejects without sending while a run is active, while a decision is
+   * waiting, after disposal, for an id that is not an assistant record, and
+   * when no user message precedes it. `retry` can send a failed regenerate
+   * again. Absent on the client-tool owner, whose ledger owns its history.
+   */
+  regenerate?(
+    messageId: string,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome>;
+  /**
    * Listens for `CUSTOM` events other than `on_interrupt` while runs stream.
    * The factory always supplies it; it is optional so hand-written sessions
    * need not. Returns an idempotent release. Nothing is replayed to a later
@@ -111,10 +137,10 @@ export interface Session {
     listener: (event: AgentSessionCustomEvent) => void
   ): () => void;
 }
-export type ClientToolSession<C extends Record<string, ToolContract>> = Omit<
-  Session,
-  'getSnapshot'
-> & {
+export type ClientToolSession<
+  C extends Record<string, ToolContract>,
+  TState = unknown
+> = Omit<Session<TState>, 'getSnapshot'> & {
   getSnapshot(): ClientToolSessionSnapshot<C>;
 };
 /** A `CUSTOM` event as an application event, read the way the Angular adapter
@@ -154,11 +180,18 @@ interface Attempt {
 }
 
 /** Private protocol owner. This does not yet implement core AgentSession. */
-export function createSession<T extends Record<string, FunctionToolDefinition>>(
-  options: SessionOptions,
+export function createSession<
+  T extends Record<string, FunctionToolDefinition>,
+  D extends StateDeclaration | undefined = undefined
+>(
+  options: Omit<SessionOptions, 'stateType'> & { readonly stateType?: D },
   tools: T & CheckedTools<T>
-): ClientToolSession<ToolContracts<T>>;
-export function createSession(options: SessionOptions): Session;
+): ClientToolSession<ToolContracts<T>, InferState<D>>;
+export function createSession<
+  D extends StateDeclaration | undefined = undefined
+>(
+  options: Omit<SessionOptions, 'stateType'> & { readonly stateType?: D }
+): Session<InferState<D>>;
 export function createSession(
   options: SessionOptions,
   tools?: Record<string, FunctionToolDefinition>
@@ -170,6 +203,7 @@ export function createSession(
     fetch,
     messages,
     state,
+    stateType,
     subagents,
     interruptMode = 'native',
   } = options;
@@ -184,6 +218,7 @@ export function createSession(
         fetch,
         messages,
         state,
+        stateType,
         subagents,
         interruptMode,
       },
@@ -403,6 +438,7 @@ export function createSession(
     });
   };
   return {
+    ...(stateType !== undefined && { stateType }),
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
@@ -615,6 +651,61 @@ export function createSession(
               run: Object.freeze({ id }),
             }),
             undefined,
+            resolve
+          );
+        });
+      }),
+    regenerate: (messageId, options) =>
+      new Promise<CompleteOutcome>((resolve, reject) => {
+        const signal = options?.signal;
+        publication.command(() => {
+          const previous = publication.getSnapshot();
+          let prompt = -1;
+          try {
+            if (disposed) throw new Error('The session is disposed.');
+            if (active)
+              throw new Error('Cannot regenerate while a response is running.');
+            if (previous.decision)
+              throw new Error('Cannot regenerate while a decision is waiting.');
+            const { transcript } = previous;
+            const root = (index: number) =>
+              typeof transcript[index].subagentRunId !== 'string';
+            const at = transcript.findIndex(
+              (record, index) =>
+                record.id === messageId &&
+                (record.role === 'assistant' || record.role === 'reasoning') &&
+                root(index)
+            );
+            if (at < 0)
+              throw new Error('Regenerate needs the id of an assistant message.');
+            for (let index = at - 1; index >= 0 && prompt < 0; index--)
+              if (transcript[index].role === 'user' && root(index))
+                prompt = index;
+            if (prompt < 0) throw new Error('No prompt precedes that message.');
+          } catch (error) {
+            reject(error);
+            return;
+          }
+          if (signal?.aborted) {
+            resolve('aborted');
+            return;
+          }
+          const id = crypto.randomUUID();
+          // Keep the prompt: it ends the history and is the next run's input.
+          const transcript = Object.freeze(
+            previous.transcript.slice(0, prompt + 1)
+          );
+          saved = { runId: id, transcript, state: previous.state };
+          admit(
+            id,
+            Object.freeze({
+              ...previous,
+              status: 'running',
+              transcript,
+              ...nextInvocationSubagents(previous),
+              run: Object.freeze({ id }),
+            }),
+            signal,
             resolve
           );
         });
@@ -1263,6 +1354,7 @@ function createToolsOwner(
     );
   };
   return {
+    ...(options.stateType !== undefined && { stateType: options.stateType }),
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),

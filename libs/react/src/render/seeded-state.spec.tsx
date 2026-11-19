@@ -94,7 +94,8 @@ describe('RenderSpec state carried by the spec', () => {
 
   it('seeds the store when state first appears in a later spec', () => {
     const view = render(<RenderSpec spec={form()} registry={registry} />);
-    expect(field(view).readOnly).toBe(true);
+    // The field waits for its bound value.
+    expect(view.queryByRole('textbox', { name: 'Name' })).toBeNull();
     view.rerender(
       <RenderSpec spec={form({ name: 'Ada' })} registry={registry} />
     );
@@ -103,7 +104,9 @@ describe('RenderSpec state carried by the spec', () => {
   });
 
   it('stays read-only for a spec without state', () => {
-    const view = render(<RenderSpec spec={form()} registry={registry} />);
+    const view = render(
+      <RenderSpec spec={form()} registry={registry} pendingFallback={null} />
+    );
     expect(field(view).value).toBe('');
     expect(field(view).readOnly).toBe(true);
   });

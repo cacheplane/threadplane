@@ -55,6 +55,50 @@ Runtime settings can select a developer LangGraph target. Creation, streams, his
 
 <ExampleCode file="cockpit/chat/threads/react/src/connection.ts" />
 
+## Keep the active thread in the URL
+
+The example above keeps its list in page state. To make a conversation linkable and survive a reload, `useThreadRouting` from `@threadplane/react/chat` keeps the active thread in the URL, like Angular `injectThreadRouting`. It restores the thread on load, pushes a history entry when the user selects one, follows the back and forward buttons, and replaces the URL with the bare URL when `exists` reports that the thread is gone. A bare URL means no thread is selected.
+
+~~~tsx
+import { ThreadList, useThreadRouting } from '@threadplane/react/chat';
+
+function Threads({ threads, client }) {
+  const { threadId, setThreadId } = useThreadRouting({
+    exists: (id) => client.threads.get(id).then(() => true, () => false),
+  });
+
+  return (
+    <ThreadList
+      threads={threads}
+      activeThreadId={threadId}
+      onSelect={setThreadId}
+      onNewThread={() => setThreadId(null)}
+    />
+  );
+}
+~~~
+
+Pass the same `threadId` to the session that loads the conversation. By default the thread is the path segment after `basePath` (`/` gives `/<threadId>`), and the query string and hash are kept. Set `param: 'thread'` to use `?thread=<threadId>` instead. `exists` may return a boolean or a promise; a check that fails keeps the thread in place.
+
+The default binding reads `window.location` and `window.history`. The server render and hydration read no URL and report no thread, and the browser picks up the URL right after hydration. Applications that use React Router or Next.js pass an `adapter` built from their own location and navigation:
+
+~~~tsx
+const location = useLocation();
+const navigate = useNavigate();
+const adapter = useMemo(
+  () => ({
+    read: () => new URLSearchParams(location.search).get('thread'),
+    write: (id, mode) =>
+      navigate(id ? `?thread=${encodeURIComponent(id)}` : '?', { replace: mode === 'replace' }),
+    subscribe: () => () => {},
+  }),
+  [location.search, navigate],
+);
+const { threadId, setThreadId } = useThreadRouting({ adapter });
+~~~
+
+`write` receives `push` for a selection and `replace` for a missing thread. `subscribe` reports URL changes made outside `write`; a router that re-renders on navigation can return an empty unsubscribe.
+
 ## Build from source
 
 From a Threadplane checkout with dependencies installed:

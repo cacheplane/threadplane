@@ -5,9 +5,12 @@ import type {
   A2uiValidationErrorMessage,
   A2uiValue,
 } from '@threadplane/content/a2ui';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { MessageA2uiContent } from '../chat/index.js';
-import type { ReactRenderRegistry } from '../render/index.js';
+import type {
+  ReactRenderRegistry,
+  RenderViewProps,
+} from '../render/index.js';
 import {
   A2uiMessageSurfaces,
   A2uiSurface,
@@ -40,6 +43,7 @@ export type PropsContract = Assert<
         }) => void;
       };
       readonly catalog?: ReactRenderRegistry;
+      readonly pendingFallback?: ComponentType<RenderViewProps> | null;
       readonly className?: string;
     }
   >
@@ -150,7 +154,12 @@ export type MessageSurfacesPropsContract = Assert<
     { [K in keyof A2uiMessageSurfacesProps]: A2uiMessageSurfacesProps[K] },
     { readonly content: A2uiMessageContent } & Pick<
       A2uiSurfaceProps,
-      'onAction' | 'onValidationError' | 'functions' | 'catalog' | 'className'
+      | 'onAction'
+      | 'onValidationError'
+      | 'functions'
+      | 'catalog'
+      | 'pendingFallback'
+      | 'className'
     > extends infer T
       ? { [K in keyof T]: T[K] }
       : never

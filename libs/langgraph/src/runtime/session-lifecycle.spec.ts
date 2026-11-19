@@ -74,7 +74,7 @@ describe('neutral session ownership', () => {
       status: 'idle',
       messages: [],
       toolCalls: [],
-      values: undefined,
+      state: undefined,
       interrupts: [],
       subgraphs: [],
     });

@@ -1,6 +1,6 @@
 import type { AgentError } from './error.js';
 import type { Message } from './message.js';
-import type { ToolCall, ToolContract } from './tool.js';
+import type { DeepReadonly, ToolCall, ToolContract } from './tool.js';
 import type { AgentPlanStep } from './plan.js';
 
 /**
@@ -34,7 +34,8 @@ export type AgentSnapshot<
   TTools extends { [K in keyof TTools]: ToolContract } = Record<
     string,
     ToolContract
-  >
+  >,
+  TState = unknown
 > = TTools extends unknown
   ? {
       readonly status: AgentStatus;
@@ -45,5 +46,11 @@ export type AgentSnapshot<
       readonly plan?: readonly AgentPlanStep[];
       /** Token usage the runtime reported for the most recent settled run; absent while one runs or when none was reported. */
       readonly usage?: AgentUsage;
+      /**
+       * Application state the backend last reported, as frozen plain data.
+       * Typed by the session's state declaration, and plain data without one.
+       * Absent until the backend reports a state, and on sessions that hold none.
+       */
+      readonly state?: DeepReadonly<TState>;
     }
   : never;

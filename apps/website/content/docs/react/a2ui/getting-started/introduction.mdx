@@ -13,6 +13,8 @@ The native React APIs on this page are experimental, private source-build packag
 
 The server sends a surface description and data-model updates. React retains the received surface, while form controls hold the traveler’s current edits. Search, Select, and Modify send intentional actions; typing does not start another agent run. The example admits a fixed flight-form profile rather than every possible A2UI component.
 
+When components arrive before the data model, `A2uiSurface` shows a placeholder for each component whose data-bound props have no value yet, then mounts it once they do. An input's own `value` may stay unset, so an empty field the traveler fills in still appears. Pass `pendingFallback` to change the placeholder, or `null` to mount every component at once.
+
 The [React conversation walkthrough](/docs/react/langgraph/concepts/conversation-turns) connects this capability to requests, tools, UI state, and saved history.
 
 ## Start a conversation

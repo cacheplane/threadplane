@@ -262,8 +262,8 @@ and untyped reserved fields are omitted without reading their values.
 Application fields go directly into the initial run's input. They are not resent
 on tool continuations, owned-run reconnect, or subsequent independent submits:
 server reducers may accumulate repeated values. Input state never changes
-snapshot `values` optimistically; only backend observations do. Core sessions
-remain text-only, while the private backend method accepts this extension.
+snapshot `state` optimistically; only backend observations do. Core sessions
+accept the same `{ message, state }` input, typed by their state declaration.
 
 Tool and Drop in the review apps send fixed model, reasoning, UI-mode and
 itinerary choices. The strict fixture requires them on those initial requests
@@ -487,10 +487,12 @@ transport owns its retry policy. Canonical updates may replace or remove pending
 tool calls for the same assistant message while retaining other messages' calls
 and completed results.
 
-The private `LangGraphSnapshot.values` is a broad
-`Readonly<Record<string, PlainValue>> | undefined`. It is observed application data,
-not a validated application schema. `undefined` means no current values map is
-observed; `{}` means a root record was observed with no application fields. Root
+The private `LangGraphSnapshot.state` is a broad
+`Readonly<Record<string, PlainValue>> | undefined` unless the session declares a
+`stateType`. A `type<T>()` declaration types it without checking; a Standard
+Schema also checks each reported state, withholds one it rejects at the last
+valid state, and lists the problems in `stateIssues`. `undefined` means no
+current state is observed; `{}` means a root record was observed with no application fields. Root
 `values` and `checkpoints` records, explicit history, and conclusive recovery
 correlated to the attempted run replace the whole map, including deleted fields.
 `messages` and `__interrupt__` are excluded. Missing history values clear the map

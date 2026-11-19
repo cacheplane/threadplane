@@ -1,5 +1,6 @@
 'use client';
 export { RenderSpec } from './render-spec.js';
+export { RenderPendingFallback } from './pending-fallback.js';
 export { RenderDevtools } from './devtools.js';
 export type { RenderDevtoolsProps } from './devtools.js';
 export { createRenderLifecycle } from './lifecycle.js';

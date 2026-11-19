@@ -90,6 +90,13 @@ export {
   type ThreadListItem,
   type ThreadListProps,
 } from './thread-list.js';
+export {
+  useThreadRouting,
+  type ThreadRouting,
+  type ThreadRoutingAdapter,
+  type ThreadRoutingOptions,
+  type ThreadRoutingWriteMode,
+} from './thread-routing.js';
 export { Timeline, type TimelineItem, type TimelineProps } from './timeline.js';
 export { TextTranscript, type TextTranscriptProps } from './text-transcript.js';
 export {
@@ -153,7 +160,13 @@ export {
   type ApprovalRecordEntry,
   type ApprovalRecordProps,
 } from './approval-card.js';
-export { Chat, type ChatModelPicker, type ChatProps } from './chat.js';
+export {
+  Chat,
+  type ChatModelPicker,
+  type ChatProps,
+  type ChatRunActivityContext,
+} from './chat.js';
+export { useChatLifecycle, type ChatLifecycle } from './lifecycle.js';
 export { ChatError, type ChatErrorProps } from './error.js';
 export { ChatPopup, type ChatPopupProps } from './chat-popup.js';
 export { LauncherButton, type LauncherButtonProps } from './launcher-button.js';

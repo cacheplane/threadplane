@@ -1,4 +1,5 @@
 import type { RunAgentInput } from '@ag-ui/client';
+import type { StateDeclaration } from '@threadplane/core';
 import { createSession, type SessionOptions } from '../create-session';
 import type { SessionSnapshot } from '../session-observation';
 
@@ -76,9 +77,12 @@ function controlledFetchResponse(
 
 /** Browser-safe test composition. All snapshots and commands belong to the real
  * private session; the fixture controls only its physical Fetch API response. */
-export function bindingFixture(
+export function bindingFixture<
+  D extends StateDeclaration | undefined = undefined
+>(
   options: Pick<SessionOptions, 'messages' | 'state'> & {
     threadId?: string;
+    stateType?: D;
   } = {}
 ) {
   const exchanges: ReturnType<typeof controlledFetchResponse>[] = [];

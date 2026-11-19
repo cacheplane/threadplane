@@ -17,7 +17,7 @@ import {
 } from './application';
 import { ObservedStateComparison } from './observed-state-comparison';
 
-type Values = NonNullable<ReactApplicationSnapshot['runtime']>['values'];
+type Values = NonNullable<ReactApplicationSnapshot['runtime']>['state'];
 let supplied: StateDiffProps;
 vi.mock('@threadplane/react/debug', async (importOriginal) => {
   const original = await importOriginal<
@@ -38,7 +38,7 @@ function owner(initial: Values = { count: 1 }) {
   let status = 'ready';
   const getSnapshot = vi.fn(() => ({
     selection: { status, id },
-    runtime: { values },
+    runtime: { state: values },
   }));
   return {
     application: { getSnapshot } as unknown as ReactApplication,
@@ -79,7 +79,7 @@ it('starts collapsed, borrows observed values, compares updates and clears local
     <ObservedStateComparison
       application={f.application}
       threadId="a"
-      values={values}
+      state={values}
     />
   );
   const view = render(content(before));
@@ -117,7 +117,7 @@ it.each([
       <ObservedStateComparison
         application={f.application}
         threadId="a"
-        values={values}
+        state={values}
       />
     );
     const view = render(content(invalid));
@@ -157,7 +157,7 @@ it('does not fabricate unknown current values and preserves a baseline while unk
     <ObservedStateComparison
       application={f.application}
       threadId="a"
-      values={values}
+      state={values}
     />
   );
   const view = render(content(initial));
@@ -187,7 +187,7 @@ it('rejects live values, selection and readiness changes before render', () => {
     <ObservedStateComparison
       application={f.application}
       threadId="a"
-      values={values}
+      state={values}
     />
   );
   const capture = callback(controls(view).capture);
@@ -217,7 +217,7 @@ it('retires owner and thread generations across A-B-A and unmount', () => {
     <ObservedStateComparison
       application={application}
       threadId={threadId}
-      values={values}
+      state={values}
     />
   );
   const view = render(content(f.application));
@@ -266,7 +266,7 @@ it('keeps a baseline accepted during layout across StrictMode replay', () => {
       <ObservedStateComparison
         application={f.application}
         threadId="a"
-        values={values}
+        state={values}
       />
       <CaptureOnce />
     </StrictMode>

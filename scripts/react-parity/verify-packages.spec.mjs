@@ -980,8 +980,10 @@ test('installed native contracts reject the former empty scaffold exports', () =
   assert.equal(typeof packageVerifier.assertSupportedExports, 'function');
   assert.throws(() => packageVerifier.assertSupportedExports('core', {}), /completeDelivery/);
   assert.throws(() => packageVerifier.assertSupportedExports('react', {}), /useAgent/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react', { useAgent: () => undefined }));
-  assert.throws(() => packageVerifier.assertSupportedExports('react', { useAgent: () => undefined, OverflowMenu: () => undefined }), /unexpected/);
+  const react = { useAgent: () => undefined, useAgentState: () => undefined };
+  assert.throws(() => packageVerifier.assertSupportedExports('react', { useAgent: () => undefined }), /useAgentState/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react', react));
+  assert.throws(() => packageVerifier.assertSupportedExports('react', { ...react, OverflowMenu: () => undefined }), /unexpected/);
 });
 
 function fixture(t, change = {}) {
@@ -1068,7 +1070,8 @@ test('React chat requires its real supported export', () => {
   supported.ChatMessage = component;
   supported.isTyping = component;
   supported.ApprovalRecord = component;
-  for (const name of ['ask', 'createClientTools', 'useClientToolCalls', 'usePendingClientToolCalls']) supported[name] = component;
+  for (const name of ['ask', 'createClientTools', 'useClientToolCalls', 'usePendingClientToolCalls', 'useChatLifecycle']) supported[name] = component;
+  supported.useThreadRouting = component;
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', {}), /ApprovalCard/);
   for (const name of Object.keys(supported)) {
     const { [name]: _omitted, ...rest } = supported;
@@ -1086,7 +1089,7 @@ test('React chat requires its real supported export', () => {
   assert.throws(() => packageVerifier.assertSupportedExports('react/chat', { ...supported, isTyping: forwarded }), /isTyping/);
   assert.throws(() => packageVerifier.assertSupportedExports('core', { completeDelivery: forwarded }), /completeDelivery/);
 });
-test('React render requires exactly the RenderSpec, lifecycle recorder and RenderDevtools runtime exports', () => {
+test('React render requires exactly the RenderSpec, lifecycle recorder, RenderDevtools and RenderPendingFallback runtime exports', () => {
   const RenderSpec = () => null;
   const createRenderLifecycle = () => ({});
   assert.throws(() => packageVerifier.assertSupportedExports('react/a2ui', {}), /A2uiSurface/);
@@ -1100,8 +1103,10 @@ test('React render requires exactly the RenderSpec, lifecycle recorder and Rende
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', {}), /RenderSpec/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec }), /createRenderLifecycle/);
   assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle }), /RenderDevtools/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle, RenderDevtools }));
-  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle, RenderDevtools, createStateStore: () => ({}) }), /unexpected/);
+  const RenderPendingFallback = () => null;
+  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle, RenderDevtools }), /RenderPendingFallback/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle, RenderDevtools, RenderPendingFallback }));
+  assert.throws(() => packageVerifier.assertSupportedExports('react/render', { RenderSpec, createRenderLifecycle, RenderDevtools, RenderPendingFallback, createStateStore: () => ({}) }), /unexpected/);
 });
 test('headless framework root rejects the render adapter and engine', () => {
   assert.throws(() => packageVerifier.assertHeadlessInputs({ 'node_modules/@threadplane/react/src/render/render-spec.js': {} }), /render/i);

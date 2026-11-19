@@ -122,12 +122,12 @@ export type FixtureSnapshot = AgentSnapshot<FixtureTools> & {
   readonly subgraphs: readonly {
     readonly namespace: readonly string[];
     readonly messages: readonly Message[];
-    readonly values: Readonly<Record<string, PlainValue>> | undefined;
+    readonly state: Readonly<Record<string, PlainValue>> | undefined;
     readonly interrupts: readonly FixtureInterrupt[];
     readonly error?: AgentError;
   }[];
   readonly reconnect?: { readonly runId: string };
-  readonly values: Readonly<Record<string, PlainValue>> | undefined;
+  readonly state: Readonly<Record<string, PlainValue>> | undefined;
   readonly interrupts: readonly FixtureInterrupt[];
 };
 
@@ -187,7 +187,7 @@ export function display(snapshot: FixtureSnapshot) {
         )
       )
       .join('\n'),
-    values: JSON.stringify(snapshot.values) ?? 'unobserved',
+    values: JSON.stringify(snapshot.state) ?? 'unobserved',
     history: JSON.stringify(snapshot.history) ?? 'unobserved',
     interrupts: JSON.stringify(snapshot.interrupts),
     subgraphs: JSON.stringify(
@@ -202,7 +202,7 @@ export function display(snapshot: FixtureSnapshot) {
               ? `complete:${message.delivery.outcome}`
               : message.delivery.phase,
         })),
-        values: child.values ?? null,
+        values: child.state ?? null,
         interrupts: child.interrupts,
         error: child.error?.message ?? '',
       }))

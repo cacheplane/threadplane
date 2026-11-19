@@ -595,7 +595,7 @@ describe('automatic read-only recovery when the stream throws', () => {
     expect(f.session.getSnapshot()).toMatchObject({
       status: 'idle',
       error: undefined,
-      values: { step: 'done' },
+      state: { step: 'done' },
     });
     expect(f.session.getSnapshot().messages.at(-1)).toMatchObject({
       content: committed.content,

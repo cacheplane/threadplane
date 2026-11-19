@@ -28,7 +28,7 @@ export interface DebugSnapshot {
   readonly interrupts: readonly unknown[];
   readonly subgraphs: readonly unknown[];
   readonly error?: unknown;
-  readonly values?: unknown;
+  readonly state?: unknown;
   readonly history?: readonly unknown[];
 }
 export interface ConfirmedAuthority {
@@ -386,7 +386,7 @@ function loadedMatches(
       )
         return false;
     }
-    const values = captureInspectionValues(f('values'));
+    const values = captureInspectionValues(f('state'));
     return (
       values.kind === 'available' &&
       same(values.values['analysis'], authority.analysis)

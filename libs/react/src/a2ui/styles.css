@@ -87,6 +87,41 @@
     --a2ui-surface-variant: #262a33;
   }
 }
+/* Theme attribute, as in Angular chat: data-theme or data-threadplane-chat-theme
+   on an ancestor forces a scheme over prefers-color-scheme. A theme file
+   (:root .a2ui-surface) still outranks these. */
+:where([data-theme="light"], [data-threadplane-chat-theme="light"]) .a2ui-surface,
+.a2ui-surface:where([data-theme="light"], [data-threadplane-chat-theme="light"]) {
+  --a2ui-surface: #ffffff;
+  --a2ui-on-surface: #1a1d23;
+  --a2ui-on-surface-variant: rgba(0, 0, 0, 0.6);
+  --a2ui-outline: rgba(0, 0, 0, 0.12);
+  --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --a2ui-elevation-4: 0 8px 24px rgba(0, 0, 0, 0.16);
+  --a2ui-primary: #2f6fed;
+  --a2ui-error: #b3261e;
+  --a2ui-scrim: rgba(0, 0, 0, 0.4);
+  --a2ui-input-bg: #ffffff;
+  --a2ui-on-primary: #ffffff;
+  --a2ui-primary-hover: #245bd0;
+  --a2ui-surface-variant: #f1f3f6;
+}
+:where([data-theme="dark"], [data-threadplane-chat-theme="dark"]) .a2ui-surface,
+.a2ui-surface:where([data-theme="dark"], [data-threadplane-chat-theme="dark"]) {
+  --a2ui-surface: #1a1d23;
+  --a2ui-on-surface: #ffffff;
+  --a2ui-on-surface-variant: rgba(255, 255, 255, 0.7);
+  --a2ui-outline: rgba(255, 255, 255, 0.1);
+  --a2ui-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --a2ui-elevation-4: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --a2ui-primary: #8ab4ff;
+  --a2ui-error: #f2b8b5;
+  --a2ui-scrim: rgba(0, 0, 0, 0.6);
+  --a2ui-input-bg: #12141a;
+  --a2ui-on-primary: #0b1220;
+  --a2ui-primary-hover: #a9c7ff;
+  --a2ui-surface-variant: #262a33;
+}
 .a2ui-text-h1,
 .a2ui-text-h2,
 .a2ui-text-h3,
@@ -541,6 +576,63 @@
 .a2ui-unsupported {
   display: contents;
 }
+/* RenderPendingFallback: a component whose data-bound props have not arrived. */
+.a2ui-surface .tp-render-pending {
+  display: block;
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: var(--a2ui-spacing-3);
+  border: 1px solid var(--a2ui-outline);
+  border-radius: var(--a2ui-shape-medium);
+  background: var(--a2ui-surface-variant);
+  color: var(--a2ui-on-surface-variant);
+  font-size: var(--a2ui-typography-label-size);
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__label {
+  display: block;
+  margin-block-end: var(--a2ui-spacing-2);
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--a2ui-spacing-2);
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__row {
+  display: block;
+  block-size: 0.625rem;
+  border-radius: var(--a2ui-shape-extra-small);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, currentColor 22%, transparent) 0%,
+    color-mix(in srgb, currentColor 10%, transparent) 50%,
+    color-mix(in srgb, currentColor 22%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  animation: a2ui-pending-shimmer 1.4s ease-in-out infinite;
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__row:nth-child(1) {
+  inline-size: 70%;
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__row:nth-child(2) {
+  inline-size: 90%;
+}
+.a2ui-surface .tp-render-pending .tp-genui-skeleton__row:nth-child(3) {
+  inline-size: 50%;
+}
+@keyframes a2ui-pending-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .a2ui-surface .tp-render-pending .tp-genui-skeleton__row {
+    animation: none;
+  }
+}
 @media (forced-colors: active) {
   .a2ui-card,
   .a2ui-divider--horizontal {
@@ -554,6 +646,12 @@
   }
   .a2ui-modal {
     border-color: CanvasText;
+  }
+  .a2ui-surface .tp-render-pending {
+    border-color: CanvasText;
+  }
+  .a2ui-surface .tp-render-pending .tp-genui-skeleton__row {
+    background: GrayText;
   }
   .a2ui-tf__input,
   .a2ui-dti__input,

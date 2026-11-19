@@ -188,6 +188,10 @@ test('Chat Messages owns a closed native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('chat-messages'), {
     topic: 'messages', adapter: 'langgraph', appPath: 'cockpit/chat/messages/react',
     base: '/chat/messages/react/', port: 4620, project: 'cockpit-chat-messages-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/messages/python',
+      fixtures: 'cockpit/chat/messages/angular/e2e/fixtures', langgraphPort: 5620,
+    },
   });
   for (const key of ['messages', 'chat/messages', '../chat-messages'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);

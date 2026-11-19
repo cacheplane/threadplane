@@ -140,6 +140,17 @@ const directRegistry: ReactRenderRegistry = {
   Memo: DirectMemo,
   Forward: DirectForward,
 };
+// The same unresolved binding without the opt-out: the default placeholder stands in.
+function DefaultWaitReal() {
+  return <p data-testid="default-wait-real">Mounted too early</p>;
+}
+const defaultWaitSpec: RenderSpecData = {
+  root: 'wait',
+  elements: {
+    wait: { type: 'Wait', props: { absent: { $state: '/missing' } } },
+  },
+};
+const defaultWaitRegistry: ReactRenderRegistry = { Wait: DefaultWaitReal };
 const rowSpec: RenderSpecData = {
   root: 'rows',
   elements: {
@@ -184,18 +195,29 @@ function App() {
   return (
     <>
       <p data-testid="descriptor">{descriptor}</p>
-      <RenderSpec
-        key={epoch}
-        spec={spec}
-        registry={registry}
-        state={snapshot}
-        loading={loading}
-      />
+      <div data-testid="main-tree">
+        <RenderSpec
+          key={epoch}
+          spec={spec}
+          registry={registry}
+          state={snapshot}
+          loading={loading}
+        />
+      </div>
+      {/* Direct exotic components receive undefined props only with the documented opt-out. */}
       <RenderSpec
         spec={directSpec}
         registry={directRegistry}
         state={snapshot}
+        pendingFallback={null}
       />
+      <div data-testid="default-wait">
+        <RenderSpec
+          spec={defaultWaitSpec}
+          registry={defaultWaitRegistry}
+          state={snapshot}
+        />
+      </div>
       <RenderSpec spec={rowSpec} registry={rowRegistry} state={snapshot} />
     </>
   );

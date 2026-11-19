@@ -8,7 +8,7 @@ function setup(status = 'success') {
     status: 'idle',
     messages: [],
     toolCalls: [],
-    values: {},
+    state: {},
     interrupts: [],
     subgraphs: [],
   };
@@ -68,7 +68,7 @@ it('confirms tool errors honestly without disabling an otherwise confirmed paren
 });
 it('confirms filtered live private values from the full checkpoint and keeps Send/history/read evidence available', async () => {
   const x = setup();
-  delete (x.input.snapshot.values as any).skills_metadata;
+  delete (x.input.snapshot.state as any).skills_metadata;
   await x.app.submit('Inspect runway.');
   const view = x.app.getSnapshot();
   expect(view.canSubmit).toBe(true);
@@ -371,7 +371,7 @@ it('bounds the page-local catalog and does not restore evicted IDs', async () =>
       status: 'idle',
       messages: [],
       toolCalls: [],
-      values: {},
+      state: {},
       interrupts: [],
       subgraphs: [],
     });
@@ -418,7 +418,7 @@ it('bounds aggregate catalog text even before reaching the entry cap', async () 
       status: 'idle',
       messages: [],
       toolCalls: [],
-      values: {},
+      state: {},
       interrupts: [],
       subgraphs: [],
     });
@@ -457,7 +457,7 @@ it('malformed live state never reaches the display and requires New', async () =
 });
 it('unsupported child state cannot masquerade as confirmed root skill evidence', async () => {
   const x = setup();
-  delete (x.input.snapshot.values as any).skills_metadata;
+  delete (x.input.snapshot.state as any).skills_metadata;
   x.input.snapshot.subgraphs.push({ id: 'child' } as never);
   x.input.loadedSnapshot.subgraphs.push({ id: 'child' } as never);
   await x.app.submit('Inspect runway.');

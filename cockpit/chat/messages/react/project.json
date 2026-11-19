@@ -3,6 +3,7 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/chat/messages/react/src",
   "projectType": "application",
+  "implicitDependencies": ["cockpit-chat-messages-angular", "cockpit-chat-messages-python"],
   "tags": [
     "scope:cockpit-examples",
     "scope:cockpit-e2e",

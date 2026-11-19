@@ -25,7 +25,7 @@ const make = (index = 0) => {
     toolCalls: [],
     interrupts: [],
     subgraphs: [],
-    values: { analysis: t.analysis },
+    state: { analysis: t.analysis },
     history: [{ checkpoint: t.checkpoint, next: [], tasks: [] }],
   };
   const running = {
@@ -161,7 +161,7 @@ describe('independent canonical native authority', () => {
         outcome: 'success',
       },
     }));
-    x.snapshot.values = { analysis: raw.values.analysis };
+    x.snapshot.state = { analysis: raw.values.analysis };
     x.snapshot.history = [{ checkpoint: raw.checkpoint, next: [], tasks: [] }];
     x.human = { ...m[0], generation: x.generation };
     expect(confirmLiveTurn(x)?.analysis).toEqual({ characters: 44, words: 8 });
@@ -387,7 +387,7 @@ describe('independent canonical native authority', () => {
       '[Processing] Analyzed 2001 characters. Found 1 words. Processing complete.';
     first.snapshot.messages[1].content = answer;
     first.snapshot.messages[2].content = processing;
-    first.snapshot.values.analysis = analysis;
+    first.snapshot.state.analysis = analysis;
     for (const raw of [first.current, first.exact]) {
       raw.values.messages[1].content = answer;
       raw.values.messages[2].content = processing;

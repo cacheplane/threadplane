@@ -8,7 +8,7 @@ function snapshot(content = 'one'): LangGraphSnapshot {
   return {
     status: 'idle',
     history: undefined,
-    values: undefined,
+    state: undefined,
     interrupts: [],
     subgraphs: [],
     messages: [
@@ -228,7 +228,7 @@ describe('private snapshot publication', () => {
     expect(() =>
       publication.publish({
         ...snapshot('Invalid'),
-        values: { count: 9 },
+        state: { count: 9 },
         interrupts: [{ value: new Date() }],
       } as unknown as LangGraphSnapshot)
     ).toThrow(TypeError);
@@ -240,7 +240,7 @@ describe('private snapshot publication', () => {
     expect(() =>
       publication.publish({
         ...snapshot('candidate'),
-        values: { bad: new Date(0) },
+        state: { bad: new Date(0) },
       } as unknown as LangGraphSnapshot)
     ).toThrow(TypeError);
     expect(publication.getSnapshot()).toBe(before);
@@ -248,12 +248,12 @@ describe('private snapshot publication', () => {
 
   it('owns application values and suppresses equal queued aggregate publications', () => {
     const data = { stable: { x: 1 }, count: 1 };
-    const publication = createPublication({ ...snapshot(), values: data });
+    const publication = createPublication({ ...snapshot(), state: data });
     const first = publication.getSnapshot() as LangGraphSnapshot;
-    expect(first.values).toEqual(data);
-    expect(first.values).not.toBe(data);
+    expect(first.state).toEqual(data);
+    expect(first.state).not.toBe(data);
     data.stable.x = 9;
-    expect(first.values?.['stable']).toEqual({ x: 1 });
+    expect(first.state?.['stable']).toEqual({ x: 1 });
     const seen: LangGraphSnapshot[] = [];
     for (let index = 0; index < 2; index++)
       publication.subscribe(() => {
@@ -262,7 +262,7 @@ describe('private snapshot publication', () => {
           const interrupts = [
             { id: 'queued', value: { choices: ['continue'] } },
           ];
-          publication.publish({ ...snapshot('two'), values, interrupts });
+          publication.publish({ ...snapshot('two'), state: values, interrupts });
           values.count = 99;
           interrupts[0].value.choices.push('late mutation');
         }
@@ -272,13 +272,13 @@ describe('private snapshot publication', () => {
     );
     publication.publish({ ...first, status: 'running' });
     expect(seen).toHaveLength(2);
-    expect(seen[1].values).toEqual({ stable: { x: 1 }, count: 2 });
-    expect(seen[1].values?.['stable']).toBe(first.values?.['stable']);
+    expect(seen[1].state).toEqual({ stable: { x: 1 }, count: 2 });
+    expect(seen[1].state?.['stable']).toBe(first.state?.['stable']);
     expect(seen[1].interrupts).toEqual([
       { id: 'queued', value: { choices: ['continue'] } },
     ]);
     expect(seen[1].messages[0].content).toBe('two');
-    expect(Object.isFrozen(seen[1].values)).toBe(true);
+    expect(Object.isFrozen(seen[1].state)).toBe(true);
   });
 
   it('does not turn unsupported SDK instances into apparently portable tool data', () => {

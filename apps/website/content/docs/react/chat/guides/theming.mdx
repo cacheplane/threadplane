@@ -53,7 +53,7 @@ React chat also reads the Angular chat token names. A stylesheet that sets `--tp
 | `--tplane-chat-font-*`, `--tplane-chat-line-height*`, `--tplane-chat-radius-*`, `--tplane-chat-max-width` | Typography, corner radii and the reading width |
 | `--tplane-chat-citation-type-*-fg` | Source type colors for files, apps and memory |
 
-React chat does not inject the Angular default values, so a token that the theme does not set keeps the React default. React follows `color-scheme` for light and dark defaults. A theme that switches with `[data-theme="dark"]` must set its dark values under that selector, as it does for Angular.
+React chat does not inject the Angular default values, so a token that the theme does not set keeps the React default. React follows `color-scheme` for light and dark defaults. Like Angular chat, it also follows a `data-theme="light|dark"` or `data-threadplane-chat-theme="light|dark"` attribute on the chat or any ancestor, so an app theme toggle reaches the chat with no extra code. The nearest attribute wins, and either attribute beats the system `prefers-color-scheme` setting. An explicit `--tp-chat-color-scheme` on a chat root beats both. The A2UI surface stylesheet reads the same attributes. A theme that switches with `[data-theme="dark"]` must set its dark values under that selector, as it does for Angular.
 
 <ExampleCode file="cockpit/chat/theming/react/src/styles.css" />
 

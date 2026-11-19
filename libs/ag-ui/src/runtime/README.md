@@ -141,13 +141,16 @@ const session = createAgentSession(native);
 ```
 
 - It is a view, not a second owner. `getSnapshot` derives
-  `{ status, messages, toolCalls, error?, plan?, usage? }` from the native snapshot with
-  the two selectors above and keeps its reference until one of those fields
-  changes. Subscribers hear about those changes only, so a native publication
-  that touches only state, child evidence or a decision is silent here.
-- `submit` takes text and goes straight to the native session, as do `stop` and
-  `dispose`. Disposing the view disposes the session. `retry` goes to the native
-  session too, when it has one (see "Retry" below).
+  `{ status, messages, toolCalls, error?, plan?, usage?, state?, stateIssues? }`
+  from the native snapshot with the two selectors above and keeps its reference
+  until one of those fields changes. Subscribers hear about those changes only,
+  so a native publication that touches only child evidence or a decision is
+  silent here.
+- `submit` takes text, or `{ message, state? }` with a state patch, and goes
+  straight to the native session, as do `stop` and
+  `dispose`. Disposing the view disposes the session. `retry` and `regenerate`
+  go to the native session too, when it has them (see "Retry" and
+  "Regenerate" below).
 - A failed run becomes `snapshot.error`. A backend `RUN_ERROR` is a `server`
   error carrying the backend's message. A stream that ended without a terminal
   is `interrupted`. A response that was not OK carries its HTTP status: 401 and
@@ -171,11 +174,46 @@ const session = createAgentSession(native);
   labels and finite counts copied. It is absent while a run is going and after a
   run that reported none, so it never carries over from an earlier run. The
   native snapshot keeps the event's own `usage` on `run.terminal`.
-- A state patch, native resume and client-tool evidence have no core
-  equivalent. Keep the native session for those; both can be used together.
+- Native resume and client-tool evidence have no core equivalent. Keep the
+  native session for those; both can be used together.
   While a native decision is waiting, `submit` resolves `error` without sending,
   and nothing in the core snapshot says why. Show the decision instead, as
   below.
+
+### State
+
+The view's `snapshot.state` is the session's state document. Declare its type
+with `stateType` when creating the session:
+
+```ts
+import { type } from '@threadplane/core';
+
+const native = createSession({
+  threadId,
+  url,
+  state: { topic: 'billing', notes: [] },
+  stateType: type<{ topic: string; notes: string[] }>(),
+});
+const session = createAgentSession(native);
+session.getSnapshot().state?.topic; // string | undefined
+await session.submit({ message: 'Go on', state: { topic: 'refunds' } });
+```
+
+- `type<T>()` declares the type and checks nothing. Pass a Standard Schema, such
+  as a Zod object, to check each document as well: `state` is then the schema's
+  output, frozen. Each document is checked once, however often it is read.
+- A document the schema rejects does not fail the run. `state` keeps the last
+  document that passed, or stays absent when none has, and `stateIssues` lists
+  the reasons until a document passes again. A schema must validate
+  synchronously and produce plain data.
+- Without a declaration `state` is plain data and a submitted patch is any plain
+  record.
+- A session created without `state` reports none, and its schema is not asked,
+  until the application submits a patch or the backend sends a state. The
+  request still carries `{}` until then.
+- The native snapshot's `state` is always the literal document, the one each
+  request sends, whatever is declared. The schema's output is never sent to the
+  backend. A typed session's native `submit` accepts the declared keys too.
 
 ### Retry
 
@@ -194,6 +232,26 @@ otherwise resolves with the native re-run's outcome.
   was sent as uncertain and blocks further commands, so nothing could be retried.
 - A `RUN_ERROR` settles that the run failed, not that it did nothing. Work the
   backend did before failing can be repeated.
+
+### Regenerate
+
+The plain native owner has `regenerate(messageId, options?)`, with the same
+semantics as the Angular adapter's `regenerate`. It takes the `id` of a root
+assistant record, or of the reasoning record a reasoning-only answer is shown
+under, which is the `id` the core view gives that message. It keeps the history
+up to and including the user message before that record, drops everything after
+it, and sends a run with that history and the current state. The prompt is not
+added again. Regenerating an earlier answer drops every later turn.
+
+- It rejects without sending after disposal, while a run is active, while a
+  decision is waiting, for an id that is not an assistant record, and when no
+  user message precedes it.
+- A regenerate that fails with a backend `RUN_ERROR` can be sent again with
+  `retry`, from the same trimmed history.
+- The core view forwards it as the core session's `regenerate`, so React `Chat`
+  offers Regenerate on assistant messages.
+- The client-tool owner has no `regenerate`: its ledger owns the history of the
+  calls it ran, and trimming that history is not supported.
 
 ### Approvals
 

@@ -255,7 +255,8 @@ it('updates the same retained layout from latest shared state without mutating t
 });
 it('distinguishes unavailable data from valid empty lists and zero values', () => {
   const view = render(<RenderSpec spec={spec} registry={dashboardRegistry} />);
-  expect(screen.getAllByText('Waiting for dashboard data…')).toHaveLength(4);
+  // RenderSpec holds each view behind its placeholder until the bound data arrives.
+  expect(screen.getAllByText('Building UI…')).toHaveLength(4);
   view.rerender(
     <RenderSpec
       spec={spec}

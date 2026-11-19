@@ -44,7 +44,7 @@ export function evidence() {
     toolCalls: [tool],
     interrupts: [],
     subgraphs: [],
-    values: {},
+    state: {},
   };
   const after: GenerativeUiState = {
     ...before,
@@ -55,7 +55,7 @@ export function evidence() {
       { ...result, content: 'rendered' },
       final,
     ],
-    values: {
+    state: {
       dashboard: {},
       completed_turn_id: human.id,
       completed_answer_id: final.id,
@@ -85,7 +85,7 @@ export function evidence() {
     next: [],
     tasks: [],
     values: {
-      ...saved.values,
+      ...saved.state,
       messages: saved.messages.map((m) => ({
         id: m.id,
         type:
