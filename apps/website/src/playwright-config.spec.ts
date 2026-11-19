@@ -520,7 +520,7 @@ describe('Website Playwright configuration', () => {
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-computed-functions --no-parent',url:'http://127.0.0.1:4619'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-messages-python:smoke && node scripts/react-cockpit/serve.mjs chat-messages --no-parent',url:'http://127.0.0.1:4620'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-theming --no-parent --backend',url:'http://127.0.0.1:4644/__ready'}),
-      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-debug --no-parent',url:'http://127.0.0.1:4645'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-debug --no-parent --backend',url:'http://127.0.0.1:4645/__ready'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-a2ui --no-parent',url:'http://127.0.0.1:4646'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-input-python:smoke && node scripts/react-cockpit/serve.mjs chat-input --no-parent',url:'http://127.0.0.1:4621'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-interrupts-python:smoke && node scripts/react-cockpit/serve.mjs chat-interrupts --no-parent',url:'http://127.0.0.1:4622'}),

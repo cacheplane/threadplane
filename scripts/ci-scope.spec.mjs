@@ -261,7 +261,7 @@ describe('Debug actual CI owners', () => {
     assert.ok(debug, 'conditional Debug proof');
     const commands = [
       'npx nx run cockpit-chat-debug-python:test --skip-nx-cache',
-      'node --test --test-concurrency=1 scripts/react-cockpit/chat-debug-configuration.spec.mjs scripts/react-cockpit/chat-debug-fixture.spec.mjs',
+      'node --test --test-concurrency=1 scripts/react-cockpit/chat-debug-configuration.spec.mjs',
       'npx nx build core --skip-nx-cache',
       'node scripts/react-cockpit/chat-debug-native-session-probe.mjs',
     ];
