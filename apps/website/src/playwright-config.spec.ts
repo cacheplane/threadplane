@@ -467,7 +467,7 @@ describe('Website Playwright configuration', () => {
       }),
       expect.objectContaining({
         command:
-          'node scripts/react-cockpit/serve.mjs client-tools --no-parent',
+          'node scripts/react-cockpit/serve.mjs client-tools --no-parent --backend',
         url: 'http://127.0.0.1:4603',
       }),
       expect.objectContaining({
@@ -489,7 +489,7 @@ describe('Website Playwright configuration', () => {
       }),
       expect.objectContaining({
         command:
-          'node scripts/react-cockpit/serve.mjs deployment-runtime --no-parent',
+          'node scripts/react-cockpit/serve.mjs deployment-runtime --no-parent --backend',
         url: 'http://127.0.0.1:4608',
       }),
       expect.objectContaining({
