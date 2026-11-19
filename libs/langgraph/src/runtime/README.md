@@ -119,7 +119,12 @@ step delivered whole with its answer, were never observed arriving. The field is
 then absent, never zero. A correction that removes the reasoning removes its time.
 The measurement lives outside the deterministic reducer, is not stored or sent, and
 is lost with the session, so a reloaded conversation shows no durations. A network
-stall counts as reasoning time. Subgraph messages are not timed.
+stall counts as reasoning time.
+
+Assistant steps in `snapshot.subgraphs` are timed the same way, each child graph
+on its own clock, since namespaces can repeat message identifiers. A child
+graph's timings last as long as the session lists it: a new submission starts
+with no child graphs, so their durations go with them.
 
 ## Completed checkpoint forks
 
