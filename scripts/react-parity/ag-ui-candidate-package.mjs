@@ -36,6 +36,7 @@ export const reviewedSources = [
   ...[
     'activity-messages',
     'agent-session',
+    'child-projection',
     'client-tool-ledger',
     'client-tools',
     'create-http-request',
