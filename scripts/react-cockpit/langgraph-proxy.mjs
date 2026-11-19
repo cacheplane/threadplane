@@ -8,8 +8,10 @@
  * cannot produce on demand:
  *
  *   GET  /__requests          every /api and /developer-api request, in order
- *   POST /__ready             200 once `langgraph dev` answers /ok (graph loaded;
- *                             with `serve.mjs --backend`, after its lazy start)
+ *   GET|POST /__ready         200 once `langgraph dev` answers /ok (graph loaded;
+ *                             with `serve.mjs --backend`, after its lazy start).
+ *                             GET lets a Playwright webServer use it as its
+ *                             readiness URL, so the boot finishes before tests.
  *   GET  /__lifetime          { activeStream, activeHistory, activeTitle,
  *                               activeState, openResponses }
  *   GET  /__captures          per finished run: forwarded SSE text, saved
@@ -845,7 +847,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       held?.finish();
       return {};
     }],
-    '/__ready': ['POST', async () => {
+    '/__ready': [['GET', 'POST'], async () => {
       await ready();
       const answer = await send('GET', '/ok', { accept: 'application/json' }, Buffer.alloc(0));
       await readAll(answer);
@@ -920,7 +922,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     }
     if (Object.hasOwn(controls, pathname)) {
       const [method, run] = controls[pathname];
-      if (request.method !== method) {
+      if (![method].flat().includes(request.method)) {
         json(response, {}, 405);
         return true;
       }

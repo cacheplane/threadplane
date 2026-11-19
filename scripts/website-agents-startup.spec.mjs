@@ -22,9 +22,9 @@ const options = {
 const topics = ['planning', 'filesystem', 'subagents', 'skills', 'memory'];
 const manifest = () =>
   topics.map((topic, index) => ({
-    command: `npx nx run cockpit-deep-agents-${topic}-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-${topic} --no-parent`,
+    command: `node scripts/react-cockpit/serve.mjs deep-agents-${topic} --no-parent --backend`,
     cwd: '../..',
-    url: `http://127.0.0.1:${4628 + index}`,
+    url: `http://127.0.0.1:${4628 + index}${['planning', 'subagents'].includes(topic) ? '/__ready' : ''}`,
     reuseExistingServer: false,
     timeout: 180000,
   }));
@@ -53,7 +53,7 @@ test('manifest fails closed on missing, duplicate, mismatched or changed descrip
     { command: manifest()[0].command + '; echo unsafe' },
     { command: manifest()[0].command + '\n' },
     { command: manifest()[1].command },
-    { command: manifest()[0].command.replace(' && ', ' ; ') },
+    { command: manifest()[0].command.replace(' --backend', '') },
     { cwd: '.' },
     { reuseExistingServer: true },
     { timeout: 179999 },

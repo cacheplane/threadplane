@@ -99,7 +99,6 @@ const json = (response, value, status = 200) => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
-  if (aimockBackend && pathname !== '/') void aimockBackend.ensure().catch(() => undefined);
   if (agUiA2uiFixture && (await agUiA2uiFixture(request, response, pathname))) return;
   if (chatA2uiFixture) {
     if (pathname.startsWith('/__')) {
