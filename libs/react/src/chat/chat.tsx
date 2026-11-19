@@ -50,6 +50,8 @@ export interface ChatProps
   readonly renderMessage?: MessageListProps['renderMessage'];
   readonly className?: string;
   readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];
+  /** Generative UI dispatcher tools whose rows stay hidden; see `MessageListProps.genuiToolNames`. Keep stable. */
+  readonly genuiToolNames?: MessageListProps['genuiToolNames'];
   readonly toolLabel?: MessageListProps['toolLabel'];
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; execution and business confirmation remain app-owned. */
   readonly toolOutcome?: MessageListProps['toolOutcome'];
@@ -215,6 +217,7 @@ export function Chat({
   renderMessage,
   className,
   groupRelatedTools,
+  genuiToolNames,
   toolLabel,
   toolOutcome,
   renderToolCall,
@@ -420,6 +423,7 @@ export function Chat({
         rows={rows}
         renderMessage={renderMessage}
         groupRelatedTools={groupRelatedTools}
+        genuiToolNames={genuiToolNames}
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
         renderToolCall={renderToolCall}
