@@ -63,17 +63,42 @@ export async function withOwnedResources(work, report = {}, finish = () => {}) {
 
 async function installedConsumer(mode) {
   const assert = (await import('node:assert/strict')).default;
-  const { createServer } = await import('node:http');
+  const { createServer, get } = await import('node:http');
+  // One-shot reads on their own connection: the SDK's pooled keep-alive
+  // sockets to the same server must not carry the receipt reads.
+  const getJson = (url) =>
+    new Promise((resolve, reject) => {
+      get(url, { agent: false }, (answer) => {
+        let raw = '';
+        answer.setEncoding('utf8');
+        answer.on('data', (chunk) => (raw += chunk));
+        answer.on('end', () => {
+          try {
+            resolve(JSON.parse(raw));
+          } catch (error) {
+            reject(error);
+          }
+        });
+      }).on('error', reject);
+    });
   const { once } = await import('node:events');
   const { randomUUID } = await import('node:crypto');
   const { writeFileSync, readFileSync, realpathSync } = await import('node:fs');
   const { createRequire } = await import('node:module');
+  const { fileURLToPath } = await import('node:url');
   const require = createRequire(import.meta.url);
   const entry = require.resolve('@threadplane/langgraph');
   const sdkEntry = createRequire(entry).resolve('@langchain/langgraph-sdk');
   const { createSession } = await import(entry);
   const { Client } = await import(sdkEntry);
-  const { createChatA2uiFixture } = await import(process.env.A2UI_FIXTURE_URL);
+  // The repository that owns the backend: aimock replays chat/a2ui's shared
+  // fixtures into a real `langgraph dev`, behind the recording proxy.
+  const rootURL = new URL(process.env.A2UI_REPO_ROOT_URL);
+  assert.equal(rootURL.protocol, 'file:');
+  const { createAimockBackend } = await import(new URL('scripts/react-cockpit/aimock-backend.mjs', rootURL).href);
+  const { createLanggraphProxy } = await import(new URL('scripts/react-cockpit/langgraph-proxy.mjs', rootURL).href);
+  const { reactCockpitConfiguration } = await import(new URL('scripts/react-cockpit/configuration.mjs', rootURL).href);
+  const { backend: backendConfig } = reactCockpitConfiguration('chat-a2ui');
   assert.ok(
     realpathSync(entry).startsWith(
       realpathSync(process.cwd()) + '/node_modules/@threadplane/langgraph/'
@@ -94,16 +119,16 @@ async function installedConsumer(mode) {
   let fixture;
   await withOwnedResources(
     async (own) => {
-      fixture = createChatA2uiFixture();
-      own('fixture', () => fixture.close());
+      const backend = createAimockBackend({ root: fileURLToPath(rootURL), backend: backendConfig });
+      own('backend', async () => {
+        const pid = backend.pid;
+        await backend.close();
+        if (pid) assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
+      });
+      await backend.ensure();
+      const proxy = createLanggraphProxy({ upstream: `http://127.0.0.1:${backendConfig.langgraphPort}` });
       const server = createServer(async (req, res) => {
-        if (
-          !(await fixture(
-            req,
-            res,
-            new URL(req.url, 'http://localhost').pathname
-          ))
-        ) {
+        if (!(await proxy(req, res, new URL(req.url, 'http://localhost').pathname))) {
           res.writeHead(404);
           res.end();
         }
@@ -114,7 +139,15 @@ async function installedConsumer(mode) {
       });
       server.listen(0, '127.0.0.1');
       await once(server, 'listening');
-      const apiUrl = `http://127.0.0.1:${server.address().port}/api`;
+      const base = `http://127.0.0.1:${server.address().port}`;
+      const apiUrl = base + '/api';
+      // What the proxy recorded and what the real server streamed.
+      fixture = {
+        receipt: async () => ({
+          requests: await getJson(base + '/__requests'),
+          captures: await getJson(base + '/__captures'),
+        }),
+      };
       const client = new Client({
         apiUrl,
         apiKey: null,
@@ -205,9 +238,7 @@ async function installedConsumer(mode) {
         assert.deepEqual(exact.next, []);
         assert.deepEqual(exact.values.messages.slice(0, prior.length), prior);
         assert.equal(exact.values.messages.length, prior.length + 2);
-        const request = fixture
-          .receipt()
-          .requests.filter((r) => r.path.endsWith('/runs/stream'))
+        const request = (await fixture.receipt()).requests.filter((r) => r.path.endsWith('/runs/stream'))
           .at(-1);
         assert.deepEqual(request.body.stream_mode, [
           'values',
@@ -344,7 +375,7 @@ async function installedConsumer(mode) {
         }
         prior = exact.values.messages;
       }
-      const captured = fixture.receipt();
+      const captured = await fixture.receipt();
       assert.equal(
         captured.requests.filter((r) => r.path.endsWith('/runs/stream')).length,
         4
@@ -355,11 +386,29 @@ async function installedConsumer(mode) {
         ).length,
         4
       );
+      // Every run the consumer read back finished on the real server.
+      const runReads = await Promise.all(
+        captured.requests
+          .filter((r) => r.method === 'GET' && /\/runs\/[^/]+$/.test(r.path))
+          .map((r) =>
+            getJson(`http://127.0.0.1:${backendConfig.langgraphPort}` + r.path.replace(/^\/api/, ''))
+          )
+      );
       assert.deepEqual(
-        captured.runReads.map((row) => row.run.status),
+        runReads.map((run) => run.status),
         ['success', 'success', 'success', 'success']
       );
-      const callbacks = captured.events.flatMap((row) => row.events);
+      // The callbacks the real server streamed, as [event, data] pairs.
+      const callbacks = captured.captures.flatMap((row) =>
+        row.sse
+          .split(/\r?\n\r?\n/)
+          .map((frame) => {
+            const event = /^event: (.*)$/m.exec(frame)?.[1];
+            const data = /^data: (.*)$/m.exec(frame)?.[1];
+            return event && data ? [event.split('|')[0], JSON.parse(data)] : null;
+          })
+          .filter(Boolean)
+      );
       assert.ok(
         callbacks.some(
           ([kind, value]) =>
@@ -389,7 +438,7 @@ async function installedConsumer(mode) {
     },
     report,
     () => {
-      report.fixture = fixture?.receipt();
+      report.backend = backendConfig;
       writeFileSync('native-receipt.json', JSON.stringify(report) + '\n', {
         flag: 'wx',
         mode: 0o600,
@@ -554,19 +603,18 @@ async function runWorker(evidence, scenario, mode) {
       fileURLToPath(import.meta.url),
       join(evidence, 'probe-source.mjs')
     );
-    const fixture = join(root, 'scripts/react-cockpit/chat-a2ui-fixture.mjs');
-    copyFileSync(fixture, join(evidence, 'fixture-source.mjs'));
-    copyFileSync(
-      join(root, 'scripts/react-cockpit/chat-a2ui-wire.py'),
-      join(evidence, 'wire-source.py')
-    );
-    report.fixtureSha256 = sha(fixture);
-    report.wireSha256 = sha(
-      join(root, 'scripts/react-cockpit/chat-a2ui-wire.py')
-    );
+    // The backend the consumer runs against: aimock + `langgraph dev`, behind
+    // the recording proxy. Keep the exact sources as evidence.
+    for (const [name, relative] of [
+      ['aimock-backend-source.mjs', 'scripts/react-cockpit/aimock-backend.mjs'],
+      ['proxy-source.mjs', 'scripts/react-cockpit/langgraph-proxy.mjs'],
+    ]) {
+      copyFileSync(join(root, relative), join(evidence, name));
+      report[name] = sha(join(root, relative));
+    }
     const child = spawn(node, ['native-consumer.mjs'], {
       cwd: consumer,
-      env: { ...env, A2UI_FIXTURE_URL: pathToFileURL(fixture).href },
+      env: { ...env, A2UI_REPO_ROOT_URL: pathToFileURL(root + '/').href },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let stdout = '',
@@ -756,21 +804,17 @@ export async function runNativeProbe(options = {}) {
     }
   };
   try {
-    // Only explicit nonsecret fixture configuration crosses the worker boundary.
+    // Only the nonsecret locations `uv run langgraph dev` needs cross the
+    // worker boundary: uv, its cache and an explicit interpreter (the worker
+    // HOME is empty).
     if (!workerScenario) {
-      const { fixtureConfiguration } = await import('./chat-a2ui-fixture.mjs');
-      const config = fixtureConfiguration();
+      const uv = realpathSync(execFileSync('which', ['uv'], { encoding: 'utf8' }).trim());
       Object.assign(env, {
-        A2UI_FIXTURE_UV: config.uv,
-        A2UI_FIXTURE_PYTHON: config.python,
-        A2UI_FIXTURE_ENV: config.environment,
-        A2UI_FIXTURE_CACHE: config.cache,
+        PATH: `${dirname(node)}:${dirname(uv)}:/usr/bin:/bin`,
+        UV_CACHE_DIR: execFileSync(uv, ['cache', 'dir'], { encoding: 'utf8' }).trim(),
+        ...(process.env.UV_PYTHON ? { UV_PYTHON: process.env.UV_PYTHON } : {}),
       });
       report.environmentKeys = Object.keys(env).sort();
-      writeFileSync(
-        join(evidence, 'fixture-config.json'),
-        JSON.stringify(config, null, 2) + '\n'
-      );
     }
     child = spawn(
       node,

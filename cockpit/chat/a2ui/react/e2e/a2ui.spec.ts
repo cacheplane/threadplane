@@ -4,11 +4,20 @@ import { writeFile } from 'node:fs/promises';
 const base = '/chat/a2ui/react/';
 const current = (page: Page) => page.getByRole('region', { name: 'Current flight preview', exact: true });
 const earlier = (page: Page) => page.getByRole('region', { name: 'Earlier flight preview', exact: true });
-const lifetime = async (request: APIRequestContext) => (await request.get('/__lifetime')).json();
+// Backend: aimock replays cockpit/chat/a2ui/angular/e2e/fixtures (the A2UI
+// model's outputs for these flows, keyed on each node's full system prompt)
+// into a real `langgraph dev`, whose real tools find routes and look flights
+// up. The recording proxy (scripts/react-cockpit/langgraph-proxy.mjs) records
+// /api requests and holds the next run stream.
+/** Every /api request so far, as the proxy recorded it. */
+const lifetime = async (request: APIRequestContext) => ({ requests: await (await request.get('/__requests')).json() });
+/** Whether the proxy holds a run stream right now. */
+const held = async (request: APIRequestContext) => (await (await request.get('/__lifetime')).json()).activeStream;
+const hold = (request: APIRequestContext) => request.post('/__hold/stream', { data: { immediate: true } });
 const streamRequests = (receipt: any) => receipt.requests.filter((r: any) => r.method === 'POST' && r.path.endsWith('/runs/stream'));
 async function save(request: APIRequestContext, info: TestInfo, extra: unknown = {}) {
   const path = info.outputPath('actual-graph-and-transport.json');
-  await writeFile(path, JSON.stringify({ receipt: await lifetime(request), extra }, null, 2));
+  await writeFile(path, JSON.stringify({ receipt: await lifetime(request), captures: await (await request.get('/__captures')).json(), extra }, null, 2));
   await info.attach('actual-graph-and-transport.json', { path, contentType: 'application/json' });
 }
 async function form(page: Page) {
@@ -78,9 +87,10 @@ test('installed native application saves request, edited Search, Select and serv
   expect(search.action).toMatchObject({ name: 'bookingSubmit', surfaceId: 'booking', context: { formId: 'booking', origin: ['SFO'], dest: ['SEA'], date: '2027-02-17', passengers: 3, fare_class: ['Business'] } });
   expect(JSON.parse(runs[2].body.input.messages[0].content).action).toMatchObject({ name: 'flightSelect', context: { flightId: 'UA204' } });
   expect(JSON.parse(runs[3].body.input.messages[0].content).action.name).toBe('modifySearch');
-  expect(receipt.runReads).toHaveLength(4);
-  expect(receipt.runReads.every((r: any) => r.run.status === 'success' && r.threadId === threadId)).toBe(true);
-  expect(new Set(receipt.runReads.map((r: any) => r.run.run_id)).size).toBe(4);
+  const runReads = receipt.requests.filter((r: any) => r.method === 'GET' && /\/runs\/[^/]+$/.test(r.path));
+  expect(runReads).toHaveLength(4);
+  expect(runReads.every((r: any) => r.path.startsWith(`/api/threads/${threadId}/runs/`))).toBe(true);
+  expect(new Set(runReads.map((r: any) => r.path)).size).toBe(4);
   await expect.poll(() => exactReads.length).toBe(4);
   for (const [index, state] of exactReads.entries()) {
     expect(state.checkpoint).toMatchObject({ thread_id: threadId, checkpoint_ns: '' });
@@ -89,10 +99,10 @@ test('installed native application saves request, edited Search, Select and serv
     expect(state.values.messages).toHaveLength((index + 1) * 2);
     expect(state.values.messages.at(-2).id).toBe(runs[index].body.input.messages[0].id);
   }
-  expect(receipt.proofs.every((p: any) => p.actualCompiledGraph && p.networkConnectAttempts === 0 && p.sourceSha256 === '9a54abf5d03dfd7d285265fc4f3c37ca3b5a830dee319cf52093584907ea8462' && p.lockSha256 === '56247b7f8c8a4cd27f43238a3c99f37f251c8e3a850a94d1761d7ac472abf303')).toBe(true);
-  expect(JSON.stringify(receipt.proofs)).toContain('_find_routes_impl');
-  expect(JSON.stringify(receipt.events)).toContain('generate_title');
-  expect(JSON.stringify(receipt.events)).toContain('messages');
+  // What the real server streamed: title and message callbacks included.
+  const streamed = JSON.stringify(await (await request.get('/__captures')).json());
+  expect(streamed).toContain('generate_title');
+  expect(streamed).toContain('event: messages');
   await save(request, info, { exactReads });
 });
 
@@ -116,9 +126,9 @@ test('invalid lexical drafts and direct user activation send zero actions; rapid
   await expect(current(page).getByText('Enter a real date as YYYY-MM-DD.')).toBeVisible();
   expect(streamRequests(await lifetime(request))).toHaveLength(1);
   await edit(page);
-  await request.post('/__hold/stream');
+  await hold(request);
   await search.evaluate((button: HTMLButtonElement) => { button.click(); button.click(); });
-  await expect.poll(async () => (await lifetime(request)).heldCompleted).toBe(1);
+  await expect.poll(async () => held(request)).toBe(true);
   expect(streamRequests(await lifetime(request))).toHaveLength(2);
   await request.post('/__release');
   await expect(current(page).getByRole('button', { name: 'Select', exact: true })).toBeVisible();
@@ -173,16 +183,16 @@ test('untrusted saved boundaries fail closed, retain prior cards, and late held 
   for (const command of ['Stop', 'New conversation']) {
     await page.getByRole('button', { name: 'New conversation', exact: true }).click();
     await form(page); await edit(page);
-    await request.post('/__hold/stream');
+    await hold(request);
     await current(page).getByRole('button', { name: 'Search flights', exact: true }).click();
-    await expect.poll(async () => (await lifetime(request)).heldCompleted).toBe(1);
+    await expect.poll(async () => held(request)).toBe(true);
     await page.getByRole('button', { name: command, exact: true }).click();
-    await expect.poll(async () => (await lifetime(request)).heldStreams).toBe(0);
+    await expect.poll(async () => held(request)).toBe(false);
     await request.post('/__release');
     await expect(current(page)).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Select', exact: true })).toHaveCount(0);
   }
-  await save(request, info, { failures, lifetimeMeaning: 'Actual graph completed; HTTP delivery was held. No server-side graph-cancellation claim.' });
+  await save(request, info, { failures, lifetimeMeaning: 'The proxy held the real run stream after its first event; Stop or New closed it.' });
 });
 
 test('390px keyboard workflow remains readable and pagehide revokes held HTTP delivery and views', async ({ page, request }, info) => {
@@ -207,16 +217,65 @@ test('390px keyboard workflow remains readable and pagehide revokes held HTTP de
   await expect(current(page).getByRole('button', { name: 'Modify search', exact: true })).toBeVisible();
   await noOverflow(page);
   await page.screenshot({ path: info.outputPath('mobile-confirmation.png'), fullPage: true });
-  await request.post('/__hold/stream');
+  await hold(request);
   await current(page).getByRole('button', { name: 'Modify search', exact: true }).click();
-  await expect.poll(async () => (await lifetime(request)).heldCompleted).toBe(1);
+  await expect.poll(async () => held(request)).toBe(true);
   await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
   await expect(page.locator('#root')).toBeEmpty();
-  await expect.poll(async () => (await lifetime(request)).heldStreams).toBe(0);
+  await expect.poll(async () => held(request)).toBe(false);
   await request.post('/__release');
   await expect(page.locator('#root')).toBeEmpty();
-  const receipt = await lifetime(request);
-  expect(receipt.streamCloses.some((closed: any) => closed.held && closed.destroyed)).toBe(true);
-  expect(streamRequests(receipt)).toHaveLength(4);
-  await save(request, info, { scope: 'Chromium desktop/mobile viewport, labels, Tab/Enter, synthetic pagehide; graph completed before held HTTP close.' });
+  expect(streamRequests(await lifetime(request))).toHaveLength(4);
+  await save(request, info, { scope: 'Chromium desktop/mobile viewport, labels, Tab/Enter, synthetic pagehide closing a held run stream.' });
+});
+
+// The real graph's own model-failure paths, reached through model output.
+// Injected data: aimock fixtures tagged `[scenario:<name>]` in
+// cockpit/chat/a2ui/angular/e2e/fixtures/c-a2ui.json answer the title prompt
+// with a provider error, or the booking-form designer with a form whose fare
+// option is `Economomy` (outside the schema's literals).
+async function graphTurn(request: APIRequestContext, content: string) {
+  const thread = await (await request.post('/api/threads', { data: {} })).json();
+  const stream = await request.post(`/api/threads/${thread.thread_id}/runs/stream`, {
+    data: { assistant_id: 'c-a2ui', input: { messages: [{ type: 'human', content }] }, stream_mode: ['values', 'messages-tuple'] },
+  });
+  expect(stream.status()).toBe(200);
+  const sse = await stream.text();
+  const runId = /"run_id":\s*"([^"]+)"/.exec(sse)?.[1];
+  expect(runId).toBeTruthy();
+  const run = await (await request.get(`/api/threads/${thread.thread_id}/runs/${runId}`)).json();
+  const state = await (await request.get(`/api/threads/${thread.thread_id}/state`)).json();
+  const captures = await (await request.get('/__captures')).json();
+  return { sse, run, state, capture: captures.at(-1) };
+}
+const formMessage = (state: any) => state.values.messages.at(-1).content as string;
+
+test('a failed title model call is swallowed: the form still saves and the thread keeps no title', async ({ request }) => {
+  const { sse, run, state, capture } = await graphTurn(request, 'I want to fly LAX to JFK [scenario:title-down]');
+  expect(run.status).toBe('success');
+  expect(state.next).toEqual([]);
+  expect(state.values.messages).toHaveLength(2);
+  expect(formMessage(state)).toMatch(/^---a2ui_JSON---\n/);
+  expect(formMessage(state)).not.toMatch(/Book a flight \(fallback\)/);
+  expect(sse).not.toContain('generate_title');
+  expect(capture.titleAfter ?? null).toBeNull();
+});
+
+test('one invalid structured form is retried and the corrected form saves', async ({ request }) => {
+  const { run, state } = await graphTurn(request, 'I want to fly LAX to JFK [scenario:retry]');
+  expect(run.status).toBe('success');
+  expect(state.values.messages).toHaveLength(2);
+  // Without the retry the invalid first answer would have ended in the fallback form.
+  expect(formMessage(state)).toMatch(/^---a2ui_JSON---\n/);
+  expect(formMessage(state)).not.toMatch(/Book a flight \(fallback\)/);
+  expect(formMessage(state)).not.toContain('Economomy');
+});
+
+test('three invalid structured forms end in the graph\'s fallback form, seeded from the request', async ({ request }) => {
+  const { run, state } = await graphTurn(request, 'I want to fly LAX to JFK [scenario:invalid]');
+  expect(run.status).toBe('success');
+  expect(state.values.messages).toHaveLength(2);
+  expect(formMessage(state)).toMatch(/Book a flight \(fallback\)/);
+  const data = formMessage(state).split('\n').slice(1).filter(Boolean).map((line) => JSON.parse(line)).find((e) => e.updateDataModel)?.updateDataModel.value;
+  expect(data).toMatchObject({ origin: ['LAX'], dest: ['JFK'], passengers: 1, fare_class: ['Economy'] });
 });

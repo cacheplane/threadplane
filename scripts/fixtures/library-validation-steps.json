@@ -142,11 +142,11 @@
       "sha256": "04a604dbc1efa86d0c4f8ace3da7949977928887bf7d884399b764b3888b7f48"
     },
     {
-      "step": "- name: Verify canonical A2UI native fixtures",
+      "step": "- name: Verify canonical A2UI native graph",
       "lanes": [
         "packages"
       ],
-      "sha256": "eb0c97a21ac19f77ba597c684a0db23d513ba27fc7b9475781a270e63d6923bf"
+      "sha256": "c57fb15056d86cbeeff0a65fcd6ebb2c41b66151fa04de48c06ba0c83bee6c27"
     },
     {
       "step": "- name: Configure bounded Ubuntu package downloads",

@@ -18,6 +18,39 @@ import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { LLMock } from 'aimock';
 
+/** Every process below `pid`, deepest first. */
+function descendants(pid) {
+  let children = [];
+  try {
+    children = execFileSync('pgrep', ['-P', String(pid)], { encoding: 'utf8' })
+      .split('\n')
+      .filter(Boolean)
+      .map(Number);
+  } catch {
+    // no children
+  }
+  return children.flatMap((child) => [...descendants(child), child]);
+}
+
+function signal(pids, name) {
+  for (const pid of pids) {
+    try {
+      process.kill(pid, name);
+    } catch {
+      // already gone
+    }
+  }
+}
+
+function alive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code === 'EPERM';
+  }
+}
+
 export function createAimockBackend({ root, backend }) {
   let starting;
   let mock;
@@ -83,18 +116,20 @@ export function createAimockBackend({ root, backend }) {
       return child?.pid ?? null;
     },
     async close() {
-      // `uv run` does not forward signals to the server it started: stop the
-      // server processes under it first, then uv itself, and wait for it.
+      // `uv run` does not forward signals to the server it started, and the
+      // server starts workers of its own: stop every process under uv, then
+      // uv itself, and wait until all of them are gone.
       if (child?.pid && child.exitCode === null && child.signalCode === null) {
         const exited = new Promise((done) => child.once('exit', done));
-        try {
-          execFileSync('pkill', ['-TERM', '-P', String(child.pid)]);
-        } catch {
-          // no children left
-        }
+        const tree = descendants(child.pid);
+        signal(tree, 'SIGTERM');
         child.kill('SIGTERM');
-        const timeout = setTimeout(() => child.kill('SIGKILL'), 10_000);
+        const timeout = setTimeout(() => {
+          signal(tree, 'SIGKILL');
+          child.kill('SIGKILL');
+        }, 10_000);
         await exited;
+        while (tree.some(alive)) await delay(25);
         clearTimeout(timeout);
       }
       await mock?.stop();

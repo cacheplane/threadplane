@@ -196,7 +196,7 @@ it('pins CI runners to the installed browser recipe and canonical Python baselin
   assert.match(setup ?? '', /python-version: '3\.12'/);
   const provider = await readFile('cockpit/chat/a2ui/python/pyproject.toml', 'utf8');
   assert.match(provider, /requires-python = ">=3\.12"/);
-  const proof = library.split('      - name: Verify canonical A2UI native fixtures')[1]?.split('\n      - name:')[0];
+  const proof = library.split('      - name: Verify canonical A2UI native graph')[1]?.split('\n      - name:')[0];
   assert.match(proof ?? '', /python find --no-project --no-config --no-python-downloads 3\.12/);
   assert.match(proof ?? '', /env -i HOME=/);
   assert.doesNotMatch(proof ?? '', /UV_PYTHON_INSTALL_DIR=/);
@@ -376,10 +376,11 @@ describe('native canonical provider inputs', () => {
 
 describe('canonical A2UI native regression CI ownership', () => {
   const inputs = [
-    'scripts/react-cockpit/chat-a2ui-wire.py',
-    'scripts/react-cockpit/chat-a2ui-fixture.mjs',
-    'scripts/react-cockpit/chat-a2ui-fixture.spec.mjs',
     'scripts/react-cockpit/chat-a2ui-native-probe.mjs',
+    'scripts/react-cockpit/chat-a2ui-native-probe.spec.mjs',
+    'scripts/react-cockpit/aimock-backend.mjs',
+    'scripts/react-cockpit/langgraph-proxy.mjs',
+    'cockpit/chat/a2ui/angular/e2e/fixtures/c-a2ui.json',
     'cockpit/chat/a2ui/python/src/graph.py',
     'cockpit/chat/a2ui/python/src/nested/helper.py',
     'cockpit/chat/a2ui/python/tests/test_booking_form.py',
@@ -410,12 +411,12 @@ describe('canonical A2UI native regression CI ownership', () => {
     });
   }
   for (const file of [
-    'scripts/react-cockpit/chat-a2ui-wire.py.bak',
-    'scripts/react-cockpit/chat-a2ui-fixture-other.mjs',
-    'scripts/react-cockpit/chat-a2ui-fixture.spec.mjs/extra',
+    'scripts/react-cockpit/chat-a2ui-native-probe.spec.mjs/extra',
     'scripts/react-cockpit/chat-a2ui-native-probe.mjs.bak',
-    'scripts/react-cockpit/chat-debug-fixture.mjs',
-    'other/scripts/react-cockpit/chat-a2ui-wire.py',
+    'scripts/react-cockpit/aimock-backend.mjs.bak',
+    'scripts/react-cockpit/chat-debug-native-session-probe.mjs',
+    'cockpit/chat/a2ui/angular/e2e/fixtures/other.json',
+    'other/scripts/react-cockpit/chat-a2ui-native-probe.mjs',
     'cockpit/chat/a2ui/python-other/src/graph.py',
     'cockpit/chat/a2ui/python/src-other/graph.py',
     'cockpit/chat/a2ui/python/uv.lock.bak',
@@ -447,7 +448,7 @@ describe('canonical A2UI native regression CI ownership', () => {
     assert.match(library, /LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware/);
     const builds = library.indexOf('npx nx run-many -t build --projects=$LIBS --configuration=production');
     assert.ok(builds >= 0, 'all-library production build prerequisite is present');
-    const marker = '      - name: Verify canonical A2UI native fixtures';
+    const marker = '      - name: Verify canonical A2UI native graph';
     const position = library.indexOf(marker);
     assert.ok(position > setup && position > foundations && position > builds, 'A2UI regression follows Python and all required builds');
     const proof = library.slice(position).split('\n      - name:')[0];
@@ -460,19 +461,21 @@ describe('canonical A2UI native regression CI ownership', () => {
     assert.equal((proof.match(/env -i /g) ?? []).length, 3, 'preparation, unit tests and native fixtures each close inherited environment');
     const prepare = proof.indexOf('"$uv_path" run --frozen --python "$python_path" --no-env-file --no-config --no-python-downloads');
     const unit = proof.indexOf('"$A2UI_FIXTURE_ENV/bin/python" -E -B -m unittest discover -s cockpit/chat/a2ui/python/tests -p test_booking_form.py');
-    const execute = proof.indexOf('"$node_path" --test --test-concurrency=1 scripts/react-cockpit/chat-a2ui-fixture.spec.mjs');
+    const execute = proof.indexOf('"$node_path" --test --test-concurrency=1 --test-force-exit scripts/react-cockpit/chat-a2ui-configuration.spec.mjs scripts/react-cockpit/chat-a2ui-native-probe.spec.mjs');
     assert.ok(prepare >= 0 && unit > prepare && execute > unit, 'frozen preparation precedes exact unit discovery and then the maintained native regression');
     const unitBlock = proof.slice(proof.lastIndexOf('env -i ', unit), unit);
     assert.match(unitBlock, /^env -i HOME="\$fixture_home" PATH="\$fixture_path" LANG=C.UTF-8 \\\n/);
     assert.match(unitBlock, /PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \\\n/);
     assert.doesNotMatch(unitBlock, /\b(?:OPENAI|ANTHROPIC|LANGSMITH_API|LANGCHAIN_API)[A-Z_]*=/);
     assert.match(proof, /--project cockpit\/chat\/a2ui\/python python -E -B -c 'import langgraph'/);
+    // The native probe runs aimock + `langgraph dev` from the frozen cache and
+    // interpreter the preparation step used, with no provider credentials.
     for (const configuration of [
-      'A2UI_FIXTURE_UV="$uv_path"',
-      'A2UI_FIXTURE_PYTHON="$python_path"',
-      'A2UI_FIXTURE_ENV="$A2UI_FIXTURE_ENV"',
-      'A2UI_FIXTURE_CACHE="$A2UI_FIXTURE_CACHE"',
+      'UV_CACHE_DIR="$A2UI_FIXTURE_CACHE"',
+      'UV_PYTHON="$python_path"',
     ]) assert.ok(proof.includes(configuration), configuration);
+    const executeBlock = proof.slice(proof.lastIndexOf('env -i ', execute), execute);
+    assert.doesNotMatch(executeBlock, /\b(?:OPENAI|ANTHROPIC|LANGSMITH_API|LANGCHAIN_API)[A-Z_]*=/);
   });
 });
 
