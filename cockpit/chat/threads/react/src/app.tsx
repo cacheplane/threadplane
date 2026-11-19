@@ -7,10 +7,16 @@ import {
   MessageList,
   Reasoning,
   Citations,
+  ThreadSidebar,
 } from '@threadplane/react/chat';
 import { Markdown } from '@threadplane/react/markdown';
 import type { MessageRow } from '@threadplane/content/messages';
-import { createThreadsClient, type ThreadsConnection } from './connection';
+import type { ThreadDirectory } from '@threadplane/core';
+import {
+  createThreadsClient,
+  createThreadsDirectory,
+  type ThreadsConnection,
+} from './connection';
 import { createThreadsApplication } from './application';
 
 /** Render existing native content stores without retaining them outside their session owner. */
@@ -32,6 +38,11 @@ export function renderMessage(row: MessageRow) {
     </article>
   );
 }
+/** Shown when a listed conversation cannot be opened on this page. */
+export const UNAVAILABLE_NOTICE =
+  'This conversation could not be confirmed and cannot be continued here.';
+export const EARLIER_VISIT_NOTICE =
+  'This conversation was saved on an earlier visit and cannot be continued here.';
 type Props = {
   readonly connection: ThreadsConnection;
   readonly onReady: () => void;
@@ -53,7 +64,19 @@ function ThreadsOwner({ connection, onReady }: Props) {
   const [application] = useState(() =>
     createThreadsApplication(createThreadsClient(connection))
   );
+  // Created and disposed by the same effect, so a StrictMode remount gets a
+  // fresh directory instead of one its first cleanup already disposed.
+  const [directory, setDirectory] = useState<ThreadDirectory | null>(null);
+  useEffect(() => {
+    const created = createThreadsDirectory(connection);
+    setDirectory(created);
+    return () => created.dispose();
+  }, [connection]);
+  const [projectId, setProjectId] = useState<string | null>(null);
   const snapshot = useAgent(application);
+  const [notice, setNotice] = useState<string | null>(null);
+  // A new view (selection, New, removal) replaces any earlier notice.
+  useEffect(() => setNotice(null), [snapshot.viewGeneration]);
   useEffect(() => {
     onReady();
   }, [onReady]);
@@ -63,6 +86,17 @@ function ThreadsOwner({ connection, onReady }: Props) {
     },
     [application]
   );
+  // The sidebar refreshes itself on mount and after each row command. A new
+  // saved conversation, a saved response (the graph writes the title) and a
+  // loaded conversation also refresh it.
+  const confirmedThreads = snapshot.conversations
+    .map((record) => record.threadId)
+    .join(' ');
+  useEffect(() => {
+    if (!directory) return;
+    if (!confirmedThreads && snapshot.confirmation === null) return;
+    directory.refresh().catch(() => undefined);
+  }, [directory, confirmedThreads, snapshot.confirmation]);
   const status = snapshot.busy
     ? snapshot.activity === 'creating'
       ? 'Creating conversation…'
@@ -115,28 +149,46 @@ function ThreadsOwner({ connection, onReady }: Props) {
         </button>
       </header>
       <p>
-        Switch between conversations created on this page. The list and drafts
-        last while this page stays open; saved history is checked before
-        continuing. Titles are optional.
+        The sidebar lists the conversations saved on the server: rename, pin,
+        reorder, archive, delete or move them into a project from each row menu,
+        and select a project to list only its conversations. Conversations
+        created on this page can be continued; their drafts last while this page
+        stays open and saved history is checked before continuing. Titles are
+        optional.
       </p>
       <div className="threads-layout">
         <nav aria-label="Conversations" className="conversation-picker">
-          <h2>Conversations</h2>
-          {snapshot.conversations.length === 0 && (
-            <p>No saved conversations on this page yet.</p>
+          {directory && (
+            <ThreadSidebar
+              directory={directory}
+              activeThreadId={snapshot.threadId}
+              onSelect={(threadId) => {
+                // Only conversations confirmed on this page can be continued.
+                const record = application
+                  .getSnapshot()
+                  .conversations.find((entry) => entry.threadId === threadId);
+                if (!record) setNotice(EARLIER_VISIT_NOTICE);
+                else if (record.availability === 'unavailable')
+                  setNotice(UNAVAILABLE_NOTICE);
+                else {
+                  setNotice(null);
+                  void application.select(record.key);
+                }
+              }}
+              onNewChat={() => void application.newConversation()}
+              onActiveRemoved={() => void application.newConversation()}
+              // Selecting a project lists only its conversations; selecting it
+              // again lists them all.
+              selectedProjectId={projectId}
+              onProjectSelect={(id) =>
+                setProjectId((current) => (current === id ? null : id))
+              }
+              labels={{ empty: 'No saved conversations yet.' }}
+            />
           )}
-          {snapshot.conversations.map((record) => (
-            <button
-              type="button"
-              key={record.key}
-              aria-pressed={snapshot.selectedKey === record.key}
-              disabled={snapshot.busy || record.availability === 'unavailable'}
-              onClick={() => void application.select(record.key)}
-            >
-              {record.label}
-              {record.availability === 'unavailable' ? ' (unavailable)' : ''}
-            </button>
-          ))}
+          <p className="conversation-notice" aria-live="polite">
+            {notice}
+          </p>
         </nav>
         <section
           className="conversation-panel"

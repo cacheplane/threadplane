@@ -3210,3 +3210,16 @@
   .tp-genui-skeleton { color: CanvasText; }
   .tp-genui-skeleton__row { background: GrayText; }
 }
+.tp-thread-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-inline-size: 0;
+}
+.tp-thread-sidebar[aria-busy='true'] .tp-chat-sidenav-sections__section {
+  opacity: 0.6;
+}
+.tp-thread-sidebar__error {
+  padding: 0.5rem 0.75rem;
+  font-size: var(--tp-chat-font-size-sm, 0.875rem);
+}

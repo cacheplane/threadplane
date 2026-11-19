@@ -4,7 +4,7 @@ test('mobile A/B/A preserves drafts and a usable transcript after viewport reduc
   page,
   request,
 }) => {
-  await request.post('/__reset');
+  await request.post('/__purge');
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto('/chat/threads/react/');
   const input = () =>
@@ -15,7 +15,8 @@ test('mobile A/B/A preserves drafts and a usable transcript after viewport reduc
   });
   const picker = page
     .getByRole('navigation', { name: 'Conversations' })
-    .getByRole('button');
+    .getByRole('list', { name: 'Recent' })
+    .locator('.tp-thread-list__button');
   await input().fill('A first');
   await input().press('Enter');
   await expect(page.getByRole('status')).toHaveText('Response saved.');
@@ -27,7 +28,8 @@ test('mobile A/B/A preserves drafts and a usable transcript after viewport reduc
   await input().press('Enter');
   await expect(page.getByRole('status')).toHaveText('Response saved.');
   await input().fill('B mobile draft');
-  await picker.nth(0).click();
+  // The server lists the newest-created conversation (B) first.
+  await picker.last().click();
   await expect(page.getByRole('status')).toHaveText('Conversation loaded.');
   await expect(input()).toHaveValue('A mobile draft');
   await expect(transcript).toContainText('A first');
@@ -37,7 +39,7 @@ test('mobile A/B/A preserves drafts and a usable transcript after viewport reduc
   await expect(input()).toBeFocused();
   await expect(input()).toHaveValue('A mobile draft');
   expect((await transcript.boundingBox())?.height).toBeGreaterThan(80);
-  await picker.nth(1).click();
+  await picker.first().click();
   await expect(page.getByRole('status')).toHaveText('Conversation loaded.');
   await expect(input()).toHaveValue('B mobile draft');
   await expect(transcript).toContainText('B first');

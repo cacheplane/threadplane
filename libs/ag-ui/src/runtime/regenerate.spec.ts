@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { createAgentSession } from './agent-session';
 import { createSession } from './create-session';
 import { bindingFixture } from './testing/binding-fixture';
 
@@ -29,7 +28,7 @@ function regenerateOf<T>(
 
 /** Two settled turns: Rome then Paris. */
 async function twoTurns(fixture: Fixture) {
-  const session = createAgentSession(fixture.session);
+  const session = fixture.session;
   const first = session.submit('Plan Rome');
   const one = await fixture.started();
   answer(one, 'rome', 'Rome plan');
@@ -43,7 +42,7 @@ async function twoTurns(fixture: Fixture) {
   return { session, one, two };
 }
 
-describe('regenerate over the native owner', () => {
+describe('regenerate', () => {
   it('answers the latest prompt again and drops the earlier answer', async () => {
     const fixture = bindingFixture();
     try {
@@ -224,12 +223,11 @@ describe('regenerate over the native owner', () => {
     }
   });
 
-  it('is absent on the client-tool owner and on its core view', () => {
+  it('is absent on the client-tool session', () => {
     const owner = createSession(
       { threadId: 't', url: 'https://native-fixture.invalid/run' },
       { f: { description: 'f', handler: () => 'ok' } }
     );
     expect('regenerate' in owner).toBe(false);
-    expect('regenerate' in createAgentSession(owner)).toBe(false);
   });
 });

@@ -9,6 +9,7 @@ import {
   ThreadList,
   type ThreadActionAdapter,
   type ThreadListItem,
+  type ThreadListProps,
 } from './thread-list.js';
 
 /** Supplies the conversations, archived conversations and projects a sidebar shows, with their selection callbacks and row actions. */
@@ -24,6 +25,10 @@ export interface ChatSidenavSectionsProps {
   readonly onThreadSelect?: (threadId: string) => void;
   /** Row actions for both conversation lists; see `ThreadListProps.actions`. */
   readonly threadActions?: ThreadActionAdapter | null;
+  /** Replaces each conversation row in both lists; see `ThreadListProps.renderItem`. */
+  readonly renderThread?: ThreadListProps['renderItem'];
+  /** App commands appended to each conversation row menu; see `ThreadListProps.extraActions`. */
+  readonly extraThreadActions?: ThreadListProps['extraActions'];
   /** Projects, listed under "Projects" and offered as move destinations. Null or absent omits the section. */
   readonly projects?: readonly ProjectListItem[] | null;
   readonly selectedProjectId?: string | null;
@@ -40,6 +45,8 @@ export interface ChatSidenavSectionsProps {
   readonly recentLabel?: string;
   readonly archivedLabel?: string;
   readonly archivedEmptyLabel?: string;
+  /** Shown under "Recent" in place of an empty list. Absent keeps the empty list. */
+  readonly recentEmptyLabel?: string;
 }
 
 const ignore = () => undefined;
@@ -57,6 +64,8 @@ export function ChatSidenavSections({
   activeThreadId,
   onThreadSelect = ignore,
   threadActions,
+  renderThread,
+  extraThreadActions,
   projects,
   selectedProjectId,
   onProjectSelect = ignore,
@@ -69,6 +78,7 @@ export function ChatSidenavSections({
   recentLabel = 'Recent',
   archivedLabel = 'Archived',
   archivedEmptyLabel = 'No archived conversations.',
+  recentEmptyLabel,
 }: ChatSidenavSectionsProps) {
   const id = useId();
   const [archivedOpen, setArchivedOpen] = useState(false);
@@ -129,15 +139,23 @@ export function ChatSidenavSections({
           <h2 id={`${id}-recent`} className="tp-chat-sidenav-sections__heading">
             {recentLabel}
           </h2>
-          <ThreadList
-            label={recentLabel}
-            threads={threads}
-            activeThreadId={activeThreadId}
-            onSelect={onThreadSelect}
-            actions={threadActions}
-            projects={destinations}
-            now={now}
-          />
+          {threads.length === 0 && recentEmptyLabel !== undefined ? (
+            <p className="tp-chat-sidenav-sections__empty">
+              {recentEmptyLabel}
+            </p>
+          ) : (
+            <ThreadList
+              label={recentLabel}
+              threads={threads}
+              activeThreadId={activeThreadId}
+              onSelect={onThreadSelect}
+              actions={threadActions}
+              projects={destinations}
+              now={now}
+              renderItem={renderThread}
+              extraActions={extraThreadActions}
+            />
+          )}
         </section>
       )}
       {archivedThreads != null && (
@@ -186,6 +204,8 @@ export function ChatSidenavSections({
                 actions={threadActions}
                 projects={destinations}
                 now={now}
+                renderItem={renderThread}
+                extraActions={extraThreadActions}
               />
             )}
           </div>

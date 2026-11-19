@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type { RunAgentInput } from '@ag-ui/client';
 import { createSession } from './create-session';
-import { initialObservation, type SessionSnapshot } from './session-observation';
+import { initialObservation, type Observation } from './session-observation';
 import { createPublication } from './session-publication';
+/** A publication that publishes its observation as it is. */
+const observed = (initial: Parameters<typeof createPublication>[0]) =>
+  createPublication(initial, (observation) => observation);
 
-const withState = (previous: SessionSnapshot, state: unknown): SessionSnapshot =>
-  Object.freeze({ ...previous, state: state as SessionSnapshot['state'] });
+const withState = (previous: Observation, state: unknown): Observation =>
+  Object.freeze({ ...previous, state: state as Observation['state'] });
 
 describe('session plan', () => {
   it('reads the plan from the todos state key, skipping malformed steps', () => {
-    const store = createPublication(
+    const store = observed(
       initialObservation([], {
         todos: [
           { content: ' Find flights ', status: 'completed' },
@@ -30,14 +33,14 @@ describe('session plan', () => {
   });
 
   it('leaves plan absent when the state declares no todos', () => {
-    const store = createPublication(initialObservation([], { count: 1 }));
+    const store = observed(initialObservation([], { count: 1 }));
     expect('plan' in store.getSnapshot()).toBe(false);
     store.publish(withState(store.getSnapshot(), { todos: 'not a list' }));
     expect('plan' in store.getSnapshot()).toBe(false);
   });
 
   it('shares unchanged steps and the whole list across state updates', () => {
-    const store = createPublication(
+    const store = observed(
       initialObservation([], {
         todos: [
           { content: 'One', status: 'in_progress' },
@@ -71,7 +74,7 @@ describe('session plan', () => {
   });
 
   it('keeps the plan reference when the state reference is unchanged', () => {
-    const store = createPublication(
+    const store = observed(
       initialObservation([], { todos: [{ content: 'One', status: 'pending' }] })
     );
     const plan = store.getSnapshot().plan;
@@ -81,7 +84,7 @@ describe('session plan', () => {
   });
 
   it('drops the plan when the state no longer holds todos', () => {
-    const store = createPublication(
+    const store = observed(
       initialObservation([], { todos: [{ content: 'One', status: 'pending' }] })
     );
     store.publish(withState(store.getSnapshot(), {}));

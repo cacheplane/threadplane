@@ -1071,7 +1071,7 @@ const chatThreadsReact = (() => {
   if (!canonical || !frontend) throw new Error('Chat Threads frontend registration is missing');
   return freezeCapabilityDescriptor({
     ...canonical, id: 'chat-threads-python-react', frontend: 'react', title: 'Chat Threads (React preview)',
-    codeAssetPaths: ['app.tsx', 'application.ts', 'authority.ts', 'records.ts', 'titles.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/threads/react/src/${file}`),
+    codeAssetPaths: ['app.tsx', 'application.ts', 'authority.ts', 'records.ts', 'connection.ts', 'main.tsx', 'styles.css'].map(file => `cockpit/chat/threads/react/src/${file}`),
     runtimeUrl: frontend.runtimePath, devPort: frontend.port,
   });
 })();

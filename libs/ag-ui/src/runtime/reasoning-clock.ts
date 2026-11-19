@@ -1,5 +1,5 @@
 import type { AGUIEvent } from '@ag-ui/client';
-import type { SessionSnapshot } from './session-observation.js';
+import type { Observation } from './session-observation.js';
 import type { Transcript } from './transcript.js';
 
 type Durations = Readonly<Record<string, number>>;
@@ -85,10 +85,10 @@ export function createReasoningClock(now: () => number = () => Date.now()) {
      * ends. `previous` is the snapshot the event was applied to; with it, a
      * messages snapshot carries the measured times over to the new records.
      */
-    observe<T extends SessionSnapshot>(
+    observe<T extends Observation>(
       event: AGUIEvent,
       next: T,
-      previous?: SessionSnapshot
+      previous?: Observation
     ): T {
       if (event.type === 'MESSAGES_SNAPSHOT' && previous) {
         const carried = carryReasoningDurations(

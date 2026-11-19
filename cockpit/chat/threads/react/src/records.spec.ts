@@ -88,12 +88,12 @@ describe('page-owned conversation records', () => {
       key: a.key,
       threadId: 'thread-a',
       draft: 'draft',
-      label: 'Conversation 1',
+      ordinal: 1,
     });
     expect(records.list()).toHaveLength(1);
     expect(Object.isFrozen(records.get(a.key))).toBe(true);
   });
-  it('keeps independent drafts and titles for confirmed conversations', () => {
+  it('keeps independent drafts for confirmed conversations', () => {
     const r = new ConversationRecords(),
       a = r.create();
     r.confirmThread(a.key, 'thread-a');
@@ -101,15 +101,8 @@ describe('page-owned conversation records', () => {
     const b = r.create();
     r.confirmThread(b.key, 'thread-b');
     r.setDraft(b.key, 'draft B');
-    expect(r.setTitle(a.key, '<b>Literal A</b>', a.version)).toBe(true);
-    expect(r.get(a.key)).toMatchObject({
-      draft: 'draft A',
-      label: '<b>Literal A</b>',
-    });
-    expect(r.get(b.key)).toMatchObject({
-      draft: 'draft B',
-      label: 'Conversation 2',
-    });
+    expect(r.get(a.key)).toMatchObject({ draft: 'draft A', ordinal: 1 });
+    expect(r.get(b.key)).toMatchObject({ draft: 'draft B', ordinal: 2 });
     expect(a.key).not.toBe(b.key);
     expect(r.list()).toHaveLength(2);
   });
@@ -147,27 +140,15 @@ describe('page-owned conversation records', () => {
     expect(() => r.confirm(a.key, saved('foreign'), 'run-1')).toThrow();
     expect(() => r.confirmThread(a.key, 'different')).toThrow();
   });
-  it('never repairs an unavailable record through later evidence or metadata', () => {
+  it('never repairs an unavailable record through later evidence', () => {
     const r = new ConversationRecords(),
       a = r.create();
     r.confirmThread(a.key, 'thread-a');
     r.markUnavailable(a.key);
     expect(r.get(a.key)?.availability).toBe('unavailable');
     expect(() => r.confirm(a.key, saved(), 'run-1')).toThrow();
-    expect(r.setTitle(a.key, 'Late title', 0)).toBe(false);
     expect(r.create().availability).toBe('available');
     expect(r.get(a.key)?.availability).toBe('unavailable');
-  });
-  it('fences late title publication using a record version', () => {
-    const r = new ConversationRecords(),
-      a = r.create();
-    r.confirmThread(a.key, 'thread-a');
-    expect(r.setTitle(a.key, 'First', 0)).toBe(true);
-    const version = r.invalidate(a.key);
-    expect(version).toBe(1);
-    expect(r.setTitle(a.key, 'Stale', 0)).toBe(false);
-    expect(r.get(a.key)?.label).toBe('First');
-    expect(r.setTitle(a.key, 'Latest', version)).toBe(true);
   });
   it('rejects a changed confirmed prefix without replacing saved evidence', () => {
     const r = new ConversationRecords(),

@@ -1,10 +1,15 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { createThreadsClient, threadsConnection } from './connection';
+import {
+  createThreadsClient,
+  createThreadsDirectory,
+  threadsConnection,
+} from './connection';
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   get: vi.fn(),
   session: vi.fn(),
   client: vi.fn(),
+  directory: vi.fn(),
 }));
 vi.mock('@langchain/langgraph-sdk', () => ({
   Client: class {
@@ -14,7 +19,10 @@ vi.mock('@langchain/langgraph-sdk', () => ({
     }
   },
 }));
-vi.mock('@threadplane/langgraph', () => ({ createSession: mocks.session }));
+vi.mock('@threadplane/langgraph', () => ({
+  createSession: mocks.session,
+  createLangGraphThreadDirectory: mocks.directory,
+}));
 const configuration = {
   apiUrl: 'https://developer.test',
   headers: { 'x-api-key': 'fictional' },
@@ -141,39 +149,18 @@ it('disposes a rejected session and returns a generic diagnostic', async () => {
   );
   expect(bad.dispose).toHaveBeenCalledTimes(1);
 });
-it('reads optional metadata only for known confirmed IDs with the caller signal', async () => {
-  const client = createThreadsClient(configuration),
-    signal = new AbortController().signal;
-  expect(await client.readTitle('unknown', signal)).toBeUndefined();
-  expect(mocks.get).not.toHaveBeenCalled();
-  const id = await client.createThread(signal),
-    raw = { thread_id: id, metadata: { title: 'Literal' } };
-  mocks.get.mockResolvedValue(raw);
-  expect(await client.readTitle(id, signal)).toEqual(raw);
-  expect(mocks.get).toHaveBeenCalledWith(id, { signal });
-  expect(mocks.get).toHaveBeenCalledTimes(1);
-});
-it('ignores failed, aborted and late metadata without retrying', async () => {
-  const client = createThreadsClient(configuration),
-    signal = new AbortController().signal,
-    id = await client.createThread(signal);
-  mocks.get.mockRejectedValue(new Error('PRIVATE fictional'));
-  expect(await client.readTitle(id, signal)).toBeUndefined();
-  const aborted = new AbortController();
-  aborted.abort();
-  expect(await client.readTitle(id, aborted.signal)).toBeUndefined();
-  expect(mocks.get).toHaveBeenCalledTimes(1);
-  let resolve!: (value: unknown) => void;
-  mocks.get.mockImplementation(
-    () =>
-      new Promise((r) => {
-        resolve = r;
-      })
-  );
-  const controller = new AbortController(),
-    pending = client.readTitle(id, controller.signal);
-  controller.abort();
-  resolve({ thread_id: id, metadata: { title: 'Late' } });
-  expect(await pending).toBeUndefined();
-  expect(mocks.get).toHaveBeenCalledTimes(2);
+it('builds the sidebar directory on the same target, headers and no retries', () => {
+  const directory = { dispose: vi.fn() };
+  mocks.directory.mockReturnValue(directory);
+  expect(createThreadsDirectory(configuration)).toBe(directory);
+  expect(mocks.client).toHaveBeenCalledWith({
+    apiUrl: configuration.apiUrl,
+    apiKey: null,
+    defaultHeaders: configuration.headers,
+    callerOptions: { maxRetries: 0 },
+  });
+  const [options] = mocks.directory.mock.calls[0];
+  expect(options).toMatchObject({ titleFallback: 'Untitled conversation' });
+  expect(options.client.threads.create).toBe(mocks.create);
+  expect(mocks.create).not.toHaveBeenCalled();
 });

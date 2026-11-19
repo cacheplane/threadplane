@@ -104,7 +104,8 @@ export async function verifyBrowser(browser, server) {
   });
   assert.equal(partial.a.subagents[0].started.name, 'Worker');
   assert.equal(partial.a.subagents[0].terminal, undefined);
-  assert.equal(partial.a.toolCalls, undefined);
+  // The core tool calls withhold a call whose arguments are still arriving.
+  assert.deepEqual(partial.a.toolCalls, []);
   await text('React A', ['First']);
   await text('Angular A', ['First']);
   await toolText('React', '{"city":');

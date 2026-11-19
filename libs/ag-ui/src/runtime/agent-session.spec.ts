@@ -1,16 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { AgentSession } from '@threadplane/core';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- The shared wording is compared with its LangGraph source.
 import { RECOVERY_COPY } from '../../../langgraph/src/runtime/stream-projection';
-import {
-  createAgentSession,
-  INTERRUPTED_COPY,
-  type NativeSession,
-} from './agent-session';
-import {
-  initialObservation,
-  type SessionSnapshot,
-} from './session-observation';
+import { createPresenter, INTERRUPTED_COPY } from './agent-session';
+import { initialObservation, type Observation } from './session-observation';
 import { bindingFixture } from './testing/binding-fixture';
 
 type Records = NonNullable<Parameters<typeof initialObservation>[0]>;
@@ -18,34 +11,22 @@ const history: Records = [
   { id: 'u', role: 'user', content: 'Ask' },
   { id: 'a', role: 'assistant', content: 'Answer' },
 ];
-/** A native session whose snapshot the test replaces by hand. */
-function controlled(first: SessionSnapshot) {
-  let snapshot = first;
-  const listeners = new Set<() => void>();
-  const native = {
-    getSnapshot: () => snapshot,
-    subscribe(notify: () => void) {
-      listeners.add(notify);
-      return () => void listeners.delete(notify);
-    },
-    submit: vi.fn(async () => 'success' as const),
-    stop: vi.fn(async () => undefined),
-    dispose: vi.fn(async () => undefined),
-  } satisfies NativeSession;
+/** A presenter over an observation the test replaces by hand. */
+function controlled(first: Observation, canRetry = false) {
+  const present = createPresenter(undefined, canRetry);
+  let observation = first;
   return {
-    native,
-    listeners,
-    publish(extra: Partial<SessionSnapshot>) {
-      snapshot = Object.freeze({ ...snapshot, ...extra });
-      for (const notify of [...listeners]) notify();
+    getSnapshot: () => present(observation),
+    publish(extra: Partial<Observation>) {
+      observation = Object.freeze({ ...observation, ...extra });
     },
   };
 }
 
-describe('createAgentSession', () => {
-  it('publishes the native conversation as a frozen core snapshot', () => {
-    const { native } = controlled(initialObservation(history));
-    const session: AgentSession = createAgentSession(native);
+describe('the published snapshot', () => {
+  it('is the frozen core snapshot with the protocol evidence behind it', () => {
+    const observation = initialObservation(history);
+    const session = controlled(observation);
     const snapshot = session.getSnapshot();
     expect(snapshot).toEqual({
       status: 'idle',
@@ -54,65 +35,44 @@ describe('createAgentSession', () => {
         expect.objectContaining({ id: 'a', role: 'assistant', content: 'Answer' }),
       ],
       toolCalls: [],
+      transcript: observation.transcript,
+      subagents: [],
     });
+    expect(snapshot.transcript).toBe(observation.transcript);
     expect(Object.isFrozen(snapshot)).toBe(true);
     expect('error' in snapshot).toBe(false);
     expect('plan' in snapshot).toBe(false);
+    expect('state' in snapshot).toBe(false);
     expect(session.getSnapshot()).toBe(snapshot);
-    expect(session.checkStatus).toBeUndefined();
   });
 
-  it('keeps its snapshot and stays silent when only native fields change', () => {
-    const source = controlled(initialObservation(history));
-    const session = createAgentSession(source.native);
+  it('shares what did not change between observations', () => {
+    const session = controlled(initialObservation(history));
     const before = session.getSnapshot();
-    const notify = vi.fn();
-    session.subscribe(notify);
-    source.publish({ reasoningDurations: { missing: 5 } });
-    expect(notify).not.toHaveBeenCalled();
-    expect(session.getSnapshot()).toBe(before);
-    source.publish({ status: 'running' });
-    expect(notify).toHaveBeenCalledTimes(1);
+    session.publish({ reasoningDurations: { missing: 5 } });
+    const timed = session.getSnapshot();
+    expect(timed).not.toBe(before);
+    expect(timed.messages).toBe(before.messages);
+    expect(timed.toolCalls).toBe(before.toolCalls);
+    session.publish({ status: 'running' });
     const running = session.getSnapshot();
     expect(running.status).toBe('running');
     expect(running.messages[0]).toBe(before.messages[0]);
-  });
-
-  it('tells each subscriber once per change and stops after release', () => {
-    const source = controlled(initialObservation(history));
-    const session = createAgentSession(source.native);
-    const first = vi.fn();
-    const second = vi.fn(() => void session.getSnapshot());
-    const release = session.subscribe(first);
-    session.subscribe(second);
-    source.publish({ status: 'running' });
-    expect(first).toHaveBeenCalledTimes(1);
-    expect(second).toHaveBeenCalledTimes(1);
-    release();
-    release();
-    source.publish({ status: 'idle' });
-    expect(first).toHaveBeenCalledTimes(1);
-    expect(second).toHaveBeenCalledTimes(2);
-    expect(source.listeners.size).toBe(1);
   });
 
   it('carries the declared plan by reference', () => {
     const plan = Object.freeze([
       Object.freeze({ id: '1', label: 'Search', status: 'pending' as const }),
     ]);
-    const source = controlled(
+    const session = controlled(
       Object.freeze({ ...initialObservation(history), plan })
     );
-    const session = createAgentSession(source.native);
     expect(session.getSnapshot().plan).toBe(plan);
-    source.publish({ plan: undefined });
-    expect('plan' in session.getSnapshot()).toBe(false);
   });
 
   it('reports the backend error text as a server failure with no recovery when the owner cannot retry', () => {
-    const source = controlled(initialObservation(history));
-    const session = createAgentSession(source.native);
-    source.publish({
+    const session = controlled(initialObservation(history));
+    session.publish({
       status: 'error',
       run: {
         id: 'run',
@@ -128,14 +88,13 @@ describe('createAgentSession', () => {
       recovery: 'none',
     });
     expect(Object.isFrozen(error)).toBe(true);
-    source.publish({ state: { changed: true } });
+    session.publish({ state: { changed: true } });
     expect(session.getSnapshot().error).toBe(error);
   });
 
   it('reports a stream that ended without a terminal as interrupted', () => {
-    const source = controlled(initialObservation(history));
-    const session = createAgentSession(source.native);
-    source.publish({ status: 'error', run: { id: 'run', outcome: 'interrupted' } });
+    const session = controlled(initialObservation(history));
+    session.publish({ status: 'error', run: { id: 'run', outcome: 'interrupted' } });
     expect(session.getSnapshot().error).toEqual({
       kind: 'interrupted',
       message: INTERRUPTED_COPY.message,
@@ -150,41 +109,23 @@ describe('createAgentSession', () => {
   });
 
   it('reports a failure it cannot name generically and clears it on the next run', () => {
-    const source = controlled(initialObservation(history));
-    const session = createAgentSession(source.native);
-    source.publish({ status: 'error', run: { id: 'run', outcome: 'error' } });
+    const session = controlled(initialObservation(history));
+    session.publish({ status: 'error', run: { id: 'run', outcome: 'error' } });
     expect(session.getSnapshot().error).toEqual({
       kind: 'server',
       message: 'The agent request failed.',
       retryable: false,
       recovery: 'none',
     });
-    source.publish({ status: 'running', run: { id: 'next' } });
+    session.publish({ status: 'running', run: { id: 'next' } });
     expect('error' in session.getSnapshot()).toBe(false);
-  });
-
-  it('sends commands straight to the native session', async () => {
-    const { native } = controlled(initialObservation());
-    const session = createAgentSession(native);
-    const signal = new AbortController().signal;
-    await expect(session.submit('Hello', { signal })).resolves.toBe('success');
-    expect(native.submit).toHaveBeenCalledWith('Hello', { signal });
-    await session.stop();
-    await session.dispose();
-    expect(native.stop).toHaveBeenCalledTimes(1);
-    expect(native.dispose).toHaveBeenCalledTimes(1);
   });
 });
 
-describe('createAgentSession over the real owner', () => {
+describe('the real session as a core session', () => {
   it('streams a turn, completes it and reports a backend error on the next', async () => {
     const fixture = bindingFixture();
-    const session = createAgentSession(fixture.session);
-    const seen: string[] = [];
-    session.subscribe(() => {
-      const snapshot = session.getSnapshot();
-      seen.push(`${snapshot.status}:${snapshot.messages.length}`);
-    });
+    const session: AgentSession = fixture.session;
     try {
       const run = session.submit('Go');
       const exchange = await fixture.started();
@@ -213,7 +154,6 @@ describe('createAgentSession over the real owner', () => {
         phase: 'complete',
         outcome: 'success',
       });
-      expect(new Set(seen).size).toBe(seen.length);
 
       const failed = session.submit('Again');
       const next = await fixture.started(1);

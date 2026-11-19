@@ -64,6 +64,7 @@ interface MenuState {
 
 const NO_ORDER: ReadonlyMap<string, string | null> = new Map();
 const NO_PROJECT = 'none';
+const EXTRA = 'extra:';
 
 /** Supplies ordered conversations and controlled selection, with creation, row rendering, action, and context-menu hooks. */
 export interface ThreadListProps {
@@ -102,6 +103,18 @@ export interface ThreadListProps {
   readonly projects?:
     | readonly { readonly id: string; readonly name: string }[]
     | null;
+  /**
+   * App commands appended to each row's built-in menu, in both modes. A
+   * rejected command leaves the row as supplied. Rows drawn by `renderItem`
+   * get no menu.
+   */
+  readonly extraActions?:
+    | readonly {
+        readonly id: string;
+        readonly label: string;
+        readonly run: (threadId: string) => RowActionResult;
+      }[]
+    | null;
 }
 
 function validDate(value: number | undefined): Date | undefined {
@@ -136,6 +149,7 @@ export function ThreadList({
   actions: adapter,
   mode = 'active',
   projects,
+  extraActions,
 }: ThreadListProps) {
   const listId = useId();
   const keyboardContext = useRef<HTMLButtonElement | null>(null);
@@ -182,8 +196,12 @@ export function ThreadList({
     ];
   }
 
+  const extraItems: OverflowMenuItem[] = (extraActions ?? []).map((action) => ({
+    id: `${EXTRA}${action.id}`,
+    label: action.label,
+  }));
   const menuItems = (thread: ThreadListItem): OverflowMenuItem[] => {
-    if (!adapter) return [];
+    if (!adapter) return extraItems;
     const items: OverflowMenuItem[] = [];
     if (mode === 'archived') {
       if (adapter.unarchive)
@@ -207,7 +225,7 @@ export function ThreadList({
     }
     if (adapter.delete)
       items.push({ id: 'delete', label: 'Delete', tone: 'destructive' });
-    return items;
+    return [...items, ...extraItems];
   };
   const projectItems: OverflowMenuItem[] = [
     { id: NO_PROJECT, label: 'No project' },
@@ -242,8 +260,15 @@ export function ThreadList({
     view: MenuState['view'],
     returnTo: HTMLElement | null
   ) => {
-    if (!adapter) return;
     const id = thread.id;
+    if (view === 'actions' && itemId.startsWith(EXTRA)) {
+      const action = extraActions?.find(
+        (candidate) => `${EXTRA}${candidate.id}` === itemId
+      );
+      if (action) void optimistic.settle(() => action.run(id));
+      return;
+    }
+    if (!adapter) return;
     if (view === 'projects') {
       const projectId =
         itemId === NO_PROJECT ? null : itemId.slice('project:'.length);
@@ -290,7 +315,7 @@ export function ThreadList({
   };
   const onContextMenu =
     ownerContextMenu ??
-    (adapter && !renderItem && visible.some((row) => menuItems(row).length > 0)
+    (!renderItem && visible.some((row) => menuItems(row).length > 0)
       ? builtInContextMenu
       : undefined);
 

@@ -6,7 +6,7 @@ import type { AddressInfo } from 'node:net';
 import { describe, expect, it } from 'vitest';
 import type { Message, RunAgentInput } from '@ag-ui/client';
 import { createSession, type Session } from './create-session';
-import type { SessionSnapshot } from './session-observation';
+import type { SessionSnapshot } from './agent-session';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

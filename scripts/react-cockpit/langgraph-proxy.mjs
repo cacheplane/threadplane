@@ -238,9 +238,23 @@ function applyStateOp(op, state, humanId) {
   return false;
 }
 
+/** The title rewrite a `/__title/<mode>` control applies to thread metadata. */
+function titleMetadata(source, mode) {
+  const metadata = { ...source };
+  if (mode === 'missing') delete metadata.title;
+  if (mode === 'invalid') metadata.title = { invalid: true };
+  if (mode === 'literal') metadata.title = '<script>alert("title")</script>';
+  if (mode === 'long') metadata.title = 'Long authored title '.repeat(30);
+  return metadata;
+}
+
 export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   const target = new URL(upstream);
   let requests = [];
+  // Sidebar directory traffic (thread search, rename, delete and project-name
+  // Store calls) is logged apart from the conversation wire, as the authored
+  // threads fixture did, so specs can assert the sidebar only reads lists.
+  let directoryRequests = [];
   let failCreate = false;
   let failStream = false;
   let nextStreamCut = null;
@@ -345,6 +359,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     heldHistory?.response.destroy();
     heldStream = heldHistory = undefined;
     requests = [];
+    directoryRequests = [];
     captures = [];
     reasoning = null;
     decoratedChunks.clear();
@@ -495,11 +510,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         return;
       }
       const thread = JSON.parse(raw.toString('utf8'));
-      const metadata = { ...thread.metadata };
-      if (mode === 'missing') delete metadata.title;
-      if (mode === 'invalid') metadata.title = { invalid: true };
-      if (mode === 'literal') metadata.title = '<script>alert("title")</script>';
-      if (mode === 'long') metadata.title = 'Long authored title '.repeat(30);
+      const metadata = titleMetadata(thread.metadata, mode);
       json(response, {
         ...thread,
         metadata,
@@ -808,6 +819,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
 
   const controls = {
     '/__requests': ['GET', () => requests],
+    '/__directory-requests': ['GET', () => directoryRequests],
     '/__captures': ['GET', async () => {
       await Promise.all(pendingCaptures);
       return captures;
@@ -821,6 +833,32 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       openResponses,
     })],
     '/__reset': ['POST', () => { reset(); return {}; }],
+    // Opt-in clean slate for specs written against an empty server: deletes
+    // every thread and Store item on this run's isolated `langgraph dev`.
+    '/__purge': ['POST', async () => {
+      const call = async (method, path, body) => {
+        const response = await fetch(new URL(path, target), {
+          method,
+          headers: { 'content-type': 'application/json' },
+          body: body === undefined ? undefined : JSON.stringify(body),
+        });
+        if (!response.ok && response.status !== 404) throw new Error(`purge ${method} ${path}: ${response.status}`);
+        return response.status === 204 || method === 'DELETE' ? null : response.json();
+      };
+      let threads = 0, items = 0;
+      for (;;) {
+        const page = await call('POST', '/threads/search', { limit: 100, offset: 0 });
+        if (!page.length) break;
+        for (const thread of page) { await call('DELETE', `/threads/${thread.thread_id}`); threads += 1; }
+      }
+      for (;;) {
+        const { items: page } = await call('POST', '/store/items/search', { namespace_prefix: [], limit: 100, offset: 0 });
+        if (!page.length) break;
+        for (const item of page) { await call('DELETE', '/store/items', { namespace: item.namespace, key: item.key }); items += 1; }
+      }
+      reset();
+      return { threads, items };
+    }],
     '/__fail-create': ['POST', () => { failCreate = true; return {}; }],
     '/__release': ['POST', () => {
       heldStream?.release();
@@ -977,7 +1015,10 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     let body = await readAll(request);
     const search = new URL(request.url, 'http://localhost').search;
     const path = pathname.slice(prefix.length) + search;
-    requests.push({
+    (isDirectoryRequest(request.method, pathname.slice(prefix.length).split('?')[0])
+      ? directoryRequests
+      : requests
+    ).push({
       path: pathname,
       method: request.method,
       body: body.length ? JSON.parse(body.toString('utf8')) : {},
@@ -1043,6 +1084,23 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         await proxyState(request, response, path, body);
       else if (request.method === 'GET' && /^\/threads\/[^/]+$/.test(pathname.slice(prefix.length)))
         await proxyTitle(request, response, path, body);
+      else if (
+        request.method === 'POST' &&
+        pathname.slice(prefix.length) === '/threads/search' &&
+        ['missing', 'invalid', 'literal', 'long'].includes(titleMode)
+      ) {
+        // The connected sidebar reads titles from the thread list, so title
+        // rewrites apply to every listed thread too (injected data).
+        const upstreamResponse = await send(request.method, path, request.headers, body);
+        const raw = await readAll(upstreamResponse);
+        if (upstreamResponse.statusCode !== 200) {
+          response.writeHead(upstreamResponse.statusCode, forwardedHeaders(upstreamResponse.headers));
+          response.end(raw);
+        } else {
+          const threads = JSON.parse(raw.toString('utf8'));
+          json(response, threads.map((thread) => ({ ...thread, metadata: titleMetadata(thread.metadata, titleMode) })));
+        }
+      }
       else if (reasoning && request.method === 'GET' && /\/threads\/[^/]+\/state$/.test(pathname)) {
         const upstreamResponse = await send(request.method, path, request.headers, body);
         const raw = await readAll(upstreamResponse);
@@ -1064,4 +1122,17 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     }
     return true;
   };
+}
+
+/** Directory traffic: what the connected thread sidebar sends. */
+export function isDirectoryRequest(method, path) {
+  const route = /^\/(threads\/search|threads\/([^/]+)|store\/items(?:\/search)?)$/.exec(path);
+  if (!route) return false;
+  const threadId = route[2];
+  return (
+    (route[1] === 'threads/search' && method === 'POST') ||
+    (threadId !== undefined && threadId !== 'search' && ['PATCH', 'DELETE'].includes(method)) ||
+    (route[1] === 'store/items' && ['PUT', 'DELETE'].includes(method)) ||
+    (route[1] === 'store/items/search' && method === 'POST')
+  );
 }
