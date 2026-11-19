@@ -13,6 +13,30 @@ builds. Commands, frozen manual review and dependency/type limitations are in
 This does not change the published package root or narrow the current custom
 transport declaration into a final public contract.
 
+## Thread creation
+
+`threadId` is optional. A session created without one (or with `null`) starts
+empty and sends no request until its first submit, which calls
+`transport.createThread(signal)` once, before the run. The owned SDK transport
+implements it with `client.threads.create()`, the call the Angular transport
+makes, under the owned `maxRetries` policy (0 unless a number is supplied). A
+supplied transport without `createThread` makes construction throw. The created id
+is reported once through `onThreadId` and is read from `session.threadId`; a
+throwing callback does not affect the run. The id is not part of the snapshot.
+
+- A submit that replaces a submit waiting on creation shares the same request,
+  so one session never creates two threads. Stop leaves the request running and
+  keeps a thread it creates; dispose aborts it and reports nothing.
+- A failed creation settles the submit as `error` with the generic request
+  message. Only an unprotected SDK error's numeric status is read (401 and 403
+  report `auth`), never its message or body. No run started, so the error is
+  `recovery: 'retry'` when `retry()` exists and `none` otherwise; the next submit
+  or `retry()` makes a new creation request.
+- Before the thread exists, `load()` and `checkStatus()` resolve without a
+  request, `fork()` and `regenerate()` reject, and `reconnect()` and `resume()`
+  reject as they do with nothing to join or answer.
+- There is no thread switch: a session still belongs to one thread once it has one.
+
 ## Visible text
 
 The shared private wire helper preserves a top-level string verbatim. Arrays join
@@ -164,7 +188,8 @@ undispatched (a browser `TypeError: fetch failed` carries no cause, and a reset
 after the server accepted the request looks identical to one that never left), so
 a pre-response failure is an `interrupted` error too, not a retryable
 `connection` one. The only `retry` the runtime emits is for a run the backend
-itself reports as failed (see "Retry" below).
+itself reports as failed (see "Retry" below), and for a first submit whose thread
+could not be created, which started no run (see "Thread creation" above).
 
 `recovery: 'check'` is offered exactly when `transport.getHistory` exists for an
 ordinary submit, with or without a captured run id, and `checkStatus()` is exposed
@@ -208,7 +233,8 @@ run so the two surfaces cannot disagree.
 when the transport has `getRunStatus`, because only the exact run's status can
 settle a failure. It sends a command again when, and only when, the backend
 reported that command's run as `error` or `timeout`, at close or through
-`checkStatus()`. That error carries `retryable: true` and `recovery: 'retry'`.
+`checkStatus()`, or when the command's thread could not be created. That error
+carries `retryable: true` and `recovery: 'retry'`.
 
 - The transcript and values return to what they were before the command, and the
   command's captured input is sent again. A submission keeps its user message id,
