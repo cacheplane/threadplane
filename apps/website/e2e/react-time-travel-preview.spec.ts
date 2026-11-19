@@ -1,3 +1,6 @@
+// The preview server (`serve.mjs <example> --backend`) runs the real graph under
+// `langgraph dev` on aimock fixtures shared with the Angular example; controls
+// come from scripts/react-cockpit/langgraph-proxy.mjs.
 import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
@@ -65,6 +68,7 @@ test('switching away releases a held fork and returning starts with an empty che
   );
   const origin = 'http://127.0.0.1:4607';
   await request.post(origin + '/__reset');
+  await request.post(origin + '/__ready', { timeout: 180000 });
   await page.goto('/docs/react/langgraph/guides/time-travel?mode=run');
   const frame = page.frameLocator('iframe');
   for (const text of ['A', 'B']) {
@@ -72,16 +76,29 @@ test('switching away releases a held fork and returning starts with an empty che
     await frame.getByRole('button', { name: 'Send', exact: true }).click();
     await expect(frame.getByRole('status')).toHaveText('Response complete.');
   }
+  // Real history saves input, start and done checkpoints per turn: select
+  // turn A's completed checkpoint from the page the app just loaded.
+  const loaded = page.waitForResponse((r) => r.url().endsWith('/history'));
   await frame
     .getByRole('button', { name: 'Refresh saved checkpoints' })
     .click();
-  await frame.getByRole('button', { name: 'Select checkpoint 3' }).click();
-  await request.post(origin + '/__hold-stream');
+  const history: { next: string[]; values: { messages: unknown[] } }[] =
+    await (await loaded).json();
+  const a = history.findIndex(
+    (entry) => entry.next.length === 0 && entry.values.messages.length === 2
+  );
+  await frame
+    .getByRole('button', { name: `Select checkpoint ${a + 1}` })
+    .click();
+  await request.post(origin + '/__hold/stream');
   await frame.getByLabel('Message', { exact: true }).fill('Held fork');
   await frame.getByRole('button', { name: 'Fork selected checkpoint' }).click();
-  await expect(
-    frame.getByRole('region', { name: 'Conversation', exact: true })
-  ).toContainText('Transient chunk');
+  await expect
+    .poll(
+      async () =>
+        (await (await request.get(origin + '/__lifetime')).json()).activeStream
+    )
+    .toBe(true);
   const oldFrame = await page.locator('iframe').elementHandle();
   await selectFramework(page, 'angular');
   await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
@@ -90,7 +107,7 @@ test('switching away releases a held fork and returning starts with an empty che
       async () =>
         (
           await (await request.get(origin + '/__lifetime')).json()
-        ).active
+        ).activeStream
     )
     .toBe(false);
   await request.post(origin + '/__release');

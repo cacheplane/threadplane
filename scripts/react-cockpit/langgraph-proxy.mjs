@@ -218,7 +218,7 @@ function applyStateOp(op, state, humanId) {
   return false;
 }
 
-export function createLanggraphProxy({ upstream }) {
+export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   const target = new URL(upstream);
   let requests = [];
   let failCreate = false;
