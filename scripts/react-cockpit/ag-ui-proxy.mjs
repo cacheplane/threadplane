@@ -7,18 +7,26 @@
  * layer only adds what a browser contract test needs and a live server cannot
  * produce on demand:
  *
- *   GET  /__requests          every agent POST, in order: { path, method, body }
+ *   GET  /__requests          every agent POST, in order: { path, method,
+ *                             body, events (real, so far), held, closed }
  *   GET  /__captures          per finished run: { path, sse, events } as the
  *                             real server sent them (before any edit)
  *   GET  /__lifetime          { active (a held stream), openResponses }
  *   GET|POST /__ready         200 once the server answers /ok (with
  *                             `serve.mjs --backend`, after its lazy start)
  *   POST /__reset             forget requests and captures, drop one-shot
- *                             controls, end a held stream
+ *                             controls, end a held stream (and clear the
+ *                             model journal)
+ *   GET  /__model-requests    every request the model (aimock) received, from
+ *                             its journal (`modelJournal`)
  *   POST /__hold/stream       hold the next run stream after the first event
  *                             whose type matches `afterType` (default
  *                             TEXT_MESSAGE_CONTENT) or whose raw JSON matches
- *                             `afterPattern`; buffers the rest
+ *                             `afterPattern`, or just before the first event
+ *                             of type `beforeType`; buffers the rest.
+ *                             `persist` holds every later run the same way;
+ *                             `fromRequest: n` starts with the nth request
+ *                             (0-based). /__requests marks a held run.
  *   POST /__release           flush and resume a held stream
  *   POST /__fail-stream       next agent POST answers 500 unforwarded (the
  *                             server is unavailable)
@@ -146,7 +154,7 @@ function rewriteOutcome(mode, event) {
   return { ...event, outcome: { ...event.outcome, interrupts: [copy] } };
 }
 
-export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', ready = async () => {} }) {
+export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', modelJournal, ready = async () => {} }) {
   let requests = [];
   let captures = [];
   const pendingCaptures = new Set();
@@ -170,7 +178,11 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
 
   async function proxyRun(request, response, pathname, raw) {
     const body = raw.length ? JSON.parse(raw.toString('utf8')) : {};
-    requests.push({ path: pathname, method: request.method, body });
+    // Live while the run streams: the real events so far, and whether the
+    // proxy holds it or the browser closed it.
+    const entry = { path: pathname, method: request.method, body, events: [], held: false, closed: false };
+    requests.push(entry);
+    response.once('close', () => { entry.closed = true; });
     if (stickyEdits.some((op) => op.mode === 'unstable-result') && Array.isArray(body.messages))
       raw = Buffer.from(
         JSON.stringify({
@@ -187,8 +199,9 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
       json(response, { error: 'PRIVATE AG-UI server failure' }, 500);
       return;
     }
-    const hold = holdNext;
-    holdNext = null;
+    let hold = holdNext;
+    if (hold?.fromRequest !== undefined && requests.length - 1 < hold.fromRequest) hold = null;
+    else if (!hold?.persist) holdNext = null;
     const edits = [...stickyEdits, ...(nextEdits ?? [])].map((op) => ({ ...op, pattern: new RegExp(op.type ?? '.*'), used: false }));
     nextEdits = null;
     const ids = { threadId: body.threadId, runId: body.runId, humanId: body.messages?.at(-1)?.id, answerId: null };
@@ -274,6 +287,7 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
       release() {
         if (held === held_) held = undefined;
         holding = false;
+        entry.held = false;
         pendingCaptures.add(settled);
         for (const event of buffered.splice(0)) if (!forward(event)) return;
         if (ended) finish();
@@ -294,18 +308,30 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
         if (!line) continue;
         const event = JSON.parse(line.slice(5));
         events.push(event);
+        entry.events.push(event);
         if (response.writableEnded) continue;
         if (holding) {
+          buffered.push(event);
+          continue;
+        }
+        if (armed && hold.beforeType && event.type === hold.beforeType) {
+          armed = false;
+          holding = true;
+          entry.held = true;
+          held = held_;
+          pendingCaptures.delete(settled);
           buffered.push(event);
           continue;
         }
         if (!forward(event)) continue;
         if (
           armed &&
+          !hold.beforeType &&
           (hold.afterPattern ? new RegExp(hold.afterPattern).test(line) : event.type === (hold.afterType ?? 'TEXT_MESSAGE_CONTENT'))
         ) {
           armed = false;
           holding = true;
+          entry.held = true;
           held = held_;
           // A held run is not "in flight" for /__captures: it waits on a
           // release the test sends later.
@@ -345,9 +371,24 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
       if (!answer.ok) throw new Error('AG-UI server is not ready');
       return {};
     }],
-    '/__reset': [['POST'], () => { reset(); return {}; }],
+    '/__reset': [['POST'], async () => {
+      reset();
+      if (modelJournal) await fetch(new URL('/__aimock/reset/journal', modelJournal), { method: 'POST' }).catch(() => undefined);
+      return {};
+    }],
+    // What the model received, from aimock's request journal.
+    '/__model-requests': [['GET'], async () => {
+      if (!modelJournal) throw new Error('No model journal configured');
+      return (await fetch(modelJournal)).json();
+    }],
     '/__hold/stream': [['POST'], (body) => {
-      holdNext = { afterType: body.afterType, afterPattern: body.afterPattern };
+      holdNext = {
+        afterType: body.afterType,
+        afterPattern: body.afterPattern,
+        beforeType: body.beforeType,
+        persist: body.persist === true,
+        fromRequest: body.fromRequest,
+      };
       return {};
     }],
     '/__release': [['POST'], () => { held?.release(); return {}; }],

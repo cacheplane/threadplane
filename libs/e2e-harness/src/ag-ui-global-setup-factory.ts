@@ -83,9 +83,14 @@ async function startAgUiBackend(opts: {
   backendPort: number;
   fixturesDir: string;
   backendReadyTimeoutMs?: number;
+  aimockPort?: number;
 }): Promise<AgUiBackend> {
   const launch = resolveAimockLaunch(opts.fixturesDir);
-  const aimock = await startAimock(launch.startOptions);
+  const aimock = await startAimock(
+    opts.aimockPort && launch.startOptions.mode === 'replay'
+      ? { ...launch.startOptions, port: opts.aimockPort }
+      : launch.startOptions,
+  );
   // eslint-disable-next-line no-console
   console.log(`[ag-ui-harness] aimock listening at ${aimock.baseUrl}`);
 
@@ -134,6 +139,8 @@ export interface CreateAgUiBackendGlobalSetupOpts {
   backendPort: number;
   fixturesDir: string;
   backendReadyTimeoutMs?: number;
+  /** A fixed aimock port, for specs that read its request journal. */
+  aimockPort?: number;
 }
 
 /** Backend only: the React cockpit serves its own build and proxies to it. */
@@ -147,6 +154,7 @@ export function createAgUiBackendGlobalSetup(
       backendPort: opts.backendPort,
       fixturesDir: opts.fixturesDir,
       backendReadyTimeoutMs: opts.backendReadyTimeoutMs,
+      aimockPort: opts.aimockPort,
     });
     registerState(opts.stateKey, backend);
   };

@@ -3,6 +3,10 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/ag-ui/client-tools/react/src",
   "projectType": "application",
+  "implicitDependencies": [
+    "cockpit-ag-ui-client-tools-angular",
+    "cockpit-ag-ui-client-tools-python"
+  ],
   "tags": [
     "scope:cockpit-examples",
     "scope:cockpit-e2e",
@@ -30,7 +34,12 @@
             "react"
           ]
         },
-        { "target": "react-ag-ui", "projects": ["website-runtime-preparation"] }
+        {
+          "target": "react-ag-ui",
+          "projects": [
+            "website-runtime-preparation"
+          ]
+        }
       ],
       "outputs": [
         "{workspaceRoot}/dist/cockpit/ag-ui/client-tools/react"
@@ -39,24 +48,26 @@
         "command": "node scripts/react-cockpit/build.mjs ag-ui-client-tools"
       }
     },
-    "prepare-fixture": {
-      "executor": "nx:run-commands",
-      "cache": false,
-      "options": {
-        "command": "node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs"
-      }
-    },
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
       "dependsOn": [
-        "prepare-fixture",
-        "build"
+        "build",
+        {
+          "target": "test",
+          "projects": [
+            "cockpit-ag-ui-client-tools-python"
+          ]
+        }
       ],
       "options": {
         "config": "cockpit/ag-ui/client-tools/react/e2e/playwright.config.ts",
         "skipInstall": true
-      }
+      },
+      "inputs": [
+        "default",
+        "reactAimockBackend"
+      ]
     }
   }
 }

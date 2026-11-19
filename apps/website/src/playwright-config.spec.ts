@@ -506,7 +506,7 @@ describe('Website Playwright configuration', () => {
         command: 'node scripts/react-cockpit/serve.mjs ag-ui-tool-views --no-parent --backend',
         url: 'http://127.0.0.1:4611/__ready',
       }),
-      expect.objectContaining({command:'node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs --serve',url:'http://127.0.0.1:4640'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs ag-ui-client-tools --no-parent --backend',url:'http://127.0.0.1:4640/__ready'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent',url:'http://127.0.0.1:4641'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent',url:'http://127.0.0.1:4642'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-aws-strands --no-parent',url:'http://127.0.0.1:4643'}),
@@ -577,11 +577,11 @@ describe('Website Playwright configuration', () => {
   });
 });
 
-it('owns frozen AG-UI Client Tools preparation without reusing a foreign fixture', () => {
+it('owns the AG-UI Client Tools preview and its aimock backend without reusing a foreign server', () => {
   const config = createWebsitePlaywrightConfig({ PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true' });
   const servers = Array.isArray(config.webServer) ? config.webServer : [];
-  expect(servers.find(server => server.url === 'http://127.0.0.1:4640')).toMatchObject({
-    command: 'node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs --serve',
+  expect(servers.find(server => server.url === 'http://127.0.0.1:4640/__ready')).toMatchObject({
+    command: 'node scripts/react-cockpit/serve.mjs ag-ui-client-tools --no-parent --backend',
     timeout: 180_000, reuseExistingServer: false,
   });
   const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
@@ -620,6 +620,6 @@ it('scopes native AG-UI A2UI checks to Website and the prepared owned React serv
 it('scopes native client-tools checks to the Website and exact two owned frontend servers', () => {
   const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'ag-ui-client-tools', WEBSITE_E2E_PORT: '4390' });
   const servers = Array.isArray(config.webServer) ? config.webServer : [];
-  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://localhost:4325', 'http://127.0.0.1:4640']);
+  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://localhost:4325', 'http://127.0.0.1:4640/__ready']);
   expect(config.testMatch).toBe('**/react-ag-ui-client-tools-preview.spec.ts');
 });

@@ -35,7 +35,7 @@ export function createAimockBackend({ root, backend }) {
     // A leftover server on the port would answer /ok with a dead aimock behind it.
     const stale = await fetch(`http://127.0.0.1:${port}/ok`).then(() => true, () => false);
     if (stale) throw new Error(`Port ${port} is already serving; stop the leftover server first`);
-    mock = new LLMock({ port: 0, chunkSize: 4096 });
+    mock = new LLMock({ port: backend.aimockPort ?? 0, chunkSize: 4096 });
     mock.addFixturesFromJSON(fixtures);
     await mock.start();
     const agUi = backend.kind === 'aimock-ag-ui';

@@ -356,10 +356,9 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs --serve',
+                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-client-tools --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4640',
-                  // A reused listener cannot establish canonical worker ownership.
+                  url: 'http://127.0.0.1:4640/__ready',
                   reuseExistingServer: false,
                   timeout: 180_000,
                 },
@@ -564,7 +563,7 @@ export const createWebsitePlaywrightConfig = (
     config.testMatch = '**/react-ag-ui-client-tools-preview.spec.ts';
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer.filter(server =>
-        [localURL, 'http://localhost:4325', 'http://127.0.0.1:4640'].includes(server.url ?? '')
+        [localURL, 'http://localhost:4325', 'http://127.0.0.1:4640/__ready'].includes(server.url ?? '')
       );
     }
   }

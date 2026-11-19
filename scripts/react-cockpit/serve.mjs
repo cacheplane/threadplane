@@ -9,7 +9,6 @@ import { createAgUiA2uiFixture } from './ag-ui-a2ui-fixture.mjs';
 import { createNativeMastraFixture } from './native-mastra-fixture.mjs';
 import { createNativeStrandsFixture } from './native-strands-fixture.mjs';
 import { createNativeMafFixture } from './native-maf-fixture.mjs';
-import { createAgUiClientToolsFixture } from './ag-ui-client-tools-fixture.mjs';
 import { createLanggraphProxy } from './langgraph-proxy.mjs';
 import { createAgUiProxy } from './ag-ui-proxy.mjs';
 import { createAimockBackend } from './aimock-backend.mjs';
@@ -67,10 +66,10 @@ const agUiProxy = configuration.backend?.kind === 'aimock-ag-ui'
       upstream: `http://127.0.0.1:${configuration.backend.backendPort}`,
       agentPaths: [`/ag-ui/${configuration.topic}${configuration.backend.agentPath}`, '/developer-agent'],
       agentPath: configuration.backend.agentPath,
+      modelJournal: `http://127.0.0.1:${configuration.backend.aimockPort}/__aimock/journal`,
       ready: aimockBackend ? () => aimockBackend.ensure() : undefined,
     })
   : null;
-const agUiClientToolsFixture = configuration.adapter === 'ag-ui' && configuration.topic === 'client-tools' ? createAgUiClientToolsFixture() : null;
 
 const root = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -128,7 +127,6 @@ const server = createServer(async (request, response) => {
   if (nativeStrandsFixture && (await nativeStrandsFixture(request, response, pathname))) return;
   if (nativeMafFixture && (await nativeMafFixture(request, response, pathname))) return;
   if (nativeMastraFixture && (await nativeMastraFixture(request, response, pathname))) return;
-  if (agUiClientToolsFixture && (await agUiClientToolsFixture(request, response, pathname))) return;
   if (chatGenerativeUiFixture && pathname === '/__reset') {
     if (request.method !== 'POST') return json(response, {}, 405);
     try {
@@ -207,7 +205,7 @@ const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]) : null;
 let closing;
 let shutdown;
-if (agUiA2uiFixture || isChatA2ui || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || agUiClientToolsFixture || chatGenerativeUiFixture) {
+if (agUiA2uiFixture || isChatA2ui || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || chatGenerativeUiFixture) {
   shutdown = (code = 0) => {
     closing ??= (async () => {
       let a2uiFailure;
@@ -220,7 +218,7 @@ if (agUiA2uiFixture || isChatA2ui || nativeStrandsFixture || nativeMafFixture ||
         try { await chatA2uiFixture?.close(); }
         catch (error) { a2uiFailure = error; }
       }
-      else await (nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? agUiClientToolsFixture ?? chatGenerativeUiFixture).close();
+      else await (nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? chatGenerativeUiFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();
