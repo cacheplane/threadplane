@@ -87,6 +87,298 @@
       "response": {
         "content": "All set — I researched both airports, found flights, and drafted an itinerary. Recommended plan: book the balanced mid-morning nonstop from LAX to JFK, arrive about two hours early, and take the AirTrain into the city. Pack for mild spring weather in New York."
       }
+    },
+    {
+      "match": { "systemMessage": "In 3-5 words, summarize" },
+      "response": { "content": "Trip planning" }
+    },
+    {
+      "match": {
+        "systemMessage": "Booking Agent",
+        "userMessage": "failure:"
+      },
+      "response": {
+        "error": {
+          "message": "private-provider-marker-14",
+          "type": "server_error"
+        },
+        "status": 500
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Research Agent",
+        "userMessage": "(round 2)"
+      },
+      "response": { "content": "A fictional specialist observation. (research, round 2)" }
+    },
+    {
+      "match": { "systemMessage": "Research Agent" },
+      "response": { "content": "A fictional specialist observation. (research, round 1)" }
+    },
+    {
+      "match": {
+        "systemMessage": "Booking Agent",
+        "userMessage": "(round 2)"
+      },
+      "response": { "content": "A fictional specialist observation. (booking, round 2)" }
+    },
+    {
+      "match": { "systemMessage": "Booking Agent" },
+      "response": { "content": "A fictional specialist observation. (booking, round 1)" }
+    },
+    {
+      "match": {
+        "systemMessage": "Itinerary Agent",
+        "userMessage": "(round 2)"
+      },
+      "response": { "content": "A fictional specialist observation. (itinerary, round 2)" }
+    },
+    {
+      "match": { "systemMessage": "Itinerary Agent" },
+      "response": { "content": "A fictional specialist observation. (itinerary, round 1)" }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "direct"
+      },
+      "response": { "content": "A fictional parent summary." }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "batch",
+        "hasToolResult": true
+      },
+      "response": { "content": "A fictional parent summary." }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "batch",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"research\", \"task_description\": \"batch: a fictional LAX to JFK trip.\"}"
+          },
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"booking\", \"task_description\": \"batch: a fictional LAX to JFK trip.\"}"
+          },
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"itinerary\", \"task_description\": \"batch: a fictional LAX to JFK trip.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "sequential",
+        "toolResultContains": "(itinerary, round 1)"
+      },
+      "response": { "content": "A fictional parent summary." }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "sequential",
+        "toolResultContains": "(booking, round 1)"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"itinerary\", \"task_description\": \"sequential: a fictional LAX to JFK trip.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "sequential",
+        "toolResultContains": "(research, round 1)"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"booking\", \"task_description\": \"sequential: a fictional LAX to JFK trip.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "sequential",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"research\", \"task_description\": \"sequential: a fictional LAX to JFK trip.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "failure",
+        "toolResultContains": "(itinerary, round 1)"
+      },
+      "response": { "content": "A fictional parent summary." }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "failure",
+        "toolResultContains": "(booking, round 1)"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"itinerary\", \"task_description\": \"failure: a fictional LAX to JFK trip.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "failure",
+        "toolResultContains": "(research, round 1)"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"booking\", \"task_description\": \"failure: a fictional LAX to JFK trip.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "failure",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"research\", \"task_description\": \"failure: a fictional LAX to JFK trip.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "rounds",
+        "toolResultContains": "(itinerary, round 2)"
+      },
+      "response": { "content": "A fictional parent summary." }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "rounds",
+        "toolResultContains": "(booking, round 2)"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"itinerary\", \"task_description\": \"rounds: a fictional LAX to JFK trip. (round 2)\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "rounds",
+        "toolResultContains": "(research, round 2)"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"booking\", \"task_description\": \"rounds: a fictional LAX to JFK trip. (round 2)\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "rounds",
+        "toolResultContains": "(itinerary, round 1)"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"research\", \"task_description\": \"rounds: a fictional LAX to JFK trip. (round 2)\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "rounds",
+        "toolResultContains": "(booking, round 1)"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"itinerary\", \"task_description\": \"rounds: a fictional LAX to JFK trip.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "rounds",
+        "toolResultContains": "(research, round 1)"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"booking\", \"task_description\": \"rounds: a fictional LAX to JFK trip.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Trip Planner Orchestrator",
+        "userMessage": "rounds",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"role\": \"research\", \"task_description\": \"rounds: a fictional LAX to JFK trip.\"}"
+          }
+        ]
+      }
     }
   ]
 }

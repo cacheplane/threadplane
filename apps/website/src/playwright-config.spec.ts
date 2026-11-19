@@ -235,7 +235,7 @@ describe('Website Playwright configuration', () => {
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4622')?.command).toBe('npx nx run cockpit-chat-interrupts-python:smoke && node scripts/react-cockpit/serve.mjs chat-interrupts --no-parent');
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4619')?.command).toBe('node scripts/react-cockpit/serve.mjs render-computed-functions --no-parent');
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4614')?.command).toBe('node scripts/react-cockpit/serve.mjs render-spec-rendering --no-parent');
-    expect(reactServers.find(server => server.url === 'http://127.0.0.1:4613')?.command).toBe('npx nx run cockpit-ag-ui-subagents-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent');
+    expect(reactServers.find(server => server.url === 'http://127.0.0.1:4613/__ready')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent --backend');
     expect(reactServers.find(server=>server.url==='http://127.0.0.1:4612/__ready')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent --backend');
   });
   it('sends the Vercel automation bypass only when CI supplies it', () => {
@@ -511,7 +511,7 @@ describe('Website Playwright configuration', () => {
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent',url:'http://127.0.0.1:4642'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-aws-strands --no-parent',url:'http://127.0.0.1:4643'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent --backend',url:'http://127.0.0.1:4612/__ready'}),
-      expect.objectContaining({command:'npx nx run cockpit-ag-ui-subagents-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent',url:'http://127.0.0.1:4613'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent --backend',url:'http://127.0.0.1:4613/__ready'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-spec-rendering --no-parent',url:'http://127.0.0.1:4614'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-state-management --no-parent',url:'http://127.0.0.1:4615'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-repeat-loops --no-parent',url:'http://127.0.0.1:4616'}),
