@@ -108,10 +108,17 @@ function node(value?: string) {
 }
 function mount(
   initial: RenderReadinessEntry = entry(),
-  state: NonNullable<RenderSpecProps['state']> = node('ready')
+  state: NonNullable<RenderSpecProps['state']> = node('ready'),
+  // `null` turns off the default wait for direct components.
+  pendingFallback?: null
 ) {
   const view = render(
-    <RenderSpec spec={spec} registry={{ Input: initial }} state={state} />
+    <RenderSpec
+      spec={spec}
+      registry={{ Input: initial }}
+      state={state}
+      pendingFallback={pendingFallback}
+    />
   );
   return {
     ...view,
@@ -120,7 +127,12 @@ function mount(
       nextState = node()
     ) {
       view.rerender(
-        <RenderSpec spec={spec} registry={{ Input: next }} state={nextState} />
+        <RenderSpec
+          spec={spec}
+          registry={{ Input: next }}
+          state={nextState}
+          pendingFallback={pendingFallback}
+        />
       );
     },
   };
@@ -133,7 +145,7 @@ function edit(view: ReturnType<typeof render>) {
 
 describe('readiness contracts', () => {
   it.each(['function', 'memo', 'forwardRef'])(
-    'keeps direct %s views immediate with undefined props',
+    'keeps direct %s views immediate with undefined props when pendingFallback is null',
     (kind) => {
       const Component =
         kind === 'memo'
@@ -145,7 +157,7 @@ describe('readiness contracts', () => {
               </div>
             ))
           : Input;
-      const view = mount(entry());
+      const view = mount(entry(), node('ready'), null);
       view.update(Component);
       expect(view.getByText('undefined')).toBeTruthy();
       expect(view.getByRole('textbox')).toBeTruthy();
@@ -251,7 +263,7 @@ describe('readiness contracts', () => {
       )
     ).toThrow(error);
   });
-  it('uses null for absent pending fallback and reserves top fallback for unknown types', () => {
+  it('uses the tree placeholder for absent pending fallback, null when turned off, and reserves top fallback for unknown types', () => {
     const top = vi.fn(() => <p>unknown</p>);
     const view = render(
       <RenderSpec
@@ -259,6 +271,16 @@ describe('readiness contracts', () => {
         registry={{ Input: entry({ fallback: undefined }) }}
         state={{}}
         fallback={top}
+      />
+    );
+    expect(view.getByRole('status').textContent).toContain('Building UI');
+    view.rerender(
+      <RenderSpec
+        spec={spec}
+        registry={{ Input: entry({ fallback: undefined }) }}
+        state={{}}
+        fallback={top}
+        pendingFallback={null}
       />
     );
     expect(view.container.textContent).toBe('');
@@ -270,7 +292,11 @@ describe('readiness contracts', () => {
     const Component = memo(Input);
     Object.setPrototypeOf(Component, { kind: 'readiness' });
     const view = render(
-      <RenderSpec spec={spec} registry={{ Input: Component }} />
+      <RenderSpec
+        spec={spec}
+        registry={{ Input: Component }}
+        state={node('ready')}
+      />
     );
     expect(view.getByRole('textbox')).toBeTruthy();
   });
@@ -407,7 +433,7 @@ describe('readiness contracts', () => {
   });
   it('resets descriptor lifetime across direct component dispatch', () => {
     const config = entry();
-    const view = mount(config);
+    const view = mount(config, node('ready'), null);
     const old = edit(view);
     view.update(Input);
     expect(view.getByRole('textbox')).not.toBe(old);

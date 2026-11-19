@@ -13,7 +13,7 @@ import type {
   RenderStore,
 } from './index.js';
 import type { RenderState } from '@threadplane/content/render-state';
-import { RenderSpec } from './index.js';
+import { RenderPendingFallback, RenderSpec } from './index.js';
 import type { Json } from '@threadplane/content/json';
 
 const spec = {
@@ -34,6 +34,10 @@ const functions: ReactRenderFunctions = {
   uppercase: ({ value }) => String(value).toUpperCase(),
 };
 RenderSpec({ spec, registry, functions });
+RenderSpec({ spec, registry, pendingFallback: RenderPendingFallback });
+RenderSpec({ spec, registry, pendingFallback: null });
+// @ts-expect-error pendingFallback is a component or null, not an element.
+RenderSpec({ spec, registry, pendingFallback: 'Loading' });
 
 export function computedContracts(
   args: Readonly<Record<string, RenderValue>>,
