@@ -9,6 +9,7 @@ import {
   position,
   saved,
 } from './testing/checkpoint-fixture';
+import { answerPending } from './testing/answer-pending';
 
 const ai = (reasoning?: unknown, content = 'Answer') => ({
   type: 'ai',
@@ -201,7 +202,7 @@ describe('reasoning through actual session ownership', () => {
     await f.session.load!();
     const paused = f.session.getSnapshot();
     expect(paused.messages[0].reasoning).toBe('Paused');
-    const run = f.session.resume(true);
+    const run = f.session.resume(answerPending(f.session, true));
     await f.started();
     await f.emit(delta(undefined, 'Resumed'));
     const current = f.session.getSnapshot().messages[0];

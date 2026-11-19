@@ -15,7 +15,10 @@ export function assertRunOptions(
     metadata: { source: 'ui' },
   } as const;
   void session.submit('Hello', options);
-  void session.resume(false, options);
+  void session.resume(
+    [{ interruptId: 'i', status: 'resolved', value: false }],
+    options
+  );
   // @ts-expect-error Configuration is deeply readonly.
   options.config?.tags?.push('changed');
   if (options.config?.configurable) {
@@ -32,7 +35,7 @@ export function assertRunOptions(
     // @ts-expect-error Thread routing belongs to the session.
     config: { configurable: { thread_id: 'other' } },
   });
-  void session.resume(true, {
+  void session.resume([{ interruptId: 'i', status: 'resolved', value: true }], {
     // @ts-expect-error Checkpoint execution needs an explicit owner contract.
     config: { configurable: { checkpoint_id: 'old' } },
   });

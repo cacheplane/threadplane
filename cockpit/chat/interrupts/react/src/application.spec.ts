@@ -225,7 +225,7 @@ it.each(['confirm', 'cancel'] as const)(
     await h.app.submit('Forbidden while paused');
     expect(h.session.resume).toHaveBeenCalledTimes(1);
     expect(h.session.resume).toHaveBeenCalledWith(
-      value,
+      [{ interruptId: 'approval', status: 'resolved', value }],
       expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
     h.result();

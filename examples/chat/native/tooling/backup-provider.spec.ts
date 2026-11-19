@@ -211,7 +211,7 @@ function candidate() {
       assistant_id: 'chat',
       input: null,
       command: {
-        resume: { [id]: scenario === 'decline' ? 'denied' : 'approved' },
+        resume: scenario === 'decline' ? 'denied' : 'approved',
       },
       ...stream,
     });

@@ -60,3 +60,28 @@ const explicitDraft: string | undefined =
   explicit.session.getSnapshot().state?.draft;
 const anySession: AgentSession = stateful.session;
 void [statefulSession, todos, explicitDraft, anySession];
+
+// Interrupts, child agents and resume use the core shapes.
+const pausing = createFakeAgentSession({
+  interrupts: [{ id: 'i1', value: { tool: 'send' } }],
+  subagents: [
+    { id: 'child', messages: [{ role: 'assistant', content: 'Hi' }] },
+  ],
+  onResume: (responses, fake) => {
+    const first: string = responses[0].interruptId;
+    fake.setInterrupts(undefined);
+    void first;
+    return 'success';
+  },
+});
+pausing.setInterrupts([{ id: 'i2' }]);
+// @ts-expect-error an interrupt needs an id
+pausing.setInterrupts([{ value: 1 }]);
+pausing.setSubagents([{ id: 'child', status: 'unknown' }]);
+// @ts-expect-error a child agent status is one of the four contract values
+pausing.setSubagents([{ id: 'child', status: 'pending' }]);
+// @ts-expect-error a resume handler returns an outcome
+pausing.onResume(() => 'done');
+const firstResume: string | undefined =
+  pausing.resumes[0]?.responses[0]?.interruptId;
+void firstResume;

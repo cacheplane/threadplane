@@ -3,6 +3,7 @@ import type { Run, ThreadState } from '@langchain/langgraph-sdk';
 import { createSession } from './create-session';
 import { RECOVERY_COPY, failureProjection } from './stream-projection';
 import type { AgentTransport, StreamEvent } from './transport.types';
+import { answerPending } from './testing/answer-pending';
 
 const chunk = (content: string, sseId = '1'): StreamEvent => ({
   type: 'messages',
@@ -354,7 +355,9 @@ describe('read-only recovery for a resume attempt', () => {
 
   it('offers a status check for a dropped decision on a run still in flight and resolves it once the run ends', async () => {
     const f = await resumeFixture({ status: 'running' });
-    expect(await f.session.resume(true)).toBe('interrupted');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'interrupted'
+    );
     expect(f.getHistory).not.toHaveBeenCalled();
     expect(f.session.getSnapshot()).toMatchObject({
       status: 'error',
@@ -384,7 +387,9 @@ describe('read-only recovery for a resume attempt', () => {
 
   it('treats the same pause with no new activity as inconclusive and lets the decision be sent again', async () => {
     const f = await resumeFixture({ exact: false });
-    expect(await f.session.resume(true)).toBe('interrupted');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'interrupted'
+    );
     expect(f.getHistory).toHaveBeenCalledTimes(1);
     const original = f.session.getSnapshot();
     expect(original.error).toMatchObject({ recovery: 'check' });
@@ -404,7 +409,9 @@ describe('read-only recovery for a resume attempt', () => {
     f.stream.mockImplementation(async function* () {
       yield { type: 'values', data: { messages: [user, waiting, answer] } };
     });
-    expect(await f.session.resume(true)).toBe('success');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'success'
+    );
     expect(f.session.getSnapshot().messages.at(-1)).toMatchObject({
       id: 'resumed-answer',
       delivery: { outcome: 'success' },
@@ -415,7 +422,9 @@ describe('read-only recovery for a resume attempt', () => {
   it('settles as paused on a different pending interrupt reached after the decision landed', async () => {
     const f = await resumeFixture({ exact: false });
     f.getHistory.mockResolvedValue([paused([user, waiting, answer], [again])]);
-    expect(await f.session.resume(true)).toBe('paused');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'paused'
+    );
     expect(f.getHistory).toHaveBeenCalledTimes(1);
     expect(f.session.getSnapshot()).toMatchObject({
       status: 'idle',
@@ -432,7 +441,9 @@ describe('read-only recovery for a resume attempt', () => {
     f.getHistory.mockResolvedValue([
       paused([user, waiting, answer], [approve]),
     ]);
-    expect(await f.session.resume(true)).toBe('paused');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'paused'
+    );
     expect(f.session.getSnapshot().interrupts).toEqual([approve]);
     expect(f.session.getSnapshot().messages.at(-1)).toMatchObject({
       id: 'resumed-answer',
@@ -444,7 +455,9 @@ describe('read-only recovery for a resume attempt', () => {
     f.getHistory.mockResolvedValue([
       paused([user, waiting], [{ id: 'approve', value: 'Really proceed?' }]),
     ]);
-    expect(await f.session.resume(true)).toBe('paused');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'paused'
+    );
     expect(f.session.getSnapshot().interrupts).toEqual([
       { id: 'approve', value: 'Really proceed?' },
     ]);
@@ -462,7 +475,9 @@ describe('read-only recovery for a resume attempt', () => {
       settings?.onRunCreated?.({ run_id: 'run-1', thread_id: 't' });
       yield { type: 'updates', data: { __interrupt__: [again] } };
     });
-    expect(await f.session.resume(true)).toBe('interrupted');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'interrupted'
+    );
     expect(f.session.getSnapshot()).toMatchObject({
       status: 'error',
       error: { recovery: 'check' },
@@ -471,7 +486,9 @@ describe('read-only recovery for a resume attempt', () => {
     f.stream.mockImplementationOnce(async function* () {
       yield { type: 'values', data: { messages: [user, waiting, answer] } };
     });
-    expect(await f.session.resume(false)).toBe('success');
+    expect(await f.session.resume(answerPending(f.session, false))).toBe(
+      'success'
+    );
     expect(f.session.getSnapshot().interrupts).toEqual([]);
     expect(f.stream).toHaveBeenCalledTimes(2);
   });
@@ -479,7 +496,9 @@ describe('read-only recovery for a resume attempt', () => {
   it('keeps an idle thread with no pending interrupt and no new activity inconclusive', async () => {
     const f = await resumeFixture({ exact: false });
     f.getHistory.mockResolvedValue([paused([user, waiting], [])]);
-    expect(await f.session.resume(true)).toBe('interrupted');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'interrupted'
+    );
     const original = f.session.getSnapshot();
     expect(original.error).toMatchObject({ recovery: 'check' });
     await f.session.checkStatus?.();
@@ -491,7 +510,9 @@ describe('read-only recovery for a resume attempt', () => {
     f.getHistory.mockResolvedValue([
       paused([user, waiting, answer], [], ['generate']),
     ]);
-    expect(await f.session.resume(true)).toBe('interrupted');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'interrupted'
+    );
     expect(f.session.getSnapshot().error).toMatchObject({ recovery: 'check' });
     f.getHistory.mockResolvedValue([paused([user, waiting, answer], [])]);
     await f.session.checkStatus?.();
@@ -507,7 +528,9 @@ describe('read-only recovery for a resume attempt', () => {
     f.getHistory.mockResolvedValue([
       paused([user, waiting, answer, newer], [], ['analyze']),
     ]);
-    expect(await f.session.resume(true)).toBe('success');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'success'
+    );
     expect(f.session.getSnapshot().messages.at(-1)).toMatchObject({
       id: 'resumed-answer',
       delivery: { outcome: 'success' },
@@ -517,7 +540,9 @@ describe('read-only recovery for a resume attempt', () => {
   it('disambiguates an exact interrupted status on a resumed run through history', async () => {
     const f = await resumeFixture({ status: 'interrupted' });
     f.getHistory.mockResolvedValue([paused([user, waiting, answer], [again])]);
-    expect(await f.session.resume(true)).toBe('paused');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'paused'
+    );
     expect(f.getHistory).toHaveBeenCalledTimes(1);
     expect(f.session.getSnapshot().interrupts).toEqual([again]);
     expect(f.session.getSnapshot().reconnect).toBeUndefined();
@@ -528,7 +553,9 @@ describe('read-only recovery for a resume attempt', () => {
     f.getHistory.mockResolvedValue([
       paused([{ ...user, id: 'other-user' }, answer], [again]),
     ]);
-    expect(await f.session.resume(true)).toBe('interrupted');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'interrupted'
+    );
     expect(f.session.getSnapshot().interrupts).toEqual([]);
     expect(f.session.getSnapshot().error).toMatchObject({ recovery: 'check' });
   });
@@ -676,7 +703,9 @@ describe('automatic read-only recovery when the stream throws', () => {
         ],
       },
     ]);
-    expect(await f.session.resume(true)).toBe('paused');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'paused'
+    );
     expect(f.session.getSnapshot()).toMatchObject({
       status: 'idle',
       error: undefined,

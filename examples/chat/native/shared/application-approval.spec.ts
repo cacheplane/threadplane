@@ -96,7 +96,8 @@ const resume = (thread: string, answer = 'approved', extra = {}) => ({
   payload: {
     assistant_id: 'assistant',
     input: null,
-    command: { resume: { [id]: answer } },
+    // One pending approval: the answer is the plain resume value.
+    command: { resume: answer },
     stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
     stream_subgraphs: true,
     stream_resumable: true,
@@ -452,8 +453,8 @@ test('approval rejected completion suppresses a real replacement pause even when
         const actual = o.sessionFactory!(thread);
         return {
           ...actual,
-          async resume(value, options) {
-            assert.equal(await actual.resume(value, options), 'paused');
+          async resume(responses, options) {
+            assert.equal(await actual.resume(responses, options), 'paused');
             throw new Error('completion delivery failed');
           },
         };
@@ -495,10 +496,10 @@ for (const action of ['stop', 'select', 'dispose'] as const) {
           const actual = o.sessionFactory!(thread);
           return {
             ...actual,
-            resume(value, options) {
+            resume(responses, options) {
               invocations++;
               aborted = options?.signal?.aborted ?? false;
-              return actual.resume(value, options);
+              return actual.resume(responses, options);
             },
           };
         },
@@ -554,8 +555,8 @@ test('approval held resume Stop closes HTTP but cannot release the shared slot b
         const actual = o.sessionFactory!(thread);
         return {
           ...actual,
-          async resume(value, options) {
-            const result = await actual.resume(value, options);
+          async resume(responses, options) {
+            const result = await actual.resume(responses, options);
             settled.release();
             await gate.promise;
             return result;
@@ -654,8 +655,8 @@ for (const rejection of [false, true]) {
           first = false;
           return {
             ...actual,
-            async resume(value, options) {
-              const result = await actual.resume(value, options);
+            async resume(responses, options) {
+              const result = await actual.resume(responses, options);
               if (delay) {
                 settled.release();
                 await gate.promise;

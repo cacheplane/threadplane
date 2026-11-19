@@ -249,7 +249,7 @@ const resume = (id, answer, events, extra = {}) => ({
   payload: {
     assistant_id: 'assistant',
     input: null,
-    command: { resume: { [approvalId]: answer } },
+    command: { resume: answer },
     stream_mode: ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'],
     stream_subgraphs: true,
     stream_resumable: true,

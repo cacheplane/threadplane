@@ -107,8 +107,6 @@ export function checkCandidate(signal: AbortSignal) {
   void agent.submit({ message: 'Hello', state: { topic: 'x' } });
   // @ts-expect-error A submission takes a message and state only.
   void agent.submit({ message: 'Hello', messages: [] });
-  // @ts-expect-error Resume is not part of the core contract.
-  void agent.resume;
   const regenerated: Promise<CompleteOutcome> | undefined =
     session.regenerate?.('assistant-id', { signal });
   void regenerated;

@@ -33,13 +33,14 @@ function setup() {
   const creation = deferred<string>();
   const run = deferred<CompleteOutcome>();
   const resumed = deferred<CompleteOutcome>();
-  let snapshot: AgentSnapshot & { interrupts: readonly { value?: unknown }[] } =
-    Object.freeze({
-      status: 'idle',
-      messages: [],
-      toolCalls: [],
-      interrupts: Object.freeze([]),
-    });
+  let snapshot: AgentSnapshot & {
+    interrupts: readonly { id: string; value?: unknown }[];
+  } = Object.freeze({
+    status: 'idle',
+    messages: [],
+    toolCalls: [],
+    interrupts: Object.freeze([]),
+  });
   const observers = new Set<() => void>();
   const release = vi.fn();
   const session: InterruptSession = {
@@ -142,9 +143,10 @@ describe('public interrupts owner', () => {
       await s.application.decide(required(decision), response);
       await s.application.submit('Duplicate text');
       expect(s.session.resume).toHaveBeenCalledTimes(1);
-      expect(s.session.resume).toHaveBeenCalledWith(response, {
-        signal: expect.any(AbortSignal),
-      });
+      expect(s.session.resume).toHaveBeenCalledWith(
+        [{ interruptId: 'reused-id', status: 'resolved', value: response }],
+        { signal: expect.any(AbortSignal) }
+      );
       expect(s.application.getSnapshot().busy).toBe(true);
       expect(s.application.getSnapshot().decision).toBeNull();
       expect(s.session.submit).toHaveBeenCalledTimes(1);
@@ -244,7 +246,13 @@ describe('public interrupts owner', () => {
     const pending = s.application.decide(required(decision), response);
     response.amount = 100;
     expect(s.session.resume).toHaveBeenCalledWith(
-      { approved: true, amount: 25 },
+      [
+        {
+          interruptId: 'reused-id',
+          status: 'resolved',
+          value: { approved: true, amount: 25 },
+        },
+      ],
       expect.any(Object)
     );
     s.resumed.reject(new Error('PRIVATE credential'));

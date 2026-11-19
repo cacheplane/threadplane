@@ -1,8 +1,10 @@
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import { describe, expect, it } from 'vitest';
 import {
+  identifyInterrupts,
   projectHistoryInterrupts,
   projectInterrupts,
+  resumeValue,
 } from './interrupt-projection';
 import type { StreamEvent } from './transport.types';
 
@@ -382,5 +384,144 @@ describe('interrupt projection', () => {
     ).toThrow(TypeError);
     expect(value['self']).toBe(value);
     expect(Object.isFrozen(value)).toBe(false);
+  });
+});
+
+describe('published interrupt ids', () => {
+  it('keeps backend ids and names the rest by breakpoint or position', () => {
+    const wire = projectInterrupts(
+      [],
+      control([
+        { id: 'approve', value: 'Proceed?', namespace: ['task'] },
+        { value: 'No id' },
+        { id: 'interrupt-1', value: 'Taken name' },
+      ])
+    );
+    const published = identifyInterrupts(wire);
+    expect(published).toEqual([
+      { id: 'approve', value: 'Proceed?', namespace: ['task'] },
+      { id: 'interrupt-1-1', value: 'No id' },
+      { id: 'interrupt-1', value: 'Taken name' },
+    ]);
+    expect(published[0]).toBe(wire[0]);
+    expect(Object.isFrozen(published)).toBe(true);
+    expect(Object.isFrozen(published[1])).toBe(true);
+    // One wire batch has one published list.
+    expect(identifyInterrupts(wire)).toBe(published);
+    expect(identifyInterrupts(projectInterrupts([], control([])))).toEqual([
+      { id: 'breakpoint', when: 'breakpoint' },
+    ]);
+    expect(
+      identifyInterrupts(projectInterrupts([], control([{ value: 0 }])))
+    ).toEqual([{ id: 'interrupt-0', value: 0 }]);
+  });
+});
+
+describe('resume value', () => {
+  const one = projectInterrupts([], control([{ id: 'approve', value: 'Q' }]));
+  const several = projectInterrupts(
+    [],
+    control([{ id: 'a', value: 1 }, { id: 'b', value: 2 }, { value: 3 }])
+  );
+
+  it('sends the response value as is for one pending interrupt', () => {
+    for (const value of [undefined, null, false, 0, '', { approve: true }])
+      expect(
+        resumeValue(
+          [{ interruptId: 'approve', status: 'resolved', value }],
+          one
+        )
+      ).toBe(value);
+    const breakpoint = projectInterrupts([], control([]));
+    expect(
+      resumeValue(
+        [{ interruptId: 'breakpoint', status: 'resolved' }],
+        breakpoint
+      )
+    ).toBeUndefined();
+    const unnamed = projectInterrupts([], control([{ value: 'Q' }]));
+    expect(
+      resumeValue(
+        [{ interruptId: 'interrupt-0', status: 'resolved', value: 'yes' }],
+        unnamed
+      )
+    ).toBe('yes');
+  });
+
+  it('answers several pending interrupts by backend id, all or some', () => {
+    expect(
+      resumeValue(
+        [
+          { interruptId: 'b', status: 'resolved', value: { ok: true } },
+          { interruptId: 'a', status: 'resolved', value: null },
+        ],
+        several
+      )
+    ).toEqual({ b: { ok: true }, a: null });
+    expect(
+      resumeValue(
+        [{ interruptId: 'a', status: 'resolved', value: 'only' }],
+        several
+      )
+    ).toEqual({ a: 'only' });
+  });
+
+  it.each([
+    [undefined, /at least one/],
+    [[], /at least one/],
+    [[null], /names its interrupt by id/],
+    [[{ status: 'resolved' }], /names its interrupt by id/],
+    [
+      [{ interruptId: 'other', status: 'resolved' }],
+      /No pending interrupt has the id "other"/,
+    ],
+    [
+      [
+        { interruptId: 'approve', status: 'resolved' },
+        { interruptId: 'approve', status: 'resolved' },
+      ],
+      /"approve" is answered twice/,
+    ],
+    [
+      [{ interruptId: 'approve', status: 'cancelled' }],
+      /cannot cancel an interrupt/,
+    ],
+    [[{ interruptId: 'approve', status: 'done' }], /status "resolved"/],
+    [[{ interruptId: 'approve' }], /status "resolved"/],
+  ])('rejects %j', (responses, message) => {
+    expect(() => resumeValue(responses, one)).toThrow(TypeError);
+    expect(() => resumeValue(responses, one)).toThrow(message);
+  });
+
+  it('rejects what a batch answered by id cannot express', () => {
+    expect(() =>
+      resumeValue(
+        [{ interruptId: 'interrupt-2', status: 'resolved', value: 1 }],
+        several
+      )
+    ).toThrow(/has no backend id/);
+    expect(() =>
+      resumeValue([{ interruptId: 'a', status: 'resolved' }], several)
+    ).toThrow(/needs a value while several interrupts are pending/);
+  });
+
+  it('reads each response field once', () => {
+    const reads: string[] = [];
+    const response = {
+      get interruptId() {
+        reads.push('interruptId');
+        return 'approve';
+      },
+      get status() {
+        reads.push('status');
+        return 'resolved';
+      },
+      get value() {
+        reads.push('value');
+        return 1;
+      },
+    };
+    expect(resumeValue([response], one)).toBe(1);
+    expect(reads).toEqual(['interruptId', 'status', 'value']);
   });
 });

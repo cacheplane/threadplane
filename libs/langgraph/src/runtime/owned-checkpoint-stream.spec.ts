@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
 import { createSession } from './create-session';
 import type { AgentTransport } from './transport.types';
+import { answerPending } from './testing/answer-pending';
 
 const modes = ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'];
 const legacyModes = modes.slice(0, -1);
@@ -233,7 +234,9 @@ describe('owned native checkpoint stream through the real SDK', () => {
     const requests = server({ pause: true });
     const session = native();
     expect(await session.submit('Question')).toBe('paused');
-    expect(await session.resume({ approve: false })).toBe('success');
+    expect(
+      await session.resume(answerPending(session, { approve: false }))
+    ).toBe('success');
     const posts = requests.filter((r) => r.method === 'POST');
     expect(posts).toHaveLength(2);
     expect(posts.map((r) => r.body?.['stream_mode'])).toEqual([modes, modes]);

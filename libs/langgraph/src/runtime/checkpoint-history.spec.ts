@@ -3,6 +3,7 @@ import { assert, describe, expect, it, vi } from 'vitest';
 import { createSession } from './create-session';
 import type { AgentTransport } from './transport.types';
 import { deferred } from './testing/deferred';
+import { answerPending } from './testing/answer-pending';
 
 function checkpoint(id: string | null = 'latest'): ThreadState {
   return {
@@ -59,7 +60,9 @@ describe('explicit checkpoint history observation', () => {
     });
     expect(await f.session.submit('Go')).toBe('paused');
     await f.session.stop();
-    expect(await f.session.resume(true)).toBe('success');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'success'
+    );
     await f.session.dispose();
     expect(snapshots.length).toBeGreaterThan(2);
     expect(snapshots.every((snapshot) => snapshot.history === page)).toBe(true);

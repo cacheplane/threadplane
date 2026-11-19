@@ -1,7 +1,11 @@
 import type {
   AgentError,
+  AgentInterrupt,
+  AgentInterruptResponse,
   AgentSession,
   AgentSnapshot,
+  AgentSubagent,
+  AgentSubagentStatus,
   AgentUsage,
   Citation,
   CompleteOutcome,
@@ -222,3 +226,83 @@ const usage: AgentUsage | undefined = snapshot.usage;
 // @ts-expect-error usage entries are readonly
 usage?.entries.push({ inputTokens: 1 });
 void [retried, retriedText, usage];
+
+// Interrupts: optional on the snapshot, readonly, and answered through resume.
+const interrupts: readonly AgentInterrupt[] | undefined = snapshot.interrupts;
+const interruptValue: PlainValue = interrupts?.[0]?.value;
+// @ts-expect-error pending interrupts are readonly
+interrupts?.push({ id: 'i' });
+// @ts-expect-error an interrupt's fields are readonly
+if (interrupts?.[0]) interrupts[0].id = 'other';
+const resolved: AgentInterruptResponse = {
+  interruptId: 'i',
+  status: 'resolved',
+  value: { approved: true },
+};
+const cancelled: AgentInterruptResponse = {
+  interruptId: 'i',
+  status: 'cancelled',
+};
+// @ts-expect-error a cancelled response carries no value
+const cancelledWithValue: AgentInterruptResponse = {
+  interruptId: 'i',
+  status: 'cancelled',
+  value: 1,
+};
+// @ts-expect-error a response names its interrupt
+const unnamed: AgentInterruptResponse = { status: 'resolved' };
+const unsendable: AgentInterruptResponse = {
+  interruptId: 'i',
+  status: 'resolved',
+  // @ts-expect-error a response value is plain data
+  value: new Date(),
+};
+// resume is optional and reports the continued run's outcome, like submit.
+const resumed: Promise<CompleteOutcome> | undefined = session.resume?.(
+  [resolved, cancelled],
+  { signal: new AbortController().signal }
+);
+// @ts-expect-error resume takes the responses as a list
+session.resume?.(resolved);
+// A session with no resume command is still an AgentSession.
+const cannotPause: AgentSession = {
+  getSnapshot: () => snapshot,
+  subscribe: () => () => undefined,
+  submit: async () => 'success',
+  stop: async () => undefined,
+  dispose: async () => undefined,
+};
+void [
+  interruptValue,
+  cancelledWithValue,
+  unnamed,
+  unsendable,
+  resumed,
+  cannotPause,
+];
+
+// Child agents: optional on the snapshot, each with its own readonly transcript.
+const subagents: readonly AgentSubagent[] | undefined = snapshot.subagents;
+const childMessages: readonly Message[] | undefined = subagents?.[0]?.messages;
+const childCalls: readonly ToolCall[] | undefined = subagents?.[0]?.toolCalls;
+const childStatus: AgentSubagentStatus | undefined = subagents?.[0]?.status;
+// @ts-expect-error pending is a tool call status, not a child agent status
+const invalidChildStatus: AgentSubagentStatus = 'pending';
+// @ts-expect-error a child's messages are readonly
+subagents?.[0]?.messages.push();
+// @ts-expect-error a child agent needs its transcript
+const bare: AgentSubagent = { id: 'c', status: 'running' };
+// A session typed with authored tools reports the same child shape.
+declare const authored: AgentSnapshot<{
+  weather: { args: { city: string }; result: { temp: number } };
+}>;
+const authoredChildren: readonly AgentSubagent[] | undefined =
+  authored.subagents;
+void [
+  childMessages,
+  childCalls,
+  childStatus,
+  invalidChildStatus,
+  bare,
+  authoredChildren,
+];

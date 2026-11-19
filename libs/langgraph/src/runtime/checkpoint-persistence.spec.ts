@@ -12,6 +12,7 @@ import {
   position,
   saved,
 } from './testing/checkpoint-fixture';
+import { answerPending } from './testing/answer-pending';
 
 const drain = () => new Promise<void>((resolve) => setImmediate(resolve));
 function persistenceFixture() {
@@ -139,7 +140,7 @@ describe('checkpoint persistence', () => {
       for (const command of [
         () => f.session.submit('Next'),
         () => f.session.fork(position('a'), 'Fork'),
-        () => f.session.resume(null),
+        () => f.session.resume(answerPending(f.session, null)),
         () => f.session.load?.(),
         () => f.session.checkStatus?.(),
         () => f.session.reconnect(),
