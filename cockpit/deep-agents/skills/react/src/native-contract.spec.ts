@@ -95,18 +95,18 @@ it.each([
     await session.load?.();
     const loadedSnapshot = session.getSnapshot();
     if (filtered) {
-      expect(Object.keys(snapshot.values ?? {})).toEqual(['files']);
-      expect(Object.hasOwn(snapshot.values ?? {}, 'skills_metadata')).toBe(
+      expect(Object.keys(snapshot.state ?? {})).toEqual(['files']);
+      expect(Object.hasOwn(snapshot.state ?? {}, 'skills_metadata')).toBe(
         false
       );
     } else {
-      expect(snapshot.values?.skills_metadata).toEqual(
+      expect(snapshot.state?.skills_metadata).toEqual(
         actual.current.values.skills_metadata
       );
     }
     expect(observedState).toEqual(history[0]);
     expect(loadedCheckpoint).toEqual(observedState);
-    expect(loadedSnapshot.values?.skills_metadata).toEqual(
+    expect(loadedSnapshot.state?.skills_metadata).toEqual(
       actual.current.values.skills_metadata
     );
     expect(snapshot.toolCalls.map((c) => c.status)).toEqual([

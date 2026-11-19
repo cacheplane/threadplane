@@ -20,7 +20,7 @@ async function tick() {
   for (let n = 0; n < 8; n++) await Promise.resolve();
 }
 type State = AgentSnapshot & {
-  values?: Readonly<Record<string, unknown>>;
+  state?: Readonly<Record<string, unknown>>;
   history?: unknown;
   interrupts: readonly unknown[];
 };
@@ -132,7 +132,7 @@ function setup() {
       replace({
         status: 'idle',
         messages,
-        values: {
+        state: {
           completed_turn_id: human.id,
           completed_answer_id: answer.id,
           completed_message_ids: messages.map((message) => message.id),
@@ -259,7 +259,7 @@ it('valid current pair with truncated canonical history blocks all further effec
   await tick();
   const human = f.sessions[0].state().messages.at(-1)!;
   f.sessions[0].final({
-    values: {
+    state: {
       completed_turn_id: human.id,
       completed_answer_id: 'answer-' + human.id,
       completed_message_ids: [human.id, 'answer-' + human.id],

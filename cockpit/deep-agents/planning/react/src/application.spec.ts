@@ -142,7 +142,7 @@ function setup() {
       status: 'idle',
       messages: projected,
       toolCalls,
-      values: {
+      state: {
         files: {},
         ...(raw.values.todos ? { todos: raw.values.todos } : {}),
       },
@@ -270,7 +270,7 @@ it('invalid live values retain prior valid display and notice', async () => {
   vi.mocked(f.session.submit).mockImplementation(async () => {
     f.emit({
       ...f.session.getSnapshot(),
-      values: { todos: [{ content: 'bad', status: 'wrong' }] },
+      state: { todos: [{ content: 'bad', status: 'wrong' }] },
     });
     return 'error';
   });
@@ -371,7 +371,7 @@ it('valid recovery clears the current invalid-update notice', async () => {
   const f = setup();
   await f.app.submit('Plan');
   vi.mocked(f.session.submit).mockImplementationOnce(async () => {
-    f.emit({ ...f.session.getSnapshot(), values: { todos: 'bad' } });
+    f.emit({ ...f.session.getSnapshot(), state: { todos: 'bad' } });
     return 'error';
   });
   await f.app.submit('Bad');
@@ -421,7 +421,7 @@ it('read-only status changes preserve unfinished items after assistant completes
   f.emit({
     ...f.session.getSnapshot(),
     status: 'running',
-    values: { todos: [{ content: 'Late', status: 'completed' }] },
+    state: { todos: [{ content: 'Late', status: 'completed' }] },
   });
   expect(f.app.getSnapshot().observedPlan).toEqual({
     kind: 'valid',

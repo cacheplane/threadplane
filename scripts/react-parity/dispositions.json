@@ -19706,6 +19706,156 @@
       "treatment": "react",
       "status": "in-progress",
       "reason": "Structural session slice (status snapshot and subscribe) that drives the Devtools button's streaming dot."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#useChatLifecycle",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "Reads the lifecycle of the enclosing Chat, or null outside one; Angular injects the CHAT_LIFECYCLE token from content projected into the chat."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatLifecycle",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "The four lifecycle values as plain readonly fields; Angular's ChatLifecycle holds the same four as signals."
+    },
+    {
+      "id": "source:libs/react/src/chat/lifecycle.ts",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "Chat lifecycle for React: componentReady, firstMessageSent, messageCount and inputSubmittedAt as plain values, read inside Chat with useChatLifecycle and outside it through onLifecycleChange. Angular provides the same four as signals on the CHAT_LIFECYCLE token. Counts start again when the session prop changes, where Angular resets them in clearThread. The LangGraph agent lifecycle timestamps are separate and not covered."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/lifecycle.ts",
+      "taskIds": [
+        "T08"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "reason": "Framework-neutral lifecycle timestamps for a session: first stream event, latest failure with its kind, first interrupt, latest resume, first saved-history read, and first tool call start and finish, as an observable beside the snapshot.",
+      "note": "Staged in the private session. The Angular AgentLifecycle signals and registry are unchanged and not built on it. No threadCreatedAt, since a session never creates its thread; nothing resets, since a session serves one thread."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#useThreadRouting",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-routing.ts",
+      "reason": "Keeps the active thread in the URL like Angular injectThreadRouting: restores it on load, pushes a history entry on selection, follows back and forward, and replaces a thread that exists rejects with the bare URL. React has no single router, so the URL binding is an adapter; the default reads window.location and history and reads nothing on the server."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRouting",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-routing.ts",
+      "reason": "The active thread id from the URL and its setter, the React counterpart of the app-owned threadId signal Angular binds."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRoutingAdapter",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-routing.ts",
+      "reason": "React-only seam: read, write and subscribe for the URL so React Router or Next.js applications bind their own location, where Angular uses the Router directly."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRoutingOptions",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-routing.ts",
+      "reason": "Adapter, base path or query parameter, and an optional existence check, the counterparts of Angular toCommands, threadIdFromUrl and validate."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ThreadRoutingWriteMode",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/thread-routing.ts",
+      "reason": "Push for a selection and replace for a missing thread, matching the navigate and replaceUrl calls Angular makes."
+    },
+    {
+      "id": "source:libs/react/src/chat/thread-routing.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "note": "useThreadRouting and its default browser adapter, the React counterpart of libs/chat/src/lib/routing/thread-routing.ts."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#observeAgentState",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "export:libs/react/src/index.ts#useAgentState",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "source:libs/angular/src/observe-agent-state.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "source:libs/react/src/use-agent-state.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
     }
   ]
 }

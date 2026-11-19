@@ -265,7 +265,7 @@ test('installed native session proves two real live generations and two explicit
     assert.ok(observations.slice(before).some((s) => s.status === 'running'));
     // Freeze semantic authority before calling the explicit load operation.
     const frozen = structuredClone(neutral(live.messages));
-    const analysis = structuredClone(live.values.analysis);
+    const analysis = structuredClone(live.state.analysis);
     const answer = turn[1].content;
     assert.deepEqual(analysis, {
       characters: [...answer].length,
@@ -295,7 +295,7 @@ test('installed native session proves two real live generations and two explicit
     const loaded = session.getSnapshot();
     assertEmptyExtras(loaded);
     assert.deepEqual(neutral(loaded.messages), frozen);
-    assert.deepEqual(loaded.values.analysis, analysis);
+    assert.deepEqual(loaded.state.analysis, analysis);
     for (const message of loaded.messages)
       assert.deepEqual(message.delivery, {
         generation: message.id,
@@ -388,13 +388,13 @@ test('installed native session proves two real live generations and two explicit
     unicodeAnswer = unicodeLive.messages[1].content;
   assert.ok(unicodeAnswer.includes('🛩️'));
   assert.notEqual([...unicodeAnswer].length, unicodeAnswer.length);
-  assert.deepEqual(unicodeLive.values.analysis, {
+  assert.deepEqual(unicodeLive.state.analysis, {
     characters: [...unicodeAnswer].length,
     words: unicodeAnswer.split(' ').length,
   });
   const unicodeRaw = await unicodeClient.threads.getState(unicodeThread);
   assert.equal(unicodeRaw.values.messages[1].content, unicodeAnswer);
-  assert.deepEqual(unicodeRaw.values.analysis, unicodeLive.values.analysis);
+  assert.deepEqual(unicodeRaw.values.analysis, unicodeLive.state.analysis);
   const unicodeExact = await unicodeClient.threads.getState(
     unicodeThread,
     unicodeRaw.checkpoint
@@ -406,8 +406,8 @@ test('installed native session proves two real live generations and two explicit
     neutral(unicodeRaw.values.messages)
   );
   assert.deepEqual(
-    unicodeSession.getSnapshot().values.analysis,
-    unicodeLive.values.analysis
+    unicodeSession.getSnapshot().state.analysis,
+    unicodeLive.state.analysis
   );
   report.unicodeExtension = {
     label: 'AuthoredModel _begin extension, real graph analysis',

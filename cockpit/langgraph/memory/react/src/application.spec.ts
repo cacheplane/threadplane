@@ -101,7 +101,7 @@ it('shows a streamed reply before extracted facts arrive', async () => {
   });
   expect(h.application.getSnapshot().rows).toHaveLength(1);
   expect(h.application.getSnapshot().facts).toEqual([]);
-  h.replace({ values: { memory: { user_name: 'Mira' } } });
+  h.replace({ state: { memory: { user_name: 'Mira' } } });
   expect(h.application.getSnapshot().facts).toEqual([
     { key: 'user_name', value: 'Mira' },
   ]);
@@ -117,13 +117,13 @@ it('shows a streamed reply before extracted facts arrive', async () => {
 it('replaces authoritative facts rather than merging removed keys', async () => {
   const h = setup();
   await h.start();
-  h.replace({ values: { memory: { name: 'Mira', favorite: 'tea' } } });
-  h.replace({ values: { memory: { favorite: 'coffee' } } });
+  h.replace({ state: { memory: { name: 'Mira', favorite: 'tea' } } });
+  h.replace({ state: { memory: { favorite: 'coffee' } } });
   expect(h.application.getSnapshot().facts).toEqual([
     { key: 'favorite', value: 'coffee' },
   ]);
   const facts = h.application.getSnapshot().facts;
-  h.replace({ values: { memory: { favorite: 'coffee' } } });
+  h.replace({ state: { memory: { favorite: 'coffee' } } });
   expect(h.application.getSnapshot().facts).toBe(facts);
   expect(Object.isFrozen(facts)).toBe(true);
   expect(Object.isFrozen(facts[0])).toBe(true);
@@ -139,9 +139,9 @@ it.each([
 ])('clears facts for absent or malformed state %#', async (values) => {
   const h = setup();
   await h.start();
-  h.replace({ values: { memory: { name: 'Mira' } } });
+  h.replace({ state: { memory: { name: 'Mira' } } });
   expect(h.application.getSnapshot().facts).toHaveLength(1);
-  h.replace({ values });
+  h.replace({ state: values });
   expect(h.application.getSnapshot().facts).toEqual([]);
 });
 
@@ -156,13 +156,13 @@ it('keeps literal keys and strings, skips nonstrings and never evaluates accesso
     )
   );
   Object.defineProperty(memory, 'accessor', { enumerable: true, get: getter });
-  h.replace({ values: { memory } });
+  h.replace({ state: { memory } });
   expect(h.application.getSnapshot().facts).toEqual([
     { key: '__proto__', value: 'literal' },
     { key: 'a.b', value: '<b>tea</b>' },
   ]);
   const root = Object.defineProperty({}, 'memory', { get: getter });
-  h.replace({ values: root });
+  h.replace({ state: root });
   expect(h.application.getSnapshot().facts).toEqual([]);
   expect(getter).not.toHaveBeenCalled();
 });
@@ -356,7 +356,7 @@ it('disposes once, releases observation and ignores late state', async () => {
   expect(h.application.dispose()).toBe(disposal);
   await disposal;
   const saved = h.application.getSnapshot();
-  h.replace({ values: { memory: { late: 'fact' } } });
+  h.replace({ state: { memory: { late: 'fact' } } });
   h.run.resolve('success');
   await pending;
   await h.application.submit('After disposal');

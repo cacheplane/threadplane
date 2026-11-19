@@ -127,7 +127,7 @@ describe('pure subgraph projection', () => {
       history: undefined,
       messages: [],
       toolCalls: [],
-      values: undefined,
+      state: undefined,
       interrupts: [],
       subgraphs: before.subgraphs,
     });

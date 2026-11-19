@@ -12,13 +12,13 @@ import {
 interface Child {
   readonly namespace: readonly string[];
   readonly messages: readonly Message[];
-  readonly values?: Readonly<Record<string, unknown>>;
+  readonly state?: Readonly<Record<string, unknown>>;
   readonly interrupts: readonly { readonly value?: unknown }[];
   readonly error?: AgentSnapshot['error'];
 }
 export interface SubgraphsSession extends Omit<AgentSession, 'getSnapshot'> {
   getSnapshot(): AgentSnapshot & {
-    readonly values?: Readonly<Record<string, unknown>>;
+    readonly state?: Readonly<Record<string, unknown>>;
     readonly interrupts: readonly { readonly value?: unknown }[];
     readonly subgraphs: readonly Child[];
   };
@@ -116,13 +116,13 @@ export function createSubgraphsApplication(options: {
       toolCalls: root.toolCalls,
       interrupts: root.interrupts,
       subgraphs: root.subgraphs,
-      values: root.values,
+      state: root.state,
     };
     if (!valid()) return;
     const children = state.subgraphs.map((child) => ({
       namespace: child.namespace,
       messages: child.messages,
-      values: child.values,
+      state: child.state,
       interrupts: child.interrupts,
       error: child.error,
     }));
@@ -172,11 +172,11 @@ export function createSubgraphsApplication(options: {
         }
         const key = JSON.stringify(namespace);
         if (selected.previousNamespaces.has(key)) continue;
-        const topic = own(child.values, 'research_topic'),
-          brief = own(child.values, 'research_brief');
+        const topic = own(child.state, 'research_topic'),
+          brief = own(child.state, 'research_brief');
         if (!valid()) return;
         if (
-          child.values !== undefined &&
+          child.state !== undefined &&
           (typeof topic !== 'string' || typeof brief !== 'string')
         )
           selected.unsafe = true;
@@ -190,10 +190,10 @@ export function createSubgraphsApplication(options: {
         );
       }
     }
-    const humanId = own(state.values, 'completed_turn_id'),
-      answerId = own(state.values, 'completed_answer_id');
-    const topic = own(state.values, 'research_topic'),
-      brief = own(state.values, 'research_brief');
+    const humanId = own(state.state, 'completed_turn_id'),
+      answerId = own(state.state, 'completed_answer_id');
+    const topic = own(state.state, 'research_topic'),
+      brief = own(state.state, 'research_brief');
     if (!valid()) return;
     let final: readonly Message[] | undefined,
       route: 'direct' | 'nested' | undefined;

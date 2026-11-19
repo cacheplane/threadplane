@@ -29,6 +29,22 @@ export function observeStatus(session: AgentSession) {
 }
 ```
 
+`observeAgentState(session)` returns a signal of only the snapshot's `state`. It
+changes when the state changes, not on every streamed token. The type comes from
+the session: one created with a `stateType` yields that type, read-only, and any
+other yields plain data. The value is `undefined` until the session holds a
+state. It needs an injection context, like `observeAgent`.
+
+```ts
+import { observeAgentState } from '@threadplane/angular';
+
+readonly todos = observeAgentState(this.session, (state) => state?.todos ?? []);
+```
+
+The optional selector runs once per state, and the signal changes only when the
+selected value does. To change the state, send a patch with
+`session.submit({ message, state })`.
+
 The function borrows the session. Reading or subscribing does not start a run.
 Snapshot reads and subscription calls preserve the session method receiver.
 The injected `DestroyRef` releases only this observer's subscription when its
