@@ -226,6 +226,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/ag-ui/tool-views/react/',
       port: 4611,
       project: 'cockpit-ag-ui-tool-views-react',
+      backend: aimockAgUi('ag-ui/tool-views', 4611),
     });
   if (topic === 'ag-ui-interrupts')
     return Object.freeze({

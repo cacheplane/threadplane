@@ -23,6 +23,532 @@
           }
         ]
       }
+    },
+    {
+      "match": { "userMessage": "Zero" },
+      "response": { "content": "Reply to Zero" }
+    },
+    {
+      "match": {
+        "userMessage": "One",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to One" }
+    },
+    {
+      "match": {
+        "userMessage": "One",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Hold args",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Hold args" }
+    },
+    {
+      "match": {
+        "userMessage": "Hold args",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Hold call",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Hold call" }
+    },
+    {
+      "match": {
+        "userMessage": "Hold call",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Hold result",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Hold result" }
+    },
+    {
+      "match": {
+        "userMessage": "Hold result",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Hold final",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Hold final" }
+    },
+    {
+      "match": {
+        "userMessage": "Hold final",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Unstable result identity",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Unstable result identity" }
+    },
+    {
+      "match": {
+        "userMessage": "Unstable result identity",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "HTTP error",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to HTTP error" }
+    },
+    {
+      "match": {
+        "userMessage": "HTTP error",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Run error",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Run error" }
+    },
+    {
+      "match": {
+        "userMessage": "Run error",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Child",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Child" }
+    },
+    {
+      "match": {
+        "userMessage": "Child",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Decision",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Decision" }
+    },
+    {
+      "match": {
+        "userMessage": "Decision",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Pending tools",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Pending tools" }
+    },
+    {
+      "match": {
+        "userMessage": "Pending tools",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Wrong terminal",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Wrong terminal" }
+    },
+    {
+      "match": {
+        "userMessage": "Wrong terminal",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Truncated prefix",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Truncated prefix" }
+    },
+    {
+      "match": {
+        "userMessage": "Truncated prefix",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Duplicate result",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Duplicate result" }
+    },
+    {
+      "match": {
+        "userMessage": "Duplicate result",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Orphan result",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Orphan result" }
+    },
+    {
+      "match": {
+        "userMessage": "Orphan result",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Malformed weather",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Malformed weather" }
+    },
+    {
+      "match": {
+        "userMessage": "Malformed weather",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Legacy notice",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Legacy notice" }
+    },
+    {
+      "match": {
+        "userMessage": "Legacy notice",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Notice EOF",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Notice EOF" }
+    },
+    {
+      "match": {
+        "userMessage": "Notice EOF",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "EOF",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to EOF" }
+    },
+    {
+      "match": {
+        "userMessage": "EOF",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Batch",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Batch" }
+    },
+    {
+      "match": {
+        "userMessage": "Batch",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" }
+          },
+          {
+            "name": "weather_card",
+            "arguments": { "location": "Boston" }
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "rounds-second" },
+      "response": { "content": "Reply to Rounds" }
+    },
+    {
+      "match": { "toolCallId": "rounds-first" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "Boston" },
+            "id": "rounds-second"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Rounds",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "San Francisco" },
+            "id": "rounds-first"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Unknown tool",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Unknown tool" }
+    },
+    {
+      "match": {
+        "userMessage": "Unknown tool",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "unknown",
+            "arguments": { "location": "San Francisco" }
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Malformed args",
+        "hasToolResult": true
+      },
+      "response": { "content": "Reply to Malformed args" }
+    },
+    {
+      "match": {
+        "userMessage": "Malformed args",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": {}
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Literal",
+        "hasToolResult": true
+      },
+      "response": { "content": "<script>private markup</script>" }
+    },
+    {
+      "match": {
+        "userMessage": "Literal",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": { "location": "<img src=x onerror=alert(1)>" }
+          }
+        ]
+      }
+    },
+    {
+      "match": { "userMessage": "" },
+      "response": { "content": "Reply recorded." }
     }
   ]
 }

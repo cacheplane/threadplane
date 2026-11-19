@@ -177,7 +177,7 @@ describe('Website Playwright configuration', () => {
     const config = createWebsitePlaywrightConfig({CI:'true'});
     const servers = Array.isArray(config.webServer) ? config.webServer : [];
     expect(servers.find(server => server.url === 'http://localhost:4322')?.command).toBe('npx nx run cockpit-ag-ui-tool-views-angular:serve:cockpit --port 4322');
-    expect(servers.find(server => server.url === 'http://127.0.0.1:4611')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-tool-views --no-parent');
+    expect(servers.find(server => server.url === 'http://127.0.0.1:4611/__ready')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-tool-views --no-parent --backend');
     const project = JSON.parse(readFileSync(resolve(import.meta.dirname,'../project.json'),'utf8'));
     expect(project.implicitDependencies).toContain('cockpit-ag-ui-tool-views-angular');
   });
@@ -503,8 +503,8 @@ describe('Website Playwright configuration', () => {
         url: 'http://127.0.0.1:4610/__ready',
       }),
       expect.objectContaining({
-        command: 'node scripts/react-cockpit/serve.mjs ag-ui-tool-views --no-parent',
-        url: 'http://127.0.0.1:4611',
+        command: 'node scripts/react-cockpit/serve.mjs ag-ui-tool-views --no-parent --backend',
+        url: 'http://127.0.0.1:4611/__ready',
       }),
       expect.objectContaining({command:'node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs --serve',url:'http://127.0.0.1:4640'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent',url:'http://127.0.0.1:4641'}),

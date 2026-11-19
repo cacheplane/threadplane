@@ -40,7 +40,16 @@
  *                                                        duplicate-identity,
  *                                                        truncated-prefix,
  *                                                        old-pair, answer-only,
- *                                                        sent, tool-call
+ *                                                        sent, drop-sent,
+ *                                                        duplicate-result,
+ *                                                        orphan-result,
+ *                                                        unstable-result,
+ *                                                        result-content
+ *                                                        { content },
+ *                                                        tool-call
+ *                             `persist: true` applies the ops to every later
+ *                             run until reset (a backend property, not a
+ *                             one-off fault).
  *                             "$threadId", "$runId", "$humanId" and
  *                             "$answerId" in values are the run's own ids.
  *                             Injected data: protocol shapes a correct server
@@ -62,7 +71,7 @@ const readAll = async (stream) => {
 };
 
 /** The snapshot shapes the authored AG-UI fixtures produced. */
-function rewriteSnapshot(mode, event, body) {
+function rewriteSnapshot(mode, event, body, options = {}) {
   const sent = body.messages ?? [];
   const human = sent.at(-1);
   const messages = [...event.messages];
@@ -71,6 +80,26 @@ function rewriteSnapshot(mode, event, body) {
   else if (mode === 'truncated-prefix') return { ...event, messages: [human, answer] };
   else if (mode === 'old-pair') return { ...event, messages: sent.slice(0, -1) };
   else if (mode === 'answer-only') return { ...event, messages: [answer] };
+  else if (mode === 'drop-sent') {
+    const sentIds = new Set(sent.map((message) => message.id));
+    return { ...event, messages: messages.filter((message) => !sentIds.has(message.id)) };
+  } else if (mode === 'duplicate-result') {
+    const index = messages.findLastIndex((message) => message.role === 'tool');
+    messages.splice(messages.length - 1, 0, { ...messages[index], id: 'duplicate-result' });
+  } else if (mode === 'unstable-result') {
+    // Every saved result under another identity (with `persist`, the proxy
+    // maps them back on the way upstream, so the server's history agrees).
+    return {
+      ...event,
+      messages: messages.map((message) =>
+        message.role === 'tool' ? { ...message, id: `graph-${message.toolCallId}` } : message
+      ),
+    };
+  } else if (mode === 'result-content') {
+    const index = messages.findLastIndex((message) => message.role === 'tool');
+    messages[index] = { ...messages[index], content: options.content };
+  } else if (mode === 'orphan-result')
+    messages.splice(messages.length - 1, 0, { id: 'orphan', role: 'tool', toolCallId: 'orphan-call', content: '{}' });
   else if (mode === 'sent') return { ...event, messages: sent };
   else if (mode === 'tool-call')
     messages[messages.length - 1] = {
@@ -102,6 +131,7 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
   let held;
   let failNext = false;
   let nextEdits = null;
+  let stickyEdits = [];
   let openResponses = 0;
 
   function reset() {
@@ -110,6 +140,7 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
     holdNext = null;
     failNext = false;
     nextEdits = null;
+    stickyEdits = [];
     held?.end();
     held = undefined;
   }
@@ -117,6 +148,17 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
   async function proxyRun(request, response, pathname, raw) {
     const body = raw.length ? JSON.parse(raw.toString('utf8')) : {};
     requests.push({ path: pathname, method: request.method, body });
+    if (stickyEdits.some((op) => op.mode === 'unstable-result') && Array.isArray(body.messages))
+      raw = Buffer.from(
+        JSON.stringify({
+          ...body,
+          messages: body.messages.map((message) =>
+            message.role === 'tool' && message.id === `graph-${message.toolCallId}`
+              ? { ...message, id: message.toolCallId }
+              : message
+          ),
+        })
+      );
     if (failNext) {
       failNext = false;
       json(response, { error: 'PRIVATE AG-UI server failure' }, 500);
@@ -124,7 +166,7 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
     }
     const hold = holdNext;
     holdNext = null;
-    const edits = (nextEdits ?? []).map((op) => ({ ...op, pattern: new RegExp(op.type ?? '.*'), used: false }));
+    const edits = [...stickyEdits, ...(nextEdits ?? [])].map((op) => ({ ...op, pattern: new RegExp(op.type ?? '.*'), used: false }));
     nextEdits = null;
     const ids = { threadId: body.threadId, runId: body.runId, humanId: body.messages?.at(-1)?.id, answerId: null };
     const fill = (value) =>
@@ -180,7 +222,7 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
           for (const key of op.keys ?? []) delete current[key];
         }
         if (op.op === 'outcome') current = rewriteOutcome(op.mode, current);
-        if (op.op === 'snapshot') current = rewriteSnapshot(op.mode, current, body);
+        if (op.op === 'snapshot') current = rewriteSnapshot(op.mode, current, body, op);
         if (op.op === 'insertBefore') write(fill(op.event));
         if (op.op === 'insertAfter') after.push(fill(op.event));
       }
@@ -274,7 +316,11 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
     }],
     '/__release': [['POST'], () => { held?.release(); return {}; }],
     '/__fail-stream': [['POST'], () => { failNext = true; return {}; }],
-    '/__stream/edit': [['POST'], (body) => { nextEdits = body.ops ?? []; return {}; }],
+    '/__stream/edit': [['POST'], (body) => {
+      if (body.persist) stickyEdits = body.ops ?? [];
+      else nextEdits = body.ops ?? [];
+      return {};
+    }],
   };
 
   return async function handle(request, response, pathname) {
