@@ -72,6 +72,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       appPath: 'cockpit/deep-agents/skills/react',
       base: '/deep-agents/skills/react/', port: 4631,
       project: 'cockpit-deep-agents-skills-react',
+      backend: aimockLanggraph('deep-agents/skills', 4631),
     });
   if (topic === 'deep-agents-subagents')
     return Object.freeze({topic:'subagents',library:'deep-agents',adapter:'langgraph',appPath:'cockpit/deep-agents/subagents/react',base:'/deep-agents/subagents/react/',port:4630,project:'cockpit-deep-agents-subagents-react'});

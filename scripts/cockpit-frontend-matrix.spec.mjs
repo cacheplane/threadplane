@@ -63,6 +63,23 @@ test('Planning backend changes select exactly both canonical frontends', () => {
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-deep-agents-planning-angular', 'cockpit-deep-agents-planning-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/deep-agents/planning/python'));
 });
+test('Skills and Subagents own exact closed native React identities', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  for (const [topic, port] of [['skills', 4631]]) {
+    const configuration = reactCockpitConfiguration(`deep-agents-${topic}`);
+    assert.deepEqual(configuration, {
+      topic, library: 'deep-agents', adapter: 'langgraph', appPath: `cockpit/deep-agents/${topic}/react`,
+      base: `/deep-agents/${topic}/react/`, port, project: `cockpit-deep-agents-${topic}-react`,
+      backend: {
+        kind: 'aimock-langgraph', python: `cockpit/deep-agents/${topic}/python`,
+        fixtures: `cockpit/deep-agents/${topic}/angular/e2e/fixtures`, langgraphPort: port + 1000,
+      },
+    });
+    assert.ok(Object.isFrozen(configuration));
+    for (const key of [topic, `deep-agents/${topic}`, `../deep-agents-${topic}`, `deep-agents-${topic}/../../foreign`])
+      assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+  }
+});
 test('Planning owns an exact closed native React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('deep-agents-planning'), {
