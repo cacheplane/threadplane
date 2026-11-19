@@ -2,6 +2,7 @@ import {
   agentPlanFromState,
   completeDelivery,
   type AgentError,
+  type AgentInterruptResponse,
   type AgentSession,
   type AgentSessionCustomEvent,
   type CompleteOutcome,
@@ -30,14 +31,16 @@ import {
 } from './history-projection.js';
 import { projectCheckpointHistory } from './checkpoint-history.js';
 import type {
-  LangGraphInterrupt,
+  LangGraphWireInterrupt,
   LangGraphSnapshot,
   LangGraphValues,
 } from './langgraph-snapshot.js';
 import { projectHistoryValues, projectValues } from './values-projection.js';
 import {
+  identifyInterrupts,
   projectHistoryInterrupts,
   projectInterrupts,
+  resumeValue,
 } from './interrupt-projection.js';
 import { ownMessage, ownValue } from './ownership.js';
 import {
@@ -54,7 +57,10 @@ import {
   type LangGraphInputState,
   type LangGraphSubmitInput,
 } from './submit-input.js';
-export type { LangGraphInputState, LangGraphSubmitInput } from './submit-input.js';
+export type {
+  LangGraphInputState,
+  LangGraphSubmitInput,
+} from './submit-input.js';
 import {
   captureRunOptions,
   type CapturedRunOptions,
@@ -129,7 +135,7 @@ export type LangGraphSession<
     string,
     ToolContract
   >
-> = Omit<AgentSession<TTools>, 'getSnapshot' | 'submit'> & {
+> = Omit<AgentSession<TTools>, 'getSnapshot' | 'submit' | 'resume'> & {
   getSnapshot(): LangGraphSnapshot<TTools>;
   submit(
     input: LangGraphSubmitInput,
@@ -143,8 +149,14 @@ export type LangGraphSession<
   reconnect(options?: {
     readonly signal?: AbortSignal;
   }): Promise<CompleteOutcome>;
+  /**
+   * Answers pending interrupts and continues the paused graph. One pending
+   * interrupt receives its response's value as the resume value. Several are
+   * answered by backend id, each with a value. LangGraph has no cancelled
+   * response: a refusal is a value the graph reads.
+   */
   resume(
-    value?: PlainValue,
+    responses: readonly AgentInterruptResponse[],
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
@@ -177,7 +189,7 @@ type AttemptInput =
       readonly kind: 'resume';
       readonly value: PlainValue | undefined;
       /** The pending interrupts this decision answers, for history reconciliation. */
-      readonly interrupts: readonly LangGraphInterrupt[];
+      readonly interrupts: readonly LangGraphWireInterrupt[];
     };
 
 interface PhysicalRun {
@@ -219,11 +231,11 @@ interface Attempt {
  * by id and payload. Ids alone are not enough: a node that pauses again can
  * reuse its deterministic id with a different question. */
 function sameInterrupts(
-  current: readonly LangGraphInterrupt[],
-  answered: readonly LangGraphInterrupt[]
+  current: readonly LangGraphWireInterrupt[],
+  answered: readonly LangGraphWireInterrupt[]
 ): boolean {
   if (current.length !== answered.length) return false;
-  const key = (interrupt: LangGraphInterrupt) =>
+  const key = (interrupt: LangGraphWireInterrupt) =>
     JSON.stringify([interrupt.id ?? null, interrupt.value ?? null]);
   const keys = answered.map(key);
   return current.every((interrupt) => keys.includes(key(interrupt)));
@@ -367,7 +379,7 @@ export function createSession(
   let state = initialMessageState();
   const reasoningTimer = createReasoningTimer();
   let values: LangGraphValues | undefined;
-  let interrupts: readonly LangGraphInterrupt[] =
+  let interrupts: readonly LangGraphWireInterrupt[] =
     publication.getSnapshot().interrupts;
   let owner: Attempt | undefined;
   let recoveryAttempt: Attempt | undefined;
@@ -476,7 +488,7 @@ export function createSession(
       history: historyPage,
       values,
       ...(plan ? { plan } : {}),
-      interrupts,
+      interrupts: identifyInterrupts(interrupts),
       subgraphs: subgraphs.subgraphs,
       ...(retained?.run.evidence.runId
         ? { reconnect: { runId: retained.run.evidence.runId } }
@@ -835,8 +847,7 @@ export function createSession(
           return (
             message &&
             (message['type'] === 'ai' ||
-              (attempt.handoffIds.length === 0 &&
-                message['type'] === 'tool') ||
+              (attempt.handoffIds.length === 0 && message['type'] === 'tool') ||
               message['role'] === 'assistant') &&
             typeof message['id'] === 'string'
           );
@@ -1665,7 +1676,7 @@ export function createSession(
   }
 
   function resume(
-    value?: PlainValue,
+    responses: readonly AgentInterruptResponse[],
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
@@ -1703,6 +1714,7 @@ export function createSession(
           throw new Error('Resume requires an observed interrupt.');
       };
       admit();
+      const value = resumeValue(responses, interrupts);
       if (branch && value === undefined)
         throw new Error('Branch resume requires a defined response value.');
       const captured = ownValue(value);
@@ -2162,7 +2174,9 @@ export function createSession(
     );
     // The transcript may have moved on while history was read.
     if (select().id !== prompt.id)
-      throw new Error('The conversation changed before it could be regenerated.');
+      throw new Error(
+        'The conversation changed before it could be regenerated.'
+      );
     const holds = (saved: ThreadState) => {
       const values = saved.values as { messages?: unknown } | null | undefined;
       return (
@@ -2182,7 +2196,11 @@ export function createSession(
       throw new Error(
         'The checkpoint before that prompt is not in the loaded history.'
       );
-    return fork(source.checkpoint as CheckpointReference, prompt.content, options);
+    return fork(
+      source.checkpoint as CheckpointReference,
+      prompt.content,
+      options
+    );
   }
   const canRegenerate =
     !!getHistory &&

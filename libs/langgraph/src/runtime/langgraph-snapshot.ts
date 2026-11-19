@@ -1,4 +1,5 @@
 import type {
+  AgentInterrupt,
   AgentSnapshot,
   AgentError,
   DeepReadonly,
@@ -13,9 +14,18 @@ export type LangGraphHistoryEntry = DeepReadonly<
   Pick<ThreadState, 'checkpoint' | 'parent_checkpoint' | 'created_at' | 'next'>
 >;
 
-/** Backend wire metadata and a plain payload. DeepReadonly maps the SDK's
+/** An interrupt as the backend sent it: wire metadata and a plain payload,
+ * with an id only when the backend supplied one. DeepReadonly maps the SDK's
  * unknown payload to PlainValue without recursively re-mapping PlainValue. */
-export type LangGraphInterrupt = DeepReadonly<Interrupt>;
+export type LangGraphWireInterrupt = DeepReadonly<Interrupt>;
+
+/**
+ * A pending root interrupt. `id` is the name a `resume` response uses: the
+ * backend's id when it sent one, `breakpoint` for a static breakpoint, and the
+ * position (`interrupt-0`) otherwise. The wire metadata is kept alongside.
+ */
+export type LangGraphInterrupt = AgentInterrupt &
+  Omit<LangGraphWireInterrupt, 'id' | 'value'>;
 
 /** Observed backend application data, not a validated application schema. */
 export type LangGraphValues = Readonly<Record<string, PlainValue>>;
@@ -25,7 +35,7 @@ export interface LangGraphSubgraph {
   readonly namespace: readonly string[];
   readonly messages: readonly Message[];
   readonly values: LangGraphValues | undefined;
-  readonly interrupts: readonly LangGraphInterrupt[];
+  readonly interrupts: readonly LangGraphWireInterrupt[];
   readonly error?: AgentError;
 }
 
@@ -35,7 +45,7 @@ export type LangGraphSnapshot<
     string,
     ToolContract
   >
-> = AgentSnapshot<TTools> & {
+> = Omit<AgentSnapshot<TTools>, 'interrupts'> & {
   /** Last explicit history page; undefined until loaded. Not a live branch tree. */
   readonly history: readonly LangGraphHistoryEntry[] | undefined;
   readonly values: LangGraphValues | undefined;

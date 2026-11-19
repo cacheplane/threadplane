@@ -10,6 +10,7 @@ import {
 } from '@threadplane/core';
 import type {
   LangGraphInterrupt,
+  LangGraphWireInterrupt,
   LangGraphSnapshot,
   LangGraphSubgraph,
   LangGraphValues,
@@ -336,9 +337,9 @@ export function ownLangGraphSnapshot(
     | LangGraphValues
     | undefined;
   const interrupts = ownValueWithSharing(
-    input.interrupts,
-    previous?.interrupts
-  ) as readonly LangGraphInterrupt[];
+    input.interrupts as unknown as PlainValue,
+    previous?.interrupts as unknown as PlainValue
+  ) as unknown as readonly LangGraphInterrupt[];
   const reconnect = ownValueWithSharing(
     input.reconnect,
     previous?.reconnect
@@ -389,7 +390,7 @@ export function ownSubgraph(
   const interrupts = ownValueWithSharing(
     input.interrupts,
     previous?.interrupts
-  ) as readonly LangGraphInterrupt[];
+  ) as readonly LangGraphWireInterrupt[];
   const error = sameError(input.error, previous?.error)
     ? previous?.error
     : input.error && ownError(input.error);

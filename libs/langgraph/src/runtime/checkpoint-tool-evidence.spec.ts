@@ -7,6 +7,7 @@ import {
   position,
   saved,
 } from './testing/checkpoint-fixture';
+import { answerPending } from './testing/answer-pending';
 
 const call = {
   type: 'ai',
@@ -254,7 +255,9 @@ describe('branch-owned local tool settlement', () => {
         content: 'ACTUAL RESULT',
       });
       if (load) await session.load?.();
-      expect(await session.resume(null)).toBe('success');
+      expect(await session.resume(answerPending(session, null))).toBe(
+        'success'
+      );
       expect(handler).toHaveBeenCalledOnce();
       expect(f.transport.stream).toHaveBeenCalledTimes(3);
       await session.dispose();
@@ -322,7 +325,9 @@ describe('branch-owned local tool settlement', () => {
       });
       expect(await session.fork(position('a'), 'Run')).toBe('paused');
       await session.load?.();
-      expect(await session.resume(null)).toBe('interrupted');
+      expect(await session.resume(answerPending(session, null))).toBe(
+        'interrupted'
+      );
       expect(session.getSnapshot().error?.message).toContain(
         'identity conflict'
       );

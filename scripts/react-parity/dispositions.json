@@ -12823,6 +12823,17 @@
       "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/testing/answer-pending.ts",
+      "taskIds": [
+        "T05",
+        "T06"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private controlled runtime/binding test helper; excluded from public exports and production packages.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/testing/deferred.ts",
       "taskIds": [
         "T05",

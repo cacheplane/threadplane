@@ -206,7 +206,9 @@ describe('session application values', () => {
     expect(f.snapshot().values).toEqual({ count: 2 });
     f.streams[0].finish();
     expect(await run).toBe('paused');
-    expect(f.snapshot().interrupts).toEqual([{ when: 'breakpoint' }]);
+    expect(f.snapshot().interrupts).toEqual([
+      { id: 'breakpoint', when: 'breakpoint' },
+    ]);
   });
 
   for (const [label, invalid] of [
@@ -419,7 +421,9 @@ describe('session application values', () => {
         expect(await run).toBe('paused');
       } else await f.session.checkStatus?.();
       expect(f.snapshot().values).toEqual({ count: 3 });
-      expect(f.snapshot().interrupts).toEqual([{ when: 'breakpoint' }]);
+      expect(f.snapshot().interrupts).toEqual([
+        { id: 'breakpoint', when: 'breakpoint' },
+      ]);
       expect(f.snapshot().messages.at(-1)?.delivery).toMatchObject({
         outcome: 'paused',
       });

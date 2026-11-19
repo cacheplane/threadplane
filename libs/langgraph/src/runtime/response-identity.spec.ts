@@ -12,6 +12,7 @@ import {
 } from './stream-projection';
 import type { StreamEvent } from './transport.types';
 import { initialSubgraphs, projectSubgraphs } from './subgraph-projection';
+import { answerPending } from './testing/answer-pending';
 
 const projection = (): StreamProjection => ({
   generation: 'physical-run',
@@ -611,7 +612,9 @@ it('keeps pause/resume, the next turn and fresh history on canonical IDs', async
       .messages.filter((m) => m.role === 'assistant')
       .map((m) => m.id)
   ).toEqual([first.id]);
-  await expect(session.resume({ pause: 'approved' })).resolves.toBe('success');
+  await expect(
+    session.resume(answerPending(session, { pause: 'approved' }))
+  ).resolves.toBe('success');
   expect(
     session
       .getSnapshot()

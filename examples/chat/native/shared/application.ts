@@ -1788,10 +1788,12 @@ function createApplicationOwner<TRow extends MessageContent>(
     )
       return false;
     const response = {
-      [decision.approval.id]: action === 'approve' ? 'approved' : 'denied',
-    };
+      interruptId: decision.approval.id,
+      status: 'resolved',
+      value: action === 'approve' ? 'approved' : 'denied',
+    } as const;
     return execute('decision', (runtimeSession, signal) =>
-      runtimeSession.resume(response, { signal })
+      runtimeSession.resume([response], { signal })
     );
   }
 

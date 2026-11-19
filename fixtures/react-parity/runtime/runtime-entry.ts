@@ -1,7 +1,7 @@
 import type {
+  AgentInterruptResponse,
   AgentSession,
   CompleteOutcome,
-  PlainValue,
 } from '@threadplane/core';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- This development-only entry composes private source into a temporary fixture bundle, never a package export.
 import { createSession } from '../../../libs/langgraph/src/runtime/create-session';
@@ -32,7 +32,7 @@ export function createFixtureSession(
   ): Promise<CompleteOutcome>;
   load?: (options?: { signal?: AbortSignal }) => Promise<void>;
   resume(
-    value?: PlainValue,
+    responses: readonly AgentInterruptResponse[],
     options?: FixtureRunOptions
   ): Promise<CompleteOutcome>;
   reconnect(options?: {

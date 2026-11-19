@@ -133,7 +133,7 @@ for (const consumed of [false, true]) {
         const unsubscribe = session.subscribe(() => publications.push(session.getSnapshot()));
         let rejected = false;
         try {
-          await session.resume({ approved: false });
+          await session.resume([{ interruptId: session.getSnapshot().interrupts[0]?.id ?? 'consumed', status: 'resolved', value: { approved: false } }]);
         } catch {
           rejected = true;
         } finally {
@@ -159,7 +159,7 @@ for (const consumed of [false, true]) {
         expect(position((await api.threads.getState(threadId)).checkpoint)).toEqual(position(approved.checkpoint));
         const stillPaused = await api.threads.getState(threadId, pausedPosition);
         expect(stillPaused.tasks).toEqual([expect.objectContaining({ id: task.id, result: null, interrupts: task.interrupts })]);
-        expect(await session.resume({ approved: false })).toBe('success');
+        expect(await session.resume([{ interruptId: session.getSnapshot().interrupts[0].id, status: 'resolved', value: { approved: false } }])).toBe('success');
         expect(transport.creations).toBe(beforeCreations + 1);
         const exact = transport.finalPosition();
         const rejected = await api.threads.getState(threadId, exact);

@@ -1,7 +1,10 @@
 import type { Interrupt } from '@langchain/langgraph-sdk';
 import type { DeepReadonly, PlainValue } from '@threadplane/core';
-import type { LangGraphInterrupt } from './langgraph-snapshot';
-import { projectInterrupts } from './interrupt-projection';
+import type {
+  LangGraphInterrupt,
+  LangGraphWireInterrupt,
+} from './langgraph-snapshot';
+import { identifyInterrupts, projectInterrupts } from './interrupt-projection';
 
 const wire: Interrupt<PlainValue> = {
   id: 'approval',
@@ -12,7 +15,12 @@ const wire: Interrupt<PlainValue> = {
   resumable: false,
 };
 const batch = projectInterrupts([], { type: 'interrupt', interrupt: wire });
-const interrupt: LangGraphInterrupt = batch[0];
+const interrupt: LangGraphWireInterrupt = batch[0];
+// The published form always has the id a response names.
+const published: LangGraphInterrupt = identifyInterrupts(batch)[0];
+const publishedId: string = published.id;
+// @ts-expect-error A wire interrupt may have no id.
+const wireId: string = interrupt.id;
 const sdkShape: DeepReadonly<Interrupt> = interrupt;
 const payload: PlainValue = interrupt.value;
 const metadata: readonly string[] | undefined = interrupt.namespace;
@@ -34,4 +42,4 @@ if (
   // @ts-expect-error Nested payload fields remain readonly.
   interrupt.value['changed'] = true;
 }
-void [sdkShape, payload, metadata, request];
+void [sdkShape, payload, metadata, request, publishedId, wireId];

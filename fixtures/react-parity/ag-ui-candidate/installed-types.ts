@@ -107,8 +107,8 @@ export function checkCandidate(signal: AbortSignal) {
   void agent.submit({ message: 'Hello', state: { topic: 'x' } });
   // @ts-expect-error The core view takes a message and state only.
   void agent.submit({ message: 'Hello', messages: [] });
-  // @ts-expect-error Native resume stays on the native session.
-  void agent.resume;
+  // @ts-expect-error The core contract's resume is optional, and this view does not supply it.
+  void agent.resume([]);
   // @ts-expect-error The view wraps a session, not its options.
   createAgentSession(options);
   return { session, snapshot, rows, stable, messages, toolCalls, agent, core };

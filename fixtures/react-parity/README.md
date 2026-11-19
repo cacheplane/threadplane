@@ -111,8 +111,8 @@ catalog retain ownership of their input fields. Submitted state does not
 optimistically change observed values. The input contract is broad plain data,
 not an inferred or validated application schema.
 
-Explicit `resume()` sends an authored response for observed interrupts without a
-synthetic human message. `reconnect()` joins the latest retained owned physical
+Explicit `resume(responses)` answers observed interrupts by id with authored
+values, without a synthetic human message. `reconnect()` joins the latest retained owned physical
 run only with safe cursor evidence. Captured run identity requires exact-run
 status confirmation before successful completion or tool execution; known-run
 uncertainty cannot fall back to thread history. Reconnection preserves anonymous
