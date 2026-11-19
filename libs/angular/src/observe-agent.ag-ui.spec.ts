@@ -128,6 +128,11 @@ describe('observeAgent native AG-UI owner', () => {
     });
     expect(second.snapshot().subagents).toEqual([
       {
+        id: 'child',
+        name: 'worker',
+        status: 'complete',
+        messages: [],
+        toolCalls: [],
         started: {
           type: 'SUBAGENT_STARTED',
           subagentRunId: 'child',
@@ -178,8 +183,8 @@ describe('observeAgent native AG-UI owner', () => {
     expect(second.snapshot().run?.outcome).toBe('paused');
     const decision = second.snapshot().decision;
     if (decision?.kind !== 'native') throw new Error('Missing observed pause');
-    const nextRun = f.session.resume(decision.id, [
-      { interruptId: 'approval', status: 'resolved', payload: 'yes' },
+    const nextRun = f.session.resume([
+      { interruptId: 'approval', status: 'resolved', value: 'yes' },
     ]);
     const next = await f.started(1);
     expect(next.body).toEqual({

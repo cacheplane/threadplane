@@ -19268,6 +19268,18 @@
       "note": "Covered by runtime specs and a React Chat integration spec over the real owner. Exported from the test-only candidate package entry and checked from installed tarballs; not exported from the published package root. A rejected credential (401 or 403) is an auth error and another HTTP status is carried on a server error. State patches, native resume, client-tool evidence, a status check and a failure without a response are not represented."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/child-projection.ts",
+      "taskIds": [
+        "T12",
+        "T14",
+        "T23"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of the current run's child evidence into the core contract's child agents: each child's id, name, task, status and its own messages and tool calls, with the protocol evidence kept alongside.",
+      "note": "Covered by runtime specs over the real owner. Children of earlier runs stay bare evidence in earlierSubagents, and a child that reuses a run id also lists the earlier child's records."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/message-projection.ts",
       "taskIds": [
         "T12",

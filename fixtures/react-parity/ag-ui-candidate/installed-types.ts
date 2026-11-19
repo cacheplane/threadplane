@@ -22,7 +22,7 @@ import type {
   Message,
   ToolCall,
 } from '@threadplane/core';
-export type NativeResponse = Parameters<Session['resume']>[1][number];
+export type NativeResponse = Parameters<Session['resume']>[0][number];
 export function checkCandidate(signal: AbortSignal) {
   const options: SessionOptions = {
     threadId: 'candidate',
@@ -51,7 +51,7 @@ export function checkCandidate(signal: AbortSignal) {
   const resolved: NativeResponse = {
     interruptId: 'backend-id',
     status: 'resolved',
-    payload: null,
+    value: null,
     metadata: { reviewed: true },
   };
   const cancelled: NativeResponse = {
@@ -59,13 +59,17 @@ export function checkCandidate(signal: AbortSignal) {
     status: 'cancelled',
   };
   if (snapshot.decision?.kind === 'native') {
-    void session.resume(snapshot.decision.id, [resolved], { signal });
-    void session.resume(snapshot.decision.id, [cancelled]);
-    // @ts-expect-error Pause generations are branded, not arbitrary strings.
-    void session.resume('backend-id', [resolved]);
-    void session.resume(snapshot.decision.id, [
-      // @ts-expect-error Cancelled native responses cannot carry a payload.
-      { interruptId: 'backend-id', status: 'cancelled', payload: null },
+    void session.resume([resolved], { signal });
+    void session.resume([cancelled]);
+    // @ts-expect-error Resume takes the responses alone, with no pause id.
+    void session.resume(snapshot.decision.id, [resolved]);
+    void session.resume([
+      // @ts-expect-error A cancelled response cannot carry a value.
+      { interruptId: 'backend-id', status: 'cancelled', value: null },
+    ]);
+    void session.resume([
+      // @ts-expect-error The answer is the response's value, not a payload.
+      { interruptId: 'backend-id', status: 'resolved', payload: null },
     ]);
     // @ts-expect-error Decision evidence is readonly.
     snapshot.decision.interrupts.push({ id: 'changed' });
@@ -92,7 +96,7 @@ export function checkCandidate(signal: AbortSignal) {
   void session.addToolResult('id', 'result');
   const pending: DecisionState | undefined = decisionState(snapshot);
   if (pending?.kind === 'native' && pending.phase === 'ready') {
-    void session.resume(pending.id, [
+    void session.resume([
       { interruptId: pending.interrupts[0].id, status: 'resolved' },
     ]);
     // @ts-expect-error The pending decision is readonly.
@@ -107,6 +111,13 @@ export function checkCandidate(signal: AbortSignal) {
   void agent.submit({ message: 'Hello', state: { topic: 'x' } });
   // @ts-expect-error A submission takes a message and state only.
   void agent.submit({ message: 'Hello', messages: [] });
+  // The session's resume is the core contract's command.
+  const resumed: Promise<CompleteOutcome> | undefined = agent.resume?.([
+    { interruptId: 'backend-id', status: 'resolved', value: true },
+  ]);
+  const waiting: string | undefined = core.interrupts?.[0]?.id;
+  const child: string | undefined = core.subagents?.[0]?.id;
+  void [resumed, waiting, child];
   const regenerated: Promise<CompleteOutcome> | undefined =
     session.regenerate?.('assistant-id', { signal });
   void regenerated;

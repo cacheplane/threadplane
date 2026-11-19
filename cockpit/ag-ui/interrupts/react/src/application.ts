@@ -436,8 +436,13 @@ export function createInterruptsApplication(options: {
           : { approved: true };
       if (selected.unsafe || !ownedValid()) return;
       const pending = selected.session.resume(
-        approval.pause,
-        [{ interruptId: approval.interruptId, status: 'resolved', payload }],
+        [
+          {
+            interruptId: approval.interruptId,
+            status: 'resolved',
+            value: payload,
+          },
+        ],
         { signal: admitted.signal }
       );
       void pending.catch(() => undefined);

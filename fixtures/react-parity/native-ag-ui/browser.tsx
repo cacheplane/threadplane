@@ -16,7 +16,11 @@ import {
   TextTranscriptComponent,
   ToolObservationComponent,
 } from '@threadplane/angular/chat';
-import { createSession, projectTextTranscript, type Session } from './backend-binding.js';
+import {
+  createSession,
+  projectTextTranscript,
+  type Session,
+} from './backend-binding.js';
 
 const sequence = [
   'First',
@@ -249,11 +253,11 @@ function start(session: Session, text: string) {
   const command =
     text === 'Resume'
       ? decision?.kind === 'native'
-        ? session.resume(decision.id, [
+        ? session.resume([
             {
               interruptId: 'approval',
               status: 'resolved',
-              payload: { approved: true },
+              value: { approved: true },
             },
           ])
         : Promise.reject(new Error('A current native pause is required'))

@@ -180,15 +180,12 @@ it.each(['approve', 'decline'] as const)(
     const pending = h.app.decide(approval, action);
     await h.app.decide(approval, action === 'approve' ? 'decline' : 'approve');
     expect(h.session.resume).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(h.session.resume).mock.calls[0].slice(0, 2)).toEqual([
-      'opaque-pause',
-      [
-        {
-          interruptId: 'opaque-interrupt',
-          status: 'resolved',
-          payload: { approved: action === 'approve' },
-        },
-      ],
+    expect(vi.mocked(h.session.resume).mock.calls[0][0]).toEqual([
+      {
+        interruptId: 'opaque-interrupt',
+        status: 'resolved',
+        value: { approved: action === 'approve' },
+      },
     ]);
     h.finish(completed(action === 'approve'), 'success');
     await pending;

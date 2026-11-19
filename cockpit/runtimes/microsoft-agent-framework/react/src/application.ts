@@ -548,12 +548,11 @@ export function createMafApplication(options: {
       p.approved = action === 'approve';
       const pending = p.methods.resume.call(
         p.candidate,
-        approval.pause,
         [
           {
             interruptId: approval.interruptId,
             status: 'resolved',
-            payload: { approved: p.approved },
+            value: { approved: p.approved },
           },
         ],
         { signal: controller.signal }

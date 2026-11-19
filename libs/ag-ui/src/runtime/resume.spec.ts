@@ -1,7 +1,7 @@
 import { PROTOCOL_VERSION } from '@ag-ui/client';
 import { describe, expect, it, vi } from 'vitest';
 import { bindingFixture } from './testing/binding-fixture';
-import type { NativeResponse, PauseId } from './decision';
+import type { InterruptResponse, PauseId } from './decision';
 import type { CompleteOutcome } from '@threadplane/core';
 import { createSession } from './create-session';
 import type { RunAgentInput } from '@ag-ui/client';
@@ -51,30 +51,6 @@ async function pause(fixture: ReturnType<typeof bindingFixture>) {
 }
 
 describe('native decision owner', () => {
-  it('rejects a real foreign owner token without changing either owner', async () => {
-    const first = bindingFixture(),
-      second = bindingFixture();
-    try {
-      const firstToken = await pause(first),
-        secondToken = await pause(second);
-      expect(firstToken).not.toBe(secondToken);
-      const before = first.session.getSnapshot(),
-        other = second.session.getSnapshot();
-      expect(
-        await first.session.resume(secondToken, [
-          { interruptId: 'approval', status: 'resolved' },
-        ])
-      ).toBe('error');
-      expect(first.session.getSnapshot()).toBe(before);
-      expect(second.session.getSnapshot()).toBe(other);
-      expect(first.exchanges).toHaveLength(1);
-      expect(second.exchanges).toHaveLength(1);
-    } finally {
-      await first.cleanup();
-      await second.cleanup();
-    }
-  });
-
   it('rechecks expiry after selected caller reads and before admission', async () => {
     const fixture = bindingFixture();
     const now = vi.spyOn(Date, 'now').mockReturnValue(1000);
@@ -99,18 +75,18 @@ describe('native decision owner', () => {
       expect(await bounded(first)).toBe('paused');
       await bounded(exchange.closed);
       const before = fixture.session.getSnapshot();
-      expect(
-        await fixture.session.resume(currentPause(fixture), [
-          {
-            interruptId: 'approval',
-            status: 'resolved',
-            get payload() {
-              now.mockReturnValue(2000);
-              return null;
-            },
+      const expired = fixture.session.resume([
+        {
+          interruptId: 'approval',
+          status: 'resolved',
+          get value() {
+            now.mockReturnValue(2000);
+            return null;
           },
-        ])
-      ).toBe('error');
+        },
+      ]);
+      await expect(expired).rejects.toThrow(TypeError);
+      await expect(expired).rejects.toThrow('The interrupt has expired');
       expect(fixture.session.getSnapshot()).toBe(before);
       expect(fixture.exchanges).toHaveLength(1);
     } finally {
@@ -131,7 +107,6 @@ describe('native decision owner', () => {
         snapshot.decision?.kind === 'native'
       ) {
         pending = fixture.session.resume(
-          snapshot.decision.id,
           [{ interruptId: 'approval', status: 'resolved' }],
           { signal: controller.signal }
         );
@@ -150,32 +125,40 @@ describe('native decision owner', () => {
     }
   });
 
-  it('rejects foreign tokens, invalid batches and pre-aborted input without reads, publication or dispatch', async () => {
+  it('rejects invalid batches, and aborts pre-aborted input without reads, publication or dispatch', async () => {
     const fixture = bindingFixture();
     try {
-      const token = await pause(fixture);
+      await pause(fixture);
       const before = fixture.session.getSnapshot();
       const notify = vi.fn();
       fixture.session.subscribe(notify);
-      for (const responses of [
-        [],
-        [{ interruptId: 'other', status: 'resolved' }],
+      for (const [responses, message] of [
+        [[], 'Exactly one response per interrupt is required'],
         [
-          { interruptId: 'approval', status: 'resolved' },
-          { interruptId: 'approval', status: 'cancelled' },
+          [{ interruptId: 'other', status: 'resolved' }],
+          'Unknown or duplicate interrupt response',
         ],
-        [{ interruptId: 'approval', status: 'cancelled', payload: null }],
-      ] as unknown as readonly NativeResponse[][])
-        expect(await fixture.session.resume(token, responses)).toBe('error');
-      expect(
-        await fixture.session.resume('foreign' as PauseId, [
-          { interruptId: 'approval', status: 'resolved' },
-        ])
-      ).toBe('error');
+        [
+          [
+            { interruptId: 'approval', status: 'resolved' },
+            { interruptId: 'approval', status: 'cancelled' },
+          ],
+          'Exactly one response per interrupt is required',
+        ],
+        [
+          [{ interruptId: 'approval', status: 'cancelled', value: null }],
+          'A cancelled response cannot carry a value.',
+        ],
+        ['approval', 'Resume takes an array of responses.'],
+      ] as unknown as readonly [readonly InterruptResponse[], string?][]) {
+        const refused = fixture.session.resume(responses);
+        await expect(refused).rejects.toThrow(TypeError);
+        if (message) await expect(refused).rejects.toThrow(message);
+      }
       const unread = vi.fn((): never => {
         throw new Error('unread');
       });
-      const responses: readonly NativeResponse[] = [
+      const responses: readonly InterruptResponse[] = [
         {
           get interruptId() {
             return unread();
@@ -184,7 +167,7 @@ describe('native decision owner', () => {
         },
       ];
       expect(
-        await fixture.session.resume(token, responses, {
+        await fixture.session.resume(responses, {
           signal: AbortSignal.abort(),
         })
       ).toBe('aborted');
@@ -192,7 +175,7 @@ describe('native decision owner', () => {
       expect(notify).not.toHaveBeenCalled();
       expect(fixture.exchanges).toHaveLength(1);
       await fixture.session.dispose();
-      expect(await fixture.session.resume(token, responses)).toBe('aborted');
+      expect(await fixture.session.resume(responses)).toBe('aborted');
       expect(unread).not.toHaveBeenCalled();
     } finally {
       await fixture.cleanup();
@@ -202,7 +185,7 @@ describe('native decision owner', () => {
   it('captures selected option/input getters once and ignores extra getters', async () => {
     const fixture = bindingFixture();
     try {
-      const token = await pause(fixture);
+      await pause(fixture);
       const signal = new AbortController().signal;
       const selected = vi.fn(() => signal);
       const ignored = vi.fn((): never => {
@@ -219,12 +202,12 @@ describe('native decision owner', () => {
       const response = {
         interruptId: 'approval',
         status: 'resolved' as const,
-        payload: null,
+        value: null,
         get forwardedProps() {
           return ignored();
         },
       };
-      const done = fixture.session.resume(token, [response], options);
+      const done = fixture.session.resume([response], options);
       const exchange = await bounded(fixture.started(1));
       // 1.0 client rule: a whole-optional `payload: null` is sent as absent.
       expect(exchange.body.resume).toStrictEqual([
@@ -242,13 +225,12 @@ describe('native decision owner', () => {
   it('retains cancellation precedence when a selected signal getter disposes then throws', async () => {
     const fixture = bindingFixture();
     try {
-      const token = await pause(fixture);
+      await pause(fixture);
       const unread = vi.fn((): never => {
         throw new Error('unread');
       });
       expect(
         await fixture.session.resume(
-          token,
           [
             {
               get interruptId() {
@@ -326,8 +308,8 @@ describe('native decision owner', () => {
           throw new Error('Missing native decision');
         expect(
           await bounded(
-            owner.resume(decision.id, [
-              { interruptId: 'approval', status: 'resolved', payload: null },
+            owner.resume([
+              { interruptId: 'approval', status: 'resolved', value: null },
             ])
           )
         ).toBe(action === 'stop' ? 'aborted' : 'error');
@@ -336,11 +318,9 @@ describe('native decision owner', () => {
           id: decision.id,
           attempt: { runId: owner.getSnapshot().run?.id },
         });
-        expect(
-          await owner.resume(decision.id, [
-            { interruptId: 'approval', status: 'resolved' },
-          ])
-        ).toBe('error');
+        await expect(
+          owner.resume([{ interruptId: 'approval', status: 'resolved' }])
+        ).rejects.toThrow('No interrupt is waiting for an answer.');
         expect(await owner.submit('bypass')).toBe('error');
         expect(calls).toBe(2);
       } finally {
@@ -355,8 +335,8 @@ describe('native decision owner', () => {
       const token = await pause(fixture);
       const before = fixture.session.getSnapshot();
       const payload = { values: [1] };
-      const done = fixture.session.resume(token, [
-        { interruptId: 'approval', status: 'resolved', payload },
+      const done = fixture.session.resume([
+        { interruptId: 'approval', status: 'resolved', value: payload },
       ]);
       payload.values.push(99);
       const admitted = fixture.session.getSnapshot();
@@ -378,11 +358,13 @@ describe('native decision owner', () => {
           ],
         },
       });
-      expect(
-        await fixture.session.resume(token, [
+      await expect(
+        fixture.session.resume([
           { interruptId: 'approval', status: 'cancelled' },
         ])
-      ).toBe('error');
+      ).rejects.toThrow(
+        'Resume needs a settled session with a pending interrupt.'
+      );
       const unread = vi.fn((): never => {
         throw new Error('unread');
       });
@@ -436,15 +418,18 @@ describe('native decision owner', () => {
         !attempted &&
         snapshot.run?.terminal?.type === 'RUN_FINISHED' &&
         snapshot.decision?.kind === 'native'
-      )
-        attempted = fixture.session.resume(snapshot.decision.id, [
+      ) {
+        attempted = fixture.session.resume([
           { interruptId: 'approval', status: 'resolved' },
         ]);
+        // Observed below; the refusal lands before the test awaits it.
+        attempted.catch(() => undefined);
+      }
     });
     try {
       await pause(fixture);
       if (!attempted) throw new Error('Missing terminal callback attempt');
-      expect(await bounded(attempted)).toBe('error');
+      await expect(bounded(attempted)).rejects.toThrow(TypeError);
       expect(fixture.exchanges).toHaveLength(1);
       expect(fixture.session.getSnapshot().decision?.kind).toBe('native');
     } finally {
@@ -467,16 +452,18 @@ describe('native decision owner', () => {
       scheduled = true;
       const payload = { values: [1] };
       attempts.push(
-        fixture.session.resume(snapshot.decision.id, [
-          { interruptId: 'approval', status: 'resolved', payload },
+        fixture.session.resume([
+          { interruptId: 'approval', status: 'resolved', value: payload },
         ])
       );
       payload.values.push(99);
       attempts.push(
-        fixture.session.resume(snapshot.decision.id, [
+        fixture.session.resume([
           { interruptId: 'approval', status: 'cancelled' },
         ])
       );
+      // Observed below; the refusal lands before the test awaits it.
+      attempts[1].catch(() => undefined);
     });
     try {
       await pause(fixture);
@@ -488,7 +475,7 @@ describe('native decision owner', () => {
           payload: { values: [1] },
         },
       ]);
-      expect(await bounded(attempts[1])).toBe('error');
+      await expect(bounded(attempts[1])).rejects.toThrow(TypeError);
       await fixture.session.stop();
       expect(await bounded(attempts[0])).toBe('aborted');
       expect(fixture.exchanges).toHaveLength(2);
@@ -503,15 +490,15 @@ describe('native decision owner', () => {
       const fixture = bindingFixture();
       let inner: Promise<unknown> = Promise.resolve();
       try {
-        const token = await pause(fixture);
-        const responses: readonly NativeResponse[] = [
+        await pause(fixture);
+        const responses: readonly InterruptResponse[] = [
           {
             interruptId: 'approval',
             status: 'resolved',
-            get payload(): never {
+            get value(): never {
               inner =
                 command === 'resume'
-                  ? fixture.session.resume(token, [
+                  ? fixture.session.resume([
                       { interruptId: 'approval', status: 'cancelled' },
                     ])
                   : fixture.session[command]();
@@ -519,7 +506,7 @@ describe('native decision owner', () => {
             },
           },
         ];
-        expect(await fixture.session.resume(token, responses)).toBe('aborted');
+        expect(await fixture.session.resume(responses)).toBe('aborted');
         if (command === 'resume') {
           const exchange = await bounded(fixture.started(1));
           expect(exchange.body.resume).toEqual([
@@ -550,7 +537,7 @@ describe('native decision owner', () => {
         }
       });
       expect(
-        await fixture.session.resume(token, [
+        await fixture.session.resume([
           { interruptId: 'approval', status: 'resolved' },
         ])
       ).toBe('aborted');
@@ -563,7 +550,7 @@ describe('native decision owner', () => {
       expect(fixture.session.getSnapshot().run?.id).not.toBe(
         decision.sourceRunId
       );
-      const retry = fixture.session.resume(token, [
+      const retry = fixture.session.resume([
         { interruptId: 'approval', status: 'resolved' },
       ]);
       await bounded(fixture.started(1));

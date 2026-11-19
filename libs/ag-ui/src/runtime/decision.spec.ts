@@ -9,7 +9,7 @@ import {
   observeDecision,
   settleDecision,
   type NativeDecision,
-  type NativeResponse,
+  type InterruptResponse,
   type PauseId,
 } from './decision';
 
@@ -39,7 +39,7 @@ const decision = (): NativeDecision =>
   });
 const responses = () =>
   captureResponses([
-    { interruptId: 'a', status: 'resolved', payload: null },
+    { interruptId: 'a', status: 'resolved', value: null },
     { interruptId: 'b', status: 'cancelled' },
   ]);
 
@@ -49,7 +49,7 @@ describe('captured native response ownership', () => {
     const reads = {
       id: vi.fn(() => 'a'),
       status: vi.fn(() => 'resolved' as const),
-      payload: vi.fn(() => graph),
+      value: vi.fn(() => graph),
       metadata: vi.fn(() => ({ m: graph })),
     };
     const ignored = vi.fn((): never => {
@@ -63,8 +63,8 @@ describe('captured native response ownership', () => {
         get status() {
           return reads.status();
         },
-        get payload() {
-          return reads.payload();
+        get value() {
+          return reads.value();
         },
         get metadata() {
           return reads.metadata();
@@ -100,7 +100,7 @@ describe('captured native response ownership', () => {
     expect(owned[0]).not.toHaveProperty('payload');
     expect(
       captureResponses([
-        { interruptId: 'a', status: 'resolved', payload: undefined },
+        { interruptId: 'a', status: 'resolved', value: undefined },
       ])
     ).toEqual([{ interruptId: 'a', status: 'resolved' }]);
   });
@@ -109,13 +109,13 @@ describe('captured native response ownership', () => {
     [{ id: 'a', status: 'resolved' }],
     [{ interruptId: 1, status: 'resolved' }],
     [{ interruptId: 'a', status: 'future' }],
-    [{ interruptId: 'a', status: 'cancelled', payload: null }],
-    [{ interruptId: 'a', status: 'resolved', payload: new Date() }],
+    [{ interruptId: 'a', status: 'cancelled', value: null }],
+    [{ interruptId: 'a', status: 'resolved', value: new Date() }],
     [{ interruptId: 'a', status: 'resolved', metadata: [] }],
-    [{ interruptId: 'a', status: 'resolved', payload: () => true }],
+    [{ interruptId: 'a', status: 'resolved', value: () => true }],
   ])('rejects unsupported selected decision fields %j', (input) => {
     expect(() =>
-      captureResponses(input as unknown as readonly NativeResponse[])
+      captureResponses(input as unknown as readonly InterruptResponse[])
     ).toThrow();
   });
 });
@@ -160,26 +160,23 @@ describe('pure decision correlation and settlement', () => {
       ).toEqual({ kind: 'unsupported', sourceRunId: 'source' });
     }
   });
-  it('requires current generation and local settlement, then exactly one response per observed ID', () => {
+  it('requires local settlement and no earlier attempt, then exactly one response per observed ID', () => {
     const current = decision();
+    expect(() => assertResumeEligible(current, { id: 'source' }, 1)).toThrow(
+      'No interrupt is waiting for an answer.'
+    );
     expect(() =>
-      assertResumeEligible(current, { id: 'source' }, first, 1)
-    ).toThrow();
+      assertResumeEligible(undefined, { id: 'source', outcome: 'paused' }, 1)
+    ).toThrow('No interrupt is waiting for an answer.');
     expect(() =>
       assertResumeEligible(
-        current,
+        { kind: 'unsupported', sourceRunId: 'source' },
         { id: 'source', outcome: 'paused' },
-        second,
         1
       )
-    ).toThrow();
+    ).toThrow('No interrupt is waiting for an answer.');
     expect(
-      assertResumeEligible(
-        current,
-        { id: 'source', outcome: 'aborted' },
-        first,
-        1
-      )
+      assertResumeEligible(current, { id: 'source', outcome: 'aborted' }, 1)
     ).toBe(current);
     for (const input of [
       [],
@@ -202,13 +199,8 @@ describe('pure decision correlation and settlement', () => {
     expect(claimed.attempt?.responses).toBe(captured);
     expect(claimed.interrupts).toBe(current.interrupts);
     expect(() =>
-      assertResumeEligible(
-        claimed,
-        { id: 'resume', outcome: 'aborted' },
-        first,
-        1
-      )
-    ).toThrow();
+      assertResumeEligible(claimed, { id: 'resume', outcome: 'aborted' }, 1)
+    ).toThrow('No interrupt is waiting for an answer.');
   });
   it.each(['invalid', '2020-01-01T00:00:00Z', '2019-01-01T00:00:00Z'])(
     'fails closed on expired/invalid date %s',
@@ -221,7 +213,6 @@ describe('pure decision correlation and settlement', () => {
         assertResumeEligible(
           current,
           { id: 'source', outcome: 'paused' },
-          first,
           Date.parse('2020-01-01T00:00:00Z')
         )
       ).toThrow();
@@ -238,7 +229,6 @@ describe('pure decision correlation and settlement', () => {
       assertResumeEligible(
         current,
         { id: 'source', outcome: 'paused' },
-        first,
         Date.parse('2020-01-01T00:00:00Z')
       )
     ).toBe(current);
@@ -251,12 +241,7 @@ describe('pure decision correlation and settlement', () => {
     );
     expect(released).toEqual(original);
     expect(
-      assertResumeEligible(
-        released,
-        { id: 'resume', outcome: 'aborted' },
-        first,
-        1
-      )
+      assertResumeEligible(released, { id: 'resume', outcome: 'aborted' }, 1)
     ).toBe(released);
     expect(
       settleDecision(claimed, { id: 'resume', outcome: 'aborted' }, true)

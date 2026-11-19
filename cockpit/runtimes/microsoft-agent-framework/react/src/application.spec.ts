@@ -634,8 +634,7 @@ it.each([true, false])(
     void h.app.decide(a, 'approve', 0);
     expect(h.session.resume).toHaveBeenCalledTimes(1);
     expect(h.session.resume).toHaveBeenCalledWith(
-      a.pause,
-      [{ interruptId: 'call', status: 'resolved', payload: { approved } }],
+      [{ interruptId: 'call', status: 'resolved', value: { approved } }],
       expect.anything()
     );
     h.update(completed(approved));

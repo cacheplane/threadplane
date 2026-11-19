@@ -1,4 +1,4 @@
-import type { Session } from '@threadplane/ag-ui';
+import type { DecisionState, Session } from '@threadplane/ag-ui';
 export type NativeSnapshot = ReturnType<Session['getSnapshot']>;
 type Transcript = NativeSnapshot['transcript'];
 export interface Expense {
@@ -17,7 +17,7 @@ export interface ExpenseApproval {
   readonly threadId: string;
   readonly sourceRunId: string;
   /** Original opaque native occurrence; never reconstruct from observation data. */
-  readonly pause: Parameters<Session['resume']>[0];
+  readonly pause: Extract<DecisionState, { kind: 'native' }>['id'];
   readonly interruptId: string;
   readonly toolCallId: string;
   readonly expense: Expense;
@@ -432,7 +432,7 @@ export function captureApproval(
     const pause =
       originalDecision &&
       (Object.getOwnPropertyDescriptor(originalDecision, 'id')
-        ?.value as Parameters<Session['resume']>[0]);
+        ?.value as Extract<DecisionState, { kind: 'native' }>['id']);
     if (!valid() || pause !== d.id) return;
     return Object.freeze({
       threadId: turn.threadId,

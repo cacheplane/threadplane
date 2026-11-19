@@ -1,4 +1,4 @@
-import type { Session } from '@threadplane/ag-ui';
+import type { DecisionState, Session } from '@threadplane/ag-ui';
 export type NativeSnapshot = ReturnType<Session['getSnapshot']>;
 type Transcript = NativeSnapshot['transcript'];
 export interface Meeting {
@@ -15,7 +15,7 @@ export interface MeetingApproval {
   readonly threadId: string;
   readonly sourceRunId: string;
   /** Keep the original opaque branded occurrence, never decode an interrupt identifier. */
-  readonly pause: Parameters<Session['resume']>[0];
+  readonly pause: Extract<DecisionState, { kind: 'native' }>['id'];
   readonly interruptId: string;
   readonly toolCallId: string;
   readonly meeting: Meeting;
@@ -383,9 +383,10 @@ export function captureApproval(
     if (!valid()) return;
     const pause =
       original &&
-      (Object.getOwnPropertyDescriptor(original, 'id')?.value as Parameters<
-        Session['resume']
-      >[0]);
+      (Object.getOwnPropertyDescriptor(original, 'id')?.value as Extract<
+        DecisionState,
+        { kind: 'native' }
+      >['id']);
     if (!valid() || pause !== d.id) return;
     return Object.freeze({
       threadId: turn.threadId,
