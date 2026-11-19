@@ -105,7 +105,7 @@ const empty = (): FilesystemApplicationSnapshot =>
   });
 /** Native state remains transient. Copy canonical metadata only, never the raw file map. */
 function metadata(source: FilesystemSnapshot): FilesystemSnapshot {
-  inspectJson(source, true, [['values'], ['history', '0', 'values']]);
+  inspectJson(source, true, [['state'], ['history', '0', 'values']]);
   const omit = (input: object, keys: string[]) =>
     Object.fromEntries(
       Object.keys(input)
@@ -115,7 +115,7 @@ function metadata(source: FilesystemSnapshot): FilesystemSnapshot {
   const history = ownValue(source, 'history');
   const copied = copyJson(
     {
-      ...omit(source, ['values', 'history']),
+      ...omit(source, ['state', 'history']),
       ...(Array.isArray(history)
         ? {
             history: history.map((x) => {
@@ -129,7 +129,7 @@ function metadata(source: FilesystemSnapshot): FilesystemSnapshot {
   ) as FilesystemSnapshot;
   return {
     ...copied,
-    values: ownValue(source, 'values'),
+    state: ownValue(source, 'state'),
     history: history as readonly unknown[] | undefined,
   };
 }
@@ -222,7 +222,7 @@ export function createFilesystemApplication(client: FilesystemClient) {
           humanContent: run.text,
         });
     }
-    const workspace = workspaceState(state.values);
+    const workspace = workspaceState(state.state);
     const rows = run.owner.content.project(state as AgentSnapshot);
     if (!current(run)) return;
     publish({

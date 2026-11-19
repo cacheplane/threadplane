@@ -99,7 +99,7 @@ separate application admission work.
 
 Explicit fixed-thread history loading replaces the transcript from the latest
 checkpoint. Equal reads preserve identity, failures preserve the previous
-snapshot, and loaded tools never execute. Readonly application `values` and full
+snapshot, and loaded tools never execute. Readonly application `state` and full
 interrupt batches publish atomically with messages. `undefined` means unobserved
 values; `{}` means an observed empty map. Child, update and custom envelopes do
 not overwrite root application values.

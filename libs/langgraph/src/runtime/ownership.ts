@@ -13,7 +13,7 @@ import type {
   LangGraphWireInterrupt,
   LangGraphSnapshot,
   LangGraphSubgraph,
-  LangGraphValues,
+  LangGraphState,
 } from './langgraph-snapshot.js';
 
 // Only objects projected here are trusted. Object.isFrozen on external input is
@@ -333,8 +333,8 @@ export function ownLangGraphSnapshot(
     previous?.history as PlainValue
   ) as LangGraphSnapshot['history'];
   const subgraphs = ownSubgraphs(input.subgraphs, previous?.subgraphs);
-  const values = ownValueWithSharing(input.values, previous?.values) as
-    | LangGraphValues
+  const state = ownValueWithSharing(input.state, previous?.state) as
+    | LangGraphState
     | undefined;
   const interrupts = ownValueWithSharing(
     input.interrupts as unknown as PlainValue,
@@ -344,10 +344,15 @@ export function ownLangGraphSnapshot(
     input.reconnect,
     previous?.reconnect
   ) as LangGraphSnapshot['reconnect'];
+  const stateIssues = ownValueWithSharing(
+    input.stateIssues,
+    previous?.stateIssues
+  ) as LangGraphSnapshot['stateIssues'];
   if (
     core === previous &&
     history === previous?.history &&
-    values === previous?.values &&
+    state === previous?.state &&
+    stateIssues === previous?.stateIssues &&
     interrupts === previous?.interrupts &&
     subgraphs === previous?.subgraphs &&
     reconnect === previous?.reconnect
@@ -362,7 +367,8 @@ export function ownLangGraphSnapshot(
     error: core.error,
     ...(core.plan ? { plan: core.plan } : {}),
     history,
-    values,
+    state,
+    ...(stateIssues ? { stateIssues } : {}),
     interrupts,
     subgraphs,
     ...(reconnect ? { reconnect } : {}),
@@ -384,8 +390,8 @@ export function ownSubgraph(
     ownMessage,
     sameMessage
   );
-  const values = ownValueWithSharing(input.values, previous?.values) as
-    | LangGraphValues
+  const state = ownValueWithSharing(input.state, previous?.state) as
+    | LangGraphState
     | undefined;
   const interrupts = ownValueWithSharing(
     input.interrupts,
@@ -398,7 +404,7 @@ export function ownSubgraph(
     previous &&
     namespace === previous.namespace &&
     messages === previous.messages &&
-    values === previous.values &&
+    state === previous.state &&
     interrupts === previous.interrupts &&
     error === previous.error
   )
@@ -406,7 +412,7 @@ export function ownSubgraph(
   return freeze({
     namespace,
     messages,
-    values,
+    state,
     interrupts,
     ...(error ? { error } : {}),
   });
@@ -424,7 +430,7 @@ export function ownSubgraphs(
       a === b ||
       (a.namespace === b.namespace &&
         a.messages === b.messages &&
-        a.values === b.values &&
+        a.state === b.state &&
         a.interrupts === b.interrupts &&
         sameError(a.error, b.error))
   );

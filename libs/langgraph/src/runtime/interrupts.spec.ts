@@ -166,7 +166,7 @@ describe('session interrupt observation', () => {
       expect(f.snapshot().interrupts).toEqual([
         { id: 'later-pause', value: false },
       ]);
-      expect(f.snapshot().values).toEqual({ count: 2 });
+      expect(f.snapshot().state).toEqual({ count: 2 });
       expect(f.snapshot().messages.at(-1)).toMatchObject({
         id: 'earlier',
         delivery: { outcome: 'success' },
@@ -214,7 +214,7 @@ describe('session interrupt observation', () => {
     await f.emit(full({ count: 2, messages: [ai('Awaiting approval')] }));
     expect(f.snapshot().interrupts).toBe(batch);
     expect(seen.at(-1)).toMatchObject({
-      values: { count: 2 },
+      state: { count: 2 },
       interrupts: batch,
       messages: [{ role: 'user' }, { content: 'Awaiting approval' }],
     });
@@ -287,7 +287,7 @@ describe('session interrupt observation', () => {
     await f.session.load?.();
     expect(seen).toHaveLength(1);
     expect(seen[0]).toMatchObject({
-      values: { count: 2 },
+      state: { count: 2 },
       interrupts: [
         { id: 'a', value: false },
         { id: 'b', value: { nested: [1] } },
@@ -301,7 +301,7 @@ describe('session interrupt observation', () => {
     expect(seen).toHaveLength(1);
     await f.session.load?.();
     expect(f.snapshot().interrupts).toEqual([]);
-    expect(f.snapshot().values).toBeUndefined();
+    expect(f.snapshot().state).toBeUndefined();
     expect(f.snapshot().messages).toEqual([]);
     expect(f.stream).not.toHaveBeenCalled();
     expect(f.handler).not.toHaveBeenCalled();
@@ -321,7 +321,7 @@ describe('session interrupt observation', () => {
     await f.started();
     expect(seen).toHaveLength(1);
     expect(seen[0].interrupts).toEqual([]);
-    expect(seen[0].values).toBe(before.values);
+    expect(seen[0].state).toBe(before.state);
     expect(seen[0].status).toBe('running');
     await f.session.stop();
     expect(await run).toBe('aborted');
@@ -368,7 +368,7 @@ describe('session interrupt observation', () => {
     });
     expect(seen).toHaveLength(1);
     expect(seen[0]).toMatchObject({
-      values: { count: 3 },
+      state: { count: 3 },
       interrupts: [{ id: 'approval', value: 0 }],
     });
     expect(seen[0].messages.at(-1)?.content).toBe('Checkpoint');
@@ -397,7 +397,7 @@ describe('session interrupt observation', () => {
     });
     expect(await run).toBe('interrupted');
     expect(f.snapshot().interrupts).toBe(before.interrupts);
-    expect(f.snapshot().values).toBe(before.values);
+    expect(f.snapshot().state).toBe(before.state);
     expect(f.snapshot().messages.map((message) => message.content)).toEqual(
       before.messages.map((message) => message.content)
     );
@@ -439,7 +439,7 @@ describe('session interrupt observation', () => {
       f.streams[0].finish();
       expect(await run).toBe('interrupted');
       expect(f.snapshot().status).toBe('error');
-      expect(f.snapshot().values).toBe(before.values);
+      expect(f.snapshot().state).toBe(before.state);
       expect(f.snapshot().interrupts).toBe(before.interrupts);
       expect(f.snapshot().messages.map((message) => message.content)).toEqual(
         before.messages.map((message) => message.content)
@@ -496,7 +496,7 @@ describe('session interrupt observation', () => {
             action === 'submit' ? 'interrupted' : 'aborted'
           );
         expect(fired).toBe(true);
-        expect(f.snapshot().values).toBe(before.values);
+        expect(f.snapshot().state).toBe(before.state);
         expect(f.snapshot().interrupts).toEqual(
           action === 'submit' ? [] : before.interrupts
         );
@@ -537,7 +537,7 @@ describe('session interrupt observation', () => {
       expect(seen).toHaveLength(1);
       expect(seen[0]).toMatchObject({
         status: 'idle',
-        values: { count: 3 },
+        state: { count: 3 },
         interrupts: [{ when: 'breakpoint' }],
       });
       expect(seen[0].messages.at(-1)?.delivery).toMatchObject({
@@ -608,7 +608,7 @@ describe('session interrupt observation', () => {
       } else if (mode === 'load')
         await expect(f.session.load?.()).rejects.not.toThrow('private payload');
       else await expect(f.session.checkStatus?.()).rejects.toThrow();
-      expect(f.snapshot().values).toBe(before.values);
+      expect(f.snapshot().state).toBe(before.state);
       expect(f.snapshot().interrupts).toBe(before.interrupts);
       expect(f.snapshot().messages.map((message) => message.content)).toEqual(
         before.messages.map((message) => message.content)
@@ -650,7 +650,7 @@ describe('session interrupt observation', () => {
       await f.session.checkStatus?.();
       expect(fired).toBe(true);
       expect(f.snapshot().interrupts).toBe(before.interrupts);
-      expect(f.snapshot().values).toBe(before.values);
+      expect(f.snapshot().state).toBe(before.state);
       if (action === 'submit') {
         await f.started(1);
         await f.session.stop();

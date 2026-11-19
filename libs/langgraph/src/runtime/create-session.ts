@@ -1,6 +1,9 @@
 import {
   agentPlanFromState,
   completeDelivery,
+  readState,
+  type InferState,
+  type StateDeclaration,
   type AgentError,
   type AgentInterruptResponse,
   type AgentSession,
@@ -24,6 +27,10 @@ import {
   type MessageState,
 } from './message-reducer.js';
 import { createReasoningTimer } from './reasoning-timing.js';
+import {
+  createLifecycleRecorder,
+  type LangGraphLifecycleSource,
+} from './lifecycle.js';
 import { createPublication } from './publication.js';
 import {
   observeHistoryInvocations,
@@ -33,7 +40,7 @@ import { projectCheckpointHistory } from './checkpoint-history.js';
 import type {
   LangGraphWireInterrupt,
   LangGraphSnapshot,
-  LangGraphValues,
+  LangGraphState,
   LangGraphSubgraph,
 } from './langgraph-snapshot.js';
 import { projectHistoryValues, projectValues } from './values-projection.js';
@@ -61,6 +68,7 @@ import {
 export type {
   LangGraphInputState,
   LangGraphSubmitInput,
+  LangGraphSubmitState,
 } from './submit-input.js';
 import {
   captureRunOptions,
@@ -68,6 +76,10 @@ import {
   type LangGraphRunOptions,
 } from './run-options.js';
 export type { LangGraphRunOptions } from './run-options.js';
+export type {
+  LangGraphLifecycle,
+  LangGraphLifecycleSource,
+} from './lifecycle.js';
 import {
   advanceCursor,
   captureRun,
@@ -134,6 +146,12 @@ export interface SessionOptions {
    * their retry policy; joining a known run is separate from replaying submit. */
   readonly clientOptions?: LangGraphClientOptions;
   readonly executionStore?: ToolExecutionStore;
+  /**
+   * The graph state's type: `type<T>()` to declare it, or a Standard Schema,
+   * such as a Zod object, to also check each state the backend reports. A state
+   * the schema rejects is withheld and described in `snapshot.stateIssues`.
+   */
+  readonly stateType?: StateDeclaration;
 }
 
 /** Backend-private capability; core sessions and borrowed observers stay minimal. */
@@ -141,19 +159,20 @@ export type LangGraphSession<
   TTools extends { [K in keyof TTools]: ToolContract } = Record<
     string,
     ToolContract
-  >
-> = Omit<AgentSession<TTools>, 'getSnapshot' | 'submit' | 'resume'> & {
-  getSnapshot(): LangGraphSnapshot<TTools>;
+  >,
+  TState = unknown
+> = Omit<AgentSession<TTools, TState>, 'getSnapshot' | 'submit' | 'resume'> & {
+  getSnapshot(): LangGraphSnapshot<TTools, TState>;
   /** The session's thread: the given `threadId`, or the thread it created on
    * the first submit. Undefined until that thread exists. */
   readonly threadId: string | undefined;
   submit(
-    input: LangGraphSubmitInput,
+    input: LangGraphSubmitInput<TState>,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
   fork(
     checkpoint: CheckpointReference,
-    input: LangGraphSubmitInput,
+    input: LangGraphSubmitInput<TState>,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
   reconnect(options?: {
@@ -172,6 +191,8 @@ export type LangGraphSession<
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
   /** Always present here: `custom` stream frames as application events. */
   onCustomEvent(listener: (event: AgentSessionCustomEvent) => void): () => void;
+  /** When this session first saw each milestone; see `LangGraphLifecycle`. */
+  readonly lifecycle: LangGraphLifecycleSource;
 };
 
 interface HistoryRead {
@@ -221,7 +242,7 @@ interface Attempt {
   /** The transcript and values before this command added anything; retry restores them. */
   readonly baseline: {
     readonly state: MessageState;
-    readonly values: LangGraphValues | undefined;
+    readonly values: LangGraphState | undefined;
   };
   readonly runOptions: CapturedRunOptions | undefined;
   readonly branch?: CheckpointOwner;
@@ -281,12 +302,23 @@ function captureCustomEvent(
  * submits resolve aborted, subscriptions are inert, reads retain the final
  * snapshot, stop/dispose are idempotent. checkStatus rejects after disposal or
  * during a run; it only reads history and never creates another logical run. */
-export function createSession<T extends Record<string, FunctionToolDefinition>>(
-  options: SessionOptions & { readonly tools: T & CheckedTools<T> }
-): LangGraphSession<ToolContracts<T>>;
-export function createSession(
-  options: SessionOptions & { readonly tools?: undefined }
-): LangGraphSession;
+export function createSession<
+  T extends Record<string, FunctionToolDefinition>,
+  D extends StateDeclaration | undefined = undefined
+>(
+  options: Omit<SessionOptions, 'stateType'> & {
+    readonly tools: T & CheckedTools<T>;
+    readonly stateType?: D;
+  }
+): LangGraphSession<ToolContracts<T>, InferState<D>>;
+export function createSession<
+  D extends StateDeclaration | undefined = undefined
+>(
+  options: Omit<SessionOptions, 'stateType'> & {
+    readonly tools?: undefined;
+    readonly stateType?: D;
+  }
+): LangGraphSession<Record<string, ToolContract>, InferState<D>>;
 export function createSession(
   options: SessionOptions & {
     readonly tools?: Record<string, FunctionToolDefinition>;
@@ -430,7 +462,7 @@ export function createSession(
     status: 'idle',
     messages: [],
     toolCalls: [],
-    values: undefined,
+    state: undefined,
     interrupts: [],
     subgraphs: [],
     history: undefined,
@@ -464,7 +496,8 @@ export function createSession(
       if (!present.has(key)) subgraphTimers.delete(key);
     return changed ? timed : observed;
   }
-  let values: LangGraphValues | undefined;
+  const lifecycle = createLifecycleRecorder();
+  let values: LangGraphState | undefined;
   let interrupts: readonly LangGraphWireInterrupt[] =
     publication.getSnapshot().interrupts;
   let owner: Attempt | undefined;
@@ -594,16 +627,58 @@ export function createSession(
   }
 
   const owns = (attempt: Attempt) => owner === attempt && !disposed;
+  const stateType = options.stateType;
+  let published: {
+    readonly source: LangGraphState | undefined;
+    readonly state: LangGraphState | undefined;
+    readonly issues?: readonly string[];
+  } = { source: undefined, state: undefined };
+  /** The state to publish for the current values, checked once per reported state. */
+  function readPublishedState(): typeof published {
+    if (values === published.source) return published;
+    if (values === undefined || stateType === undefined)
+      return (published = { source: values, state: values });
+    const reading = readState(stateType, values);
+    if (!reading.valid)
+      return (published = {
+        source: values,
+        state: published.state,
+        issues: reading.issues,
+      });
+    // A schema may hand back the reported record itself or a new value.
+    let state: LangGraphState | undefined;
+    try {
+      state = record(ownValue(reading.value as PlainValue)) as
+        | LangGraphState
+        | undefined;
+    } catch {
+      state = undefined;
+    }
+    return (published = state
+      ? { source: values, state }
+      : {
+          source: values,
+          state: published.state,
+          issues: ['The state schema must produce a plain data record.'],
+        });
+  }
   function publish(status: 'idle' | 'running' | 'error', error?: AgentError) {
     if (hasInvocationConflict(state.invocations)) {
       status = 'error';
       error = invocationConflictError();
     }
     const plan = agentPlanFromState(values);
+    lifecycle.observe({
+      error,
+      interrupts,
+      toolCalls: state.toolCalls,
+    });
+    const reading = readPublishedState();
     publication.publish({
       status,
       history: historyPage,
-      values,
+      state: reading.state,
+      ...(reading.issues ? { stateIssues: reading.issues } : {}),
       ...(plan ? { plan } : {}),
       interrupts: identifyInterrupts(interrupts),
       subgraphs: timedSubgraphs(subgraphs.subgraphs),
@@ -624,6 +699,8 @@ export function createSession(
         : state.toolCalls,
       ...(error ? { error } : {}),
     });
+    // Last, so a lifecycle listener runs where a snapshot listener would.
+    lifecycle.flush();
   }
   function invalidateCheck() {
     revision += 1;
@@ -1195,6 +1272,7 @@ export function createSession(
             settle(attempt, 'interrupted', invocationConflictError());
             return;
           }
+          lifecycle.mark('streamStartedAt');
           publish('running');
           // publish drains observer commands before returning. Never dispatch or
           // read on behalf of an attempt a listener just stopped/superseded.
@@ -1584,7 +1662,10 @@ export function createSession(
       external.addEventListener('abort', abort, { once: true });
       if (external.aborted) abort();
     }
-    if (owns(created)) publish('running');
+    if (owns(created)) {
+      if (input.kind === 'resume') lifecycle.mark('interruptResolvedAt');
+      publish('running');
+    }
     checking?.abort();
     if (previous) close(previous, true);
     closeLoad(reading);
@@ -2046,6 +2127,7 @@ export function createSession(
         authoredTools.clear();
         loading = undefined;
         read.resolve();
+        if (history.length > 0) lifecycle.mark('threadPersistedAt');
         publish(
           unsettledTools.size ? 'error' : 'idle',
           unsettledTools.size ? unsettledToolError() : undefined
@@ -2352,6 +2434,11 @@ export function createSession(
       disposed ? () => undefined : publication.subscribe(notify),
     onCustomEvent: (listener) =>
       disposed ? () => undefined : publication.onCustomEvent(listener),
+    lifecycle: {
+      getSnapshot: lifecycle.source.getSnapshot,
+      subscribe: (notify) =>
+        disposed ? () => undefined : lifecycle.source.subscribe(notify),
+    },
     submit,
     fork,
     ...(canRegenerate ? { regenerate } : {}),
@@ -2380,6 +2467,7 @@ export function createSession(
         recoveryAttempt = undefined;
         publish('idle');
         publication.clearListeners();
+        lifecycle.clearListeners();
         checking?.abort();
         if (attempt) close(attempt, true);
         closeLoad(reading);

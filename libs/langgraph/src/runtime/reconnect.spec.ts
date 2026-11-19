@@ -596,7 +596,7 @@ describe('owned run reconnect', () => {
     });
     await f.session.submit('Question');
     expect(f.session.getSnapshot().messages[1].content).toBe('Partial');
-    expect(f.session.getSnapshot().values).toBeUndefined();
+    expect(f.session.getSnapshot().state).toBeUndefined();
     await f.session.reconnect();
     expect(f.joinStream.mock.calls[0][2]).toBe('1');
   });
@@ -642,7 +642,7 @@ describe('owned run reconnect', () => {
       );
       await replacement;
       expect(f.session.getSnapshot().reconnect).toBeUndefined();
-      expect(f.session.getSnapshot().values?.['stage']).toBeUndefined();
+      expect(f.session.getSnapshot().state?.['stage']).toBeUndefined();
       expect(
         f.session
           .getSnapshot()

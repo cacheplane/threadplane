@@ -112,7 +112,7 @@ describe('private subgraph observations', () => {
     await f.emit(child('B', ['a', 'b']));
     const next = f.session.getSnapshot();
     expect(next.messages).toBe(before.messages);
-    expect(next.values).toBe(before.values);
+    expect(next.state).toBe(before.state);
     expect(next.subgraphs[0]).toBe(before.subgraphs[0]);
     expect(next.subgraphs[2]).toBe(before.subgraphs[2]);
     expect(next.subgraphs[1].messages[0].content).toBe('AB');
@@ -187,7 +187,7 @@ describe('private subgraph observations', () => {
     f.streams[0].finish();
     expect(await run).toBe('success');
     const snapshot = f.session.getSnapshot();
-    expect(snapshot.subgraphs[0].values).toEqual({ nested: { count: [1] } });
+    expect(snapshot.subgraphs[0].state).toEqual({ nested: { count: [1] } });
     expect(snapshot.subgraphs[0].interrupts).toEqual([
       { id: 'ask', value: { confirm: true } },
     ]);
@@ -281,7 +281,7 @@ describe('private subgraph observations', () => {
           .getSnapshot()
           .subgraphs.some((entry) => entry.namespace[0] === 'bad')
       ).toBe(false);
-      expect(f.session.getSnapshot().values).toBeUndefined();
+      expect(f.session.getSnapshot().state).toBeUndefined();
       if (action === 'submit') {
         await f.started(1);
         await f.session.stop();

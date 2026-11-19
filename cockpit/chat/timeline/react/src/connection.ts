@@ -4,7 +4,7 @@ import type { AgentSession } from '@threadplane/core';
 import type { AgentSnapshot, CompleteOutcome } from '@threadplane/core';
 import { checkpointSource, copyData, type ForkSource } from './checkpoints';
 export type TimelineState = AgentSnapshot & {
-  readonly values?: Readonly<Record<string, unknown>>;
+  readonly state?: Readonly<Record<string, unknown>>;
   readonly history?: unknown;
   readonly subgraphs: readonly unknown[];
   readonly interrupts: readonly unknown[];

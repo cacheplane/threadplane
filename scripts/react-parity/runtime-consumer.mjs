@@ -295,7 +295,7 @@ export function assertTextTranscript(messages: readonly Message[]) {
   // @ts-expect-error Child observations are immutable.
   snapshot.subgraphs.push(directChildren[0]);
   for (const child of snapshot.subgraphs) {
-    const childValues: Readonly<Record<string, PlainValue>> | undefined = child.values;
+    const childValues: Readonly<Record<string, PlainValue>> | undefined = child.state;
     const childInterrupt: PlainValue = child.interrupts[0]?.value;
     const childError: AgentError | undefined = child.error;
     const childInterruptNamespace: readonly string[] | undefined = child.interrupts[0]?.namespace;
@@ -310,25 +310,25 @@ export function assertTextTranscript(messages: readonly Message[]) {
     child.submit('Run');
     // @ts-expect-error Child streams have no executable tool list.
     void child.toolCalls;
-    if (child.values) {
+    if (child.state) {
       // @ts-expect-error Child values are readonly plain data.
-      child.values['stage'] = 'changed';
+      child.state['stage'] = 'changed';
     }
     // @ts-expect-error Child interrupts cannot be mutated.
     child.interrupts.push({ value: true });
     void [childValues, childInterrupt, childError, childInterruptNamespace, childResumable];
   }
   void [observedChildren, directChildren];
-  const directValues: Readonly<Record<string, PlainValue>> | undefined = direct.values;
-  const values: Readonly<Record<string, PlainValue>> | undefined = snapshot.values;
+  const directValues: Readonly<Record<string, PlainValue>> | undefined = direct.state;
+  const values: Readonly<Record<string, PlainValue>> | undefined = snapshot.state;
   // @ts-expect-error No application schema is inferred from the broad values map.
-  const assumedCounter: number = snapshot.values?.['counter'];
+  const assumedCounter: number = snapshot.state?.['counter'];
   // @ts-expect-error Concrete backend fields remain readonly.
-  snapshot.values = {};
-  if (snapshot.values) {
+  snapshot.state = {};
+  if (snapshot.state) {
     // @ts-expect-error Application records remain readonly.
-    snapshot.values['counter'] = 2;
-    const nested = snapshot.values['profile'];
+    snapshot.state['counter'] = 2;
+    const nested = snapshot.state['profile'];
     if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
       // @ts-expect-error Nested application records remain readonly.
       nested['name'] = 'mutable';

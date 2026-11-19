@@ -21,7 +21,7 @@ import {
 
 export interface TimeTravelSession extends Omit<AgentSession, 'getSnapshot'> {
   getSnapshot(): AgentSnapshot & {
-    readonly values?: Readonly<Record<string, unknown>>;
+    readonly state?: Readonly<Record<string, unknown>>;
     readonly interrupts: readonly unknown[];
     readonly history?: unknown;
   };
@@ -143,7 +143,7 @@ export function createTimeTravelApplication(options: {
     if (!valid()) return;
     const interrupts = root.interrupts;
     if (!valid()) return;
-    const values = root.values;
+    const values = root.state;
     if (!valid()) return;
     if (
       !Array.isArray(messages) ||

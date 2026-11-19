@@ -175,7 +175,7 @@ export function createSkillsApplication(client: SkillsClient) {
       currentOwner: o.key,
       currentGeneration: o.generation,
       source,
-      values: s.values,
+      values: s.state,
     });
     const rows = o.content.project({
       status: s.status as AgentStatus,

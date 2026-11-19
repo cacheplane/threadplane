@@ -13,8 +13,8 @@ describe('terminal owned Skills authority', () => {
       input.observedState.values,
       input.history[0].values,
       input.loadedCheckpoint.values,
-      input.snapshot.values,
-      input.loadedSnapshot.values,
+      input.snapshot.state,
+      input.loadedSnapshot.state,
     ]) {
       (values as any).skills_load_errors = [
         { path: '/skills/broken/SKILL.md', error: 'Invalid frontmatter' },
@@ -31,7 +31,7 @@ describe('terminal owned Skills authority', () => {
     'confirms only absent live private keys $keys and retains exact checkpoint metadata',
     ({ keys }) => {
       const input = withPrivateErrors();
-      for (const key of keys) delete (input.snapshot.values as any)[key];
+      for (const key of keys) delete (input.snapshot.state as any)[key];
       const authority = captureAuthority(input);
       expect(authority.kind).toBe('terminal');
       if (authority.kind !== 'terminal')
@@ -45,10 +45,10 @@ describe('terminal owned Skills authority', () => {
     (key) => {
       for (const value of [[], undefined]) {
         const input = withPrivateErrors();
-        delete (input.snapshot.values as any)[
+        delete (input.snapshot.state as any)[
           key === 'skills_metadata' ? 'skills_load_errors' : 'skills_metadata'
         ];
-        (input.snapshot.values as any)[key] = value;
+        (input.snapshot.state as any)[key] = value;
         expect(captureAuthority(input).kind).toBe('unconfirmed');
       }
     }
@@ -58,10 +58,10 @@ describe('terminal owned Skills authority', () => {
     (key) => {
       for (const remove of [true, false]) {
         const input = withPrivateErrors();
-        delete (input.snapshot.values as any).skills_metadata;
-        delete (input.snapshot.values as any).skills_load_errors;
-        if (remove) delete (input.loadedSnapshot.values as any)[key];
-        else (input.loadedSnapshot.values as any)[key] = [];
+        delete (input.snapshot.state as any).skills_metadata;
+        delete (input.snapshot.state as any).skills_load_errors;
+        if (remove) delete (input.loadedSnapshot.state as any)[key];
+        else (input.loadedSnapshot.state as any)[key] = [];
         expect(captureAuthority(input).kind).toBe('unconfirmed');
       }
     }
@@ -69,20 +69,20 @@ describe('terminal owned Skills authority', () => {
   it('rejects missing/conflicting ordinary keys, nested omissions, unknown extras and nonrecord live values', () => {
     for (const modify of [
       (i: any) => {
-        delete i.snapshot.values.files;
+        delete i.snapshot.state.files;
       },
       (i: any) => {
-        i.snapshot.values.files = { stale: true };
+        i.snapshot.state.files = { stale: true };
       },
       (i: any) => {
-        i.snapshot.values.extra = [];
+        i.snapshot.state.extra = [];
       },
       (i: any) => {
-        i.snapshot.values = structuredClone(i.snapshot.values);
-        delete i.snapshot.values.skills_metadata[0].description;
+        i.snapshot.state = structuredClone(i.snapshot.state);
+        delete i.snapshot.state.skills_metadata[0].description;
       },
       ...[undefined, null, [], 'invalid'].map((value) => (i: any) => {
-        i.snapshot.values = value;
+        i.snapshot.state = value;
       }),
     ]) {
       const input = authorityInput();
@@ -96,11 +96,11 @@ describe('terminal owned Skills authority', () => {
       input.observedState.values,
       input.history[0].values,
       input.loadedCheckpoint.values,
-      input.loadedSnapshot.values,
+      input.loadedSnapshot.state,
     ])
       delete (values as any).skills_metadata;
     expect(captureAuthority(input).kind).toBe('unconfirmed');
-    delete (input.snapshot.values as any).skills_metadata;
+    delete (input.snapshot.state as any).skills_metadata;
     (input.snapshot as any).customEvents = [
       { name: 'skills_visibility', data: { skills_metadata: ['untrusted'] } },
     ];
@@ -129,7 +129,7 @@ describe('terminal owned Skills authority', () => {
       },
     ]) {
       const input = authorityInput();
-      delete (input.snapshot.values as any).skills_metadata;
+      delete (input.snapshot.state as any).skills_metadata;
       modify(input);
       expect(captureAuthority(input).kind).toBe('unconfirmed');
     }
@@ -161,7 +161,8 @@ describe('terminal owned Skills authority', () => {
   ])('rejects contradictory %s', (key) => {
     const input = authorityInput();
     const target = key === 'history' ? input.history[0] : (input as any)[key];
-    target.values.skills_metadata = [];
+    (key.endsWith('napshot') ? target.state : target.values).skills_metadata =
+      [];
     expect(captureAuthority(input).kind).toBe('unconfirmed');
   });
   it('requires actual raw status and exact tool arguments/results/ids', () => {

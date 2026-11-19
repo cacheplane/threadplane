@@ -121,7 +121,7 @@ describe('explicit interrupt resume', () => {
         status: 'running',
         interrupts: [],
         messages: before.messages,
-        values: before.values,
+        state: before.state,
       });
       expect(
         f.session.getSnapshot().messages.filter((m) => m.role === 'user')
@@ -290,7 +290,7 @@ describe('explicit interrupt resume', () => {
     });
     expect(await f.session.resume(answerPending(f.session))).toBe('success');
     expect(f.session.getSnapshot().messages).toEqual([]);
-    expect(f.session.getSnapshot().values).toEqual({ stage: 'done' });
+    expect(f.session.getSnapshot().state).toEqual({ stage: 'done' });
   });
 
   it('rejects absent pause without effects and keeps disposed/pre-aborted calls inert', async () => {

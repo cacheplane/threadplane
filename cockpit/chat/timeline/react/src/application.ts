@@ -292,7 +292,7 @@ export function createTimelineApplication(options: TimelineClient) {
         owner.unsafe ||
         before.status !== 'idle' ||
         (owner.proof &&
-          !confirmCanonicalHistory(before.messages, before.values, owner.proof))
+          !confirmCanonicalHistory(before.messages, before.state, owner.proof))
       ) {
         block(owner);
         return;
@@ -314,7 +314,7 @@ export function createTimelineApplication(options: TimelineClient) {
       const turn = owner.admission?.turn;
       const canonical =
         terminal && terminal.status === 'idle' && !unsafe(terminal) && turn
-          ? confirmCanonicalHistory(terminal.messages, terminal.values, turn)
+          ? confirmCanonicalHistory(terminal.messages, terminal.state, turn)
           : undefined;
       if (outcome !== 'success' || owner.unsafe || !canonical) {
         block(owner);

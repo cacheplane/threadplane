@@ -9,9 +9,17 @@ export type LangGraphInputState = Readonly<Record<string, PlainValue>> & {
   readonly client_tools?: never;
 };
 
-export type LangGraphSubmitInput =
+/** Input state for a session: any plain record, or part of its declared state. */
+export type LangGraphSubmitState<TState = unknown> = unknown extends TState
+  ? LangGraphInputState
+  : Partial<TState> & {
+      readonly messages?: never;
+      readonly client_tools?: never;
+    };
+
+export type LangGraphSubmitInput<TState = unknown> =
   | string
-  | { readonly message: string; readonly state?: LangGraphInputState };
+  | { readonly message: string; readonly state?: LangGraphSubmitState<TState> };
 
 /** Capture caller getters and nested data before any session effects. */
 export function captureSubmitInput(input: LangGraphSubmitInput): {

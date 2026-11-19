@@ -68,7 +68,7 @@ export function checkCandidate(signal: AbortSignal) {
   void session.reconnect({ signal });
   const snapshot = session.getSnapshot();
   const values: Readonly<Record<string, PlainValue>> | undefined =
-    snapshot.values;
+    snapshot.state;
   for (const tool of snapshot.toolCalls) {
     if (tool.name === 'weather') {
       const city: string = tool.args.city;
@@ -122,7 +122,7 @@ export function checkCandidate(signal: AbortSignal) {
   // @ts-expect-error Fork requires the actual checkpoint shape.
   void session.fork('checkpoint', 'Branch');
   // @ts-expect-error Observed state cannot be replaced by a consumer.
-  snapshot.values = {};
+  snapshot.state = {};
   // @ts-expect-error Schema-free values do not infer an application model.
   const count: number = values?.['count'];
   return { session, borrowed, outcome, values, count };

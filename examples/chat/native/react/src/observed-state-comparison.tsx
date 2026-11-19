@@ -2,24 +2,22 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { StateDiff, type DebugValue } from '@threadplane/react/debug';
 import type { ReactApplication, ReactApplicationSnapshot } from './application';
 
-type ObservedValues = NonNullable<
-  ReactApplicationSnapshot['runtime']
->['values'];
+type ObservedState = NonNullable<ReactApplicationSnapshot['runtime']>['state'];
 
 export function ObservedStateComparison({
   application,
   threadId,
-  values,
+  state,
 }: {
   readonly application: ReactApplication;
   readonly threadId: string;
-  readonly values: ObservedValues;
+  readonly state: ObservedState;
 }) {
   const scope = useMemo(() => ({}), [application, threadId]);
   const committed = useRef<object | null>(null);
   const [baseline, setBaseline] = useState<{
     readonly scope: object;
-    readonly values: Exclude<ObservedValues, undefined>;
+    readonly state: Exclude<ObservedState, undefined>;
   } | null>(null);
   useLayoutEffect(() => {
     committed.current = scope;
@@ -39,10 +37,9 @@ export function ObservedStateComparison({
   };
   const capture = () => {
     const live = liveScope();
-    if (values === undefined || !live || live.runtime?.values !== values)
-      return;
-    // Application snapshots own immutable values; borrow this one observation.
-    setBaseline({ scope, values });
+    if (state === undefined || !live || live.runtime?.state !== state) return;
+    // Application snapshots own immutable state; borrow this one observation.
+    setBaseline({ scope, state });
   };
   const clear = () => {
     if (liveScope()) setBaseline(null);
@@ -55,20 +52,20 @@ export function ObservedStateComparison({
         baseline stays in this view until cleared or the conversation changes;
         it is not a saved checkpoint.
       </p>
-      <button type="button" onClick={capture} disabled={values === undefined}>
+      <button type="button" onClick={capture} disabled={state === undefined}>
         Capture current state baseline
       </button>
       <button type="button" onClick={clear} disabled={!observed}>
         Clear baseline
       </button>
-      {values === undefined ? (
+      {state === undefined ? (
         <p>Current observed state is unavailable.</p>
       ) : observed ? (
         // Immutable runtime PlainValue permits undefined. The passive diff
         // validates these borrowed inputs without normalizing or omitting fields.
         <StateDiff
-          before={observed.values as DebugValue}
-          after={values as DebugValue}
+          before={observed.state as DebugValue}
+          after={state as DebugValue}
           label="Observed baseline to current state"
         />
       ) : (
