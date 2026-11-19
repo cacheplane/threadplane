@@ -11,9 +11,9 @@ import { createNativeStrandsFixture } from './native-strands-fixture.mjs';
 import { createNativeMafFixture } from './native-maf-fixture.mjs';
 import { createAgUiClientToolsFixture } from './ag-ui-client-tools-fixture.mjs';
 import { createLanggraphProxy } from './langgraph-proxy.mjs';
+import { createAgUiProxy } from './ag-ui-proxy.mjs';
 import { createAimockBackend } from './aimock-backend.mjs';
 import { createChatGenerativeUiFixture } from './chat-generative-ui-fixture.mjs';
-import { createAgUiStreamingFixture } from './ag-ui-streaming-fixture.mjs';
 import { createAgUiInterruptsFixture } from './ag-ui-interrupts-fixture.mjs';
 import { createAgUiToolViewsFixture } from './ag-ui-tool-views-fixture.mjs';
 import { createAgUiJsonRenderFixture } from './ag-ui-json-render-fixture.mjs';
@@ -49,11 +49,12 @@ const nativeStrandsFixture = configuration.library === 'runtimes' && configurati
 const nativeMafFixture = configuration.library === 'runtimes' && configuration.topic === 'microsoft-agent-framework' ? createNativeMafFixture() : null;
 const nativeMastraFixture = configuration.library === 'runtimes' && configuration.topic === 'mastra' ? createNativeMastraFixture() : null;
 let chatGenerativeUiFixture = configuration.library === 'chat' && configuration.topic === 'generative-ui' ? createChatGenerativeUiFixture() : null;
-// aimock-backed examples: the real graph runs under `langgraph dev` (started by
-// the Playwright global setup); this server proxies /api to it.
+// aimock-backed examples: the real graph runs under `langgraph dev` or, for
+// AG-UI examples, the example's uvicorn server (started by the Playwright
+// global setup); this server proxies the API or agent endpoint to it.
 // `--backend` (Website previews) starts that backend here, lazily on the first
-// request for the app or its API; cockpit e2e starts it from global setup.
-const aimockBackend = configuration.backend?.kind === 'aimock-langgraph' && process.argv.includes('--backend')
+// API or control request; cockpit e2e starts it from global setup.
+const aimockBackend = configuration.backend && process.argv.includes('--backend')
   ? createAimockBackend({
       root: resolve(dirname(fileURLToPath(import.meta.url)), '../..'),
       backend: configuration.backend,
@@ -62,6 +63,13 @@ const aimockBackend = configuration.backend?.kind === 'aimock-langgraph' && proc
 const langgraphProxy = configuration.backend?.kind === 'aimock-langgraph'
   ? createLanggraphProxy({
       upstream: `http://127.0.0.1:${configuration.backend.langgraphPort}`,
+      ready: aimockBackend ? () => aimockBackend.ensure() : undefined,
+    })
+  : null;
+const agUiProxy = configuration.backend?.kind === 'aimock-ag-ui'
+  ? createAgUiProxy({
+      upstream: `http://127.0.0.1:${configuration.backend.backendPort}`,
+      agentPaths: [`/ag-ui/${configuration.topic}/agent`, '/developer-agent'],
       ready: aimockBackend ? () => aimockBackend.ensure() : undefined,
     })
   : null;
@@ -76,10 +84,6 @@ const agUiJsonRenderFixture =
 const agUiToolViewsFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'tool-views'
     ? createAgUiToolViewsFixture()
-    : null;
-const agUiStreamingFixture =
-  configuration.adapter === 'ag-ui' && configuration.topic === 'streaming'
-    ? createAgUiStreamingFixture()
     : null;
 const agUiInterruptsFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'interrupts'
@@ -156,6 +160,7 @@ const server = createServer(async (request, response) => {
   }
   if (chatGenerativeUiFixture && (await chatGenerativeUiFixture(request, response, pathname))) return;
   if (langgraphProxy && (await langgraphProxy(request, response, pathname))) return;
+  if (agUiProxy && (await agUiProxy(request, response, pathname))) return;
   if (configuration.adapter === 'none') {
     if (!['GET', 'HEAD'].includes(request.method)) {
       response.writeHead(405, { allow: 'GET, HEAD' });
@@ -188,11 +193,6 @@ const server = createServer(async (request, response) => {
   if (
     agUiInterruptsFixture &&
     (await agUiInterruptsFixture(request, response, pathname))
-  )
-    return;
-  if (
-    agUiStreamingFixture &&
-    (await agUiStreamingFixture(request, response, pathname))
   )
     return;
   if (

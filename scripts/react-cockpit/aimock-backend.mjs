@@ -1,6 +1,8 @@
 /**
- * Local e2e only: aimock + a real `langgraph dev` for one aimock-backed React
- * cockpit example, owned by `serve.mjs --backend`.
+ * Local e2e only: aimock + the real server for one aimock-backed React cockpit
+ * example, owned by `serve.mjs --backend`: `langgraph dev` for LangGraph
+ * examples (`aimock-langgraph`), the example's uvicorn `src/server.py` for
+ * AG-UI examples (`aimock-ag-ui`).
  *
  * Cockpit e2e starts the same backend from its Playwright global setup
  * (libs/e2e-harness). Website e2e reuses the React examples as previews and
@@ -22,6 +24,7 @@ export function createAimockBackend({ root, backend }) {
   let child;
   let stderr = '';
 
+  const port = backend.kind === 'aimock-ag-ui' ? backend.backendPort : backend.langgraphPort;
   async function start() {
     const dir = resolve(root, backend.fixtures);
     const fixtures = readdirSync(dir)
@@ -29,12 +32,18 @@ export function createAimockBackend({ root, backend }) {
       .sort()
       .flatMap((file) => JSON.parse(readFileSync(join(dir, file), 'utf8')).fixtures);
     // Same replay defaults as libs/e2e-harness/src/aimock-runner.ts.
+    // A leftover server on the port would answer /ok with a dead aimock behind it.
+    const stale = await fetch(`http://127.0.0.1:${port}/ok`).then(() => true, () => false);
+    if (stale) throw new Error(`Port ${port} is already serving; stop the leftover server first`);
     mock = new LLMock({ port: 0, chunkSize: 4096 });
     mock.addFixturesFromJSON(fixtures);
     await mock.start();
+    const agUi = backend.kind === 'aimock-ag-ui';
     child = spawn(
       'uv',
-      ['run', 'langgraph', 'dev', '--port', String(backend.langgraphPort), '--no-browser'],
+      agUi
+        ? ['run', 'uvicorn', 'src.server:app', '--port', String(port)]
+        : ['run', 'langgraph', 'dev', '--port', String(port), '--no-browser'],
       {
         cwd: resolve(root, backend.python),
         env: {
@@ -53,14 +62,14 @@ export function createAimockBackend({ root, backend }) {
     while (Date.now() < deadline) {
       if (child.exitCode !== null) break;
       try {
-        if ((await fetch(`http://127.0.0.1:${backend.langgraphPort}/ok`)).ok) return;
+        if ((await fetch(`http://127.0.0.1:${port}/ok`)).ok) return;
       } catch {
         // not listening yet
       }
       await delay(500);
     }
     process.stderr.write(stderr);
-    throw new Error(`langgraph dev for ${backend.python} did not become ready`);
+    throw new Error(`${agUi ? 'uvicorn' : 'langgraph dev'} for ${backend.python} did not become ready`);
   }
 
   return {

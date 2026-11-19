@@ -11,6 +11,17 @@ const aimockLanggraph = (example, port) => Object.freeze({
   fixtures: `cockpit/${example}/angular/e2e/fixtures`,
   langgraphPort: port + 1000,
 });
+/**
+ * aimock-backed AG-UI example: the example's uvicorn `src/server.py`
+ * (ag-ui-langgraph) against the Angular example's aimock fixtures.
+ * Convention: backend = port + 1000.
+ */
+const aimockAgUi = (example, port) => Object.freeze({
+  kind: 'aimock-ag-ui',
+  python: `cockpit/${example}/python`,
+  fixtures: `cockpit/${example}/angular/e2e/fixtures`,
+  backendPort: port + 1000,
+});
 /** LangGraph examples whose React e2e run on aimock + `langgraph dev`. */
 const AIMOCK_LANGGRAPH_TOPICS = new Set(['streaming', 'interrupts', 'memory', 'persistence', 'subgraphs', 'client-tools', 'deployment-runtime', 'time-travel', 'durable-execution']);
 export function reactCockpitConfiguration(topic = 'streaming') {
@@ -231,6 +242,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/ag-ui/streaming/react/',
       port: 4609,
       project: 'cockpit-ag-ui-streaming-react',
+      backend: aimockAgUi('ag-ui/streaming', 4609),
     });
   if (
     ![

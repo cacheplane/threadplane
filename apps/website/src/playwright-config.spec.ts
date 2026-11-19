@@ -495,8 +495,8 @@ describe('Website Playwright configuration', () => {
         url: 'http://127.0.0.1:4608/__ready',
       }),
       expect.objectContaining({
-        command: 'node scripts/react-cockpit/serve.mjs ag-ui-streaming --no-parent',
-        url: 'http://127.0.0.1:4609',
+        command: 'node scripts/react-cockpit/serve.mjs ag-ui-streaming --no-parent --backend',
+        url: 'http://127.0.0.1:4609/__ready',
       }),
       expect.objectContaining({
         command: 'node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent',

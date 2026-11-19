@@ -1,5 +1,8 @@
 import { resolve } from 'node:path';
-import { createLanggraphGlobalSetup } from '@threadplane-internal/e2e-harness';
+import {
+  createAgUiBackendGlobalSetup,
+  createLanggraphGlobalSetup,
+} from '@threadplane-internal/e2e-harness';
 
 /**
  * Playwright global setup for an aimock-backed React cockpit example: aimock
@@ -22,6 +25,26 @@ export function reactAimockGlobalSetup(options: {
     stateKey: name,
     langgraphCwd: `cockpit/${options.example}/python`,
     langgraphPort: options.port + 1000,
+    fixturesDir: resolve(__dirname, '..', options.example, 'angular/e2e/fixtures'),
+  });
+}
+
+/**
+ * The AG-UI flavor: aimock replays the Angular example's fixtures into the
+ * example's uvicorn AG-UI server (`src/server.py`); the static server proxies
+ * the agent endpoint to it through scripts/react-cockpit/ag-ui-proxy.mjs.
+ * Mirrors `aimockAgUi()` in scripts/react-cockpit/configuration.mjs.
+ */
+export function reactAimockAgUiGlobalSetup(options: {
+  /** e.g. 'ag-ui/streaming' */
+  example: string;
+  /** The React app port from configuration.mjs. */
+  port: number;
+}): () => Promise<void> {
+  return createAgUiBackendGlobalSetup({
+    stateKey: `cockpit-${options.example.replace('/', '-')}-react`,
+    pythonCwd: `cockpit/${options.example}/python`,
+    backendPort: options.port + 1000,
     fixturesDir: resolve(__dirname, '..', options.example, 'angular/e2e/fixtures'),
   });
 }

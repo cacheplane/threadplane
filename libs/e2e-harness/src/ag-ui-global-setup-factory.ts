@@ -70,41 +70,100 @@ function repoRoot(opts: CreateAgUiGlobalSetupOpts): string {
   throw new Error('repo root not found from fixturesDir; passed: ' + opts.fixturesDir);
 }
 
+interface AgUiBackend {
+  aimock: AimockHandle;
+  backend: ChildProcess;
+  backendPort: number;
+}
+
+/** aimock + the example's uvicorn AG-UI server (src/server.py), ready on /ok. */
+async function startAgUiBackend(opts: {
+  root: string;
+  pythonCwd: string;
+  backendPort: number;
+  fixturesDir: string;
+  backendReadyTimeoutMs?: number;
+}): Promise<AgUiBackend> {
+  const launch = resolveAimockLaunch(opts.fixturesDir);
+  const aimock = await startAimock(launch.startOptions);
+  // eslint-disable-next-line no-console
+  console.log(`[ag-ui-harness] aimock listening at ${aimock.baseUrl}`);
+
+  const backend = spawn(
+    'uv',
+    ['run', 'uvicorn', 'src.server:app', '--port', String(opts.backendPort)],
+    {
+      cwd: resolve(opts.root, opts.pythonCwd),
+      env: {
+        ...process.env,
+        OPENAI_BASE_URL: aimock.baseUrl,
+        OPENAI_API_KEY: launch.openaiApiKey,
+      },
+      stdio: 'pipe',
+      // detached:true puts the process in its own group so teardown can
+      // kill the whole tree (uv → python → uvicorn) via process.kill(-pid).
+      // Without this, SIGTERM to `uv` doesn't propagate to the Python child
+      // and the uvicorn server keeps holding the port through teardown.
+      detached: true,
+    },
+  );
+  backend.stdout?.on('data', (b) => process.stdout.write(`[ag-ui-backend] ${b}`));
+  backend.stderr?.on('data', (b) => process.stderr.write(`[ag-ui-backend] ${b}`));
+
+  await waitForPort(
+    `http://localhost:${opts.backendPort}/ok`,
+    opts.backendReadyTimeoutMs ?? 90_000,
+    'ag-ui-backend',
+  );
+  // eslint-disable-next-line no-console
+  console.log(`[ag-ui-harness] backend ready on :${opts.backendPort}`);
+  return { aimock, backend, backendPort: opts.backendPort };
+}
+
+function registerState(key: string, state: SharedState): void {
+  if (!globalThis.__AIMOCK_HARNESS_STATE__) {
+    globalThis.__AIMOCK_HARNESS_STATE__ = new Map();
+  }
+  globalThis.__AIMOCK_HARNESS_STATE__.set(key, state);
+}
+
+export interface CreateAgUiBackendGlobalSetupOpts {
+  /** Teardown state key, e.g. the React project name. */
+  stateKey: string;
+  pythonCwd: string;
+  backendPort: number;
+  fixturesDir: string;
+  backendReadyTimeoutMs?: number;
+}
+
+/** Backend only: the React cockpit serves its own build and proxies to it. */
+export function createAgUiBackendGlobalSetup(
+  opts: CreateAgUiBackendGlobalSetupOpts,
+): () => Promise<void> {
+  return async function globalSetup(): Promise<void> {
+    const backend = await startAgUiBackend({
+      root: repoRoot({ fixturesDir: opts.fixturesDir } as CreateAgUiGlobalSetupOpts),
+      pythonCwd: opts.pythonCwd,
+      backendPort: opts.backendPort,
+      fixturesDir: opts.fixturesDir,
+      backendReadyTimeoutMs: opts.backendReadyTimeoutMs,
+    });
+    registerState(opts.stateKey, backend);
+  };
+}
+
 export function createAgUiGlobalSetup(opts: CreateAgUiGlobalSetupOpts): () => Promise<void> {
-  const backendTimeout = opts.backendReadyTimeoutMs ?? 90_000;
   const angularTimeout = opts.angularReadyTimeoutMs ?? 120_000;
 
   return async function globalSetup(): Promise<void> {
     const root = repoRoot(opts);
-    const launch = resolveAimockLaunch(opts.fixturesDir);
-    const aimock = await startAimock(launch.startOptions);
-    // eslint-disable-next-line no-console
-    console.log(`[ag-ui-harness] aimock listening at ${aimock.baseUrl}`);
-
-    const backend = spawn(
-      'uv',
-      ['run', 'uvicorn', 'src.server:app', '--port', String(opts.backendPort)],
-      {
-        cwd: resolve(root, opts.pythonCwd),
-        env: {
-          ...process.env,
-          OPENAI_BASE_URL: aimock.baseUrl,
-          OPENAI_API_KEY: launch.openaiApiKey,
-        },
-        stdio: 'pipe',
-        // detached:true puts the process in its own group so teardown can
-        // kill the whole tree (uv → python → uvicorn) via process.kill(-pid).
-        // Without this, SIGTERM to `uv` doesn't propagate to the Python child
-        // and the uvicorn server keeps holding the port through teardown.
-        detached: true,
-      },
-    );
-    backend.stdout?.on('data', (b) => process.stdout.write(`[ag-ui-backend] ${b}`));
-    backend.stderr?.on('data', (b) => process.stderr.write(`[ag-ui-backend] ${b}`));
-
-    await waitForPort(`http://localhost:${opts.backendPort}/ok`, backendTimeout, 'ag-ui-backend');
-    // eslint-disable-next-line no-console
-    console.log(`[ag-ui-harness] backend ready on :${opts.backendPort}`);
+    const backend = await startAgUiBackend({
+      root,
+      pythonCwd: opts.pythonCwd,
+      backendPort: opts.backendPort,
+      fixturesDir: opts.fixturesDir,
+      backendReadyTimeoutMs: opts.backendReadyTimeoutMs,
+    });
 
     const angular = spawn(
       'npx',
@@ -125,13 +184,8 @@ export function createAgUiGlobalSetup(opts: CreateAgUiGlobalSetupOpts): () => Pr
     // eslint-disable-next-line no-console
     console.log(`[ag-ui-harness] angular ready on :${opts.angularPort} (${opts.angularProject})`);
 
-    if (!globalThis.__AIMOCK_HARNESS_STATE__) {
-      globalThis.__AIMOCK_HARNESS_STATE__ = new Map();
-    }
-    globalThis.__AIMOCK_HARNESS_STATE__.set(opts.angularProject, {
-      aimock,
-      backend,
-      backendPort: opts.backendPort,
+    registerState(opts.angularProject, {
+      ...backend,
       angular,
       angularPort: opts.angularPort,
     });
