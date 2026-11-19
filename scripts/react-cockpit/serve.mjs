@@ -14,7 +14,6 @@ import { createLanggraphProxy } from './langgraph-proxy.mjs';
 import { createAgUiProxy } from './ag-ui-proxy.mjs';
 import { createAimockBackend } from './aimock-backend.mjs';
 import { createChatGenerativeUiFixture } from './chat-generative-ui-fixture.mjs';
-import { createAgUiInterruptsFixture } from './ag-ui-interrupts-fixture.mjs';
 import { createAgUiToolViewsFixture } from './ag-ui-tool-views-fixture.mjs';
 import { createAgUiJsonRenderFixture } from './ag-ui-json-render-fixture.mjs';
 import { createAgUiSubagentsFixture } from './ag-ui-subagents-fixture.mjs';
@@ -69,7 +68,8 @@ const langgraphProxy = configuration.backend?.kind === 'aimock-langgraph'
 const agUiProxy = configuration.backend?.kind === 'aimock-ag-ui'
   ? createAgUiProxy({
       upstream: `http://127.0.0.1:${configuration.backend.backendPort}`,
-      agentPaths: [`/ag-ui/${configuration.topic}/agent`, '/developer-agent'],
+      agentPaths: [`/ag-ui/${configuration.topic}${configuration.backend.agentPath}`, '/developer-agent'],
+      agentPath: configuration.backend.agentPath,
       ready: aimockBackend ? () => aimockBackend.ensure() : undefined,
     })
   : null;
@@ -84,10 +84,6 @@ const agUiJsonRenderFixture =
 const agUiToolViewsFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'tool-views'
     ? createAgUiToolViewsFixture()
-    : null;
-const agUiInterruptsFixture =
-  configuration.adapter === 'ag-ui' && configuration.topic === 'interrupts'
-    ? createAgUiInterruptsFixture()
     : null;
 const agUiClientToolsFixture = configuration.adapter === 'ag-ui' && configuration.topic === 'client-tools' ? createAgUiClientToolsFixture() : null;
 
@@ -188,11 +184,6 @@ const server = createServer(async (request, response) => {
   if (
     agUiToolViewsFixture &&
     (await agUiToolViewsFixture(request, response, pathname))
-  )
-    return;
-  if (
-    agUiInterruptsFixture &&
-    (await agUiInterruptsFixture(request, response, pathname))
   )
     return;
   if (

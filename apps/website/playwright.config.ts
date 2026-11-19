@@ -342,9 +342,9 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4610',
+                  url: 'http://127.0.0.1:4610/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },

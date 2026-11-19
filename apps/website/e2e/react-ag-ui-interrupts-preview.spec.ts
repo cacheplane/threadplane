@@ -71,9 +71,11 @@ for (const phase of ['paused', 'resume']) {
     await frame.getByRole('button', { name: 'Send', exact: true }).click();
     await expect(frame.getByRole('status')).toHaveText('Awaiting your decision.');
     if (phase === 'resume') {
+      // The resume run streams no text: hold it right after it starts
+      // (scripts/react-cockpit/ag-ui-proxy.mjs).
+      await request.post(origin + '/__hold/stream', { data: { afterType: 'RUN_STARTED' } });
       await frame.getByRole('button', { name: 'Issue refund', exact: true }).click();
-      await expect(frame.getByRole('region', { name: 'Conversation', exact: true })).toContainText('Live partial');
-      expect((await (await request.get(origin + '/__lifetime')).json()).active).toBe(true);
+      await expect.poll(async () => (await (await request.get(origin + '/__lifetime')).json()).active).toBe(true);
     }
     const oldFrame = await page.locator('iframe').elementHandle();
     await selectFramework(page, 'angular');

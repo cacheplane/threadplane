@@ -16,11 +16,13 @@ const aimockLanggraph = (example, port) => Object.freeze({
  * (ag-ui-langgraph) against the Angular example's aimock fixtures.
  * Convention: backend = port + 1000.
  */
-const aimockAgUi = (example, port) => Object.freeze({
+const aimockAgUi = (example, port, agentPath = '/agent') => Object.freeze({
   kind: 'aimock-ag-ui',
   python: `cockpit/${example}/python`,
   fixtures: `cockpit/${example}/angular/e2e/fixtures`,
   backendPort: port + 1000,
+  // The server route the React example talks to (src/server.py).
+  agentPath,
 });
 /** LangGraph examples whose React e2e run on aimock + `langgraph dev`. */
 const AIMOCK_LANGGRAPH_TOPICS = new Set(['streaming', 'interrupts', 'memory', 'persistence', 'subgraphs', 'client-tools', 'deployment-runtime', 'time-travel', 'durable-execution']);
@@ -233,6 +235,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/ag-ui/interrupts/react/',
       port: 4610,
       project: 'cockpit-ag-ui-interrupts-react',
+      backend: aimockAgUi('ag-ui/interrupts', 4610, '/agent/native'),
     });
   if (topic === 'ag-ui-streaming')
     return Object.freeze({
