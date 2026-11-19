@@ -3,7 +3,6 @@ import { portsFor } from '../../../../../cockpit/ports.mjs';
 
 const { angular: angularPort } = portsFor('cockpit-deep-agents-memory-angular');
 
-
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
@@ -17,4 +16,5 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   globalSetup: './global-setup-impl.ts',
+  globalTeardown: require.resolve('../../../../../libs/e2e-harness/src/global-teardown'),
 });

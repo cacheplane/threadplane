@@ -7,34 +7,67 @@ const updated = 'Updated fleet note\n\n  Ω literal whitespace  \n';
 const file = '/memories/AGENTS.md';
 type Recorded = { path: string; method: string; body: Record<string, any> };
 async function records(request: APIRequestContext): Promise<Recorded[]> { return (await request.get('/__requests')).json(); }
-async function configure(request: APIRequestContext, scenario = 'teach', extra: Record<string, boolean> = {}) {
-  expect((await request.post('/__configure', { data: { scenario, holdStream: false, holdState: false, holdCheckpoint: false, failCreation: false, failStream: false, failCheckpoint: false, ...extra } })).ok()).toBe(true);
+// Backend: aimock replays cockpit/deep-agents/memory/angular/e2e/fixtures
+// (shared with the Angular example; React scenarios are tagged prompts) into a
+// real `langgraph dev` with a real store. The proxy records requests and holds
+// or fails the next call (scripts/react-cockpit/langgraph-proxy.mjs).
+// The fail-* scenarios stand in for a store read failing inside the graph at
+// one observation phase, which aimock can't cause: the browser's stream ends
+// with the graph's own error just before that phase's memory event (injected;
+// cockpit/deep-agents/memory/python/tests covers the real failure).
+const failures: Record<string, [scenario: string, phase: string]> = {
+  'fail-initial': ['recall', 'initial'], 'fail-model': ['recall', 'model'], 'fail-terminal': ['teach', 'terminal'],
+};
+let scenario = 'teach';
+async function configure(request: APIRequestContext, next = 'teach', extra: Record<string, boolean> = {}) {
+  const control = async (path: string, data: object = {}) => expect((await request.post(path, { data })).ok()).toBe(true);
+  const failure = failures[next];
+  scenario = failure ? failure[0] : next;
+  if (failure) await control('/__stream/cut', {
+    beforePattern: `"phase": ?"${failure[1]}"`,
+    error: { error: 'MemoryObservationError', message: 'Memory observation unavailable' },
+  });
+  // The saved-conversation confirmation reads the exact checkpoint.
+  if (extra.holdCheckpoint) await control('/__hold/state');
+  if (extra.holdStream) await control('/__hold/stream', { immediate: true });
+  if (extra.failCreation) await control('/__fail-create');
+  await control(extra.failCheckpoint ? '/__state/failure' : '/__state/safe');
+}
+async function release(request: APIRequestContext) {
+  await request.post('/__release-state');
+  await request.post('/__release');
+}
+/** Server-sent events as the real server framed them (CRLF or LF). */
+function events(text: string) {
+  return text.split(/\r?\n\r?\n/).filter(Boolean).map(block => {
+    const lines = block.split(/\r?\n/);
+    return { event: lines.find(line => line.startsWith('event: '))!.slice(7), data: JSON.parse(lines.find(line => line.startsWith('data: '))!.slice(6)) };
+  });
 }
 async function send(page: Page, text = 'Remember this fleet note') {
-  await page.getByRole('textbox', { name: 'Message' }).fill(text);
+  // The scenario tag selects the scripted model turns (shared fixtures).
+  await page.getByRole('textbox', { name: 'Message' }).fill(`${text} [scenario:${scenario}]`);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
 }
 async function saved(page: Page) { await expect(page.getByRole('status')).toHaveText('Response saved.', { timeout: 45000 }); }
 async function capture(request: APIRequestContext, info: TestInfo) {
   mkdirSync(info.outputDir, { recursive: true });
-  for (const endpoint of ['requests', 'graph-proof', 'raw-events']) {
+  for (const endpoint of ['requests', 'captures']) {
     const data = await (await request.get('/__' + endpoint)).json();
     writeFileSync(info.outputPath(endpoint + '.json'), JSON.stringify(data, null, 2));
-    if (endpoint === 'graph-proof') for (const proof of data) {
-      expect(proof.actualCompiledGraph).toBe(true);
-      expect(proof.networkConnectAttempts).toBe(0);
-      expect(Object.keys(proof.sourceSha256)).toHaveLength(6);
-    }
   }
   // Native snapshots are verified inside application confirmation; no extraction endpoint exists.
   writeFileSync(info.outputPath('native-evidence.json'), JSON.stringify({ nativeSnapshotsExtracted: false, evidence: 'Actual native app Saved plus independent current/newest/exact reads.' }));
 }
+test.beforeEach(async ({ request }) => { await request.post('/__reset'); scenario = 'teach'; });
 test.afterEach(async ({ request }, info) => { await capture(request, info); });
 test('literal genuine teach, same-thread edit, new-thread scoped prompt recall and historical read-only restore', async ({ page, request }, info) => {
-  const streams: Promise<{ url: string; status: number; contentLocation: string | undefined; text: string }>[] = [];
+  // Chromium doesn't keep a long-lived event-stream body for response.text();
+  // the stream's content is read from the proxy's capture of the real server.
+  const streams: Promise<{ url: string; status: number; contentLocation: string | undefined }>[] = [];
   page.on('response', response => {
     if (new URL(response.url()).pathname.endsWith('/runs/stream')) streams.push((async () => ({
-      url: response.url(), status: response.status(), contentLocation: (await response.allHeaders())['content-location'], text: await response.text(),
+      url: response.url(), status: response.status(), contentLocation: (await response.allHeaders())['content-location'],
     }))());
   });
   await configure(request, 'teach', { holdCheckpoint: true });
@@ -49,10 +82,11 @@ test('literal genuine teach, same-thread edit, new-thread scoped prompt recall a
   const scope = await page.evaluate(k => localStorage.getItem(k), key);
   expect(scope).toMatch(/^[0-9a-f-]{36}$/);
   await send(page);
-  await expect(page.getByRole('status')).toHaveText('Confirming saved conversation…');
+  // A real `langgraph dev` turn (model, tool, model) can take a few seconds.
+  await expect(page.getByRole('status')).toHaveText('Confirming saved conversation…', { timeout: 30000 });
   await expect(page.getByTestId('memory-source')).toHaveText('store observed during this run');
   await expect(page.getByTestId('memory-file').locator('pre')).toHaveText(literal, { useInnerText: false });
-  await request.post('/__release', { data: {} });
+  await release(request);
   await saved(page);
   await configure(request, 'teach');
   const first = await page.getByLabel('Saved conversations').inputValue();
@@ -69,33 +103,27 @@ test('literal genuine teach, same-thread edit, new-thread scoped prompt recall a
   const firstRequest = (await records(request)).slice(before.length).find(r => r.path.endsWith('/runs/stream'))!;
   const human = firstRequest.body.input.messages[0];
   expect(exact.values.messages.filter((message: any) => message.type === 'human')).toEqual([expect.objectContaining(human)]);
-  const firstRaw = (await (await request.get('/__raw-events')).json()).find((record: any) => record.threadId === first);
-  const firstProofs = (await (await request.get('/__graph-proof')).json()).filter((proof: any) => proof.threadId === first && proof.op === 'submit');
+  // What the real server streamed for this run, as the proxy received it.
+  const firstRaw = (await (await request.get('/__captures')).json()).find((record: any) => record.path.includes(`/threads/${first}/`));
+  const rawEvents = events(firstRaw.sse);
   const sse = await streams[0];
   expect(sse.status).toBe(200);
-  expect(sse.contentLocation).toBe(`/threads/${first}/runs/${firstRaw.runId}`);
-  const metadata = JSON.parse(sse.text.split('\n\n')[0].split('data: ')[1]);
-  expect(metadata.run_id).toBe(firstRaw.runId);
-  expect(sse.text).toContain('event: custom');
-  const decodedEvents = sse.text.split('\n\n').filter(Boolean).map(block => {
-    const lines = block.split('\n');
-    return { event: lines.find(line => line.startsWith('event: '))!.slice(7), data: JSON.parse(lines.find(line => line.startsWith('data: '))!.slice(6)) };
-  });
-  const terminalCustom = decodedEvents.filter(event => event.event === 'custom' && event.data.name === 'deep_agents.memory' && event.data.data.phase === 'terminal').at(-1)!;
-  const actualRawTerminal = firstRaw.events.filter((event: any) => event[0].length === 0 && event[1] === 'custom' && event[2].data.phase === 'terminal').at(-1)[2];
-  const terminalValues = decodedEvents.filter(event => event.event === 'values').at(-1)!;
-  const actualRawValues = firstRaw.events.filter((event: any) => event[0].length === 0 && event[1] === 'values').at(-1)[2];
+  const metadata = rawEvents[0].data;
+  expect(sse.contentLocation).toMatch(new RegExp(`/threads/${first}/runs/${metadata.run_id}$`));
+  expect(firstRaw.sse).toContain('event: custom');
+  const terminalCustom = rawEvents.filter(event => event.event === 'custom' && event.data.name === 'deep_agents.memory' && event.data.data.phase === 'terminal').at(-1)!;
+  const terminalValues = rawEvents.filter(event => event.event === 'values').at(-1)!;
   mkdirSync(info.outputDir, { recursive: true });
   writeFileSync(info.outputPath('whole-read-proof.json'), JSON.stringify({
     nativeSnapshotsExtracted: false,
     owner: { threadId: first, memoryScope: scope, actualSdkHuman: human },
     readResponses: { current, newest, exact }, rootCheckpoint: current.checkpoint,
-    actualBrowserSse: { ...sse, representation: 'Decoded Playwright response.text(), not raw UTF-8 wire bytes', parsedEvents: decodedEvents }, actualRawGraphRun: firstRaw, actualGraphProofs: firstProofs,
+    actualBrowserResponse: sse, actualServerStream: { ...firstRaw, parsedEvents: rawEvents },
   }, null, 2));
-  expect(sse.text).toContain('Ω');
-  expect(terminalCustom.data).toEqual(actualRawTerminal);
+  expect(firstRaw.sse).toContain('Ω');
   expect(terminalCustom.data.data.memory_contents).toEqual({ [file]: literal });
-  expect(terminalValues.data).toEqual(actualRawValues);
+  // Values events omit the private memory channels; the saved checkpoint has them.
+  expect(terminalValues.data.memory_contents).toBeUndefined();
   expect(exact.values.memory_contents).toEqual({ [file]: literal });
   const write = exact.values.messages.find((m: any) => m.type === 'ai' && m.tool_calls?.some((c: any) => c.name === 'write_file'));
   expect(write.tool_calls[0].args).toEqual({ file_path: file, content: literal });
@@ -119,10 +147,12 @@ test('literal genuine teach, same-thread edit, new-thread scoped prompt recall a
   const creates = (await records(request)).slice(before.length).filter(r => r.path === '/api/threads' && r.method === 'POST');
   expect(creates).toHaveLength(2);
   for (const creation of creates) expect(creation.body.if_exists).toBe('raise');
-  const raw = await (await request.get('/__raw-events')).json();
-  const recall = raw.filter((r: any) => r.threadId === second).at(-1);
-  expect(recall.modelPrompts.some((p: string) => p.includes('Updated fleet note'))).toBe(true);
-  expect(raw.some((r: any) => r.storeOperations.some((op: any) => op.type === 'PutOp'))).toBe(true);
+  // The recall reply is scripted per system prompt (shared fixtures): it names
+  // the note only when the graph put the stored memory into the model prompt.
+  await expect(page.getByRole('region', { name: 'Conversation' })).toContainText('Offline prompt observation: Updated fleet note');
+  // The write landed in the real store, under this browser's scope.
+  const stored = await (await request.post('/api/store/items/search', { data: { namespace_prefix: ['cockpit', 'deep-agents-memory', 'browser-v1', scope] } })).json();
+  expect(stored.items.length).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'New conversation' }).click();
   await configure(request, 'empty');
   await send(page, 'Empty the current store'); await saved(page);
@@ -175,8 +205,7 @@ for (const scenario of ['fail-initial', 'fail-model', 'fail-terminal', 'oversize
     await page.getByRole('button', { name: 'New conversation' }).click();
     await configure(request, 'recall'); await send(page, 'Recall the write despite failed terminal read'); await saved(page);
     await expect(page.getByTestId('memory-file').locator('pre')).toHaveText(literal, { useInnerText: false });
-    const raw = await (await request.get('/__raw-events')).json();
-    expect(raw.at(-1).modelPrompts.some((p: string) => p.includes('Fleet note'))).toBe(true);
+    await expect(page.getByRole('region', { name: 'Conversation' })).toContainText('Offline prompt observation: Fleet note');
   }
 });
 for (const mode of ['corrupt', 'unavailable'] as const) test(`storage ${mode} blocks creation`, async ({ page, request }) => {
@@ -192,7 +221,7 @@ test('active captured scope settles with warning and later replacement blocks fu
   await other.goto(base);
   await other.evaluate(k => localStorage.setItem(k, crypto.randomUUID()), key);
   await other.close();
-  await request.post('/__release', { data: {} });
+  await release(request);
   await expect(page.getByTestId('memory-scope-warning')).toBeVisible();
   await expect(page.getByTestId('memory-source')).toHaveText('confirmed checkpoint at read time');
   const before = await records(request); await page.getByRole('button', { name: 'New conversation' }).click(); await expect(page.getByRole('textbox')).toBeDisabled(); expect(await records(request)).toEqual(before);
@@ -207,13 +236,13 @@ test('Stop and New invalidate held delivery and never replay', async ({ page, re
   await configure(request, 'teach', { holdStream: true }); await page.goto(base); const before = await records(request); await send(page);
   await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Stop', exact: true }).click(); await expect(page.getByRole('textbox')).toBeDisabled();
-  await page.getByRole('button', { name: 'New conversation' }).click(); await request.post('/__release', { data: {} });
+  await page.getByRole('button', { name: 'New conversation' }).click(); await release(request);
   await expect(page.getByRole('status')).toHaveText('Ready.'); await expect(page.getByTestId('memory-file')).toHaveCount(0);
   expect((await records(request)).slice(before.length).filter(r => r.path.endsWith('/runs/stream'))).toHaveLength(1);
 });
 test('held exact read cannot resurrect the old view after New', async ({ page, request }) => {
   await configure(request, 'teach', { holdCheckpoint: true }); await page.goto(base); await send(page); await expect(page.getByRole('status')).toHaveText('Confirming saved conversation…');
-  await page.getByRole('button', { name: 'New conversation' }).click(); await request.post('/__release', { data: {} }); await expect(page.getByRole('status')).toHaveText('Ready.'); await expect(page.getByTestId('memory-file')).toHaveCount(0); await expect(page.getByLabel('Saved conversations').locator('option')).toHaveCount(1);
+  await page.getByRole('button', { name: 'New conversation' }).click(); await release(request); await expect(page.getByRole('status')).toHaveText('Ready.'); await expect(page.getByTestId('memory-file')).toHaveCount(0); await expect(page.getByLabel('Saved conversations').locator('option')).toHaveCount(1);
 });
 for (const control of ['failCheckpoint', 'failCreation'] as const) test(`${control} remains unavailable without retries`, async ({ page, request }) => {
   await configure(request, 'teach', { [control]: true }); await page.goto(base); const before = await records(request); await send(page); await expect(page.getByRole('alert')).toBeVisible({ timeout: 45000 }); await expect(page.getByRole('textbox')).toBeDisabled();
