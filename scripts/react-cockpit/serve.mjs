@@ -12,7 +12,6 @@ import { createNativeMafFixture } from './native-maf-fixture.mjs';
 import { createLanggraphProxy } from './langgraph-proxy.mjs';
 import { createAgUiProxy } from './ag-ui-proxy.mjs';
 import { createAimockBackend } from './aimock-backend.mjs';
-import { createChatGenerativeUiFixture } from './chat-generative-ui-fixture.mjs';
 
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
@@ -43,7 +42,6 @@ const releaseA2uiStreams = (cancel = false) => {
 const nativeStrandsFixture = configuration.library === 'runtimes' && configuration.topic === 'aws-strands' ? createNativeStrandsFixture() : null;
 const nativeMafFixture = configuration.library === 'runtimes' && configuration.topic === 'microsoft-agent-framework' ? createNativeMafFixture() : null;
 const nativeMastraFixture = configuration.library === 'runtimes' && configuration.topic === 'mastra' ? createNativeMastraFixture() : null;
-let chatGenerativeUiFixture = configuration.library === 'chat' && configuration.topic === 'generative-ui' ? createChatGenerativeUiFixture() : null;
 // aimock-backed examples: the real graph runs under `langgraph dev` or, for
 // AG-UI examples, the example's uvicorn server (started by the Playwright
 // global setup); this server proxies the API or agent endpoint to it.
@@ -127,17 +125,6 @@ const server = createServer(async (request, response) => {
   if (nativeStrandsFixture && (await nativeStrandsFixture(request, response, pathname))) return;
   if (nativeMafFixture && (await nativeMafFixture(request, response, pathname))) return;
   if (nativeMastraFixture && (await nativeMastraFixture(request, response, pathname))) return;
-  if (chatGenerativeUiFixture && pathname === '/__reset') {
-    if (request.method !== 'POST') return json(response, {}, 405);
-    try {
-      await chatGenerativeUiFixture.close();
-      chatGenerativeUiFixture = createChatGenerativeUiFixture();
-      return json(response, {});
-    } catch {
-      return json(response, { error: 'Fixture reset failed.' }, 500);
-    }
-  }
-  if (chatGenerativeUiFixture && (await chatGenerativeUiFixture(request, response, pathname))) return;
   if (langgraphProxy && (await langgraphProxy(request, response, pathname))) return;
   if (agUiProxy && (await agUiProxy(request, response, pathname))) return;
   if (configuration.adapter === 'none') {
@@ -205,7 +192,7 @@ const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]) : null;
 let closing;
 let shutdown;
-if (agUiA2uiFixture || isChatA2ui || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture || chatGenerativeUiFixture) {
+if (agUiA2uiFixture || isChatA2ui || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture) {
   shutdown = (code = 0) => {
     closing ??= (async () => {
       let a2uiFailure;
@@ -218,7 +205,7 @@ if (agUiA2uiFixture || isChatA2ui || nativeStrandsFixture || nativeMafFixture ||
         try { await chatA2uiFixture?.close(); }
         catch (error) { a2uiFailure = error; }
       }
-      else await (nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture ?? chatGenerativeUiFixture).close();
+      else await (nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture).close();
       await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
         owned.close(resolve);
         owned.closeAllConnections();

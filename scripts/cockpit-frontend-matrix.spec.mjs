@@ -686,6 +686,10 @@ test('native chat generative UI has an exact isolated key and route', async () =
     base: '/chat/generative-ui/react/',
     port: 4627,
     project: 'cockpit-chat-generative-ui-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/generative-ui/python',
+      fixtures: 'cockpit/chat/generative-ui/angular/e2e/fixtures', langgraphPort: 5627,
+    },
   });
   for (const key of [
     'generative-ui',

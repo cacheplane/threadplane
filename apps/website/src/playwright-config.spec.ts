@@ -222,7 +222,7 @@ describe('Website Playwright configuration', () => {
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4630/__ready')?.command).toBe('node scripts/react-cockpit/serve.mjs deep-agents-subagents --no-parent --backend');
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4629')?.command).toBe('node scripts/react-cockpit/serve.mjs deep-agents-filesystem --no-parent --backend');
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4628/__ready')?.command).toBe('node scripts/react-cockpit/serve.mjs deep-agents-planning --no-parent --backend');
-    expect(reactServers.find(server => server.url === 'http://127.0.0.1:4627')?.command).toBe('npx nx run cockpit-chat-generative-ui-python:smoke && node scripts/react-cockpit/serve.mjs chat-generative-ui --no-parent');
+    expect(reactServers.find(server => server.url === 'http://127.0.0.1:4627')?.command).toBe('node scripts/react-cockpit/serve.mjs chat-generative-ui --no-parent --backend');
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4626')?.command).toBe('npx nx run cockpit-chat-timeline-python:smoke && node scripts/react-cockpit/serve.mjs chat-timeline --no-parent');
     expect(reactServers.find(server => server.url === 'http://127.0.0.1:4625')?.command).toBe('npx nx run cockpit-chat-threads-python:smoke && node scripts/react-cockpit/serve.mjs chat-threads --no-parent');
     expect(projects).toContain('cockpit-chat-subagents-react');
@@ -530,7 +530,7 @@ describe('Website Playwright configuration', () => {
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs deep-agents-subagents --no-parent --backend',url:'http://127.0.0.1:4630/__ready'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs deep-agents-skills --no-parent --backend',url:'http://127.0.0.1:4631'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs deep-agents-memory --no-parent --backend',url:'http://127.0.0.1:4632'}),
-      expect.objectContaining({command:'npx nx run cockpit-chat-generative-ui-python:smoke && node scripts/react-cockpit/serve.mjs chat-generative-ui --no-parent',url:'http://127.0.0.1:4627'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs chat-generative-ui --no-parent --backend',url:'http://127.0.0.1:4627'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-timeline-python:smoke && node scripts/react-cockpit/serve.mjs chat-timeline --no-parent',url:'http://127.0.0.1:4626'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-threads-python:smoke && node scripts/react-cockpit/serve.mjs chat-threads --no-parent',url:'http://127.0.0.1:4625'}),
       expect.objectContaining({command:'npx nx run cockpit-chat-subagents-python:smoke && node scripts/react-cockpit/serve.mjs chat-subagents --no-parent',url:'http://127.0.0.1:4624'}),
