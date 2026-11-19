@@ -93,10 +93,10 @@ responsible for immutable snapshots; the hook neither freezes mutable data nor
 adds deep readonly types to caller-authored mutable fields.
 
 Keep the concrete session type when observing backend-specific fields. The private
-LangGraph fixture exposes a broad readonly `values` map on its snapshot: `undefined`
-means no current application-values map is observed, while `{}` is an observed
-empty map. The hook preserves that field without inferring an application schema,
-validating values, or issuing extra reads. Values and messages arrive in the same
+LangGraph fixture exposes the graph state as a readonly `state` record on its
+snapshot: `undefined` means no state is observed yet, while `{}` is an observed
+empty record. The hook preserves that field and its declared type without
+validating it or issuing extra reads. State and messages arrive in the same
 immutable snapshot. This does not make the private backend factory public or add
 state-writing support.
 

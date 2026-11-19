@@ -81,7 +81,7 @@ function authorityInput(
     toolCalls: [
       { id: 'read', name: 'read_file', args, status: 'complete', result },
     ],
-    values: {
+    state: {
       memory_contents: values.memory_contents,
       memory_scope_owner: values.memory_scope_owner,
       files: {},
@@ -119,8 +119,8 @@ describe('terminal owned Memory authority', () => {
       input.observedState.values,
       input.history[0].values,
       input.loadedCheckpoint.values,
-      input.snapshot.values,
-      input.loadedSnapshot.values,
+      input.snapshot.state,
+      input.loadedSnapshot.state,
     ]) {
       (values as any).memory_scope_owner =
         '11111111-1111-4111-8111-111111111111';
@@ -136,7 +136,7 @@ describe('terminal owned Memory authority', () => {
     'confirms only absent live private keys $keys and retains exact checkpoint metadata',
     ({ keys }) => {
       const input = withPrivateMemory();
-      for (const key of keys) delete (input.snapshot.values as any)[key];
+      for (const key of keys) delete (input.snapshot.state as any)[key];
       const authority = captureAuthority(input);
       expect(authority.kind).toBe('terminal');
       if (authority.kind !== 'terminal')
@@ -150,10 +150,10 @@ describe('terminal owned Memory authority', () => {
     (key) => {
       for (const value of [[], undefined]) {
         const input = withPrivateMemory();
-        delete (input.snapshot.values as any)[
+        delete (input.snapshot.state as any)[
           key === 'memory_contents' ? 'memory_scope_owner' : 'memory_contents'
         ];
-        (input.snapshot.values as any)[key] = value;
+        (input.snapshot.state as any)[key] = value;
         expect(captureAuthority(input).kind).toBe('unconfirmed');
       }
     }
@@ -163,10 +163,10 @@ describe('terminal owned Memory authority', () => {
     (key) => {
       for (const remove of [true, false]) {
         const input = withPrivateMemory();
-        delete (input.snapshot.values as any).memory_contents;
-        delete (input.snapshot.values as any).memory_scope_owner;
-        if (remove) delete (input.loadedSnapshot.values as any)[key];
-        else (input.loadedSnapshot.values as any)[key] = [];
+        delete (input.snapshot.state as any).memory_contents;
+        delete (input.snapshot.state as any).memory_scope_owner;
+        if (remove) delete (input.loadedSnapshot.state as any)[key];
+        else (input.loadedSnapshot.state as any)[key] = [];
         expect(captureAuthority(input).kind).toBe('unconfirmed');
       }
     }
@@ -174,20 +174,20 @@ describe('terminal owned Memory authority', () => {
   it('rejects missing/conflicting ordinary keys, nested omissions, unknown extras and nonrecord live values', () => {
     for (const modify of [
       (i: any) => {
-        delete i.snapshot.values.files;
+        delete i.snapshot.state.files;
       },
       (i: any) => {
-        i.snapshot.values.files = { stale: true };
+        i.snapshot.state.files = { stale: true };
       },
       (i: any) => {
-        i.snapshot.values.extra = [];
+        i.snapshot.state.extra = [];
       },
       (i: any) => {
-        i.snapshot.values = structuredClone(i.snapshot.values);
-        delete i.snapshot.values.memory_contents['/memories/AGENTS.md'];
+        i.snapshot.state = structuredClone(i.snapshot.state);
+        delete i.snapshot.state.memory_contents['/memories/AGENTS.md'];
       },
       ...[undefined, null, [], 'invalid'].map((value) => (i: any) => {
-        i.snapshot.values = value;
+        i.snapshot.state = value;
       }),
     ]) {
       const input = authorityInput();
@@ -201,11 +201,11 @@ describe('terminal owned Memory authority', () => {
       input.observedState.values,
       input.history[0].values,
       input.loadedCheckpoint.values,
-      input.loadedSnapshot.values,
+      input.loadedSnapshot.state,
     ])
       delete (values as any).memory_contents;
     expect(captureAuthority(input).kind).toBe('unconfirmed');
-    delete (input.snapshot.values as any).memory_contents;
+    delete (input.snapshot.state as any).memory_contents;
     (input.snapshot as any).customEvents = [
       { name: 'skills_visibility', data: { memory_contents: ['untrusted'] } },
     ];
@@ -234,7 +234,7 @@ describe('terminal owned Memory authority', () => {
       },
     ]) {
       const input = authorityInput();
-      delete (input.snapshot.values as any).memory_contents;
+      delete (input.snapshot.state as any).memory_contents;
       modify(input);
       expect(captureAuthority(input).kind).toBe('unconfirmed');
     }
@@ -266,7 +266,8 @@ describe('terminal owned Memory authority', () => {
   ])('rejects contradictory %s', (key) => {
     const input = authorityInput();
     const target = key === 'history' ? input.history[0] : (input as any)[key];
-    target.values.memory_contents = [];
+    (key.endsWith('napshot') ? target.state : target.values).memory_contents =
+      [];
     expect(captureAuthority(input).kind).toBe('unconfirmed');
   });
   it('requires actual raw status and exact tool arguments/results/ids', () => {
@@ -410,8 +411,8 @@ describe('Memory owner binding', () => {
       input.observedState.values,
       input.history[0].values,
       input.loadedCheckpoint.values,
-      input.snapshot.values,
-      input.loadedSnapshot.values,
+      input.snapshot.state,
+      input.loadedSnapshot.state,
     ])
       (v as any).memory_scope_owner = '22222222-2222-4222-8222-222222222222';
     expect(captureAuthority(input).kind).toBe('unconfirmed');
@@ -429,8 +430,8 @@ describe('historical Memory checkpoint projection', () => {
       i.observedState.values,
       i.history[0].values,
       i.loadedCheckpoint.values,
-      i.snapshot.values,
-      i.loadedSnapshot.values,
+      i.snapshot.state,
+      i.loadedSnapshot.state,
     ])
       (v as any).memory_contents = contents;
     const a = captureAuthority(i);
@@ -490,8 +491,8 @@ describe('historical Memory checkpoint projection', () => {
       i.observedState.values,
       i.history[0].values,
       i.loadedCheckpoint.values,
-      i.snapshot.values,
-      i.loadedSnapshot.values,
+      i.snapshot.state,
+      i.loadedSnapshot.state,
     ])
       delete (v as any).memory_contents;
     const a = captureAuthority(i);

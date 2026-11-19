@@ -67,7 +67,7 @@ export class ChildObservations {
         const key = JSON.stringify(namespace);
         if (next.has(key)) throw new Error('Duplicate child namespace');
         const prior = this.entries.get(key);
-        const values = child['values'];
+        const values = child['state'];
         if (
           values !== undefined &&
           (!record(values) ||

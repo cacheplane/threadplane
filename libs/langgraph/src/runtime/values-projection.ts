@@ -1,16 +1,16 @@
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import type { PlainValue } from '@threadplane/core';
-import type { LangGraphValues } from './langgraph-snapshot.js';
+import type { LangGraphState } from './langgraph-snapshot.js';
 import { ownValue, ownValueWithSharing } from './ownership.js';
 import type { StreamEvent } from './transport.types.js';
 import { record } from './wire-message.js';
 
-type Values = LangGraphValues | undefined;
+type Values = LangGraphState | undefined;
 
 function projectRecord(
   previous: Values,
   value: Record<string, unknown>
-): LangGraphValues {
+): LangGraphState {
   const prototype = Object.getPrototypeOf(value);
   if (prototype !== Object.prototype && prototype !== null) {
     // Reject SDK/class instances through the existing plain-data boundary,
@@ -25,7 +25,7 @@ function projectRecord(
   return ownValueWithSharing(
     selected as PlainValue,
     previous
-  ) as LangGraphValues;
+  ) as LangGraphState;
 }
 
 /** Only root full-state records replace application values. Node updates are

@@ -2,9 +2,16 @@ import type { PlainValue } from '@threadplane/core';
 import { ownState } from './state.js';
 
 export type ApplicationState = Readonly<Record<string, PlainValue>>;
-export type SubmitInput =
+/**
+ * The patch a submission merges into the state document. A session with a
+ * declared state type accepts that type's keys; any other accepts a plain record.
+ */
+export type SubmitState<TState = unknown> = unknown extends TState
+  ? ApplicationState
+  : Partial<TState>;
+export type SubmitInput<TState = unknown> =
   | string
-  | { readonly message: string; readonly state?: ApplicationState };
+  | { readonly message: string; readonly state?: SubmitState<TState> };
 export interface CapturedSubmit {
   readonly message: string;
   readonly state?: ApplicationState;
@@ -17,7 +24,9 @@ function isRecord(value: unknown): value is ApplicationState {
 }
 
 /** Read only the selected input fields and own their data before deferral. */
-export function captureSubmit(input: SubmitInput): CapturedSubmit {
+export function captureSubmit<TState = unknown>(
+  input: SubmitInput<TState>
+): CapturedSubmit {
   if (typeof input === 'string') return Object.freeze({ message: input });
   const message = input.message;
   if (typeof message !== 'string')

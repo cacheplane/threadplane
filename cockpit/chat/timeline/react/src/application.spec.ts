@@ -48,7 +48,7 @@ function fixture() {
       toolCalls: [],
       interrupts: [],
       subgraphs: [],
-      values: {},
+      state: {},
       history: undefined,
     } as TimelineState;
     const listeners = new Set<() => void>();
@@ -71,7 +71,7 @@ function fixture() {
       emit({
         status: 'idle',
         messages: [...base, human, answer],
-        values: {
+        state: {
           completed_turn_id: id,
           completed_answer_id: answer.id,
           completed_message_ids: [...base, human, answer].map((m) => m.id),

@@ -68,7 +68,6 @@ describe('createAgentSession', () => {
     const before = session.getSnapshot();
     const notify = vi.fn();
     session.subscribe(notify);
-    source.publish({ state: { model: 'small' } });
     source.publish({ reasoningDurations: { missing: 5 } });
     expect(notify).not.toHaveBeenCalled();
     expect(session.getSnapshot()).toBe(before);

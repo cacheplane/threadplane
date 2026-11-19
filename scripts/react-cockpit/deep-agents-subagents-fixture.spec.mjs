@@ -280,7 +280,7 @@ test(
       assert(child.messages.some((m) => m.role === 'user'));
       assert(child.messages.some((m) => m.role === 'tool'));
       assert(child.messages.some((m) => m.role === 'assistant'));
-      assert(child.values && Object.hasOwn(child.values, 'files'));
+      assert(child.state && Object.hasOwn(child.state, 'files'));
       assert.equal(child.interrupts.length, 0);
     }
     await session.load();

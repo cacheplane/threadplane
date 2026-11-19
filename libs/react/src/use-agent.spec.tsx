@@ -93,7 +93,7 @@ describe('useAgent borrowed session', () => {
             {snapshot.messages.map((message) => message.content).join('\n')}
           </output>
           <output data-testid="values">
-            {JSON.stringify(snapshot.values) ?? 'unobserved'}
+            {JSON.stringify(snapshot.state) ?? 'unobserved'}
           </output>
           <output data-testid="interrupts">
             {JSON.stringify(snapshot.interrupts)}
@@ -140,7 +140,7 @@ describe('useAgent borrowed session', () => {
     });
     const refreshed = f.session.getSnapshot();
     expect(refreshed.interrupts).toBe(snapshot.interrupts);
-    expect(refreshed.values?.['stable']).toBe(snapshot.values?.['stable']);
+    expect(refreshed.state?.['stable']).toBe(snapshot.state?.['stable']);
     expect(JSON.parse(view.getByTestId('values').textContent ?? '')).toEqual({
       counter: 2,
       stable: { items: ['saved'] },
@@ -156,7 +156,7 @@ describe('useAgent borrowed session', () => {
     f.history.value = [];
     await f.session.load();
     expect(f.session.getSnapshot().messages).toEqual([]);
-    expect(f.session.getSnapshot().values).toBeUndefined();
+    expect(f.session.getSnapshot().state).toBeUndefined();
     expect(f.session.getSnapshot().interrupts).toEqual([]);
     expect(f.history.reads).toBe(4);
     expect(f.handlerCalls).toBe(0);
@@ -225,7 +225,7 @@ describe('useAgent borrowed session', () => {
       expect(await run).toBe('success');
     });
     expect(view.getByTestId('messages').textContent).toContain('Visible final');
-    expect(f.session.getSnapshot().values).toEqual({ stage: 'complete' });
+    expect(f.session.getSnapshot().state).toEqual({ stage: 'complete' });
     expect(view.getByTestId('status').textContent).toBe('idle');
     expect(view.getByTestId('delivery').textContent).toContain('success');
 

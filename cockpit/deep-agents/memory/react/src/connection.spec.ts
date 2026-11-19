@@ -79,7 +79,7 @@ it('real SDK lazily creates UUID with raise, captured headers and no retry, then
   expect(events).toEqual([
     { name: 'deep_agents.memory', data: { phase: 'initial' } },
   ]);
-  expect(session.getSnapshot().values).toEqual({ files: {} });
+  expect(session.getSnapshot().state).toEqual({ files: {} });
   expect(session.getSnapshot().messages.at(-1)?.content).toBe('Answer.');
   expect(session.getSnapshot().toolCalls[0]).toMatchObject({
     args: { content: 'literal\n\n' },
@@ -155,7 +155,7 @@ it.each(['messages', 'messages/partial', 'messages/complete'])(
     expect(session.getSnapshot().messages.at(-1)?.content).toBe(
       'Literal native answer'
     );
-    expect(session.getSnapshot().values).toBeUndefined();
+    expect(session.getSnapshot().state).toBeUndefined();
     expect(events).toHaveLength(1);
     await session.dispose();
   }
@@ -670,7 +670,7 @@ it('confirms two successful genuine native turns on one owned thread with fresh 
         status: 'complete',
       }))
     );
-    expect(nativeSession.getSnapshot().values).toEqual({
+    expect(nativeSession.getSnapshot().state).toEqual({
       files: {},
       memory_scope_owner: memoryScope,
       memory_contents: { '/memories/AGENTS.md': contents[1] },
