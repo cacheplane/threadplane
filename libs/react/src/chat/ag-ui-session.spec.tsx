@@ -5,7 +5,6 @@ import { useAgent } from '../use-agent';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
 import { decisionState } from '../../../ag-ui/src/runtime/decision';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
-import { createAgentSession } from '../../../ag-ui/src/runtime/agent-session';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
 import { bindingFixture } from '../../../ag-ui/src/runtime/testing/binding-fixture';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
@@ -16,7 +15,7 @@ afterEach(cleanup);
 describe('Chat over a native AG-UI session', () => {
   it('sends from the composer, streams the reply with its tool call, and shows a backend error', async () => {
     const fixture = bindingFixture();
-    const session = createAgentSession(fixture.session);
+    const session = fixture.session;
     const view = render(
       <Chat
         session={session}
@@ -102,7 +101,7 @@ describe('Chat over a native AG-UI session', () => {
         },
       },
     });
-    const view = render(<Chat session={createAgentSession(fixture.session)} />);
+    const view = render(<Chat session={fixture.session} />);
     try {
       const sources = view.container.querySelector('.tp-citations');
       expect(sources?.textContent).toContain('1');
@@ -116,7 +115,7 @@ describe('Chat over a native AG-UI session', () => {
   it('shows a pending approval from the native session and answers it', async () => {
     const fixture = bindingFixture();
     const native = fixture.session;
-    const session = createAgentSession(native);
+    const session = native;
     function App() {
       const pending = decisionState(useAgent(native));
       return (
@@ -216,7 +215,7 @@ describe('Chat over a native AG-UI session', () => {
           headers: { 'content-type': 'application/json' },
         }),
     });
-    const view = render(<Chat session={createAgentSession(native)} />);
+    const view = render(<Chat session={native} />);
     try {
       const box = view.getByRole('textbox');
       fireEvent.change(box, { target: { value: 'Hello' } });

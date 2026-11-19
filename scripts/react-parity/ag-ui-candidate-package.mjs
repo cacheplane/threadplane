@@ -122,8 +122,6 @@ function forwarding(source, declaration) {
         ? factory
         : ['projectMessages', 'projectToolCalls'].includes(name.name.text)
         ? messages
-        : name.name.text === 'createAgentSession'
-        ? agent
         : ['decisionState', 'DecisionState'].includes(name.name.text)
         ? decision
         : projector;
@@ -163,12 +161,10 @@ function forwarding(source, declaration) {
             'TextTranscriptRow',
             'projectMessages',
             'projectToolCalls',
-            'createAgentSession',
             'decisionState',
             'DecisionState',
           ]
         : [
-            'createAgentSession',
             'decisionState',
             'createSession',
             'projectTextTranscript',

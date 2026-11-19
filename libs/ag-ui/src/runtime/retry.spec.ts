@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { createAgentSession } from './agent-session';
 import { createSession } from './create-session';
 import { bindingFixture } from './testing/binding-fixture';
 
@@ -13,10 +12,10 @@ const usage = [
   { provider: 'openai', model: 'small', inputTokens: 12, outputTokens: 3 },
 ];
 
-describe('retry over the native owner', () => {
+describe('retry', () => {
   it('sends a submission that ended in RUN_ERROR again without a second user message', async () => {
     const fixture = bindingFixture();
-    const session = createAgentSession(fixture.session);
+    const session = fixture.session;
     try {
       const failed = session.submit('Plan a visit');
       const first = await fixture.started();
@@ -81,7 +80,7 @@ describe('retry over the native owner', () => {
 
   it('refuses a stream that ended without a terminal and sends nothing', async () => {
     const fixture = bindingFixture();
-    const session = createAgentSession(fixture.session);
+    const session = fixture.session;
     try {
       const failed = session.submit('Go');
       const first = await fixture.started();
@@ -93,7 +92,6 @@ describe('retry over the native owner', () => {
         recovery: 'none',
       });
       await expect(retryOf(session)).rejects.toThrow(/cannot be retried/);
-      await expect(retryOf(fixture.session)).resolves.toBe('error');
       expect(fixture.exchanges).toHaveLength(1);
     } finally {
       await fixture.cleanup();
@@ -102,15 +100,13 @@ describe('retry over the native owner', () => {
 
   it('is a no-op with nothing saved and while a run is active', async () => {
     const fixture = bindingFixture();
-    const session = createAgentSession(fixture.session);
+    const session = fixture.session;
     try {
       expect(await retryOf(session)).toBe('aborted');
-      await expect(retryOf(fixture.session)).resolves.toBe('aborted');
       expect(fixture.exchanges).toHaveLength(0);
       const run = session.submit('Go');
       const first = await fixture.started();
       expect(await retryOf(session)).toBe('aborted');
-      await expect(retryOf(fixture.session)).resolves.toBe('aborted');
       first.emit({ type: 'RUN_ERROR', message: 'Failed' });
       await run;
       expect(fixture.exchanges).toHaveLength(1);
@@ -121,7 +117,7 @@ describe('retry over the native owner', () => {
 
   it('keeps usage per run: a run that reports none clears the previous count', async () => {
     const fixture = bindingFixture();
-    const session = createAgentSession(fixture.session);
+    const session = fixture.session;
     try {
       const first = session.submit('One');
       const one = await fixture.started();
@@ -161,6 +157,5 @@ describe('retry over the native owner', () => {
       }
     );
     expect('retry' in native).toBe(false);
-    expect(createAgentSession(native).retry).toBeUndefined();
   });
 });

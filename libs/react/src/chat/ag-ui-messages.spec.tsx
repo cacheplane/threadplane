@@ -11,12 +11,12 @@ import {
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only integration tests compose the actual private native owner.
 import {
   initialObservation,
-  type SessionSnapshot,
+  type Observation,
 } from '../../../ag-ui/src/runtime/session-observation';
 
 afterEach(cleanup);
 
-const native = (extra: Partial<SessionSnapshot> = {}): SessionSnapshot =>
+const native = (extra: Partial<Observation> = {}): Observation =>
   Object.freeze({
     ...initialObservation([
       { id: 'u', role: 'user', content: 'Ask' },
@@ -38,7 +38,7 @@ const native = (extra: Partial<SessionSnapshot> = {}): SessionSnapshot =>
     ]),
     ...extra,
   });
-function rows(snapshot: SessionSnapshot) {
+function rows(snapshot: Observation) {
   const content = createMessageContent();
   const core: AgentSnapshot = {
     status: snapshot.status,
