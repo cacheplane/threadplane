@@ -5,8 +5,10 @@ import type {
   DeepReadonly,
   PlainValue,
   Message,
+  ToolCall,
   ToolContract,
 } from '@threadplane/core';
+import type { LangGraphSubagent } from './subagent-projection.js';
 import type { Interrupt, ThreadState } from '@langchain/langgraph-sdk';
 
 /** Compact metadata from an explicitly loaded page, without repeated state data. */
@@ -39,11 +41,16 @@ export type LangGraphSnapshotState<TState = unknown> = unknown extends TState
 export interface LangGraphSubgraph {
   readonly namespace: readonly string[];
   readonly messages: readonly Message[];
+  /** The child graph's own tool calls, referenced by `Message.toolCallIds` in `messages`. */
+  readonly toolCalls: readonly ToolCall[];
   /** A child graph's state. It is never checked against the session's declaration. */
   readonly state: LangGraphState | undefined;
   readonly interrupts: readonly LangGraphWireInterrupt[];
   readonly error?: AgentError;
 }
+
+/** What a publication supplies: the session derives `subagents` from `subgraphs`. */
+export type LangGraphPublication = Omit<LangGraphSnapshot, 'subagents'>;
 
 /** Backend-private extension; the core snapshot remains backend-independent. */
 export type LangGraphSnapshot<
@@ -52,7 +59,7 @@ export type LangGraphSnapshot<
     ToolContract
   >,
   TState = unknown
-> = Omit<AgentSnapshot<TTools, TState>, 'interrupts'> & {
+> = Omit<AgentSnapshot<TTools, TState>, 'interrupts' | 'subagents'> & {
   /** Last explicit history page; undefined until loaded. Not a live branch tree. */
   readonly history: readonly LangGraphHistoryEntry[] | undefined;
   /**
@@ -68,4 +75,9 @@ export type LangGraphSnapshot<
   readonly reconnect?: { readonly runId: string };
   readonly interrupts: readonly LangGraphInterrupt[];
   readonly subgraphs: readonly LangGraphSubgraph[];
+  /**
+   * The child graphs in `subgraphs` as the core contract's child agents, one
+   * for each and in the same order.
+   */
+  readonly subagents: readonly LangGraphSubagent[];
 };
