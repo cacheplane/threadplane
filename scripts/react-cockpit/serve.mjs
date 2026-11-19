@@ -5,7 +5,6 @@ import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { reactCockpitConfiguration } from './configuration.mjs';
 import { createChatA2uiFixture, fixtureConfiguration } from './chat-a2ui-fixture.mjs';
-import { createAgUiA2uiFixture } from './ag-ui-a2ui-fixture.mjs';
 import { createNativeMastraFixture } from './native-mastra-fixture.mjs';
 import { createNativeStrandsFixture } from './native-strands-fixture.mjs';
 import { createNativeMafFixture } from './native-maf-fixture.mjs';
@@ -15,8 +14,6 @@ import { createAimockBackend } from './aimock-backend.mjs';
 
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
-const agUiA2uiFixture = configuration.library === 'ag-ui' && configuration.adapter === 'ag-ui' && configuration.topic === 'a2ui'
-  ? createAgUiA2uiFixture({ ...JSON.parse(process.env.THREADPLANE_AGUI_A2UI_BROWSER_RUNTIME ?? '{}'), retain: process.env.THREADPLANE_AGUI_A2UI_BROWSER_RETAIN }) : null;
 const isChatA2ui = configuration.library === 'chat' && configuration.topic === 'a2ui';
 let chatA2uiFixture = null;
 let chatA2uiConfiguration;
@@ -79,7 +76,6 @@ const json = (response, value, status = 200) => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
-  if (agUiA2uiFixture && (await agUiA2uiFixture(request, response, pathname))) return;
   if (chatA2uiFixture) {
     if (pathname.startsWith('/__')) {
       const controls = {
@@ -192,15 +188,11 @@ const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]) : null;
 let closing;
 let shutdown;
-if (agUiA2uiFixture || isChatA2ui || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture) {
+if (isChatA2ui || nativeStrandsFixture || nativeMafFixture || nativeMastraFixture) {
   shutdown = (code = 0) => {
     closing ??= (async () => {
       let a2uiFailure;
-      if (agUiA2uiFixture) {
-        try { await agUiA2uiFixture.close(); }
-        catch (error) { a2uiFailure = error; }
-      }
-      else if (isChatA2ui) {
+      if (isChatA2ui) {
         releaseA2uiStreams(true);
         try { await chatA2uiFixture?.close(); }
         catch (error) { a2uiFailure = error; }
@@ -211,10 +203,9 @@ if (agUiA2uiFixture || isChatA2ui || nativeStrandsFixture || nativeMafFixture ||
         owned.closeAllConnections();
       })));
       if (chatA2uiFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), chatA2uiFixtureClosed: a2uiReceipt(), listenersClosed: true }));
-      if (agUiA2uiFixture) console.log(JSON.stringify({ serverPid: process.pid, parentServerOwned: Boolean(parentServer), agUiA2uiFixtureClosed: agUiA2uiFixture.receipt(), bufferedCanonicalWire: true, listenersClosed: true }));
       if (a2uiFailure) throw a2uiFailure;
     })();
-    if (agUiA2uiFixture || isChatA2ui) void closing.then(() => process.exit(code), () => process.exit(1));
+    if (isChatA2ui) void closing.then(() => process.exit(code), () => process.exit(1));
     else void closing.finally(() => process.exit(code));
   };
   process.once('SIGINT', () => shutdown());

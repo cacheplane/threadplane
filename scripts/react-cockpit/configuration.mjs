@@ -34,6 +34,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       topic: 'a2ui', library: 'ag-ui', adapter: 'ag-ui',
       appPath: 'cockpit/ag-ui/a2ui/react', base: '/ag-ui/a2ui/react/',
       port: 4647, project: 'cockpit-ag-ui-a2ui-react',
+      backend: aimockAgUi('ag-ui/a2ui', 4647),
     });
   if (topic === 'chat-a2ui')
     return Object.freeze({

@@ -176,9 +176,10 @@ export const createWebsitePlaywrightConfig = (
             reuseExistingServer,
           },
           ...(!productionMode && !bfcacheRuntimeTest ? [{
-            command: 'node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs --serve',
+            // Render-only preview: its aimock + AG-UI server never boot.
+            command: 'node scripts/react-cockpit/serve.mjs ag-ui-a2ui --no-parent --backend',
             cwd: '../..', url: 'http://127.0.0.1:4647',
-            reuseExistingServer: false, timeout: 330_000,
+            reuseExistingServer: false, timeout: 180_000,
             gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 15000 },
           }] : []),
           ...(!bfcacheRuntimeTest
