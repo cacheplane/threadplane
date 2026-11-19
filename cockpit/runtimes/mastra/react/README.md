@@ -15,8 +15,7 @@ npx nx test cockpit-runtimes-mastra-react --reporters=default
 npx nx lint cockpit-runtimes-mastra-react
 npx nx build cockpit-runtimes-mastra-react
 npx nx e2e cockpit-runtimes-mastra-react
-node --test fixtures/react-parity/native-mastra-react/*.spec.mjs scripts/react-cockpit/prepare-native-mastra-fixture.spec.mjs
 node --test scripts/react-cockpit/runtimes-mastra-configuration.spec.mjs
 ```
 
-Presentation units use a mocked application store. Policy and lifetime units exercise the real application with native-session doubles. The e2e target first installs the frozen Mastra service dependencies and builds the installed app. Its offline loopback Responses seam drives the unchanged real Mastra service and a fresh temporary LibSQL database. Browser evidence and cleanup receipts stay in ignored test-results. This proves local interoperability; it does not prove a public provider. Run service dependency preparation serially with other Mastra suites because npm ci mutates the shared service node_modules.
+Presentation units use a mocked application store. Policy and lifetime units exercise the real application with native-session doubles. The e2e target builds the installed app; its global setup starts the unchanged real Mastra service (installing its frozen dependencies on first use) with a fresh temporary LibSQL database, and aimock replays the Angular example's model fixtures (`cockpit/runtimes/mastra/angular/e2e/fixtures`) through the Responses API. Browser evidence stays in ignored test-results. This proves local interoperability; it does not prove a public provider. Run service dependency preparation serially with other Mastra suites because npm ci mutates the shared service node_modules.

@@ -727,14 +727,20 @@ test('aimock-backed React e2e setups match their closed configuration backends',
   const setups = walk('cockpit');
   assert.ok(setups.length > 0);
   for (const file of setups) {
-    const call = /reactAimock(AgUi)?GlobalSetup\(\{ example: '([^']+)', port: (\d+) \}\)/.exec(readFileSync(file, 'utf8'));
-    assert.ok(call, `${file} uses reactAimockGlobalSetup or reactAimockAgUiGlobalSetup`);
-    const [, agUi, example, port] = call;
+    const call = /reactAimock(AgUi|Mastra)?GlobalSetup\(\{ example: '([^']+)', port: (\d+) \}\)/.exec(readFileSync(file, 'utf8'));
+    assert.ok(call, `${file} uses a reactAimock*GlobalSetup`);
+    const [, flavor, example, port] = call;
     const serve = /serve\.mjs ([a-z0-9-]+)/.exec(readFileSync(file.replace('global-setup-impl.ts', 'playwright.config.ts'), 'utf8'))[1];
     const configuration = reactCockpitConfiguration(serve);
     assert.equal(configuration.port, Number(port), file);
     const shared = { python: `cockpit/${example}/python`, fixtures: `cockpit/${example}/angular/e2e/fixtures` };
-    if (agUi) {
+    if (flavor === 'Mastra')
+      assert.deepEqual(configuration.backend, {
+        kind: 'aimock-mastra', service: 'deployments/ag-ui-mastra', fixtures: shared.fixtures,
+        backendPort: Number(port) + 1000, aimockPort: Number(port) + 2000,
+        agentPath: '/agent/mastra', publicAgentPath: '/agent', headers: { 'x-internal-token': 'dev-local-token' },
+      }, file);
+    else if (flavor === 'AgUi') {
       const { aimockPort, agentPath, ...rest } = configuration.backend;
       assert.deepEqual(rest, { kind: 'aimock-ag-ui', ...shared, backendPort: Number(port) + 1000 }, file);
       if (aimockPort !== undefined) assert.equal(aimockPort, Number(port) + 2000, file);

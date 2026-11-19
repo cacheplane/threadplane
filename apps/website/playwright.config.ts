@@ -364,23 +364,23 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4641',
+                  url: 'http://127.0.0.1:4641/__ready',
                   reuseExistingServer: false,
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4642',
+                  url: 'http://127.0.0.1:4642/__ready',
                   reuseExistingServer: false,
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs runtimes-aws-strands --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs runtimes-aws-strands --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4643',
+                  url: 'http://127.0.0.1:4643/__ready',
                   reuseExistingServer: false,
                   timeout: 180_000,
                 },
@@ -572,7 +572,7 @@ export const createWebsitePlaywrightConfig = (
     config.testMatch = '**/react-mastra-preview.spec.ts';
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer.filter(server =>
-        [localURL, 'http://127.0.0.1:4641'].includes(server.url ?? '')
+        [localURL, 'http://127.0.0.1:4641/__ready'].includes(server.url ?? '')
       );
     }
   }
@@ -584,7 +584,7 @@ export const createWebsitePlaywrightConfig = (
     config.outputDir = resolve(__dirname, '../../test-results/native-maf-website');
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer.filter(server =>
-        [localURL, 'http://127.0.0.1:4642'].includes(server.url ?? '')
+        [localURL, 'http://127.0.0.1:4642/__ready'].includes(server.url ?? '')
       );
     }
   }
@@ -596,7 +596,7 @@ export const createWebsitePlaywrightConfig = (
     config.outputDir = resolve(__dirname, '../../test-results/native-strands-website');
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer.filter(server =>
-        [localURL, 'http://127.0.0.1:4643'].includes(server.url ?? '')
+        [localURL, 'http://127.0.0.1:4643/__ready'].includes(server.url ?? '')
       );
     }
   }

@@ -92,39 +92,41 @@ it('scopes Chat Theming Website to two owned servers with zero retries and focus
   expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === 'test').projects).toContain('cockpit-chat-theming-python');
 });
 
-it('scopes native MAF Website checks to the owned fixture after frozen preparation and build', () => {
+it('scopes native MAF Website checks to the aimock-backed preview after its build', () => {
   const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'runtimes-microsoft-agent-framework', WEBSITE_E2E_PORT: '4390', PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true' });
   expect(config.testMatch).toBe('**/react-maf-preview.spec.ts');
   const servers = Array.isArray(config.webServer) ? config.webServer : [];
-  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://127.0.0.1:4642']);
-  expect(servers[1]).toMatchObject({ command: 'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent', reuseExistingServer: false });
+  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://127.0.0.1:4642/__ready']);
+  expect(servers[1]).toMatchObject({ command: 'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent --backend', reuseExistingServer: false });
   const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
   const name = 'cockpit-runtimes-microsoft-agent-framework-react';
   expect(project.implicitDependencies).toContain(name);
-  for (const target of ['build', 'prepare-fixture']) expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === target).projects).toContain(name);
+  expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === 'build').projects).toContain(name);
+  expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === 'prepare-fixture').projects).not.toContain(name);
 });
 
-it('scopes native Strands Website checks to the owned fixture after frozen preparation and build', () => {
+it('scopes native Strands Website checks to the aimock-backed preview after its build', () => {
   const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'runtimes-aws-strands', WEBSITE_E2E_PORT: '4390', PLAYWRIGHT_REUSE_EXISTING_SERVER: 'true' });
   expect(config.workers).toBe(1);
   expect(config.fullyParallel).toBe(false);
   expect(config.retries).toBe(0);
   expect(config.testMatch).toBe('**/react-strands-preview.spec.ts');
   const servers = Array.isArray(config.webServer) ? config.webServer : [];
-  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://127.0.0.1:4643']);
-  expect(servers[1]).toMatchObject({ command: 'node scripts/react-cockpit/serve.mjs runtimes-aws-strands --no-parent', reuseExistingServer: false });
+  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://127.0.0.1:4643/__ready']);
+  expect(servers[1]).toMatchObject({ command: 'node scripts/react-cockpit/serve.mjs runtimes-aws-strands --no-parent --backend', reuseExistingServer: false });
   const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
   const name = 'cockpit-runtimes-aws-strands-react';
   expect(project.implicitDependencies).toContain(name);
-  for (const target of ['build', 'prepare-fixture']) expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === target).projects).toContain(name);
+  expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === 'build').projects).toContain(name);
+  expect(project.targets.e2e.dependsOn.find((dependency: { target?: string }) => dependency.target === 'prepare-fixture').projects).not.toContain(name);
 });
 
-it('scopes native Mastra Website checks to the owned actual service fixture', () => {
+it('scopes native Mastra Website checks to the aimock-backed preview', () => {
   const config = createWebsitePlaywrightConfig({ WEBSITE_E2E_REACT_TOPIC: 'runtimes-mastra', WEBSITE_E2E_PORT: '4390' });
   expect(config.testMatch).toBe('**/react-mastra-preview.spec.ts');
   const servers = Array.isArray(config.webServer) ? config.webServer : [];
-  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://127.0.0.1:4641']);
-  expect(servers[1]).toMatchObject({ command: 'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent', reuseExistingServer: false });
+  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:4390', 'http://127.0.0.1:4641/__ready']);
+  expect(servers[1]).toMatchObject({ command: 'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent --backend', reuseExistingServer: false });
 });
 
 describe('Website Playwright configuration', () => {
@@ -507,9 +509,9 @@ describe('Website Playwright configuration', () => {
         url: 'http://127.0.0.1:4611/__ready',
       }),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs ag-ui-client-tools --no-parent --backend',url:'http://127.0.0.1:4640/__ready'}),
-      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent',url:'http://127.0.0.1:4641'}),
-      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent',url:'http://127.0.0.1:4642'}),
-      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-aws-strands --no-parent',url:'http://127.0.0.1:4643'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent --backend',url:'http://127.0.0.1:4641/__ready'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent --backend',url:'http://127.0.0.1:4642/__ready'}),
+      expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs runtimes-aws-strands --no-parent --backend',url:'http://127.0.0.1:4643/__ready'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent --backend',url:'http://127.0.0.1:4612/__ready'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent --backend',url:'http://127.0.0.1:4613/__ready'}),
       expect.objectContaining({command:'node scripts/react-cockpit/serve.mjs render-spec-rendering --no-parent',url:'http://127.0.0.1:4614'}),

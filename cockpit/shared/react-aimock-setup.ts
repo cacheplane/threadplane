@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import {
   createAgUiBackendGlobalSetup,
   createLanggraphGlobalSetup,
@@ -50,4 +51,46 @@ export function reactAimockAgUiGlobalSetup(options: {
     aimockPort: options.port + 2000,
     fixturesDir: resolve(__dirname, '..', options.example, 'angular/e2e/fixtures'),
   });
+}
+
+/**
+ * The Mastra flavor: the backend is the deployments/ag-ui-mastra Node service
+ * (the Angular example's backend), not a Python server, so this starts it
+ * through scripts/react-cockpit/aimock-backend.mjs (`aimock-mastra`), the
+ * code `serve.mjs --backend` runs for Website previews. Mirrors
+ * `aimockMastra()` in scripts/react-cockpit/configuration.mjs. Returns its
+ * own teardown.
+ */
+export function reactAimockMastraGlobalSetup(options: {
+  /** e.g. 'runtimes/mastra' */
+  example: string;
+  /** The React app port from configuration.mjs. */
+  port: number;
+}): () => Promise<() => Promise<void>> {
+  return async () => {
+    const root = resolve(__dirname, '../..');
+    const { createAimockBackend } = (await import(
+      pathToFileURL(resolve(root, 'scripts/react-cockpit/aimock-backend.mjs')).href
+    )) as {
+      createAimockBackend(options: { root: string; backend: unknown }): {
+        ensure(): Promise<void>;
+        close(): Promise<void>;
+      };
+    };
+    const backend = createAimockBackend({
+      root,
+      backend: {
+        kind: 'aimock-mastra',
+        service: 'deployments/ag-ui-mastra',
+        fixtures: `cockpit/${options.example}/angular/e2e/fixtures`,
+        backendPort: options.port + 1000,
+        aimockPort: options.port + 2000,
+        agentPath: '/agent/mastra',
+        publicAgentPath: '/agent',
+        headers: { 'x-internal-token': 'dev-local-token' },
+      },
+    });
+    await backend.ensure();
+    return () => backend.close();
+  };
 }

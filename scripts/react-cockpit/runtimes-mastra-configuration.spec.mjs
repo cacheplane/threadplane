@@ -12,6 +12,16 @@ test('explicit native Mastra entry preserves other authored defaults and rejects
     base: '/runtimes/mastra/react/',
     port: 4641,
     project: 'cockpit-runtimes-mastra-react',
+    backend: {
+      kind: 'aimock-mastra',
+      service: 'deployments/ag-ui-mastra',
+      fixtures: 'cockpit/runtimes/mastra/angular/e2e/fixtures',
+      backendPort: 5641,
+      aimockPort: 6641,
+      agentPath: '/agent/mastra',
+      publicAgentPath: '/agent',
+      headers: { 'x-internal-token': 'dev-local-token' },
+    },
   });
   assert.ok(Object.isFrozen(entry));
   assert.equal(
@@ -48,4 +58,7 @@ test('Nx uses the isolated installed native build with required package dependen
   assert.deepEqual(project.targets.build.outputs, [
     '{workspaceRoot}/dist/cockpit/runtimes/mastra/react',
   ]);
+  assert.deepEqual(project.targets.e2e.dependsOn, ['build']);
+  assert.deepEqual(project.targets.e2e.inputs, ['default', 'reactAimockBackend']);
+  assert.equal(project.targets['prepare-fixture'], undefined);
 });
