@@ -14,7 +14,6 @@ import { createLanggraphProxy } from './langgraph-proxy.mjs';
 import { createAgUiProxy } from './ag-ui-proxy.mjs';
 import { createAimockBackend } from './aimock-backend.mjs';
 import { createChatGenerativeUiFixture } from './chat-generative-ui-fixture.mjs';
-import { createAgUiJsonRenderFixture } from './ag-ui-json-render-fixture.mjs';
 import { createAgUiSubagentsFixture } from './ag-ui-subagents-fixture.mjs';
 
 
@@ -75,10 +74,6 @@ const agUiProxy = configuration.backend?.kind === 'aimock-ag-ui'
 const agUiSubagentsFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'subagents'
     ? createAgUiSubagentsFixture()
-    : null;
-const agUiJsonRenderFixture =
-  configuration.adapter === 'ag-ui' && configuration.topic === 'json-render'
-    ? createAgUiJsonRenderFixture()
     : null;
 const agUiClientToolsFixture = configuration.adapter === 'ag-ui' && configuration.topic === 'client-tools' ? createAgUiClientToolsFixture() : null;
 
@@ -169,11 +164,6 @@ const server = createServer(async (request, response) => {
   if (
     agUiSubagentsFixture &&
     (await agUiSubagentsFixture(request, response, pathname))
-  )
-    return;
-  if (
-    agUiJsonRenderFixture &&
-    (await agUiJsonRenderFixture(request, response, pathname))
   )
     return;
   if (

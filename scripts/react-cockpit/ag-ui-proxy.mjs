@@ -27,6 +27,8 @@
  *                               drop                     remove the event
  *                               patch { set }            merge fields into it
  *                               omit { keys }            remove fields
+ *                               setPath { path, value }  set a dotted path
+ *                               replace { from, to }     replace text in it
  *                               outcome { mode }         rewrite the real
  *                                                        interrupt of a
  *                                                        RUN_FINISHED outcome:
@@ -41,6 +43,10 @@
  *                                                        truncated-prefix,
  *                                                        old-pair, answer-only,
  *                                                        sent, drop-sent,
+ *                                                        from-human,
+ *                                                        missing-result,
+ *                                                        wrong-result-id,
+ *                                                        unknown-tool,
  *                                                        duplicate-result,
  *                                                        orphan-result,
  *                                                        unstable-result,
@@ -83,8 +89,24 @@ function rewriteSnapshot(mode, event, body, options = {}) {
   else if (mode === 'drop-sent') {
     const sentIds = new Set(sent.map((message) => message.id));
     return { ...event, messages: messages.filter((message) => !sentIds.has(message.id)) };
+  } else if (mode === 'from-human') {
+    return { ...event, messages: messages.slice(sent.length - 1) };
+  } else if (mode === 'missing-result') {
+    const index = messages.findIndex((message) => message.role === 'tool' && !sent.some((old) => old.id === message.id));
+    messages.splice(index, 1);
+  } else if (mode === 'wrong-result-id') {
+    const index = messages.findIndex((message) => message.role === 'tool' && !sent.some((old) => old.id === message.id));
+    messages[index] = { ...messages[index], id: 'wrong-result' };
+  } else if (mode === 'unknown-tool') {
+    const index = messages.findIndex((message) => message.toolCalls?.length && !sent.some((old) => old.id === message.id));
+    const [first, ...rest] = messages[index].toolCalls;
+    messages[index] = {
+      ...messages[index],
+      toolCalls: [{ ...first, function: { ...first.function, name: 'unknown_dashboard_tool' } }, ...rest],
+    };
   } else if (mode === 'duplicate-result') {
-    const index = messages.findLastIndex((message) => message.role === 'tool');
+    // A copy of this run's first result, just before the answer.
+    const index = messages.findIndex((message) => message.role === 'tool' && !sent.some((old) => old.id === message.id));
     messages.splice(messages.length - 1, 0, { ...messages[index], id: 'duplicate-result' });
   } else if (mode === 'unstable-result') {
     // Every saved result under another identity (with `persist`, the proxy
@@ -222,6 +244,14 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
           for (const key of op.keys ?? []) delete current[key];
         }
         if (op.op === 'outcome') current = rewriteOutcome(op.mode, current);
+        if (op.op === 'setPath') {
+          current = structuredClone(current);
+          const keys = op.path.split('.');
+          let target = current;
+          for (const key of keys.slice(0, -1)) target = target[key] ??= {};
+          target[keys.at(-1)] = fill(op.value);
+        }
+        if (op.op === 'replace') current = JSON.parse(JSON.stringify(current).replaceAll(op.from, op.to));
         if (op.op === 'snapshot') current = rewriteSnapshot(op.mode, current, body, op);
         if (op.op === 'insertBefore') write(fill(op.event));
         if (op.op === 'insertAfter') after.push(fill(op.event));
