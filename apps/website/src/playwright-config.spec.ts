@@ -190,7 +190,7 @@ describe('Website Playwright configuration', () => {
     const reactServers = servers.filter(server => expectedUrls.includes(origin(server.url)));
     expect(reactServers.map(server => origin(server.url)).sort()).toEqual(expectedUrls);
     expect(reactServers.every(server => server.reuseExistingServer === false)).toBe(true);
-    expect(reactServers.find(server => server.url === 'http://127.0.0.1:4610')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent');
+    expect(reactServers.find(server => server.url === 'http://127.0.0.1:4610/__ready')?.command).toBe('node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent --backend');
     const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../project.json'), 'utf8'));
     const projects = project.targets.e2e.dependsOn.find(
       (dependency: { target?: string }) => dependency.target === 'build'
@@ -499,8 +499,8 @@ describe('Website Playwright configuration', () => {
         url: 'http://127.0.0.1:4609/__ready',
       }),
       expect.objectContaining({
-        command: 'node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent',
-        url: 'http://127.0.0.1:4610',
+        command: 'node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent --backend',
+        url: 'http://127.0.0.1:4610/__ready',
       }),
       expect.objectContaining({
         command: 'node scripts/react-cockpit/serve.mjs ag-ui-tool-views --no-parent',

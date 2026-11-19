@@ -26,6 +26,12 @@
  *                             { type: regex on the event type, op, once? }:
  *                               drop                     remove the event
  *                               patch { set }            merge fields into it
+ *                               omit { keys }            remove fields
+ *                               outcome { mode }         rewrite the real
+ *                                                        interrupt of a
+ *                                                        RUN_FINISHED outcome:
+ *                                                        multiple, malformed,
+ *                                                        expired, child
  *                               insertBefore|insertAfter { event }
  *                               end                      end the stream just
  *                                                        before the event
@@ -33,7 +39,8 @@
  *                                                        MESSAGES_SNAPSHOT:
  *                                                        duplicate-identity,
  *                                                        truncated-prefix,
- *                                                        old-pair, tool-call
+ *                                                        old-pair, answer-only,
+ *                                                        sent, tool-call
  *                             "$threadId", "$runId", "$humanId" and
  *                             "$answerId" in values are the run's own ids.
  *                             Injected data: protocol shapes a correct server
@@ -54,7 +61,7 @@ const readAll = async (stream) => {
   return Buffer.concat(chunks);
 };
 
-/** The four snapshot shapes the authored AG-UI fixtures produced. */
+/** The snapshot shapes the authored AG-UI fixtures produced. */
 function rewriteSnapshot(mode, event, body) {
   const sent = body.messages ?? [];
   const human = sent.at(-1);
@@ -63,6 +70,8 @@ function rewriteSnapshot(mode, event, body) {
   if (mode === 'duplicate-identity') messages[messages.length - 1] = { ...answer, id: human.id };
   else if (mode === 'truncated-prefix') return { ...event, messages: [human, answer] };
   else if (mode === 'old-pair') return { ...event, messages: sent.slice(0, -1) };
+  else if (mode === 'answer-only') return { ...event, messages: [answer] };
+  else if (mode === 'sent') return { ...event, messages: sent };
   else if (mode === 'tool-call')
     messages[messages.length - 1] = {
       ...answer,
@@ -72,7 +81,20 @@ function rewriteSnapshot(mode, event, body) {
   return { ...event, messages };
 }
 
-export function createAgUiProxy({ upstream, agentPaths, ready = async () => {} }) {
+/** Rewrites the real interrupt in a RUN_FINISHED interrupt outcome. */
+function rewriteOutcome(mode, event) {
+  const [first] = event.outcome?.interrupts ?? [];
+  if (!first) return event;
+  const copy = structuredClone(first);
+  if (mode === 'multiple') return { ...event, outcome: { ...event.outcome, interrupts: [first, { ...copy, id: 'second' }] } };
+  if (mode === 'malformed') copy.metadata.langgraph.raw.kind = 'other';
+  else if (mode === 'expired') copy.expiresAt = '2020-01-01T00:00:00Z';
+  else if (mode === 'child') copy.subagentRunId = 'child';
+  else throw new Error('Unsupported outcome mode');
+  return { ...event, outcome: { ...event.outcome, interrupts: [copy] } };
+}
+
+export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', ready = async () => {} }) {
   let requests = [];
   let captures = [];
   const pendingCaptures = new Set();
@@ -111,7 +133,7 @@ export function createAgUiProxy({ upstream, agentPaths, ready = async () => {} }
       );
     const upstreamResponse = await new Promise((resolve, reject) => {
       const outgoing = httpRequest(
-        new URL('/agent', upstream),
+        new URL(agentPath, upstream),
         { method: 'POST', headers: { 'content-type': 'application/json', accept: 'text/event-stream' } },
         resolve
       );
@@ -153,6 +175,11 @@ export function createAgUiProxy({ upstream, agentPaths, ready = async () => {} }
           return false;
         }
         if (op.op === 'patch') current = { ...current, ...fill(op.set) };
+        if (op.op === 'omit') {
+          current = { ...current };
+          for (const key of op.keys ?? []) delete current[key];
+        }
+        if (op.op === 'outcome') current = rewriteOutcome(op.mode, current);
         if (op.op === 'snapshot') current = rewriteSnapshot(op.mode, current, body);
         if (op.op === 'insertBefore') write(fill(op.event));
         if (op.op === 'insertAfter') after.push(fill(op.event));
