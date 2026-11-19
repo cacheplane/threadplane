@@ -2,7 +2,8 @@
  * Local e2e only: aimock + the real server for one aimock-backed React cockpit
  * example, owned by `serve.mjs --backend`: `langgraph dev` for LangGraph
  * examples (`aimock-langgraph`), the example's uvicorn `src/server.py` for
- * AG-UI examples (`aimock-ag-ui`).
+ * AG-UI examples (`aimock-ag-ui`), and the deployments/ag-ui-mastra Node
+ * service for the Mastra runtime (`aimock-mastra`).
  *
  * Cockpit e2e starts the same backend from its Playwright global setup
  * (libs/e2e-harness). Website e2e reuses the React examples as previews and
@@ -13,7 +14,8 @@
  * group, so Playwright's webServer teardown stops it with the server.
  */
 import { execFileSync, spawn } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { LLMock } from 'aimock';
@@ -57,7 +59,9 @@ export function createAimockBackend({ root, backend }) {
   let child;
   let stderr = '';
 
-  const port = backend.kind === 'aimock-ag-ui' ? backend.backendPort : backend.langgraphPort;
+  let database;
+  const port = backend.kind === 'aimock-langgraph' ? backend.langgraphPort : backend.backendPort;
+  const label = { 'aimock-langgraph': 'langgraph dev', 'aimock-ag-ui': 'uvicorn', 'aimock-mastra': 'ag-ui-mastra' }[backend.kind];
   async function start() {
     const dir = resolve(root, backend.fixtures);
     const fixtures = readdirSync(dir)
@@ -71,23 +75,41 @@ export function createAimockBackend({ root, backend }) {
     mock = new LLMock({ port: backend.aimockPort ?? 0, chunkSize: 4096 });
     mock.addFixturesFromJSON(fixtures);
     await mock.start();
-    const agUi = backend.kind === 'aimock-ag-ui';
-    child = spawn(
-      'uv',
-      agUi
-        ? ['run', 'uvicorn', 'src.server:app', '--port', String(port)]
-        : ['run', 'langgraph', 'dev', '--port', String(port), '--no-browser'],
-      {
-        cwd: resolve(root, backend.python),
+    const model = {
+      OPENAI_BASE_URL: `${mock.url}/v1`,
+      OPENAI_API_KEY: 'test-not-used',
+      LANGSMITH_TRACING: 'false',
+    };
+    if (backend.kind === 'aimock-mastra') {
+      // The service is self-contained (its own package.json and lockfile).
+      const service = resolve(root, backend.service);
+      if (!existsSync(join(service, 'node_modules')))
+        execFileSync('npm', ['ci', '--no-audit', '--no-fund'], { cwd: service, stdio: 'ignore' });
+      // A fresh LibSQL file per backend: no suspended runs or memory leak in.
+      database = mkdtempSync(join(tmpdir(), 'ag-ui-mastra-e2e-'));
+      child = spawn(process.execPath, ['server.mjs'], {
+        cwd: service,
         env: {
           ...process.env,
-          OPENAI_BASE_URL: `${mock.url}/v1`,
-          OPENAI_API_KEY: 'test-not-used',
-          LANGSMITH_TRACING: 'false',
+          ...model,
+          PORT: String(port),
+          AG_UI_INTERNAL_TOKEN: backend.headers['x-internal-token'],
+          AG_UI_MASTRA_DB_PATH: join(database, 'mastra.db'),
         },
         stdio: ['ignore', 'ignore', 'pipe'],
-      },
-    );
+      });
+    } else
+      child = spawn(
+        'uv',
+        backend.kind === 'aimock-ag-ui'
+          ? ['run', 'uvicorn', 'src.server:app', '--port', String(port)]
+          : ['run', 'langgraph', 'dev', '--port', String(port), '--no-browser'],
+        {
+          cwd: resolve(root, backend.python),
+          env: { ...process.env, ...model },
+          stdio: ['ignore', 'ignore', 'pipe'],
+        },
+      );
     child.stderr.on('data', (chunk) => {
       stderr = (stderr + chunk).slice(-8192);
     });
@@ -102,7 +124,7 @@ export function createAimockBackend({ root, backend }) {
       await delay(500);
     }
     process.stderr.write(stderr);
-    throw new Error(`${agUi ? 'uvicorn' : 'langgraph dev'} for ${backend.python} did not become ready`);
+    throw new Error(`${label} for ${backend.python ?? backend.service} did not become ready`);
   }
 
   return {
@@ -111,7 +133,7 @@ export function createAimockBackend({ root, backend }) {
       starting ??= start();
       return starting;
     },
-    /** The `uv run langgraph dev` process, once started. */
+    /** The backend process (`uv run …` or the Mastra service), once started. */
     get pid() {
       return child?.pid ?? null;
     },
@@ -133,6 +155,7 @@ export function createAimockBackend({ root, backend }) {
         clearTimeout(timeout);
       }
       await mock?.stop();
+      if (database) rmSync(database, { recursive: true, force: true });
     },
   };
 }

@@ -3,23 +3,30 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/runtimes/microsoft-agent-framework/react/src",
   "projectType": "application",
-  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "implicitDependencies": [
+    "cockpit-runtimes-microsoft-agent-framework-angular",
+    "cockpit-runtimes-microsoft-agent-framework-python"
+  ],
+  "tags": [
+    "scope:cockpit-examples",
+    "scope:cockpit-e2e",
+    "framework:react"
+  ],
   "targets": {
-    "prepare-fixture": {
-      "executor": "nx:run-commands",
-      "cache": false,
-      "options": {
-        "command": "node scripts/react-cockpit/prepare-native-maf-fixture.mjs"
-      }
-    },
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
-      "dependsOn": ["prepare-fixture", "build"],
+      "dependsOn": [
+        "build"
+      ],
       "options": {
         "config": "cockpit/runtimes/microsoft-agent-framework/react/e2e/playwright.config.ts",
         "skipInstall": true
-      }
+      },
+      "inputs": [
+        "default",
+        "reactAimockBackend"
+      ]
     },
     "test": {
       "executor": "@nx/vitest:test",
@@ -27,13 +34,27 @@
         "configFile": "cockpit/runtimes/microsoft-agent-framework/react/vite.config.mts"
       }
     },
-    "lint": { "executor": "@nx/eslint:lint" },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
     "build": {
       "executor": "nx:run-commands",
       "cache": false,
       "dependsOn": [
-        { "target": "build", "projects": ["core", "content", "react"] },
-        { "target": "react-ag-ui", "projects": ["website-runtime-preparation"] }
+        {
+          "target": "build",
+          "projects": [
+            "core",
+            "content",
+            "react"
+          ]
+        },
+        {
+          "target": "react-ag-ui",
+          "projects": [
+            "website-runtime-preparation"
+          ]
+        }
       ],
       "outputs": [
         "{workspaceRoot}/dist/cockpit/runtimes/microsoft-agent-framework/react"

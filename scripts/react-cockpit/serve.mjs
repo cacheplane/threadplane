@@ -4,21 +4,15 @@ import { readFileSync } from 'node:fs';
 import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { reactCockpitConfiguration } from './configuration.mjs';
-import { createNativeMastraFixture } from './native-mastra-fixture.mjs';
-import { createNativeStrandsFixture } from './native-strands-fixture.mjs';
-import { createNativeMafFixture } from './native-maf-fixture.mjs';
 import { createLanggraphProxy } from './langgraph-proxy.mjs';
 import { createAgUiProxy } from './ag-ui-proxy.mjs';
 import { createAimockBackend } from './aimock-backend.mjs';
 
-
 const configuration = reactCockpitConfiguration(process.argv[2]);
-const nativeStrandsFixture = configuration.library === 'runtimes' && configuration.topic === 'aws-strands' ? createNativeStrandsFixture() : null;
-const nativeMafFixture = configuration.library === 'runtimes' && configuration.topic === 'microsoft-agent-framework' ? createNativeMafFixture() : null;
-const nativeMastraFixture = configuration.library === 'runtimes' && configuration.topic === 'mastra' ? createNativeMastraFixture() : null;
-// aimock-backed examples: the real graph runs under `langgraph dev` or, for
-// AG-UI examples, the example's uvicorn server (started by the Playwright
-// global setup); this server proxies the API or agent endpoint to it.
+// aimock-backed examples: the real graph runs under `langgraph dev`, the
+// example's uvicorn AG-UI server, or (Mastra) the deployments/ag-ui-mastra
+// service, started by the Playwright global setup; this server proxies the
+// API or agent endpoint to it.
 // `--backend` (Website previews) starts that backend here, lazily on the first
 // API or control request; cockpit e2e starts it from global setup.
 const aimockBackend = configuration.backend && process.argv.includes('--backend')
@@ -33,11 +27,16 @@ const langgraphProxy = configuration.backend?.kind === 'aimock-langgraph'
       ready: aimockBackend ? () => aimockBackend.ensure() : undefined,
     })
   : null;
-const agUiProxy = configuration.backend?.kind === 'aimock-ag-ui'
+const agUiProxy = ['aimock-ag-ui', 'aimock-mastra'].includes(configuration.backend?.kind)
   ? createAgUiProxy({
       upstream: `http://127.0.0.1:${configuration.backend.backendPort}`,
-      agentPaths: [`/ag-ui/${configuration.topic}${configuration.backend.agentPath}`, '/developer-agent'],
+      agentPaths: [
+        // e.g. /ag-ui/interrupts/agent/native, /runtimes/mastra/agent
+        configuration.base.replace(/\/react\/$/, '') + (configuration.backend.publicAgentPath ?? configuration.backend.agentPath),
+        '/developer-agent',
+      ],
       agentPath: configuration.backend.agentPath,
+      headers: configuration.backend.headers,
       modelJournal: `http://127.0.0.1:${configuration.backend.aimockPort}/__aimock/journal`,
       ready: aimockBackend ? () => aimockBackend.ensure() : undefined,
     })
@@ -53,9 +52,6 @@ const json = (response, value, status = 200) => {
 };
 const server = createServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname;
-  if (nativeStrandsFixture && (await nativeStrandsFixture(request, response, pathname))) return;
-  if (nativeMafFixture && (await nativeMafFixture(request, response, pathname))) return;
-  if (nativeMastraFixture && (await nativeMastraFixture(request, response, pathname))) return;
   if (langgraphProxy && (await langgraphProxy(request, response, pathname))) return;
   if (agUiProxy && (await agUiProxy(request, response, pathname))) return;
   if (configuration.adapter === 'none') {
@@ -121,41 +117,12 @@ const server = createServer(async (request, response) => {
 });
 const parentServer = !process.argv.includes('--no-parent')
   ? createServer(server.listeners('request')[0]) : null;
-let closing;
-let shutdown;
-if (nativeStrandsFixture || nativeMafFixture || nativeMastraFixture) {
-  shutdown = (code = 0) => {
-    closing ??= (async () => {
-      await (nativeStrandsFixture ?? nativeMafFixture ?? nativeMastraFixture).close();
-      await Promise.all([server, parentServer].filter(Boolean).map((owned) => new Promise((resolve) => {
-        owned.close(resolve);
-        owned.closeAllConnections();
-      })));
-    })();
-    void closing.finally(() => process.exit(code));
-  };
-  process.once('SIGINT', () => shutdown());
-  process.once('SIGTERM', () => shutdown());
-  server.once('error', () => shutdown(1));
-  parentServer?.once('error', () => shutdown(1));
-}
 
-if (aimockBackend && !shutdown) {
+if (aimockBackend) {
   const stop = () => { void aimockBackend.close().finally(() => process.exit(0)); };
   process.once('SIGINT', stop);
   process.once('SIGTERM', stop);
 }
 
-// Own signals, errors, workers and both listeners before tooling discovery or proof.
-// Only dependency tooling is reused; each reset still owns a fresh graph process.
-try {
-  if (!closing) {
-    server.listen(configuration.port, '127.0.0.1');
-    parentServer?.listen(3000, '127.0.0.1');
-  }
-} catch (error) {
-  if (!closing) {
-    console.error('Local browser fixture preparation failed:', error.message);
-    shutdown?.(1);
-  }
-}
+server.listen(configuration.port, '127.0.0.1');
+parentServer?.listen(3000, '127.0.0.1');

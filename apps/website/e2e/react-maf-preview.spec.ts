@@ -1,14 +1,18 @@
 import { selectWorkspaceMode } from './fixtures/workspace-controls';
 import { writeFile } from 'node:fs/promises';
-import { test, expect, type Page, type Locator } from '@playwright/test';
+import { test, expect, type Page, type Locator, type APIRequestContext } from '@playwright/test';
 
 const origin = 'http://127.0.0.1:4642';
 const approved = 'Expense recorded: $220.00 to Blue Finch Bistro (meals) — queued for reimbursement.';
 const rejected = 'Error: Tool call invocation was rejected by user.';
 const browserErrors = new WeakMap<Page, string[]>();
-function events(base64: string) {
-  return [...Buffer.from(base64, 'base64').toString().matchAll(/^data: (.+)$/gm)].map(match => JSON.parse(match[1]));
-}
+// The preview's backend: aimock replays cockpit/runtimes/microsoft-agent-framework/angular/e2e/fixtures
+// into the example's real Agent Framework AG-UI server, behind the recording proxy
+// (scripts/react-cockpit/ag-ui-proxy.mjs): /__requests lists each agent POST with the
+// events the server streamed (`events`) and what the browser got (`sent`).
+const runs = async (request: APIRequestContext) => (await request.get(origin + '/__requests')).json();
+const model = async (request: APIRequestContext) => (await request.get(origin + '/__model-requests')).json();
+const submitted = (run: { events: { type: string; toolCallId?: string }[] }) => run.events.filter(event => event.type === 'TOOL_CALL_RESULT' && event.toolCallId === 'c0_submit_expense');
 async function mode(page: Page, name: 'Docs' | 'Code' | 'Run') {
   await selectWorkspaceMode(page, name);
 }
@@ -23,26 +27,22 @@ async function fits(locator: Locator) {
 
 test.describe('native MAF Website', () => {
   test.describe.configure({ mode: 'serial' });
-  test.skip(!!process.env['BASE_URL'], 'Owned actual-service fixture is local only.');
+  test.skip(!!process.env['BASE_URL'], 'The aimock-backed preview is local only.');
   test.beforeEach(async ({ page, request }) => {
     const errors: string[] = [];
     browserErrors.set(page, errors);
     page.on('pageerror', error => errors.push(error.message));
     page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-    expect((await request.post(origin + '/__reset', { data: { scenario: 'approval' } })).ok()).toBe(true);
+    expect((await request.post(origin + '/__reset')).ok()).toBe(true);
   });
   test.afterEach(async ({ page, request }, info) => {
     await writeFile(info.outputPath('browser-errors.json'), JSON.stringify(browserErrors.get(page), null, 2));
     await writeFile(info.outputPath('dom.html'), await page.content());
     await page.screenshot({ path: info.outputPath('final-page.png') });
     await page.goto('about:blank');
-    // These receipts establish owned fixture closure after page exit. The
-    // connection integration spec separately proves synchronous native abort
-    // and revoked retained callbacks on unmount.
-    await writeFile(info.outputPath('actual-service-evidence.json'), JSON.stringify(await (await request.get(origin + '/__stats')).json(), null, 2));
-    const receipt = await (await request.post(origin + '/__finish')).json();
-    await writeFile(info.outputPath('owned-cleanup.json'), JSON.stringify(receipt, null, 2));
-    for (const owner of receipt.closed) expect(Object.values(owner.closure).every(Boolean)).toBe(true);
+    // The connection integration spec proves synchronous native abort and
+    // revoked retained callbacks on unmount.
+    await writeFile(info.outputPath('actual-service-evidence.json'), JSON.stringify({ runs: await runs(request), model: await model(request) }, null, 2));
   });
   for (const width of [1280, 390]) for (const decision of ['Approve', 'Decline'] as const) {
     test(`Docs Code Run and actual native ${decision} at ${width}`, async ({ page, request }, info) => {
@@ -85,21 +85,21 @@ test.describe('native MAF Website', () => {
       expect(await page.locator('iframe').evaluate((current, retained) => current === retained, iframe)).toBe(true);
       await expect(frame.getByRole('textbox', { name: 'Message', exact: true })).toHaveValue(draft);
       await expect(frame.getByRole('status')).toHaveText('Ready.');
-      expect((await (await request.get(origin + '/__stats')).json()).current.requests).toHaveLength(0);
+      expect(await runs(request)).toHaveLength(0);
       await frame.getByRole('button', { name: 'Send', exact: true }).click();
       await expect(frame.getByRole('status')).toHaveText('Awaiting your decision.');
       for (const control of [frame.getByRole('button', { name: 'Approve', exact: true }), frame.getByRole('button', { name: 'Decline', exact: true }), frame.getByRole('textbox', { name: 'Message', exact: true }), frame.getByRole('status')]) await fits(control);
       await expect(frame.locator('.tp-approval-card')).toContainText('Blue Finch Bistro');
       await fits(frame.locator('.tp-approval-card'));
       await page.screenshot({ path: info.outputPath('approval.png') });
-      const before = (await (await request.get(origin + '/__stats')).json()).current;
-      expect(before.requests).toHaveLength(1);
-      const initial = before.requests[0];
-      expect(initial.upstreamBase64).toBe(initial.sentBase64);
-      const pause = events(initial.upstreamBase64).find(event => event.type === 'RUN_FINISHED');
+      const before = await runs(request);
+      expect(before).toHaveLength(1);
+      const initial = before[0];
+      expect(initial.sent).toEqual(initial.events);
+      const pause = initial.events.find((event: { type: string }) => event.type === 'RUN_FINISHED');
       expect(pause).toMatchObject({ runId: initial.body.runId, threadId: initial.body.threadId, outcome: { type: 'interrupt' } });
       expect(pause.outcome.interrupts).toHaveLength(1);
-      expect(before.observed.entries).toBe(0);
+      expect(submitted(initial)).toHaveLength(0);
       await frame.getByRole('button', { name: decision, exact: true }).click();
       await expect(frame.getByRole('status')).toHaveText(decision === 'Approve' ? 'Fictional expense approved.' : 'Expense declined.');
       const literal = decision === 'Approve' ? approved : rejected;
@@ -107,19 +107,19 @@ test.describe('native MAF Website', () => {
       await expect(result).toHaveText(literal);
       for (const control of [result, frame.getByRole('textbox', { name: 'Message', exact: true }), frame.getByRole('button', { name: 'Send', exact: true }), frame.getByRole('button', { name: 'New conversation', exact: true }), frame.getByRole('status')]) await fits(control);
       await page.screenshot({ path: info.outputPath('result.png') });
-      const after = (await (await request.get(origin + '/__stats')).json()).current;
-      expect(after.requests).toHaveLength(2);
-      const resumed = after.requests[1];
+      const after = await runs(request);
+      expect(after).toHaveLength(2);
+      const resumed = after[1];
       expect(resumed.body.threadId).toBe(initial.body.threadId);
       expect(resumed.body.resume).toEqual([{ interruptId: pause.outcome.interrupts[0].id, status: 'resolved', payload: { approved: decision === 'Approve' } }]);
       expect(resumed.body.forwardedProps).not.toHaveProperty('command');
-      expect(resumed.upstreamBase64).toBe(resumed.sentBase64);
-      expect(events(resumed.upstreamBase64).find(event => event.type === 'RUN_FINISHED')).toMatchObject({ runId: resumed.body.runId, threadId: resumed.body.threadId });
-      expect(after.observed.entries).toBe(decision === 'Approve' ? 1 : 0);
-      expect(after.observed.model.httpSeen).toBe(3);
-      expect(after.observed.model.records[2].actualContinuationToolContent).toBe(literal);
-      expect(after.observed.profile.kind).toContain('no body replacement');
-      for (const module of Object.values(after.observed.modules) as { sha256: string }[]) expect(module.sha256).toMatch(/^[a-f0-9]{64}$/);
+      expect(resumed.sent).toEqual(resumed.events);
+      expect(resumed.events.find((event: { type: string }) => event.type === 'RUN_FINISHED')).toMatchObject({ runId: resumed.body.runId, threadId: resumed.body.threadId });
+      // The real submit_expense ran only when approved.
+      expect(submitted(resumed)).toHaveLength(decision === 'Approve' ? 1 : 0);
+      const calls = await model(request);
+      expect(calls).toHaveLength(3);
+      expect(calls[2].body.messages.filter((row: { role: string; tool_call_id?: string }) => row.role === 'tool' && row.tool_call_id === 'c0_submit_expense').map((row: { content: string }) => row.content)).toEqual([literal]);
     });
   }
 });

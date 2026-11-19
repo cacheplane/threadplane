@@ -3,20 +3,26 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/runtimes/aws-strands/react/src",
   "projectType": "application",
-  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "implicitDependencies": [
+    "cockpit-runtimes-aws-strands-angular",
+    "cockpit-runtimes-aws-strands-python"
+  ],
+  "tags": [
+    "scope:cockpit-examples",
+    "scope:cockpit-e2e",
+    "framework:react"
+  ],
   "targets": {
-    "prepare-fixture": {
-      "executor": "nx:run-commands",
-      "cache": false,
-      "options": {
-        "command": "node scripts/react-cockpit/prepare-native-strands-fixture.mjs"
-      }
-    },
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
-      "inputs": ["default", "awsStrandsFixture"],
-      "dependsOn": ["prepare-fixture", "build"],
+      "inputs": [
+        "default",
+        "reactAimockBackend"
+      ],
+      "dependsOn": [
+        "build"
+      ],
       "options": {
         "config": "cockpit/runtimes/aws-strands/react/e2e/playwright.config.ts",
         "skipInstall": true
@@ -28,27 +34,34 @@
         "configFile": "cockpit/runtimes/aws-strands/react/vite.config.mts"
       }
     },
-    "lint": { "executor": "@nx/eslint:lint" },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
     "build": {
       "executor": "nx:run-commands",
       "cache": false,
       "dependsOn": [
-        { "target": "build", "projects": ["core", "content", "react"] },
-        { "target": "react-ag-ui", "projects": ["website-runtime-preparation"] }
+        {
+          "target": "build",
+          "projects": [
+            "core",
+            "content",
+            "react"
+          ]
+        },
+        {
+          "target": "react-ag-ui",
+          "projects": [
+            "website-runtime-preparation"
+          ]
+        }
       ],
-      "outputs": ["{workspaceRoot}/dist/cockpit/runtimes/aws-strands/react"],
+      "outputs": [
+        "{workspaceRoot}/dist/cockpit/runtimes/aws-strands/react"
+      ],
       "options": {
         "command": "node scripts/react-cockpit/build.mjs runtimes-aws-strands"
       }
     }
-  },
-  "namedInputs": {
-    "awsStrandsFixture": [
-      "{workspaceRoot}/fixtures/react-parity/native-strands-react/**/*",
-      "{workspaceRoot}/scripts/react-cockpit/native-strands-fixture.mjs",
-      "{workspaceRoot}/scripts/react-cockpit/native-strands-fixture.spec.mjs",
-      "{workspaceRoot}/scripts/react-cockpit/prepare-native-strands-fixture.mjs",
-      "{workspaceRoot}/scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs"
-    ]
   }
 }

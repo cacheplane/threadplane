@@ -1,5 +1,14 @@
 {
   "fixtures": [
+    {"match": {"userMessage": "[scenario:batch]", "toolResultContains": "Expense recorded"}, "response": {"content": "The fictional $220.00 Blue Finch Bistro expense was submitted for reimbursement."}},
+    {"match": {"userMessage": "[scenario:batch]", "toolResultContains": "rejected by user"}, "response": {"content": "The fictional Blue Finch Bistro expense was not submitted."}},
+    {"match": {"userMessage": "[scenario:batch]", "hasToolResult": true}, "response": {"content": "The Blue Finch Bistro expense decision is complete."}},
+    {"match": {"userMessage": "[scenario:batch]"}, "response": {"toolCalls": [{"id": "c0_lookup_expense_policy", "name": "lookup_expense_policy", "arguments": "{\"category\": \"meals\"}"}, {"id": "c0_submit_expense", "name": "submit_expense", "arguments": "{\"expense\":{\"vendor\":\"Blue Finch Bistro\",\"category\":\"meals\",\"amount_usd\":220,\"memo\":\"Team dinner for 4 attendees; receipt attached.\"}}"}]}},
+    {"match": {"userMessage": "[scenario:cancel]"}, "response": {"toolCalls": [{"id": "c0_lookup_expense_policy", "name": "lookup_expense_policy", "arguments": "{\"category\": \"meals\"}"}]}, "latency": 30000},
+    {"match": {"userMessage": "fictional demo expense", "toolResultContains": "Expense recorded"}, "response": {"content": "The fictional $220.00 Blue Finch Bistro expense was submitted for reimbursement."}},
+    {"match": {"userMessage": "fictional demo expense", "toolResultContains": "rejected by user"}, "response": {"content": "The fictional Blue Finch Bistro expense was not submitted."}},
+    {"match": {"userMessage": "fictional demo expense", "hasToolResult": true}, "response": {"toolCalls": [{"id": "c0_submit_expense", "name": "submit_expense", "arguments": "{\"expense\":{\"vendor\":\"Blue Finch Bistro\",\"category\":\"meals\",\"amount_usd\":220,\"memo\":\"Team dinner for 4 attendees; receipt attached.\"}}"}]}},
+    {"match": {"userMessage": "fictional demo expense"}, "response": {"toolCalls": [{"id": "c0_lookup_expense_policy", "name": "lookup_expense_policy", "arguments": "{\"category\": \"meals\"}"}]}},
     {
       "match": { "userMessage": "team dinner", "hasToolResult": true, "turnIndex": 2 },
       "response": {

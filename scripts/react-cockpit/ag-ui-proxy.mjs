@@ -8,7 +8,8 @@
  * produce on demand:
  *
  *   GET  /__requests          every agent POST, in order: { path, method,
- *                             body, events (real, so far), held, closed }
+ *                             body, events (real, so far), sent (what
+ *                             the browser got, after edits), held, closed }
  *   GET  /__captures          per finished run: { path, sse, events } as the
  *                             real server sent them (before any edit)
  *   GET  /__lifetime          { active (a held stream), openResponses }
@@ -155,7 +156,7 @@ function rewriteOutcome(mode, event) {
   return { ...event, outcome: { ...event.outcome, interrupts: [copy] } };
 }
 
-export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', modelJournal, ready = async () => {} }) {
+export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', headers = {}, modelJournal, ready = async () => {} }) {
   let requests = [];
   let captures = [];
   const pendingCaptures = new Set();
@@ -181,7 +182,9 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', mo
     const body = raw.length ? JSON.parse(raw.toString('utf8')) : {};
     // Live while the run streams: the real events so far, and whether the
     // proxy holds it or the browser closed it.
-    const entry = { path: pathname, method: request.method, body, events: [], held: false, closed: false };
+    // `events`: what the real server streamed; `sent`: what the browser got
+    // after any /__stream/edit ops.
+    const entry = { path: pathname, method: request.method, body, events: [], sent: [], held: false, closed: false };
     requests.push(entry);
     response.once('close', () => { entry.closed = true; });
     if (stickyEdits.some((op) => op.mode === 'unstable-result') && Array.isArray(body.messages))
@@ -213,7 +216,8 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', mo
     const upstreamResponse = await new Promise((resolve, reject) => {
       const outgoing = httpRequest(
         new URL(agentPath, upstream),
-        { method: 'POST', headers: { 'content-type': 'application/json', accept: 'text/event-stream' } },
+        // `headers`: what the backend requires of every caller (Mastra's internal token).
+        { method: 'POST', headers: { ...headers, 'content-type': 'application/json', accept: 'text/event-stream' } },
         resolve
       );
       outgoing.once('error', reject);
@@ -238,7 +242,9 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', mo
     const buffered = [];
     const events = [];
     const write = (event) => {
-      if (!response.writableEnded) response.write(`data: ${JSON.stringify(event)}\n\n`);
+      if (response.writableEnded) return;
+      entry.sent.push(event);
+      response.write(`data: ${JSON.stringify(event)}\n\n`);
     };
     /** Apply edits to one real event; returns false once the stream must end. */
     const forward = (event) => {

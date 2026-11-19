@@ -26,6 +26,24 @@ const aimockAgUi = (example, port, agentPath = '/agent') => Object.freeze({
   // The server route the React example talks to (src/server.py).
   agentPath,
 });
+/**
+ * aimock-backed Mastra example: the deployments/ag-ui-mastra Node service
+ * (the Angular example's backend) against the Angular example's aimock
+ * fixtures. The service serves /agent/<topic> and requires X-Internal-Token
+ * on every route but /ok; the proxy adds the local token. Convention as for
+ * aimockAgUi.
+ */
+const aimockMastra = (example, port) => Object.freeze({
+  kind: 'aimock-mastra',
+  service: 'deployments/ag-ui-mastra',
+  fixtures: `cockpit/${example}/angular/e2e/fixtures`,
+  backendPort: port + 1000,
+  aimockPort: port + 2000,
+  agentPath: '/agent/mastra',
+  // The route the React example posts to, under its base path.
+  publicAgentPath: '/agent',
+  headers: Object.freeze({ 'x-internal-token': 'dev-local-token' }),
+});
 /** LangGraph examples whose React e2e run on aimock + `langgraph dev`. */
 const AIMOCK_LANGGRAPH_TOPICS = new Set(['streaming', 'interrupts', 'memory', 'persistence', 'subgraphs', 'client-tools', 'deployment-runtime', 'time-travel', 'durable-execution']);
 export function reactCockpitConfiguration(topic = 'streaming') {
@@ -63,6 +81,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       appPath: 'cockpit/runtimes/aws-strands/react',
       base: '/runtimes/aws-strands/react/', port: 4643,
       project: 'cockpit-runtimes-aws-strands-react',
+      backend: aimockAgUi('runtimes/aws-strands', 4643),
     });
   if (topic === 'runtimes-microsoft-agent-framework')
     return Object.freeze({
@@ -70,12 +89,14 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       appPath: 'cockpit/runtimes/microsoft-agent-framework/react',
       base: '/runtimes/microsoft-agent-framework/react/', port: 4642,
       project: 'cockpit-runtimes-microsoft-agent-framework-react',
+      backend: aimockAgUi('runtimes/microsoft-agent-framework', 4642),
     });
   if (topic === 'runtimes-mastra')
     return Object.freeze({
       topic: 'mastra', library: 'runtimes', adapter: 'ag-ui',
       appPath: 'cockpit/runtimes/mastra/react', base: '/runtimes/mastra/react/',
       port: 4641, project: 'cockpit-runtimes-mastra-react',
+      backend: aimockMastra('runtimes/mastra', 4641),
     });
   if (topic === 'deep-agents-memory')
     return Object.freeze({

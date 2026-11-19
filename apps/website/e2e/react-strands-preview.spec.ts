@@ -1,14 +1,17 @@
 import { selectWorkspaceMode } from './fixtures/workspace-controls';
 import { writeFile } from 'node:fs/promises';
-import { test, expect, type Page, type Locator } from '@playwright/test';
+import { test, expect, type Page, type Locator, type APIRequestContext } from '@playwright/test';
 
 const origin = 'http://127.0.0.1:4643';
 const approved = 'Meeting booked for Tuesday 10:00: Q3 roadmap review';
 const rejected = 'The human declined. Meeting NOT booked: Q3 roadmap review';
 const browserErrors = new WeakMap<Page, string[]>();
-function events(base64: string) {
-  return [...Buffer.from(base64, 'base64').toString().matchAll(/^data: (.+)$/gm)].map(match => JSON.parse(match[1]));
-}
+// The preview's backend: aimock replays cockpit/runtimes/aws-strands/angular/e2e/fixtures
+// into the example's real Strands AG-UI server, behind the recording proxy
+// (scripts/react-cockpit/ag-ui-proxy.mjs): /__requests lists each agent POST with the
+// events the server streamed (`events`) and what the browser got (`sent`).
+const runs = async (request: APIRequestContext) => (await request.get(origin + '/__requests')).json();
+const model = async (request: APIRequestContext) => (await request.get(origin + '/__model-requests')).json();
 async function mode(page: Page, name: 'Docs' | 'Code' | 'Run') {
   await selectWorkspaceMode(page, name);
 }
@@ -23,27 +26,20 @@ async function fits(locator: Locator) {
 
 test.describe('native Strands Website', () => {
   test.describe.configure({ mode: 'serial' });
-  test.skip(!!process.env['BASE_URL'], 'Owned actual-service fixture is local only.');
+  test.skip(!!process.env['BASE_URL'], 'The aimock-backed preview is local only.');
   test.beforeEach(async ({ page, request }) => {
     const errors: string[] = [];
     browserErrors.set(page, errors);
     page.on('pageerror', error => errors.push(error.message));
     page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-    expect((await request.post(origin + '/__reset', { data: { scenario: 'approval' } })).ok()).toBe(true);
+    expect((await request.post(origin + '/__reset')).ok()).toBe(true);
   });
   test.afterEach(async ({ page, request }, info) => {
-    try {
-      await writeFile(info.outputPath('browser-errors.json'), JSON.stringify(browserErrors.get(page), null, 2));
-      await writeFile(info.outputPath('dom.html'), await page.content());
-      await page.screenshot({ path: info.outputPath('final-page.png') });
-      await page.goto('about:blank');
-      await writeFile(info.outputPath('actual-service-evidence.json'), JSON.stringify(await (await request.get(origin + '/__stats')).json(), null, 2));
-    } finally {
-      const receipt = await (await request.post(origin + '/__finish')).json();
-      await writeFile(info.outputPath('owned-cleanup.json'), JSON.stringify(receipt, null, 2));
-      expect(receipt.closed.length).toBeGreaterThan(0);
-      for (const owner of receipt.closed) expect(Object.values(owner.closure).every(Boolean)).toBe(true);
-    }
+    await writeFile(info.outputPath('browser-errors.json'), JSON.stringify(browserErrors.get(page), null, 2));
+    await writeFile(info.outputPath('dom.html'), await page.content());
+    await page.screenshot({ path: info.outputPath('final-page.png') });
+    await page.goto('about:blank');
+    await writeFile(info.outputPath('actual-service-evidence.json'), JSON.stringify({ runs: await runs(request), model: await model(request) }, null, 2));
     expect(browserErrors.get(page)).toEqual([]);
   });
   for (const width of [1280, 390]) for (const decision of ['Approve', 'Decline'] as const) {
@@ -85,21 +81,21 @@ test.describe('native Strands Website', () => {
         expect(await page.locator('iframe').evaluate((element, original) => element === original, iframe)).toBe(true);
       }
       await expect(frame.getByRole('textbox', { name: 'Message', exact: true })).toHaveValue(draft);
-      expect((await (await request.get(origin + '/__stats')).json()).current.requests).toHaveLength(0);
+      expect(await runs(request)).toHaveLength(0);
       await frame.getByRole('button', { name: 'Send', exact: true }).click();
       await expect(frame.getByRole('status')).toHaveText('Awaiting your decision.');
       for (const control of [frame.getByRole('button', { name: 'Approve', exact: true }), frame.getByRole('button', { name: 'Decline', exact: true }), frame.getByRole('textbox', { name: 'Message', exact: true }), frame.getByRole('status')]) await fits(control);
       await expect(frame.locator('.tp-approval-card')).toContainText('Q3 roadmap review');
       await fits(frame.locator('.tp-approval-card'));
       await page.screenshot({ path: info.outputPath('approval.png') });
-      const before = (await (await request.get(origin + '/__stats')).json()).current;
-      expect(before.requests).toHaveLength(1);
-      const initial = before.requests[0];
-      expect(initial.upstreamBase64).toBe(initial.sentBase64);
-      const pause = events(initial.upstreamBase64).find(event => event.type === 'RUN_FINISHED');
+      const before = await runs(request);
+      expect(before).toHaveLength(1);
+      const initial = before[0];
+      expect(initial.sent).toEqual(initial.events);
+      const pause = initial.events.find((event: { type: string }) => event.type === 'RUN_FINISHED');
       expect(pause).toMatchObject({ runId: initial.body.runId, threadId: initial.body.threadId, outcome: { type: 'interrupt' } });
       expect(pause.outcome.interrupts).toHaveLength(1);
-      expect(before.observed.completedReturns).toHaveLength(0);
+      expect(initial.events.some((event: { type: string; content?: string }) => event.type === 'TOOL_CALL_RESULT' && /booked/i.test(event.content ?? ''))).toBe(false);
       expect(pause.outcome.interrupts[0]).toMatchObject({ reason: 'book_meeting', metadata: { reason: { topic: 'Q3 roadmap review', slot: 'Tuesday 10:00' } } });
       await frame.getByRole('button', { name: decision, exact: true }).click();
       await expect(frame.getByRole('status')).toHaveText(decision === 'Approve' ? 'Fictional meeting booked.' : 'Meeting declined.');
@@ -108,34 +104,31 @@ test.describe('native Strands Website', () => {
       await expect(result).toHaveText(literal);
       for (const control of [result, frame.getByRole('textbox', { name: 'Message', exact: true }), frame.getByRole('button', { name: 'Send', exact: true }), frame.getByRole('button', { name: 'New conversation', exact: true }), frame.getByRole('status')]) await fits(control);
       await page.screenshot({ path: info.outputPath('result.png') });
-      const after = (await (await request.get(origin + '/__stats')).json()).current;
-      expect(after.requests).toHaveLength(2);
-      const resumed = after.requests[1];
+      const after = await runs(request);
+      expect(after).toHaveLength(2);
+      const resumed = after[1];
       expect(resumed.body.threadId).toBe(initial.body.threadId);
       expect(resumed.body.resume).toEqual([{ interruptId: pause.outcome.interrupts[0].id, status: 'resolved', payload: { approved: decision === 'Approve' } }]);
       expect(resumed.body.forwardedProps).not.toHaveProperty('command');
-      expect(resumed.upstreamBase64).toBe(resumed.sentBase64);
-      expect(events(resumed.upstreamBase64).find(event => event.type === 'RUN_FINISHED')).toMatchObject({ runId: resumed.body.runId, threadId: resumed.body.threadId });
-      expect(after.observed.completedReturns).toHaveLength(1);
+      expect(resumed.sent).toEqual(resumed.events);
+      expect(resumed.events.find((event: { type: string }) => event.type === 'RUN_FINISHED')).toMatchObject({ runId: resumed.body.runId, threadId: resumed.body.threadId });
       expect(resumed.body.runId).not.toBe(initial.body.runId);
-      const canonical = events(resumed.upstreamBase64).filter(event => event.type === 'MESSAGES_SNAPSHOT').at(-1).messages;
+      const canonical = resumed.events.filter((event: { type: string }) => event.type === 'MESSAGES_SNAPSHOT').at(-1).messages;
       const bookingCall = canonical.flatMap((row: { toolCalls?: { id: string; function: { name: string } }[] }) => row.toolCalls ?? []).find((call: { function: { name: string } }) => call.function.name === 'book_meeting');
       const results = canonical.filter((row: { role: string; toolCallId?: string }) => row.role === 'tool' && row.toolCallId === bookingCall.id);
       expect(results).toHaveLength(1);
       expect(results[0].content).toBe(JSON.stringify(literal));
       await expect(frame.getByRole('region', { name: 'Last observed schedule' })).toContainText('Observed booking status: pending');
-      expect(after.observed.model.httpSeen).toBe(3);
-      const toolResults = after.observed.model.records.at(-1).body.messages.filter((row: { role: string; tool_call_id?: string }) => row.role === 'tool' && row.tool_call_id === bookingCall.id);
+      const calls = await model(request);
+      expect(calls).toHaveLength(3);
+      const toolResults = calls.at(-1).body.messages.filter((row: { role: string; tool_call_id?: string }) => row.role === 'tool' && row.tool_call_id === bookingCall.id);
       expect(toolResults).toHaveLength(1);
       expect(toolResults[0].content).toBe(literal);
-
-      for (const module of Object.values(after.observed.modules) as { sha256: string }[]) expect(module.sha256).toMatch(/^[a-f0-9]{64}$/);
     });
   }
   for (const width of [1280, 390]) {
     test(`unconfirmed native result preserves revoked authority across modes at ${width}`, async ({ page, request }) => {
       test.setTimeout(90000);
-      expect((await request.post(origin + '/__reset', { data: { scenario: 'missing-terminal' } })).ok()).toBe(true);
       await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
       await page.goto('/docs/react/runtimes/aws-strands/overview');
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true', { timeout: 30000 });
@@ -145,22 +138,25 @@ test.describe('native Strands Website', () => {
       await frame.getByRole('button', { name: 'Q3 roadmap review', exact: true }).click();
       await frame.getByRole('button', { name: 'Send', exact: true }).click();
       await expect(frame.getByRole('button', { name: 'Approve', exact: true })).toBeEnabled();
+      // Injected data: the proxy drops the resumed run's real terminal on its way to the browser.
+      expect((await request.post(origin + '/__stream/edit', { data: { ops: [{ type: 'RUN_FINISHED', op: 'drop' }] } })).ok()).toBe(true);
       await frame.getByRole('button', { name: 'Approve', exact: true }).click();
       await expect(frame.getByRole('status')).toHaveText('Meeting unconfirmed. Start a new conversation.');
       await expect(frame.getByRole('region', { name: 'Observed backend result' })).toHaveCount(0);
       await expect(frame.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
       await expect(frame.getByRole('button', { name: 'Approve', exact: true })).toHaveCount(0);
-      const evidence = (await (await request.get(origin + '/__stats')).json()).current;
-      expect(evidence.requests).toHaveLength(2);
-      expect(evidence.observed.completedReturns).toHaveLength(1);
-      const resumed = evidence.requests[1];
-      expect(events(resumed.upstreamBase64).some(event => event.type === 'RUN_FINISHED' && event.runId === resumed.body.runId)).toBe(true);
-      expect(events(resumed.sentBase64).some(event => event.type === 'RUN_FINISHED' && event.runId === resumed.body.runId)).toBe(false);
+      const evidence = await runs(request);
+      expect(evidence).toHaveLength(2);
+      const resumed = evidence[1];
+      // The real booking completed upstream; only the browser lost the terminal.
+      expect(resumed.events.some((event: { type: string; content?: string }) => event.type === 'TOOL_CALL_RESULT' && (event.content ?? '').includes(approved))).toBe(true);
+      expect(resumed.events.some((event: { type: string; runId?: string }) => event.type === 'RUN_FINISHED' && event.runId === resumed.body.runId)).toBe(true);
+      expect(resumed.sent.some((event: { type: string; runId?: string }) => event.type === 'RUN_FINISHED' && event.runId === resumed.body.runId)).toBe(false);
       await mode(page, 'Docs');
       await expect(page.locator('iframe')).toHaveCount(1);
       await mode(page, 'Run');
       await expect(page.frameLocator('iframe').getByRole('status')).toHaveText('Meeting unconfirmed. Start a new conversation.');
-      expect((await (await request.get(origin + '/__stats')).json()).current.requests).toHaveLength(2);
+      expect(await runs(request)).toHaveLength(2);
     });
   }
 });
