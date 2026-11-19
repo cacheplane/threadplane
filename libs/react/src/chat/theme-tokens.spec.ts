@@ -124,7 +124,7 @@ describe('React chat theme tokens', () => {
         file === 'chat/styles.css' && property.startsWith('--tp-chat-'),
     );
     // Tokens with no Angular counterpart keep their own default.
-    const reactOnly = new Set(['--tp-chat-gap']);
+    const reactOnly = new Set(['--tp-chat-gap', '--tp-chat-theme-scheme']);
     const unmapped = root
       .filter(({ property }) => !reactOnly.has(property))
       // Local re-mappings (user bubble) read other --tp-chat-* tokens.
@@ -168,6 +168,36 @@ describe('React chat theme tokens', () => {
         property === 'transition' && /\d(m?s)\b/.test(withoutVars(value)),
     ).map(({ file, line, value }) => `${file}:${line} ${value}`);
     expect(offenders).toEqual([]);
+  });
+
+  it('follows the Angular theme attributes, with an explicit scheme winning', () => {
+    const css = stripComments(STYLESHEETS['chat/styles.css']);
+    // Same selectors Angular chat uses, for both attributes and both schemes.
+    for (const scheme of ['light', 'dark'])
+      expect(css).toContain(
+        `:where([data-theme="${scheme}"], [data-threadplane-chat-theme="${scheme}"]) {\n  --tp-chat-theme-scheme: ${scheme};`,
+      );
+    // Dark is declared after light, matching Angular's precedence on one element.
+    expect(css.indexOf('--tp-chat-theme-scheme: dark')).toBeGreaterThan(
+      css.indexOf('--tp-chat-theme-scheme: light'),
+    );
+    // Precedence: explicit app scheme, then the attribute, then the system.
+    expect(css).toContain(
+      'color-scheme: var(--tp-chat-color-scheme, var(--tp-chat-theme-scheme, light dark));',
+    );
+  });
+
+  it('forces the A2UI surface scheme from the same attributes', () => {
+    const css = stripComments(STYLESHEETS['a2ui/styles.css']);
+    for (const scheme of ['light', 'dark']) {
+      const sel = `[data-theme="${scheme}"], [data-threadplane-chat-theme="${scheme}"]`;
+      expect(css).toContain(`:where(${sel}) .a2ui-surface`);
+      expect(css).toContain(`.a2ui-surface:where(${sel})`);
+    }
+    // The attribute rules sit after the media query so they beat it.
+    expect(css.indexOf('[data-theme="dark"]')).toBeGreaterThan(
+      css.indexOf('@media (prefers-color-scheme: dark)'),
+    );
   });
 
   it('draws every focus ring with the focus-ring token', () => {

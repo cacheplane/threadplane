@@ -258,8 +258,8 @@ test('CLI rejects descriptor drift before starting commands', async (t) => {
   assert.match(output, /Invalid Angular/);
 });
 
-test('manifest preserves Nx commands and default or original deadlines, and fails closed on drift', async () => {
-  const { parseServers } = await import(moduleUrl);
+test('manifest serves built apps with default or original deadlines, and fails closed on drift', async () => {
+  const { parseServers, buildArgs } = await import(moduleUrl);
   const descriptor = {
     command: 'npx nx run cockpit-chat-angular:serve:cockpit --port 4312',
     cwd: '../..',
@@ -271,14 +271,36 @@ test('manifest preserves Nx commands and default or original deadlines, and fail
   );
   assert.equal(normal.timeout, 60000);
   assert.equal(extended.timeout, 180000);
+  assert.equal(normal.command, process.execPath);
   assert.deepEqual(normal.args, [
-    'nx',
-    'run',
-    'cockpit-chat-angular:serve:cockpit',
-    '--port',
+    'scripts/website-angular-static.mjs',
+    'cockpit-chat-angular',
     '4312',
   ]);
+  assert.equal(normal.name, 'cockpit-chat-angular:serve:cockpit');
   assert.equal(normal.cwd, resolveRoot());
+  assert.deepEqual(
+    buildArgs(
+      parseServers(
+        JSON.stringify([
+          descriptor,
+          {
+            ...descriptor,
+            command: 'npx nx run cockpit-chat-threads-angular:serve:cockpit --port 4506',
+            url: 'http://localhost:4506',
+          },
+        ])
+      )
+    ),
+    [
+      'nx',
+      'run-many',
+      '--targets=build',
+      '--configuration=cockpit',
+      '--projects=cockpit-chat-angular,cockpit-chat-threads-angular',
+      '--parallel=2',
+    ]
+  );
   for (const change of [
     { url: 'http://example.com:4312' },
     { url: 'http://localhost:4313' },
@@ -402,4 +424,60 @@ test('Playwright waits for the actual stdout barrier and tears down its owned gr
   assert.match(output, /1 passed/);
   for (const value of ports)
     await assert.rejects(fetch(`http://127.0.0.1:${value}`));
+});
+
+const staticUrl = pathToFileURL(
+  join(import.meta.dirname, 'website-angular-static.mjs')
+).href;
+
+test('static Angular server resolves each pooled project build and its proxy prefixes', async () => {
+  const { resolveApp } = await import(staticUrl);
+  const app = await resolveApp('cockpit-ag-ui-streaming-angular');
+  assert.equal(app.directory, join(resolveRoot(), 'dist/cockpit/ag-ui/streaming/angular'));
+  assert.deepEqual(app.prefixes, ['/agent']);
+  assert.deepEqual(
+    (await resolveApp('cockpit-langgraph-streaming-angular')).prefixes,
+    ['/api']
+  );
+  await assert.rejects(resolveApp('cockpit-missing-angular'), /Unknown Angular project/);
+  await assert.rejects(resolveApp('../etc'), /Invalid Angular project/);
+});
+
+test('static Angular server serves files, falls back to index for routes, and fails proxy paths like a dead backend', async (t) => {
+  const { createHandler, serve } = await import(staticUrl);
+  const directory = await mkdtemp(join(tmpdir(), 'angular-static-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  await writeFile(join(directory, 'index.html'), '<app-root></app-root>');
+  await writeFile(join(directory, 'main.js'), 'console.log(1)');
+  await writeFile(join(tmpdir(), 'angular-static-outside.txt'), 'secret');
+  const value = await port();
+  const servers = await serve(createHandler({ directory, prefixes: ['/api'] }), value);
+  t.after(() => servers.forEach((server) => server.close()));
+  const get = async (path, init) => {
+    const response = await fetch(`http://127.0.0.1:${value}${path}`, init);
+    return { status: response.status, type: response.headers.get('content-type'), body: await response.text() };
+  };
+  assert.deepEqual(await get('/'), { status: 200, type: 'text/html; charset=utf-8', body: '<app-root></app-root>' });
+  assert.equal((await get('/threads/abc')).body, '<app-root></app-root>');
+  assert.deepEqual(await get('/main.js'), { status: 200, type: 'text/javascript; charset=utf-8', body: 'console.log(1)' });
+  assert.equal((await get('/missing.js')).status, 404);
+  assert.equal((await get('/api/threads/search', { method: 'POST' })).status, 500);
+  assert.equal((await get('/..%2fangular-static-outside.txt')).status, 404);
+  assert.equal((await get('/', { method: 'POST' })).status, 405);
+  assert.equal((await fetch(`http://localhost:${value}/`)).status, 200);
+});
+
+test('static Angular server exits when its build is missing', async () => {
+  const child = spawn(
+    process.execPath,
+    ['scripts/website-angular-static.mjs', 'cockpit-missing-angular', String(await port())],
+    { cwd: resolveRoot(), stdio: ['ignore', 'pipe', 'pipe'] }
+  );
+  let output = '';
+  child.stderr.on('data', (data) => {
+    output += data;
+  });
+  const code = await new Promise((resolve) => child.on('exit', resolve));
+  assert.equal(code, 1);
+  assert.match(output, /Unknown Angular project/);
 });

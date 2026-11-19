@@ -69,6 +69,24 @@
       "reason": "One call waiting for an answer, by name and arguments; Angular exposes pending client tool calls on the agent capability."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#useChatLifecycle",
+      "taskIds": ["T03", "T04"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "Reads the lifecycle of the enclosing Chat, or null outside one; Angular injects the CHAT_LIFECYCLE token from content projected into the chat."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatLifecycle",
+      "taskIds": ["T03", "T04"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "The four lifecycle values as plain readonly fields; Angular's ChatLifecycle holds the same four as signals."
+    },
+    {
+      "id": "source:libs/react/src/chat/lifecycle.ts",
+      "taskIds": ["T03", "T04"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/lifecycle.ts",
+      "reason": "Chat lifecycle for React: componentReady, firstMessageSent, messageCount and inputSubmittedAt as plain values, read inside Chat with useChatLifecycle and outside it through onLifecycleChange. Angular provides the same four as signals on the CHAT_LIFECYCLE token. Counts start again when the session prop changes, where Angular resets them in clearThread. The LangGraph agent lifecycle timestamps are separate and not covered."
+    },
+    {
       "id": "source:libs/react/src/chat/client-tools.ts",
       "taskIds": ["T15"], "treatment": "react", "status": "in-progress",
       "target": "libs/react/src/chat/client-tools.ts",
@@ -14744,6 +14762,18 @@
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
     },
     {
+      "id": "export:libs/angular/src/public-api.ts#observeAgentState",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#Chat",
       "taskIds": [
         "T22",
@@ -14764,6 +14794,17 @@
       "status": "in-progress",
       "reason": "Options, controlled value and labels for the opt-in model picker Chat renders in the composer before inputTrailing.",
       "note": "Placement, choice reporting, declined change, labels, empty options, running state and disabled state are verified with real DOM tests. Chat sends nothing about the value to the session."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatRunActivityContext",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "The current run's messages passed to Chat's renderRunActivity, which replaces the typing indicator until the run's first assistant message.",
+      "note": "The window, the status region, typing-indicator replacement, the hand-off to the first assistant message and a continued run are verified with real DOM tests."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#ChatProps",
@@ -14889,6 +14930,18 @@
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
     },
     {
+      "id": "export:libs/react/src/index.ts#useAgentState",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/text-transcript.ts",
       "taskIds": [
         "T12",
@@ -14935,6 +14988,18 @@
       "status": "in-progress",
       "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/angular/src/observe-agent-state.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
     },
     {
       "id": "source:libs/angular/src/public-api.ts",
@@ -15029,6 +15094,17 @@
       "note": "Verified through the Chat DOM tests: owned disposal on unmount and session change, StrictMode recreation, and app-passed content never disposed. Not part of the public surface."
     },
     {
+      "id": "source:libs/react/src/chat/internal/a2ui-action-label.ts",
+      "taskIds": [
+        "T22",
+        "T27"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Internal reader giving the words for a user message that is a serialized A2UI action: its stamped label, or the action name in plain words; not exported.",
+      "note": "Verified through the MessageList and Chat DOM tests: default label, opt-out, name fallback, untouched non-action and assistant messages, and text-only rendering. Not part of the public surface."
+    },
+    {
       "id": "source:libs/react/src/chat/message-list.tsx",
       "taskIds": [
         "T22",
@@ -15074,6 +15150,18 @@
       "status": "in-progress",
       "reason": "Private native observer and first plain-text feature surface; this records scoped source and packaging proof, not full chat parity.",
       "note": "Unique-ID readonly text rows, literal rendering and borrowed ownership are verified. Rich content, tools, custom templates, scrolling, SSR, publication and richer legacy migration tasks remain incomplete."
+    },
+    {
+      "id": "source:libs/react/src/use-agent-state.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
     },
     {
       "id": "source:libs/react/vite.config.mts",
@@ -19436,6 +19524,33 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "Turns RenderSpec lifecycle, stateChange and handler events into first-mount, mount-count and latest-activity timings, the React counterpart of Angular RENDER_LIFECYCLE."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtools",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Opt-in `devtools` prop on ChatSidenav: a session plus a render function for the panel; the React counterpart of Angular's [agent] input, omitted from production builds."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtoolsPanel",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Props the sidenav Devtools button spreads onto ChatDebug: controlled open, bottom dock and no built-in launcher."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#ChatSidenavDevtoolsSource",
+      "taskIds": [
+        "T30"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "Structural session slice (status snapshot and subscribe) that drives the Devtools button's streaming dot."
     }
   ]
 }

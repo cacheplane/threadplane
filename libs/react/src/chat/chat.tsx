@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { AgentSession } from '@threadplane/core';
+import type { AgentSession, AgentSnapshot } from '@threadplane/core';
 import type { MessageContent } from '@threadplane/content/messages';
 import { useAgent } from '../use-agent.js';
 import {
@@ -22,6 +22,11 @@ import {
 } from './client-tools.js';
 import { ChatError } from './error.js';
 import { useMessageContent } from './internal/use-message-content.js';
+import {
+  ChatLifecycleContext,
+  createChatLifecycleStore,
+  type ChatLifecycle,
+} from './lifecycle.js';
 import {
   MessageList,
   repeatsToolFailure,
@@ -50,6 +55,8 @@ export interface ChatProps
   readonly renderMessage?: MessageListProps['renderMessage'];
   readonly className?: string;
   readonly groupRelatedTools?: MessageListProps['groupRelatedTools'];
+  /** Generative UI dispatcher tools whose rows stay hidden; see `MessageListProps.genuiToolNames`. Keep stable. */
+  readonly genuiToolNames?: MessageListProps['genuiToolNames'];
   readonly toolLabel?: MessageListProps['toolLabel'];
   /** App-authored confirmed result previews, or `status: 'failed'` to show a completed call as failed; execution and business confirmation remain app-owned. */
   readonly toolOutcome?: MessageListProps['toolOutcome'];
@@ -111,12 +118,23 @@ export interface ChatProps
   readonly renderMessageActivity?: MessageListProps['renderMessageActivity'];
   /** One reasoning disclosure per multi-step turn; see `MessageListProps.mergeReasoning`. Defaults to true. */
   readonly mergeReasoning?: MessageListProps['mergeReasoning'];
+  /** Shows an A2UI action sent as a user message by its label; see `MessageListProps.a2uiActionLabels`. Defaults to true. */
+  readonly a2uiActionLabels?: MessageListProps['a2uiActionLabels'];
   /**
    * The waiting indicator in the transcript; see `MessageListProps.typingIndicator`. Pass
    * `{ announce: false }` when the app already announces progress, such as a status in
    * `inputFooter`, so the run is not read twice.
    */
   readonly typingIndicator?: MessageListProps['typingIndicator'];
+  /**
+   * Replaces the typing indicator between a submit and the run's first
+   * assistant message, which can be long when the first model call is slow.
+   * It receives the current run's messages (those after the last user message)
+   * and renders in a polite status region after the last message. Once an
+   * assistant message arrives it leaves, and the message's own reasoning and
+   * tool area takes over. Define it outside render or keep it stable.
+   */
+  readonly renderRunActivity?: (context: ChatRunActivityContext) => ReactNode;
   /** App-owned content before the draft; see `ChatInputProps.leading`. */
   readonly inputLeading?: ChatInputProps['leading'];
   /** App-owned controls before Stop and Send; see `ChatInputProps.trailing`. */
@@ -149,6 +167,18 @@ export interface ChatProps
    * `approval` is left to those to announce. Off unless set.
    */
   readonly runStatus?: boolean;
+  /**
+   * Called with the chat's lifecycle each time one of its values changes,
+   * starting with `componentReady` after mount. Content rendered inside the
+   * chat reads the same values with `useChatLifecycle`.
+   */
+  readonly onLifecycleChange?: (lifecycle: ChatLifecycle) => void;
+}
+
+/** What `renderRunActivity` receives while a run has no assistant message yet. */
+export interface ChatRunActivityContext {
+  /** The current run's messages: every message after the last user message. */
+  readonly messages: AgentSnapshot['messages'];
 }
 
 /** The options, controlled value and labels of the composer's model picker. */
@@ -198,6 +228,7 @@ export function Chat({
   renderMessage,
   className,
   groupRelatedTools,
+  genuiToolNames,
   toolLabel,
   toolOutcome,
   renderToolCall,
@@ -223,13 +254,29 @@ export function Chat({
   generativeUi,
   markdownComponents,
   mergeReasoning,
+  a2uiActionLabels,
   renderMessageActivity,
   typingIndicator,
+  renderRunActivity,
   welcome,
   runStatus = false,
+  onLifecycleChange,
   ...input
 }: ChatProps) {
   const snapshot = useAgent(session);
+  const lifecycleChanged = useRef(onLifecycleChange);
+  lifecycleChanged.current = onLifecycleChange;
+  const [lifecycle] = useState(() =>
+    createChatLifecycleStore((next) => lifecycleChanged.current?.(next))
+  );
+  // Another session is another conversation: its counts start again.
+  useEffect(() => {
+    lifecycle.set({
+      componentReady: true,
+      messageCount: 0,
+      inputSubmittedAt: null,
+    });
+  }, [lifecycle, session]);
   // A session that can regenerate gets the built-in action, unless the app
   // handles it itself. Built-in actions stay off until `messageActions` is set.
   const actions = useMemo(() => {
@@ -331,6 +378,10 @@ export function Chat({
         : welcome
       : null;
   const running = snapshot.status === 'running';
+  // A run the composer did not start still means a message was sent.
+  useEffect(() => {
+    if (running) lifecycle.set({ firstMessageSent: true });
+  }, [lifecycle, running]);
   const showStopped =
     runStatus && !running && endedStopped(snapshot, session, stopped);
   // A new run clears the stopped turn and the last announcement, so a repeat is read again.
@@ -364,6 +415,19 @@ export function Chat({
     suggestionFocus.current = false;
     composer.current?.focus();
   }, [greeted]);
+  // The run's messages keep their identity while only later snapshots change.
+  const messages = snapshot.messages;
+  const runMessages = useMemo(() => {
+    let from = messages.length;
+    while (from > 0 && messages[from - 1].role !== 'user') from--;
+    return messages.slice(from);
+  }, [messages]);
+  const runActivity =
+    renderRunActivity &&
+    snapshot.status === 'running' &&
+    !runMessages.some((message) => message.role === 'assistant')
+      ? renderRunActivity({ messages: runMessages })
+      : null;
   const chat = (
     <div
       ref={root}
@@ -388,6 +452,7 @@ export function Chat({
         rows={rows}
         renderMessage={renderMessage}
         groupRelatedTools={groupRelatedTools}
+        genuiToolNames={genuiToolNames}
         toolLabel={toolLabel}
         toolOutcome={toolOutcome}
         renderToolCall={renderToolCall}
@@ -404,8 +469,9 @@ export function Chat({
         generativeUi={generativeUi}
         markdownComponents={markdownComponents}
         mergeReasoning={mergeReasoning}
+        a2uiActionLabels={a2uiActionLabels}
         renderMessageActivity={renderMessageActivity}
-        typingIndicator={typingIndicator}
+        typingIndicator={runActivity === null ? typingIndicator : false}
         renderScrollControl={(controls) =>
           controls.pinned ? null : (
             <ScrollBubble
@@ -418,6 +484,11 @@ export function Chat({
           )
         }
       >
+        {runActivity === null ? null : (
+          <div className="tp-chat__run-activity" role="status" aria-atomic="false">
+            {runActivity}
+          </div>
+        )}
         {pending ? approval : null}
         {showStopped ? (
           <p className="tp-chat__stopped">
@@ -488,6 +559,11 @@ export function Chat({
         footer={inputFooter}
         busy={snapshot.status === 'running'}
         onSubmit={(text) => {
+          lifecycle.set({
+            firstMessageSent: true,
+            messageCount: lifecycle.getSnapshot().messageCount + 1,
+            inputSubmittedAt: Date.now(),
+          });
           session.submit(text.trim()).catch(ignore);
         }}
         onStop={stop}
@@ -511,20 +587,28 @@ export function Chat({
     </div>
   );
   // The prop's presence, not its length, decides the wrapper, so a list that loads later never remounts the chat.
-  if (threads === undefined) return chat;
+  if (threads === undefined) {
+    return (
+      <ChatLifecycleContext.Provider value={lifecycle}>
+        {chat}
+      </ChatLifecycleContext.Provider>
+    );
+  }
   return (
-    <div className="tp-chat-shell">
-      {threads.length > 0 ? (
-        <aside className="tp-chat tp-chat-shell__sidebar">
-          <ThreadList
-            threads={threads}
-            activeThreadId={activeThreadId}
-            onSelect={onThreadSelect}
-          />
-        </aside>
-      ) : null}
-      {chat}
-    </div>
+    <ChatLifecycleContext.Provider value={lifecycle}>
+      <div className="tp-chat-shell">
+        {threads.length > 0 ? (
+          <aside className="tp-chat tp-chat-shell__sidebar">
+            <ThreadList
+              threads={threads}
+              activeThreadId={activeThreadId}
+              onSelect={onThreadSelect}
+            />
+          </aside>
+        ) : null}
+        {chat}
+      </div>
+    </ChatLifecycleContext.Provider>
   );
 }
 

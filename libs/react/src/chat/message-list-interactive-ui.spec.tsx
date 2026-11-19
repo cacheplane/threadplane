@@ -202,4 +202,69 @@ describe('MessageList generativeUi interaction', () => {
     });
     expect(echoes(view.container)).toEqual(['Grace']);
   });
+
+  describe('progressive', () => {
+    const streamed = (text: string) => {
+      const content = createMessageContent();
+      return (length: number, streaming = true) =>
+        content.project(snapshot([assistant(text.slice(0, length), 'a', streaming)]));
+    };
+
+    it('runs no action from an element whose JSON is still open', () => {
+      const book = vi.fn();
+      const options: MessageGenerativeUi = {
+        registry,
+        handlers: { book },
+        progressive: true,
+      };
+      const at = streamed(FORM);
+      // The button and its label are here; its `on` binding is half written.
+      const view = render(
+        <MessageList rows={at(FORM.indexOf('"params"'))} generativeUi={options} />
+      );
+      fireEvent.click(view.getByRole('button', { name: 'Book' }));
+      // The binding has finished, but the element has not.
+      const closed = FORM.indexOf('}}}}', FORM.indexOf('"params"')) + 4;
+      view.rerender(<MessageList rows={at(closed)} generativeUi={options} />);
+      fireEvent.click(view.getByRole('button', { name: 'Book' }));
+      expect(book).not.toHaveBeenCalled();
+
+      view.rerender(<MessageList rows={at(closed + 1)} generativeUi={options} />);
+      fireEvent.click(view.getByRole('button', { name: 'Book' }));
+      expect(book).toHaveBeenCalledTimes(1);
+    });
+
+    it('seeds its own state path by path and keeps an edit made between seeds', () => {
+      const NOTED = JSON.stringify({
+        root: 'form',
+        elements: {
+          form: { type: 'Box', props: {}, children: ['guest', 'echo', 'note'] },
+          guest: { type: 'Field', props: { label: 'Guest', value: { $bindState: '/guest' } } },
+          echo: { type: 'Text', props: { text: { $state: '/guest' } } },
+          note: { type: 'Text', props: { text: { $state: '/note' } } },
+        },
+        state: { guest: 'Ada', note: 'Window seat' },
+      });
+      const events: MessageRenderEvent[] = [];
+      const options: MessageGenerativeUi = {
+        registry,
+        progressive: true,
+        onRenderEvent: (event) => {
+          if (event.event.type !== 'lifecycle') events.push(event);
+        },
+      };
+      const at = streamed(NOTED);
+      const view = render(
+        <MessageList rows={at(NOTED.indexOf('"note":"') + 9)} generativeUi={options} />
+      );
+      expect(echoes(view.container)).toEqual(['Ada', '']);
+      fireEvent.change(view.getByRole('textbox', { name: 'Guest' }), {
+        target: { value: 'Grace' },
+      });
+      view.rerender(<MessageList rows={at(NOTED.length, false)} generativeUi={options} />);
+      expect(echoes(view.container)).toEqual(['Grace', 'Window seat']);
+      // Seeding is not reported as a state write; the edit is.
+      expect(events.map(({ event }) => event.type)).toEqual(['stateChange']);
+    });
+  });
 });
