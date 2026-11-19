@@ -29,8 +29,9 @@ interface SharedState {
   /** Present when the backend is a uvicorn AG-UI server. */
   backend?: ChildProcess;
   backendPort?: number;
-  angular: ChildProcess;
-  angularPort: number;
+  /** Absent for backend-only setups (React cockpit serves its own build). */
+  angular?: ChildProcess;
+  angularPort?: number;
 }
 
 declare global {
