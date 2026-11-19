@@ -290,7 +290,7 @@ export const createWebsitePlaywrightConfig = (
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs durable-execution --no-parent',
+                    'node scripts/react-cockpit/serve.mjs durable-execution --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4605',
                   reuseExistingServer,
@@ -306,7 +306,7 @@ export const createWebsitePlaywrightConfig = (
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs time-travel --no-parent',
+                    'node scripts/react-cockpit/serve.mjs time-travel --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4607',
                   reuseExistingServer,

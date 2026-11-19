@@ -9,7 +9,7 @@
  * pays for the previews it actually drives. The child stays in this process's
  * group, so Playwright's webServer teardown stops it with the server.
  */
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -69,7 +69,16 @@ export function createAimockBackend({ root, backend }) {
       return starting;
     },
     async close() {
-      child?.kill('SIGTERM');
+      // `uv run` does not forward signals to the server it started: stop the
+      // server processes under it first, then uv itself.
+      if (child?.pid && child.exitCode === null) {
+        try {
+          execFileSync('pkill', ['-TERM', '-P', String(child.pid)]);
+        } catch {
+          // no children left
+        }
+        child.kill('SIGTERM');
+      }
       await mock?.stop();
     },
   };
