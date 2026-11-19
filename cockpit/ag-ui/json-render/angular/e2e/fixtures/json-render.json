@@ -42,6 +42,371 @@
           }
         ]
       }
+    },
+    {
+      "match": { "systemMessage": "In 3-5 words, summarize" },
+      "response": { "content": "Airline operations dashboard" }
+    },
+    {
+      "match": { "systemMessage": "Provide a brief (1-2 sentence) conversational summary" },
+      "response": { "content": "The fictional dashboard is ready." }
+    },
+    {
+      "match": {
+        "userMessage": "full",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dashboard prepared." }
+    },
+    {
+      "match": {
+        "userMessage": "full",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "render_spec",
+            "arguments": "{\"root\": \"dashboard\", \"elements\": {\"dashboard\": {\"type\": \"dashboard_grid\", \"children\": [\"row\", \"table\"]}, \"row\": {\"type\": \"container\", \"props\": {\"direction\": \"row\"}, \"children\": [\"card\", \"trend\", \"airlines\"]}, \"card\": {\"type\": \"stat_card\", \"props\": {\"label\": \"On time\", \"value\": {\"$state\": \"/on_time/value\"}, \"delta\": {\"$state\": \"/on_time/delta\"}}}, \"trend\": {\"type\": \"line_chart\", \"props\": {\"title\": \"Trend\", \"data\": {\"$state\": \"/on_time_trend\"}, \"xKey\": \"month\", \"yKey\": \"on_time_pct\"}}, \"airlines\": {\"type\": \"bar_chart\", \"props\": {\"title\": \"Airlines\", \"data\": {\"$state\": \"/flights_by_airline\"}, \"labelKey\": \"airline\", \"valueKey\": \"count\"}}, \"table\": {\"type\": \"data_grid\", \"props\": {\"title\": \"Disruptions\", \"rows\": {\"$state\": \"/recent_disruptions\"}, \"columns\": [\"flight_number\", \"type\", \"minutes\", \"route\", \"date\"]}}}}"
+          },
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}"
+          },
+          {
+            "name": "query_on_time_trend",
+            "arguments": "{\"months\": 6}"
+          },
+          {
+            "name": "query_flights_by_airline",
+            "arguments": "{\"airlines\": [\"United\", \"Delta\"]}"
+          },
+          {
+            "name": "query_recent_disruptions",
+            "arguments": "{\"limit\": 5}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "prose",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dashboard prepared." }
+    },
+    {
+      "match": {
+        "userMessage": "prose",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "render_spec",
+            "arguments": "{\"root\": \"dashboard\", \"elements\": {\"dashboard\": {\"type\": \"dashboard_grid\", \"children\": [\"row\", \"table\"]}, \"row\": {\"type\": \"container\", \"props\": {\"direction\": \"row\"}, \"children\": [\"card\", \"trend\", \"airlines\"]}, \"card\": {\"type\": \"stat_card\", \"props\": {\"label\": \"On time\", \"value\": {\"$state\": \"/on_time/value\"}, \"delta\": {\"$state\": \"/on_time/delta\"}}}, \"trend\": {\"type\": \"line_chart\", \"props\": {\"title\": \"Trend\", \"data\": {\"$state\": \"/on_time_trend\"}, \"xKey\": \"month\", \"yKey\": \"on_time_pct\"}}, \"airlines\": {\"type\": \"bar_chart\", \"props\": {\"title\": \"Airlines\", \"data\": {\"$state\": \"/flights_by_airline\"}, \"labelKey\": \"airline\", \"valueKey\": \"count\"}}, \"table\": {\"type\": \"data_grid\", \"props\": {\"title\": \"Disruptions\", \"rows\": {\"$state\": \"/recent_disruptions\"}, \"columns\": [\"flight_number\", \"type\", \"minutes\", \"route\", \"date\"]}}}}"
+          },
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}"
+          },
+          {
+            "name": "query_on_time_trend",
+            "arguments": "{\"months\": 6}"
+          },
+          {
+            "name": "query_flights_by_airline",
+            "arguments": "{\"airlines\": [\"United\", \"Delta\"]}"
+          },
+          {
+            "name": "query_recent_disruptions",
+            "arguments": "{\"limit\": 5}"
+          }
+        ],
+        "content": "Preparing a fictional dashboard."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "filter",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dashboard prepared." }
+    },
+    {
+      "match": {
+        "userMessage": "filter",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_recent_disruptions",
+            "arguments": "{\"type\": \"cancelled\", \"limit\": 5}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "all-airlines",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dashboard prepared." }
+    },
+    {
+      "match": {
+        "userMessage": "all-airlines",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_flights_by_airline",
+            "arguments": "{\"airlines\": []}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "structural",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dashboard prepared." }
+    },
+    {
+      "match": {
+        "userMessage": "structural",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "render_spec",
+            "arguments": "{\"root\": \"new-card\", \"elements\": {\"new-card\": {\"type\": \"stat_card\", \"props\": {\"label\": \"Updated flights\", \"value\": {\"$state\": \"/flights_today/value\"}}}}}"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "userMessage": "zero" },
+      "response": { "content": "Dashboard prepared." }
+    },
+    {
+      "match": { "toolCallId": "rounds-2" },
+      "response": { "content": "Dashboard prepared." }
+    },
+    {
+      "match": { "toolCallId": "rounds-1" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "rounds-2"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "rounds",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "rounds-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "cap-1" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-2"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "cap-2" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-3"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "cap-3" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-4"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "cap-4" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-5"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "cap-5" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-6"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "cap-6" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-7"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "cap-7" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-8"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "cap-8" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-9"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "cap-9" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-10"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "cap-10" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-11"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "cap-11" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-12"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "cap",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}",
+            "id": "cap-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "render_spec",
+            "arguments": "{\"root\": \"dashboard\", \"elements\": {\"dashboard\": {\"type\": \"dashboard_grid\", \"children\": [\"row\", \"table\"]}, \"row\": {\"type\": \"container\", \"props\": {\"direction\": \"row\"}, \"children\": [\"card\", \"trend\", \"airlines\"]}, \"card\": {\"type\": \"stat_card\", \"props\": {\"label\": \"On time\", \"value\": {\"$state\": \"/on_time/value\"}, \"delta\": {\"$state\": \"/on_time/delta\"}}}, \"trend\": {\"type\": \"line_chart\", \"props\": {\"title\": \"Trend\", \"data\": {\"$state\": \"/on_time_trend\"}, \"xKey\": \"month\", \"yKey\": \"on_time_pct\"}}, \"airlines\": {\"type\": \"bar_chart\", \"props\": {\"title\": \"Airlines\", \"data\": {\"$state\": \"/flights_by_airline\"}, \"labelKey\": \"airline\", \"valueKey\": \"count\"}}, \"table\": {\"type\": \"data_grid\", \"props\": {\"title\": \"Disruptions\", \"rows\": {\"$state\": \"/recent_disruptions\"}, \"columns\": [\"flight_number\", \"type\", \"minutes\", \"route\", \"date\"]}}}}"
+          },
+          {
+            "name": "query_airline_kpis",
+            "arguments": "{}"
+          },
+          {
+            "name": "query_on_time_trend",
+            "arguments": "{\"months\": 6}"
+          },
+          {
+            "name": "query_flights_by_airline",
+            "arguments": "{\"airlines\": [\"United\", \"Delta\"]}"
+          },
+          {
+            "name": "query_recent_disruptions",
+            "arguments": "{\"limit\": 5}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "",
+        "hasToolResult": true
+      },
+      "response": { "content": "Dashboard prepared." }
     }
   ]
 }

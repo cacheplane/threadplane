@@ -19,7 +19,7 @@ test('canonical JSON Render Run keeps a retained layout bound to current native 
 }) => {
   test.skip(
     Boolean(process.env['BASE_URL']),
-    'The compiled offline producer is verified before deployment'
+    'The real AG-UI server is verified before deployment'
   );
   const origin = 'http://127.0.0.1:4612';
   await request.post(origin + '/__reset');
@@ -175,7 +175,8 @@ test('switching away disposes a held server-tool stream and returning stays lazy
   await page.goto('/docs/react/ag-ui/guides/json-render?mode=run');
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
-  await request.post(origin + '/__hold/result');
+  // Hold the real stream after the first tool result (scripts/react-cockpit/ag-ui-proxy.mjs).
+  await request.post(origin + '/__hold/stream', { data: { afterType: 'TOOL_CALL_RESULT' } });
   await frame.getByLabel('Message', { exact: true }).fill('full');
   const response = page.waitForResponse(
     (candidate) =>

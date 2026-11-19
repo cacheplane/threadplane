@@ -385,9 +385,9 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
-                  command: 'npx nx run cockpit-ag-ui-json-render-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4612',
+                  url: 'http://127.0.0.1:4612/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },

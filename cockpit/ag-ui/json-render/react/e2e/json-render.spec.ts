@@ -1,4 +1,66 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
+// Backend: aimock replays cockpit/ag-ui/json-render/angular/e2e/fixtures (the
+// scripted dashboard model of the Python tests) into the example's real AG-UI
+// server. The recording proxy (scripts/react-cockpit/ag-ui-proxy.mjs) holds,
+// fails or edits the next run; /__captures has what the server sent.
+const edit = (request: APIRequestContext, ops: object[]) =>
+  request.post('/__stream/edit', { data: { ops } });
+/** Where each held stage stops the real stream. */
+async function hold(request: APIRequestContext, stage: string) {
+  const afterType = { state: 'STATE_SNAPSHOT', result: 'TOOL_CALL_RESULT', final: 'MESSAGES_SNAPSHOT' }[stage];
+  await request.post('/__hold/stream', { data: { afterType } });
+}
+/** The final snapshot of each finished run, as the real server sent it. */
+async function finals(request: APIRequestContext) {
+  const captures: { events: { type: string; messages?: unknown[] }[] }[] = await (
+    await request.get('/__captures')
+  ).json();
+  return captures.map((capture) => capture.events.findLast((event) => event.type === 'MESSAGES_SNAPSHOT')!.messages!);
+}
+/** Arms a fault on the next run: injected protocol shapes a correct server won't produce. */
+async function fault(request: APIRequestContext, mode: string) {
+  const finished = (set: object) => edit(request, [{ type: '^RUN_FINISHED$', op: 'patch', set }]);
+  const snapshot = (name: string) => edit(request, [{ type: '^MESSAGES_SNAPSHOT$', op: 'snapshot', mode: name }]);
+  if (mode === 'http-error') await request.post('/__fail-stream');
+  if (mode === 'run-error')
+    await edit(request, [
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'RUN_ERROR', message: 'PRIVATE provider failure' } },
+      { type: '^(?!RUN_STARTED$)', op: 'end' },
+    ]);
+  if (mode === 'wrong-run') await finished({ runId: 'wrong-run' });
+  if (mode === 'wrong-thread') await finished({ threadId: 'wrong-thread' });
+  if (mode === 'eof') await edit(request, [{ type: '^RUN_FINISHED$', op: 'drop' }]);
+  if (mode === 'child')
+    await edit(request, [
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'worker' } },
+    ]);
+  if (mode === 'legacy')
+    await edit(request, [
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'CUSTOM', name: 'on_interrupt', value: { note: 'legacy pause' } } },
+    ]);
+  if (mode === 'notice-eof')
+    await edit(request, [
+      { type: '^RUN_FINISHED$', op: 'insertBefore', event: { type: 'CUSTOM', name: 'unsupported', value: {} } },
+      { type: '^RUN_FINISHED$', op: 'end' },
+    ]);
+  if (mode === 'bad-state')
+    await edit(request, [
+      { type: '^STATE_SNAPSHOT$', op: 'setPath', path: 'snapshot.on_time', value: { value: { invalid: true }, delta: null } },
+    ]);
+  const snapshotModes: Record<string, string> = {
+    'truncated-prefix': 'from-human',
+    'duplicate-result': 'duplicate-result',
+    'orphan-result': 'orphan-result',
+    'missing-result': 'missing-result',
+    'wrong-result-id': 'wrong-result-id',
+    'unknown-tool': 'unknown-tool',
+  };
+  if (snapshotModes[mode]) await snapshot(snapshotModes[mode]);
+  if (mode === 'malformed-spec')
+    await edit(request, [
+      { type: '^(TOOL_CALL_ARGS|MESSAGES_SNAPSHOT)$', op: 'replace', from: 'dashboard_grid', to: 'custom_html' },
+    ]);
+}
 const base = '/ag-ui/json-render/react/';
 const rows = (page: Page) => page.locator('[data-dashboard-message]');
 async function send(page: Page, text: string) {
@@ -66,6 +128,7 @@ test('actual compiled graph and installed SDK retain all six views, canonical ba
   }
   const requests = await (await request.get('/__requests')).json();
   expect(requests).toHaveLength(8);
+  const final = await finals(request);
   expect(
     new Set(
       requests.map(
@@ -88,10 +151,10 @@ test('actual compiled graph and installed SDK retain all six views, canonical ba
       index ? nativeIds[index - 1] : []
     );
     if (index) {
-      expect(prefix).toHaveLength(requests[index - 1].final.length);
+      expect(prefix).toHaveLength(final[index - 1].length);
       for (const message of prefix)
         expect(message).toEqual(
-          requests[index - 1].final.find(
+          final[index - 1].find(
             (row: { id: string }) => row.id === message.id
           )
         );
@@ -100,7 +163,7 @@ test('actual compiled graph and installed SDK retain all six views, canonical ba
       );
     }
     const calls = new Set<string>();
-    for (const message of entry.final) {
+    for (const message of final[index] as { role: string; id: string; toolCallId?: string; toolCalls?: { id: string }[] }[]) {
       if (message.role === 'assistant')
         for (const call of message.toolCalls ?? []) calls.add(call.id);
       if (message.role === 'tool') {
@@ -126,7 +189,7 @@ for (const stage of ['state', 'result', 'final'])
     request,
   }) => {
     await page.goto(base);
-    await request.post('/__hold/' + stage);
+    await hold(request, stage);
     await send(page, 'full');
     await expect
       .poll(
@@ -155,7 +218,7 @@ test('retained layout reads valid streamed shared-state updates while native com
   const chartData = page.locator('.dashboard-chart-data').first();
   await chartData.locator('summary').click();
   const originalChart = await chartData.elementHandle();
-  await request.post('/__hold/final');
+  await hold(request, 'final');
   await send(page, 'filter');
   await expect
     .poll(async () => (await (await request.get('/__lifetime')).json()).active)
@@ -215,7 +278,7 @@ for (const mode of [
     await page.goto(base);
     await send(page, 'full');
     await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
-    await request.post('/__mode/' + mode);
+    await fault(request, mode);
     await send(page, 'full');
     await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
       'Start a new conversation to continue.'
@@ -235,7 +298,7 @@ for (const action of ['Stop', 'pagehide'])
     request,
   }) => {
     await page.goto(base);
-    await request.post('/__hold/result');
+    await hold(request, 'result');
     await send(page, 'full');
     await expect
       .poll(
@@ -351,9 +414,10 @@ test('the authored developer endpoint routes all native requests and stays out o
       .slice(0, -1)
       .map((message: { id: string }) => message.id)
   ).toEqual(priorIds);
+  const [first] = await finals(request);
   for (const message of wire[1].body.messages.slice(0, -1))
     expect(message).toEqual(
-      wire[0].final.find((row: { id: string }) => row.id === message.id)
+      (first as { id: string }[]).find((row) => row.id === message.id)
     );
   await expect(frame.locator('body')).not.toContainText('/developer-agent');
 });
