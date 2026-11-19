@@ -1,13 +1,19 @@
-import type {
-  AgentError,
-  AgentSession,
-  AgentSessionCustomEvent,
-  AgentSnapshot,
-  AgentSubmitOptions,
-  AgentUsage,
-  AgentUsageEntry,
+import {
+  readState,
+  type AgentError,
+  type AgentSession,
+  type AgentSessionCustomEvent,
+  type AgentSnapshot,
+  type AgentSubmitOptions,
+  type AgentUsage,
+  type AgentUsageEntry,
+  type PlainValue,
+  type StateDeclaration,
+  type ToolContract,
 } from '@threadplane/core';
 import type { Session } from './create-session.js';
+import { NO_STATE, ownState } from './state.js';
+import type { SubmitInput } from './submit-input.js';
 import { projectMessages, projectToolCalls } from './message-projection.js';
 import {
   failedWithRunError,
@@ -15,8 +21,9 @@ import {
 } from './session-observation.js';
 
 /** The native owner, with or without a client-tool catalog. */
-export type NativeSession = Pick<
-  Session,
+export type NativeSession<TState = unknown> = Pick<
+  Session<TState>,
+  | 'stateType'
   | 'subscribe'
   | 'submit'
   | 'stop'
@@ -25,6 +32,63 @@ export type NativeSession = Pick<
   | 'regenerate'
   | 'onCustomEvent'
 > & { getSnapshot(): SessionSnapshot };
+
+type Tools = Record<string, ToolContract>;
+/** The core snapshot of an AG-UI session, with the outcome of its last state check. */
+export type AgUiAgentSnapshot<TState = unknown> = AgentSnapshot<
+  Tools,
+  TState
+> & {
+  /**
+   * Why the session's state schema rejected the current state document.
+   * `state` then keeps the last document that passed. Absent while the
+   * document passes, and always absent without a schema.
+   */
+  readonly stateIssues?: readonly string[];
+};
+/** A core `AgentSession` over an AG-UI session. */
+export type AgUiAgentSession<TState = unknown> = Omit<
+  AgentSession<Tools, TState>,
+  'getSnapshot'
+> & { getSnapshot(): AgUiAgentSnapshot<TState> };
+
+/** The state to publish for one state document, and why a schema rejected it. */
+interface StateView {
+  readonly source: PlainValue;
+  readonly state?: PlainValue;
+  readonly issues?: readonly string[];
+}
+const NOT_PLAIN = Object.freeze(['The state schema must produce plain data.']);
+
+/**
+ * Checks each state document once. A session created without a state reports
+ * none until the application or the backend supplies one, so a schema is not
+ * asked about a document nobody wrote.
+ */
+function stateReader(declaration: StateDeclaration | undefined) {
+  // Starting at the default document is what leaves it unread.
+  let view: StateView = { source: NO_STATE };
+  return (source: PlainValue): StateView => {
+    if (source === view.source) return view;
+    const reading = readState(declaration, source);
+    if (!reading.valid)
+      return (view = {
+        source,
+        state: view.state,
+        issues: Object.freeze([...reading.issues]),
+      });
+    // A schema may hand back the document itself or a value of its own.
+    if (reading.value === source) return (view = { source, state: source });
+    try {
+      const state = ownState(reading.value);
+      // `undefined` would read as no state at all.
+      if (state !== undefined) return (view = { source, state });
+    } catch {
+      /* Reported below. */
+    }
+    return (view = { source, state: view.state, issues: NOT_PLAIN });
+  };
+}
 
 /**
  * The same wording the LangGraph runtime uses when it cannot tell whether a
@@ -136,8 +200,9 @@ function usage(native: SessionSnapshot): AgentUsage | undefined {
 function project(
   native: SessionSnapshot,
   canRetry: boolean,
-  previous?: AgentSnapshot
-): AgentSnapshot {
+  view: StateView,
+  previous?: AgUiAgentSnapshot
+): AgUiAgentSnapshot {
   const messages = projectMessages(native, previous?.messages);
   const toolCalls = projectToolCalls(native, previous?.toolCalls);
   const error =
@@ -152,7 +217,9 @@ function project(
     previous.toolCalls === toolCalls &&
     previous.error === error &&
     previous.plan === native.plan &&
-    previous.usage === used
+    previous.usage === used &&
+    previous.state === view.state &&
+    previous.stateIssues === view.issues
   )
     return previous;
   return Object.freeze({
@@ -162,6 +229,8 @@ function project(
     ...(error && { error }),
     ...(native.plan && { plan: native.plan }),
     ...(used && { usage: used }),
+    ...(view.state !== undefined && { state: view.state }),
+    ...(view.issues && { stateIssues: view.issues }),
   });
 }
 
@@ -176,24 +245,35 @@ function project(
  * go straight to the native session, so disposing the view disposes the
  * session. `retry` rejects unless the error is `recovery: 'retry'`. Custom
  * event listeners pass straight through to the native session too, when it
- * has them. Application state,
- * native resume and client-tool evidence have no core equivalent: keep the
- * native session for those.
+ * has them. Native resume and client-tool evidence have no core equivalent:
+ * keep the native session for those.
+ *
+ * `state` is the session's state document, typed by the `stateType` the session
+ * was created with. With a schema, each document is checked once and `state`
+ * holds the schema's output; a rejected document leaves `state` at the last
+ * one that passed and lists the reasons in `stateIssues`, and the run goes on.
+ * A session created without a state has none until the application submits
+ * one or the backend reports one.
  */
-export function createAgentSession(session: NativeSession): AgentSession {
+export function createAgentSession<TState = unknown>(
+  session: NativeSession<TState>
+): AgUiAgentSession<TState> {
   let seen: SessionSnapshot | undefined;
-  let current: AgentSnapshot | undefined;
+  let current: AgUiAgentSnapshot | undefined;
   const retry = session.retry;
   const regenerate = session.regenerate;
   const listen = session.onCustomEvent;
-  const getSnapshot = (): AgentSnapshot => {
+  const readView = stateReader(session.stateType);
+  const read = (): AgUiAgentSnapshot => {
     const native = session.getSnapshot();
     if (native !== seen || !current) {
-      current = project(native, !!retry, current);
+      current = project(native, !!retry, readView(native.state), current);
       seen = native;
     }
     return current;
   };
+  // The declaration is the only evidence of TState, as for any typed session.
+  const getSnapshot = read as () => AgUiAgentSnapshot<TState>;
   return {
     getSnapshot,
     subscribe(notify) {
@@ -210,7 +290,8 @@ export function createAgentSession(session: NativeSession): AgentSession {
       onCustomEvent: (listener: (event: AgentSessionCustomEvent) => void) =>
         listen.call(session, listener),
     }),
-    submit: (input, options) => session.submit(input, options),
+    submit: (input, options) =>
+      session.submit(input as SubmitInput<TState>, options),
     stop: () => session.stop(),
     dispose: () => session.dispose(),
     // The native owner rejects what it cannot regenerate, as the core
