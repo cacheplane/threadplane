@@ -1,7 +1,67 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
+// Backend: aimock replays cockpit/ag-ui/tool-views/angular/e2e/fixtures into
+// the example's real AG-UI server, whose graph calls the real weather tool.
+// The recording proxy (scripts/react-cockpit/ag-ui-proxy.mjs) holds, fails or
+// edits the next run.
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
 });
+const edit = (request: APIRequestContext, ops: object[]) =>
+  request.post('/__stream/edit', { data: { ops } });
+/** Where each hold stops the real stream. */
+const holds: Record<string, object> = {
+  'Hold args': { afterType: 'TOOL_CALL_START' },
+  'Hold call': { afterType: 'TOOL_CALL_END' },
+  'Hold result': { afterType: 'TOOL_CALL_RESULT' },
+  'Hold final': { afterType: 'MESSAGES_SNAPSHOT' },
+};
+/**
+ * Arms a fault. `Unknown tool` and `Malformed args` are real (the model calls
+ * a tool that does not exist, or the weather tool without a location); the
+ * rest are injected protocol shapes a correct server won't produce.
+ */
+async function fault(request: APIRequestContext, mode: string) {
+  const finished = (set: object) => edit(request, [{ type: '^RUN_FINISHED$', op: 'patch', set }]);
+  const snapshot = (name: string) => edit(request, [{ type: '^MESSAGES_SNAPSHOT$', op: 'snapshot', mode: name }]);
+  if (mode === 'HTTP error') await request.post('/__fail-stream');
+  if (mode === 'Run error')
+    await edit(request, [
+      { type: '^TOOL_CALL_START$', op: 'insertBefore', event: { type: 'RUN_ERROR', message: 'PRIVATE model failure', code: 'TEST' } },
+      { type: '^TOOL_CALL_START$', op: 'end' },
+    ]);
+  if (mode === 'Child')
+    await edit(request, [
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'worker' } },
+    ]);
+  if (mode === 'Decision') await finished({ outcome: { type: 'interrupt', interrupts: [{ id: 'pause', reason: 'approval' }] } });
+  if (mode === 'Pending tools') await finished({ outcome: { type: 'success', pendingToolCallIds: ['unobserved'] } });
+  if (mode === 'Wrong terminal') await finished({ runId: 'different-run' });
+  if (mode === 'Truncated prefix') await snapshot('drop-sent');
+  if (mode === 'Duplicate result') await snapshot('duplicate-result');
+  if (mode === 'Orphan result') await snapshot('orphan-result');
+  // The backend saves every result under another identity from then on.
+  if (mode === 'Unstable result identity')
+    await request.post('/__stream/edit', {
+      data: { persist: true, ops: [{ type: '^MESSAGES_SNAPSHOT$', op: 'snapshot', mode: 'unstable-result' }] },
+    });
+  if (mode === 'Malformed weather') {
+    const content = JSON.stringify({ location: 'San Francisco', temperatureF: 'hot', conditions: 'Sunny', humidity: 55, windMph: 8 });
+    await edit(request, [
+      { type: '^TOOL_CALL_RESULT$', op: 'patch', set: { content } },
+      { type: '^MESSAGES_SNAPSHOT$', op: 'snapshot', mode: 'result-content', content },
+    ]);
+  }
+  if (mode === 'Legacy notice')
+    await edit(request, [
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'CUSTOM', name: 'on_interrupt', value: { note: 'legacy pause' } } },
+    ]);
+  if (mode === 'Notice EOF')
+    await edit(request, [
+      { type: '^MESSAGES_SNAPSHOT$', op: 'insertBefore', event: { type: 'CUSTOM', name: 'unsupported', value: {} } },
+      { type: '^MESSAGES_SNAPSHOT$', op: 'end' },
+    ]);
+  if (mode === 'EOF') await edit(request, [{ type: '^RUN_FINISHED$', op: 'end' }]);
+}
 const rows = (page: Page) => page.locator('[data-weather-message]');
 async function send(page: Page, text: string) {
   await page.getByLabel('Message', { exact: true }).fill(text);
@@ -88,6 +148,7 @@ for (const mode of ['Hold args', 'Hold call', 'Hold result', 'Hold final']) {
     request,
   }) => {
     await page.goto('/ag-ui/tool-views/react/');
+    await request.post('/__hold/stream', { data: holds[mode] });
     await send(page, mode);
     await expect
       .poll(
@@ -121,6 +182,7 @@ for (const mode of ['Hold args', 'Hold call', 'Hold result', 'Hold final']) {
       request,
     }) => {
       await page.goto('/ag-ui/tool-views/react/');
+      await request.post('/__hold/stream', { data: holds[mode] });
       await send(page, mode);
       await expect
         .poll(
@@ -170,6 +232,7 @@ for (const mode of [
       await send(page, 'One');
       await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Response complete.');
     }
+    await fault(request, mode);
     await send(page, mode);
     await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
       'Start a new conversation to continue.'
@@ -194,6 +257,7 @@ test('a result saved under another identity keeps its card and its place in the 
   // The stream names the result after its call; the final snapshot saves it
   // under another identifier, as graph backends do.
   await page.goto('/ag-ui/tool-views/react/');
+  await fault(request, 'Unstable result identity');
   await send(page, 'Unstable result identity');
   await expect(
     page.getByRole('status', { name: 'Conversation status' })

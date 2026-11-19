@@ -69,6 +69,8 @@ test('switching away disposes a held server-tool stream and returning stays lazy
   );
   const origin = 'http://127.0.0.1:4611';
   await request.post(origin + '/__reset');
+  // Hold the real stream after the tool result (scripts/react-cockpit/ag-ui-proxy.mjs).
+  await request.post(origin + '/__hold/stream', { data: { afterType: 'TOOL_CALL_RESULT' } });
   await page.goto('/docs/react/ag-ui/guides/tool-views?mode=run');
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');

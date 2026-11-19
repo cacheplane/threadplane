@@ -14,7 +14,6 @@ import { createLanggraphProxy } from './langgraph-proxy.mjs';
 import { createAgUiProxy } from './ag-ui-proxy.mjs';
 import { createAimockBackend } from './aimock-backend.mjs';
 import { createChatGenerativeUiFixture } from './chat-generative-ui-fixture.mjs';
-import { createAgUiToolViewsFixture } from './ag-ui-tool-views-fixture.mjs';
 import { createAgUiJsonRenderFixture } from './ag-ui-json-render-fixture.mjs';
 import { createAgUiSubagentsFixture } from './ag-ui-subagents-fixture.mjs';
 
@@ -80,10 +79,6 @@ const agUiSubagentsFixture =
 const agUiJsonRenderFixture =
   configuration.adapter === 'ag-ui' && configuration.topic === 'json-render'
     ? createAgUiJsonRenderFixture()
-    : null;
-const agUiToolViewsFixture =
-  configuration.adapter === 'ag-ui' && configuration.topic === 'tool-views'
-    ? createAgUiToolViewsFixture()
     : null;
 const agUiClientToolsFixture = configuration.adapter === 'ag-ui' && configuration.topic === 'client-tools' ? createAgUiClientToolsFixture() : null;
 
@@ -179,11 +174,6 @@ const server = createServer(async (request, response) => {
   if (
     agUiJsonRenderFixture &&
     (await agUiJsonRenderFixture(request, response, pathname))
-  )
-    return;
-  if (
-    agUiToolViewsFixture &&
-    (await agUiToolViewsFixture(request, response, pathname))
   )
     return;
   if (
