@@ -4,6 +4,77 @@ import {
   type Page,
   type APIRequestContext,
 } from '@playwright/test';
+// Backend: aimock replays cockpit/ag-ui/subagents/angular/e2e/fixtures (the
+// scripted orchestrator and specialists of the Python tests) into the
+// example's real AG-UI server, whose SubagentEmittingAgent runs real child
+// graphs. The recording proxy (scripts/react-cockpit/ag-ui-proxy.mjs) holds,
+// fails or edits the next run; /__captures has what the server sent.
+const edit = (request: APIRequestContext, ops: object[]) =>
+  request.post('/__stream/edit', { data: { ops } });
+const childEvent = '"subagentRunId"';
+/** Where each held stage stops the real stream. */
+async function hold(request: APIRequestContext, stage: string) {
+  const data = {
+    'child-text': { afterPattern: `"type": ?"TEXT_MESSAGE_CONTENT".*${childEvent}|${childEvent}.*"type": ?"TEXT_MESSAGE_CONTENT"` },
+    'child-finished': { afterType: 'SUBAGENT_FINISHED' },
+    final: { afterType: 'MESSAGES_SNAPSHOT' },
+  }[stage];
+  await request.post('/__hold/stream', { data });
+}
+/**
+ * Arms a scenario on the next run. `without-child-tokens` stands in for a
+ * nonstreaming specialist provider (no child text events, only the final
+ * result); the rest are injected protocol shapes a correct server won't
+ * produce.
+ */
+async function arm(request: APIRequestContext, name: string) {
+  const finished = (set: object) => edit(request, [{ type: '^RUN_FINISHED$', op: 'patch', set }]);
+  const snapshot = (snapshotMode: string) => edit(request, [{ type: '^MESSAGES_SNAPSHOT$', op: 'snapshot', mode: snapshotMode }]);
+  const firstChild = (set: object) => edit(request, [{ type: '^SUBAGENT_STARTED$', op: 'patch', once: true, set }]);
+  if (name === 'without-child-tokens')
+    await edit(request, [{ type: '^TEXT_MESSAGE_(START|CONTENT|END)$', dataPattern: childEvent, op: 'drop' }]);
+  if (name === 'http-error') await request.post('/__fail-stream');
+  if (name === 'run-error')
+    await edit(request, [
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'RUN_ERROR', message: 'PRIVATE provider failure' } },
+      { type: '^(?!RUN_STARTED$)', op: 'end' },
+    ]);
+  if (name === 'orphan-text')
+    await edit(request, [
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'TEXT_MESSAGE_START', messageId: 'orphan-m1', role: 'assistant', subagentRunId: 'orphan' } },
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'TEXT_MESSAGE_CONTENT', messageId: 'orphan-m1', delta: 'Unknown child', subagentRunId: 'orphan' } },
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'TEXT_MESSAGE_END', messageId: 'orphan-m1', subagentRunId: 'orphan' } },
+    ]);
+  if (name === 'wrong-run') await finished({ runId: 'wrong-run' });
+  if (name === 'wrong-thread') await finished({ threadId: 'wrong-thread' });
+  if (name === 'eof') await edit(request, [{ type: '^RUN_FINISHED$', op: 'drop' }]);
+  if (name === 'child')
+    await edit(request, [
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'worker' } },
+    ]);
+  if (name === 'legacy')
+    await edit(request, [
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'CUSTOM', name: 'on_interrupt', value: { note: 'legacy pause' } } },
+    ]);
+  if (name === 'notice-eof')
+    await edit(request, [
+      { type: '^RUN_FINISHED$', op: 'insertBefore', event: { type: 'CUSTOM', name: 'unsupported', value: {} } },
+      { type: '^RUN_FINISHED$', op: 'end' },
+    ]);
+  const snapshotModes: Record<string, string> = {
+    'truncated-prefix': 'from-human',
+    'duplicate-result': 'duplicate-result',
+    'orphan-result': 'orphan-result',
+    'missing-result': 'missing-result',
+    'wrong-result-id': 'wrong-result-id',
+    'unknown-tool': 'unknown-tool',
+  };
+  if (snapshotModes[name]) await snapshot(snapshotModes[name]);
+  if (name === 'unfinished-child') await edit(request, [{ type: '^SUBAGENT_FINISHED$', op: 'drop', once: true }]);
+  if (name === 'wrong-parent') await firstChild({ parentToolCallId: 'foreign-call' });
+  if (name === 'unknown-role') await firstChild({ name: 'unknown' });
+  if (name === 'wrong-child-id') await firstChild({ subagentRunId: 'foreign-child' });
+}
 test('the authored developer endpoint routes all native requests and stays out of visible text', async ({
   page,
   request,
@@ -41,7 +112,7 @@ test('the authored developer endpoint routes all native requests and stays out o
           )
         );
   }
-  const wire = await (await request.get('/__requests')).json();
+  const wire = await requests(request);
   expect(wire).toHaveLength(2);
   expect(
     wire.every(
@@ -72,8 +143,16 @@ async function send(page: Page, text: string) {
   await page.getByRole('textbox', { name: 'Message', exact: true }).fill(text);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
 }
+/** Agent requests, each with the final snapshot the real server sent for it. */
 async function requests(request: APIRequestContext) {
-  return (await request.get('/__requests')).json();
+  const wire = await (await request.get('/__requests')).json();
+  const captures: { events: { type: string; messages?: unknown[] }[] }[] = await (
+    await request.get('/__captures')
+  ).json();
+  return wire.map((entry: object, index: number) => ({
+    ...entry,
+    final: captures[index]?.events.findLast((event) => event.type === 'MESSAGES_SNAPSHOT')?.messages,
+  }));
 }
 async function nativeRows(page: Page) {
   return page
@@ -158,7 +237,7 @@ test('real nonstreaming child providers retain final result fallback', async ({
   page,
   request,
 }) => {
-  await request.post('/__mode/without-child-tokens');
+  await arm(request, 'without-child-tokens');
   await ready(page);
   await send(page, 'sequential');
   await completed(page);
@@ -172,7 +251,7 @@ for (const stage of ['child-text', 'child-finished', 'final'])
     page,
     request,
   }) => {
-    await request.post('/__hold/' + stage);
+    await hold(request, stage);
     await ready(page);
     await send(page, 'sequential');
     await expect(page.locator('[data-child-id]').first()).toBeVisible();
@@ -211,7 +290,7 @@ for (const mode of [
   'orphan-text',
 ])
   test(`${mode} requires New with no replay`, async ({ page, request }) => {
-    await request.post('/__mode/' + mode);
+    await arm(request, mode);
     await ready(page);
     await send(page, 'sequential');
     await expect(page.getByRole('status')).toHaveText(
@@ -244,7 +323,7 @@ for (const action of ['Stop', 'pagehide'])
     page,
     request,
   }) => {
-    await request.post('/__hold/child-text');
+    await hold(request, 'child-text');
     await ready(page);
     await send(page, 'sequential');
     await expect(page.locator('[data-child-id]')).toHaveCount(1);
@@ -275,7 +354,7 @@ for (const action of ['Stop', 'pagehide'])
   });
 test('a truncated final snapshot cannot replace a previously confirmed canonical prefix', async ({ page, request }) => {
   await ready(page); await send(page, 'sequential'); await completed(page);
-  await request.post('/__mode/truncated-prefix'); await send(page, 'sequential');
+  await arm(request, 'truncated-prefix'); await send(page, 'sequential');
   await expect(page.getByRole('status')).toHaveText('Start a new conversation to continue.');
   await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
   expect(await requests(request)).toHaveLength(2);

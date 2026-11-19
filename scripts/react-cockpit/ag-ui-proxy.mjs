@@ -23,7 +23,8 @@
  *   POST /__fail-stream       next agent POST answers 500 unforwarded (the
  *                             server is unavailable)
  *   POST /__stream/edit       body { ops }: edits to the next run stream, each
- *                             { type: regex on the event type, op, once? }:
+ *                             { type: regex on the event type, op, once?,
+ *                             dataPattern? (regex on the event's JSON) }:
  *                               drop                     remove the event
  *                               patch { set }            merge fields into it
  *                               omit { keys }            remove fields
@@ -232,6 +233,7 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
       let current = event;
       for (const op of edits) {
         if ((op.once && op.used) || !op.pattern.test(event.type)) continue;
+        if (op.dataPattern && !new RegExp(op.dataPattern).test(JSON.stringify(event))) continue;
         op.used = true;
         if (op.op === 'drop') return true;
         if (op.op === 'end') {
@@ -272,6 +274,7 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
       release() {
         if (held === held_) held = undefined;
         holding = false;
+        pendingCaptures.add(settled);
         for (const event of buffered.splice(0)) if (!forward(event)) return;
         if (ended) finish();
       },
@@ -304,6 +307,9 @@ export function createAgUiProxy({ upstream, agentPaths, agentPath = '/agent', re
           armed = false;
           holding = true;
           held = held_;
+          // A held run is not "in flight" for /__captures: it waits on a
+          // release the test sends later.
+          pendingCaptures.delete(settled);
         }
       }
     });

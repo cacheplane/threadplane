@@ -14,7 +14,6 @@ import { createLanggraphProxy } from './langgraph-proxy.mjs';
 import { createAgUiProxy } from './ag-ui-proxy.mjs';
 import { createAimockBackend } from './aimock-backend.mjs';
 import { createChatGenerativeUiFixture } from './chat-generative-ui-fixture.mjs';
-import { createAgUiSubagentsFixture } from './ag-ui-subagents-fixture.mjs';
 
 
 const configuration = reactCockpitConfiguration(process.argv[2]);
@@ -71,10 +70,6 @@ const agUiProxy = configuration.backend?.kind === 'aimock-ag-ui'
       ready: aimockBackend ? () => aimockBackend.ensure() : undefined,
     })
   : null;
-const agUiSubagentsFixture =
-  configuration.adapter === 'ag-ui' && configuration.topic === 'subagents'
-    ? createAgUiSubagentsFixture()
-    : null;
 const agUiClientToolsFixture = configuration.adapter === 'ag-ui' && configuration.topic === 'client-tools' ? createAgUiClientToolsFixture() : null;
 
 const root = resolve(
@@ -161,11 +156,6 @@ const server = createServer(async (request, response) => {
       return response.end();
     }
   }
-  if (
-    agUiSubagentsFixture &&
-    (await agUiSubagentsFixture(request, response, pathname))
-  )
-    return;
   if (
     pathname.startsWith('/api/') ||
     pathname.startsWith('/developer-api/') ||

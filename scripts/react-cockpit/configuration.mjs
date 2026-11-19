@@ -201,6 +201,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/ag-ui/subagents/react/',
       port: 4613,
       project: 'cockpit-ag-ui-subagents-react',
+      backend: aimockAgUi('ag-ui/subagents', 4613),
     });
   if (topic === 'ag-ui-json-render')
     return Object.freeze({
