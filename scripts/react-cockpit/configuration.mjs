@@ -104,6 +104,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
     return Object.freeze({
       topic: 'generative-ui', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/generative-ui/react',
       base: '/chat/generative-ui/react/', port: 4627, project: 'cockpit-chat-generative-ui-react',
+      backend: aimockLanggraph('chat/generative-ui', 4627),
     });
   if (topic === 'chat-timeline')
     return Object.freeze({

@@ -34,7 +34,13 @@
  *   POST /__hold/history      hold the next history read
  *   POST /__state/<mode>      checkpoint state reads: safe | hold | failure |
  *                             changed | foreign | malformed | unsafe (a pending
- *                             task on the source)
+ *                             task on the source) | task-error (a failed task)
+ *                             | missing-terminal (no completed_turn_id) |
+ *                             malformed-layout (the render owner's content) |
+ *                             stale-terminal | foreign-terminal | old-message |
+ *                             old-data | incomplete-tools | missing-dashboard |
+ *                             disagreeing-dashboard (chat/generative-ui's
+ *                             saved-turn markers and dashboard)
  *   POST /__hold/state        hold the next checkpoint state read
  *   POST /__release-state     finish a held checkpoint state read
  *   POST /__mapped-checkpoints body { extra? }: until reset, checkpoints the
@@ -146,7 +152,9 @@ const HISTORY_MODES = [
   'mismatch', 'unsupported', 'foreign', 'failure', 'paused',
 ];
 // Rewrites of checkpoint state reads (POST /threads/<id>/state/checkpoint).
-const STATE_MODES = ['safe', 'hold', 'failure', 'changed', 'foreign', 'malformed', 'unsafe'];
+const STATE_MODES = ['safe', 'hold', 'failure', 'changed', 'foreign', 'malformed', 'unsafe', 'missing-terminal', 'malformed-layout', 'task-error',
+  'stale-terminal', 'foreign-terminal', 'old-message', 'old-data', 'incomplete-tools', 'missing-dashboard',
+  'disagreeing-dashboard'];
 // Rewrites of the thread metadata read (GET /threads/<id>) the client uses for titles.
 const TITLE_MODES = ['safe', 'hold', 'missing', 'wrong-thread', 'invalid', 'titlefailure', 'literal', 'long'];
 const HOP_BY_HOP = new Set(['connection', 'keep-alive', 'transfer-encoding', 'content-length', 'host']);
@@ -530,6 +538,22 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       if (mode === 'foreign' && state.checkpoint) state.checkpoint.thread_id = randomUUID();
       if (mode === 'malformed') state.values = { ...state.values, messages: [{ type: 'human', content: { bad: true }, id: 'malformed' }] };
       if (mode === 'unsafe') state.tasks = [{ id: 'pending-task', name: 'generate', interrupts: [] }];
+      if (mode === 'task-error') state.tasks = [{ id: 'failed-task', name: 'respond', error: 'Local failure', interrupts: [] }];
+      if (mode === 'missing-terminal' && state.values) delete state.values.completed_turn_id;
+      const values = state.values;
+      if (mode === 'stale-terminal' && values)
+        values.completed_turn_id = values.messages?.find((message) => message.type === 'human')?.id + '-stale';
+      if (mode === 'foreign-terminal' && values) values.completed_answer_id = randomUUID();
+      if (mode === 'old-message' && values?.messages?.length) values.messages[0].content = 'Changed prior content';
+      if (mode === 'old-data' && values?.dashboard?.on_time) values.dashboard.on_time.value = '999%';
+      if (mode === 'incomplete-tools' && values?.messages)
+        values.messages = values.messages.filter((message) => message.name !== 'render_spec');
+      if (mode === 'missing-dashboard' && values) delete values.dashboard;
+      if (mode === 'disagreeing-dashboard' && values?.dashboard?.recent_disruptions) values.dashboard.recent_disruptions = [];
+      if (mode === 'malformed-layout') {
+        const owner = state.values?.messages?.find((message) => message.tool_calls?.some((call) => call.name === 'render_spec'));
+        if (owner) owner.content = '{"elements":{},"root":"missing"}';
+      }
       for (const op of stateEdits?.ops ?? []) applyStateOp(op, state.values, stateEdits.humanId);
       json(response, state);
     };
