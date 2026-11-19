@@ -161,6 +161,11 @@ export interface MessageListProps<TRow extends MessageRow = MessageRow> {
    */
   readonly subagents?: readonly SubagentInfo[];
   /**
+   * Also places a child that names no tool call: its card follows the tool calls of the first
+   * assistant message of the latest turn. Off unless set, so such children stay with the application.
+   */
+  readonly placeUnanchoredSubagents?: boolean;
+  /**
    * Answered approvals, each rendered as a one-line `ApprovalRecord` after the row its `afterId`
    * names, or after the last row when that row is absent. Records stay where the app put them while
    * the run continues below.
@@ -320,15 +325,33 @@ function toolRowsShownElsewhere(
 }
 const NO_CITATIONS: readonly never[] = [];
 const NO_SUBAGENTS: readonly SubagentInfo[] = Object.freeze([]);
-/** Each row's children by spawning call. Rows without one share a constant so their memo stays stable. */
+/**
+ * Each row's children by spawning call. With `unanchored`, a child that names
+ * no call belongs to the first assistant message of the latest turn, so its
+ * card keeps its place as the turn goes on. Rows without one share a constant
+ * so their memo stays stable.
+ */
 function subagentsByRow(
   rows: readonly MessageRow[],
-  subagents: readonly SubagentInfo[]
+  subagents: readonly SubagentInfo[],
+  unanchored: boolean
 ): readonly (readonly SubagentInfo[])[] {
-  return rows.map((row) => {
-    const own = subagents.filter((subagent) =>
-      row.toolCalls.some((call) => call.id === subagent.toolCallId)
+  const loose = unanchored
+    ? subagents.filter((subagent) => subagent.toolCallId === undefined)
+    : [];
+  let home = -1;
+  if (loose.length)
+    for (let index = rows.length - 1; index >= 0; index--) {
+      if (rows[index].role === 'user') break;
+      if (rows[index].role === 'assistant') home = index;
+    }
+  return rows.map((row, index) => {
+    const own = subagents.filter(
+      (subagent) =>
+        subagent.toolCallId !== undefined &&
+        row.toolCalls.some((call) => call.id === subagent.toolCallId)
     );
+    if (index === home) own.push(...loose);
     return own.length ? own : NO_SUBAGENTS;
   });
 }
@@ -558,6 +581,9 @@ function RowView<TRow extends MessageRow>({
     if (last && 'activities' in last) last.activities.push(activity);
     else runs.push({ activities: [activity] });
   });
+  // A child that names no call follows the message's own calls.
+  for (const child of subagents)
+    if (child.toolCallId === undefined) runs.push({ child });
   // The plan and Stop belong to the row's last built-in group, the one the turn is still running.
   const planGroup = [...runs].reverse().find((run) => 'activities' in run);
   const actionLabel =
@@ -722,6 +748,7 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
   onStop,
   running = false,
   subagents,
+  placeUnanchoredSubagents = false,
   approvalRecords,
   typingIndicator = true,
   messageActions,
@@ -754,8 +781,11 @@ export function MessageList<TRow extends MessageRow = MessageRow>({
     [onToolRetry, rows]
   );
   const rowSubagents = useMemo(
-    () => (subagents?.length ? subagentsByRow(rows, subagents) : undefined),
-    [rows, subagents]
+    () =>
+      subagents?.length
+        ? subagentsByRow(rows, subagents, placeUnanchoredSubagents)
+        : undefined,
+    [rows, subagents, placeUnanchoredSubagents]
   );
   const retrying = useMemo(
     () => (toolOutcome ? retryingByRow(rows) : undefined),

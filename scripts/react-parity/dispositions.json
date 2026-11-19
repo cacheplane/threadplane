@@ -19109,6 +19109,36 @@
       "reason": "Readonly child-agent presentation matching the Angular subagent card: name, status, message count, and the child's messages and tool activity behind one closed disclosure. MessageList places a card in the tool call that started the child. Status and messages are borrowed; execution, sessions and restored child history remain application-owned. This does not certify whole-framework parity."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#sessionSubagents",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-subagents.ts",
+      "reason": "React-only projection from the child agents a core session reports into subagent card data. Chat applies it by default when no subagents prop is given; a child keeps its card's reference while it is unchanged. No session ownership."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SessionSubagentOptions",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-subagents.ts",
+      "reason": "React-only projection from the child agents a core session reports into subagent card data. Chat applies it by default when no subagents prop is given; a child keeps its card's reference while it is unchanged. No session ownership."
+    },
+    {
+      "id": "source:libs/react/src/chat/session-subagents.ts",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-subagents.ts",
+      "reason": "React-only projection from the child agents a core session reports into subagent card data. Chat applies it by default when no subagents prop is given; a child keeps its card's reference while it is unchanged. No session ownership."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#subagentsFromEvidence",
       "taskIds": [
         "T28"
