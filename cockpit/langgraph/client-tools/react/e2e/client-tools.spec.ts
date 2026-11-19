@@ -154,7 +154,8 @@ test('page exit aborts pending browser decisions without a model continuation', 
 
 test('a slow status handler completes normally and follows up once', async ({ page, request }) => {
   await send(page, 'Slow');
-  await expect(status(page)).toHaveText('Response complete.');
+  // The browser handler takes ~3s on purpose, then a real follow-up run.
+  await expect(status(page)).toHaveText('Response complete.', { timeout: 15000 });
   const runs = streams(await proof(request));
   expect(runs).toHaveLength(2);
   expect(runs[1].body.input!.messages[0]).toMatchObject({ tool_call_id: 'slow-1', content: '{"label":"status check","status":"complete"}' });

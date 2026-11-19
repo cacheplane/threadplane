@@ -12,7 +12,7 @@ const aimockLanggraph = (example, port) => Object.freeze({
   langgraphPort: port + 1000,
 });
 /** LangGraph examples whose React e2e run on aimock + `langgraph dev`. */
-const AIMOCK_LANGGRAPH_TOPICS = new Set(['streaming', 'interrupts', 'memory', 'persistence', 'subgraphs', 'client-tools', 'deployment-runtime']);
+const AIMOCK_LANGGRAPH_TOPICS = new Set(['streaming', 'interrupts', 'memory', 'persistence', 'subgraphs', 'client-tools', 'deployment-runtime', 'time-travel', 'durable-execution']);
 export function reactCockpitConfiguration(topic = 'streaming') {
   if (topic === 'ag-ui-a2ui')
     return Object.freeze({

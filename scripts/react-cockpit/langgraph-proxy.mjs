@@ -30,17 +30,21 @@
  *   POST /__hold/title        hold the next thread metadata read
  *   POST /__hold/history      hold the next history read
  *   POST /__state/<mode>      checkpoint state reads: safe | hold | failure |
- *                             changed | foreign | malformed
+ *                             changed | foreign | malformed | unsafe (a pending
+ *                             task on the source)
  *   POST /__hold/state        hold the next checkpoint state read
  *   POST /__release-state     finish a held checkpoint state read
- *   POST /__mapped-checkpoints until reset, checkpoints the browser receives
- *                             (history, state, `checkpoints` events) carry the
- *                             root map { "": checkpoint_id } — the HTTP shape
- *                             some deployments return
+ *   POST /__mapped-checkpoints body { extra? }: until reset, checkpoints the
+ *                             browser receives (history, state, `checkpoints`
+ *                             events) carry the map { "": checkpoint_id,
+ *                             ...extra } — the HTTP shape some deployments
+ *                             return. Maps the browser sends back are recorded
+ *                             as sent and stripped before forwarding.
  *   POST /__release-title     finish a held metadata read
  *   POST /__release-history   finish a held history read
- *   POST /__history-values    body { set?, omit? }: the next history read's
- *                             latest values get keys set or removed (an
+ *   POST /__history-values    body { set?, omit?, entry? }: the next history
+ *                             read's latest values get keys set or removed and
+ *                             `entry` fields (e.g. next) overwritten (an
  *                             authoritative server-side correction, e.g.
  *                             replaced or emptied messages). Injected data.
  *   POST /__hold/stream       hold the next run stream; body { afterText? } holds
@@ -56,7 +60,13 @@
  *                             diagnostic. Injected data, as the authored
  *                             subagents fixture did.
  *                             { immediate: true } holds right after the first
- *                             event (e.g. a resume whose graph emits no tokens)
+ *                             event (e.g. a resume whose graph emits no tokens);
+ *                             { afterPattern } after the first event whose raw
+ *                             text matches the regex; { end: true } ends the
+ *                             browser's stream at that point instead (an
+ *                             uncertain outcome) and closes the upstream run
+ *   POST /__run-status/<s>    until reset, GET /runs/<id> reports status <s>
+ *                             (running | success | …); `real` restores it
  *   POST /__interrupt/<mode>  unknown | multiple: until reset, root interrupts
  *                             the browser receives are rewritten to an
  *                             unsupported kind, or duplicated into a batch of
@@ -79,6 +89,12 @@
  *                             "$humanId" in data is the submitted message id).
  *                             `once: true` applies an op to its first match only;
  *                             `ifKey` only to events whose state has that key.
+ *                             `unlessKey` skips events whose state has that key.
+ *                             `anonymous: true` withholds the run identity (the
+ *                             metadata event and Content-Location header).
+ *                             With `state: true`, the value ops also apply to
+ *                             later checkpoint state reads (until reset), so a
+ *                             fork's confirmation read agrees with its stream.
  *                             For `checkpoints` events, ops address `values`.
  *                             Injected data for stream shapes a real graph
  *                             won't produce (missing/stale markers, child
@@ -87,6 +103,12 @@
  *                             /threads/<id>/state, e.g. a client tool result)
  *   POST /__fail/state-write  next client state write answers 500 unforwarded
  *   GET  /__thread/<id>       the real thread state (not recorded in /__requests)
+ *   POST /__thread/<id>/state write the real thread state (unrecorded), e.g. a
+ *                             competing tip committed by someone else
+ *   POST /__history-copies    body { copies: [{ index?, set: { path: value } }] }:
+ *                             the next history read gains copies of entries,
+ *                             with dotted paths overwritten (duplicate, child
+ *                             namespace or malformed references). Injected.
  *   POST /__fail-stream       next run stream answers 500 without forwarding
  *                             (the graph worker is unavailable)
  *   POST /__release           flush and resume a held run stream (and finish a
@@ -112,7 +134,7 @@ const HISTORY_MODES = [
   'mismatch', 'unsupported', 'foreign', 'failure', 'paused',
 ];
 // Rewrites of checkpoint state reads (POST /threads/<id>/state/checkpoint).
-const STATE_MODES = ['safe', 'hold', 'failure', 'changed', 'foreign', 'malformed'];
+const STATE_MODES = ['safe', 'hold', 'failure', 'changed', 'foreign', 'malformed', 'unsafe'];
 // Rewrites of the thread metadata read (GET /threads/<id>) the client uses for titles.
 const TITLE_MODES = ['safe', 'hold', 'missing', 'wrong-thread', 'invalid', 'titlefailure', 'literal', 'long'];
 const HOP_BY_HOP = new Set(['connection', 'keep-alive', 'transfer-encoding', 'content-length', 'host']);
@@ -158,7 +180,45 @@ function aiText(rawEvent) {
   }
 }
 
-export function createLanggraphProxy({ upstream, ready = async () => {} }) {
+const at = (root, path) => {
+  let target = root;
+  for (const part of (path ?? '').split('.').filter(Boolean)) {
+    if (target == null) return null;
+    target = Array.isArray(target) ? target.at(Number(part)) : target[part];
+  }
+  return target;
+};
+
+/** Applies one /__stream/edit value op to a state object; true when it changed. */
+function applyStateOp(op, state, humanId) {
+  const withHuman = (value) => JSON.parse(JSON.stringify(value).replaceAll('"$humanId"', JSON.stringify(humanId)));
+  if (op.ifKey && !(state && typeof state === 'object' && op.ifKey in state)) return false;
+  if (op.op === 'patch' || op.op === 'omit') {
+    const target = at(state, op.path);
+    if (!target || typeof target !== 'object') return false;
+    if (op.op === 'patch') Object.assign(target, withHuman(op.set ?? {}));
+    else for (const key of op.keys ?? []) delete target[key];
+    return true;
+  }
+  if (['append', 'truncate', 'duplicateLast'].includes(op.op)) {
+    const list = at(state, op.path);
+    if (!Array.isArray(list)) return false;
+    if (op.op === 'append') list.push(withHuman(op.value));
+    if (op.op === 'truncate') list.splice(0, Math.max(0, list.length - op.keep));
+    if (op.op === 'duplicateLast' && list.length) list.push(structuredClone(list.at(-1)));
+    return true;
+  }
+  if (op.op === 'copy') {
+    const value = at(state, op.from);
+    const parent = at(state, op.to.split('.').slice(0, -1).join('.'));
+    if (value === undefined || !parent || typeof parent !== 'object') return false;
+    parent[op.to.split('.').at(-1)] = structuredClone(value);
+    return true;
+  }
+  return false;
+}
+
+export function createLanggraphProxy({ upstream }) {
   const target = new URL(upstream);
   let requests = [];
   let failCreate = false;
@@ -176,6 +236,9 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   let nextValues = null;
   let nextHistoryValues = null;
   let nextStreamEdits = null;
+  let stateEdits = null;
+  let nextHistoryCopies = null;
+  let runStatus = null;
   let holdNextStateWrite = false;
   let failNextStateWrite = false;
   let heldStateWrite;
@@ -208,7 +271,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
   };
   const mapCheckpoint = (checkpoint) =>
     mapped && checkpoint?.checkpoint_id
-      ? { ...checkpoint, checkpoint_map: { '': checkpoint.checkpoint_id } }
+      ? { ...checkpoint, checkpoint_map: { '': checkpoint.checkpoint_id, ...mapped.extra } }
       : checkpoint;
   const mapState = (state) =>
     mapped && state && typeof state === 'object'
@@ -281,6 +344,9 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     nextValues = null;
     nextHistoryValues = null;
     nextStreamEdits = null;
+    stateEdits = null;
+    nextHistoryCopies = null;
+    runStatus = null;
     holdNextStateWrite = false;
     failNextStateWrite = false;
     heldStateWrite?.response.destroy();
@@ -312,15 +378,24 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     return Buffer.concat(chunks);
   }
 
-  function transformHistory(input, rewrite) {
+  function transformHistory(input, rewrite, copyRequests) {
     const states = Array.isArray(input)
       ? input.map((state) => mapState({ ...state, values: decorateValues(state.values) }))
       : input;
     if (!Array.isArray(states) || states.length === 0) return states;
     const latest = structuredClone(states[0]);
+    const copies = (copyRequests ?? []).map((request) => {
+      const entry = structuredClone(states[request.index ?? 0]);
+      for (const [path, value] of Object.entries(request.set ?? {})) {
+        const parent = at(entry, path.split('.').slice(0, -1).join('.'));
+        if (parent && typeof parent === 'object') parent[path.split('.').at(-1)] = value;
+      }
+      return entry;
+    });
     if (rewrite) {
       latest.values = { ...latest.values, ...(rewrite.set ?? {}) };
       for (const key of rewrite.omit ?? []) delete latest.values[key];
+      Object.assign(latest, rewrite.entry ?? {});
     }
     const messages = latest.values?.messages ?? [];
     const assistant = messages.find((m) => m.tool_calls?.length);
@@ -347,7 +422,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       latest.checkpoint = { ...latest.checkpoint, thread_id: randomUUID() };
     if (historyMode === 'subgraph' && latest.checkpoint)
       latest.checkpoint = { ...latest.checkpoint, checkpoint_ns: 'foreign:checkpoint' };
-    return [latest, ...states.slice(1)];
+    return [latest, ...states.slice(1), ...copies];
   }
 
   async function proxyHistory(request, response, path, body) {
@@ -355,6 +430,8 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     holdNextHistory = false;
     const rewrite = nextHistoryValues;
     nextHistoryValues = null;
+    const copyRequests = nextHistoryCopies;
+    nextHistoryCopies = null;
     if (historyMode === 'failed' || historyMode === 'failure') {
       json(response, { error: 'PRIVATE history' }, 500);
       return;
@@ -368,7 +445,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         response.end(raw);
         return;
       }
-      json(response, transformHistory(JSON.parse(raw.toString('utf8')), rewrite));
+      json(response, transformHistory(JSON.parse(raw.toString('utf8')), rewrite, copyRequests));
     };
     if (!holdThis) return finish();
     const held = { response, finish };
@@ -438,6 +515,8 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       if (mode === 'changed' && messages?.length) messages.at(-1).content = 'Changed canonical content';
       if (mode === 'foreign' && state.checkpoint) state.checkpoint.thread_id = randomUUID();
       if (mode === 'malformed') state.values = { ...state.values, messages: [{ type: 'human', content: { bad: true }, id: 'malformed' }] };
+      if (mode === 'unsafe') state.tasks = [{ id: 'pending-task', name: 'generate', interrupts: [] }];
+      for (const op of stateEdits?.ops ?? []) applyStateOp(op, state.values, stateEdits.humanId);
       json(response, state);
     };
     if (!hold) return finish();
@@ -465,25 +544,19 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     childFault = null;
     const values = nextValues;
     nextValues = null;
-    const edits = (nextStreamEdits ?? []).map((edit) => ({ ...edit, pattern: new RegExp(edit.event), used: false }));
+    const edits = (nextStreamEdits?.ops ?? []).map((edit) => ({ ...edit, pattern: new RegExp(edit.event), used: false }));
+    const streamStateEdits = nextStreamEdits?.state ? { ops: edits.filter((op) => !['drop', 'insertAfter'].includes(op.op)) } : null;
+    const anonymous = nextStreamEdits?.anonymous === true;
     nextStreamEdits = null;
     let humanId = null;
     try { humanId = JSON.parse(body.toString('utf8')).input?.messages?.at(-1)?.id ?? null; } catch { /* no input */ }
+    if (streamStateEdits && streamStateEdits.ops.length) stateEdits = { ops: streamStateEdits.ops, humanId };
     const withHuman = (value) => JSON.parse(JSON.stringify(value).replaceAll('"$humanId"', JSON.stringify(humanId)));
-    const at = (root, path) => {
-      let target = root;
-      for (const part of (path ?? '').split('.').filter(Boolean)) {
-        if (target == null) return null;
-        target = Array.isArray(target) ? target.at(Number(part)) : target[part];
-      }
-      return target;
-    };
     const edit = (raw) => {
       if (!edits.length) return raw;
       const name = /^event: *([^\r\n]*)/m.exec(raw)?.[1]?.trim() ?? '';
       const dataLine = raw.split(/\r?\n/).find((line) => line.startsWith('data:'));
       const data = dataLine ? JSON.parse(dataLine.slice(5)) : null;
-      let out = null;
       const after = [];
       let changed = false;
       for (const op of edits) {
@@ -491,37 +564,15 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         // A `checkpoints` event carries state under `values`; ops address the state.
         const state = name.startsWith('checkpoints') ? data?.values : data;
         if (op.ifKey && !(state && typeof state === 'object' && op.ifKey in state)) continue;
+        if (op.unlessKey && state && typeof state === 'object' && op.unlessKey in state) continue;
         op.used = true;
         if (op.op === 'drop') return '';
-        if (op.op === 'patch' || op.op === 'omit') {
-          const target = at(state, op.path);
-          if (!target || typeof target !== 'object') continue;
-          if (op.op === 'patch') Object.assign(target, withHuman(op.set ?? {}));
-          else for (const key of op.keys ?? []) delete target[key];
-          changed = true;
-        }
-        if (['append', 'truncate', 'duplicateLast'].includes(op.op)) {
-          const list = at(state, op.path);
-          if (!Array.isArray(list)) continue;
-          if (op.op === 'append') list.push(withHuman(op.value));
-          if (op.op === 'truncate') list.splice(0, Math.max(0, list.length - op.keep));
-          if (op.op === 'duplicateLast' && list.length) list.push(structuredClone(list.at(-1)));
-          changed = true;
-        }
-        if (op.op === 'copy') {
-          const value = at(state, op.from);
-          const [parent, key] = [at(state, op.to.split('.').slice(0, -1).join('.')), op.to.split('.').at(-1)];
-          if (value === undefined || !parent || typeof parent !== 'object') continue;
-          parent[key] = structuredClone(value);
-          changed = true;
-        }
         if (op.op === 'insertAfter') {
           const namespace = name.includes('|') ? name.slice(name.indexOf('|')) : '';
           after.push(`event: ${op.insert.event.replace('$ns', namespace)}\ndata: ${JSON.stringify(withHuman(op.insert.data))}\n\n`);
-        }
+        } else if (applyStateOp(op, state, humanId)) changed = true;
       }
-      out = changed ? raw.replace(dataLine, 'data: ' + JSON.stringify(data)) : raw;
-      return out + after.join('');
+      return (changed ? raw.replace(dataLine, 'data: ' + JSON.stringify(data)) : raw) + after.join('');
     };
     const apply = (state) => {
       if (!state || typeof state !== 'object' || Array.isArray(state)) return state;
@@ -533,6 +584,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       state && typeof state === 'object' &&
       [...Object.keys(values.set ?? {}), ...(values.omit ?? [])].some((key) => key in state);
     const inject = (raw) => {
+      if (anonymous && /^event: *metadata\s*$/m.test(raw)) return '';
       raw = edit(raw);
       if (!raw) return raw;
       if (raw.indexOf('event:') !== raw.lastIndexOf('event:'))
@@ -558,7 +610,10 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     const threadId = /\/threads\/([^/]+)\/runs\/stream/.exec(path)?.[1];
     const titleBefore = threadId ? await threadTitle(threadId) : null;
     const upstreamResponse = await send(request.method, path, request.headers, body);
-    response.writeHead(upstreamResponse.statusCode, forwardedHeaders(upstreamResponse.headers));
+    const headers = forwardedHeaders(upstreamResponse.headers);
+    if (anonymous)
+      for (const name of Object.keys(headers)) if (name.toLowerCase() === 'content-location') delete headers[name];
+    response.writeHead(upstreamResponse.statusCode, headers);
     response.flushHeaders();
     response.on('close', () => upstreamResponse.destroy());
     // Forward whole SSE events; when a hold is armed, buffer after its condition.
@@ -649,6 +704,12 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
           break;
         }
         response.write(inject(raw));
+        if (armed && hold.afterPattern && new RegExp(hold.afterPattern).test(raw)) {
+          armed = false;
+          holding = true;
+          heldStream = held;
+          continue;
+        }
         if (armed && hold.immediate) {
           armed = false;
           holding = true;
@@ -664,7 +725,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         const delta = aiText(raw);
         if (delta === null) continue;
         text += delta;
-        if (armed && !hold.beforeToolResult && !hold.afterChildMessage && !hold.immediate && (hold.afterText ? text.includes(hold.afterText) : true)) {
+        if (armed && !hold.beforeToolResult && !hold.afterChildMessage && !hold.immediate && !hold.afterPattern && (hold.afterText ? text.includes(hold.afterText) : true)) {
           armed = false;
           holding = true;
           heldStream = held;
@@ -673,6 +734,13 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       if (holding && pending) {
         buffered.push(pending);
         pending = '';
+      }
+      if (holding && hold.end && !response.writableEnded) {
+        // An uncertain outcome: the browser's stream ends here, and the
+        // upstream connection closes without a terminal event.
+        if (heldStream === held) heldStream = undefined;
+        response.end();
+        upstreamResponse.destroy();
       }
     });
     upstreamResponse.on('end', () => {
@@ -722,17 +790,23 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
         beforeToolResult: body.beforeToolResult === true,
         afterChildMessage: body.afterChildMessage === true,
         immediate: body.immediate === true,
+        afterPattern: typeof body.afterPattern === 'string' ? body.afterPattern : null,
+        end: body.end === true,
       };
       return {};
     }],
     '/__fail-stream': ['POST', () => { failStream = true; return {}; }],
     '/__values': ['POST', (body) => { nextValues = body; return {}; }],
-    '/__stream/edit': ['POST', (body) => { nextStreamEdits = body.ops ?? []; return {}; }],
+    '/__stream/edit': ['POST', (body) => {
+      nextStreamEdits = { ops: body.ops ?? [], state: body.state === true, anonymous: body.anonymous === true };
+      return {};
+    }],
     '/__history-values': ['POST', (body) => { nextHistoryValues = body; return {}; }],
+    '/__history-copies': ['POST', (body) => { nextHistoryCopies = body.copies ?? []; return {}; }],
     '/__hold/title': ['POST', () => { holdNextTitle = true; return {}; }],
     '/__hold/history': ['POST', () => { holdNextHistory = true; return {}; }],
     '/__hold/state': ['POST', () => { holdNextState = true; return {}; }],
-    '/__mapped-checkpoints': ['POST', () => { mapped = true; return {}; }],
+    '/__mapped-checkpoints': ['POST', (body) => { mapped = { extra: body.extra ?? {} }; return {}; }],
     '/__hold/state-write': ['POST', () => { holdNextStateWrite = true; return {}; }],
     '/__fail/state-write': ['POST', () => { failNextStateWrite = true; return {}; }],
     '/__release-state': ['POST', () => {
@@ -766,9 +840,22 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       }
       return true;
     }
+    if (pathname.startsWith('/__thread/') && pathname.endsWith('/state') && request.method === 'POST') {
+      const threadId = pathname.slice('/__thread/'.length, -'/state'.length);
+      const update = await readAll(request);
+      const answer = await send('POST', `/threads/${encodeURIComponent(threadId)}/state`, { 'content-type': 'application/json' }, update);
+      json(response, JSON.parse((await readAll(answer)).toString('utf8') || '{}'), answer.statusCode);
+      return true;
+    }
     if (pathname.startsWith('/__thread/') && request.method === 'GET') {
       const threadId = pathname.slice('/__thread/'.length);
       json(response, await upstreamJson(`/threads/${encodeURIComponent(threadId)}/state`));
+      return true;
+    }
+    if (pathname.startsWith('/__run-status/')) {
+      const status = pathname.slice('/__run-status/'.length);
+      runStatus = status === 'real' ? null : status;
+      json(response, {});
       return true;
     }
     if (pathname.startsWith('/__interrupt/')) {
@@ -831,7 +918,7 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
     openResponses += 1;
     response.once('close', () => { openResponses -= 1; });
     await ready();
-    const body = await readAll(request);
+    let body = await readAll(request);
     const search = new URL(request.url, 'http://localhost').search;
     const path = pathname.slice(prefix.length) + search;
     requests.push({
@@ -840,6 +927,13 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
       body: body.length ? JSON.parse(body.toString('utf8')) : {},
       key: request.headers['x-api-key'] ?? null,
     });
+    if (mapped && body.length) {
+      const parsed = JSON.parse(body.toString('utf8'));
+      if (parsed?.checkpoint?.checkpoint_map) {
+        delete parsed.checkpoint.checkpoint_map;
+        body = Buffer.from(JSON.stringify(parsed));
+      }
+    }
     try {
       if (request.method === 'POST' && /^\/threads\/?$/.test(pathname.slice(prefix.length))) {
         if (failCreate) {
@@ -855,6 +949,15 @@ export function createLanggraphProxy({ upstream, ready = async () => {} }) {
           failStream = false;
           json(response, { error: 'PRIVATE graph worker failure' }, 500);
         } else await proxyStream(request, response, path, body);
+      }
+      else if (runStatus && request.method === 'GET' && /\/threads\/[^/]+\/runs\/[^/]+$/.test(pathname)) {
+        const upstreamResponse = await send(request.method, path, request.headers, body);
+        const raw = await readAll(upstreamResponse);
+        const run = upstreamResponse.statusCode === 200 ? JSON.parse(raw.toString('utf8')) : null;
+        if (!run) {
+          response.writeHead(upstreamResponse.statusCode, forwardedHeaders(upstreamResponse.headers));
+          response.end(raw);
+        } else json(response, { ...run, status: runStatus });
       }
       else if (request.method === 'POST' && /\/threads\/[^/]+\/state$/.test(pathname)) {
         if (failNextStateWrite) {
