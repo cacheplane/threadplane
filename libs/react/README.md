@@ -839,6 +839,20 @@ focus survive, and when a chosen suggestion disappears with the greeting, focus
 moves to the composer. It is off unless set, and `--tp-welcome-max-width`,
 `--tp-welcome-gap` and `--tp-welcome-padding` adjust it.
 
+`renderRunActivity` replaces the typing indicator between a submit and the
+run's first assistant message, a window that can be long when the first model
+call is slow. It receives the current run's messages (those after the last
+user message) and renders in a polite status region after the last message.
+Once an assistant message arrives it leaves, and that message's reasoning and
+tool area takes over. Returning `null` keeps the typing indicator.
+
+```tsx
+<Chat
+  session={session}
+  renderRunActivity={({ messages }) => <TurnActivity messages={messages} />}
+/>
+```
+
 `renderMessageActivity` (on `Chat` and `MessageList`) replaces the reasoning
 disclosure and tool-call area of an assistant message with your own content,
 shown above the message text. It receives the `row`, its `toolCalls` and the

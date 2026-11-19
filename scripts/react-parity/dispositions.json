@@ -14755,6 +14755,17 @@
       "note": "Placement, choice reporting, declined change, labels, empty options, running state and disabled state are verified with real DOM tests. Chat sends nothing about the value to the session."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#ChatRunActivityContext",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "reason": "The current run's messages passed to Chat's renderRunActivity, which replaces the typing indicator until the run's first assistant message.",
+      "note": "The window, the status region, typing-indicator replacement, the hand-off to the first assistant message and a continued run are verified with real DOM tests."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#ChatProps",
       "taskIds": [
         "T22",
