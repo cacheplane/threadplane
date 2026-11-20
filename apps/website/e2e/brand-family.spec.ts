@@ -41,7 +41,7 @@ test('signal hero keeps white labels on navy primary actions', async ({ page }) 
 for (const width of [375, 1440]) {
   test(`docs and generated API have no decorative left accents at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 1000 });
-    for (const path of ['/docs/angular/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent']) {
+    for (const path of ['/docs/angular/chat/getting-started/quickstart', '/docs/api/angular/injectAgent']) {
       await page.goto(path);
       await expect(page.locator('.docs-prose, .api-reference-detail').first()).toBeVisible();
       const accents = await page.locator('.docs-workspace-article').evaluate((article) =>

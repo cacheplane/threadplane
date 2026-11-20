@@ -39,11 +39,17 @@ export const SECTION_MEDIA: Record<
         label: 'app.config.ts — durable threads',
         language: 'typescript',
         source: `provideAgent(DEMO_AGENT, {
-  apiUrl: 'https://your-deployment.langgraph.app',
   // The thread id is the durability boundary. Persist it (URL, storage,
   // your own records) and the conversation survives a reload, a new tab,
   // or a different device — the messages live in the checkpoint, not here.
   threadId: signal(threadIdFromUrl()),
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'demo',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+    }),
 });`,
       },
     ],
@@ -54,7 +60,7 @@ export const SECTION_MEDIA: Record<
         label: 'Code',
         language: 'typescript',
         source: `import { TestBed } from '@angular/core/testing';
-import { provideFakeAgent } from '@threadplane/langgraph';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 import { SupportAgentComponent } from './support-agent.component';
 
 it('renders the streamed reply', async () => {
@@ -94,13 +100,19 @@ it('renders the streamed reply', async () => {
       {
         label: 'app.config.ts',
         language: 'typescript',
-        source: `import { provideAgent } from '@threadplane/langgraph';
+        source: `import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      apiUrl: '/agent',
-      assistantId: 'my-agent',
+      createSession: (context) =>
+        createSession({
+          apiUrl: '/agent',
+          assistantId: 'my-agent',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
     }),
   ],
 };
@@ -130,14 +142,19 @@ export class ChatComponent {
       {
         label: 'app.config.ts',
         language: 'typescript',
-        source: `import { provideAgent, injectAgent } from '@threadplane/ag-ui';
+        source: `import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 import { ChatComponent } from '@threadplane/chat';
 
 // app.config.ts
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      url: 'https://your.agent.endpoint',
+      createSession: (context) =>
+        createSession({
+          url: 'https://your.agent.endpoint',
+          threadId: context.threadId ?? undefined,
+        }),
     }),
   ],
 };

@@ -17,7 +17,9 @@ describe('StackDiagram', () => {
     expect(titles).toContain('@threadplane/chat');
     expect(titles).toContain('@threadplane/langgraph');
     expect(titles).toContain('@threadplane/ag-ui');
-    expect(container.querySelector('.tp-diagram-pill text')?.textContent).toBe('Agent contract · signals + events$');
+    const eyebrows = Array.from(container.querySelectorAll('.tp-diagram-eyebrow')).map((t) => t.textContent);
+    expect(eyebrows).toEqual(['CHAT UI', 'SESSION', 'SESSION']);
+    expect(container.querySelector('.tp-diagram-pill text')?.textContent).toBe('Agent · signals over an AgentSession');
   });
 
   it.each([
@@ -35,13 +37,13 @@ describe('StackDiagram', () => {
     expect(toneOf(container, 'CrewAI · Mastra · Agent Fwk · Strands · …')).toBe('accent');
   });
 
-  it('highlight=contract accents both adapters', () => {
+  it('highlight=contract accents both session packages', () => {
     const { container } = render(<StackDiagram highlight="contract" />);
     expect(toneOf(container, '@threadplane/langgraph')).toBe('accent');
     expect(toneOf(container, '@threadplane/ag-ui')).toBe('accent');
   });
 
-  it('highlight=chat leaves both adapters neutral', () => {
+  it('highlight=chat leaves both session packages neutral', () => {
     const { container } = render(<StackDiagram highlight="chat" />);
     expect(toneOf(container, '@threadplane/langgraph')).toBe('neutral');
     expect(toneOf(container, '@threadplane/ag-ui')).toBe('neutral');
