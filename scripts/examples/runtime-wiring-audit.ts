@@ -13,7 +13,7 @@ import * as ts from 'typescript';
  *       apiUrl: connection.apiUrl, assistantId: connection.assistantId,
  *       clientOptions: connection.clientOptions,
  *       threadId: context.threadId, onThreadId: context.onThreadId,
- *       onOperationFailure: context.reportOperationFailure,
+ *       reportOperationFailure: context.reportOperationFailure,
  *       developmentRuntime: context.developmentRuntime }) };
  *   })
  *
@@ -33,7 +33,8 @@ import * as ts from 'typescript';
  *   the provider context, or does not report the thread it creates; the
  *   context spread, copied or handed away.
  * - `operation-reporter-wiring`: the host's failure reporter dropped, passed
- *   under a name the session does not accept, or its token used anywhere but
+ *   under a name the session does not accept or under a deprecated alias
+ *   (`onOperationFailure` on a LangGraph session), or its token used anywhere but
  *   the entrypoint, so a refused request never reaches the cockpit.
  * - `development-runtime-wiring`: the context's development-install relay
  *   dropped or passed under another name, so a development build of the
@@ -100,9 +101,10 @@ export interface ThreadDirectoryProviderRecord {
 
 /**
  * The option a backend's session takes the host's operation-failure reporter
- * under. The provider context always names it `reportOperationFailure`; the
- * sessions do not agree, so a reporter passed under the other backend's name
- * is silently dropped. The audit is told the accepted names rather than
+ * under. The provider context names it `reportOperationFailure` and so do
+ * both sessions; a reporter passed under any other name is silently dropped,
+ * except a deprecated alias, which is rejected for being deprecated. The
+ * audit is told the accepted names rather than
  * assuming them: `capability-wiring.spec.ts` reads them from the session
  * option interfaces, so a rename in a library needs no edit here.
  */
@@ -110,14 +112,25 @@ export type ReporterOptionNames = Readonly<
   Record<CompatibleRuntimeAdapter, readonly string[]>
 >;
 
-/** The names in the libraries when this audit was written (2026-11-20). */
+/** The names in the libraries (2026-11-20): one name for both sessions. */
 export const defaultReporterOptionNames: ReporterOptionNames = {
-  langgraph: ['onOperationFailure'],
+  langgraph: ['reportOperationFailure'],
   'ag-ui': ['reportOperationFailure'],
+};
+
+/**
+ * Names a session still reads but marks `@deprecated`. A reporter passed
+ * under one is delivered, so it is not "dropped"; it is rejected so that no
+ * application depends on a name the library is removing.
+ */
+export const defaultDeprecatedReporterOptionNames: ReporterOptionNames = {
+  langgraph: ['onOperationFailure'],
+  'ag-ui': [],
 };
 
 export interface RuntimeWiringAuditOptions {
   readonly reporterOptionNames?: ReporterOptionNames;
+  readonly deprecatedReporterOptionNames?: ReporterOptionNames;
   /**
    * The option `createLangGraphThreadDirectory` takes the reporter under.
    * Empty while the directory declares none (2026-11-20): its refused
@@ -1532,9 +1545,15 @@ export function inspectRuntimeTargetSource(
   // Every name any backend takes the reporter under, plus the context's own.
   const directoryReporterOptionNames =
     options.directoryReporterOptionNames ?? [];
+  const deprecatedReporterOptionNames =
+    options.deprecatedReporterOptionNames ??
+    (options.reporterOptionNames
+      ? { langgraph: [], 'ag-ui': [] }
+      : defaultDeprecatedReporterOptionNames);
   const reporterShapedNames = new Set([
     contextReporterKey,
     ...Object.values(reporterOptionNames).flat(),
+    ...Object.values(deprecatedReporterOptionNames).flat(),
     ...directoryReporterOptionNames,
   ]);
   const sourceFile = ts.createSourceFile(
@@ -2490,6 +2509,10 @@ export function inspectRuntimeTargetSource(
       }
     }
     const accepted = reporterOptionNames[adapter];
+    // A name declared both ways counts as current: the caller's lists win.
+    const deprecated = deprecatedReporterOptionNames[adapter].filter(
+      (name) => !accepted.includes(name)
+    );
     let reporterPassed = false;
     for (const [name, value] of options.values) {
       const key = contextKeyOf(shape, value);
@@ -2507,6 +2530,15 @@ export function inspectRuntimeTargetSource(
             `${name} must be the provider context's ${contextReporterKey}`
           );
         }
+      } else if (deprecated.includes(name)) {
+        // Delivered today, so the reporter counts as passed; the name does not.
+        reporterPassed = true;
+        report(
+          'operation-reporter-wiring',
+          `the operation reporter is passed as ${name}, a deprecated alias of the ${adapter} session; pass it as ${accepted.join(
+            ' or '
+          )}`
+        );
       } else if (
         reporterShapedNames.has(name) ||
         /OperationFailure$/.test(name) ||

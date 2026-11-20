@@ -51,6 +51,7 @@ export function createDemoSession(
     ...options,
     threadId: context.threadId,
     onThreadId: context.onThreadId,
+    reportOperationFailure: context.reportOperationFailure,
     // The relay to the development-install collector: a factory that picks
     // fields from the context reports nothing unless it passes this on.
     developmentRuntime: context.developmentRuntime,
