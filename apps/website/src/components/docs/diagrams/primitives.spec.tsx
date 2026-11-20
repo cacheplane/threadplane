@@ -69,14 +69,14 @@ describe('diagram kit primitives', () => {
   it('DiagramNode renders eyebrow, title, meta and tone', () => {
     const { container } = render(
       <svg>
-        <DiagramNode x={0} y={0} w={200} h={64} eyebrow="Adapter" title="@threadplane/ag-ui" meta="toAgent()" tone="accent" />
+        <DiagramNode x={0} y={0} w={200} h={64} eyebrow="Session" title="@threadplane/ag-ui" meta="createSession()" tone="accent" />
       </svg>
     );
     const g = container.querySelector('g.tp-diagram-node');
     expect(g?.getAttribute('data-tone')).toBe('accent');
-    expect(g?.querySelector('.tp-diagram-eyebrow')?.textContent).toBe('ADAPTER');
+    expect(g?.querySelector('.tp-diagram-eyebrow')?.textContent).toBe('SESSION');
     expect(g?.querySelector('.tp-diagram-title')?.textContent).toBe('@threadplane/ag-ui');
-    expect(g?.querySelector('.tp-diagram-meta')?.textContent).toBe('toAgent()');
+    expect(g?.querySelector('.tp-diagram-meta')?.textContent).toBe('createSession()');
   });
 
   it('DiagramNode centers a title-only node when align is middle', () => {

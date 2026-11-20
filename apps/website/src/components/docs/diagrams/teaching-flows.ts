@@ -7,7 +7,7 @@ export const toolViewFlow: NetworkDefinition = {
   caption:
     'Tool arguments and results cross the boundary as data. The frontend matches the tool name to a registered component; no UI spec comes from the server.',
   description:
-    'The server executes the tool and streams its arguments and result. The AG-UI adapter reduces those events into a tool call associated with its assistant message. In the browser, the views registry matches the tool name to a component. The render bridge supplies inputs from arguments and the parsed result. TOOL_CALL_END means the arguments ended, not that the result arrived; the view must check the data it needs before leaving its loading state. This is presentation of a server tool, not browser execution of a client tool.',
+    'The server executes the tool and streams its arguments and result. The AG-UI session reduces those events into a tool call associated with its assistant message. In the browser, the views registry matches the tool name to a component. The render bridge supplies inputs from arguments and the parsed result. TOOL_CALL_END means the arguments ended, not that the result arrived; the view must check the data it needs before leaving its loading state. This is presentation of a server tool, not browser execution of a client tool.',
   width: 580,
   height: 528,
   groups: [
@@ -28,7 +28,7 @@ export const toolViewFlow: NetworkDefinition = {
       x: 150,
       y: 240,
       width: 280,
-      title: 'AG-UI adapter',
+      title: 'AG-UI session',
       detail: 'Tool call, arguments and result',
       accent: true,
     },

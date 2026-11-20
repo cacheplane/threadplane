@@ -19,7 +19,7 @@ describe('AgUiArchitecturePipeline', () => {
     expect(container.querySelector('svg[role="img"]')?.getAttribute('aria-label')).toBeTruthy();
     const titles = Array.from(container.querySelectorAll('.tp-network-title')).map((t) => t.textContent);
     expect(titles).toContain('@threadplane/ag-ui');
-    expect(container.textContent).toContain('AbstractAgent');
+    expect(container.textContent).toContain('createSession()');
   });
 });
 

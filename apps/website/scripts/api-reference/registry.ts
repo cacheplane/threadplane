@@ -13,10 +13,11 @@ export interface SdkEntrypoint extends ApiEntrypoint {
 }
 const definitions: [string, ApiFramework, string, string?][] = [
   ['a2ui', 'shared', 'src/index.ts'],
-  ['ag-ui', 'angular', 'src/public-api.ts'],
+  ['ag-ui', 'shared', 'src/public-api.ts'],
   ['angular', 'angular', 'src/public-api.ts'],
   ['angular/chat', 'angular', 'chat/src/public-api.ts'],
   ['angular/markdown', 'angular', 'markdown/src/public-api.ts'],
+  ['angular/testing', 'angular', 'testing/src/public-api.ts'],
   ['chat', 'angular', 'src/public-api.ts'],
   ['chat/debug', 'angular', 'debug/public-api.ts'],
   ['chat/testing', 'angular', 'testing/public-api.ts'],
@@ -32,7 +33,7 @@ const definitions: [string, ApiFramework, string, string?][] = [
   ['core', 'shared', 'src/index.ts'],
   ['core/tools', 'shared', 'src/tools/index.ts'],
   ['core/testing', 'shared', 'src/testing/index.ts'],
-  ['langgraph', 'angular', 'src/public-api.ts'],
+  ['langgraph', 'shared', 'src/public-api.ts'],
   ['middleware/langgraph', 'backend', 'src/langgraph/index.ts'],
   ['react', 'react', 'src/index.ts'],
   ...['chat', 'markdown', 'render', 'debug', 'a2ui'].map(

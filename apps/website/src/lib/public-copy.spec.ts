@@ -276,18 +276,21 @@ describe('public copy', () => {
    * Without this, a future cleanup could satisfy the rules above by deleting
    * the API rows and leaving developers with an undocumented option.
    */
-  it('still documents the telemetry config field on every adapter', () => {
-    for (const [entrypoint, name] of [
-      ['ag-ui', 'AgentConfig'],
-      ['ag-ui', 'ToAgentOptions'],
-      ['langgraph', 'AgentConfig'],
-    ]) {
-      const symbol = readApiSymbol(entrypoint, name);
-      expect(symbol, `${entrypoint}/${name} must document the field`).not.toBeNull();
-      const fields = symbol!.declarations.flatMap(declaration => declaration.members);
-      const telemetry = fields.find(field => field.name === 'telemetry');
-      expect(telemetry, `${entrypoint}/${name} must document the field`).toBeDefined();
-      expect(telemetry!.excerptTokens.map(token => token.text).join('')).toBe('telemetry?: AgentRuntimeTelemetrySink | false;');
+  it('still documents the telemetry option of each session factory', () => {
+    // LangGraph: the option is a member of the exported options interface.
+    const options = readApiSymbol('langgraph', 'SessionOptions');
+    expect(options, 'langgraph/SessionOptions must document the field').not.toBeNull();
+    const telemetry = options!.declarations
+      .flatMap(declaration => declaration.members)
+      .find(field => field.name === 'telemetry');
+    expect(telemetry, 'langgraph/SessionOptions must document the field').toBeDefined();
+    expect(telemetry!.excerptTokens.map(token => token.text).join('')).toBe('readonly telemetry?: LangGraphTelemetrySink | false;');
+
+    // AG-UI: `SessionOptions` is an alias over an options type the package
+    // does not export, so the reference has no member row for the field. The
+    // sink it accepts is exported and must stay documented.
+    for (const name of ['SessionOptions', 'SessionTelemetrySink']) {
+      expect(readApiSymbol('ag-ui', name), `ag-ui/${name} must stay documented`).not.toBeNull();
     }
   });
 });

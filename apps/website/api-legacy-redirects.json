@@ -51,22 +51,22 @@
   },
   {
     "source": "/docs/langgraph/api/inject-agent",
-    "destination": "/docs/api/langgraph/injectAgent",
+    "destination": "/docs/api/angular/injectAgent",
     "permanent": true
   },
   {
     "source": "/api/markdown/langgraph/api/inject-agent",
-    "destination": "/api/markdown/api/langgraph/injectAgent",
+    "destination": "/api/markdown/api/angular/injectAgent",
     "permanent": true
   },
   {
     "source": "/docs/langgraph/api/provide-agent",
-    "destination": "/docs/api/langgraph/provideAgent",
+    "destination": "/docs/api/angular/provideAgent",
     "permanent": true
   },
   {
     "source": "/api/markdown/langgraph/api/provide-agent",
-    "destination": "/api/markdown/api/langgraph/provideAgent",
+    "destination": "/api/markdown/api/angular/provideAgent",
     "permanent": true
   },
   {
@@ -91,42 +91,42 @@
   },
   {
     "source": "/docs/langgraph/api/langgraph-threads-adapter",
-    "destination": "/docs/api/langgraph/LangGraphThreadsAdapter",
+    "destination": "/docs/api/langgraph/createLangGraphThreadDirectory",
     "permanent": true
   },
   {
     "source": "/api/markdown/langgraph/api/langgraph-threads-adapter",
-    "destination": "/api/markdown/api/langgraph/LangGraphThreadsAdapter",
+    "destination": "/api/markdown/api/langgraph/createLangGraphThreadDirectory",
     "permanent": true
   },
   {
     "source": "/docs/ag-ui/api/inject-agent",
-    "destination": "/docs/api/ag-ui/injectAgent",
+    "destination": "/docs/api/angular/injectAgent",
     "permanent": true
   },
   {
     "source": "/api/markdown/ag-ui/api/inject-agent",
-    "destination": "/api/markdown/api/ag-ui/injectAgent",
+    "destination": "/api/markdown/api/angular/injectAgent",
     "permanent": true
   },
   {
     "source": "/docs/ag-ui/api/provide-agent",
-    "destination": "/docs/api/ag-ui/provideAgent",
+    "destination": "/docs/api/angular/provideAgent",
     "permanent": true
   },
   {
     "source": "/api/markdown/ag-ui/api/provide-agent",
-    "destination": "/api/markdown/api/ag-ui/provideAgent",
+    "destination": "/api/markdown/api/angular/provideAgent",
     "permanent": true
   },
   {
     "source": "/docs/ag-ui/api/to-agent",
-    "destination": "/docs/api/ag-ui/toAgent",
+    "destination": "/docs/api/ag-ui/createSession",
     "permanent": true
   },
   {
     "source": "/api/markdown/ag-ui/api/to-agent",
-    "destination": "/api/markdown/api/ag-ui/toAgent",
+    "destination": "/api/markdown/api/ag-ui/createSession",
     "permanent": true
   },
   {

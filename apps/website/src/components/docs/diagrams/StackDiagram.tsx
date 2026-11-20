@@ -12,13 +12,14 @@ interface StackDiagramProps {
 }
 
 /**
- * The canonical Threadplane stack: chat UI on top, the Agent contract as a
- * labeled seam, the two runtime adapters, and their backends. `highlight`
- * accents the node(s) a given page is about; `contract` accents both adapters.
+ * The canonical Threadplane stack: chat UI on top, the injected Agent as a
+ * labeled seam, the two packages that create its session, and their backends.
+ * `highlight` accents the node(s) a given page is about; `contract` accents
+ * both session packages.
  */
 export function StackDiagram({ highlight = 'none', caption, scale = 'docs' }: StackDiagramProps) {
   const slug = `stack-${highlight}`;
-  const adapters = highlight === 'contract';
+  const sessions = highlight === 'contract';
   const backends = highlight === 'runtimes';
   return (
     <DiagramFrame
@@ -27,9 +28,9 @@ export function StackDiagram({ highlight = 'none', caption, scale = 'docs' }: St
       viewWidth={640}
       viewHeight={344}
       scale={scale}
-      label="Threadplane stack: the chat UI consumes the Agent contract; the LangGraph and AG-UI adapters implement it against their backends."
+      label="Threadplane stack: the chat UI reads the injected Agent; the LangGraph and AG-UI packages create the session behind it against their backends."
       caption={caption}
-      description="Read from top to bottom. The Angular chat composition and its message-list and input primitives consume one Agent contract: signals plus events$. Two adapters implement that contract. @threadplane/langgraph connects to LangGraph Platform. @threadplane/ag-ui connects to AG-UI backends such as CrewAI, Mastra, Microsoft Agent Framework and AWS Strands. Changing the adapter does not require replacing the chat components."
+      description="Read from top to bottom. The Angular chat composition and its message-list and input primitives read one Agent from @threadplane/angular: the snapshot fields of an AgentSession as signals, plus the session's commands. The session contract is defined in @threadplane/core, and two packages create a session that meets it. createSession() from @threadplane/langgraph connects to LangGraph Platform. createSession() from @threadplane/ag-ui connects to AG-UI backends such as CrewAI, Mastra, Microsoft Agent Framework and AWS Strands. Changing the session package does not require replacing the chat components."
     >
       <DiagramNode
         x={190}
@@ -42,7 +43,7 @@ export function StackDiagram({ highlight = 'none', caption, scale = 'docs' }: St
         tone={highlight === 'chat' ? 'accent' : 'neutral'}
       />
       <DiagramEdge d="M320 82 V120" slug={slug} arrow />
-      <DiagramPill cx={320} cy={136} w={230} label="Agent contract · signals + events$" />
+      <DiagramPill cx={320} cy={136} w={250} label="Agent · signals over an AgentSession" />
       <DiagramEdge d="M320 148 V178 H180 V200" slug={slug} arrow />
       <DiagramEdge d="M320 178 H460 V200" slug={slug} arrow />
       <DiagramNode
@@ -50,18 +51,18 @@ export function StackDiagram({ highlight = 'none', caption, scale = 'docs' }: St
         y={204}
         w={240}
         h={52}
-        eyebrow="Adapter"
+        eyebrow="Session"
         title="@threadplane/langgraph"
-        tone={highlight === 'langgraph' || adapters ? 'accent' : 'neutral'}
+        tone={highlight === 'langgraph' || sessions ? 'accent' : 'neutral'}
       />
       <DiagramNode
         x={340}
         y={204}
         w={240}
         h={52}
-        eyebrow="Adapter"
+        eyebrow="Session"
         title="@threadplane/ag-ui"
-        tone={highlight === 'ag-ui' || adapters ? 'accent' : 'neutral'}
+        tone={highlight === 'ag-ui' || sessions ? 'accent' : 'neutral'}
       />
       <DiagramEdge d="M180 256 V280" slug={slug} arrow />
       <DiagramEdge d="M460 256 V280" slug={slug} arrow />

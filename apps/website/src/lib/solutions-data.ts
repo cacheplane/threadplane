@@ -142,21 +142,21 @@ export const SOLUTIONS: SolutionConfig[] = [
         source: `export class AuditTrailComponent {
   private readonly agent = injectAgent(REVIEW_AGENT);
 
-  // Runtime-neutral timeline: every checkpoint the thread passed through.
-  readonly checkpoints = computed(() => this.agent.history());
-
-  // Raw LangGraph ThreadState[], for the fields an auditor asks about.
-  private readonly raw = computed(() => this.agent.langGraphHistory());
+  // Every checkpoint the thread passed through, each with the graph state
+  // saved at it. The session publishes them when it is created with
+  // historyState: true.
+  readonly checkpoints = computed(() => this.agent.checkpoints() ?? []);
 
   // The decisions themselves, lifted out of the checkpoint values. Each row
-  // pairs what was proposed with what a human answered, and when.
+  // pairs what was proposed with what a human answered.
   readonly approvals = computed(() =>
-    this.raw()
-      .filter((state) => state.values?.['approval_result'])
-      .map((state) => ({
-        at: state.created_at,
-        action: state.values['proposed_action'],
-        decision: state.values['approval_result'],
+    this.checkpoints()
+      .filter((checkpoint) => checkpoint.values['approval_result'])
+      .map((checkpoint) => ({
+        id: checkpoint.id,
+        step: checkpoint.label,
+        action: checkpoint.values['proposed_action'],
+        decision: checkpoint.values['approval_result'],
       })),
   );
 }`,
@@ -165,9 +165,9 @@ export const SOLUTIONS: SolutionConfig[] = [
         label: 'audit-trail.component.html',
         language: 'html',
         source: `<table class="audit">
-  @for (row of approvals(); track row.at) {
+  @for (row of approvals(); track row.id) {
     <tr>
-      <td>{{ row.at | date: 'medium' }}</td>
+      <td>{{ row.step }}</td>
       <td>{{ row.action.description }}</td>
       <td>{{ row.decision.approved ? 'Approved' : 'Rejected' }}</td>
       <td>{{ row.decision.reason }}</td>
@@ -231,7 +231,7 @@ export const SOLUTIONS: SolutionConfig[] = [
         label: 'dashboard.component.ts — the view catalog',
         language: 'typescript',
         source: `import { ChatComponent, views } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 
 // Your components, keyed by the name the agent uses in its spec.
 // Nothing here knows what question the user will ask.
@@ -309,22 +309,30 @@ export class DashboardComponent {
         source: `export class SupportChatComponent {
   protected readonly agent = injectAgent(SUPPORT_AGENT);
 
-  // Populated only while the graph is paused on an interrupt.
-  readonly pendingRefund = computed(() => this.agent.interrupt());
-  readonly awaitingHuman = computed(() => this.pendingRefund() !== null);
+  // Set only while the graph is paused on an interrupt.
+  readonly pendingRefund = computed(() => this.agent.interrupts()?.[0]);
+  readonly awaitingHuman = computed(() => this.pendingRefund() !== undefined);
 
   // Resuming carries the approver, so the record shows who authorized it —
   // the agent has no path to approve its own refund.
   approveRefund(approver: string) {
-    this.agent.submit({ resume: { approved: true, approver } });
+    this.answer({ approved: true, approver });
   }
 
   denyRefund(reason: string) {
-    this.agent.submit({ resume: { approved: false, reason } });
+    this.answer({ approved: false, reason });
   }
 
   send(message: string) {
-    this.agent.submit({ message });
+    void this.agent.submit(message);
+  }
+
+  private answer(value: Record<string, unknown>) {
+    const pending = this.pendingRefund();
+    if (!pending) return;
+    void this.agent.resume([
+      { interruptId: pending.id, status: 'resolved', value },
+    ]);
   }
 }`,
       },

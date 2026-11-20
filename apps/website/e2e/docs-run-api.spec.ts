@@ -46,7 +46,7 @@ for (const width of [375, 1440]) {
       page
         .locator('.api-reference-page')
         .getByRole('link', { name: 'injectAgent', exact: true })
-    ).toHaveAttribute('href', '/docs/api/ag-ui/injectAgent');
+    ).toHaveAttribute('href', '/docs/api/angular/injectAgent');
     await page.reload();
     await expect(shell).toHaveAttribute('data-workspace-mode', 'API');
     expect(
@@ -84,7 +84,7 @@ test('matching example retains its iframe while API replaces the demo-derived re
 test('generated API links start in API mode and explicit Docs survives reload and history', async ({
   page,
 }) => {
-  await page.goto('/docs/api/ag-ui/injectAgent');
+  await page.goto('/docs/api/angular/injectAgent');
   const shell = page.locator('[data-workspace-shell]');
   await expect(shell).toHaveAttribute('data-workspace-mode', 'API');
   await expect(page.locator('.api-reference-page h1')).toHaveText(
@@ -95,7 +95,7 @@ test('generated API links start in API mode and explicit Docs survives reload an
   await page.reload();
   await expect(shell).toHaveAttribute('data-workspace-mode', 'Docs');
   await page.locator('[data-workspace-toolbar-mode="API"]').click();
-  await expect(page).toHaveURL(/\/docs\/api\/ag-ui\/injectAgent$/);
+  await expect(page).toHaveURL(/\/docs\/api\/angular\/injectAgent$/);
   await page.goBack();
   await expect(shell).toHaveAttribute('data-workspace-mode', 'Docs');
   await page.goForward();
@@ -109,7 +109,7 @@ test('generated API links start in API mode and explicit Docs survives reload an
 test('generated member fragments survive a direct load in API mode', async ({
   page,
 }) => {
-  await page.goto('/docs/api/ag-ui/AgUiAgent');
+  await page.goto('/docs/api/ag-ui/Session');
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
     'data-workspace-mode',
     'API'
@@ -117,7 +117,7 @@ test('generated member fragments survive a direct load in API mode', async ({
   const member = page.locator('.api-reference-declaration[id]').last();
   const id = await member.getAttribute('id');
   expect(id).toBeTruthy();
-  await page.goto(`/docs/api/ag-ui/AgUiAgent#${id}`);
+  await page.goto(`/docs/api/ag-ui/Session#${id}`);
   await page.reload();
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
     'data-hydrated',
@@ -155,7 +155,7 @@ test('standalone directory starts in Run and links to runnable examples', async 
 });
 
 for (const [route, framework] of [
-  ['/docs/api/ag-ui/injectAgent', 'angular'],
+  ['/docs/api/angular/injectAgent', 'angular'],
   ['/docs/api/react/useAgent', 'react'],
 ] as const) {
   test(`Run from ${framework} API keeps its framework filter`, async ({

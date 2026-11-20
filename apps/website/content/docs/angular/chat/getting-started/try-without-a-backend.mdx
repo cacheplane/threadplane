@@ -15,10 +15,10 @@ An Angular 20–22 application. Nothing else.
 <Step title="Install">
 
 ```bash
-npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
 ```
 
-`provideFakeAgent()` ships in the `@threadplane/angular/testing` entry and runs on the in-memory session from `@threadplane/core/testing`. Both packages are peers of `@threadplane/chat`, so npm 7 and later install them with it; add `@threadplane/angular @threadplane/core` to the command if your package manager does not install peers. The fake needs no backend package: `@threadplane/langgraph` and its LangChain peers are here so the last step can swap in a real session, and you can install the backend you expect to use instead. `marked` renders assistant markdown.
+`provideFakeAgent()` ships in the `@threadplane/angular/testing` entry and runs on the in-memory session from `@threadplane/core/testing`. Both packages are also peers of `@threadplane/chat`; the command names them because your application imports from them directly. The fake needs no backend package: `@threadplane/langgraph` and its LangChain peers are here so the last step can swap in a real session, and you can install the backend you expect to use instead. `marked` renders assistant markdown.
 
 <Callout type="tip" title="Bundle budget">
 A default Angular application caps the initial bundle at 1 MB. If `ng build` reports a budget error after you add the chat UI and a backend package, raise `budgets[].maximumError` for the `initial` bundle in `angular.json`.

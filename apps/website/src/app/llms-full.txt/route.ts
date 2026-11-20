@@ -43,8 +43,10 @@ export async function GET() {
       '',
       'injectAgent() MUST be called inside an Angular injection context.',
       'Do not call it in ngOnInit — use constructor or field initializer.',
-      'Do not mock injectAgent() in tests — use MockAgentTransport via provideAgent({ transport: new MockAgentTransport(...) }).',
-      'RxJS is an internal implementation detail — do not import rxjs in consumer code.',
+      'provideAgent() and injectAgent() come from @threadplane/angular. @threadplane/langgraph and @threadplane/ag-ui export createSession() and no Angular code.',
+      'Do not mock injectAgent() in tests — use provideFakeAgent() from @threadplane/angular/testing, or pass a MockAgentTransport to createSession({ transport }) inside provideAgent({ createSession }).',
+      'The agent has no isLoading(), interrupt() or events$: read status() === "running", interrupts() and onCustomEvent(listener).',
+      'Consumer code reads signals and awaits commands; it does not need to import rxjs.',
     ].join('\n'),
   ];
 

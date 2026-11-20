@@ -1,12 +1,21 @@
 import { HighlightedCode } from '../HighlightedCode';
 
-const SNIPPET_1 = `import { injectAgent, provideAgent } from '@threadplane/langgraph';
+const SNIPPET_1 = `import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 import { ChatComponent, a2uiBasicCatalog } from '@threadplane/chat';
 
 @Component({
   imports: [ChatComponent],
   providers: [
-    provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'chat_agent' }),
+    provideAgent({
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'http://localhost:2024',
+          assistantId: 'chat_agent',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
+    }),
   ],
   template: \`
     <chat
