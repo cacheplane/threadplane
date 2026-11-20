@@ -331,6 +331,7 @@ const plainExtras = [
   'messageCheckpoints',
   'branchTree',
   'branch',
+  'queue',
 ] as const satisfies readonly (keyof LangGraphSnapshot)[];
 
 /** One backend aggregate, composing the core fields and owned application data. */

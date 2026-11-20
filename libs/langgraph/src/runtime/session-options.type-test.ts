@@ -53,3 +53,42 @@ export async function assertHistoryState() {
   snapshot.checkpoints?.push(snapshot.checkpoints[0]);
   void [id, parent, checkpoint, branch];
 }
+
+export async function assertRunSettings() {
+  const session = createSession({ assistantId: 'agent', threadId: 'thread' });
+  await session.submit('Go', {
+    run: {
+      command: { update: { topic: 'x' }, goto: 'agent' },
+      checkpointId: 'c1',
+      multitaskStrategy: 'enqueue',
+      interruptBefore: ['review'],
+      interruptAfter: '*',
+      streamMode: ['debug'],
+      streamSubgraphs: true,
+      durability: 'sync',
+      onDisconnect: 'cancel',
+      webhook: 'https://example.test',
+      afterSeconds: 1,
+      ifNotExists: 'create',
+      feedbackKeys: ['quality'],
+      onRunCreated: (run) => void run.run_id,
+    },
+  });
+  await session.submit(null);
+  await session.submit(undefined, { run: { command: { goto: 'agent' } } });
+  await session.resume([{ interruptId: 'i', status: 'resolved', value: 1 }], {
+    run: { command: { update: { approved: true } } },
+  });
+  const cancelled: boolean = await session.cancelQueued('run');
+  await session.clearQueue();
+  const message: string | undefined = session.getSnapshot().queue?.[0].message;
+  void [cancelled, message];
+  // @ts-expect-error The session supplies the answer to a pause.
+  await session.submit('Go', { run: { command: { resume: true } } });
+  // @ts-expect-error Settings are stated under run, never at the root.
+  await session.submit('Go', { multitaskStrategy: 'enqueue' });
+  // @ts-expect-error An unknown strategy is rejected.
+  await session.submit('Go', { run: { multitaskStrategy: 'later' } });
+  // @ts-expect-error A fork always carries a message.
+  await session.fork({ thread_id: 't', checkpoint_ns: '', checkpoint_id: 'c' }, null);
+}

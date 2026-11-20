@@ -74,6 +74,16 @@ export interface LangGraphSubgraph {
   readonly delegation?: LangGraphDelegation;
 }
 
+/** A run the session created with `multitaskStrategy: 'enqueue'` and has not joined yet. */
+export interface LangGraphQueuedRun {
+  /** The backend's run id; `cancelQueued` takes it. */
+  readonly id: string;
+  /** The message the run was submitted with; absent for a run without one. */
+  readonly message?: string;
+  /** When the session queued it, in epoch milliseconds on this clock. */
+  readonly createdAt: number;
+}
+
 /** What a publication supplies: the session derives `subagents` from `subgraphs`. */
 export type LangGraphPublication = Omit<LangGraphSnapshot, 'subagents'>;
 
@@ -117,4 +127,6 @@ export type LangGraphSnapshot<
   readonly branchTree?: LangGraphBranchTree;
   /** The branch `setBranch` last selected; absent for the default branch. */
   readonly branch?: string;
+  /** Queued runs waiting for the active one, oldest first; absent when none wait. */
+  readonly queue?: readonly LangGraphQueuedRun[];
 };

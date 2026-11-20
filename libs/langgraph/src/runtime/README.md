@@ -227,6 +227,71 @@ transcript does not change. `selectBranch(tree, branch)` returns that branch's
 checkpoints, oldest first, following the newest continuation at any fork the
 branch does not name.
 
+## Run settings
+
+`submit`, `resume`, `fork` and `regenerate` take the LangGraph settings of the
+run they create under `options.run`, beside `config`, `context`, `metadata`
+and `signal`. They are grouped so that a caller states them on purpose: a
+`command` or `streamMode` at the root of the options is never read.
+
+- `command: { update, goto }` sends a graph command with the run. On `resume`
+  the session adds the answer, so one command both answers the pause and
+  updates the state. `command.resume` is rejected: the answer is `resume`'s
+  argument.
+- `multitaskStrategy`, `interruptBefore`, `interruptAfter`, `streamSubgraphs`,
+  `durability`, `checkpointDuring`, `onCompletion`, `onDisconnect`, `webhook`,
+  `afterSeconds`, `ifNotExists` and `feedbackKeys` are passed to the request.
+- `streamMode` adds modes. The modes the session needs are always kept.
+- `onRunCreated` is called with each run the command creates, after the
+  session has recorded it. A throwing callback is ignored.
+- `checkpointId`, or `checkpoint`, starts the run from a saved checkpoint: see
+  below.
+
+Every setting is captured and owned before the request, a setting that is not
+plain data rejects before anything is sent, and nothing carries over to the
+next command. `command`, `checkpoint` and `checkpointId` apply to the first run
+of a command only, not to the runs that hand tool results back.
+
+### A run with no input
+
+`submit(null)`, or `submit(undefined)`, starts a run with no input: the graph
+continues from the thread's saved state and no user message is added. Use it
+with `run.command` to route or update the graph, or after an external state
+update. It is recovered, retried and reconnected like a resume, but it answers
+nothing and does not mark `interruptResolvedAt`.
+
+### A run from a checkpoint
+
+`run.checkpointId` starts the run from that checkpoint; the thread gains a
+branch there. When the session has the checkpoint's state (`historyState: true`
+and the checkpoint is in the loaded page), the transcript is first set back to
+what the checkpoint held, so the new turn follows it. Otherwise the session
+loads history once the run has ended, and the saved branch replaces the
+transcript then. A session that is already on a `fork` branch rejects the
+setting. `fork` remains the guarded form: it verifies a completed checkpoint
+and confirms the position each run saved.
+
+### Queued runs
+
+`submit(input, { run: { multitaskStrategy: 'enqueue' } })` during a run does
+not replace it. The session creates the run on the backend with
+`transport.createQueuedRun`, lists it in `snapshot.queue` (`id`, `message`,
+`createdAt`; the field is absent when nothing waits) and returns a promise that
+resolves with that run's outcome. When the active run ends, the oldest queued
+run is joined from its first event with `transport.joinStream`; its user
+message enters the transcript at that point. Queued runs are not joined after
+an outcome that offers a check or a retry, so that recovery is not replaced;
+they are joined after the next run that ends cleanly.
+
+`cancelQueued(runId)` removes one run and `clearQueue()` removes all, each
+asking the backend to cancel through `transport.cancelRun`; the removed
+submissions resolve `'aborted'`. `stop()` does the same for the whole queue.
+`dispose()` resolves them `'aborted'` without cancelling anything. Queueing
+needs an existing thread and both transport methods, and rejects otherwise; a
+failed queue request rejects with a safe error and leaves the active run
+alone. With nothing running, an `enqueue` submission starts at once and passes
+the strategy to the backend.
+
 ## Interruptions and recovery
 
 A stream that closes without this runtime's own terminal evidence settles as

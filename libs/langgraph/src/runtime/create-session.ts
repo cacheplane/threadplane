@@ -94,7 +94,10 @@ import {
   type CapturedRunOptions,
   type LangGraphRunOptions,
 } from './run-options.js';
-export type { LangGraphRunOptions } from './run-options.js';
+export type {
+  LangGraphRunOptions,
+  LangGraphRunSettings,
+} from './run-options.js';
 export {
   createLangGraphThreadDirectory,
   type LangGraphThreadDirectoryOptions,
@@ -112,6 +115,7 @@ import {
   rebaseRun,
   type RunEvidence,
 } from './run-recovery.js';
+import type { LangGraphSubmitOptions } from './transport.types.js';
 import { createSafeRequestError } from './operation-errors.js';
 import { createToolPersistence } from './tool-persistence.js';
 import { hasInvocationConflict } from './tool-invocations.js';
@@ -217,10 +221,24 @@ export type LangGraphSession<
   /** The session's thread: the given `threadId`, or the thread it created on
    * the first submit. Undefined until that thread exists. */
   readonly threadId: string | undefined;
+  /**
+   * Starts a run. With `null` or `undefined` the run has no input: the graph
+   * continues from the thread's saved state, and no user message is added.
+   * With `run.multitaskStrategy: 'enqueue'` during a run, the run is queued
+   * instead and the promise resolves with its outcome once it has been joined.
+   */
   submit(
-    input: LangGraphSubmitInput<TState>,
+    input: LangGraphSubmitInput<TState> | null | undefined,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
+  /**
+   * Removes one queued run and asks the backend to cancel it. Resolves `true`
+   * when the backend confirmed; `false` when the run is not queued, the
+   * transport cannot cancel, or the request failed.
+   */
+  cancelQueued(runId: string): Promise<boolean>;
+  /** Removes every queued run and asks the backend to cancel each. */
+  clearQueue(): Promise<void>;
   fork(
     checkpoint: CheckpointReference,
     input: LangGraphSubmitInput<TState>,
@@ -279,7 +297,19 @@ type AttemptInput =
       readonly value: PlainValue | undefined;
       /** The pending interrupts this decision answers, for history reconciliation. */
       readonly interrupts: readonly LangGraphWireInterrupt[];
+      /** A run with no input at all, from `submit(null)`: nothing is answered. */
+      readonly bare?: boolean;
     };
+
+interface QueuedRun {
+  readonly id: string;
+  readonly message?: string;
+  readonly createdAt: number;
+  readonly input: AttemptInput;
+  readonly runOptions: CapturedRunOptions | undefined;
+  readonly result: Promise<CompleteOutcome>;
+  readonly resolve: (outcome: CompleteOutcome) => void;
+}
 
 interface PhysicalRun {
   readonly batch: ReturnType<ReturnType<typeof createToolBuffer>['snapshot']>;
@@ -310,6 +340,10 @@ interface Attempt {
   groups: number;
   physical?: PhysicalRun;
   joinCursor?: string;
+  /** Join the known run from its first event, with no cursor. */
+  joinStart?: boolean;
+  /** The run started from a checkpoint the session could not rewind to. */
+  travel?: boolean;
   handoffIds: readonly string[];
   iterator?: AsyncIterator<StreamEvent>;
   unlink?: () => void;
@@ -512,6 +546,9 @@ export function createSession(
       : undefined;
   const canCheck = !!getHistory;
   const joinStream = transport.joinStream?.bind(transport);
+  const createQueuedRun = transport.createQueuedRun?.bind(transport);
+  const cancelRun = transport.cancelRun?.bind(transport);
+  const queue: QueuedRun[] = [];
   const getRunStatus = transport.getRunStatus?.bind(transport);
   type RunStatus = Awaited<ReturnType<NonNullable<typeof getRunStatus>>>;
   const getState = transport.getState?.bind(transport);
@@ -774,6 +811,15 @@ export function createSession(
       history: historyPage,
       ...checkpointPage,
       ...(branchName ? { branch: branchName } : {}),
+      ...(queue.length
+        ? {
+            queue: queue.map(({ id, message, createdAt }) => ({
+              id,
+              ...(message !== undefined ? { message } : {}),
+              createdAt,
+            })),
+          }
+        : {}),
       state: reading.state,
       ...(reading.issues ? { stateIssues: reading.issues } : {}),
       ...(plan ? { plan } : {}),
@@ -887,6 +933,12 @@ export function createSession(
     publish(error ? 'error' : 'idle', error);
     if (historyState && !error && (outcome === 'success' || outcome === 'paused'))
       void refreshHistoryPage();
+    // A run from a checkpoint the session could not rewind to leaves the saved
+    // branch as the only account of the transcript.
+    if (attempt.travel && !error && getHistory)
+      void load().catch(() => undefined);
+    else if (queue.length && (!error || (error.recovery ?? 'none') === 'none'))
+      drainQueue();
     // An error can end local consumption before the HTTP body closes. SDK
     // iterator return releases its reader; abort also cancels our request.
     close(
@@ -1067,6 +1119,7 @@ export function createSession(
   }
   function stopExecution() {
     cancelPageRefresh();
+    const dropped = queue.splice(0);
     const preparation = detachPreparation();
     const hadRetained = !!retained;
     const previousRetained = retained;
@@ -1090,10 +1143,103 @@ export function createSession(
       attempt.branch.state = uncertainCheckpoint(attempt.branch.state);
     retained = retainBranch ?? (branch ? previousRetained : undefined);
     if (attempt || hadRetained) publish('idle');
+    else if (dropped.length) republish();
+    for (const entry of dropped) entry.resolve('aborted');
+    if (dropped.length) void cancelRuns(dropped);
     checking?.abort();
     if (attempt) close(attempt, true);
     closeLoad(reading);
     closePreparation(preparation);
+  }
+
+  /** Asks the backend to cancel runs the session no longer waits for. */
+  async function cancelRuns(entries: readonly QueuedRun[]): Promise<boolean> {
+    if (!cancelRun || threadId === undefined) return false;
+    const id = threadId;
+    const results = await Promise.all(
+      entries.map(async (entry) => {
+        try {
+          await cancelRun(id, entry.id, new AbortController().signal);
+          return true;
+        } catch {
+          return false;
+        }
+      })
+    );
+    return results.every(Boolean);
+  }
+
+  /** The run-creation settings for one physical run of an attempt. The
+   * session's own needs come first; a caller's settings add to them. */
+  function requestOptions(
+    attempt: Pick<Attempt, 'runOptions' | 'input'>,
+    choices: {
+      readonly from?: OwnedCheckpointPosition;
+      readonly capture?: (run: { run_id: string; thread_id?: string }) => void;
+      readonly resuming?: boolean;
+      readonly first: boolean;
+      readonly notify?: () => boolean;
+    }
+  ): LangGraphSubmitOptions | undefined {
+    const { from, capture, first } = choices;
+    const answer =
+      choices.resuming &&
+      attempt.input.kind === 'resume' &&
+      attempt.input.value !== undefined
+        ? { resume: attempt.input.value }
+        : undefined;
+    if (suppliedTransport && !attempt.runOptions && !capture && !answer)
+      return undefined;
+    const { run: settings, ...base } = attempt.runOptions ?? {};
+    const {
+      command,
+      checkpoint,
+      checkpointId,
+      streamMode,
+      onRunCreated,
+      ...passed
+    } = settings ?? {};
+    const required = !suppliedTransport || from;
+    const modes =
+      required || streamMode
+        ? [
+            ...new Set([
+              ...(required ? checkpointStreamModes : []),
+              ...(streamMode ?? []),
+            ]),
+          ]
+        : undefined;
+    const sent =
+      first && (command || answer) ? { ...command, ...answer } : undefined;
+    const created =
+      capture || onRunCreated
+        ? (run: { run_id: string; thread_id?: string }) => {
+            capture?.(run);
+            if (!onRunCreated || choices.notify?.() === false) return;
+            try {
+              onRunCreated(run);
+            } catch {
+              /* Application callbacks cannot affect the run. */
+            }
+          }
+        : undefined;
+    return {
+      ...base,
+      ...(capture
+        ? { streamResumable: true, onDisconnect: 'continue' as const }
+        : {}),
+      ...passed,
+      ...(from
+        ? { checkpoint: from }
+        : first && checkpoint !== undefined
+        ? { checkpoint }
+        : first && checkpointId !== undefined
+        ? { checkpointId }
+        : {}),
+      ...(modes ? { streamMode: modes } : {}),
+      ...(created ? { onRunCreated: created } : {}),
+      ...(sent ? { command: sent } : {}),
+    };
   }
 
   function reconcile(attempt: Attempt, history: ThreadState[]) {
@@ -1246,7 +1392,8 @@ export function createSession(
       let input = attempt.input.kind === 'submit' ? attempt.input.messages : [];
       while (owns(attempt)) {
         assertInvocationIdentity();
-        const joining = attempt.joinCursor;
+        const joinCursor = attempt.joinCursor;
+        const joining = joinCursor !== undefined || attempt.joinStart === true;
         const run: PhysicalRun =
           joining && attempt.physical
             ? attempt.physical
@@ -1303,7 +1450,7 @@ export function createSession(
             ? joinStream(
                 thread(),
                 run.evidence.runId,
-                joining,
+                joinCursor,
                 attempt.controller.signal,
                 ...(!suppliedTransport || attempt.branch
                   ? [{ streamMode: [...checkpointStreamModes] }]
@@ -1314,32 +1461,13 @@ export function createSession(
                 thread(),
                 payload,
                 attempt.controller.signal,
-                !suppliedTransport ||
-                  attempt.runOptions ||
-                  canReconnect ||
-                  (resuming &&
-                    attempt.input.kind === 'resume' &&
-                    attempt.input.value !== undefined)
-                  ? {
-                      ...attempt.runOptions,
-                      ...(from ? { checkpoint: from } : {}),
-                      ...(!suppliedTransport || from
-                        ? { streamMode: [...checkpointStreamModes] }
-                        : {}),
-                      ...(canReconnect
-                        ? {
-                            streamResumable: true,
-                            onDisconnect: 'continue' as const,
-                            onRunCreated: capture,
-                          }
-                        : {}),
-                      ...(resuming &&
-                      attempt.input.kind === 'resume' &&
-                      attempt.input.value !== undefined
-                        ? { command: { resume: attempt.input.value } }
-                        : {}),
-                    }
-                  : undefined
+                requestOptions(attempt, {
+                  from,
+                  ...(canReconnect ? { capture } : {}),
+                  resuming,
+                  first: groups === 0,
+                  notify: () => owns(attempt),
+                })
               );
         attempt.iterator = events[Symbol.asyncIterator]();
         if (!owns(attempt)) {
@@ -1375,7 +1503,7 @@ export function createSession(
           const checkpoint = attempt.branch
             ? captureCheckpointEvent(event, thread())
             : undefined;
-          const cursor = advanceCursor(previousEvidence, event, joining);
+          const cursor = advanceCursor(previousEvidence, event, joinCursor);
           if (!owns(attempt)) return;
           if (cursor.replay) {
             run.evidence = cursor.evidence;
@@ -1607,6 +1735,7 @@ export function createSession(
             groups += 1;
             attempt.groups = groups;
             attempt.joinCursor = undefined;
+            attempt.joinStart = false;
             attempt.physical = undefined;
             subgraphs = initialSubgraphs(subgraphs.subgraphs);
             attempt.subgraphs = subgraphs;
@@ -1813,7 +1942,8 @@ export function createSession(
       if (external.aborted) abort();
     }
     if (owns(created)) {
-      if (input.kind === 'resume') lifecycle.mark('interruptResolvedAt');
+      if (input.kind === 'resume' && !input.bare)
+        lifecycle.mark('interruptResolvedAt');
       publish('running');
     }
     checking?.abort();
@@ -1982,10 +2112,11 @@ export function createSession(
   }
 
   function submit(
-    input: LangGraphSubmitInput,
+    input: LangGraphSubmitInput | null | undefined,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
+    let queued: Parameters<typeof enqueueRun>[0] | undefined;
     const beginning = publication.command(() => {
       if (disposed) return;
       admitSubmission();
@@ -2000,7 +2131,10 @@ export function createSession(
         capturedLoad !== loading
       )
         return;
-      const captured = captureSubmitInput(input);
+      const captured =
+        input === null || input === undefined
+          ? undefined
+          : captureSubmitInput(input);
       if (
         disposed ||
         external?.aborted ||
@@ -2017,23 +2151,194 @@ export function createSession(
       )
         return;
       admitSubmission();
-      attempt = beginAttempt(
-        {
-          kind: 'submit',
-          state: captured.state,
-          messages: [
-            {
-              type: 'human',
-              id: crypto.randomUUID(),
-              content: captured.message,
-            },
-          ],
-        },
-        external,
-        runOptions
-      );
+      const settings = runOptions?.run;
+      const from = settings?.checkpointId ?? settings?.checkpoint?.checkpoint_id;
+      if (from !== undefined && branch)
+        throw new Error(
+          'A checkpoint branch starts its runs from its own checkpoint.'
+        );
+      const attemptInput: AttemptInput = captured
+        ? {
+            kind: 'submit',
+            state: captured.state,
+            messages: [
+              {
+                type: 'human',
+                id: crypto.randomUUID(),
+                content: captured.message,
+              },
+            ],
+          }
+        : { kind: 'resume', value: undefined, interrupts, bare: true };
+      if (settings?.multitaskStrategy === 'enqueue' && owner) {
+        if (threadId === undefined)
+          throw new Error('A run cannot be queued before its thread exists.');
+        if (!createQueuedRun || !joinStream)
+          throw new Error(
+            'Queueing requires transport.createQueuedRun() and transport.joinStream().'
+          );
+        queued = { input: attemptInput, runOptions, external };
+        return;
+      }
+      // The local transcript goes back to the checkpoint when its state is
+      // known, so the run's stream continues from what the checkpoint held.
+      const source =
+        from === undefined
+          ? undefined
+          : checkpointPage?.checkpoints.find(
+              (checkpoint) => checkpoint.id === from
+            );
+      if (source) {
+        const saved = [source.saved as unknown as ThreadState];
+        const projected = projectHistory(state, saved, {
+          interrupts: [],
+          ...(typedTools
+            ? { registeredTools: new Set(definitions.keys()) }
+            : {}),
+        });
+        if (hasInvocationConflict(projected.invocations))
+          throw new Error(invocationConflictError().message);
+        state = projected;
+        values = projectHistoryValues(values, saved);
+        authoredTools.clear();
+      }
+      attempt = beginAttempt(attemptInput, external, runOptions);
+      if (from !== undefined && !source) attempt.travel = true;
     });
-    return dispatch(beginning, () => attempt);
+    return beginning.then(() => {
+      if (queued) return enqueueRun(queued);
+      if (!attempt) return 'aborted';
+      void execute(attempt);
+      return attempt.result;
+    });
+  }
+
+  /** Creates a queued run on the backend and waits for its turn. */
+  async function enqueueRun(request: {
+    readonly input: AttemptInput;
+    readonly runOptions: CapturedRunOptions | undefined;
+    readonly external: AbortSignal | undefined;
+  }): Promise<CompleteOutcome> {
+    const create = createQueuedRun;
+    if (!create || threadId === undefined) throw createSafeRequestError();
+    const { input } = request;
+    let run: RunEvidence;
+    let created: { run_id: string; thread_id?: string };
+    try {
+      const entry = await create(
+        assistantId,
+        threadId,
+        input.kind === 'submit'
+          ? createSubmitPayload(input.messages, catalog, input.state)
+          : null,
+        request.external ?? new AbortController().signal,
+        {
+          ...requestOptions(request, {
+            first: true,
+            // The queue calls back once the run is recorded.
+            notify: () => false,
+          }),
+          ...(canReconnect
+            ? { streamResumable: true, onDisconnect: 'continue' as const }
+            : {}),
+          multitaskStrategy: 'enqueue',
+          onRunCreated: undefined,
+        }
+      );
+      created = { run_id: entry.id, thread_id: entry.threadId };
+      run = captureRun({}, created, threadId);
+    } catch {
+      throw createSafeRequestError();
+    }
+    if (run.unsafe || !run.runId) throw createSafeRequestError();
+    const id = run.runId;
+    return publication.command(() => {
+      // The backend still runs it, but a disposed session observes nothing.
+      if (disposed) return 'aborted' as const;
+      let resolve!: QueuedRun['resolve'];
+      const result = new Promise<CompleteOutcome>((done) => {
+        resolve = done;
+      });
+      queue.push({
+        id,
+        ...(input.kind === 'submit'
+          ? { message: input.messages[0].content }
+          : {}),
+        createdAt: Date.now(),
+        input,
+        runOptions: request.runOptions,
+        result,
+        resolve,
+      });
+      try {
+        request.runOptions?.run?.onRunCreated?.(created);
+      } catch {
+        /* Application callbacks cannot affect the run. */
+      }
+      if (owner) republish();
+      // The active run can end while the queued one is being created.
+      else drainQueue();
+      return result;
+    });
+  }
+
+  /** Joins the oldest queued run once nothing else owns the session. */
+  function drainQueue() {
+    let attempt: Attempt | undefined;
+    void publication
+      .command(() => {
+        if (
+          disposed ||
+          owner ||
+          loading ||
+          preparing ||
+          branch ||
+          !joinStream ||
+          !queue.length
+        )
+          return;
+        const entry = queue.shift() as QueuedRun;
+        attempt = beginAttempt(entry.input, undefined, entry.runOptions);
+        attempt.physical = {
+          batch: buffer.snapshot(),
+          evidence: { runId: entry.id },
+          captureOpen: false,
+          received: false,
+          confirmed: false,
+        };
+        attempt.joinStart = true;
+        void attempt.result.then(entry.resolve);
+      })
+      .then(() => {
+        if (attempt) void execute(attempt);
+      });
+  }
+
+  function cancelQueued(runId: string): Promise<boolean> {
+    return publication
+      .command(() => {
+        const index = queue.findIndex((entry) => entry.id === runId);
+        if (disposed || index < 0) return undefined;
+        const [entry] = queue.splice(index, 1);
+        republish();
+        entry.resolve('aborted');
+        return entry;
+      })
+      .then((entry) => (entry ? cancelRuns([entry]) : false));
+  }
+
+  function clearQueue(): Promise<void> {
+    return publication
+      .command(() => {
+        if (disposed || !queue.length) return [];
+        const entries = queue.splice(0);
+        republish();
+        for (const entry of entries) entry.resolve('aborted');
+        return entries;
+      })
+      .then(async (entries) => {
+        if (entries.length) await cancelRuns(entries);
+      });
   }
 
   function resume(
@@ -2594,6 +2899,8 @@ export function createSession(
         disposed ? () => undefined : lifecycle.source.subscribe(notify),
     },
     submit,
+    cancelQueued,
+    clearQueue,
     fork,
     setBranch: (selected) =>
       publication.command(() => {
@@ -2628,7 +2935,9 @@ export function createSession(
         const checking = invalidateCheck();
         const attempt = detach('aborted');
         recoveryAttempt = undefined;
+        const dropped = queue.splice(0);
         publish('idle');
+        for (const entry of dropped) entry.resolve('aborted');
         publication.clearListeners();
         lifecycle.clearListeners();
         checking?.abort();
