@@ -179,6 +179,17 @@ export function agentSessionConformanceScenarios(
         'an error must be plain data, not an Error instance.'
       );
     }
+    if (snapshot.errorDiagnostic !== undefined) {
+      check(
+        snapshot.error !== undefined,
+        'errorDiagnostic is published only with an error.'
+      );
+      check(
+        typeof snapshot.errorDiagnostic.message === 'string' &&
+          !(snapshot.errorDiagnostic instanceof Error),
+        'errorDiagnostic must be a plain description with a message.'
+      );
+    }
   });
 
   register('shapes every optional snapshot field it publishes', (session) => {

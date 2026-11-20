@@ -12,7 +12,8 @@ export type AgentRecovery = 'retry' | 'check' | 'none';
 
 /**
  * What a failure was classified from, described as plain data for logs,
- * telemetry and debug views. It is a description, never the thrown value: no
+ * telemetry and debug views. Published beside the error, in a snapshot's
+ * `errorDiagnostic`, so `AgentError` stays a display projection. It is a description, never the thrown value: no
  * prototype, no functions, and nested causes described the same way.
  */
 export interface AgentErrorDiagnostic {
@@ -38,12 +39,6 @@ export interface AgentError {
   readonly retryable: boolean;
   readonly recovery?: AgentRecovery;
   readonly detail?: string;
-  /**
-   * A plain-data description of what this failure was classified from, when
-   * the session kept one. For diagnostics only: a view shows `message` and
-   * `detail`, never this.
-   */
-  readonly diagnostic?: AgentErrorDiagnostic;
 }
 
 const MAX_DEPTH = 6;
@@ -132,7 +127,8 @@ function describe(
 }
 
 /**
- * Describes any thrown value as frozen plain data for `AgentError.diagnostic`.
+ * Describes any thrown value as frozen plain data for a snapshot's
+ * `errorDiagnostic`.
  * Reads `name`, `message`, `stack`, `code`, `status` and `cause` where they
  * exist, copies other plain fields into `data`, and replaces functions, class
  * instances and cycles with short text. Never throws for a value it can read.
@@ -141,10 +137,7 @@ export function projectErrorDiagnostic(cause: unknown): AgentErrorDiagnostic {
   return describe(cause, 0, new Set());
 }
 
-/**
- * Copies an already classified failure, retaining neither its prototype nor a
- * raw cause. A `diagnostic` is kept, described again as plain data.
- */
+/** Copies an already classified failure, retaining neither its prototype nor cause. */
 export function projectAgentError(error: AgentError): AgentError {
   return Object.freeze({
     kind: error.kind,
@@ -153,8 +146,5 @@ export function projectAgentError(error: AgentError): AgentError {
     retryable: error.retryable,
     recovery: error.recovery,
     detail: error.detail,
-    ...(error.diagnostic !== undefined && {
-      diagnostic: projectErrorDiagnostic(error.diagnostic),
-    }),
   });
 }

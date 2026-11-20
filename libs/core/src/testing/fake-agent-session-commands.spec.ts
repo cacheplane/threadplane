@@ -77,6 +77,29 @@ describe('createFakeAgentSession optional members', () => {
     expect(fake.session.getSnapshot().toolCalls).toEqual([]);
   });
 
+  it('publishes a described cause beside the error and drops it with the error', () => {
+    const fake = createFakeAgentSession();
+    const thrown = new TypeError('socket closed');
+    fake.setError(retryable, thrown);
+    const snapshot = fake.session.getSnapshot();
+    expect(snapshot.error).toEqual(retryable);
+    expect(snapshot.error).not.toHaveProperty('diagnostic');
+    expect(snapshot.errorDiagnostic).toEqual({
+      name: 'TypeError',
+      message: 'socket closed',
+      stack: thrown.stack,
+    });
+    expect(Object.isFrozen(snapshot.errorDiagnostic)).toBe(true);
+    fake.setError({ ...retryable, message: 'Again' });
+    expect(fake.session.getSnapshot()).not.toHaveProperty('errorDiagnostic');
+    fake.setError(retryable, thrown);
+    fake.setError(undefined);
+    expect(fake.session.getSnapshot()).not.toHaveProperty('errorDiagnostic');
+    // A diagnostic without an error is not published.
+    fake.set({ errorDiagnostic: { message: 'orphan' } });
+    expect(fake.session.getSnapshot()).not.toHaveProperty('errorDiagnostic');
+  });
+
   it('publishes message blocks and extras, tool result parts, and child state', () => {
     const fake = createFakeAgentSession({
       messages: [

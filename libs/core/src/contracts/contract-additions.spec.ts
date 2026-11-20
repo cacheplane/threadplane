@@ -4,7 +4,6 @@ import {
   contentBlocksText,
   projectAgentError,
   projectErrorDiagnostic,
-  type AgentErrorDiagnostic,
 } from '../index';
 
 describe('projectErrorDiagnostic', () => {
@@ -63,42 +62,20 @@ describe('projectErrorDiagnostic', () => {
   });
 });
 
-describe('projectAgentError diagnostics', () => {
-  it('keeps a diagnostic as an owned plain copy and still drops a raw cause', () => {
-    const diagnostic = projectErrorDiagnostic(new Error('raw'));
+describe('projectAgentError and diagnostics', () => {
+  it('keeps the error a display projection: a diagnostic never rides on it', () => {
     const source = Object.assign(
       new Error('Connection dropped', { cause: new Error('raw') }),
-      { kind: 'connection' as const, retryable: true, diagnostic }
+      {
+        kind: 'connection' as const,
+        retryable: true,
+        diagnostic: projectErrorDiagnostic(new Error('raw')),
+      }
     );
     const projected = projectAgentError(source);
-    expect(projected.diagnostic).toEqual(diagnostic);
-    expect(Object.isFrozen(projected.diagnostic)).toBe(true);
+    expect(projected).not.toHaveProperty('diagnostic');
     expect(projected).not.toHaveProperty('cause');
     expect(projected).not.toHaveProperty('stack');
-  });
-
-  it('describes a diagnostic that was handed over as a thrown value', () => {
-    const raw = new Error('raw');
-    const projected = projectAgentError({
-      kind: 'server',
-      message: 'Failed',
-      retryable: false,
-      // What an untyped caller might pass: the thrown value itself.
-      diagnostic: raw as unknown as AgentErrorDiagnostic,
-    });
-    expect(projected.diagnostic).not.toBe(raw);
-    expect(projected.diagnostic).toEqual({
-      name: 'Error',
-      message: 'raw',
-      stack: raw.stack,
-    });
-    expect(Object.getPrototypeOf(projected.diagnostic)).toBe(Object.prototype);
-  });
-
-  it('adds no diagnostic field when there is none', () => {
-    expect(
-      projectAgentError({ kind: 'auth', message: 'No', retryable: false })
-    ).not.toHaveProperty('diagnostic');
   });
 });
 

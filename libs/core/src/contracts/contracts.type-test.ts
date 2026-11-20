@@ -409,7 +409,7 @@ const notFinal: ToolCall = { id: 'c', name: 'lookup', argsText: '{' };
 void [partialText, notFinal];
 
 // The diagnostic is plain data; the raw cause stays out.
-const diagnostic: AgentErrorDiagnostic | undefined = snapshot.error?.diagnostic;
+const diagnostic: AgentErrorDiagnostic | undefined = snapshot.errorDiagnostic;
 const described: AgentErrorDiagnostic = projectErrorDiagnostic(new Error('x'));
 if (diagnostic) {
   // @ts-expect-error diagnostics are readonly
@@ -419,10 +419,12 @@ const rawDiagnostic: AgentError = {
   kind: 'server',
   message: 'failed',
   retryable: false,
-  // @ts-expect-error a diagnostic is a description, not the thrown value's data
-  diagnostic: { message: 'x', data: new Map() },
+  // @ts-expect-error the diagnostic sits beside the error, not on it
+  diagnostic: described,
 };
-void [described, rawDiagnostic];
+// @ts-expect-error a diagnostic is a description, not the thrown value's data
+const liveDiagnostic: AgentErrorDiagnostic = { message: 'x', data: new Map() };
+void [described, rawDiagnostic, liveDiagnostic];
 
 // Child agents may report their own state.
 const childState: PlainValue = snapshot.subagents?.[0]?.state?.['step'];

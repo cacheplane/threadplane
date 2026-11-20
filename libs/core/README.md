@@ -120,12 +120,13 @@ is not a `ToolCall`: it is listed in the snapshot's `streamingToolCalls` as a
 parses partial JSON, a best-effort `args`. Once the arguments are final it leaves that
 list and enters `toolCalls` under the same `id`.
 
-**Error diagnostics.** `AgentError.diagnostic` describes what a failure was classified
-from as an `AgentErrorDiagnostic`: `name`, `message`, `stack`, `code`, `status`,
+**Error diagnostics.** `snapshot.errorDiagnostic`, published only beside `error`,
+describes what the failure was classified from as an `AgentErrorDiagnostic`: `name`, `message`, `stack`, `code`, `status`,
 further plain `data`, and a nested `cause` described the same way.
 `projectErrorDiagnostic(thrown)` builds one from any thrown value, replacing
 functions, class instances and cycles with short text. It is for logs and debug views;
-a view shows `message` and `detail`. The thrown value itself is never held.
+a view shows the error's `message` and `detail`. The thrown value itself is never
+held, and `AgentError` stays the display projection it was.
 
 **Child agents.** `AgentSubagent.state` is the child's own state as plain data, and
 `AgentSubagent.streamingToolCalls` its calls still being written.
@@ -170,8 +171,9 @@ when asked, through `commands: ['run', 'regenerate', 'retry', 'checkStatus',
 'onCustomEvent', 'clientTools']` or by passing `onRun`, `onRegenerate`, `onRetry` or
 `onCheckStatus`. It records every call (`submits`, `resumes`, `runs`, `regenerates`,
 `retryCount`, `checkStatusCount`, `catalogs`, `clientToolResults`, `flushCount`), and
-its controls publish every snapshot field, including `setUsage`, `setCheckpoints` and
-`emitCustomEvent`. `retry` calls again whichever handler last rejected.
+its controls publish every snapshot field, including `setUsage`, `setCheckpoints`,
+`emitCustomEvent` and `setError(error, cause)`, which describes the cause as
+`errorDiagnostic`. `retry` calls again whichever handler last rejected.
 `stream().appendReasoning(text)` adds reasoning and measures its duration.
 
 Three conformance suites check any `AgentSession`. They import no test framework; pass

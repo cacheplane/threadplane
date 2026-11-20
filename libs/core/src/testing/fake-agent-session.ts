@@ -22,7 +22,12 @@ import {
   type CompleteOutcome,
   type MessageDelivery,
 } from '../contracts/delivery.js';
-import { projectAgentError, type AgentError } from '../contracts/error.js';
+import {
+  projectAgentError,
+  projectErrorDiagnostic,
+  type AgentError,
+  type AgentErrorDiagnostic,
+} from '../contracts/error.js';
 import type { Message } from '../contracts/message.js';
 import type {
   AgentInterrupt,
@@ -83,6 +88,7 @@ export interface FakeAgentSnapshotPatch<
   readonly state?: NoInfer<TState> | DeepReadonly<NoInfer<TState>>;
   readonly interrupts?: readonly AgentInterrupt[];
   readonly subagents?: readonly FakeSubagentInput[];
+  readonly errorDiagnostic?: AgentErrorDiagnostic;
   readonly usage?: AgentUsage;
   readonly streamingToolCalls?: readonly StreamingToolCall[];
   readonly pendingClientTools?: readonly ToolCall<TTools>[];
@@ -269,8 +275,10 @@ export interface FakeAgentSession<
   push(message: FakeMessageInput): Message;
   setStatus(status: AgentStatus): void;
   /** Publishes the error with status `'error'`; `undefined` clears it and
-   * returns an errored session to `'idle'`. */
-  setError(error: AgentError | undefined): void;
+   * returns an errored session to `'idle'`. `cause` is any thrown value: the
+   * fake describes it as the snapshot's `errorDiagnostic`. Replacing or
+   * clearing the error removes the earlier diagnostic. */
+  setError(error: AgentError | undefined, cause?: unknown): void;
   setToolCalls(toolCalls: readonly ToolCall<TTools>[]): void;
   /** Replaces the state; `undefined` removes it. Throws when a schema `stateType` rejects it. */
   setState(state: NoInfer<TState> | undefined): void;
@@ -396,6 +404,7 @@ export function createFakeAgentSession<
     readonly state?: DeepReadonly<TState>;
     readonly interrupts?: readonly AgentInterrupt[];
     readonly subagents?: readonly AgentSubagent[];
+    readonly errorDiagnostic?: AgentErrorDiagnostic;
     readonly usage?: AgentUsage;
     readonly streamingToolCalls?: readonly StreamingToolCall[];
     readonly pendingClientTools?: readonly ToolCall<TTools>[];
@@ -449,6 +458,14 @@ export function createFakeAgentSession<
         ? patch.error && projectAgentError(patch.error)
         : base?.error;
     if (error) next.error = error;
+    const errorDiagnostic =
+      'errorDiagnostic' in patch
+        ? patch.errorDiagnostic
+        : 'error' in patch
+        ? undefined
+        : base?.errorDiagnostic;
+    if (error && errorDiagnostic !== undefined)
+      next.errorDiagnostic = projectErrorDiagnostic(errorDiagnostic);
     const plan = 'plan' in patch ? patch.plan : base?.plan;
     if (plan) next.plan = own(plan);
     const state =
@@ -789,10 +806,16 @@ export function createFakeAgentSession<
       return next;
     },
     setStatus: (status) => publish({ status }),
-    setError: (error) =>
+    setError: (error, cause) =>
       publish(
         error
-          ? { error, status: 'error' }
+          ? {
+              error,
+              status: 'error',
+              ...(cause !== undefined && {
+                errorDiagnostic: projectErrorDiagnostic(cause),
+              }),
+            }
           : {
               error: undefined,
               status: snapshot.status === 'error' ? 'idle' : snapshot.status,

@@ -1,4 +1,4 @@
-import type { AgentError } from './error.js';
+import type { AgentError, AgentErrorDiagnostic } from './error.js';
 import type { Message } from './message.js';
 import type {
   DeepReadonly,
@@ -62,6 +62,12 @@ export type AgentSnapshot<
       readonly messages: readonly Message[];
       readonly toolCalls: readonly ToolCall<TTools>[];
       readonly error?: AgentError;
+      /**
+       * A plain-data description of what `error` was classified from, when the
+       * session kept one. Present only with `error`. For logs and debug views:
+       * a view shows the error's `message` and `detail`, never this.
+       */
+      readonly errorDiagnostic?: AgentErrorDiagnostic;
       /** Steps the agent declared for its work, in order; absent when it declared none. */
       readonly plan?: readonly AgentPlanStep[];
       /** Token usage the runtime reported for the most recent settled run; absent while one runs or when none was reported. */
