@@ -4,14 +4,22 @@ import {
   cockpitManifest,
 } from '@threadplane/cockpit-registry';
 import {
+  agentProviderModule,
   auditRuntimeTargetSource,
+  defaultReporterOptionNames,
   hasExactImportBinding,
   inspectRuntimeTargetSource,
+  operationReporterToken,
+  providerContextKeys,
   type AngularProviderRecord,
   type BootstrapCallRecord,
   type CanonicalProviderCall,
+  type CompatibleRuntimeAdapter,
   type ExactImportBinding,
   type ProviderRegistrationOwner,
+  type ReporterOptionNames,
+  type RuntimeWiringAuditIssue,
+  type ThreadDirectoryProviderRecord,
 } from './runtime-wiring-audit';
 import {
   existsSync,
@@ -28,6 +36,184 @@ import * as ts from 'typescript';
 import { fileURLToPath } from 'node:url';
 
 const cockpitRoot = fileURLToPath(new URL('../../cockpit/', import.meta.url));
+const libsRoot = fileURLToPath(new URL('../../libs/', import.meta.url));
+
+/**
+ * The names of every member an options type declares, read from a library's
+ * source by syntax: the named interface or alias, what it extends, and the
+ * types an alias is built from. Read-only; the audit never edits a library.
+ */
+function declaredOptionMembers(directory: string, rootName: string): string[] {
+  const interfaces = new Map<string, ts.InterfaceDeclaration[]>();
+  const aliases = new Map<string, ts.TypeAliasDeclaration>();
+  const visitDirectory = (current: string): void => {
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      const entryPath = resolve(current, entry.name);
+      if (entry.isDirectory()) {
+        visitDirectory(entryPath);
+      } else if (
+        entry.isFile() &&
+        entry.name.endsWith('.ts') &&
+        !/\.(?:spec|type-test|d)\.ts$/.test(entry.name)
+      ) {
+        const sourceFile = ts.createSourceFile(
+          entryPath,
+          readFileSync(entryPath, 'utf8'),
+          ts.ScriptTarget.Latest,
+          true
+        );
+        for (const statement of sourceFile.statements) {
+          if (ts.isInterfaceDeclaration(statement)) {
+            interfaces.set(statement.name.text, [
+              ...(interfaces.get(statement.name.text) ?? []),
+              statement,
+            ]);
+          } else if (ts.isTypeAliasDeclaration(statement)) {
+            aliases.set(statement.name.text, statement);
+          }
+        }
+      }
+    }
+  };
+  visitDirectory(directory);
+
+  const names = new Set<string>();
+  const seen = new Set<string>();
+  const addMembers = (members: ts.NodeArray<ts.TypeElement>): void => {
+    for (const member of members) {
+      if (member.name && ts.isIdentifier(member.name)) {
+        names.add(member.name.text);
+      }
+    }
+  };
+  const visitType = (node: ts.Node): void => {
+    if (ts.isTypeLiteralNode(node)) addMembers(node.members);
+    if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) {
+      visitName(node.typeName.text);
+    }
+    if (
+      ts.isExpressionWithTypeArguments(node) &&
+      ts.isIdentifier(node.expression)
+    ) {
+      visitName(node.expression.text);
+    }
+    ts.forEachChild(node, visitType);
+  };
+  const visitName = (name: string): void => {
+    if (seen.has(name)) return;
+    seen.add(name);
+    for (const declaration of interfaces.get(name) ?? []) {
+      addMembers(declaration.members);
+      for (const clause of declaration.heritageClauses ?? []) {
+        for (const type of clause.types) visitType(type);
+      }
+    }
+    const alias = aliases.get(name);
+    if (alias) visitType(alias.type);
+  };
+  visitName(rootName);
+  return [...names].sort();
+}
+
+const sessionOptionMembers: Record<CompatibleRuntimeAdapter, string[]> = {
+  langgraph: declaredOptionMembers(
+    resolve(libsRoot, 'langgraph/src/runtime'),
+    'SessionOptions'
+  ),
+  'ag-ui': declaredOptionMembers(
+    resolve(libsRoot, 'ag-ui/src/runtime'),
+    'SessionOptions'
+  ),
+};
+
+/**
+ * The option each backend's session takes the operation-failure reporter
+ * under, read from the session option interfaces rather than assumed. The two
+ * sessions name it differently today (2026-11-20) and a library change is
+ * making them agree; reading the declared names lets the audit follow that
+ * change, in either direction and through a period where both names exist,
+ * without an edit here.
+ */
+const reporterOptionNames: ReporterOptionNames = {
+  langgraph: sessionOptionMembers.langgraph.filter((name) =>
+    /OperationFailure$/.test(name)
+  ),
+  'ag-ui': sessionOptionMembers['ag-ui'].filter((name) =>
+    /OperationFailure$/.test(name)
+  ),
+};
+const directoryOptionMembers = declaredOptionMembers(
+  resolve(libsRoot, 'langgraph/src/runtime'),
+  'LangGraphThreadDirectoryOptions'
+);
+/**
+ * The same for the thread directory. It declares no reporter option today, so
+ * a refused thread-list request is not reported and no wiring can change
+ * that; the audit starts requiring the reporter when the option appears.
+ */
+const directoryReporterOptionNames = directoryOptionMembers.filter((name) =>
+  /OperationFailure$/.test(name)
+);
+const auditOptions = { reporterOptionNames, directoryReporterOptionNames };
+
+/** Fixture source in the canonical wiring, for the positive and negative cases. */
+const fixtureImports: Record<CompatibleRuntimeAdapter, string> = {
+  langgraph: `
+    import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
+    import { provideAgent } from '@threadplane/angular';
+    import { createSession } from '@threadplane/langgraph';
+  `,
+  'ag-ui': `
+    import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
+    import { provideAgent } from '@threadplane/angular';
+    import { createSession } from '@threadplane/ag-ui';
+  `,
+};
+const fixtureSessionOptions: Record<CompatibleRuntimeAdapter, string> = {
+  langgraph: `apiUrl: connection.apiUrl,
+        assistantId: connection.assistantId,
+        clientOptions: connection.clientOptions,
+        threadId: context.threadId,
+        onThreadId: context.onThreadId,
+        ${defaultReporterOptionNames.langgraph[0]}: context.reportOperationFailure,`,
+  'ag-ui': `url: connection.url,
+        threadId: context.threadId ?? undefined,
+        ${defaultReporterOptionNames['ag-ui'][0]}: context.reportOperationFailure,`,
+};
+const fixtureSessionMember = (
+  adapter: CompatibleRuntimeAdapter,
+  options = fixtureSessionOptions[adapter]
+): string => `createSession: (context) => createSession({ ${options} })`;
+const fixtureFactory = (
+  adapter: CompatibleRuntimeAdapter,
+  body = `return { ${fixtureSessionMember(adapter)} };`
+): string => `() => {
+      const connection = injectCockpitRuntimeConnection();
+      if (connection.adapter !== '${adapter}') {
+        throw new Error('incompatible runtime');
+      }
+      ${body}
+    }`;
+const fixtureProvider = (
+  adapter: CompatibleRuntimeAdapter,
+  options = fixtureSessionOptions[adapter]
+): string =>
+  `provideAgent(${fixtureFactory(
+    adapter,
+    `return { ${fixtureSessionMember(adapter, options)} };`
+  )})`;
+const fixtureStatements = {
+  declaration: 'const connection = injectCockpitRuntimeConnection();',
+  guard:
+    "if (connection.adapter !== 'ag-ui') { throw new Error('incompatible runtime'); }",
+  result: `return { ${fixtureSessionMember('ag-ui')} };`,
+};
+const fixtureAppConfig = (
+  adapter: CompatibleRuntimeAdapter,
+  provider = fixtureProvider(adapter),
+  imports = fixtureImports[adapter]
+): string =>
+  `${imports}\nexport const appConfig = { providers: [${provider}] };`;
 
 function angularSourceFiles(projectRoot: string): string[] {
   const visit = (directory: string): string[] =>
@@ -80,7 +266,10 @@ interface ExpectedRuntimeWiring {
   assistantId?: string;
   sharedUrl?: string;
   agentRef?: string;
+  /** Members of the agent config that must survive, by exact source text. */
   retainedProviderProperties?: Readonly<Record<string, string>>;
+  /** Options of the backend session that must survive, by exact source text. */
+  retainedSessionProperties?: Readonly<Record<string, string>>;
 }
 
 const persistenceOnThreadIdExpression = `(id: string) => {
@@ -143,7 +332,7 @@ const expectedRuntimeWiring: ExpectedRuntimeWiring[] = [
     providerSource: 'src/app/app.config.ts',
     assistantId: 'environment.streamingAssistantId',
     agentRef: 'SUBGRAPHS_AGENT',
-    retainedProviderProperties: {
+    retainedSessionProperties: {
       transcriptNodeNames: "['answer']",
     },
   },
@@ -183,7 +372,7 @@ const expectedRuntimeWiring: ExpectedRuntimeWiring[] = [
     rootComponent: 'SubagentsComponent',
     providerSource: 'src/app/app.config.ts',
     assistantId: 'environment.streamingAssistantId',
-    retainedProviderProperties: {
+    retainedSessionProperties: {
       subagentToolNames: "['task']",
     },
   },
@@ -229,7 +418,7 @@ const expectedRuntimeWiring: ExpectedRuntimeWiring[] = [
     rootComponent: 'SubagentsComponent',
     providerSource: 'src/app/app.config.ts',
     assistantId: 'environment.streamingAssistantId',
-    retainedProviderProperties: {
+    retainedSessionProperties: {
       subagentToolNames: "['task']",
     },
   },
@@ -273,25 +462,40 @@ const expectedRuntimeWiring: ExpectedRuntimeWiring[] = [
     providerSource: 'src/app/app.config.ts',
     assistantId: 'environment.a2uiAssistantId',
   },
-  ...[
-    ['cockpit-ag-ui-interrupts-angular', 'InterruptsComponent'],
-    ['cockpit-ag-ui-streaming-angular', 'StreamingComponent'],
-    ['cockpit-ag-ui-tool-views-angular', 'ToolViewsComponent'],
-    ['cockpit-ag-ui-json-render-angular', 'JsonRenderComponent'],
-    ['cockpit-ag-ui-client-tools-angular', 'ClientToolsComponent'],
-    ['cockpit-ag-ui-a2ui-angular', 'A2uiComponent'],
-    ['cockpit-ag-ui-subagents-angular', 'SubagentsComponent'],
+  ...(
     [
-      'cockpit-runtimes-microsoft-agent-framework-angular',
-      'MicrosoftAgentFrameworkComponent',
-    ],
-    ['cockpit-runtimes-aws-strands-angular', 'AwsStrandsComponent'],
-    ['cockpit-runtimes-mastra-angular', 'MastraComponent'],
-  ].map(([project, rootComponent]) => ({
+      [
+        'cockpit-ag-ui-interrupts-angular',
+        'InterruptsComponent',
+        // Answers both the protocol's interrupt outcome and the legacy notice.
+        { interruptTransport: "'auto'" },
+      ],
+      ['cockpit-ag-ui-streaming-angular', 'StreamingComponent'],
+      ['cockpit-ag-ui-tool-views-angular', 'ToolViewsComponent'],
+      ['cockpit-ag-ui-json-render-angular', 'JsonRenderComponent'],
+      ['cockpit-ag-ui-client-tools-angular', 'ClientToolsComponent'],
+      ['cockpit-ag-ui-a2ui-angular', 'A2uiComponent'],
+      ['cockpit-ag-ui-subagents-angular', 'SubagentsComponent'],
+      [
+        'cockpit-runtimes-microsoft-agent-framework-angular',
+        'MicrosoftAgentFrameworkComponent',
+      ],
+      ['cockpit-runtimes-aws-strands-angular', 'AwsStrandsComponent'],
+      [
+        'cockpit-runtimes-mastra-angular',
+        'MastraComponent',
+        // This runtime resumes a pause only through its own command.
+        { interruptTransport: "'mastra-command'" },
+      ],
+    ] as ReadonlyArray<
+      readonly [string, string, Readonly<Record<string, string>>?]
+    >
+  ).map(([project, rootComponent, retainedSessionProperties]) => ({
     project,
     rootComponent,
     providerSource: 'src/app/app.config.ts',
     sharedUrl: "new URL('agent', document.baseURI).pathname",
+    ...(retainedSessionProperties ? { retainedSessionProperties } : {}),
   })),
 ];
 const expectedRuntimeWiringByProject = new Map(
@@ -412,15 +616,6 @@ function auditEntrypointMetadata(
       mismatches.push('environment import from ./environments/environment');
     }
     if (
-      !hasExactSemanticBinding(
-        bindingBootstrap.operationReporterBinding,
-        '@threadplane/langgraph',
-        'ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER'
-      )
-    ) {
-      mismatches.push('LangGraph operation reporter import');
-    }
-    if (
       bootstrap.runtimeProperties['sharedApiUrl'] !==
       'environment.langGraphApiUrl'
     ) {
@@ -429,50 +624,43 @@ function auditEntrypointMetadata(
     if (bootstrap.runtimeProperties['assistantId'] !== expected.assistantId) {
       mismatches.push(`assistantId ${expected.assistantId}`);
     }
-    if (
-      bootstrap.runtimeProperties['operationReporterToken'] !==
-      'ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER'
-    ) {
-      mismatches.push(
-        'operationReporterToken ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER'
-      );
-    }
   } else {
     if (!runtimeBootstrap.hasPristineAgUrlGlobals) {
       mismatches.push('pristine URL/document globals');
     }
-    if (
-      !hasExactSemanticBinding(
-        bindingBootstrap.operationReporterBinding,
-        '@threadplane/ag-ui',
-        'ɵAG_UI_RUNTIME_OPERATION_REPORTER'
-      )
-    ) {
-      mismatches.push('AG-UI operation reporter import');
-    }
     if (bootstrap.runtimeProperties['sharedUrl'] !== expected.sharedUrl) {
       mismatches.push(`sharedUrl ${expected.sharedUrl}`);
     }
-    if (
-      bootstrap.runtimeProperties['operationReporterToken'] !==
-      'ɵAG_UI_RUNTIME_OPERATION_REPORTER'
-    ) {
-      mismatches.push(
-        'operationReporterToken ɵAG_UI_RUNTIME_OPERATION_REPORTER'
-      );
-    }
+  }
+  // Both backends report through the one token the Angular agent reads. A
+  // different token is provided to nobody, so no failure reaches the host.
+  if (
+    !hasExactSemanticBinding(
+      bindingBootstrap.operationReporterBinding,
+      agentProviderModule,
+      operationReporterToken
+    )
+  ) {
+    mismatches.push(`operation reporter import from ${agentProviderModule}`);
+  }
+  if (
+    bootstrap.runtimeProperties['operationReporterToken'] !==
+    operationReporterToken
+  ) {
+    mismatches.push(`operationReporterToken ${operationReporterToken}`);
   }
   if (!bootstrap.hasRedactedCatch) mismatches.push('redacted catch owner');
   return mismatches;
 }
 
 function hasExpectedProviderProperties(
-  providerCalls: CanonicalProviderCall[],
-  expected: Readonly<Record<string, string>>
+  providerCalls: readonly CanonicalProviderCall[],
+  expected: Readonly<Record<string, string>>,
+  members: 'properties' | 'sessionProperties' = 'properties'
 ): boolean {
   return providerCalls.some((call) =>
     Object.entries(expected).every(
-      ([property, expression]) => call.properties[property] === expression
+      ([property, expression]) => call[members][property] === expression
     )
   );
 }
@@ -512,69 +700,82 @@ function expectedProviderOwner(
     : { kind: 'component', component: expected.rootComponent };
 }
 
+/**
+ * The thread list must be read from the deployment its agent talks to, with
+ * the same developer key. It may take the client options straight from the
+ * connection, or from the provider context when the app provides
+ * AGENT_CLIENT_OPTIONS from the connection in the same place.
+ */
 function auditThreadsRootProviders(
   sources: ReadonlyArray<{
     relativeFileName: string;
     angularProviders: readonly AngularProviderRecord[];
+    threadDirectoryProviders: readonly ThreadDirectoryProviderRecord[];
   }>
 ): string[] {
   const expectedFile = 'src/app/app.config.ts';
-  const providers = sources.flatMap(({ relativeFileName, angularProviders }) =>
-    angularProviders.map((provider) => ({ relativeFileName, provider }))
-  );
   const mismatches: string[] = [];
-  const assertOne = (
-    token: string,
-    valid: (provider: AngularProviderRecord) => boolean
-  ): void => {
-    const matches = providers.filter(
-      ({ provider }) => provider.provideToken === token
-    );
-    if (
-      matches.length !== 1 ||
-      matches[0].relativeFileName !== expectedFile ||
-      !valid(matches[0].provider)
-    ) {
-      mismatches.push(`${token} canonical provider in ${expectedFile}`);
-    }
-  };
-  const canonicalConnection = (provider: AngularProviderRecord): boolean =>
+  const directories = sources.flatMap(
+    ({ relativeFileName, threadDirectoryProviders }) =>
+      threadDirectoryProviders.map((provider) => ({
+        relativeFileName,
+        provider,
+      }))
+  );
+  const directory =
+    directories.length === 1 && directories[0].relativeFileName === expectedFile
+      ? directories[0].provider
+      : undefined;
+  if (
+    !directory ||
+    !directory.canonical ||
+    JSON.stringify(directory.owner) !== JSON.stringify({ kind: 'appConfig' }) ||
+    !hasExactSemanticBinding(
+      directory.provideBinding,
+      agentProviderModule,
+      'provideThreadDirectory'
+    ) ||
+    !hasExactSemanticBinding(
+      directory.createDirectoryBinding,
+      '@threadplane/langgraph',
+      'createLangGraphThreadDirectory'
+    ) ||
+    directory.directoryProperties['apiUrl'] !== 'connection.apiUrl' ||
+    !directory.clientOptionsSource
+  ) {
+    mismatches.push(`provideThreadDirectory canonical provider in ${expectedFile}`);
+  }
+
+  const clientOptions = sources.flatMap(
+    ({ relativeFileName, angularProviders }) =>
+      angularProviders
+        .filter((provider) => provider.provideToken === 'AGENT_CLIENT_OPTIONS')
+        .map((provider) => ({ relativeFileName, provider }))
+  );
+  const canonicalClientOptions = (provider: AngularProviderRecord): boolean =>
+    hasExactSemanticBinding(
+      provider.provideTokenBinding,
+      agentProviderModule,
+      'AGENT_CLIENT_OPTIONS'
+    ) &&
     provider.canonicalFactory &&
     provider.connectionDeclaration ===
       'const connection = injectCockpitRuntimeConnection()' &&
     provider.connectionCallCount === 1 &&
-    !provider.connectionWrites;
-  const hasTokenBinding = (
-    provider: AngularProviderRecord,
-    token: string
-  ): boolean =>
-    hasExactSemanticBinding(
-      (
-        provider as AngularProviderRecord & {
-          provideTokenBinding?: SemanticBindingInspection;
-        }
-      ).provideTokenBinding,
-      '@threadplane/langgraph',
-      token
-    );
-
-  assertOne(
-    'LANGGRAPH_THREADS_CONFIG',
-    (provider) =>
-      hasTokenBinding(provider, 'LANGGRAPH_THREADS_CONFIG') &&
-      canonicalConnection(provider) &&
-      provider.returnExpression === '{ apiUrl: connection.apiUrl }' &&
-      JSON.stringify(provider.returnedProperties) ===
-        JSON.stringify({ apiUrl: 'connection.apiUrl' })
-  );
-  assertOne(
-    'LANGGRAPH_CLIENT_OPTIONS',
-    (provider) =>
-      hasTokenBinding(provider, 'LANGGRAPH_CLIENT_OPTIONS') &&
-      canonicalConnection(provider) &&
-      provider.returnExpression === 'connection.clientOptions' &&
-      Object.keys(provider.returnedProperties).length === 0
-  );
+    !provider.connectionWrites &&
+    provider.returnExpression === 'connection.clientOptions' &&
+    Object.keys(provider.returnedProperties).length === 0;
+  if (
+    clientOptions.length > 1 ||
+    (directory?.clientOptionsSource === 'context' &&
+      clientOptions.length !== 1) ||
+    clientOptions.some(
+      ({ relativeFileName, provider }) =>
+        relativeFileName !== expectedFile || !canonicalClientOptions(provider)
+    )
+  ) {
+    mismatches.push(`AGENT_CLIENT_OPTIONS canonical provider in ${expectedFile}`);
+  }
   return mismatches;
 }
 
@@ -770,7 +971,8 @@ describe('cockpit capability wiring', () => {
           file.source,
           file.relativeFileName,
           adapter,
-          capability.angularProject
+          capability.angularProject,
+          auditOptions
         ),
       }));
       if (expected) {
@@ -791,6 +993,7 @@ describe('cockpit capability wiring', () => {
             sourceAudits.map(({ relativeFileName, inspection }) => ({
               relativeFileName,
               angularProviders: inspection.angularProviders,
+              threadDirectoryProviders: inspection.threadDirectoryProviders,
             }))
           )
         );
@@ -914,24 +1117,47 @@ describe('cockpit capability wiring', () => {
     expect(
       angularSourceFiles(root).some((name) => name.endsWith('.spec.ts'))
     ).toBe(false);
-    for (const changed of [
-      provider.replace('const scope =', 'mutate(connection); const scope ='),
-      provider.replace('connection.apiUrl,', "'/unsafe',"),
-      provider.replace('maxRetries: 0', 'maxRetries: 1'),
-      provider.replace('...connection.clientOptions', '...unsafeOptions'),
-      provider.replace(
-        'clientOptions,\n        threadId,',
-        'clientOptions, secret: window.runtimeApiKey,\n        threadId,'
+    for (const mutated of [
+      changed(provider, 'const scope =', 'mutate(connection); const scope ='),
+      changed(provider, 'connection.apiUrl,', "'/unsafe',"),
+      changed(provider, 'maxRetries: 0', 'maxRetries: 1'),
+      changed(provider, '...connection.clientOptions', '...unsafeOptions'),
+      changed(
+        provider,
+        'onThreadId: context.onThreadId,',
+        'onThreadId: context.onThreadId, secret: window.runtimeApiKey,'
       ),
-      provider.replace(
+      changed(
+        provider,
         'import { MemoryScope }',
         'import { UnsafeScope as MemoryScope }'
       ),
-      provider.replace('inject, signal', 'inject, signal as unsafeSignal'),
-      provider.replace('transport,', '...unsafeOverrides, transport,'),
+      changed(provider, 'ApplicationConfig, inject', 'ApplicationConfig, inject as unsafeInject'),
+      changed(provider, 'transport: new', '...unsafeOverrides, transport: new'),
+      // The transport is what reports a refused request for this session.
+      changed(provider, 'context.reportOperationFailure', 'undefined'),
+      changed(provider, /clientOptions,(\s+)context\./, '{},$1context.'),
+      changed(provider, 'threadId: context.threadId,', "threadId: 'fixed',"),
+      changed(provider, 'onThreadId: context.onThreadId,', ''),
+      changed(
+        provider,
+        'assistantId: connection.assistantId',
+        "assistantId: 'other-graph'"
+      ),
+      changed(
+        provider,
+        "import { createSession } from '@threadplane/langgraph';",
+        "import { createSession } from './fake-langgraph';"
+      ),
+      changed(
+        provider,
+        "import { MemoryTransport } from './memory-transport';",
+        "import { MemoryTransport } from './other-transport';"
+      ),
+      changed(provider, '(context) =>', '() =>'),
     ])
-      expect(inspect(changed, 'src/app/app.config.ts')).not.toEqual([]);
-    for (const changed of [
+      expect(inspect(mutated, 'src/app/app.config.ts')).not.toEqual([]);
+    for (const mutated of [
       scope.replace('window.localStorage', 'window.sessionStorage'),
       scope.replace('  InjectionToken,', '  InjectionToken as UnsafeToken,'),
       scope + '\nconst InjectionToken = UnsafeToken;',
@@ -958,8 +1184,10 @@ describe('cockpit capability wiring', () => {
       ),
       scope +
         "\nexport const unsafe = () => window.localStorage.getItem('runtime-target');",
-    ])
-      expect(inspect(changed, 'src/app/memory-scope.ts')).not.toEqual([]);
+    ]) {
+      expect(mutated).not.toBe(scope);
+      expect(inspect(mutated, 'src/app/memory-scope.ts')).not.toEqual([]);
+    }
   });
 
   it.each([
@@ -1035,27 +1263,27 @@ describe('cockpit capability wiring', () => {
     ],
     [
       'aliased provider with imported config',
-      `import { provideAgent as wireAgent } from '@threadplane/langgraph';\nimport { runtimeConfig } from './runtime-config';\nexport const providers = [wireAgent(runtimeConfig)];`,
+      `import { provideAgent as wireAgent } from '@threadplane/angular';\nimport { runtimeConfig } from './runtime-config';\nexport const providers = [wireAgent(runtimeConfig)];`,
       'noncanonical-provider-wiring',
     ],
     [
       'namespace provider with direct config',
-      `import * as agentApi from '@threadplane/ag-ui';\nconst config = { url: '/agent' };\nexport const providers = [agentApi.provideAgent(config)];`,
+      `import * as agentApi from '@threadplane/angular';\nconst config = { url: '/agent' };\nexport const providers = [agentApi.provideAgent(config)];`,
       'noncanonical-provider-wiring',
     ],
     [
       'locally aliased provider with direct config',
-      `import { provideAgent } from '@threadplane/ag-ui';\nconst wire = provideAgent;\nexport const providers = [wire({ url: '/agent' })];`,
+      `import { provideAgent } from '@threadplane/angular';\nconst wire = provideAgent;\nexport const providers = [wire({ url: '/agent' })];`,
       'noncanonical-provider-wiring',
     ],
     [
       'factory returning imported config',
-      `import { provideAgent } from '@threadplane/langgraph';\nimport { runtimeConfig } from './runtime-config';\nexport const providers = [provideAgent(() => runtimeConfig)];`,
+      `import { provideAgent } from '@threadplane/angular';\nimport { runtimeConfig } from './runtime-config';\nexport const providers = [provideAgent(() => runtimeConfig)];`,
       'noncanonical-provider-wiring',
     ],
     [
       'aliased direct Agent construction',
-      `import { Agent as RuntimeAgent } from '@threadplane/ag-ui';\nexport const agent = new RuntimeAgent({ url: '/agent' });`,
+      `import { HttpAgent as RuntimeAgent } from '@ag-ui/client';\nexport const agent = new RuntimeAgent({ url: '/agent' });`,
       'direct-agent-construction',
     ],
     [
@@ -1092,25 +1320,37 @@ describe('cockpit capability wiring', () => {
   });
 
   it('rejects aliased provider and connection imports even when their factory is otherwise valid', () => {
-    const source = `
-      import { provideAgent as wireAgent } from '@threadplane/langgraph';
-      import { injectCockpitRuntimeConnection as useConnection } from '@threadplane/cockpit-telemetry';
-      export const providers = [wireAgent(() => {
-        const connection = useConnection();
-        if (connection.adapter !== 'langgraph') throw new Error('incompatible runtime');
-        return {
-          apiUrl: connection.apiUrl,
-          assistantId: connection.assistantId,
-          clientOptions: connection.clientOptions,
-        };
-      })];
-    `;
-
+    const valid = fixtureAppConfig('langgraph');
     expect(
-      auditRuntimeTargetSource(source, 'src/app/app.config.ts').map(
-        ({ kind }) => kind
-      )
-    ).toContain('noncanonical-provider-wiring');
+      auditRuntimeTargetSource(valid, 'src/app/app.config.ts', 'langgraph')
+    ).toEqual([]);
+    for (const source of [
+      changed(
+        changed(valid, 'import { provideAgent }', 'import { provideAgent as wireAgent }'),
+        'providers: [provideAgent(',
+        'providers: [wireAgent('
+      ),
+      changed(
+        changed(
+          valid,
+          'import { injectCockpitRuntimeConnection }',
+          'import { injectCockpitRuntimeConnection as useConnection }'
+        ),
+        'const connection = injectCockpitRuntimeConnection();',
+        'const connection = useConnection();'
+      ),
+      changed(
+        changed(valid, 'import { createSession }', 'import { createSession as makeSession }'),
+        '=> createSession(',
+        '=> makeSession('
+      ),
+    ]) {
+      expect(
+        auditRuntimeTargetSource(source, 'src/app/app.config.ts', 'langgraph').map(
+          ({ kind }) => kind
+        )
+      ).toContain('noncanonical-provider-wiring');
+    }
   });
 
   it.each([
@@ -1146,72 +1386,185 @@ describe('cockpit capability wiring', () => {
     ],
     [
       'destructured provider',
-      `import * as agentApi from '@threadplane/ag-ui';\nconst { provideAgent } = agentApi;\nexport const providers = [provideAgent(() => ({ url: '/agent' }))];`,
+      `import * as agentApi from '@threadplane/angular';\nconst { provideAgent } = agentApi;\nexport const providers = [provideAgent(() => ({ url: '/agent' }))];`,
       'noncanonical-provider-wiring',
     ],
     [
       'reverse provider alias',
-      `import { provideAgent as wireAgent } from '@threadplane/ag-ui';\nconst provideAgent = wireAgent;\nexport const providers = [provideAgent(() => ({ url: '/agent' }))];`,
+      `import { provideAgent as wireAgent } from '@threadplane/angular';\nconst provideAgent = wireAgent;\nexport const providers = [provideAgent(() => ({ url: '/agent' }))];`,
       'noncanonical-provider-wiring',
     ],
     [
       'computed connection field',
-      `import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';\nimport { provideAgent } from '@threadplane/ag-ui';\nexport const providers = [provideAgent(() => { const connection = injectCockpitRuntimeConnection(); return { ['url']: connection.url }; })];`,
-      'noncanonical-provider-wiring',
+      fixtureAppConfig(
+        'ag-ui',
+        fixtureProvider(
+          'ag-ui',
+          fixtureSessionOptions['ag-ui'].replace('url:', "['url']:")
+        )
+      ),
+      'session-connection-wiring',
     ],
     [
       'spread connection fields',
-      `import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';\nimport { provideAgent } from '@threadplane/ag-ui';\nexport const providers = [provideAgent(() => { const connection = injectCockpitRuntimeConnection(); return { ...connection }; })];`,
-      'noncanonical-provider-wiring',
+      fixtureAppConfig(
+        'ag-ui',
+        fixtureProvider(
+          'ag-ui',
+          fixtureSessionOptions['ag-ui'].replace(
+            'url: connection.url',
+            '...connection'
+          )
+        )
+      ),
+      'session-connection-wiring',
     ],
     [
       'shorthand connection field',
-      `import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';\nimport { provideAgent } from '@threadplane/ag-ui';\nexport const providers = [provideAgent(() => { const connection = injectCockpitRuntimeConnection(); const url = connection.url; return { url }; })];`,
-      'noncanonical-provider-wiring',
+      fixtureAppConfig(
+        'ag-ui',
+        `provideAgent(() => { ${fixtureStatements.declaration} ${
+          fixtureStatements.guard
+        } const url = connection.url; return { ${fixtureSessionMember(
+          'ag-ui',
+          fixtureSessionOptions['ag-ui'].replace('url: connection.url', 'url')
+        )} }; })`
+      ),
+      'session-connection-wiring',
     ],
     [
       'mutable connection declaration',
-      `import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';\nimport { provideAgent } from '@threadplane/ag-ui';\nexport const providers = [provideAgent(() => { let connection = injectCockpitRuntimeConnection(); return { url: connection.url }; })];`,
+      fixtureAppConfig(
+        'ag-ui',
+        `provideAgent(() => { let connection = injectCockpitRuntimeConnection(); ${fixtureStatements.guard} ${fixtureStatements.result} })`
+      ),
       'noncanonical-provider-wiring',
     ],
     [
       'connection reassignment',
-      `import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';\nimport { provideAgent } from '@threadplane/ag-ui';\nexport const providers = [provideAgent(() => { const connection = injectCockpitRuntimeConnection(); connection = injectCockpitRuntimeConnection(); return { url: connection.url }; })];`,
+      fixtureAppConfig(
+        'ag-ui',
+        `provideAgent(() => { ${fixtureStatements.declaration} connection = injectCockpitRuntimeConnection(); ${fixtureStatements.result} })`
+      ),
       'noncanonical-provider-wiring',
     ],
     [
       'return before canonical connection declaration',
-      `import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';\nimport { provideAgent } from '@threadplane/ag-ui';\nexport const providers = [provideAgent(() => { return { url: connection.url }; const connection = injectCockpitRuntimeConnection(); if (connection.adapter !== 'ag-ui') { throw new Error('incompatible runtime'); } })];`,
+      fixtureAppConfig(
+        'ag-ui',
+        `provideAgent(() => { ${fixtureStatements.result} ${fixtureStatements.declaration} ${fixtureStatements.guard} })`
+      ),
       'noncanonical-provider-wiring',
     ],
     [
       'unreachable statement before canonical connection declaration',
-      `import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';\nimport { provideAgent } from '@threadplane/ag-ui';\nexport const providers = [provideAgent(() => { throw new Error('unreachable'); const connection = injectCockpitRuntimeConnection(); if (connection.adapter !== 'ag-ui') { throw new Error('incompatible runtime'); } return { url: connection.url }; })];`,
+      fixtureAppConfig(
+        'ag-ui',
+        `provideAgent(() => { throw new Error('unreachable'); ${fixtureStatements.declaration} ${fixtureStatements.guard} ${fixtureStatements.result} })`
+      ),
+      'noncanonical-provider-wiring',
+    ],
+    [
+      'missing adapter guard',
+      fixtureAppConfig(
+        'ag-ui',
+        `provideAgent(() => { ${fixtureStatements.declaration} ${fixtureStatements.result} })`
+      ),
+      'noncanonical-provider-wiring',
+    ],
+    [
+      'adapter guard for the other backend',
+      fixtureAppConfig(
+        'ag-ui',
+        `provideAgent(() => { ${
+          fixtureStatements.declaration
+        } ${fixtureStatements.guard.replace("'ag-ui'", "'langgraph'")} ${
+          fixtureStatements.result
+        } })`
+      ),
       'noncanonical-provider-wiring',
     ],
     [
       'nested alternate Agent return',
-      `import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';\nimport { provideAgent } from '@threadplane/ag-ui';\nexport const providers = [provideAgent(() => { const connection = injectCockpitRuntimeConnection(); if (connection.adapter !== 'ag-ui') { throw new Error('incompatible runtime'); } if (flag) return { url: connection.url }; return { url: connection.url }; })];`,
+      fixtureAppConfig(
+        'ag-ui',
+        `provideAgent(() => { ${fixtureStatements.declaration} ${fixtureStatements.guard} if (flag) ${fixtureStatements.result} ${fixtureStatements.result} })`
+      ),
       'noncanonical-provider-wiring',
     ],
     [
       'connection passed to mutating helper',
-      `import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';\nimport { provideAgent } from '@threadplane/ag-ui';\nexport const providers = [provideAgent(() => { const connection = injectCockpitRuntimeConnection(); if (connection.adapter !== 'ag-ui') { throw new Error('incompatible runtime'); } mutate(connection); return { url: connection.url }; })];`,
+      fixtureAppConfig(
+        'ag-ui',
+        `provideAgent(() => { ${fixtureStatements.declaration} ${fixtureStatements.guard} mutate(connection); ${fixtureStatements.result} })`
+      ),
       'noncanonical-provider-wiring',
     ],
     [
       'Object.assign connection mutation',
-      `import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';\nimport { provideAgent } from '@threadplane/ag-ui';\nexport const providers = [provideAgent(() => { const connection = injectCockpitRuntimeConnection(); if (connection.adapter !== 'ag-ui') { throw new Error('incompatible runtime'); } Object.assign(connection, { url: '/wrong' }); return { url: connection.url }; })];`,
+      fixtureAppConfig(
+        'ag-ui',
+        `provideAgent(() => { ${fixtureStatements.declaration} ${fixtureStatements.guard} Object.assign(connection, { url: '/wrong' }); ${fixtureStatements.result} })`
+      ),
       'noncanonical-provider-wiring',
     ],
     [
+      'connection read inside a session option expression',
+      fixtureAppConfig(
+        'ag-ui',
+        fixtureProvider(
+          'ag-ui',
+          fixtureSessionOptions['ag-ui'].replace(
+            'url: connection.url',
+            'url: rewrite(connection.url)'
+          )
+        )
+      ),
+      'session-connection-wiring',
+    ],
+    [
+      'session built by a namespace import',
+      `import * as langgraph from '@threadplane/langgraph';\nexport const make = () => langgraph.createSession({ assistantId: 'chat' });`,
+      'direct-agent-construction',
+    ],
+    [
+      'transport constructed by hand',
+      `import { FetchStreamTransport } from '@threadplane/langgraph';\nexport const make = () => new FetchStreamTransport('https://deployment.example');`,
+      'direct-agent-construction',
+    ],
+    [
+      'agent built outside its provider',
+      `import { createAgent } from '@threadplane/angular';\nexport const make = (config: never) => createAgent(config);`,
+      'direct-agent-construction',
+    ],
+    [
+      'aliased session factory import',
+      `import { createSession as makeSession } from '@threadplane/langgraph';\nexport const make = makeSession;`,
+      'noncanonical-provider-wiring',
+    ],
+    [
+      'session factory destructured from a namespace',
+      `import * as langgraph from '@threadplane/langgraph';\nconst { createSession } = langgraph;\nexport const make = () => createSession({ assistantId: 'chat' });`,
+      'noncanonical-provider-wiring',
+    ],
+    [
+      'provider imported from a backend package',
+      `import { provideAgent } from '@threadplane/langgraph';\nexport const appConfig = { providers: [provideAgent(() => ({}))] };`,
+      'noncanonical-provider-wiring',
+    ],
+    [
+      'provider given a ready config instead of a factory',
+      `import { provideAgent } from '@threadplane/angular';\nimport { runtimeConfig } from './runtime-config';\nexport const appConfig = { providers: [provideAgent(runtimeConfig)] };`,
+      'direct-agent-provider-config',
+    ],
+    [
       'provider element alias declaration',
-      `import * as api from '@threadplane/ag-ui';\nconst wire = api['provideAgent'];\nexport const providers = [wire(() => ({ url: '/agent' }))];`,
+      `import * as api from '@threadplane/angular';\nconst wire = api['provideAgent'];\nexport const providers = [wire(() => ({ url: '/agent' }))];`,
       'noncanonical-provider-wiring',
     ],
     [
       'provider renamed destructuring declaration',
-      `import * as api from '@threadplane/ag-ui';\nconst { provideAgent: wire } = api;\nexport const providers = [wire(() => ({ url: '/agent' }))];`,
+      `import * as api from '@threadplane/angular';\nconst { provideAgent: wire } = api;\nexport const providers = [wire(() => ({ url: '/agent' }))];`,
       'noncanonical-provider-wiring',
     ],
     [
@@ -1328,17 +1681,7 @@ describe('cockpit capability wiring', () => {
   });
 
   it('rejects Agent providers copied to orphan files, moved to the wrong file, or duplicated', () => {
-    const canonicalSource = `
-      import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
-      import { provideAgent } from '@threadplane/ag-ui';
-      export const appConfig = { providers: [provideAgent(() => {
-        const connection = injectCockpitRuntimeConnection();
-        if (connection.adapter !== 'ag-ui') {
-          throw new Error('incompatible runtime');
-        }
-        return { url: connection.url };
-      })] };
-    `;
+    const canonicalSource = fixtureAppConfig('ag-ui');
     const source = (relativeFileName: string) => ({
       relativeFileName,
       providerCalls: inspectRuntimeTargetSource(
@@ -1385,20 +1728,9 @@ describe('cockpit capability wiring', () => {
   it('pins provideAgent calls to their executable Angular registration owner', () => {
     const preamble = `
       import { Component } from '@angular/core';
-      import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
-      import { provideAgent } from '@threadplane/langgraph';
+      ${fixtureImports.langgraph}
     `;
-    const providerCall = `provideAgent(() => {
-      const connection = injectCockpitRuntimeConnection();
-      if (connection.adapter !== 'langgraph') {
-        throw new Error('incompatible runtime');
-      }
-      return {
-        apiUrl: connection.apiUrl,
-        assistantId: connection.assistantId,
-        clientOptions: connection.clientOptions,
-      };
-    })`;
+    const providerCall = fixtureProvider('langgraph');
     const inspect = (source: string) =>
       inspectRuntimeTargetSource(
         `${preamble}\n${source}`,
@@ -1573,276 +1905,1130 @@ describe('cockpit capability wiring', () => {
   it('rejects comment-only, wrong, helper-indirected, and duplicate Threads root providers', () => {
     const inspect = (
       source: string,
-      relativeFileName = 'src/app/app.config.ts'
+      relativeFileName = 'src/app/app.config.ts',
+      adapter: CompatibleRuntimeAdapter = 'langgraph'
     ) => {
       const inspection = inspectRuntimeTargetSource(
         source,
         relativeFileName,
-        'langgraph'
+        adapter
       );
       return {
         relativeFileName,
         angularProviders: inspection.angularProviders,
+        threadDirectoryProviders: inspection.threadDirectoryProviders,
         issues: inspection.issues,
       };
     };
-    const factory = (body: string) => `() => {
-      const connection = injectCockpitRuntimeConnection();
-      if (connection.adapter !== 'langgraph') {
-        throw new Error('incompatible runtime');
-      }
-      ${body}
-    }`;
-    const validSource = `
+    const directoryMismatch =
+      'provideThreadDirectory canonical provider in src/app/app.config.ts';
+    const clientOptionsMismatch =
+      'AGENT_CLIENT_OPTIONS canonical provider in src/app/app.config.ts';
+    const factory = (body: string) => fixtureFactory('langgraph', body);
+    const imports = `
       import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
-      import { LANGGRAPH_CLIENT_OPTIONS, LANGGRAPH_THREADS_CONFIG } from '@threadplane/langgraph';
-      export const appConfig = { providers: [
-        { provide: LANGGRAPH_THREADS_CONFIG, useFactory: ${factory(
-          'return { apiUrl: connection.apiUrl };'
-        )} },
-        { provide: LANGGRAPH_CLIENT_OPTIONS, useFactory: ${factory(
-          'return connection.clientOptions;'
-        )} },
-      ] };
+      import { AGENT_CLIENT_OPTIONS, provideThreadDirectory } from '@threadplane/angular';
+      import { createLangGraphThreadDirectory, type LangGraphClientOptions } from '@threadplane/langgraph';
     `;
-
-    expect(auditThreadsRootProviders([inspect(validSource)])).toEqual([]);
-    expect(
-      auditThreadsRootProviders([
-        inspect(
-          validSource.replace(
-            "from '@threadplane/langgraph';",
-            "from './fake-langgraph';"
-          )
-        ),
-      ])
-    ).not.toEqual([]);
-    expect(
-      auditThreadsRootProviders([
-        inspect(
-          validSource.replace(
-            "import { LANGGRAPH_CLIENT_OPTIONS, LANGGRAPH_THREADS_CONFIG } from '@threadplane/langgraph';",
-            'const LANGGRAPH_CLIENT_OPTIONS = fakeClientOptions; const LANGGRAPH_THREADS_CONFIG = fakeThreadsConfig;'
-          )
-        ),
-      ])
-    ).not.toEqual([]);
-    expect(
-      auditThreadsRootProviders([
-        inspect(`
-          // provide: LANGGRAPH_THREADS_CONFIG, useFactory: () => ({ apiUrl: connection.apiUrl })
-          export const appConfig = { providers: [
-            { provide: LANGGRAPH_CLIENT_OPTIONS, useFactory: ${factory(
-              'return connection.clientOptions;'
-            )} },
-          ] };
-        `),
-      ])
-    ).toContain(
-      'LANGGRAPH_THREADS_CONFIG canonical provider in src/app/app.config.ts'
+    const contextOptions =
+      'apiUrl: connection.apiUrl, clientOptions: context.clientOptions as LangGraphClientOptions | undefined,';
+    const connectionOptions =
+      'apiUrl: connection.apiUrl, clientOptions: connection.clientOptions,';
+    const directoryReturn = (options: string) =>
+      `return { createDirectory: (context) => createLangGraphThreadDirectory({ ${options} }) };`;
+    const directoryProvider = (options: string) =>
+      `provideThreadDirectory(${factory(directoryReturn(options))})`;
+    const clientOptionsReturn = 'return connection.clientOptions;';
+    const clientOptionsProvider = `{ provide: AGENT_CLIENT_OPTIONS, useFactory: ${factory(
+      clientOptionsReturn
+    )} }`;
+    const appConfig = (...providers: string[]) =>
+      `${imports}\nexport const appConfig = { providers: [\n${providers.join(
+        ',\n'
+      )}\n] };`;
+    // The client options through the provider context, as the Threads
+    // application has them, and straight from the connection.
+    const validSource = appConfig(
+      directoryProvider(contextOptions),
+      clientOptionsProvider
     );
+    const directSource = appConfig(directoryProvider(connectionOptions));
+    const mismatches = (source: string, fileName?: string) =>
+      auditThreadsRootProviders([inspect(source, fileName)]);
+    const kinds = (source: string) =>
+      inspect(source).issues.map(({ kind }) => kind);
+    const details = (source: string) =>
+      inspect(source)
+        .issues.map(({ detail }) => detail)
+        .join('\n');
+
+    for (const source of [validSource, directSource]) {
+      expect(mismatches(source)).toEqual([]);
+      expect(inspect(source).issues).toEqual([]);
+    }
+    // Both forms together: the provider is optional but still has to be right.
     expect(
-      auditThreadsRootProviders([inspect(validSource, 'src/app/orphan.ts')])
-    ).toEqual([
-      'LANGGRAPH_THREADS_CONFIG canonical provider in src/app/app.config.ts',
-      'LANGGRAPH_CLIENT_OPTIONS canonical provider in src/app/app.config.ts',
+      mismatches(
+        appConfig(directoryProvider(connectionOptions), clientOptionsProvider)
+      )
+    ).toEqual([]);
+
+    // A directory pointed at a different backend than the agent.
+    for (const apiUrl of [
+      "'https://other-deployment.example'",
+      'environment.langGraphApiUrl',
+      'connection.assistantId',
+    ]) {
+      const source = changed(
+        validSource,
+        'apiUrl: connection.apiUrl',
+        `apiUrl: ${apiUrl}`
+      );
+      expect(mismatches(source)).toContain(directoryMismatch);
+      expect(kinds(source)).toContain('thread-directory-wiring');
+      expect(details(source)).toMatch(
+        /apiUrl must be an explicit apiUrl: connection\.apiUrl/
+      );
+    }
+    // A directory that does not send the deployment key its agent sends.
+    for (const source of [
+      changed(
+        validSource,
+        'clientOptions: context.clientOptions as LangGraphClientOptions | undefined,',
+        ''
+      ),
+      changed(directSource, 'connection.clientOptions', '{ maxRetries: 4 }'),
+      changed(directSource, 'connection.clientOptions', 'context.reportOperationFailure'),
+    ]) {
+      expect(mismatches(source)).toContain(directoryMismatch);
+      expect(details(source)).toMatch(
+        /clientOptions must be connection\.clientOptions or the provider context's clientOptions/
+      );
+    }
+    // The context's client options with nothing providing them: undefined.
+    const unprovided = appConfig(directoryProvider(contextOptions));
+    expect(mismatches(unprovided)).toEqual([
+      directoryMismatch,
+      clientOptionsMismatch,
+    ]);
+    expect(details(unprovided)).toMatch(
+      /requires the canonical AGENT_CLIENT_OPTIONS provider in the same file/
+    );
+    // ...or provided from somewhere other than the connection.
+    for (const source of [
+      changed(validSource, clientOptionsReturn, 'return { maxRetries: 4 };'),
+      changed(
+        validSource,
+        `useFactory: ${factory(clientOptionsReturn)}`,
+        'useFactory: makeClientOptions'
+      ),
+      changed(validSource, clientOptionsReturn, `if (flag) ${clientOptionsReturn} ${clientOptionsReturn}`),
+      changed(
+        validSource,
+        clientOptionsReturn,
+        `Reflect.set(connection, 'clientOptions', {}); ${clientOptionsReturn}`
+      ),
+    ]) {
+      expect(mismatches(source)).toContain(clientOptionsMismatch);
+      expect(kinds(source)).toContain('session-connection-wiring');
+    }
+    const fakeToken = changed(
+      validSource,
+      'import { AGENT_CLIENT_OPTIONS, provideThreadDirectory }',
+      "import { AGENT_CLIENT_OPTIONS } from './fake-tokens';\nimport { provideThreadDirectory }"
+    );
+    expect(mismatches(fakeToken)).toContain(clientOptionsMismatch);
+    const duplicateToken = appConfig(
+      directoryProvider(contextOptions),
+      clientOptionsProvider,
+      clientOptionsProvider
+    );
+    expect(mismatches(duplicateToken)).toContain(clientOptionsMismatch);
+    expect(details(duplicateToken)).toMatch(
+      /duplicate Angular provider token AGENT_CLIENT_OPTIONS/
+    );
+
+    // A ready client, a spread, or a helper can each replace the connection.
+    for (const [options, reason] of [
+      [`${connectionOptions} client: sharedClient,`, /option client replaces/],
+      [`${connectionOptions} ...overrides,`, /may not contain spreads/],
+      [`apiUrl: connection.apiUrl, ...context,`, /may not spread the provider context/],
+      [`${connectionOptions} apiUrl: '/other',`, /apiUrl is given more than once/],
+      [`${connectionOptions} titleFallback: label(context),`, /may only be read as the whole value of a directory option/],
+    ] as const) {
+      const source = appConfig(directoryProvider(options));
+      expect(mismatches(source)).toContain(directoryMismatch);
+      expect(kinds(source)).toContain('thread-directory-wiring');
+      expect(details(source)).toMatch(reason);
+    }
+    for (const body of [
+      'return { createDirectory: makeDirectory };',
+      `return { createDirectory: () => createLangGraphThreadDirectory({ ${connectionOptions} }) };`,
+      `return { createDirectory: (context) => wrap(createLangGraphThreadDirectory({ ${connectionOptions} })) };`,
+      `return { createDirectory: (context) => createLangGraphThreadDirectory(directoryOptions) };`,
+      `return { ...base, createDirectory: (context) => createLangGraphThreadDirectory({ ${connectionOptions} }) };`,
+      `return { createDirectory: (context) => createLangGraphThreadDirectory({ ${connectionOptions} }), client: sharedClient };`,
+      `mutate(connection); ${directoryReturn(connectionOptions)}`,
+      `if (flag) ${directoryReturn(connectionOptions)} ${directoryReturn(
+        connectionOptions
+      )}`,
+    ]) {
+      const source = appConfig(`provideThreadDirectory(${factory(body)})`);
+      expect(mismatches(source)).toContain(directoryMismatch);
+      expect(inspect(source).issues).not.toEqual([]);
+    }
+    for (const provider of [
+      'provideThreadDirectory(makeDirectoryConfig)',
+      `provideThreadDirectory(${factory('return directoryConfig;')})`,
+      `provideThreadDirectory(() => { ${directoryReturn(
+        connectionOptions
+      )} const connection = injectCockpitRuntimeConnection(); })`,
+      `provideThreadDirectory(() => { const connection = injectCockpitRuntimeConnection(); ${directoryReturn(
+        connectionOptions
+      )} })`,
+      `provideThreadDirectory((injectCockpitRuntimeConnection = fakeInjector) => {
+        const connection = injectCockpitRuntimeConnection();
+        if (connection.adapter !== 'langgraph') { throw new Error('incompatible runtime'); }
+        ${directoryReturn(connectionOptions)}
+      })`,
+    ]) {
+      const source = appConfig(provider);
+      expect(mismatches(source)).toContain(directoryMismatch);
+      expect(inspect(source).issues).not.toEqual([]);
+    }
+
+    // The provider or the directory factory from somewhere else.
+    for (const source of [
+      changed(
+        directSource,
+        'import { AGENT_CLIENT_OPTIONS, provideThreadDirectory }',
+        "import { provideThreadDirectory } from './fake-angular';\nimport { AGENT_CLIENT_OPTIONS }"
+      ),
+      changed(
+        directSource,
+        "import { createLangGraphThreadDirectory, type LangGraphClientOptions } from '@threadplane/langgraph';",
+        "import { createLangGraphThreadDirectory } from './fake-langgraph';"
+      ),
+      changed(
+        directSource,
+        'import { createLangGraphThreadDirectory,',
+        'const createLangGraphThreadDirectory = fakeDirectory;\nimport {'
+      ),
+    ]) {
+      expect(mismatches(source)).toContain(directoryMismatch);
+      expect(inspect(source).issues).not.toEqual([]);
+    }
+
+    // Not registered, registered elsewhere, or registered twice.
+    expect(
+      mismatches(
+        `${imports}
+         // provideThreadDirectory(() => ({ createDirectory: () => createLangGraphThreadDirectory({ apiUrl: connection.apiUrl }) }))
+         export const appConfig = { providers: [${clientOptionsProvider}] };`
+      )
+    ).toEqual([directoryMismatch]);
+    const deadProvider = `${imports}
+      export const appConfig = { providers: [] };
+      ${directoryProvider(connectionOptions)};`;
+    expect(mismatches(deadProvider)).toContain(directoryMismatch);
+    expect(kinds(deadProvider)).toContain('thread-directory-wiring');
+    expect(mismatches(validSource, 'src/app/orphan.ts')).toEqual([
+      directoryMismatch,
+      clientOptionsMismatch,
     ]);
     expect(
-      auditThreadsRootProviders([
-        inspect(
-          validSource.replace(
-            'return { apiUrl: connection.apiUrl };',
-            'return { apiUrl: other.apiUrl };'
-          )
-        ),
-      ])
-    ).toContain(
-      'LANGGRAPH_THREADS_CONFIG canonical provider in src/app/app.config.ts'
+      mismatches(
+        appConfig(
+          directoryProvider(connectionOptions),
+          directoryProvider(connectionOptions)
+        )
+      )
+    ).toContain(directoryMismatch);
+
+    // A LangGraph thread list beside an agent on another backend.
+    expect(
+      inspect(directSource, 'src/app/app.config.ts', 'ag-ui')
+        .issues.map(({ detail }) => detail)
+        .join('\n')
+    ).toMatch(/a LangGraph thread directory cannot list the threads of an ag-ui agent/);
+
+    // The directory's own refused requests. Today it has no option for the
+    // reporter, so one passed anyway is dropped; once it declares an option,
+    // a directory wired without it is the mistake.
+    const withDirectoryReporter = (source: string, names: string[]) =>
+      inspectRuntimeTargetSource(
+        source,
+        'src/app/app.config.ts',
+        'langgraph',
+        undefined,
+        { directoryReporterOptionNames: names }
+      );
+    const reportingSource = appConfig(
+      directoryProvider(
+        `${connectionOptions} reportOperationFailure: context.reportOperationFailure,`
+      )
+    );
+    expect(details(reportingSource)).toMatch(
+      /passed as reportOperationFailure, which the thread directory does not accept; the reporter is dropped/
     );
     expect(
-      auditThreadsRootProviders([
-        inspect(
-          validSource.replace(
-            `useFactory: ${factory('return connection.clientOptions;')}`,
-            'useFactory: makeClientOptions'
-          )
-        ),
-      ])
-    ).toContain(
-      'LANGGRAPH_CLIENT_OPTIONS canonical provider in src/app/app.config.ts'
-    );
+      withDirectoryReporter(reportingSource, ['reportOperationFailure']).issues
+    ).toEqual([]);
     expect(
-      auditThreadsRootProviders([
-        inspect(
-          validSource.replace(
-            '] };',
-            `, { provide: LANGGRAPH_THREADS_CONFIG, useFactory: ${factory(
-              'return { apiUrl: connection.apiUrl };'
-            )} }] };`
-          )
-        ),
-      ])
-    ).toContain(
-      'LANGGRAPH_THREADS_CONFIG canonical provider in src/app/app.config.ts'
-    );
-    const earlyThreadsFactory = `() => {
-      return { apiUrl: connection.apiUrl };
-      const connection = injectCockpitRuntimeConnection();
-      if (connection.adapter !== 'langgraph') {
-        throw new Error('incompatible runtime');
-      }
-    }`;
+      withDirectoryReporter(
+        reportingSource,
+        ['reportOperationFailure']
+      ).threadDirectoryProviders.map(({ canonical }) => canonical)
+    ).toEqual([true]);
+    const silent = withDirectoryReporter(directSource, [
+      'reportOperationFailure',
+    ]);
+    expect(silent.threadDirectoryProviders[0].canonical).toBe(false);
+    expect(silent.issues).toEqual([
+      {
+        kind: 'thread-directory-wiring',
+        detail:
+          "createLangGraphThreadDirectory must be given the provider context's reportOperationFailure as reportOperationFailure",
+      },
+    ]);
     expect(
-      auditThreadsRootProviders([
-        inspect(
-          validSource.replace(
-            factory('return { apiUrl: connection.apiUrl };'),
-            earlyThreadsFactory
-          )
+      withDirectoryReporter(
+        changed(
+          reportingSource,
+          'reportOperationFailure: context.reportOperationFailure',
+          'reportOperationFailure: () => undefined'
         ),
-      ])
-    ).toContain(
-      'LANGGRAPH_THREADS_CONFIG canonical provider in src/app/app.config.ts'
+        ['reportOperationFailure']
+      ).issues.map(({ detail }) => detail)
+    ).toEqual([
+      "reportOperationFailure must be the provider context's reportOperationFailure",
+    ]);
+
+    // The registration array itself must stay explicit.
+    const trailingSpread = changed(
+      validSource,
+      '\n] };',
+      ', ...runtimeProviderOverrides\n] };'
     );
-    const nestedClientFactory = `() => {
-      const connection = injectCockpitRuntimeConnection();
-      if (connection.adapter !== 'langgraph') {
-        throw new Error('incompatible runtime');
-      }
-      if (flag) return connection.clientOptions;
-      return connection.clientOptions;
-    }`;
+    expect(mismatches(trailingSpread)).not.toEqual([]);
+    expect(kinds(trailingSpread)).toContain('noncanonical-provider-wiring');
     expect(
-      auditThreadsRootProviders([
-        inspect(
-          validSource.replace(
-            factory('return connection.clientOptions;'),
-            nestedClientFactory
-          )
-        ),
+      kinds(
+        changed(
+          validSource,
+          'provide: AGENT_CLIENT_OPTIONS',
+          "['provide']: AGENT_CLIENT_OPTIONS"
+        )
+      )
+    ).toContain('noncanonical-provider-wiring');
+    expect(
+      kinds(
+        changed(
+          validSource,
+          '{ provide: AGENT_CLIENT_OPTIONS',
+          '{ ...override, provide: AGENT_CLIENT_OPTIONS'
+        )
+      )
+    ).toContain('noncanonical-provider-wiring');
+    expect(
+      kinds(`export const appConfig = { providers: [{ provide, useFactory }] };`)
+    ).toContain('noncanonical-provider-wiring');
+  });
+
+  it('reads the session option names and the provider context members from the libraries', () => {
+    // The session rules stand on these facts. They are read from the library
+    // sources so that a rename is followed, and a removal is named here
+    // rather than surfacing as 35 unexplained application failures.
+    expect(reporterOptionNames.langgraph).not.toEqual([]);
+    expect(reporterOptionNames['ag-ui']).not.toEqual([]);
+    expect(sessionOptionMembers.langgraph).toEqual(
+      expect.arrayContaining([
+        'apiUrl',
+        'assistantId',
+        'clientOptions',
+        'threadId',
+        'onThreadId',
+        'transport',
       ])
-    ).toContain(
-      'LANGGRAPH_CLIENT_OPTIONS canonical provider in src/app/app.config.ts'
     );
-    const rejectFactory = (
-      validFactory: string,
-      invalidFactory: string,
-      token: 'LANGGRAPH_THREADS_CONFIG' | 'LANGGRAPH_CLIENT_OPTIONS'
-    ): void => {
-      expect(
-        auditThreadsRootProviders([
-          inspect(validSource.replace(validFactory, invalidFactory)),
-        ])
-      ).toContain(`${token} canonical provider in src/app/app.config.ts`);
-    };
-    const threadsReturn = 'return { apiUrl: connection.apiUrl };';
-    const clientReturn = 'return connection.clientOptions;';
-    rejectFactory(
-      factory(threadsReturn),
-      `() => {
-        const connection = injectCockpitRuntimeConnection();
-        throw new Error('unreachable');
-        if (connection.adapter !== 'langgraph') { throw new Error('incompatible runtime'); }
-        ${threadsReturn}
-      }`,
-      'LANGGRAPH_THREADS_CONFIG'
+    expect(sessionOptionMembers['ag-ui']).toEqual(
+      expect.arrayContaining(['url', 'threadId', 'agent', 'fetch'])
     );
-    rejectFactory(
-      factory(threadsReturn),
-      `() => {
-        const connection = injectCockpitRuntimeConnection();
-        if (connection.adapter !== 'langgraph') { throw new Error('incompatible runtime'); }
-        if (flag) ${threadsReturn}
-        ${threadsReturn}
-      }`,
-      'LANGGRAPH_THREADS_CONFIG'
+    // The AG-UI session names its own thread and takes no callback for it.
+    // If it gains one, the audit's AG-UI contract must start requiring it.
+    expect(sessionOptionMembers['ag-ui']).not.toContain('onThreadId');
+    expect(
+      declaredOptionMembers(
+        resolve(libsRoot, 'angular/src'),
+        'AgentSessionContext'
+      )
+    ).toEqual([...providerContextKeys].sort());
+    expect(directoryOptionMembers).toEqual(
+      expect.arrayContaining(['apiUrl', 'clientOptions', 'client'])
     );
-    rejectFactory(
-      factory(clientReturn),
-      `() => {
-        ${clientReturn}
-        const connection = injectCockpitRuntimeConnection();
-        if (connection.adapter !== 'langgraph') { throw new Error('incompatible runtime'); }
-      }`,
-      'LANGGRAPH_CLIENT_OPTIONS'
-    );
-    rejectFactory(
-      factory(clientReturn),
-      `() => {
-        const connection = injectCockpitRuntimeConnection();
-        throw new Error('unreachable');
-        if (connection.adapter !== 'langgraph') { throw new Error('incompatible runtime'); }
-        ${clientReturn}
-      }`,
-      'LANGGRAPH_CLIENT_OPTIONS'
-    );
-    rejectFactory(
-      factory(threadsReturn),
-      factory(`mutate(connection); ${threadsReturn}`),
-      'LANGGRAPH_THREADS_CONFIG'
-    );
-    rejectFactory(
-      factory(clientReturn),
-      factory(`Reflect.set(connection, 'clientOptions', {}); ${clientReturn}`),
-      'LANGGRAPH_CLIENT_OPTIONS'
-    );
-    rejectFactory(
-      factory(threadsReturn),
-      `(injectCockpitRuntimeConnection = fakeInjector) => {
-        const connection = injectCockpitRuntimeConnection();
-        if (connection.adapter !== 'langgraph') { throw new Error('incompatible runtime'); }
-        ${threadsReturn}
-      }`,
-      'LANGGRAPH_THREADS_CONFIG'
-    );
-    rejectFactory(
-      factory(clientReturn),
-      `function injectCockpitRuntimeConnection() {
-        const connection = injectCockpitRuntimeConnection();
-        if (connection.adapter !== 'langgraph') { throw new Error('incompatible runtime'); }
-        ${clientReturn}
-      }`,
-      'LANGGRAPH_CLIENT_OPTIONS'
-    );
-    const deadProviders = `
-      export const appConfig = { providers: [] };
-      ({ provide: LANGGRAPH_THREADS_CONFIG, useFactory: ${factory(
-        'return { apiUrl: connection.apiUrl };'
-      )} });
-      ({ provide: LANGGRAPH_CLIENT_OPTIONS, useFactory: ${factory(
-        'return connection.clientOptions;'
-      )} });
-    `;
-    expect(auditThreadsRootProviders([inspect(deadProviders)])).not.toEqual([]);
-    const trailingSpread = validSource.replace(
-      '] };',
-      ', ...runtimeProviderOverrides] };'
-    );
-    expect(auditThreadsRootProviders([inspect(trailingSpread)])).not.toEqual(
-      []
-    );
-    expect(inspect(trailingSpread).issues.map(({ kind }) => kind)).toContain(
-      'noncanonical-provider-wiring'
-    );
-    const computedProvider = validSource.replace(
-      'provide: LANGGRAPH_THREADS_CONFIG',
-      "['provide']: LANGGRAPH_THREADS_CONFIG"
-    );
-    expect(inspect(computedProvider).issues.map(({ kind }) => kind)).toContain(
-      'noncanonical-provider-wiring'
-    );
-    const spreadProvider = validSource.replace(
-      '{ provide: LANGGRAPH_THREADS_CONFIG',
-      '{ ...override, provide: LANGGRAPH_THREADS_CONFIG'
-    );
-    expect(inspect(spreadProvider).issues.map(({ kind }) => kind)).toContain(
-      'noncanonical-provider-wiring'
-    );
+    // The directory factory is offered the reporter too. Whether the
+    // directory can take it is read from its options (today it cannot), and
+    // the audit requires it from the day the options declare it.
+    expect(
+      declaredOptionMembers(
+        resolve(libsRoot, 'angular/src'),
+        'ThreadDirectoryContext'
+      )
+    ).toEqual(['clientOptions', 'reportOperationFailure']);
+  });
+
+  const kindsOf = (issues: readonly RuntimeWiringAuditIssue[]): string[] =>
+    [...new Set(issues.map(({ kind }) => kind))].sort();
+  const sessionIssues = (
+    adapter: CompatibleRuntimeAdapter,
+    options: string,
+    names?: ReporterOptionNames
+  ): RuntimeWiringAuditIssue[] =>
+    inspectRuntimeTargetSource(
+      fixtureAppConfig(adapter, fixtureProvider(adapter, options)),
+      'src/app/app.config.ts',
+      adapter,
+      undefined,
+      names ? { reporterOptionNames: names } : undefined
+    ).issues;
+  const langGraphOptions = fixtureSessionOptions.langgraph;
+  const agUiOptions = fixtureSessionOptions['ag-ui'];
+  const langGraphReporter = defaultReporterOptionNames.langgraph[0];
+  const agUiReporter = defaultReporterOptionNames['ag-ui'][0];
+  const changed = (
+    source: string,
+    search: string | RegExp,
+    replacement: string
+  ): string => {
+    const next = source.replace(search, replacement);
+    // A mutation that changes nothing would pass every negative case.
+    if (next === source) throw new Error(`fixture mutation missed: ${search}`);
+    return next;
+  };
+
+  it('accepts every correct form of the session wiring', () => {
+    expect(sessionIssues('langgraph', langGraphOptions)).toEqual([]);
+    expect(sessionIssues('ag-ui', agUiOptions)).toEqual([]);
+    // The AG-UI session's thread option needs no `?? undefined` to be wired.
+    expect(
+      sessionIssues('ag-ui', changed(agUiOptions, ' ?? undefined', ''))
+    ).toEqual([]);
+    // Options that belong to the application, not to the connection.
+    expect(
+      sessionIssues(
+        'langgraph',
+        `${langGraphOptions} throttle: 16, historyState: true, stateType: type<State>(), transcriptNodeNames: ['answer'],`
+      )
+    ).toEqual([]);
+    expect(
+      sessionIssues('ag-ui', `${agUiOptions} interruptTransport: 'auto',`)
+    ).toEqual([]);
+    const inspect = (provider: string) =>
+      inspectRuntimeTargetSource(
+        fixtureAppConfig('langgraph', provider),
+        'src/app/app.config.ts',
+        'langgraph'
+      ).issues;
+    // The context destructured, with and without renaming.
     expect(
       inspect(
-        `export const appConfig = { providers: [{ provide, useFactory }] };`
-      ).issues.map(({ kind }) => kind)
-    ).toContain('noncanonical-provider-wiring');
+        `provideAgent(${fixtureFactory(
+          'langgraph',
+          `return { createSession: ({ threadId, onThreadId, reportOperationFailure }) => createSession({
+            apiUrl: connection.apiUrl,
+            assistantId: connection.assistantId,
+            clientOptions: connection.clientOptions,
+            threadId,
+            onThreadId,
+            ${langGraphReporter}: reportOperationFailure,
+          }) };`
+        )})`
+      )
+    ).toEqual([]);
+    expect(
+      inspect(
+        `provideAgent(${fixtureFactory(
+          'langgraph',
+          `return { createSession: ({ threadId: thread, onThreadId: created, reportOperationFailure: report }) => createSession({
+            apiUrl: connection.apiUrl,
+            assistantId: connection.assistantId,
+            clientOptions: connection.clientOptions,
+            threadId: thread,
+            onThreadId: created,
+            ${langGraphReporter}: report,
+          }) };`
+        )})`
+      )
+    ).toEqual([]);
+    // A block body whose only statement returns the session.
+    expect(
+      inspect(
+        `provideAgent(${fixtureFactory(
+          'langgraph',
+          `return { createSession: (context) => { return createSession({ ${langGraphOptions} }); } };`
+        )})`
+      )
+    ).toEqual([]);
+    // Agent config beside the session factory.
+    expect(
+      inspect(
+        `provideAgent(${fixtureFactory(
+          'langgraph',
+          `return { ${fixtureSessionMember(
+            'langgraph'
+          )}, threadId: activeThread, onThreadId: (id: string) => activeThread.set(id) };`
+        )})`
+      )
+    ).toEqual([]);
+  });
+
+  it.each<
+    [string, CompatibleRuntimeAdapter, () => string, string[], RegExp]
+  >([
+    [
+      'a hard-coded deployment URL',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'apiUrl: connection.apiUrl',
+          "apiUrl: 'https://deployment.example'"
+        ),
+      ['session-connection-wiring'],
+      /apiUrl must be an explicit apiUrl: connection\.apiUrl/,
+    ],
+    [
+      'a hard-coded AG-UI endpoint',
+      'ag-ui',
+      () => changed(agUiOptions, 'url: connection.url', "url: '/agent'"),
+      ['session-connection-wiring'],
+      /url must be an explicit url: connection\.url/,
+    ],
+    [
+      'a hard-coded assistant',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'assistantId: connection.assistantId',
+          "assistantId: 'another-graph'"
+        ),
+      ['session-connection-wiring'],
+      /assistantId must be an explicit/,
+    ],
+    [
+      'dropped cockpit client options',
+      'langgraph',
+      () =>
+        changed(langGraphOptions, 'clientOptions: connection.clientOptions,', ''),
+      ['session-connection-wiring'],
+      /clientOptions must be an explicit/,
+    ],
+    [
+      'client options replaced by a literal',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'clientOptions: connection.clientOptions',
+          'clientOptions: { maxRetries: 4 }'
+        ),
+      ['session-connection-wiring'],
+      /clientOptions must be an explicit/,
+    ],
+    [
+      "client options read from the context instead of the cockpit's connection",
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'clientOptions: connection.clientOptions',
+          'clientOptions: context.clientOptions'
+        ),
+      ['session-connection-wiring'],
+      /clientOptions must be an explicit/,
+    ],
+    [
+      'connection values crossed',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'apiUrl: connection.apiUrl',
+          'apiUrl: connection.assistantId'
+        ),
+      ['noncanonical-provider-wiring', 'session-connection-wiring'],
+      /apiUrl must be an explicit/,
+    ],
+    [
+      'a connection value given twice',
+      'langgraph',
+      () => `${langGraphOptions} apiUrl: '/other',`,
+      ['session-connection-wiring'],
+      /option apiUrl is given more than once/,
+    ],
+    [
+      'a spread that can replace a connection value',
+      'langgraph',
+      () => `${langGraphOptions} ...overrides,`,
+      ['session-connection-wiring'],
+      /options may not contain spreads/,
+    ],
+    [
+      'a custom transport that replaces the connection',
+      'langgraph',
+      () => `${langGraphOptions} transport: customTransport,`,
+      ['session-connection-wiring'],
+      /option transport replaces the cockpit runtime connection/,
+    ],
+    [
+      'a hand-built agent that replaces the endpoint',
+      'ag-ui',
+      () => `${agUiOptions} agent: customAgent,`,
+      ['session-connection-wiring'],
+      /option agent replaces the cockpit runtime connection/,
+    ],
+    [
+      'a custom fetch that can reroute the endpoint',
+      'ag-ui',
+      () => `${agUiOptions} fetch: customFetch,`,
+      ['session-connection-wiring'],
+      /option fetch replaces the cockpit runtime connection/,
+    ],
+    [
+      'a fixed thread',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'threadId: context.threadId',
+          "threadId: 'thread-1'"
+        ),
+      ['session-context-wiring'],
+      /threadId must be the provider context's threadId/,
+    ],
+    [
+      'a session that ignores the thread it is asked to open',
+      'ag-ui',
+      () => changed(agUiOptions, 'threadId: context.threadId ?? undefined,', ''),
+      ['session-context-wiring'],
+      /threadId must be the provider context's threadId/,
+    ],
+    [
+      'a created thread that is never reported to the agent',
+      'langgraph',
+      () => changed(langGraphOptions, 'onThreadId: context.onThreadId,', ''),
+      ['session-context-wiring'],
+      /onThreadId must be the provider context's onThreadId/,
+    ],
+    [
+      'a thread callback that bypasses the agent',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'onThreadId: context.onThreadId',
+          'onThreadId: (id: string) => remember(id)'
+        ),
+      ['session-context-wiring'],
+      /onThreadId must be the provider context's onThreadId/,
+    ],
+    [
+      'thread members crossed',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'threadId: context.threadId',
+          'threadId: context.clientOptions'
+        ),
+      ['session-context-wiring'],
+      /threadId must be the provider context's threadId/,
+    ],
+    [
+      'a context member that does not exist',
+      'langgraph',
+      () => `${langGraphOptions} signal: context.signal,`,
+      ['session-context-wiring'],
+      /the provider context has no member signal/,
+    ],
+    [
+      'the context handed to a helper',
+      'langgraph',
+      () => `${langGraphOptions} extra: describe(context),`,
+      ['session-context-wiring'],
+      /may only be read as the whole value of a createSession option; found context/,
+    ],
+    [
+      'a context member read inside an expression',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'threadId: context.threadId',
+          'threadId: context.threadId || fallbackThread'
+        ),
+      ['session-context-wiring'],
+      /threadId must be the provider context's threadId/,
+    ],
+    [
+      'a spread of the whole context',
+      'langgraph',
+      () =>
+        `apiUrl: connection.apiUrl, assistantId: connection.assistantId, clientOptions: connection.clientOptions, ...context,`,
+      ['operation-reporter-wiring', 'session-context-wiring'],
+      /options may not spread the provider context/,
+    ],
+    [
+      'a dropped operation reporter',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          `${langGraphReporter}: context.reportOperationFailure,`,
+          ''
+        ),
+      ['operation-reporter-wiring'],
+      /createSession must be given the provider context's reportOperationFailure as onOperationFailure/,
+    ],
+    [
+      'a dropped AG-UI operation reporter',
+      'ag-ui',
+      () =>
+        changed(
+          agUiOptions,
+          `${agUiReporter}: context.reportOperationFailure,`,
+          ''
+        ),
+      ['operation-reporter-wiring'],
+      /createSession must be given the provider context's reportOperationFailure as reportOperationFailure/,
+    ],
+    [
+      "the reporter under the AG-UI session's name on a LangGraph session",
+      'langgraph',
+      () => changed(langGraphOptions, `${langGraphReporter}:`, `${agUiReporter}:`),
+      ['operation-reporter-wiring'],
+      /passed as reportOperationFailure, which the langgraph session does not accept \(it takes onOperationFailure\); the reporter is dropped/,
+    ],
+    [
+      "the reporter under the LangGraph session's name on an AG-UI session",
+      'ag-ui',
+      () => changed(agUiOptions, `${agUiReporter}:`, `${langGraphReporter}:`),
+      ['operation-reporter-wiring'],
+      /passed as onOperationFailure, which the ag-ui session does not accept \(it takes reportOperationFailure\); the reporter is dropped/,
+    ],
+    [
+      'the reporter under an invented name',
+      'langgraph',
+      () => changed(langGraphOptions, `${langGraphReporter}:`, 'onFailure:'),
+      ['operation-reporter-wiring'],
+      /passed as onFailure, which the langgraph session does not accept/,
+    ],
+    [
+      'a reporter the host never sees',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'context.reportOperationFailure',
+          '() => undefined'
+        ),
+      ['operation-reporter-wiring'],
+      /onOperationFailure must be the provider context's reportOperationFailure/,
+    ],
+    [
+      'the reporter option given another context member',
+      'ag-ui',
+      () =>
+        changed(
+          agUiOptions,
+          'context.reportOperationFailure',
+          'context.onThreadId'
+        ),
+      ['operation-reporter-wiring'],
+      /reportOperationFailure must be the provider context's reportOperationFailure/,
+    ],
+  ])(
+    'rejects %s',
+    (_label, adapter, options, expectedKinds, expectedDetail) => {
+      const issues = sessionIssues(adapter, options());
+      expect(kindsOf(issues)).toEqual(expectedKinds);
+      expect(issues.map(({ detail }) => detail).join('\n')).toMatch(
+        expectedDetail
+      );
+    }
+  );
+
+  it('accepts whichever reporter option name the session interface declares', () => {
+    const unified: ReporterOptionNames = {
+      langgraph: ['reportOperationFailure'],
+      'ag-ui': ['reportOperationFailure'],
+    };
+    const renamed = changed(
+      langGraphOptions,
+      `${langGraphReporter}:`,
+      'reportOperationFailure:'
+    );
+    // Today the LangGraph session takes the reporter under its own name.
+    expect(kindsOf(sessionIssues('langgraph', renamed))).toEqual([
+      'operation-reporter-wiring',
+    ]);
+    // Once both sessions declare one name, that name is the accepted one and
+    // the old one is the reporter that gets dropped.
+    expect(sessionIssues('langgraph', renamed, unified)).toEqual([]);
+    expect(sessionIssues('ag-ui', agUiOptions, unified)).toEqual([]);
+    expect(
+      kindsOf(sessionIssues('langgraph', langGraphOptions, unified))
+    ).toEqual(['operation-reporter-wiring']);
+    // While a session declares both, either is wired.
+    const both: ReporterOptionNames = {
+      langgraph: ['onOperationFailure', 'reportOperationFailure'],
+      'ag-ui': ['reportOperationFailure'],
+    };
+    expect(sessionIssues('langgraph', renamed, both)).toEqual([]);
+    expect(sessionIssues('langgraph', langGraphOptions, both)).toEqual([]);
+    // The applications are audited with the names read from the libraries.
+    expect(
+      sessionIssues(
+        'langgraph',
+        // Not `changed`: today the declared name is the fixture's own.
+        langGraphOptions.replace(
+          `${langGraphReporter}:`,
+          `${reporterOptionNames.langgraph[0]}:`
+        ),
+        reporterOptionNames
+      )
+    ).toEqual([]);
+  });
+
+  it('requires the agent config to build its session inline from the provider context', () => {
+    const configIssues = (body: string, adapter: CompatibleRuntimeAdapter = 'langgraph') =>
+      inspectRuntimeTargetSource(
+        fixtureAppConfig(adapter, `provideAgent(${fixtureFactory(adapter, body)})`),
+        'src/app/app.config.ts',
+        adapter
+      ).issues;
+    const details = (issues: readonly RuntimeWiringAuditIssue[]): string =>
+      issues.map(({ detail }) => detail).join('\n');
+    const member = fixtureSessionMember('langgraph');
+    expect(configIssues(`return { ${member} };`)).toEqual([]);
+
+    const helper = configIssues('return { createSession: makeSession };');
+    expect(kindsOf(helper)).toEqual(['noncanonical-provider-wiring']);
+    expect(details(helper)).toMatch(/createSession must be an inline arrow/);
+
+    const ignoresContext = configIssues(
+      `return { createSession: () => createSession({ apiUrl: connection.apiUrl, assistantId: connection.assistantId, clientOptions: connection.clientOptions }) };`
+    );
+    expect(details(ignoresContext)).toMatch(
+      /createSession must take exactly the provider context parameter/
+    );
+
+    const extraStatements = configIssues(
+      `return { createSession: (context) => { prepare(); return createSession({ ${langGraphOptions} }); } };`
+    );
+    expect(details(extraStatements)).toMatch(
+      /createSession must return a direct createSession\(\.\.\.\) call and nothing else/
+    );
+
+    const wrapped = configIssues(
+      `return { createSession: (context) => decorate(createSession({ ${langGraphOptions} })) };`
+    );
+    expect(kindsOf(wrapped)).toEqual([
+      'noncanonical-provider-wiring',
+      'session-outside-provider-factory',
+    ]);
+
+    const indirectOptions = configIssues(
+      `return { createSession: (context) => createSession(sessionOptions(context)) };`
+    );
+    expect(details(indirectOptions)).toMatch(
+      /createSession must be given one inline options object/
+    );
+
+    const defaulted = configIssues(
+      `return { createSession: (context = fallbackContext) => createSession({ ${langGraphOptions} }) };`
+    );
+    expect(details(defaulted)).toMatch(/may not have a default/);
+
+    const missing = configIssues('return { threadId: activeThread };');
+    expect(details(missing)).toMatch(
+      /agent config requires an explicit createSession member/
+    );
+
+    const unknownMember = configIssues(
+      `return { ${member}, transport: customTransport };`
+    );
+    expect(kindsOf(unknownMember)).toEqual(['noncanonical-provider-wiring']);
+    expect(details(unknownMember)).toMatch(
+      /agent config member transport is not part of the audited wiring/
+    );
+
+    const spreadConfig = configIssues(`return { ...baseConfig, ${member} };`);
+    expect(details(spreadConfig)).toMatch(
+      /agent config forbids spread, computed, method, and shorthand members/
+    );
+
+    const duplicate = configIssues(
+      `return { ${member}, createSession: makeSession };`
+    );
+    expect(details(duplicate)).toMatch(
+      /agent config member createSession is given more than once/
+    );
+
+    // A typed ref reached through anything but its own import.
+    const refIssues = (ref: string, imports = '') =>
+      inspectRuntimeTargetSource(
+        fixtureAppConfig(
+          'langgraph',
+          `provideAgent(${ref}, ${fixtureFactory('langgraph')})`,
+          `${fixtureImports.langgraph}\n${imports}`
+        ),
+        'src/app/app.config.ts',
+        'langgraph'
+      ).issues;
+    expect(
+      refIssues(
+        'STREAMING_AGENT',
+        "import { STREAMING_AGENT } from './agent-ref';"
+      )
+    ).toEqual([]);
+    expect(details(refIssues('refs.STREAMING_AGENT'))).toMatch(
+      /typed provider refs must be a direct identifier first argument/
+    );
+    expect(
+      details(
+        refIssues(
+          'STREAMING_AGENT',
+          "import { STREAMING_AGENT } from './other-ref';"
+        )
+      )
+    ).toMatch(
+      /typed provider ref STREAMING_AGENT requires its stable \.\/agent-ref import/
+    );
+  });
+
+  it('rejects a session or directory built anywhere but its provider factory', () => {
+    const outside = (source: string, fileName = 'src/app/session-helper.ts') =>
+      inspectRuntimeTargetSource(source, fileName, 'langgraph').issues;
+    // A component that builds its own session: it has no provider context, so
+    // it ignores the agent's thread and reports no refused request.
+    expect(
+      kindsOf(
+        outside(
+          `import { createSession } from '@threadplane/langgraph';
+           export function openSession(target: string) {
+             return createSession({ apiUrl: target, assistantId: 'chat' });
+           }`
+        )
+      )
+    ).toEqual(['session-outside-provider-factory']);
+    expect(
+      kindsOf(
+        outside(
+          `import { createSession } from '@threadplane/ag-ui';
+           export function openSession(target: string) {
+             return createSession({ url: target });
+           }`
+        )
+      )
+    ).toEqual(['session-outside-provider-factory']);
+    expect(
+      kindsOf(
+        outside(
+          `import { createLangGraphThreadDirectory } from '@threadplane/langgraph';
+           export function openDirectory(target: string) {
+             return createLangGraphThreadDirectory({ apiUrl: target });
+           }`
+        )
+      )
+    ).toEqual(['session-outside-provider-factory']);
+
+    const inFactory = (body: string) =>
+      inspectRuntimeTargetSource(
+        fixtureAppConfig(
+          'langgraph',
+          `provideAgent(${fixtureFactory('langgraph', body)})`
+        ),
+        'src/app/app.config.ts',
+        'langgraph'
+      ).issues;
+    // One session hoisted out of the per-thread factory: every thread switch
+    // would get the same session, opened without a thread.
+    expect(
+      kindsOf(
+        inFactory(
+          `const session = createSession({ apiUrl: connection.apiUrl, assistantId: connection.assistantId, clientOptions: connection.clientOptions });
+           return { createSession: () => session };`
+        )
+      )
+    ).toEqual([
+      'noncanonical-provider-wiring',
+      'session-outside-provider-factory',
+    ]);
+    // The session built by a helper the factory calls.
+    expect(
+      kindsOf(
+        inFactory(
+          `const makeSession = (context) => createSession({ ${langGraphOptions} });
+           return { createSession: makeSession };`
+        )
+      )
+    ).toEqual([
+      'noncanonical-provider-wiring',
+      'session-outside-provider-factory',
+    ]);
+    // The backend factory handed over as the config member: it would be called
+    // with the provider context as its options.
+    expect(kindsOf(inFactory('return { createSession };'))).toEqual([
+      'noncanonical-provider-wiring',
+      'session-outside-provider-factory',
+    ]);
+    expect(
+      kindsOf(inFactory('return { createSession: createSession };'))
+    ).toEqual([
+      'noncanonical-provider-wiring',
+      'session-outside-provider-factory',
+    ]);
+    // The canonical call is the only one that passes.
+    expect(inFactory(`return { ${fixtureSessionMember('langgraph')} };`)).toEqual(
+      []
+    );
+  });
+
+  it('rejects a session from a backend other than the one the application declares', () => {
+    const wrongBackend = (
+      expected: CompatibleRuntimeAdapter,
+      imported: CompatibleRuntimeAdapter
+    ) =>
+      inspectRuntimeTargetSource(
+        fixtureAppConfig(
+          expected,
+          `provideAgent(${fixtureFactory(
+            expected,
+            `return { ${fixtureSessionMember(imported)} };`
+          )})`,
+          fixtureImports[imported]
+        ),
+        'src/app/app.config.ts',
+        expected
+      ).issues.map(({ detail }) => detail);
+    expect(wrongBackend('langgraph', 'ag-ui')).toContain(
+      'session adapter ag-ui does not match langgraph'
+    );
+    expect(wrongBackend('ag-ui', 'langgraph')).toContain(
+      'session adapter langgraph does not match ag-ui'
+    );
+    expect(wrongBackend('langgraph', 'langgraph')).toEqual([]);
+    // A look-alike factory from a local module is no backend at all.
+    expect(
+      inspectRuntimeTargetSource(
+        fixtureAppConfig(
+          'langgraph',
+          fixtureProvider('langgraph'),
+          changed(
+            fixtureImports.langgraph,
+            "from '@threadplane/langgraph'",
+            "from './fake-langgraph'"
+          )
+        ),
+        'src/app/app.config.ts',
+        'langgraph'
+      ).issues.map(({ detail }) => detail)
+    ).toContain(
+      'createSession requires its stable direct import from @threadplane/langgraph'
+    );
+  });
+
+  it('keeps the host reporter token and the client options token in their one sanctioned place', () => {
+    const issuesOf = (source: string, fileName: string) =>
+      inspectRuntimeTargetSource(source, fileName, 'langgraph').issues;
+    const entrypoint = `
+      import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/angular';
+      import { bootstrapWithCockpitHarness } from '@threadplane/cockpit-telemetry';
+      import { appConfig } from './app/app.config';
+      import { StreamingComponent } from './app/streaming.component';
+      import { environment } from './environments/environment';
+      void bootstrapWithCockpitHarness(StreamingComponent, appConfig, {
+        runtime: {
+          adapter: 'langgraph',
+          sharedApiUrl: environment.langGraphApiUrl,
+          assistantId: environment.streamingAssistantId,
+          operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
+        },
+      }).catch(() => undefined);
+    `;
+    expect(issuesOf(entrypoint, 'src/main.ts')).toEqual([]);
+    // The application overriding the reporter the harness provides.
+    const override = issuesOf(
+      `import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/angular';
+       export const appConfig = { providers: [
+         { provide: ɵAGENT_OPERATION_FAILURE_REPORTER, useFactory: () => () => undefined },
+       ] };`,
+      'src/app/app.config.ts'
+    );
+    expect(kindsOf(override)).toEqual(['operation-reporter-wiring']);
+    expect(
+      kindsOf(
+        issuesOf(
+          `import { inject } from '@angular/core';
+           import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/angular';
+           export const read = () => inject(ɵAGENT_OPERATION_FAILURE_REPORTER);`,
+          'src/app/reporter.ts'
+        )
+      )
+    ).toEqual(['operation-reporter-wiring']);
+    expect(
+      kindsOf(
+        issuesOf(
+          `${entrypoint}\nregister(ɵAGENT_OPERATION_FAILURE_REPORTER);`,
+          'src/main.ts'
+        )
+      )
+    ).toEqual(['operation-reporter-wiring']);
+
+    // Client options that do not come from the cockpit's connection.
+    const fixedOptions = issuesOf(
+      `import { AGENT_CLIENT_OPTIONS } from '@threadplane/angular';
+       export const appConfig = { providers: [
+         { provide: AGENT_CLIENT_OPTIONS, useFactory: () => ({ maxRetries: 4 }) },
+       ] };`,
+      'src/app/app.config.ts'
+    );
+    expect(kindsOf(fixedOptions)).toEqual(['session-connection-wiring']);
+    expect(
+      kindsOf(
+        issuesOf(
+          `import { AGENT_CLIENT_OPTIONS } from '@threadplane/angular';
+           export const appConfig = { providers: [
+             { provide: AGENT_CLIENT_OPTIONS, useValue: fixedOptions },
+           ] };`,
+          'src/app/app.config.ts'
+        )
+      )
+    ).toEqual(['noncanonical-provider-wiring', 'session-connection-wiring']);
+    expect(
+      kindsOf(
+        issuesOf(
+          `import { provideAgentClientOptions } from '@threadplane/angular';
+           export const appConfig = { providers: [provideAgentClientOptions(fixedOptions)] };`,
+          'src/app/app.config.ts'
+        )
+      )
+    ).toEqual(['session-connection-wiring']);
+    expect(
+      issuesOf(
+        `import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
+         import { AGENT_CLIENT_OPTIONS } from '@threadplane/angular';
+         export const appConfig = { providers: [
+           { provide: AGENT_CLIENT_OPTIONS, useFactory: ${fixtureFactory(
+             'langgraph',
+             'return connection.clientOptions;'
+           )} },
+         ] };`,
+        'src/app/app.config.ts'
+      )
+    ).toEqual([]);
   });
 
   it('preserves the exact audited root, default, typed-ref, and provider-option metadata', () => {
@@ -1920,20 +3106,34 @@ describe('cockpit capability wiring', () => {
           provideAgentBinding?: SemanticBindingInspection;
           agentRefBinding?: SemanticBindingInspection;
         };
-        const providerModule =
+        const sessionModule =
           capability.runtimeAdapter === 'ag-ui'
             ? '@threadplane/ag-ui'
             : '@threadplane/langgraph';
         if (
           !hasExactSemanticBinding(
             bindingProvider.provideAgentBinding,
-            providerModule,
+            agentProviderModule,
             'provideAgent'
           )
         ) {
           mismatches.push({
             project: capability.angularProject,
-            mismatch: `provideAgent import from ${providerModule}`,
+            mismatch: `provideAgent import from ${agentProviderModule}`,
+          });
+        }
+        // The backend the session comes from is the application's adapter.
+        if (
+          provider.adapter !== capability.runtimeAdapter ||
+          !hasExactSemanticBinding(
+            provider.createSessionBinding,
+            sessionModule,
+            'createSession'
+          )
+        ) {
+          mismatches.push({
+            project: capability.angularProject,
+            mismatch: `createSession import from ${sessionModule}`,
           });
         }
         if (
@@ -1998,6 +3198,21 @@ describe('cockpit capability wiring', () => {
           )}`,
         });
       }
+      if (
+        expected.retainedSessionProperties &&
+        !hasExpectedProviderProperties(
+          providerCalls,
+          expected.retainedSessionProperties,
+          'sessionProperties'
+        )
+      ) {
+        mismatches.push({
+          project: capability.angularProject,
+          mismatch: `retained session options ${JSON.stringify(
+            expected.retainedSessionProperties
+          )}`,
+        });
+      }
     }
 
     expect(mismatches).toEqual([]);
@@ -2017,7 +3232,7 @@ describe('cockpit capability wiring', () => {
           adapter: 'langgraph',
           sharedApiUrl: environment.langGraphApiUrl,
           assistantId: environment.streamingAssistantId,
-          operationReporterToken: ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER,
+          operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
         },
       }).catch(() => undefined);
     `;
@@ -2080,7 +3295,7 @@ describe('cockpit capability wiring', () => {
             runtime: {
               adapter: 'ag-ui',
               sharedUrl: '/wrong-agent',
-              operationReporterToken: ɵAG_UI_RUNTIME_OPERATION_REPORTER,
+              operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
             },
           }).catch(() => undefined);`,
           'ag-ui'
@@ -2089,19 +3304,9 @@ describe('cockpit capability wiring', () => {
         'ag-ui'
       )
     ).toContain("sharedUrl new URL('agent', document.baseURI).pathname");
-    const canonicalProviderPreamble = `
-      import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
-      import { provideAgent } from '@threadplane/langgraph';
-    `;
+    const canonicalProviderPreamble = fixtureImports.langgraph;
     const executableWrongRef = `${canonicalProviderPreamble}
-      provideAgent(MESSAGES_AGENT, () => {
-        const connection = injectCockpitRuntimeConnection();
-        return {
-          apiUrl: connection.apiUrl,
-          assistantId: connection.assistantId,
-          clientOptions: connection.clientOptions,
-        };
-      });
+      provideAgent(MESSAGES_AGENT, ${fixtureFactory('langgraph')});
     `;
     expect(
       inspectRuntimeTargetSource(
@@ -2117,24 +3322,43 @@ describe('cockpit capability wiring', () => {
         'langgraph'
       ).providerCalls
     ).toEqual([]);
-    const commentOnlyOption = `${canonicalProviderPreamble}
-      provideAgent(() => {
-        const connection = injectCockpitRuntimeConnection();
-        return {
-          apiUrl: connection.apiUrl,
-          assistantId: connection.assistantId,
-          clientOptions: connection.clientOptions,
-          // subagentToolNames: ['task']
-        };
-      });
-    `;
+    const sessionOption = (option: string): CanonicalProviderCall[] =>
+      inspectRuntimeTargetSource(
+        fixtureAppConfig(
+          'langgraph',
+          fixtureProvider(
+            'langgraph',
+            `${fixtureSessionOptions.langgraph}\n${option}`
+          )
+        ),
+        'src/app/app.config.ts',
+        'langgraph'
+      ).providerCalls;
     expect(
       hasExpectedProviderProperties(
-        inspectRuntimeTargetSource(
-          commentOnlyOption,
-          'src/app/app.config.ts',
-          'langgraph'
-        ).providerCalls,
+        sessionOption("// subagentToolNames: ['task']"),
+        { subagentToolNames: "['task']" },
+        'sessionProperties'
+      )
+    ).toBe(false);
+    expect(
+      hasExpectedProviderProperties(
+        sessionOption("subagentToolNames: ['other'],"),
+        { subagentToolNames: "['task']" },
+        'sessionProperties'
+      )
+    ).toBe(false);
+    expect(
+      hasExpectedProviderProperties(
+        sessionOption("subagentToolNames: ['task'],"),
+        { subagentToolNames: "['task']" },
+        'sessionProperties'
+      )
+    ).toBe(true);
+    // A session option is not an agent config member, and the reverse.
+    expect(
+      hasExpectedProviderProperties(
+        sessionOption("subagentToolNames: ['task'],"),
         { subagentToolNames: "['task']" }
       )
     ).toBe(false);
@@ -2152,7 +3376,7 @@ describe('cockpit capability wiring', () => {
         adapter: 'langgraph',
         sharedApiUrl: environment.langGraphApiUrl,
         assistantId: environment.streamingAssistantId,
-        operationReporterToken: ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER,
+        operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
       },
     }`;
     const inspectBootstrap = (source: string): AppConfigBootstrapRecord =>
@@ -2323,11 +3547,11 @@ describe('cockpit capability wiring', () => {
         adapter: 'langgraph',
         sharedApiUrl: environment.langGraphApiUrl,
         assistantId: environment.streamingAssistantId,
-        operationReporterToken: ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER,
+        operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
       },
     }`;
     const bootstrapImports = `
-      import { ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER } from '@threadplane/langgraph';
+      import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/angular';
       import { bootstrapWithCockpitHarness } from '@threadplane/cockpit-telemetry';
       import { appConfig } from './app/app.config';
       import { StreamingComponent } from './app/streaming.component';
@@ -2364,8 +3588,8 @@ describe('cockpit capability wiring', () => {
     expect(
       hasExactSemanticBinding(
         canonicalBootstrap.operationReporterBinding,
-        '@threadplane/langgraph',
-        'ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER'
+        agentProviderModule,
+        operationReporterToken
       )
     ).toBe(true);
     expect(
@@ -2412,43 +3636,117 @@ describe('cockpit capability wiring', () => {
       hasExactSemanticBinding(
         inspectBootstrap(
           `${bootstrapImports.replace(
-            "import { ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER } from '@threadplane/langgraph';",
-            'const ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER = fakeReporter;'
+            "import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/angular';",
+            'const ɵAGENT_OPERATION_FAILURE_REPORTER = fakeReporter;'
           )}\n${bootstrapCall}`
         ).operationReporterBinding,
-        '@threadplane/langgraph',
-        'ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER'
+        agentProviderModule,
+        operationReporterToken
       )
     ).toBe(false);
-    const providerFactory = `() => {
-      const connection = injectCockpitRuntimeConnection();
-      if (connection.adapter !== 'langgraph') {
-        throw new Error('incompatible runtime');
-      }
-      return {
-        apiUrl: connection.apiUrl,
-        assistantId: connection.assistantId,
-        clientOptions: connection.clientOptions,
-      };
-    }`;
+    // The reporter token of a backend package, or under a legacy name, is a
+    // token nothing provides: no failure would ever reach the host.
+    const streamingExpected = expectedRuntimeWiringByProject.get(
+      'cockpit-langgraph-streaming-angular'
+    ) as ExpectedRuntimeWiring;
+    expect(
+      auditEntrypointMetadata(canonicalBootstrap, streamingExpected, 'langgraph')
+    ).toEqual([]);
+    expect(
+      auditEntrypointMetadata(
+        inspectBootstrap(
+          `${changed(
+            bootstrapImports,
+            "import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/angular';",
+            "import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/langgraph';"
+          )}\n${bootstrapCall}`
+        ),
+        streamingExpected,
+        'langgraph'
+      )
+    ).toEqual([`operation reporter import from ${agentProviderModule}`]);
+    expect(
+      auditEntrypointMetadata(
+        inspectBootstrap(
+          `${bootstrapImports}\nimport { ɵLEGACY_REPORTER } from '@threadplane/angular';\n${changed(
+            bootstrapCall,
+            'operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER',
+            'operationReporterToken: ɵLEGACY_REPORTER'
+          )}`
+        ),
+        streamingExpected,
+        'langgraph'
+      )
+    ).toEqual([
+      'canonical runtime options grammar',
+      `operation reporter import from ${agentProviderModule}`,
+      `operationReporterToken ${operationReporterToken}`,
+    ]);
+    // An entrypoint with no reporter at all.
+    expect(
+      auditEntrypointMetadata(
+        inspectBootstrap(
+          `${bootstrapImports}\n${changed(
+            bootstrapCall,
+            'operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,',
+            ''
+          )}`
+        ),
+        streamingExpected,
+        'langgraph'
+      )
+    ).toEqual(
+      expect.arrayContaining([
+        'canonical runtime options grammar',
+        `operationReporterToken ${operationReporterToken}`,
+      ])
+    );
+    expect(
+      hasExactSemanticBinding(
+        inspectBootstrap(
+          `${changed(
+            bootstrapImports,
+            "import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/angular';",
+            "import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/langgraph';"
+          )}\n${bootstrapCall}`
+        ).operationReporterBinding,
+        agentProviderModule,
+        operationReporterToken
+      )
+    ).toBe(false);
+    expect(
+      hasExactSemanticBinding(
+        inspectBootstrap(
+          `${changed(
+            bootstrapImports,
+            'import { ɵAGENT_OPERATION_FAILURE_REPORTER }',
+            'import { OTHER_REPORTER as ɵAGENT_OPERATION_FAILURE_REPORTER }'
+          )}\n${bootstrapCall}`
+        ).operationReporterBinding,
+        agentProviderModule,
+        operationReporterToken
+      )
+    ).toBe(false);
     const inspectProvider = (imports: string): SemanticProviderCall | undefined =>
       inspectRuntimeTargetSource(
         `${imports}
          import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
          export const appConfig = { providers: [
-           provideAgent(STREAMING_AGENT, ${providerFactory})
+           provideAgent(STREAMING_AGENT, ${fixtureFactory('langgraph')})
          ] };`,
         'src/app/app.config.ts',
         'langgraph'
       ).providerCalls[0] as SemanticProviderCall | undefined;
-    const canonicalProvider = inspectProvider(`
-      import { provideAgent } from '@threadplane/langgraph';
+    const canonicalImports = `
+      import { provideAgent } from '@threadplane/angular';
+      import { createSession } from '@threadplane/langgraph';
       import { STREAMING_AGENT } from './agent-ref';
-    `);
+    `;
+    const canonicalProvider = inspectProvider(canonicalImports);
     expect(
       hasExactSemanticBinding(
         canonicalProvider?.provideAgentBinding,
-        '@threadplane/langgraph',
+        agentProviderModule,
         'provideAgent'
       )
     ).toBe(true);
@@ -2461,49 +3759,73 @@ describe('cockpit capability wiring', () => {
     ).toBe(true);
     expect(
       hasExactSemanticBinding(
-        inspectProvider(`
-          import { provideAgent } from './fake-agent';
-          import { STREAMING_AGENT } from './agent-ref';
-        `)?.provideAgentBinding,
+        canonicalProvider?.createSessionBinding,
         '@threadplane/langgraph',
-        'provideAgent'
+        'createSession'
       )
-    ).toBe(false);
-    expect(
-      hasExactSemanticBinding(
-        inspectProvider(`
-          const provideAgent = fakeProvideAgent;
-          import { STREAMING_AGENT } from './agent-ref';
-        `)?.provideAgentBinding,
-        '@threadplane/langgraph',
-        'provideAgent'
-      )
-    ).toBe(false);
-    expect(
-      hasExactSemanticBinding(
-        inspectProvider(`
-          import { provideAgent } from '@threadplane/langgraph';
-          const STREAMING_AGENT = fakeAgentRef;
-        `)?.agentRefBinding,
-        './agent-ref',
-        'STREAMING_AGENT'
-      )
-    ).toBe(false);
-    expect(
-      hasExactSemanticBinding(
-        inspectProvider(`
-          import { provideAgent } from '@threadplane/langgraph';
-          import { STREAMING_AGENT } from './fake-agent-ref';
-        `)?.agentRefBinding,
-        './agent-ref',
-        'STREAMING_AGENT'
-      )
-    ).toBe(false);
+    ).toBe(true);
+    expect(canonicalProvider?.adapter).toBe('langgraph');
+    for (const replacement of [
+      "import { provideAgent } from './fake-agent';",
+      "import { provideAgent } from '@threadplane/langgraph';",
+      'const provideAgent = fakeProvideAgent;',
+    ]) {
+      expect(
+        hasExactSemanticBinding(
+          inspectProvider(
+            changed(
+              canonicalImports,
+              "import { provideAgent } from '@threadplane/angular';",
+              replacement
+            )
+          )?.provideAgentBinding,
+          agentProviderModule,
+          'provideAgent'
+        )
+      ).toBe(false);
+    }
+    for (const replacement of [
+      'const STREAMING_AGENT = fakeAgentRef;',
+      "import { STREAMING_AGENT } from './fake-agent-ref';",
+    ]) {
+      expect(
+        hasExactSemanticBinding(
+          inspectProvider(
+            changed(
+              canonicalImports,
+              "import { STREAMING_AGENT } from './agent-ref';",
+              replacement
+            )
+          )?.agentRefBinding,
+          './agent-ref',
+          'STREAMING_AGENT'
+        )
+      ).toBe(false);
+    }
+    for (const replacement of [
+      "import { createSession } from './fake-session';",
+      "import { createSession } from '@threadplane/ag-ui';",
+      'const createSession = fakeCreateSession;',
+    ]) {
+      expect(
+        hasExactSemanticBinding(
+          inspectProvider(
+            changed(
+              canonicalImports,
+              "import { createSession } from '@threadplane/langgraph';",
+              replacement
+            )
+          )?.createSessionBinding,
+          '@threadplane/langgraph',
+          'createSession'
+        )
+      ).toBe(false);
+    }
   });
 
   it('allows the LangGraph environment import only as the two runtime property roots', () => {
     const imports = `
-      import { ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER } from '@threadplane/langgraph';
+      import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/angular';
       import { bootstrapWithCockpitHarness } from '@threadplane/cockpit-telemetry';
       import { appConfig } from './app/app.config';
       import { StreamingComponent } from './app/streaming.component';
@@ -2517,7 +3839,7 @@ describe('cockpit capability wiring', () => {
           adapter: 'langgraph',
           sharedApiUrl: environment.langGraphApiUrl,
           assistantId: environment.streamingAssistantId,
-          operationReporterToken: ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER,
+          operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
         },
       }
     ).catch(() => undefined);`;
@@ -2572,7 +3894,7 @@ describe('cockpit capability wiring', () => {
       hasPristineAgUrlGlobals?: boolean;
     };
     const imports = `
-      import { ɵAG_UI_RUNTIME_OPERATION_REPORTER } from '@threadplane/ag-ui';
+      import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/angular';
       import { bootstrapWithCockpitHarness } from '@threadplane/cockpit-telemetry';
       import { appConfig } from './app/app.config';
       import { StreamingComponent } from './app/streaming.component';
@@ -2580,7 +3902,7 @@ describe('cockpit capability wiring', () => {
     const runtime = `{
       adapter: 'ag-ui',
       sharedUrl: new URL('agent', document.baseURI).pathname,
-      operationReporterToken: ɵAG_UI_RUNTIME_OPERATION_REPORTER,
+      operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
     }`;
     const call = (options: string) =>
       `void bootstrapWithCockpitHarness(StreamingComponent, appConfig, ${options}).catch(() => undefined);`;
@@ -2602,7 +3924,7 @@ describe('cockpit capability wiring', () => {
         `${imports}\n${call(`{ runtime: { ...runtimeDefaults,
           adapter: 'ag-ui',
           sharedUrl: new URL('agent', document.baseURI).pathname,
-          operationReporterToken: ɵAG_UI_RUNTIME_OPERATION_REPORTER,
+          operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
         } }`)}`
       ).hasCanonicalRuntimeOptions
     ).toBe(false);
@@ -2621,7 +3943,7 @@ describe('cockpit capability wiring', () => {
         `${imports}\n${call(`{ runtime: {
           adapter: 'ag-ui',
           sharedUrl: new URL('agent', document.baseURI).pathname,
-          operationReporterToken: ɵAG_UI_RUNTIME_OPERATION_REPORTER,
+          operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
           adapter: fakeAdapter,
         } }`)}`
       ).hasCanonicalRuntimeOptions
@@ -2631,7 +3953,7 @@ describe('cockpit capability wiring', () => {
         `${imports}\n${call(`{ runtime: {
           adapter: 'ag-ui',
           sharedUrl,
-          operationReporterToken: ɵAG_UI_RUNTIME_OPERATION_REPORTER,
+          operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
         } }`)}`
       ).hasCanonicalRuntimeOptions
     ).toBe(false);
@@ -2649,7 +3971,7 @@ describe('cockpit capability wiring', () => {
         `${imports}\n${call(`{ runtime: {
           adapter: 'ag-ui',
           sharedUrl: new URL('agent', document.baseURI).pathname,
-          ['operationReporterToken']: ɵAG_UI_RUNTIME_OPERATION_REPORTER,
+          ['operationReporterToken']: ɵAGENT_OPERATION_FAILURE_REPORTER,
         } }`)}`
       ).hasCanonicalRuntimeOptions
     ).toBe(false);
@@ -2658,7 +3980,7 @@ describe('cockpit capability wiring', () => {
         `${imports}\n${call(`{ runtime: {
           adapter: 'ag-ui',
           sharedUrl: new URL('agent', document.baseURI).pathname,
-          operationReporterToken: ɵAG_UI_RUNTIME_OPERATION_REPORTER,
+          operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
           harmlessExtra: true,
         } }`)}`
       ).hasCanonicalRuntimeOptions
@@ -2719,7 +4041,7 @@ describe('cockpit capability wiring', () => {
         `${imports}\n${call(`{ runtime: {
           adapter: 'ag-ui',
           sharedUrl: new RuntimeURL('agent', document.baseURI).pathname,
-          operationReporterToken: ɵAG_UI_RUNTIME_OPERATION_REPORTER,
+          operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
         } }`)}`
       ).hasCanonicalRuntimeOptions
     ).toBe(false);
@@ -2756,8 +4078,17 @@ describe('cockpit capability wiring', () => {
   it('preserves typed, option-bearing, and component-scoped provider patterns', () => {
     const read = (path: string): string =>
       readFileSync(resolve(cockpitRoot, path), 'utf8');
-    const providerCalls = (path: string): CanonicalProviderCall[] =>
-      inspectRuntimeTargetSource(read(path), path, 'langgraph').providerCalls;
+    const providerCalls = (
+      path: string,
+      adapter: CompatibleRuntimeAdapter = 'langgraph'
+    ): CanonicalProviderCall[] =>
+      inspectRuntimeTargetSource(
+        read(path),
+        path,
+        adapter,
+        undefined,
+        auditOptions
+      ).providerCalls;
     const typed = providerCalls(
       'langgraph/streaming/angular/src/app/app.config.ts'
     );
@@ -2773,26 +4104,66 @@ describe('cockpit capability wiring', () => {
     const persistenceComponent = providerCalls(
       'langgraph/persistence/angular/src/app/persistence.component.ts'
     );
-    const threadsConfig = inspectRuntimeTargetSource(
+    const threadsInspection = inspectRuntimeTargetSource(
       read('chat/threads/angular/src/app/app.config.ts'),
       'src/app/app.config.ts',
-      'langgraph'
-    ).angularProviders;
+      'langgraph',
+      undefined,
+      auditOptions
+    );
     const threadsComponent = providerCalls(
       'chat/threads/angular/src/app/threads.component.ts'
     );
+    const agUi = providerCalls(
+      'ag-ui/streaming/angular/src/app/app.config.ts',
+      'ag-ui'
+    );
+    const mastra = providerCalls(
+      'runtimes/mastra/angular/src/app/app.config.ts',
+      'ag-ui'
+    );
 
     expect(typed.map(({ agentRef }) => agentRef)).toEqual(['STREAMING_AGENT']);
-    expect(typed[0].properties['clientOptions']).toBe(
-      'connection.clientOptions'
+    // Every connection value, the thread members and the reporter reach the
+    // session; the reporter under a name this backend's session declares.
+    expect(typed[0].sessionProperties).toMatchObject({
+      apiUrl: 'connection.apiUrl',
+      assistantId: 'connection.assistantId',
+      clientOptions: 'connection.clientOptions',
+      threadId: 'context.threadId',
+      onThreadId: 'context.onThreadId',
+    });
+    expect(
+      reporterOptionNames.langgraph.map(
+        (name) => typed[0].sessionProperties[name]
+      )
+    ).toContain('context.reportOperationFailure');
+    expect(agUi[0].sessionProperties).toMatchObject({
+      url: 'connection.url',
+      threadId: 'context.threadId ?? undefined',
+    });
+    expect(
+      reporterOptionNames['ag-ui'].map((name) => agUi[0].sessionProperties[name])
+    ).toContain('context.reportOperationFailure');
+    expect(mastra[0].sessionProperties['interruptTransport']).toBe(
+      "'mastra-command'"
     );
-    expect(subagents[0].properties['subagentToolNames']).toBe("['task']");
-    expect(subgraphs[0].properties['transcriptNodeNames']).toBe("['answer']");
+    expect(subagents[0].sessionProperties['subagentToolNames']).toBe(
+      "['task']"
+    );
+    expect(subgraphs[0].sessionProperties['transcriptNodeNames']).toBe(
+      "['answer']"
+    );
 
     expect(persistenceConfig).toEqual([]);
     expect(persistenceComponent).toHaveLength(1);
     expect(persistenceComponent[0].properties['onThreadId']).toBe(
       persistenceOnThreadIdExpression
+    );
+    // The component's own callback sits beside the session's, not in place
+    // of it: the session still reports its thread to the agent.
+    expect(persistenceComponent[0].sessionProperties['onThreadId']).toBe(
+      'context.onThreadId'
     );
 
     expect(threadsComponent).toHaveLength(1);
@@ -2802,11 +4173,19 @@ describe('cockpit capability wiring', () => {
     expect(threadsComponent[0].properties['onThreadId']).toBe(
       '(id: string) => activeThreadIdState.set(id)'
     );
+    expect(threadsComponent[0].sessionProperties['threadId']).toBe(
+      'context.threadId'
+    );
+    expect(threadsInspection.threadDirectoryProviders).toHaveLength(1);
+    expect(
+      threadsInspection.threadDirectoryProviders[0].directoryProperties['apiUrl']
+    ).toBe('connection.apiUrl');
     expect(
       auditThreadsRootProviders([
         {
           relativeFileName: 'src/app/app.config.ts',
-          angularProviders: threadsConfig,
+          angularProviders: threadsInspection.angularProviders,
+          threadDirectoryProviders: threadsInspection.threadDirectoryProviders,
         },
       ])
     ).toEqual([]);
@@ -2845,8 +4224,10 @@ describe('cockpit capability wiring', () => {
         .join('\n');
       const forbidden = [
         'injectCockpitRuntimeConnection',
-        'ɵAG_UI_RUNTIME_OPERATION_REPORTER',
-        'ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER',
+        operationReporterToken,
+        'provideAgent(',
+        'provideThreadDirectory(',
+        'createSession(',
         "from '@threadplane/ag-ui'",
         "from '@threadplane/langgraph'",
         "adapter: 'ag-ui'",
