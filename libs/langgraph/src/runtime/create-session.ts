@@ -217,6 +217,7 @@ import {
   failureProjection,
   finalizeProjection,
   interruptionError,
+  unansweredError,
   isTranscriptEvent,
   projectStream,
   record,
@@ -627,6 +628,11 @@ interface Attempt {
   travel?: boolean;
   /** A development tool scripted this run; the backend never saw it. */
   scripted?: boolean;
+  /** This command's creation request got no response from anything. */
+  unanswered?: boolean;
+  /** A retry of an unanswered command: the thread is read for this turn's
+   * message before anything is sent again. */
+  verifyUnsent?: boolean;
   /** For telemetry: when the command began. */
   startedAt?: number;
   /** For the development collector: what created the request. */
@@ -1952,6 +1958,20 @@ export function createSession(
     };
   }
 
+  /** Whether any saved checkpoint in the page holds this turn's own user
+   * message: proof the backend received the request that carried it. */
+  function holdsTurn(attempt: Attempt, history: ThreadState[]) {
+    const userId = attempt.projection.userId;
+    if (userId === undefined) return false;
+    return history.some((saved) => {
+      const messages = record(saved?.values)?.['messages'];
+      return (
+        Array.isArray(messages) &&
+        messages.some((message) => record(message)?.['id'] === userId)
+      );
+    });
+  }
+
   function reconcile(attempt: Attempt, history: ThreadState[]) {
     const previousState = state;
     const previousValues = values;
@@ -2104,6 +2124,44 @@ export function createSession(
         return;
       }
       if (!owns(attempt)) return;
+    }
+    if (attempt.verifyUnsent) {
+      // A retry of a command whose creation request got no response. `fetch`
+      // rejects the same way when a response is lost on its way back, so the
+      // thread is asked first: a turn it already holds is adopted or left to
+      // a status check, and only a turn it does not hold is sent again.
+      attempt.verifyUnsent = false;
+      if (getHistory && !script) {
+        let history: ThreadState[] | undefined;
+        try {
+          history = await getHistory(thread(), attempt.controller.signal);
+        } catch {
+          /* The thread cannot be read; the unanswered request is all that is known. */
+        }
+        if (!owns(attempt)) return;
+        if (history) {
+          let recovered: ReturnType<typeof reconcile>;
+          let held: boolean;
+          try {
+            recovered = reconcile(attempt, history);
+            held = holdsTurn(attempt, history);
+          } catch {
+            held = true;
+          }
+          if (!owns(attempt)) return;
+          if (recovered) {
+            state = recovered.state;
+            values = recovered.values;
+            interrupts = recovered.interrupts;
+            settle(attempt, recovered.outcome);
+            return;
+          }
+          if (held) {
+            settle(attempt, 'interrupted', interruptionError(attemptCanCheck()));
+            return;
+          }
+        }
+      }
     }
     try {
       let groups = attempt.groups;
@@ -2557,18 +2615,28 @@ export function createSession(
     } catch (raw) {
       if (!owns(attempt)) return;
       if (attempt.physical) attempt.physical.captureOpen = false;
-      const error = failureProjection(
-        raw,
-        protectedTransport,
-        false,
-        attemptCanCheck()
-      );
+      // The default transport's fetch seam saw this plain submission's
+      // creation request rejected with no response from anything. Nothing
+      // answered, so there is no run to ask about, and `retry()` can send the
+      // same command again once the thread shows no trace of it.
+      let unanswered =
+        !!getRunStatus &&
+        attempt.input.kind === 'submit' &&
+        attempt.groups === 0 &&
+        !attempt.branch &&
+        !attempt.physical?.received &&
+        !attempt.physical?.evidence.runId &&
+        !attempt.physical?.evidence.unsafe &&
+        isUnansweredRunCreation(raw);
+      let error = unanswered
+        ? unansweredError()
+        : failureProjection(raw, protectedTransport, false, attemptCanCheck());
       // A thrown stream gets the same single read-only reconciliation a closed
       // one gets, unless the exact run is known to be still in flight. A
       // conclusive answer settles the attempt itself; nothing is retried.
       if (
-        error.kind === 'interrupted' &&
-        error.recovery === 'check' &&
+        (unanswered ||
+          (error.kind === 'interrupted' && error.recovery === 'check')) &&
         getHistory
       ) {
         const run = attempt.physical;
@@ -2602,11 +2670,18 @@ export function createSession(
               settle(attempt, recovered.outcome);
               return;
             }
+            // The thread holds this turn's message after all: the request
+            // did arrive, so its outcome is checked and it is not sent again.
+            if (unanswered && holdsTurn(attempt, history)) {
+              unanswered = false;
+              error = interruptionError(attemptCanCheck());
+            }
           } catch {
             if (!owns(attempt)) return;
           }
         }
       }
+      attempt.unanswered = unanswered;
       settle(
         attempt,
         error.kind === 'interrupted' ? 'interrupted' : 'error',
@@ -3729,7 +3804,8 @@ export function createSession(
    * message id, so the snapshot gains no second copy and an `add_messages`
    * thread replaces rather than appends it; a resume sends the same response.
    * Resolves with the re-run's outcome, or `aborted` when nothing ran. It
-   * never replays an uncertain outcome. */
+   * never replays an uncertain outcome. A command whose creation request got
+   * no response is sent again only after the thread shows no trace of it. */
   function retry(): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
     const beginning = publication.command(() => {
@@ -3752,6 +3828,7 @@ export function createSession(
         previous.runOptions,
         'retry'
       );
+      if (previous.unanswered) attempt.verifyUnsent = true;
     });
     // No attempt means nothing ran: `aborted`, as for an ignored submit.
     return dispatch(beginning, () => attempt);

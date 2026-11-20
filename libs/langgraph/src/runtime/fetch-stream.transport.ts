@@ -2,12 +2,12 @@ import type { Client, Run, StreamMode, ThreadState } from '@langchain/langgraph-
 import { captureCheckpoint } from './checkpoint-position.js';
 import type { OwnedCheckpointPosition } from './checkpoint-position.js';
 import type { AgentQueueEntry, AgentTransport, LangGraphClientOptions, LangGraphSubmitOptions, StreamEvent } from './transport.types.js';
+import { ɵcreateProtectedLangGraphClient } from './create-langgraph-client.js';
 import {
-  createLangGraphClient,
-  ɵcreateProtectedLangGraphClient,
-} from './create-langgraph-client.js';
-import {
+  beginRunCreation,
+  createLangGraphObservingFetch,
   createLangGraphRuntimeFetch,
+  markUnansweredRunCreation,
   projectLangGraphOperationFailure,
 } from './operation-errors.js';
 import type { RuntimeOperationFailureReporter } from './operation-errors.js';
@@ -58,7 +58,13 @@ export class FetchStreamTransport implements AgentTransport {
           clientOptions,
           createLangGraphRuntimeFetch(reportOperationFailure),
         )
-      : createLangGraphClient(apiUrl, clientOptions);
+      : // The SDK's own errors are kept. The seam only observes whether a
+        // run-creation request got any response.
+        ɵcreateProtectedLangGraphClient(
+          apiUrl,
+          clientOptions,
+          createLangGraphObservingFetch(),
+        );
     this.onThreadId = onThreadId;
   }
 
@@ -92,6 +98,7 @@ export class FetchStreamTransport implements AgentTransport {
       return this.rethrowLocalError(error, signal);
     }
     let run: ReturnType<Client['runs']['stream']>;
+    beginRunCreation(signal);
     try {
       run = this.client.runs.stream(
         thread,
@@ -101,7 +108,14 @@ export class FetchStreamTransport implements AgentTransport {
     } catch (error) {
       this.rethrowOperationError(error, signal);
     }
-    yield* this.iterateSdkRun(run, signal);
+    try {
+      yield* this.iterateSdkRun(run, signal);
+    } catch (error) {
+      // A creation request that `fetch` rejected with no response is told
+      // apart from every failure a server could have had a part in.
+      markUnansweredRunCreation(error, signal);
+      throw error;
+    }
   }
 
   /** Create an empty thread, as `stream` does when it has no thread id. */

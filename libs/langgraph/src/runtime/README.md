@@ -379,10 +379,47 @@ the session can prove is safe. A failure that leaves the backend outcome open is
 never `recovery: 'retry'`: a thrown iterator cannot show that a request was
 undispatched (a browser `TypeError: fetch failed` carries no cause, and a reset
 after the server accepted the request looks identical to one that never left), so
-a pre-response failure is an `interrupted` error too, not a retryable
-`connection` one. The only `retry` the runtime emits is for a run the backend
-itself reports as failed (see "Retry" below), and for a first submit whose thread
-could not be created, which started no run (see "Thread creation" above).
+what a thrown value says about itself never makes a failure retryable. The
+`retry` the runtime emits is for a run the backend itself reports as failed
+(see "Retry" below), for a first submit whose thread could not be created, which
+started no run (see "Thread creation" above), and for a creation request that
+got no response at all (next section).
+
+### A creation request that got no response
+
+The owned SDK transport observes its own `fetch` calls. When the request that
+creates a run is rejected by `fetch` with no response of any status, as it is
+offline, for a refused connection or an unresolved host, and the caller did not
+abort it, the submit settles as `error` with
+
+```ts
+{ kind: 'connection', retryable: true, recovery: 'retry',
+  message: "Can't reach the server. Check your connection and try again." }
+```
+
+and `session.retry()` sends the same command again. This is the failure a chat
+view offers Retry for.
+
+- The evidence is the fetch call itself, recorded where the transport makes it,
+  never an error's name, message or status. With `clientOptions.maxRetries` set,
+  every one of the SDK's attempts must have been rejected without a response; one
+  answered attempt, of any status, makes the failure a checked one.
+- A request that anything answered keeps the rules above: an HTTP error status
+  is a `server` error and a response that began and then dropped is
+  `interrupted`, both with `recovery: 'check'` and no retry.
+- A rejected `fetch` is not proof on its own: a response can be lost on its way
+  back, and a browser reports a blocked cross-origin response the same way. So
+  the thread is read before anything is sent again. When the failure is first
+  seen, and again when `retry()` is called, the session reads the thread's
+  history and looks for this turn's own user message id. A turn the thread
+  already answered is adopted without a request; a prompt saved without an
+  answer becomes `interrupted` with `recovery: 'check'`; only a turn the thread
+  does not hold is sent again, under the same message id. A history read that
+  fails leaves the rejected request as the only evidence, and the command is
+  sent.
+- It applies to a plain submit's first request. A resume, a tool follow-up, a
+  fork and a queued run keep `recovery: 'check'` or `none`, and so does every
+  custom transport: only the owned transport can make this observation.
 
 `recovery: 'check'` is offered exactly when `transport.getHistory` exists for an
 ordinary submit, with or without a captured run id, and `checkStatus()` is exposed
@@ -426,8 +463,9 @@ run so the two surfaces cannot disagree.
 when the transport has `getRunStatus`, because only the exact run's status can
 settle a failure. It sends a command again when, and only when, the backend
 reported that command's run as `error` or `timeout`, at close or through
-`checkStatus()`, or when the command's thread could not be created. That error
-carries `retryable: true` and `recovery: 'retry'`.
+`checkStatus()`, when the command's thread could not be created, or when its
+creation request got no response at all (see above; that retry reads the thread
+first). That error carries `retryable: true` and `recovery: 'retry'`.
 
 - The transcript and values return to what they were before the command, and the
   command's captured input is sent again. A submission keeps its user message id,

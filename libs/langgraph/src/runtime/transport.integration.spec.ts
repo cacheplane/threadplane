@@ -994,13 +994,16 @@ describe('neutral real SDK transport', () => {
         await vi.runAllTimersAsync();
         const outcome = await submitted;
         expect(posts).toHaveLength(expectedPosts);
-        expect(outcome).toBe(
-          expectedPosts === 2
-            ? 'success'
-            : clientOptions?.defaultHeaders
-            ? 'error'
-            : 'interrupted'
-        );
+        // Nothing is replayed without the opt-in. `fetch` rejected with no
+        // response, so the failure offers a retry, and that retry reads the
+        // thread before it sends anything (see unanswered-creation.spec.ts).
+        expect(outcome).toBe(expectedPosts === 2 ? 'success' : 'error');
+        if (expectedPosts === 1)
+          expect(session.getSnapshot().error).toMatchObject({
+            kind: 'connection',
+            retryable: true,
+            recovery: 'retry',
+          });
         expect(posts.every((post) => post.method === 'POST')).toBe(true);
         for (const post of posts)
           expect(new Headers(post.headers).get('authorization')).toBe(

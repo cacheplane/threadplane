@@ -1,3 +1,9 @@
+import {
+  connect,
+  createServer,
+  type AddressInfo,
+  type Socket,
+} from 'node:net';
 import { runAgentSessionConformance } from '@threadplane/core/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { selectBranch } from '../src/runtime/create-session';
@@ -579,6 +585,65 @@ describe('failures', () => {
     expect(Object.isFrozen(snapshot.errorDiagnostic)).toBe(true);
     // The user message stays, marked as a failed delivery.
     expect(texts(snapshot.messages)).toEqual([['user', 'Hello']]);
+  });
+
+  it('offers a retry when nothing answered the creation request, and sends the turn once', async () => {
+    // A port nothing listens on, then a relay to the real server on it: the
+    // same address is first unreachable and later reachable.
+    const reserve = createServer();
+    await new Promise<void>((done) => reserve.listen(0, '127.0.0.1', done));
+    const port = (reserve.address() as AddressInfo).port;
+    await new Promise<void>((done) => reserve.close(() => done()));
+    const target = new URL(backend.url);
+    const sockets = new Set<Socket>();
+    const relay = createServer((socket) => {
+      const upstream = connect(Number(target.port), target.hostname);
+      sockets.add(socket).add(upstream);
+      socket.on('error', () => upstream.destroy());
+      upstream.on('error', () => socket.destroy());
+      socket.pipe(upstream).pipe(socket);
+    });
+    const threadId = await backend.thread();
+    const session = track(
+      liveSession({ ...backend, url: `http://127.0.0.1:${port}` }, { threadId })
+    );
+    try {
+      expect(await session.submit('Hello')).toBe('error');
+      const failed = session.getSnapshot();
+      expect(failed.error).toEqual({
+        kind: 'connection',
+        message: "Can't reach the server. Check your connection and try again.",
+        retryable: true,
+        recovery: 'retry',
+      });
+      expect(texts(failed.messages)).toEqual([['user', 'Hello']]);
+      // Nothing reached the server.
+      expect(await backend.client.runs.list(threadId)).toHaveLength(0);
+
+      await new Promise<void>((done) => relay.listen(port, '127.0.0.1', done));
+      expect(await session.retry?.()).toBe('success');
+      const snapshot = session.getSnapshot();
+      expect(snapshot.status).toBe('idle');
+      expect(snapshot.error).toBeUndefined();
+      expect(texts(snapshot.messages)).toEqual([
+        ['user', 'Hello'],
+        ['assistant', HI],
+      ]);
+      // One run, and the prompt saved once under the id it was first sent with.
+      expect(await backend.client.runs.list(threadId)).toHaveLength(1);
+      const saved = await backend.saved(threadId);
+      expect(
+        messagesOf(saved.values as Record<string, unknown>).map(
+          (message) => message.id
+        )
+      ).toEqual(snapshot.messages.map((message) => message.id));
+      expect(snapshot.messages[0].id).toBe(failed.messages[0].id);
+    } finally {
+      await session.dispose();
+      for (const socket of sockets) socket.destroy();
+      if (relay.listening)
+        await new Promise<void>((done) => relay.close(() => done()));
+    }
   });
 
   it('keeps a protected transport generic: no diagnostic is published', async () => {
