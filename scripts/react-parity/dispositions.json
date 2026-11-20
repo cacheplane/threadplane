@@ -12801,6 +12801,17 @@
       "note": "Covered by runtime specs. Opt-in through historyState; a session otherwise keeps only checkpoint metadata."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/session-hooks.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private host seams of the session: the telemetry sink, development collector, devtools sink and scripted-run source types, listener throttling, and the message deserializer applied to stream events and saved checkpoints.",
+      "note": "Covered by runtime specs. The development collector and the devtools emitter are created by the host; the neutral runtime only calls them."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
       "taskIds": [
         "T09",

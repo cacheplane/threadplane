@@ -105,3 +105,59 @@ export async function assertJoinStream() {
   // @ts-expect-error Joining creates no run, so it takes no run settings.
   await session.joinStream('run', undefined, { run: {} });
 }
+
+export function assertHostOptions() {
+  const session = createSession({
+    assistantId: 'agent',
+    threadId: 'thread',
+    initialValues: { topic: 'draft' },
+    toMessage: (message) => message,
+    throttle: 16,
+    a2uiClientCapabilities: { supportedCatalogIds: ['standard'] },
+    telemetry: (payload) => void payload.properties.requestType,
+    onOperationFailure: (code) => void (code === 'unauthorized'),
+    developmentRuntime: {
+      touch() {
+        /* host */
+      },
+      milestone(kind) {
+        void (kind === 'transport.connected');
+      },
+      dispose() {
+        /* host */
+      },
+    },
+    devtools: {
+      begin: (type) => void type,
+      end: () => undefined,
+      wrote: (name) => void (name === 'messages'),
+      outside: (_label, run) => run(),
+    },
+    scriptedRuns: { take: () => ({ frames: [{ event: 'values', data: {} }] }) },
+  });
+  createSession({
+    assistantId: 'agent',
+    threadId: 'thread',
+    telemetry: false,
+    throttle: false,
+  });
+  createSession({
+    assistantId: 'agent',
+    threadId: 'thread',
+    // @ts-expect-error Initial values are plain data.
+    initialValues: { when: new Date() },
+  });
+  createSession({
+    assistantId: 'agent',
+    threadId: 'thread',
+    // @ts-expect-error Capabilities name the supported catalogs.
+    a2uiClientCapabilities: {},
+  });
+  createSession({
+    assistantId: 'agent',
+    threadId: 'thread',
+    // @ts-expect-error Telemetry is a function or false.
+    telemetry: true,
+  });
+  return session;
+}

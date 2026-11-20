@@ -84,6 +84,27 @@ export interface LangGraphQueuedRun {
   readonly createdAt: number;
 }
 
+/** Progress a running tool reported through the `tools` stream mode. */
+export interface LangGraphToolProgress {
+  readonly toolCallId?: string;
+  readonly name: string;
+  readonly state: 'starting' | 'running' | 'completed' | 'error';
+  readonly input?: PlainValue;
+  readonly data?: PlainValue;
+  readonly result?: PlainValue;
+  readonly error?: PlainValue;
+}
+
+/** A message as LangGraph sent it: the wire record, owned and frozen. */
+export type LangGraphWireMessage = Readonly<Record<string, PlainValue>>;
+
+/** What the stream said about one message, keyed by message id. */
+export interface LangGraphMessageMetadata {
+  readonly messageId: string;
+  /** The `messages` stream metadata: `langgraph_node`, tags, the model and so on. */
+  readonly streamMetadata: Readonly<Record<string, PlainValue>>;
+}
+
 /** What a publication supplies: the session derives `subagents` from `subgraphs`. */
 export type LangGraphPublication = Omit<LangGraphSnapshot, 'subagents'>;
 
@@ -127,6 +148,17 @@ export type LangGraphSnapshot<
   readonly branchTree?: LangGraphBranchTree;
   /** The branch `setBranch` last selected; absent for the default branch. */
   readonly branch?: string;
+  /** Progress of the tools running in the current run; absent when none reported. */
+  readonly toolProgress?: readonly LangGraphToolProgress[];
+  /**
+   * The transcript's messages as LangGraph sent them, in transcript order.
+   * Present only on a session created with `rawMessages: true`.
+   */
+  readonly langGraphMessages?: readonly LangGraphWireMessage[];
+  /** Stream metadata by message id, root and child. With `langGraphMessages`. */
+  readonly messageMetadata?: Readonly<Record<string, LangGraphMessageMetadata>>;
+  /** True while a history read the session started is in flight; absent otherwise. */
+  readonly loading?: true;
   /** Queued runs waiting for the active one, oldest first; absent when none wait. */
   readonly queue?: readonly LangGraphQueuedRun[];
 };

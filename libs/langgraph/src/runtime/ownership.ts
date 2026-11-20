@@ -332,6 +332,11 @@ const plainExtras = [
   'branchTree',
   'branch',
   'queue',
+  'loading',
+  'toolProgress',
+  'langGraphMessages',
+  'messageMetadata',
+  'usage',
 ] as const satisfies readonly (keyof LangGraphSnapshot)[];
 
 /** One backend aggregate, composing the core fields and owned application data. */

@@ -538,6 +538,59 @@ A child agent keeps its reference while its child graph and status are
 unchanged. Child agents give no command authority: answering a pause is the
 root session's `resume`.
 
+## Host options
+
+These `createSession` options let a host (a framework binding, a development
+tool) supply what the Angular agent used to build in. None changes the
+contract; all are optional and inert when omitted.
+
+- `initialValues`: the state `snapshot.state` holds until the backend reports
+  one. It is copied and frozen, published without the `stateType` check, and
+  never sent to the graph.
+- `toMessage(message)`: converts each wire message before the session reads
+  it, from stream events and saved checkpoints, for the root graph and child
+  graphs. Return the plain wire shape (`type` or `role`, `id`, `content`,
+  `tool_calls`, `tool_call_id`). A message it throws on is read as sent.
+- `throttle`: the least time in milliseconds between two calls to a
+  `subscribe` listener while a run streams. `getSnapshot()` is never delayed,
+  the last change is always delivered, and a change that ends the run is
+  delivered at once. Each listener is paced separately. Off when omitted,
+  `false` or `0`; the Angular agent's default was 16.
+- `a2uiClientCapabilities`: `{ supportedCatalogIds, inlineCatalogs? }`, sent
+  with every run that has input under the `a2ui_client_capabilities` state
+  key, where the middleware reads it. A run with no input carries nothing.
+- `telemetry`: a sink called with `{ event, properties }`:
+  `tplane:runtime_instance_created` once, then for each command
+  `tplane:runtime_request_created` (with `requestType`: `submit`, `resume`,
+  `continue`, `retry`, `reconnect`, `join`, `join_queued` or `enqueue`),
+  `tplane:stream_started`, and `tplane:stream_ended` or
+  `tplane:stream_errored` (with `durationMs`, and the error kind as
+  `errorClass`). A stopped or replaced run reports no ending. The sink may be
+  asynchronous and a failure in it is ignored. `false` turns it off.
+- `onOperationFailure(code)`: told when the owned SDK transport's request was
+  refused as `unauthorized` or failed as `network_blocked`. Supplying it also
+  makes the owned transport report generic errors only. A supplied transport
+  ignores it.
+- `developmentRuntime`: a development-install collector with `touch()`,
+  `milestone(kind)` and `dispose()`. The session touches it at creation and for
+  each command, reports `transport.connected` on a run's first event and
+  `thread.persisted` when a history read restores messages, and disposes it
+  with the session. The collector itself, and its policy for which agents
+  collect, stay with the host because they depend on Angular.
+- `devtools`: a sink told which published fields each event changed, by name
+  and never by value. `begin(type)` and `end()` bracket a stream event,
+  `outside(label, run)` brackets a change no event caused (`run:start`,
+  `run:end`, `history`, `queue`, `branch`), and `wrote(name)` is called inside
+  the bracket with the Angular devtools vocabulary: `status`, `values`,
+  `messages`, `error`, `interrupt`, `interrupts`, `branch`, `history`,
+  `isThreadLoading`, `toolProgress`, `toolCalls`, `messageMetadata`,
+  `subagents`, `queue` and `custom`.
+- `scriptedRuns`: `{ take() }` returns an armed run of `{ event, data }`
+  frames, or null. An armed run's frames are normalized as the owned transport
+  normalizes the SDK's and streamed in place of the next new run. The backend
+  never sees it: no request is made and no thread is created for it, it is
+  never offered a status check, and it is taken once.
+
 ## Thread directory
 
 `createLangGraphThreadDirectory` in `thread-directory.ts` implements the

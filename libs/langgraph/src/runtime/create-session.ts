@@ -20,7 +20,35 @@ import type {
   ToolExecutionStore,
 } from '@threadplane/core/tools';
 import type { ThreadState } from '@langchain/langgraph-sdk';
-import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport.js';
+import {
+  FetchStreamTransport,
+  normalizeSdkEvent,
+} from '../lib/transport/fetch-stream.transport.js';
+import {
+  changedSignals,
+  convertEventMessages,
+  convertSavedMessages,
+  errorClass,
+  safely,
+  throttleListener,
+  type A2uiClientCapabilities,
+  type LangGraphDevelopmentRuntime,
+  type LangGraphDevtoolsSink,
+  type LangGraphScriptedRuns,
+  type LangGraphTelemetryEvent,
+  type LangGraphTelemetrySink,
+} from './session-hooks.js';
+export type {
+  A2uiClientCapabilities,
+  LangGraphDevelopmentRuntime,
+  LangGraphDevtoolsSignal,
+  LangGraphDevtoolsSink,
+  LangGraphScriptedRun,
+  LangGraphScriptedRuns,
+  LangGraphTelemetryEvent,
+  LangGraphTelemetryPayload,
+  LangGraphTelemetrySink,
+} from './session-hooks.js';
 import {
   initialMessageState,
   reduceMessages,
@@ -207,6 +235,47 @@ export interface SessionOptions {
    * `snapshot.history`.
    */
   readonly historyState?: boolean;
+  /**
+   * The state `snapshot.state` holds until the backend reports one. It is
+   * published as given, without the `stateType` check, and never sent.
+   */
+  readonly initialValues?: Readonly<Record<string, PlainValue>>;
+  /**
+   * Converts each wire message, from a stream event or a saved checkpoint, of
+   * the root graph or a child, before the session reads it. Return the plain
+   * wire shape the session projects (`type` or `role`, `id`, `content`,
+   * `tool_calls`, `tool_call_id`). A message the function throws on is read
+   * as it was sent.
+   */
+  readonly toMessage?: (message: unknown) => unknown;
+  /**
+   * The least time, in milliseconds, between two calls to a `subscribe`
+   * listener while a run streams. The snapshot is never delayed, the last
+   * change is always delivered, and a change that ends the run is delivered
+   * at once. Off when omitted, `false` or `0`.
+   */
+  readonly throttle?: number | false;
+  /**
+   * Generated UI capabilities to advertise to the graph. They are sent with
+   * every run that has input, under the `a2ui_client_capabilities` state key.
+   */
+  readonly a2uiClientCapabilities?: A2uiClientCapabilities;
+  /** Receives the session's runtime telemetry events. `false` is the same as omitting it. */
+  readonly telemetry?: LangGraphTelemetrySink | false;
+  /**
+   * Told when a request of the owned SDK transport was refused as
+   * unauthorized or blocked by the network. Supplying it also makes the owned
+   * transport report generic errors only. A supplied transport ignores it.
+   */
+  readonly onOperationFailure?: (
+    code: 'unauthorized' | 'network_blocked'
+  ) => void;
+  /** A development-install collector to keep informed. The host creates it. */
+  readonly developmentRuntime?: LangGraphDevelopmentRuntime;
+  /** A development tool told which published fields each event changed. */
+  readonly devtools?: LangGraphDevtoolsSink;
+  /** Development only: a source of scripted runs that stand in for the network. */
+  readonly scriptedRuns?: LangGraphScriptedRuns;
 }
 
 /** Backend-private capability; core sessions and borrowed observers stay minimal. */
@@ -358,6 +427,10 @@ interface Attempt {
   joinStart?: boolean;
   /** The run started from a checkpoint the session could not rewind to. */
   travel?: boolean;
+  /** A development tool scripted this run; the backend never saw it. */
+  scripted?: boolean;
+  /** For telemetry: when the command began. */
+  startedAt?: number;
   handoffIds: readonly string[];
   iterator?: AsyncIterator<StreamEvent>;
   unlink?: () => void;
@@ -467,10 +540,91 @@ export function createSession(
   const ownedRetries = ownedClientOptions?.maxRetries ?? 0;
   const transport =
     suppliedTransport ??
-    new FetchStreamTransport(options.apiUrl ?? '', undefined, {
-      ...ownedClientOptions,
-      maxRetries: ownedRetries,
-    });
+    new FetchStreamTransport(
+      options.apiUrl ?? '',
+      undefined,
+      {
+        ...ownedClientOptions,
+        maxRetries: ownedRetries,
+      },
+      typeof options.onOperationFailure === 'function'
+        ? options.onOperationFailure
+        : undefined
+    );
+  const toMessage =
+    typeof options.toMessage === 'function' ? options.toMessage : undefined;
+  const telemetry =
+    typeof options.telemetry === 'function' ? options.telemetry : undefined;
+  const developmentRuntime = options.developmentRuntime;
+  const devtools = options.devtools;
+  const scriptedRuns = options.scriptedRuns;
+  const a2uiClientCapabilities = options.a2uiClientCapabilities
+    ? ownValue({
+        supportedCatalogIds: options.a2uiClientCapabilities.supportedCatalogIds,
+        ...(options.a2uiClientCapabilities.inlineCatalogs !== undefined
+          ? { inlineCatalogs: options.a2uiClientCapabilities.inlineCatalogs }
+          : {}),
+      })
+    : undefined;
+  const throttleMs =
+    typeof options.throttle === 'number' && options.throttle > 0
+      ? options.throttle
+      : 0;
+  function report(
+    event: LangGraphTelemetryEvent,
+    properties: { requestType?: string; durationMs?: number; errorClass?: string } = {}
+  ) {
+    if (!telemetry) return;
+    safely(() =>
+      telemetry({
+        event,
+        properties: { transport: 'langgraph', surface: 'agent', ...properties },
+      })
+    );
+  }
+  /** Reports one command to telemetry and the development collector. */
+  function reportRequest(attempt: Attempt, requestType: string) {
+    attempt.startedAt = Date.now();
+    if (developmentRuntime) safely(() => developmentRuntime.touch());
+    report('tplane:runtime_request_created', { requestType });
+    report('tplane:stream_started');
+  }
+  /** The run payload for a submission: its messages, state and what the
+   * session itself advertises. */
+  function runPayload(
+    messages: readonly unknown[],
+    state?: LangGraphInputState
+  ): Record<string, unknown> {
+    const payload = createSubmitPayload(messages, catalog, state);
+    if (a2uiClientCapabilities)
+      payload['a2ui_client_capabilities'] = a2uiClientCapabilities;
+    return payload;
+  }
+  function takeScript() {
+    if (!scriptedRuns) return null;
+    try {
+      const script = scriptedRuns.take();
+      return script && Array.isArray(script.frames) ? script : null;
+    } catch {
+      return null;
+    }
+  }
+  /** A scripted run's frames, normalized as the owned transport normalizes
+   * the SDK's and delivered one per turn, as a stream would. */
+  async function* streamScript(
+    frames: readonly { readonly event: string; readonly data: unknown }[],
+    signal: AbortSignal
+  ): AsyncIterable<StreamEvent> {
+    for (const frame of frames) {
+      await Promise.resolve();
+      if (signal.aborted) {
+        const error = new Error('Scripted run aborted.');
+        error.name = 'AbortError';
+        throw error;
+      }
+      yield normalizeSdkEvent(frame.event as StreamEvent['type'], frame.data);
+    }
+  }
   const protectedTransport =
     transport instanceof FetchStreamTransport &&
     transport.protectsOperationErrors;
@@ -554,10 +708,17 @@ export function createSession(
       }
     }
   );
-  const getHistory =
+  const readHistoryPage =
     typeof transport.getHistory === 'function'
       ? transport.getHistory.bind(transport)
       : undefined;
+  const getHistory: typeof readHistoryPage =
+    readHistoryPage && toMessage
+      ? async (id, signal) =>
+          (await readHistoryPage(id, signal)).map((saved) =>
+            convertSavedMessages(saved, toMessage)
+          )
+      : readHistoryPage;
   const canCheck = !!getHistory;
   const joinStream = transport.joinStream?.bind(transport);
   const createQueuedRun = transport.createQueuedRun?.bind(transport);
@@ -565,13 +726,24 @@ export function createSession(
   const queue: QueuedRun[] = [];
   const getRunStatus = transport.getRunStatus?.bind(transport);
   type RunStatus = Awaited<ReturnType<NonNullable<typeof getRunStatus>>>;
-  const getState = transport.getState?.bind(transport);
+  const readSavedState = transport.getState?.bind(transport);
+  const getState: typeof readSavedState =
+    readSavedState && toMessage
+      ? async (id, checkpoint, signal) =>
+          convertSavedMessages(
+            await readSavedState(id, checkpoint, signal),
+            toMessage
+          )
+      : readSavedState;
   const canReconnect = !!joinStream && !!getRunStatus;
+  const initialValues = options.initialValues
+    ? (record(ownValue(options.initialValues)) as LangGraphState | undefined)
+    : undefined;
   const publication = createPublication({
     status: 'idle',
     messages: [],
     toolCalls: [],
-    state: undefined,
+    state: initialValues,
     interrupts: [],
     subgraphs: [],
     history: undefined,
@@ -636,7 +808,7 @@ export function createSession(
   /** `tools:<task id>` namespace segment to the tool call that started it. */
   const delegationBindings = new Map<string, string>();
   const lifecycle = createLifecycleRecorder();
-  let values: LangGraphState | undefined;
+  let values: LangGraphState | undefined = initialValues;
   let interrupts: readonly LangGraphWireInterrupt[] =
     publication.getSnapshot().interrupts;
   let owner: Attempt | undefined;
@@ -778,7 +950,7 @@ export function createSession(
     readonly source: LangGraphState | undefined;
     readonly state: LangGraphState | undefined;
     readonly issues?: readonly string[];
-  } = { source: undefined, state: undefined };
+  } = { source: initialValues, state: initialValues };
   /** The state to publish for the current values, checked once per reported state. */
   function readPublishedState(): typeof published {
     if (values === published.source) return published;
@@ -820,6 +992,7 @@ export function createSession(
       toolCalls: state.toolCalls,
     });
     const reading = readPublishedState();
+    const before = devtools && publication.getSnapshot();
     publication.publish({
       status,
       history: historyPage,
@@ -861,8 +1034,35 @@ export function createSession(
         : state.toolCalls,
       ...(error ? { error } : {}),
     });
+    if (devtools && before) reportWrites(before);
     // Last, so a lifecycle listener runs where a snapshot listener would.
     lifecycle.flush();
+  }
+  /** What the next publication is attributed to in a development tool. */
+  let writeLabel: { readonly event?: string; readonly label?: string } = {};
+  let customWrite = false;
+  function reportWrites(before: LangGraphSnapshot) {
+    const sink = devtools;
+    if (!sink) return;
+    const { event, label = 'run:end' } = writeLabel;
+    writeLabel = {};
+    const names = [
+      ...changedSignals(before, publication.getSnapshot()),
+      ...(customWrite ? (['custom'] as const) : []),
+    ];
+    customWrite = false;
+    const write = () => {
+      for (const name of names) sink.wrote(name);
+    };
+    safely(() => {
+      if (event === undefined) return sink.outside(label, write);
+      sink.begin(event);
+      try {
+        write();
+      } finally {
+        sink.end();
+      }
+    });
   }
   function invalidateCheck() {
     revision += 1;
@@ -945,6 +1145,15 @@ export function createSession(
     recoveryAttempt = error?.recovery === 'check' ? attempt : undefined;
     replayable = error?.recovery === 'retry' ? { attempt, state } : undefined;
     publish(error ? 'error' : 'idle', error);
+    if (outcome !== 'aborted') {
+      const durationMs = Date.now() - (attempt.startedAt ?? Date.now());
+      if (error)
+        report('tplane:stream_errored', {
+          durationMs,
+          errorClass: errorClass(error),
+        });
+      else report('tplane:stream_ended', { durationMs });
+    }
     if (historyState && !error && (outcome === 'success' || outcome === 'paused'))
       void refreshHistoryPage();
     // A run from a checkpoint the session could not rewind to leaves the saved
@@ -984,6 +1193,7 @@ export function createSession(
         pageRefresh = undefined;
         historyPage = page;
         checkpointPage = views;
+        writeLabel = { label: 'history' };
         republish();
       });
     } catch {
@@ -1066,7 +1276,7 @@ export function createSession(
             definition,
             call,
             attempt.controller.signal,
-            { threadId: thread(), toolCallId: call.id },
+            { threadId: threadId ?? '', toolCallId: call.id },
             store,
             groups >= 10
           );
@@ -1389,8 +1599,16 @@ export function createSession(
       (attempt.input.kind === 'submit' ||
         (attempt.input.kind === 'resume' && attempt.groups === 0)) &&
       canCheck &&
+      !attempt.scripted &&
       !attempt.physical?.evidence.unsafe;
-    if (threadId === undefined) {
+    // Development only: an armed scripted run stands in for the network, so
+    // it creates no thread either.
+    let script =
+      attempt.joinStart || attempt.joinCursor !== undefined
+        ? null
+        : takeScript();
+    if (script) attempt.scripted = true;
+    if (threadId === undefined && !script) {
       // The first submit of a session without a thread creates it before the
       // run. A replacing submit waits for the same request.
       try {
@@ -1425,13 +1643,15 @@ export function createSession(
         const resuming = groups === 0 && attempt.input.kind === 'resume';
         const payload = resuming
           ? null
-          : createSubmitPayload(
+          : runPayload(
               [...batch.messages, ...input],
-              catalog,
               !joining && groups === 0 && attempt.input.kind === 'submit'
                 ? attempt.input.state
                 : undefined
             );
+        const scripted = joining ? null : script ?? (groups > 0 ? takeScript() : null);
+        script = null;
+        if (scripted) attempt.scripted = true;
         const from =
           attempt.branch && !joining
             ? readyCheckpoint(attempt.branch.state).position
@@ -1470,6 +1690,8 @@ export function createSession(
                   ? [{ streamMode: [...checkpointStreamModes] }]
                   : [])
               )
+            : scripted
+            ? streamScript(scripted.frames, attempt.controller.signal)
             : transport.stream(
                 assistantId,
                 thread(),
@@ -1494,9 +1716,15 @@ export function createSession(
           if (next.done) break;
           // Run creation precedes stream frames. A later callback cannot safely
           // attach an identity to already consumed data, including reentrant getters.
+          const firstEvent = !run.received;
           run.received = true;
-          const event = captureStreamEvent(next.value);
+          const event = convertEventMessages(
+            captureStreamEvent(next.value),
+            toMessage
+          );
           if (!owns(attempt)) return;
+          if (developmentRuntime && firstEvent)
+            safely(() => developmentRuntime.milestone('transport.connected'));
           const custom = captureCustomEvent(event);
           const binding = captureDelegationBinding(event);
           const previousState = state;
@@ -1564,6 +1792,8 @@ export function createSession(
             return;
           }
           lifecycle.mark('streamStartedAt');
+          writeLabel = { event: event.type };
+          customWrite = !!custom;
           publish('running');
           // publish drains observer commands before returning. Never dispatch or
           // read on behalf of an attempt a listener just stopped/superseded.
@@ -1880,7 +2110,12 @@ export function createSession(
   function beginAttempt(
     input: AttemptInput,
     external?: AbortSignal,
-    runOptions?: CapturedRunOptions
+    runOptions?: CapturedRunOptions,
+    requestType = input.kind === 'submit'
+      ? 'submit'
+      : input.bare
+      ? 'continue'
+      : 'resume'
   ): Attempt {
     cancelPageRefresh();
     const reading = detachLoad();
@@ -1958,6 +2193,8 @@ export function createSession(
     if (owns(created)) {
       if (input.kind === 'resume' && !input.bare)
         lifecycle.mark('interruptResolvedAt');
+      reportRequest(created, requestType);
+      writeLabel = { label: 'run:start' };
       publish('running');
     }
     checking?.abort();
@@ -2235,6 +2472,8 @@ export function createSession(
   }): Promise<CompleteOutcome> {
     const create = createQueuedRun;
     if (!create || threadId === undefined) throw createSafeRequestError();
+    if (developmentRuntime) safely(() => developmentRuntime.touch());
+    report('tplane:runtime_request_created', { requestType: 'enqueue' });
     const { input } = request;
     let run: RunEvidence;
     let created: { run_id: string; thread_id?: string };
@@ -2243,7 +2482,7 @@ export function createSession(
         assistantId,
         threadId,
         input.kind === 'submit'
-          ? createSubmitPayload(input.messages, catalog, input.state)
+          ? runPayload(input.messages, input.state)
           : null,
         request.external ?? new AbortController().signal,
         {
@@ -2289,6 +2528,7 @@ export function createSession(
       } catch {
         /* Application callbacks cannot affect the run. */
       }
+      writeLabel = { label: 'queue' };
       if (owner) republish();
       // The active run can end while the queued one is being created.
       else drainQueue();
@@ -2312,7 +2552,12 @@ export function createSession(
         )
           return;
         const entry = queue.shift() as QueuedRun;
-        attempt = beginAttempt(entry.input, undefined, entry.runOptions);
+        attempt = beginAttempt(
+          entry.input,
+          undefined,
+          entry.runOptions,
+          'join_queued'
+        );
         attempt.physical = {
           batch: buffer.snapshot(),
           evidence: { runId: entry.id },
@@ -2355,7 +2600,9 @@ export function createSession(
         throw new TypeError('joinStream requires a valid run id.');
       attempt = beginAttempt(
         { kind: 'resume', value: undefined, interrupts, bare: true },
-        external
+        external,
+        undefined,
+        'join'
       );
       attempt.physical = {
         batch: buffer.snapshot(),
@@ -2576,7 +2823,11 @@ export function createSession(
         external.addEventListener('abort', abort, { once: true });
         if (external.aborted) abort();
       }
-      if (owns(created)) publish('running');
+      if (owns(created)) {
+        reportRequest(created, 'reconnect');
+        writeLabel = { label: 'run:start' };
+        publish('running');
+      }
       checking?.abort();
     });
     return dispatch(beginning, () => attempt);
@@ -2642,6 +2893,9 @@ export function createSession(
         loading = undefined;
         read.resolve();
         if (history.length > 0) lifecycle.mark('threadPersistedAt');
+        if (developmentRuntime && projected.messages.length > 0)
+          safely(() => developmentRuntime.milestone('thread.persisted'));
+        writeLabel = { label: 'history' };
         publish(
           unsettledTools.size ? 'error' : 'idle',
           unsettledTools.size ? unsettledToolError() : undefined
@@ -2748,7 +3002,12 @@ export function createSession(
       const previous = failed.attempt;
       state = previous.baseline.state;
       values = previous.baseline.values;
-      attempt = beginAttempt(previous.input, undefined, previous.runOptions);
+      attempt = beginAttempt(
+        previous.input,
+        undefined,
+        previous.runOptions,
+        'retry'
+      );
     });
     // No attempt means nothing ran: `aborted`, as for an ignored submit.
     return dispatch(beginning, () => attempt);
@@ -2933,6 +3192,9 @@ export function createSession(
       options
     );
   }
+  const throttles = new Set<{ cancel(): void }>();
+  if (developmentRuntime) safely(() => developmentRuntime.touch());
+  report('tplane:runtime_instance_created');
   const canRegenerate =
     !!getHistory &&
     !!getState &&
@@ -2945,8 +3207,22 @@ export function createSession(
     get threadId() {
       return threadId;
     },
-    subscribe: (notify) =>
-      disposed ? () => undefined : publication.subscribe(notify),
+    subscribe: (notify) => {
+      if (disposed) return () => undefined;
+      if (!throttleMs) return publication.subscribe(notify);
+      const throttled = throttleListener(
+        notify,
+        throttleMs,
+        () => publication.getSnapshot().status !== 'running'
+      );
+      throttles.add(throttled);
+      const release = publication.subscribe(throttled);
+      return () => {
+        throttles.delete(throttled);
+        throttled.cancel();
+        release();
+      };
+    },
     onCustomEvent: (listener) =>
       disposed ? () => undefined : publication.onCustomEvent(listener),
     lifecycle: {
@@ -2964,6 +3240,7 @@ export function createSession(
           throw new TypeError('A branch is a string.');
         if (disposed || selected === branchName) return;
         branchName = selected;
+        writeLabel = { label: 'branch' };
         republish();
       }),
     ...(canRegenerate ? { regenerate } : {}),
@@ -2995,6 +3272,9 @@ export function createSession(
         const dropped = queue.splice(0);
         publish('idle');
         for (const entry of dropped) entry.resolve('aborted');
+        for (const throttled of throttles) throttled.cancel();
+        throttles.clear();
+        if (developmentRuntime) safely(() => developmentRuntime.dispose());
         publication.clearListeners();
         lifecycle.clearListeners();
         checking?.abort();
