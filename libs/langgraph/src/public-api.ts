@@ -67,6 +67,7 @@ export { extractCitations } from './runtime/citation-projection.js';
 // Saved conversations and project names.
 export { createLangGraphThreadDirectory } from './runtime/thread-directory.js';
 export type {
+  LangGraphThreadDirectory,
   LangGraphThreadDirectoryOptions,
   LangGraphThreadsClient,
 } from './runtime/thread-directory.js';

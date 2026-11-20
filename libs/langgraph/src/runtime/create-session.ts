@@ -170,6 +170,7 @@ export type {
 } from './run-options.js';
 export {
   createLangGraphThreadDirectory,
+  type LangGraphThreadDirectory,
   type LangGraphThreadDirectoryOptions,
   type LangGraphThreadsClient,
 } from './thread-directory.js';

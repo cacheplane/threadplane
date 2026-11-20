@@ -323,17 +323,25 @@ import {
   provideThreadDirectory,
   refreshOnRunEnd,
 } from '@threadplane/angular';
+import {
+  createLangGraphThreadDirectory,
+  type LangGraphThreadDirectory,
+} from '@threadplane/langgraph';
 
 // app.config.ts
 providers: [
   provideThreadDirectory({
-    createDirectory: ({ clientOptions }) =>
-      createLangGraphThreadDirectory({ apiUrl, clientOptions }),
+    createDirectory: ({ clientOptions, reportOperationFailure }) =>
+      createLangGraphThreadDirectory({
+        apiUrl,
+        clientOptions,
+        reportOperationFailure,
+      }),
   }),
 ];
 
 // component
-readonly threads = injectThreadDirectory();
+readonly threads = injectThreadDirectory<LangGraphThreadDirectory>();
 constructor() {
   void this.threads.refresh();
   refreshOnRunEnd(injectAgent(), this.threads);
@@ -356,9 +364,12 @@ constructor() {
 | `createProject`, `renameProject`, `removeProject` | Project commands. |
 
 Nothing is loaded until `refresh()` is called. A command the directory does not
-offer is `undefined`, so a view offers no control for it. Naming the directory
-type, `injectThreadDirectory<MyDirectory>()`, types the commands that type
-guarantees as present. A row or project command shows at once, rolls back when
+offer is `undefined`, so a view offers no control for it. Plain
+`injectThreadDirectory()` is typed by the core contract, where every command is
+optional and is called as `threads.create?.()`. Naming the directory type, as
+`injectThreadDirectory<LangGraphThreadDirectory>()` does above, types the
+commands that type guarantees as present, so they are called as
+`threads.create()`. A row or project command shows at once, rolls back when
 it fails and rejects with the directory's error. The view owns the directory
 and disposes it with its injector.
 

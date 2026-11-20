@@ -782,6 +782,16 @@ it observes a session. Pass `apiUrl` (with optional `clientOptions`) to have it
 build its own protected SDK client with `maxRetries: 0`, or `client` to reuse an
 existing one. With `browserOrigin`, a cross-origin `apiUrl` is rejected.
 
+It returns a `LangGraphThreadDirectory`: the core contract with the commands
+this directory always has (`get`, `pinnedOrderOf`, `create`, `rename`, `remove`,
+`setArchived`, `setPinned`, `reorderPinned`, `setProject`) typed as present, so
+they are called without `?.`. The project commands are typed as present with the
+default options or a supplied `ProjectStore`, as absent with `projects: false`
+(`LangGraphThreadDirectory<false>`), and as optional when `projects` is not
+known until run time (`LangGraphThreadDirectory<boolean>`). A binding names the
+type to carry it through, for example
+`injectThreadDirectory<LangGraphThreadDirectory>()` in Angular.
+
 An entry is read from thread metadata: `title` (trimmed, else `titleFallback`,
 default "New chat"), `archived`, `pinned`, `pinnedOrder` and `projectId`.
 `threads` holds the active conversations, pinned ones first in their saved

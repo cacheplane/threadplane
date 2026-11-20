@@ -20434,6 +20434,11 @@
       "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
     },
     {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadDirectory",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root: the return type of createLangGraphThreadDirectory, the core ThreadDirectory with the commands it always has typed as present."
+    },
+    {
       "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadDirectoryOptions",
       "taskIds": ["T08"], "treatment": "shared", "status": "complete",
       "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."

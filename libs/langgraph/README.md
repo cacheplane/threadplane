@@ -94,7 +94,7 @@ The package root is the whole public surface. Everything is exported from `@thre
 
 **Saved conversations**
 
-- `createLangGraphThreadDirectory(options)`: the core `ThreadDirectory` for a deployment's threads, with `LangGraphThreadDirectoryOptions` and `LangGraphThreadsClient`.
+- `createLangGraphThreadDirectory(options)`: the core `ThreadDirectory` for a deployment's threads, with `LangGraphThreadDirectoryOptions` and `LangGraphThreadsClient`. It returns a `LangGraphThreadDirectory`, which types the commands it always has as present, `get(id)` for reading one thread among them, so none needs `?.`. `reportOperationFailure` in the options receives rejected credentials and refused requests. The [session reference](./src/runtime/README.md#thread-directory) lists how it differs from the removed `LangGraphThreadsAdapter`.
 - `createLangGraphProjectStore(client)` and `ProjectStore`: project names in the LangGraph Store.
 
 **Transports and the SDK client**
