@@ -28,7 +28,11 @@ same runtime, so one implementation serves both frameworks.
 5. **Full parity.** The new `Agent` must do everything the legacy one does.
    Nothing is dropped for Angular users. A capability the session runtime
    lacks is built, either in the runtime or in the Angular layer.
-6. **Landing.** One long-lived branch, merged to `main` when everything
+6. **One Angular provider.** There is no backend-specific Angular provider.
+   An app writes `provideAgent({ createSession: (context) => createSession({
+   apiUrl, assistantId, ...context }) })` with `provideAgent` from
+   `@threadplane/angular` and `createSession` from the backend package.
+7. **Landing.** One long-lived branch, merged to `main` when everything
    compiles and passes. Breaking changes are allowed; no backwards
    compatibility is required.
 
@@ -62,13 +66,19 @@ case), the `Agent` replaces the session underneath and its signals carry on.
 
 ### Order of work
 
-1. Close the runtime, core and Angular-layer gaps below (parallel workstreams).
-2. Move the pieces the runtimes import out of the legacy folders.
+1. Close the runtime, core and Angular-layer gaps below (parallel
+   workstreams). Done 2026-11-19; integrated and verified against live
+   backends with fixtures.
+2. Both runtimes produce the core contract's optional members, with live
+   tests for the features no app exercises yet.
 3. Rewrite the Angular chat components (`libs/chat/src/lib`) to the new `Agent`.
 4. Convert the 37 Angular example and cockpit apps and the smoke template.
 5. Update the Angular docs (about 90 pages).
-6. Delete the legacy implementations and move the factories to the package
-   roots.
+6. Delete the legacy implementations, move the pieces the runtimes import out
+   of the legacy folders, and move the factories to the package roots. The
+   move waits for this step: the transition's packaging guards
+   (`scripts/react-parity/package-policy.mjs`, `verify-boundaries.mjs`) name
+   the current locations and are rewritten together with the deletion.
 
 ## Gap list
 
