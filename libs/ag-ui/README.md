@@ -78,12 +78,15 @@ The package root is the whole public surface. Everything is exported from `@thre
 
 **The session**
 
-- `createSession(options, tools?)` and its types `SessionOptions`, `SessionCommonOptions`, `HttpSessionSource`, `AgentSessionSource`, `Session`, `ClientToolSession`, `ResumeOptions`.
+- `createSession(options, tools?)` and its types `SessionOptions`, `DeclaredSessionOptions`, `SessionCommonOptions`, `HttpSessionSource`, `AgentSessionSource`, `Session`, `ClientToolSession`, `ResumeOptions`.
+- The option groups `SessionCommonOptions` is composed from: `DurabilityOptions` (`persistence`, `replay`) and `InstrumentOptions` (`telemetry`, `devtools`, `developmentRuntime`, `reportOperationFailure`, `a2uiClientCapabilities`), with `SessionAgent`, `OperationFailureReporter` and `OperationFailureCode`.
 - What a submit accepts: `SubmitInput`, `SubmitState`, `ApplicationState`.
 
 **The snapshot**
 
 - `SessionSnapshot`, `SessionInterrupt`, `SessionInputBlock`, `InputBlock`, `Observation`, `Transcript`, `SessionLifecycle`, `SessionLifecycleSource`.
+- Child agents and the evidence behind them: `SessionSubagent`, `Subagents`, `SubagentObservation`, `ChildStart`, `ChildFinish`, `ChildError`.
+- The last run's evidence: `OwnedRootTerminal`, `OwnedLegacyInterrupt`.
 - With client tools: `ClientToolSessionSnapshot`, `ClientToolCall`, `ClientToolBlocker`.
 
 **Selectors over a snapshot**
@@ -96,7 +99,7 @@ The package root is the whole public surface. Everything is exported from `@thre
 
 - `decisionState(snapshot)` and `DecisionState`: the pending decision and its phase.
 - `interruptSession(snapshot)` and `InterruptSession`: the full interrupt batch and how far its answer has got.
-- `Decision`, `DecisionRun`, `NativeDecision`, `NativeResponse`, `InterruptResponse`, `OwnedInterrupt`, `PauseId`, `InterruptMode`, `InterruptTransport`.
+- `Decision`, `DecisionRun`, `NativeDecision`, `NativeResponse`, `InterruptResponse`, `OwnedInterrupt`, `PauseId`, `CommandProps`, `InterruptMode`, `InterruptTransport`.
 
 **Restoring a thread**
 

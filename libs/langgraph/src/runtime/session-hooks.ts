@@ -12,8 +12,11 @@ export type LangGraphTelemetryEvent =
   | 'tplane:stream_ended'
   | 'tplane:stream_errored';
 
+/** What a telemetry sink receives: the lifecycle moment and its properties. No content is included. */
 export interface LangGraphTelemetryPayload {
+  /** The lifecycle moment. */
   readonly event: LangGraphTelemetryEvent;
+  /** What is known of the moment: the request's kind, its duration, the error's kind. */
   readonly properties: {
     readonly transport: 'langgraph';
     readonly surface: 'agent';
@@ -81,6 +84,7 @@ export interface LangGraphDevtoolsSink {
   outside<R>(label: string, run: () => R): R;
 }
 
+/** The name of a published field a development tool is told has changed. */
 export type LangGraphDevtoolsSignal =
   | 'status'
   | 'values'
@@ -105,6 +109,7 @@ export interface LangGraphScriptedRun {
     readonly data: unknown;
   }[];
 }
+/** A development tool's source of scripted runs, asked before each request. */
 export interface LangGraphScriptedRuns {
   /** The armed run, taken once, or null when none is armed. */
   take(): LangGraphScriptedRun | null;

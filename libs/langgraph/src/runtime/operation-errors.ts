@@ -1,3 +1,4 @@
+/** Told when a request is refused as unauthorized or blocked by the network. */
 export type RuntimeOperationFailureReporter = (
   code: 'unauthorized' | 'network_blocked'
 ) => void;

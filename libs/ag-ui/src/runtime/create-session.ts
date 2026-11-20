@@ -140,7 +140,9 @@ export interface SessionCommonOptions
   readonly clientOptions?: object | undefined;
   /** Names the agent, when an endpoint serves more than one. Published as `session.agentId`. */
   readonly agentId?: string;
+  /** The conversation the session begins with, before any restore. */
   readonly messages?: readonly Message[] | Transcript;
+  /** The state document the session begins with, before any restore. */
   readonly state?: unknown;
   /**
    * The type of the state document: `type<T>()` to declare it, or a Standard
@@ -150,6 +152,10 @@ export interface SessionCommonOptions
   readonly stateType?: StateDeclaration;
   /** Child evidence saved with this thread, published as `earlierSubagents`. Their attributed messages belong in `messages`. */
   readonly subagents?: Subagents;
+  /**
+   * How a root `CUSTOM on_interrupt` notice is read; `'native'` when omitted.
+   * See `InterruptMode`.
+   */
   readonly interruptMode?: InterruptMode;
   /**
    * How a pause is answered. Absent, a session answers the protocol's own
@@ -162,6 +168,13 @@ export interface SessionCommonOptions
 /** A session that posts each run to an HTTP endpoint. */
 export interface HttpSessionSource
   extends Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'> {
+  /** The endpoint each run is posted to. */
+  url: HttpAgentConfig['url'];
+  /** Headers sent with every request. */
+  headers?: HttpAgentConfig['headers'];
+  /** The `fetch` to send requests with, in place of the global one. */
+  fetch?: HttpAgentConfig['fetch'];
+  /** Never set on an HTTP session: `agent` selects `AgentSessionSource`. */
   readonly agent?: undefined;
 }
 /**
@@ -171,11 +184,19 @@ export interface HttpSessionSource
  * and neither reads nor changes the agent's own messages and state.
  */
 export interface AgentSessionSource {
+  /** The agent whose `run` the session calls for each request. */
   readonly agent: SessionAgent;
+  /** Never set with `agent`: the agent owns its transport. */
   readonly url?: undefined;
+  /** Never set with `agent`: the agent owns its transport. */
   readonly headers?: undefined;
+  /** Never set with `agent`: the agent owns its transport. */
   readonly fetch?: undefined;
 }
+/**
+ * What `createSession` takes: the common options, and either an HTTP endpoint
+ * (`url`, `headers`, `fetch`) or an `agent` the application built.
+ */
 export type SessionOptions = SessionCommonOptions &
   (HttpSessionSource | AgentSessionSource);
 /** Options as the factory captured them: one read of each, thread resolved. */
@@ -189,8 +210,14 @@ interface CapturedOptions
   /** The session named the thread itself; its first request creates it. */
   readonly ownThread: boolean;
 }
-/** The session's options with its state declaration as the type parameter. */
-type DeclaredOptions<D> = Omit<SessionCommonOptions, 'stateType'> & {
+/**
+ * `SessionOptions` with the state declaration as the type parameter, so
+ * `createSession` can infer the snapshot's state type from `stateType`.
+ */
+export type DeclaredSessionOptions<D> = Omit<
+  SessionCommonOptions,
+  'stateType'
+> & {
   readonly stateType?: D;
 } & (HttpSessionSource | AgentSessionSource);
 /**
@@ -237,6 +264,10 @@ function assertCurrentPause(decision: NativeDecision, pause: unknown): void {
       'Stale pause: read the pending decision again before answering.'
     );
 }
+/**
+ * What `createSession` returns: the core `AgentSession` contract over an AG-UI
+ * backend, with the snapshot, the commands and the protocol's own evidence.
+ */
 export interface Session<TState = unknown> {
   /** The thread this session owns. The factory always supplies it. */
   readonly threadId?: string;
@@ -563,6 +594,11 @@ function startingObservation(
     ? Object.freeze({ ...initial, hold: 'hydrating' as const })
     : initial;
 }
+/**
+ * The session `createSession(options, tools)` returns when it is given a
+ * handler map: it runs those tools itself and publishes their calls in the
+ * snapshot's `clientTools`.
+ */
 export type ClientToolSession<
   C extends Record<string, ToolContract>,
   TState = unknown
@@ -663,12 +699,12 @@ export function createSession<
   T extends Record<string, FunctionToolDefinition>,
   D extends StateDeclaration | undefined = undefined
 >(
-  options: DeclaredOptions<D>,
+  options: DeclaredSessionOptions<D>,
   tools: T & CheckedTools<T>
 ): ClientToolSession<ToolContracts<T>, InferState<D>>;
 export function createSession<
   D extends StateDeclaration | undefined = undefined
->(options: DeclaredOptions<D>): Session<InferState<D>>;
+>(options: DeclaredSessionOptions<D>): Session<InferState<D>>;
 export function createSession(
   options: SessionOptions,
   tools?: Record<string, FunctionToolDefinition>

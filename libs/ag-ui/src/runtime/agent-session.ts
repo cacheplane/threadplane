@@ -23,7 +23,6 @@ import {
 import { failedWithRunError, type Observation } from './session-observation.js';
 import { PROTECTED_COPY } from './session-instruments.js';
 
-type Tools = Record<string, ToolContract>;
 /**
  * What an AG-UI session publishes: the core snapshot, with the protocol
  * evidence behind it. `state` is the typed state; the literal document a
@@ -33,7 +32,10 @@ export type SessionSnapshot<TState = unknown> = Omit<
   Observation,
   'state' | 'subagents' | 'clientToolCatalog'
 > &
-  Omit<AgentSnapshot<Tools, TState>, 'interrupts' | 'subagents'> & {
+  Omit<
+    AgentSnapshot<Record<string, ToolContract>, TState>,
+    'interrupts' | 'subagents'
+  > & {
     /**
      * What a paused run waits on, each with the protocol's own fields. Listed
      * from the pause until an answer is sent, and absent otherwise; a pause

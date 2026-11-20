@@ -1,6 +1,7 @@
 import type { Message } from '@threadplane/core';
 import type { Transcript } from './transcript.js';
 
+/** One user or assistant message as plain text: what `projectTextTranscript` returns. */
 export type TextTranscriptRow = Readonly<
   Pick<Message, 'id' | 'content'> & {
     role: 'user' | 'assistant';

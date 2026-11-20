@@ -23,13 +23,18 @@ export interface LangGraphCheckpoint extends AgentCheckpoint {
   readonly saved: DeepReadonly<ThreadState>;
 }
 
+/** One checkpoint in a branch tree, with the fork choices that lead to it. */
 export interface LangGraphBranchNode {
+  /** Always `'node'`. */
   readonly type: 'node';
+  /** The checkpoint at this position. */
   readonly value: LangGraphCheckpoint;
   /** The fork choices that lead here: one checkpoint id for each fork passed. */
   readonly path: readonly string[];
 }
+/** A point in a branch tree where the history splits into alternatives. */
 export interface LangGraphBranchFork {
+  /** Always `'fork'`. */
   readonly type: 'fork';
   /** The alternative continuations, oldest first: the last is the newest. */
   readonly items: readonly LangGraphBranchTree[];
@@ -37,7 +42,9 @@ export interface LangGraphBranchFork {
 /** A history page as a tree: a run of checkpoints, splitting where a
  * checkpoint has several children. */
 export interface LangGraphBranchTree {
+  /** Always `'sequence'`. */
   readonly type: 'sequence';
+  /** The checkpoints and forks of this run, oldest first. */
   readonly items: readonly (LangGraphBranchNode | LangGraphBranchFork)[];
 }
 

@@ -29,6 +29,7 @@ import type { LangGraphClientOptions } from './transport.types.js';
 /** The SDK client surface a thread directory reads and writes. */
 export type LangGraphThreadsClient = Pick<Client, 'threads' | 'store'>;
 
+/** What `createLangGraphThreadDirectory` takes: how to reach the deployment, and where project names are kept. */
 export interface LangGraphThreadDirectoryOptions {
   /** LangGraph API base. Ignored when `client` is supplied. */
   readonly apiUrl?: string;
@@ -56,7 +57,8 @@ export interface LangGraphThreadDirectoryOptions {
   readonly reportOperationFailure?: RuntimeOperationFailureReporter;
 }
 
-type ThreadCommand =
+/** The thread commands a `LangGraphThreadDirectory` always has. */
+export type LangGraphThreadCommand =
   | 'get'
   | 'pinnedOrderOf'
   | 'create'
@@ -66,7 +68,11 @@ type ThreadCommand =
   | 'setPinned'
   | 'reorderPinned'
   | 'setProject';
-type ProjectCommand = 'createProject' | 'renameProject' | 'removeProject';
+/** The project commands a `LangGraphThreadDirectory` has when projects are on. */
+export type LangGraphProjectCommand =
+  | 'createProject'
+  | 'renameProject'
+  | 'removeProject';
 
 /**
  * The directory `createLangGraphThreadDirectory` returns: the core
@@ -79,11 +85,11 @@ type ProjectCommand = 'createProject' | 'renameProject' | 'removeProject';
  */
 export type LangGraphThreadDirectory<TProjects extends boolean = true> =
   ThreadDirectory &
-    Required<Pick<ThreadDirectory, ThreadCommand>> &
+    Required<Pick<ThreadDirectory, LangGraphThreadCommand>> &
     ([TProjects] extends [true]
-      ? Required<Pick<ThreadDirectory, ProjectCommand>>
+      ? Required<Pick<ThreadDirectory, LangGraphProjectCommand>>
       : [TProjects] extends [false]
-        ? { readonly [K in ProjectCommand]?: undefined }
+        ? { readonly [K in LangGraphProjectCommand]?: undefined }
         : unknown);
 
 /** The saved pin rank of each entry a directory produced. */

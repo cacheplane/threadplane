@@ -81,7 +81,7 @@ export type ThreadDirectoryConfigInput<TDirectory extends ThreadDirectory> =
  * when the directory's type guarantees the command, otherwise possibly
  * undefined, so a caller offers no control for it.
  */
-type Command<
+export type ThreadDirectoryCommand<
   TDirectory extends ThreadDirectory,
   K extends keyof ThreadDirectory,
   TCommand
@@ -148,45 +148,45 @@ export interface ThreadDirectoryView<
    * Creates a thread and resolves with its id, or with null when the request
    * failed; the failure is logged with `console.error`.
    */
-  readonly create: Command<
+  readonly create: ThreadDirectoryCommand<
     TDirectory,
     'create',
     (metadata?: { readonly [key: string]: PlainValue }) => Promise<
       string | null
     >
   >;
-  readonly rename: Command<
+  readonly rename: ThreadDirectoryCommand<
     TDirectory,
     'rename',
     (threadId: string, newTitle: string) => Promise<void>
   >;
-  readonly delete: Command<
+  readonly delete: ThreadDirectoryCommand<
     TDirectory,
     'remove',
     (threadId: string) => Promise<void>
   >;
-  readonly archive: Command<
+  readonly archive: ThreadDirectoryCommand<
     TDirectory,
     'setArchived',
     (threadId: string) => Promise<void>
   >;
-  readonly unarchive: Command<
+  readonly unarchive: ThreadDirectoryCommand<
     TDirectory,
     'setArchived',
     (threadId: string) => Promise<void>
   >;
-  readonly pin: Command<
+  readonly pin: ThreadDirectoryCommand<
     TDirectory,
     'setPinned',
     (threadId: string) => Promise<void>
   >;
-  readonly unpin: Command<
+  readonly unpin: ThreadDirectoryCommand<
     TDirectory,
     'setPinned',
     (threadId: string) => Promise<void>
   >;
   /** Moves a thread into a project, or out of any project with null. */
-  readonly moveToProject: Command<
+  readonly moveToProject: ThreadDirectoryCommand<
     TDirectory,
     'setProject',
     (threadId: string, projectId: string | null) => Promise<void>
@@ -195,23 +195,23 @@ export interface ThreadDirectoryView<
    * Places a pinned thread before another pinned thread, or last with null or
    * an id that is not pinned.
    */
-  readonly reorderPinned: Command<
+  readonly reorderPinned: ThreadDirectoryCommand<
     TDirectory,
     'reorderPinned',
     (threadId: string, beforeId: string | null) => Promise<void>
   >;
-  readonly createProject: Command<
+  readonly createProject: ThreadDirectoryCommand<
     TDirectory,
     'createProject',
     (name: string) => Promise<{ readonly id: string }>
   >;
-  readonly renameProject: Command<
+  readonly renameProject: ThreadDirectoryCommand<
     TDirectory,
     'renameProject',
     (projectId: string, name: string) => Promise<void>
   >;
   /** Removes a project; its threads leave it first. */
-  readonly removeProject: Command<
+  readonly removeProject: ThreadDirectoryCommand<
     TDirectory,
     'removeProject',
     (projectId: string) => Promise<void>

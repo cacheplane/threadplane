@@ -27,6 +27,7 @@ export type {
   LangGraphSubmitState,
 } from './runtime/submit-input.js';
 export type {
+  LangGraphRunConfigurable,
   LangGraphRunOptions,
   LangGraphRunSettings,
 } from './runtime/run-options.js';
@@ -67,6 +68,8 @@ export { extractCitations } from './runtime/citation-projection.js';
 // Saved conversations and project names.
 export { createLangGraphThreadDirectory } from './runtime/thread-directory.js';
 export type {
+  LangGraphProjectCommand,
+  LangGraphThreadCommand,
   LangGraphThreadDirectory,
   LangGraphThreadDirectoryOptions,
   LangGraphThreadsClient,

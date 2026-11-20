@@ -23,11 +23,17 @@ export type SessionTelemetryEvent =
   | 'tplane:stream_ended'
   | 'tplane:stream_errored';
 
+/** What a telemetry sink is told with each lifecycle moment. No content is included. */
 export interface SessionTelemetryProperties {
+  /** Always `'ag-ui'`. */
   readonly transport: 'ag-ui';
+  /** Always `'session'`. */
   readonly surface: 'session';
+  /** The command that opened the request, on `tplane:runtime_request_created`. */
   readonly requestType?: SessionRequestType;
+  /** How long the stream took, in milliseconds, when it ended or failed. */
   readonly durationMs?: number;
+  /** The class of the failure, on `tplane:stream_errored`. */
   readonly errorClass?: string;
 }
 
@@ -127,6 +133,7 @@ export interface InstrumentOptions {
    * snapshot, in its evidence and on the raw event stream.
    */
   readonly reportOperationFailure?: OperationFailureReporter | undefined;
+  /** Development hooks that follow each publication or script a run. */
   readonly devtools?: SessionDevtools;
 }
 

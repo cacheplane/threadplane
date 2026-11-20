@@ -31,10 +31,15 @@ import {
   type InterruptMode,
 } from './interrupt-mode.js';
 
+/** A `CUSTOM on_interrupt` notice as the session keeps it: its fields, frozen. */
 export type OwnedLegacyInterrupt = DeepReadonly<
   Pick<CustomEvent, 'type' | 'name' | 'value' | 'timestamp' | 'metadata'>
 >;
 
+/**
+ * The event that ended a root run, as the session keeps it: the fields of a
+ * `RUN_FINISHED`, a `RUN_ERROR` or an interrupt notice, frozen.
+ */
 export type OwnedRootTerminal = DeepReadonly<
   | Pick<
       RunFinishedEvent,
@@ -53,9 +58,16 @@ export type OwnedRootTerminal = DeepReadonly<
     >
   | Pick<CustomEvent, 'type' | 'name' | 'value' | 'timestamp' | 'metadata'>
 >;
+/**
+ * The protocol evidence a session holds: the transcript, the state document,
+ * the last run and its pause, as the backend's events gave them.
+ */
 export interface Observation {
+  /** Whether a run is going, and whether the last one failed. */
   readonly status: 'idle' | 'running' | 'error';
+  /** Every protocol message of the thread, in order. */
   readonly transcript: Transcript;
+  /** The literal state document, as requests send it. */
   readonly state: PlainValue;
   /** Steps the agent declared in the state's `todos` list, `[{ content, status }]`. Absent when the state holds no such list. */
   readonly plan?: readonly AgentPlanStep[];

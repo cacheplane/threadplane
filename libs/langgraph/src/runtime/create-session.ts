@@ -237,7 +237,9 @@ import {
   resultCall,
 } from './function-tools.js';
 
+/** What `createSession` takes: the assistant, the thread and how to reach the backend. */
 export interface SessionOptions {
+  /** The assistant, or graph name, each run is created for. */
   readonly assistantId: string;
   /** The thread this session belongs to. Omit it, or pass null, to start an
    * empty session that creates its thread on the first submit. That requires
@@ -246,13 +248,16 @@ export interface SessionOptions {
   /** Called once with the id of the thread this session created. Never called
    * when `threadId` is given. A throwing callback does not affect the run. */
   readonly onThreadId?: (threadId: string) => void;
+  /** A transport to use in place of the SDK transport the session would own. */
   readonly transport?: AgentTransport;
+  /** The LangGraph API base the owned SDK transport calls. A supplied transport ignores it. */
   readonly apiUrl?: string;
   /** The owned SDK transport defaults maxRetries to 0: an ambiguous failed
    * run-creation POST must not silently create another run. A supplied numeric
    * maxRetries explicitly opts into SDK request retries. Custom transports own
    * their retry policy; joining a known run is separate from replaying submit. */
   readonly clientOptions?: LangGraphClientOptions;
+  /** Where client-tool executions are recorded, for a session created with tools. */
   readonly executionStore?: ToolExecutionStore;
   /**
    * The graph state's type: `type<T>()` to declare it, or a Standard Schema,

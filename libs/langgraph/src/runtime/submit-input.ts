@@ -18,6 +18,10 @@ export type LangGraphSubmitState<TState = unknown> = unknown extends TState
       readonly client_tools?: never;
     };
 
+/**
+ * What `submit` accepts: the user's message as text, or an object carrying the
+ * message, optional structured content and optional input state.
+ */
 export type LangGraphSubmitInput<TState = unknown> =
   | string
   | {

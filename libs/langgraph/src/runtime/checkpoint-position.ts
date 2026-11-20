@@ -6,6 +6,7 @@ export type CheckpointReference = Readonly<
 > & {
   readonly checkpoint_map?: Readonly<Record<string, unknown>> | null;
 };
+/** A root checkpoint's routing as a session holds it: thread, id and map, frozen. */
 export type OwnedCheckpointPosition = {
   readonly thread_id: string;
   readonly checkpoint_ns: '';

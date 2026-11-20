@@ -1,5 +1,6 @@
 export { observeAgent } from './observe-agent';
 export { observeAgentState } from './observe-agent-state';
+export type { AgentStateSession } from './observe-agent-state';
 export { createAgent, ɵagentConfig } from './agent';
 export type {
   Agent,
@@ -8,6 +9,7 @@ export type {
   AgentFieldSignals,
   AgentSessionContext,
   AgentSessionLike,
+  AgentSessionPlumbing,
   AgentSnapshotOf,
 } from './agent';
 export { withAgentOverrides } from './agent-overrides';
@@ -46,6 +48,7 @@ export {
   provideThreadDirectory,
 } from './thread-directory';
 export type {
+  ThreadDirectoryCommand,
   ThreadDirectoryConfig,
   ThreadDirectoryConfigInput,
   ThreadDirectoryContext,
@@ -53,3 +56,4 @@ export type {
   ThreadListItem,
 } from './thread-directory';
 export { refreshOnRunEnd, refreshOnTransition } from './refresh-on';
+export type { RefreshTarget } from './refresh-on';

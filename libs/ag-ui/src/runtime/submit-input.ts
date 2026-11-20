@@ -1,6 +1,7 @@
 import type { ContentBlock, PlainValue } from '@threadplane/core';
 import { ownState } from './state.js';
 
+/** A state document as plain data: a frozen record of plain values. */
 export type ApplicationState = Readonly<Record<string, PlainValue>>;
 /**
  * The patch a submission merges into the state document. A session with a
@@ -9,6 +10,10 @@ export type ApplicationState = Readonly<Record<string, PlainValue>>;
 export type SubmitState<TState = unknown> = unknown extends TState
   ? ApplicationState
   : Partial<TState>;
+/**
+ * What `submit` accepts: the user's message as text, or an object carrying the
+ * message, optional structured content and an optional state patch.
+ */
 export type SubmitInput<TState = unknown> =
   | string
   | {

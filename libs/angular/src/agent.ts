@@ -51,7 +51,7 @@ export type AgentFieldSignals<TSnapshot> = {
 };
 
 /** Session members the agent owns and therefore does not pass through. */
-type SessionPlumbing = 'getSnapshot' | 'subscribe' | 'dispose';
+export type AgentSessionPlumbing = 'getSnapshot' | 'subscribe' | 'dispose';
 
 /**
  * What an agent adds because it outlives any one session: the thread it is on,
@@ -114,7 +114,7 @@ export interface AgentControls {
  */
 export type Agent<TSession extends AgentSessionLike = AgentSession> =
   AgentControls &
-    Omit<TSession, SessionPlumbing | keyof AgentControls> &
+    Omit<TSession, AgentSessionPlumbing | keyof AgentControls> &
     Omit<
       AgentFieldSignals<AgentSnapshotOf<TSession>>,
       keyof TSession | keyof AgentControls

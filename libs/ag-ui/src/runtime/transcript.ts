@@ -2,6 +2,7 @@ import type { Message } from '@ag-ui/client';
 import type { DeepReadonly } from '@threadplane/core';
 import { copyData } from './copy-data.js';
 
+/** A thread's protocol messages, in order and frozen. */
 export type Transcript = readonly DeepReadonly<Message>[];
 
 /**

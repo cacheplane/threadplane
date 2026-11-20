@@ -81,7 +81,7 @@ The package root is the whole public surface. Everything is exported from `@thre
 **The session**
 
 - `createSession(options, tools?)` and its types `SessionOptions`, `LangGraphSession`, `LangGraphResumeOptions`.
-- What a submit and a run accept: `LangGraphSubmitInput`, `LangGraphSubmitState`, `LangGraphInputState`, `LangGraphRunOptions`, `LangGraphRunSettings`.
+- What a submit and a run accept: `LangGraphSubmitInput`, `LangGraphSubmitState`, `LangGraphInputState`, `LangGraphRunOptions`, `LangGraphRunSettings`, `LangGraphRunConfigurable`.
 - Host hooks a binding or a development tool supplies: `LangGraphTelemetrySink`, `LangGraphTelemetryEvent`, `LangGraphTelemetryPayload`, `LangGraphDevelopmentRuntime`, `LangGraphDevtoolsSink`, `LangGraphDevtoolsSignal`, `LangGraphScriptedRun`, `LangGraphScriptedRuns`, `A2uiClientCapabilities`, `RuntimeOperationFailureReporter`.
 
 **The snapshot**
@@ -96,7 +96,7 @@ The package root is the whole public surface. Everything is exported from `@thre
 
 **Saved conversations**
 
-- `createLangGraphThreadDirectory(options)`: the core `ThreadDirectory` for a deployment's threads, with `LangGraphThreadDirectoryOptions` and `LangGraphThreadsClient`. It returns a `LangGraphThreadDirectory`, which types the commands it always has as present, `get(id)` for reading one thread among them, so none needs `?.`. `reportOperationFailure` in the options receives rejected credentials and refused requests. The [session reference](./src/runtime/README.md#thread-directory) lists how it differs from the removed `LangGraphThreadsAdapter`.
+- `createLangGraphThreadDirectory(options)`: the core `ThreadDirectory` for a deployment's threads, with `LangGraphThreadDirectoryOptions` and `LangGraphThreadsClient`. It returns a `LangGraphThreadDirectory`, which types the commands it always has as present, `get(id)` for reading one thread among them, so none needs `?.`; `LangGraphThreadCommand` and `LangGraphProjectCommand` name those commands. `reportOperationFailure` in the options receives rejected credentials and refused requests. The [session reference](./src/runtime/README.md#thread-directory) lists how it differs from the removed `LangGraphThreadsAdapter`.
 - `createLangGraphProjectStore(client)` and `ProjectStore`: project names in the LangGraph Store.
 
 **Transports and the SDK client**

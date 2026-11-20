@@ -6,12 +6,19 @@ export { createSession } from './runtime/create-session.js';
 export type {
   AgentSessionSource,
   ClientToolSession,
+  DeclaredSessionOptions,
   HttpSessionSource,
   ResumeOptions,
   Session,
   SessionCommonOptions,
   SessionOptions,
 } from './runtime/create-session.js';
+export type { SessionAgent } from './runtime/create-http-request.js';
+export type { DurabilityOptions } from './runtime/durability.js';
+export type {
+  OperationFailureCode,
+  OperationFailureReporter,
+} from './runtime/protected-fetch.js';
 export type {
   ApplicationState,
   SubmitInput,
@@ -30,7 +37,19 @@ export type {
   ClientToolCall,
   ClientToolSessionSnapshot,
 } from './runtime/client-tools.js';
-export type { Observation } from './runtime/session-observation.js';
+export type { SessionSubagent } from './runtime/child-projection.js';
+export type {
+  Observation,
+  OwnedLegacyInterrupt,
+  OwnedRootTerminal,
+} from './runtime/session-observation.js';
+export type {
+  ChildError,
+  ChildFinish,
+  ChildStart,
+  SubagentObservation,
+  Subagents,
+} from './runtime/subagents.js';
 export type { Transcript } from './runtime/transcript.js';
 export type {
   SessionLifecycle,
@@ -51,6 +70,7 @@ export { bridgeCitationsState } from './runtime/bridge-citations-state.js';
 // Pauses and their answers.
 export { decisionState, interruptSession } from './runtime/decision.js';
 export type {
+  CommandProps,
   Decision,
   DecisionRun,
   DecisionState,
@@ -83,6 +103,7 @@ export type {
 
 // Host hooks: telemetry and devtools.
 export type {
+  InstrumentOptions,
   ScriptedRun,
   SessionDevelopmentInstall,
   SessionDevelopmentRuntime,
