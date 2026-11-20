@@ -3,8 +3,8 @@ import {
   ChatComponent,
   ChatWelcomeSuggestionComponent,
 } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
-import { STREAMING_AGENT, type StreamingState } from './agent-ref';
+import { injectAgent } from '@threadplane/angular';
+import { STREAMING_AGENT } from './agent-ref';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { COCKPIT_INSPECTION_PUBLISHER } from '@threadplane/cockpit-telemetry';
 import { createInspectionRecorder } from '@threadplane/cockpit-runtime-bridge';
@@ -47,7 +47,7 @@ const WELCOME_SUGGESTIONS = [
       <button
         headerActions
         type="button"
-        [disabled]="agent.isLoading()"
+        [disabled]="agent.status() === 'running'"
         (click)="newConversation(conversation)"
       >
         New conversation
@@ -62,7 +62,7 @@ const WELCOME_SUGGESTIONS = [
       >
         <p chatFooterStatus role="status" class="example-submission-status">
           {{
-            agent.isLoading()
+            agent.status() === 'running'
               ? 'Receiving response…'
               : agent.error()
               ? 'Response failed. Try again.'
@@ -85,7 +85,7 @@ const WELCOME_SUGGESTIONS = [
 })
 export class StreamingComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.agent.status() === 'running') return;
     this.agent.switchThread(null);
     this.inspection.reset();
     conversation.clearDraft();
@@ -97,17 +97,9 @@ export class StreamingComponent {
     this.publisher?.(frame)
   );
   // Chat and welcome suggestions share the same actual submission boundary.
-  protected readonly agent: typeof this.sourceAgent = {
-    ...this.sourceAgent,
+  protected readonly agent = withOverrides(this.sourceAgent, {
     submit: async (input, options) => {
-      const message = input?.message;
-      const text =
-        typeof message === 'string'
-          ? message
-          : message
-              ?.filter((block) => block.type === 'text')
-              .map((block) => block.text)
-              .join('') ?? '';
+      const text = typeof input === 'string' ? input : input?.message ?? '';
       const id = this.inspection.startCall(text);
       try {
         const result = await this.sourceAgent.submit(input, options);
@@ -118,7 +110,7 @@ export class StreamingComponent {
         throw error;
       }
     },
-  };
+  });
 
   constructor() {
     effect(() => {
@@ -136,21 +128,20 @@ export class StreamingComponent {
       const messages = sourceMessages.map((message) => ({
         id: message.id,
         role: message.role,
-        text:
-          typeof message.content === 'string'
-            ? message.content
-            : message.content
-                .filter((block) => block.type === 'text')
-                .map((block) => block.text)
-                .join(''),
+        // `content` is the text of the message's text blocks, never the blocks.
+        text: message.content,
       }));
-      const busy = this.sourceAgent.isLoading();
+      const busy = this.sourceAgent.status() === 'running';
+      const graphState = this.sourceAgent.state();
       this.inspection.observe({
         messages,
         busy,
         state: {
           busy,
-          hasValue: this.sourceAgent.hasValue(),
+          // True once the thread has reported messages or graph state.
+          hasValue:
+            messages.length > 0 ||
+            (graphState != null && Object.keys(graphState).length > 0),
           status: this.sourceAgent.status(),
           hasFailure: this.sourceAgent.error() != null,
           messageCount: messages.length,
@@ -161,11 +152,29 @@ export class StreamingComponent {
     });
     inject(DestroyRef).onDestroy(() => this.inspection.dispose());
   }
-  // Typed read: prove StreamingState flows through DI.
-  protected readonly _typedState: StreamingState = this.agent.value();
+  // Typed read: the ref carries the LangGraph session type through DI, so a
+  // field only that backend publishes is a signal here without a cast.
+  protected readonly _retainedRun = this.sourceAgent.retainedRun;
   protected readonly suggestions = WELCOME_SUGGESTIONS;
 
   protected send(text: string): void {
     void this.agent.submit({ message: text });
   }
+}
+
+/**
+ * A view of the agent with some members replaced.
+ *
+ * The injected agent reads every member from its current session at the moment
+ * it is asked, so a spread copy (`{ ...agent, submit }`) would keep only the
+ * members that exist when it is taken and miss a field the session publishes
+ * later, such as `error`. This forwards every read instead.
+ */
+function withOverrides<T extends object>(agent: T, overrides: Partial<T>): T {
+  return new Proxy(agent, {
+    get: (target, key) =>
+      Object.hasOwn(overrides, key)
+        ? overrides[key as keyof T]
+        : Reflect.get(target, key),
+  });
 }

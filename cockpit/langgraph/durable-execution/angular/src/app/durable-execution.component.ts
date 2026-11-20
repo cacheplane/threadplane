@@ -1,6 +1,7 @@
 import { Component, computed } from '@angular/core';
 import { ChatComponent, views } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 import { signalStateStore } from '@threadplane/render';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { StepPipelineComponent } from './views/step-pipeline.component';
@@ -145,7 +146,7 @@ const STEP_LABELS: Record<string, string> = {
     >
       <!-- #region layout -->
       <chat placeholder="Plan a fictional project…" [welcomeDisabled]="true" main [agent]="agent" [views]="ui" [store]="uiStore" class="flex-1 min-w-0">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
       <div sidebar class="panel">
         <h3 class="cap">Pipeline</h3>
@@ -203,7 +204,7 @@ export class DurableExecutionComponent {
   readonly uiStore = signalStateStore({});
 
   // #region agent
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 
   /**
    * Derives the 3-step pipeline status from the graph's `state.step` field.
@@ -212,8 +213,10 @@ export class DurableExecutionComponent {
    * active, and subsequent steps remain pending.
    */
   protected readonly steps = computed<PipelineStep[]>(() => {
-    const val = this.agent.value() as Record<string, unknown> | undefined;
-    const currentStep = (val?.['step'] as string) ?? '';
+    // `state()` is the graph state without `messages`; undefined before the
+    // graph reports one.
+    const step = this.agent.state()?.['step'];
+    const currentStep = typeof step === 'string' ? step : '';
     const activeIndex = STEP_ORDER.indexOf(currentStep as (typeof STEP_ORDER)[number]);
 
     return STEP_ORDER.map((id, i) => ({

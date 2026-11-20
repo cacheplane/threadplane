@@ -1,6 +1,8 @@
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { PlainValue } from '@threadplane/core';
+import type { LangGraphSession } from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { CurrencyPipe } from '@angular/common';
 
@@ -85,7 +87,7 @@ const WELCOME_SUGGESTIONS = [
     >
       <div main class="flex flex-col h-full">
       <chat placeholder="Describe a refund request…" [welcomeDisabled]="true" [agent]="agent" class="flex-1 min-w-0">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
           <div chatWelcomeSuggestions>
             @for (s of suggestions; track s.value) {
               <chat-welcome-suggestion
@@ -137,7 +139,7 @@ export class InterruptsComponent {
   protected readonly editing = signal(false);
   protected readonly editAmount = signal<number | null>(null);
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 
   protected send(text: string): void {
     void this.agent.submit({ message: text });
@@ -146,10 +148,10 @@ export class InterruptsComponent {
   // #region resume
   protected onAction(action: ChatApprovalAction): void {
     if (action === 'approve') {
-      void this.agent.submit({ resume: { approved: true } });
+      this.answer({ approved: true });
       this.resetEdit();
     } else if (action === 'cancel') {
-      void this.agent.submit({ resume: { approved: false } });
+      this.answer({ approved: false });
       this.resetEdit();
     } else if (action === 'edit') {
       this.editing.set(true);
@@ -158,8 +160,20 @@ export class InterruptsComponent {
 
   protected submitEdit(payload: { amount: number }): void {
     const next = this.editAmount() ?? payload.amount;
-    void this.agent.submit({ resume: { approved: true, amount: next } });
+    this.answer({ approved: true, amount: next });
     this.resetEdit();
+  }
+
+  /**
+   * Answers the pending interrupt. A response names the interrupt it answers;
+   * its `value` is what the graph's `interrupt()` call returns.
+   */
+  private answer(value: PlainValue): void {
+    const interrupt = this.agent.interrupts()[0];
+    if (!interrupt) return;
+    void this.agent.resume([
+      { interruptId: interrupt.id, status: 'resolved', value },
+    ]);
   }
 
   private resetEdit(): void {

@@ -1,6 +1,7 @@
 import { Component, computed } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 /**
@@ -12,8 +13,8 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
  * Memory shared across threads would require the separate LangGraph Store API.
  *
  * Key integration points:
- * - `stream.value()` exposes the full graph state, including the `memory` field
- * - `memoryEntries` is derived from `stream.value()` for reactive sidebar rendering
+ * - `agent.state()` exposes the graph state, including the `memory` field
+ * - `memoryEntries` is derived from `agent.state()` for reactive sidebar rendering
  * - Facts appear in the sidebar as the agent learns them during conversation
  */
 @Component({
@@ -45,10 +46,10 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
       title="LangGraph memory"
       description="Teach the assistant a fictional fact, then ask it to recall it in this conversation. Each reply is followed by a memory extraction pass. A new conversation starts empty."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="agent.status() === 'running'"
         (click)="newConversation(conversation)">New conversation</button>
       <chat placeholder="Tell me a fictional fact…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
       <!-- #region memory-panel -->
       <div sidebar class="panel">
@@ -69,29 +70,28 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 })
 export class MemoryComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.agent.status() === 'running') return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
 
   // #region memory-signal
   /**
-   * The streaming resource connected to the memory graph.
+   * The agent connected to the memory graph.
    *
    * The graph returns a `memory` dict alongside messages in its state.
-   * We expose it via `stream.value()` and derive a reactive signal for display.
+   * We read it from `agent.state()` and derive a reactive signal for display.
    */
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 
   /**
    * Reactive list of [key, value] memory entries derived from the graph state.
    *
    * The Python graph stores learned facts in `state.memory` as a plain dict.
-   * This signal re-computes whenever the stream state changes.
+   * This signal re-computes whenever the graph state changes.
    */
   protected readonly memoryEntries = computed(() => {
-    const val = this.agent.value() as Record<string, unknown>;
-    const mem = val?.['memory'];
+    const mem = this.agent.state()?.['memory'];
     if (!mem || typeof mem !== 'object') return [];
     return Object.entries(mem as Record<string, string>);
   });

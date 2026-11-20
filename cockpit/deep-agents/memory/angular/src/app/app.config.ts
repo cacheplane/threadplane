@@ -1,11 +1,9 @@
 import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
-import { ApplicationConfig, inject, signal } from '@angular/core';
+import { ApplicationConfig, inject } from '@angular/core';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 import { MemoryScope } from './memory-scope';
 import { MemoryTransport } from './memory-transport';
-import {
-  provideAgent,
-  ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER,
-} from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -15,24 +13,25 @@ export const appConfig: ApplicationConfig = {
         throw new Error('incompatible runtime');
       }
       const scope = inject(MemoryScope);
-      const threadId = signal<string | null>(null);
-      const onThreadId = (id: string) => threadId.set(id);
       const clientOptions = { ...connection.clientOptions, maxRetries: 0 };
-      const transport = new MemoryTransport(
-        connection.apiUrl,
-        scope,
-        onThreadId,
-        clientOptions,
-        inject(ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER, { optional: true }) ??
-          undefined
-      );
       return {
-        apiUrl: connection.apiUrl,
-        assistantId: connection.assistantId,
-        clientOptions,
-        threadId,
-        onThreadId,
-        transport,
+        // Runs once at start and again for each thread switch. Each session
+        // gets its own scoped transport: the session creates its thread
+        // through `transport.createThread` and reports the id through
+        // `context.onThreadId`, so the transport needs no thread callback.
+        createSession: (context) =>
+          createSession({
+            assistantId: connection.assistantId,
+            threadId: context.threadId,
+            onThreadId: context.onThreadId,
+            transport: new MemoryTransport(
+              connection.apiUrl,
+              scope,
+              undefined,
+              clientOptions,
+              context.reportOperationFailure
+            ),
+          }),
       };
     }),
   ],

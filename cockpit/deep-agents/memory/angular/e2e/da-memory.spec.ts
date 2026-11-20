@@ -56,8 +56,8 @@ test('canonical Angular auto-send suggestion, provider-owned followup and scoped
     return events.filter((event: any) => event[1] === 'custom' && event[2].data.phase === 'terminal').at(-1)?.[2].data.memory_contents;
   }).toEqual({ '/memories/AGENTS.md': '' });
   await expect.poll(() => page.evaluate(() => {
-    const debug = (window as unknown as { ng: { getComponent(element: Element): { agent: { isLoading(): boolean } } } }).ng;
-    return debug.getComponent(document.querySelector('app-da-memory')!).agent.isLoading();
+    const debug = (window as unknown as { ng: { getComponent(element: Element): { agent: { status(): string } } } }).ng;
+    return debug.getComponent(document.querySelector('app-da-memory')!).agent.status() === 'running';
   })).toBe(false);
   await expect(page.getByTestId('memory-line')).toHaveCount(0);
   const beforeRestore = await records(request);
