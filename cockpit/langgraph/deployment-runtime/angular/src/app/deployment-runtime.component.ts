@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 /**
@@ -19,20 +20,20 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
       title="LangGraph deployment runtime"
       description="Send a message to the connected LangGraph runtime. Completed replies stay in this conversation until you start a new one."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="agent.status() === 'running'"
         (click)="newConversation(conversation)">New conversation</button>
       <chat placeholder="Ask a fictional deployment question…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
     </example-chat-layout>
   `,
 })
 export class DeploymentRuntimeComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.agent.status() === 'running') return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 }

@@ -1,7 +1,7 @@
 import { Component, computed, signal } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
-import type { ThreadState } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphCheckpoint, LangGraphSession } from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 /**
@@ -10,10 +10,11 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
  * Layout: chat panel (flex-1) + checkpoint timeline sidebar (w-72).
  *
  * Key integration points:
- * - `agent.langGraphHistory()` -- array of ThreadState snapshots
+ * - `historyState: true` on the session (app.config.ts) -- keeps checkpoints
+ * - `agent.checkpoints()` -- the saved checkpoints, oldest first
  * - `agent.branch()` -- current branch identifier
  * - `agent.setBranch(id)` -- record a checkpoint as the active branch
- * - `agent.submit(input, { checkpointId })` -- run from a past checkpoint
+ * - `agent.submit(input, { run: { checkpointId } })` -- run from a past checkpoint
  */
 @Component({
   selector: 'app-time-travel',
@@ -144,7 +145,7 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
     >
       <!-- Chat panel -->
       <chat placeholder="Write a message to send or fork…" [welcomeDisabled]="true" main [agent]="agent" class="block flex-1">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
 
       <!-- #region timeline -->
@@ -160,15 +161,15 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
             <p class="empty">No checkpoints yet. Send a message to begin.</p>
           }
 
-          @for (state of checkpoints(); track state.checkpoint?.checkpoint_id ?? $index; let i = $index) {
+          @for (state of checkpoints(); track state.id ?? $index; let i = $index) {
             <div
               class="row"
-              [class.row--active]="state.checkpoint?.checkpoint_id === selectedCheckpointId()"
+              [class.row--active]="state.id === selectedCheckpointId()"
             >
               <!-- Numbered badge -->
               <span
                 class="badge"
-                [class.badge--active]="state.checkpoint?.checkpoint_id === selectedCheckpointId()"
+                [class.badge--active]="state.id === selectedCheckpointId()"
               >
                 {{ i + 1 }}
               </span>
@@ -176,8 +177,8 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
               <!-- Checkpoint info -->
               <div class="info">
                 <p class="label">{{ checkpointLabel(state, i) }}</p>
-                @if (state.checkpoint?.checkpoint_id) {
-                  <p class="id">{{ state.checkpoint.checkpoint_id }}</p>
+                @if (state.id) {
+                  <p class="id">{{ state.id }}</p>
                 }
               </div>
 
@@ -208,23 +209,27 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 })
 export class TimeTravelComponent {
   // #region history
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 
   /** Selection survives new checkpoints being prepended to the history. */
   protected readonly selectedCheckpointId = signal<string | null>(null);
 
-  /** Checkpoint history derived from the agent. */
-  protected readonly checkpoints = computed(
-    (): ThreadState<any>[] => this.agent.langGraphHistory(),
+  /**
+   * Checkpoint history derived from the agent, newest first as the timeline
+   * lists it. `checkpoints()` is oldest first, and absent until a history page
+   * has been read: the session reads one after every run.
+   */
+  protected readonly checkpoints = computed((): LangGraphCheckpoint[] =>
+    [...(this.agent.checkpoints() ?? [])].reverse(),
   );
   // #endregion
 
   /** Display label for a checkpoint entry. */
   protected checkpointLabel(
-    state: ThreadState<any>,
+    state: LangGraphCheckpoint,
     index: number,
   ): string {
-    if (state.checkpoint?.checkpoint_id) {
+    if (state.id) {
       return `Checkpoint ${index + 1}`;
     }
     return `State ${index + 1}`;
@@ -237,27 +242,28 @@ export class TimeTravelComponent {
    * `setBranch()` records the identifier in the agent's `branch()` signal.
    * It starts no run: it is a pointer the interface can read back.
    */
-  protected select(state: ThreadState<any>): void {
-    if (state.checkpoint?.checkpoint_id) {
-      this.selectedCheckpointId.set(state.checkpoint.checkpoint_id);
-      this.agent.setBranch(state.checkpoint.checkpoint_id);
+  protected select(state: LangGraphCheckpoint): void {
+    if (state.id) {
+      this.selectedCheckpointId.set(state.id);
+      this.agent.setBranch(state.id);
     }
   }
 
   /**
    * Start a new run from the given checkpoint.
    *
-   * Passing `checkpointId` to `submit()` resumes the thread at that point
+   * Passing `run.checkpointId` to `submit()` resumes the thread at that point
    * rather than at its tip, so the new run hangs off the chosen checkpoint
-   * and the original path stays intact.
+   * and the original path stays intact. Per-run LangGraph settings are
+   * grouped under `run`.
    */
-  protected fork(state: ThreadState<any>): void {
-    const checkpointId = state.checkpoint?.checkpoint_id;
+  protected fork(state: LangGraphCheckpoint): void {
+    const checkpointId = state.id;
     if (!checkpointId) return;
     this.selectedCheckpointId.set(checkpointId);
     void this.agent.submit(
       { message: 'Try a different approach from here.' },
-      { checkpointId },
+      { run: { checkpointId } },
     );
   }
   // #endregion

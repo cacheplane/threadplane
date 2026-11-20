@@ -1,6 +1,7 @@
 import { Component, computed } from '@angular/core';
+import type { DeepReadonly } from '@threadplane/core';
 import { ChatComponent, tools, action, view, ask } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { z } from 'zod/v4';
 import { WeatherCardComponent } from './weather-card.component';
@@ -14,7 +15,7 @@ import { CLIENT_TOOLS_AGENT_REF, type ClientToolsState } from './agent-ref';
  * the result); `weather_card` is a VIEW (the model fills its props, rendered
  * inline, auto-acknowledged); `confirm_booking` is an ASK (an interactive
  * component whose emitted value becomes the result). The catalog is shipped to
- * the model via the LangGraph adapter (as `input.client_tools`); the backend
+ * the model by the LangGraph session (as `input.client_tools`); the backend
  * graph binds the client stubs (no server implementation) and ends the turn so
  * the browser executes them.
  *
@@ -86,33 +87,34 @@ function waitForAbortableDelay(ms: number, signal: AbortSignal): Promise<void> {
       title="LangGraph client tools"
       description="Try simulated weather, a slow status check, a weather panel or snapshot, and a fictional booking decision. These browser tools use authored data; no real weather service or booking is contacted."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="agent.status() === 'running'"
         (click)="newConversation(conversation)">New conversation</button>
       <chat placeholder="Ask for weather or a fictional booking…" #conversation [welcomeDisabled]="true" main [agent]="agent" [clientTools]="clientTools" class="flex-1 min-w-0">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
     </example-chat-layout>
   `,
 })
 export class ClientToolsComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.agent.status() === 'running') return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
 
-  /** Typed agent: state() and value() are ClientToolsState. */
+  /** Typed agent: `agent.state()` is the graph's `ClientToolsState`. */
   protected readonly agent = injectAgent(CLIENT_TOOLS_AGENT_REF);
   protected readonly clientTools = clientTools;
 
   /**
    * Typed state read — proves the typed DI path compiles under strict: true.
-   * `messages` and `client_tools` are read from the strongly-typed
-   * `ClientToolsState` shape; the compiler errors if the field does not exist.
+   * `todos` is read from the strongly-typed `ClientToolsState` shape; the
+   * compiler errors if the field does not exist. The state is undefined until
+   * the graph reports one, and read-only like every snapshot field.
    */
-  protected readonly messageCount = computed((): number => {
-    const s: ClientToolsState = this.agent.value();
-    return s.messages.length;
+  protected readonly todoCount = computed((): number => {
+    const s: DeepReadonly<ClientToolsState> | undefined = this.agent.state();
+    return s?.todos?.length ?? 0;
   });
 }
 // #endregion

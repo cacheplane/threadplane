@@ -1,4 +1,4 @@
-import { ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER } from '@threadplane/langgraph';
+import { ɵAGENT_OPERATION_FAILURE_REPORTER } from '@threadplane/angular';
 import { bootstrapWithCockpitHarness } from '@threadplane/cockpit-telemetry';
 import { appConfig } from './app/app.config';
 import { TimeTravelComponent } from './app/time-travel.component';
@@ -9,6 +9,6 @@ void bootstrapWithCockpitHarness(TimeTravelComponent, appConfig, {
     adapter: 'langgraph',
     sharedApiUrl: environment.langGraphApiUrl,
     assistantId: environment.streamingAssistantId,
-    operationReporterToken: ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER,
+    operationReporterToken: ɵAGENT_OPERATION_FAILURE_REPORTER,
   },
 }).catch(() => undefined);

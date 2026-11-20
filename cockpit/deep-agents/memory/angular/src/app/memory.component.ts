@@ -4,7 +4,8 @@ import {
   ChatWelcomeSuggestionComponent,
 } from '@threadplane/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 import { MemoryScope } from './memory-scope';
 import { guardMemoryAgent } from './memory-agent-gate';
 
@@ -50,11 +51,11 @@ const SUGGESTIONS = [
       title="Deep Agents Memory"
       description="Teach the agent about your operation, then start a new conversation and ask what it remembers. Stop cancels local delivery; backend work may continue."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="agent.status() === 'running'"
         (click)="newConversation(conversation)">New conversation</button>
       <chat placeholder="Teach the agent or ask what it remembers…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -168,13 +169,16 @@ const SUGGESTIONS = [
 })
 export class MemoryComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.agent.status() === 'running') return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
 
   private readonly scope = inject(MemoryScope);
-  protected readonly agent = guardMemoryAgent(injectAgent(), this.scope);
+  protected readonly agent = guardMemoryAgent(
+    injectAgent<LangGraphSession>(),
+    this.scope
+  );
   protected readonly scopeWarning = computed(() => {
     const snapshot = this.scope.snapshot();
     return snapshot.status === 'blocked' ? snapshot.warning : null;
@@ -182,7 +186,7 @@ export class MemoryComponent {
   protected readonly suggestions = SUGGESTIONS;
 
   // #region memory-sources
-  // The adapter clears custom events at run/thread boundaries. While loading,
+  // The agent clears custom events at run/thread boundaries. While loading,
   // absence of a new custom event must not promote old checkpoint/state data.
   private readonly observation = computed<{
     source: 'live' | 'checkpoint' | 'none' | 'unavailable';
@@ -209,8 +213,8 @@ export class MemoryComponent {
         ? { source: 'live', contents }
         : { source: 'unavailable' };
     }
-    if (this.agent.isLoading()) return { source: 'none' };
-    const value = plainRecord(this.agent.value());
+    if (this.agent.status() === 'running') return { source: 'none' };
+    const value = plainRecord(this.agent.state());
     if (!value || !Object.hasOwn(value, 'memory_contents'))
       return { source: 'none' };
     if (value.memory_scope_owner !== owner) return { source: 'unavailable' };

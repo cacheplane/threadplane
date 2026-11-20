@@ -10,14 +10,14 @@ directly. The child graph's state has no `messages` key, so it exchanges only
 `research_topic` and `research_brief` with the parent and never touches the
 transcript.
 
-The sidebar shows the child from two angles. `agent.value()` reads the parent
+The sidebar shows the child from two angles. `agent.state()` reads the parent
 graph's own state — watching the shared keys is watching the boundary itself.
 `agent.subagents()` shows the child as a stream: plain subgraph nodes appear
-there under their namespace key, named by node, and settle with the run
-(tool-dispatched children appear under their tool-call id — see the Chat
-Subagents capability for that shape).
+in that list named by node, and settle with the run (tool-dispatched children
+also carry their `toolCallId` — see the Chat Subagents capability for that
+shape).
 
 Key components used: `<chat>`. Child tokens stay on the child's stream and
-never merge into the transcript; `provideAgent({ transcriptNodeNames:
-['answer'] })` additionally keeps the top-level router node's
-structured-output chunks out of the chat.
+never merge into the transcript; `createSession({ transcriptNodeNames:
+['answer'] })` additionally keeps the top-level router node's output out of
+the chat.

@@ -2,8 +2,9 @@ import '@angular/compiler';
 import { TestBed } from '@angular/core/testing';
 import {
   injectAgent,
-  ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER,
-} from '@threadplane/langgraph';
+  ɵAGENT_OPERATION_FAILURE_REPORTER,
+} from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 import { COCKPIT_RUNTIME_CONNECTION } from '@threadplane/cockpit-telemetry';
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 const sdk = vi.hoisted(() => ({
@@ -67,7 +68,9 @@ describe('Memory provideAgent integration', () => {
     });
   });
   function agent() {
-    return TestBed.runInInjectionContext(() => injectAgent());
+    return TestBed.runInInjectionContext(() =>
+      injectAgent<LangGraphSession>()
+    );
   }
   it('reuses actual created thread on two submissions with immutable scoped context', async () => {
     const a = agent();
@@ -116,13 +119,13 @@ describe('Memory provideAgent integration', () => {
       await Promise.resolve();
       expect(sdk.create).not.toHaveBeenCalled();
       expect(sdk.stream).not.toHaveBeenCalled();
-      expect(c.agent.isInputBlocked()).toBe(true);
+      expect(c.agent.inputBlocked()).toMatchObject({ reason: 'memory-scope' });
       expect(c.scopeWarning()).toContain('changed');
     }
   );
   it('passes the optional DI operation reporter into the actual protected transport boundary', async () => {
     const reporter = vi.fn();
-    TestBed.overrideProvider(ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER, {
+    TestBed.overrideProvider(ɵAGENT_OPERATION_FAILURE_REPORTER, {
       useValue: reporter,
     });
     const a = agent();
