@@ -286,8 +286,9 @@ const subagents: readonly AgentSubagent[] | undefined = snapshot.subagents;
 const childMessages: readonly Message[] | undefined = subagents?.[0]?.messages;
 const childCalls: readonly ToolCall[] | undefined = subagents?.[0]?.toolCalls;
 const childStatus: AgentSubagentStatus | undefined = subagents?.[0]?.status;
-// @ts-expect-error pending is a tool call status, not a child agent status
-const invalidChildStatus: AgentSubagentStatus = 'pending';
+const pendingChildStatus: AgentSubagentStatus = 'pending';
+// @ts-expect-error a child agent has no status outside the declared ones
+const invalidChildStatus: AgentSubagentStatus = 'cancelled';
 // @ts-expect-error a child's messages are readonly
 subagents?.[0]?.messages.push();
 // @ts-expect-error a child agent needs its transcript
@@ -302,6 +303,7 @@ void [
   childMessages,
   childCalls,
   childStatus,
+  pendingChildStatus,
   invalidChildStatus,
   bare,
   authoredChildren,

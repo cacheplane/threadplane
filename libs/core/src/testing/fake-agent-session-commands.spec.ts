@@ -124,7 +124,7 @@ describe('createFakeAgentSession optional members', () => {
           parts: [{ type: 'text', text: 'done' }],
         },
       ],
-      subagents: [{ id: 's', state: { step: 2 } }],
+      subagents: [{ id: 's', status: 'pending', state: { step: 2 } }],
     });
     const snapshot = fake.session.getSnapshot();
     expect(snapshot.messages[0].blocks).toHaveLength(2);
@@ -136,6 +136,7 @@ describe('createFakeAgentSession optional members', () => {
       parts: [{ type: 'text', text: 'done' }],
     });
     expect(snapshot.subagents?.[0].state).toEqual({ step: 2 });
+    expect(snapshot.subagents?.[0].status).toBe('pending');
   });
 
   it('submits blocks as a user message that keeps its text', async () => {

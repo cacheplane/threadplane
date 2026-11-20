@@ -46,9 +46,10 @@ twice, or uses a status its backend cannot express. `interrupts` and `resume` ar
 optional: a session that cannot pause supplies neither.
 
 The snapshot's optional `subagents` lists the child agents the root agent started, in
-start order. An `AgentSubagent` has an `id`, a `status` of `running`, `complete`,
-`error` or `unknown`, and its own `messages` and `toolCalls`, which are not repeated
-in the root transcript. `unknown` means the child started, no ending was seen, and
+start order. An `AgentSubagent` has an `id`, a `status` of `pending`, `running`,
+`complete`, `error` or `unknown`, and its own `messages` and `toolCalls`, which are not
+repeated in the root transcript. `pending` means the root agent asked for the child and
+it has not started; only a backend that can tell reports it. `unknown` means the child started, no ending was seen, and
 no run is active that could still report one. `toolCallId` relates a child to the
 root tool call that started it, and `parentId` to the child that did. The fake
 session in `@threadplane/core/testing` publishes both fields and records `resume`

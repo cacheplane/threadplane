@@ -2,10 +2,17 @@ import type { Message } from './message.js';
 import type { PlainValue, StreamingToolCall, ToolCall } from './tool.js';
 
 /**
- * Where a child agent stands. `unknown` means the session saw it start and saw
- * no ending, and no run is active that could still report one.
+ * Where a child agent stands. `pending` means the root agent asked for the
+ * child and it has not started; only a backend that can tell reports it.
+ * `unknown` means the session saw it start and saw no ending, and no run is
+ * active that could still report one.
  */
-export type AgentSubagentStatus = 'running' | 'complete' | 'error' | 'unknown';
+export type AgentSubagentStatus =
+  | 'pending'
+  | 'running'
+  | 'complete'
+  | 'error'
+  | 'unknown';
 
 /**
  * A child agent the root agent started, with the transcript it produced. Its

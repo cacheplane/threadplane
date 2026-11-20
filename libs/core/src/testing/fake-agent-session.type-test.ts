@@ -78,8 +78,9 @@ pausing.setInterrupts([{ id: 'i2' }]);
 // @ts-expect-error an interrupt needs an id
 pausing.setInterrupts([{ value: 1 }]);
 pausing.setSubagents([{ id: 'child', status: 'unknown' }]);
-// @ts-expect-error a child agent status is one of the four contract values
 pausing.setSubagents([{ id: 'child', status: 'pending' }]);
+// @ts-expect-error a child agent status is one of the five contract values
+pausing.setSubagents([{ id: 'child', status: 'cancelled' }]);
 // @ts-expect-error a resume handler returns an outcome
 pausing.onResume(() => 'done');
 const firstResume: string | undefined =
