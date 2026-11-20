@@ -119,3 +119,11 @@ createSession({ threadId: 't' });
 // @ts-expect-error an agent has the protocol's run
 createSession({ agent: { runAgent: () => undefined } });
 createSession({ agent: custom }, { f: { description: 'f', handler: () => 1 } });
+
+// A child reported as an activity record keeps that record's content.
+const [childAgent] = untyped.getSnapshot().subagents;
+const childName: string = childAgent.started.name;
+void childName;
+void childAgent.activity?.['status'];
+// @ts-expect-error the record's content is readonly
+if (childAgent.activity) childAgent.activity['status'] = 'complete';

@@ -199,6 +199,20 @@ const session = createSession({ threadId, url });
     the records from before the pause. Any other child that reuses a run id
     replaces the earlier one and starts with none of its records.
   - A child keeps its reference until its evidence, status or records change.
+  - A backend that reports children as `ACTIVITY` records with
+    `activityType: 'subagent'`, as the Angular adapter supported, gets the same
+    children. Each root record of that type is one child, read from its
+    content: `name`, `description`, `toolCallId`, `status`, `messages` (or one
+    `text`), `toolCalls` and, for a failure, `state.error`. Listed messages are
+    shown as the child's own output with role `assistant`, with `toolCallIds`
+    and `reasoning` kept. A `status` of `complete` or `error` settles the
+    child; any other is `running` in its own run and `unknown` after it. The
+    record's content stays on the child as `activity`; `started` is derived
+    from it and there is no `terminal`. These children follow the ones with
+    event evidence, in transcript order, and one from an earlier root run is
+    marked `earlier`. A child with `SUBAGENT_*` evidence under the same
+    identifier is read from that evidence. The record itself stays out of the
+    root `messages`.
 - Every publication notifies subscribers, including one that changes only
   protocol evidence such as a decision or a child.
 - `submit` takes text, or `{ message, state? }` with a state patch.
