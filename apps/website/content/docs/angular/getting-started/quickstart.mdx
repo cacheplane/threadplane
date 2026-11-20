@@ -14,10 +14,10 @@ An Angular 20–22 application and a Node.js version supported by that Angular v
 ## 1. Install the packages
 
 ```sh
-npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/chat @threadplane/angular @threadplane/core marked
 ```
 
-This example uses the LangGraph package's fake agent. The fake agent streams fixed text through the same chat component you can later connect to your backend.
+`@threadplane/chat` is the chat interface. `@threadplane/angular` provides the agent your components inject, and its testing entry includes a fake agent. The fake agent streams fixed text through the same chat component you can later connect to your backend.
 
 ## 2. Create a fake agent
 
@@ -26,7 +26,7 @@ Add `provideFakeAgent()` to the providers in your existing application configura
 ```ts
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
-import { provideFakeAgent } from '@threadplane/langgraph';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -46,7 +46,7 @@ Import the chat component and pass it the agent. Use this template in your app's
 // app.component.ts
 import { Component } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   selector: 'app-root',
@@ -78,9 +78,9 @@ You now have a working chat. Keep exploring the conversation or replace the fake
     Follow the guided replay to distinguish a user message, a growing assistant response, and a completed turn. Then connect the observations to Angular source.
   </Card>
   <Card title="Connect LangGraph" href="/docs/angular/langgraph/getting-started/quickstart">
-    Set up your server and replace the fake provider with LangGraph's `provideAgent()`. Keep the chat component above.
+    Set up your server and replace the fake provider with `provideAgent()` and the LangGraph `createSession`. Keep the chat component above.
   </Card>
   <Card title="Connect AG-UI" href="/docs/angular/ag-ui/getting-started/quickstart">
-    Install the AG-UI adapter and import its provider and `injectAgent` from `@threadplane/ag-ui`. Keep the same chat template.
+    Install `@threadplane/ag-ui` and pass its `createSession` to the same `provideAgent()`. Keep the same chat template.
   </Card>
 </CardGroup>

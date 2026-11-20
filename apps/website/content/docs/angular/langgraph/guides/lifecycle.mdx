@@ -1,76 +1,83 @@
 ---
-description: Eight per-agent lifecycle signals on every LangGraphAgent — first chunk, errors, interrupts, thread creation, and tool-call timings, plus their reset semantics.
+description: Eight lifecycle signals on every injected agent, covering the first stream event, errors, interrupts, thread creation, tool-call timings, and resets.
 ---
 
 # Agent Lifecycle Signals
 
-The `@threadplane/langgraph` library exposes per-agent lifecycle signals on every `LangGraphAgent` returned by `injectAgent()`. They are timestamps and classifications derived from the stream you already have — handy for debugging, custom dashboards, or telemetry integrations.
+The `@threadplane/angular` library exposes per-agent lifecycle signals on every agent returned by `injectAgent()`, as `agent.lifecycle`. They are timestamps and classifications that the LangGraph session records from the stream you already have, which makes them handy for debugging, custom dashboards, or telemetry integrations.
 
 ## Interface
 
 ```typescript
 import { InjectionToken, Signal } from '@angular/core';
-import type { AgentErrorKind } from '@threadplane/chat';
+import type { AgentErrorKind } from '@threadplane/core';
 
 export interface AgentLifecycle {
-  /** Epoch ms of the first stream chunk arrival. Resets on switchThread(). */
+  /** The first event to arrive on any run's stream. */
   readonly streamStartedAt: Signal<number | null>;
-  /** Epoch ms + failure class of the most recent stream error. Resets on switchThread(). */
-  readonly streamErrorAt: Signal<{ at: number; kind: AgentErrorKind | string } | null>;
-  /** Epoch ms of the first interrupt$ non-null in this stream. Resets on switchThread(). */
+  /** The most recent failure the session published, with its error kind. */
+  readonly streamErrorAt: Signal<{
+    readonly at: number;
+    readonly kind: AgentErrorKind | string;
+  } | null>;
+  /** The first time the session held a pending interrupt. */
   readonly interruptReceivedAt: Signal<number | null>;
-  /** Epoch ms of the most recent submit({ resume }) call. Resets on switchThread(). */
+  /** The most recent `resume` the session accepted. */
   readonly interruptResolvedAt: Signal<number | null>;
-  /** Epoch ms when the agent's "create new thread" branch fired. Resets on switchThread(). */
+  /** When a session reported the thread it created for its first submit. */
   readonly threadCreatedAt: Signal<number | null>;
-  /** Epoch ms when an existing thread was restored from server (proves persistence). Resets on switchThread(). */
+  /** The first history read that returned saved data for the thread. */
   readonly threadPersistedAt: Signal<number | null>;
-  /** Epoch ms of the first tool call append. Resets on switchThread(). */
+  /** The first time the session held a tool call. */
   readonly toolCallStartedAt: Signal<number | null>;
-  /** Epoch ms of the first tool call result transition. Resets on switchThread(). */
+  /** The first time a tool call was complete or failed. */
   readonly toolCallCompletedAt: Signal<number | null>;
 }
 
 export const AGENT_LIFECYCLE = new InjectionToken<AgentLifecycle>('AGENT_LIFECYCLE');
 ```
 
+Every value is epoch milliseconds on the browser's clock, and `null` until its milestone happens. All eight return to `null` when the agent switches threads.
+
 ## Derivation
 
-Six of the eight signals derive directly from existing stream subjects on the agent (`values$`, `messages$`, `error$`, `interrupt$`, `toolCalls$`, `history$`):
+The values come from the session. A LangGraph session keeps a small `lifecycle` source beside its snapshot, and the agent mirrors that source into the eight signals. Six of them are recorded from what the session publishes:
 
-| Signal | Source |
-|--------|--------|
-| `streamStartedAt` | first non-empty `values$` or `messages$` emission |
-| `streamErrorAt` | `error$` emission, classified by `AgentErrorKind` |
-| `interruptReceivedAt` | first non-null `interrupt$` value |
-| `threadPersistedAt` | first non-empty `history$` emission |
-| `toolCallStartedAt` | first tool-call append in `toolCalls$` |
-| `toolCallCompletedAt` | first tool-call `result` transition in `toolCalls$` |
+| Signal | Stamped |
+|--------|---------|
+| `streamStartedAt` | the first event to arrive on any run's stream |
+| `streamErrorAt` | the most recent published failure, as `{ at, kind }` |
+| `interruptReceivedAt` | the first time the session held a pending interrupt |
+| `threadPersistedAt` | the first history read that returned saved checkpoints |
+| `toolCallStartedAt` | the first time the session held a tool call |
+| `toolCallCompletedAt` | the first time a tool call was complete or failed |
 
-Two signals require explicit hook points that the agent already invokes:
+Two are recorded at a command or a callback instead:
 
 | Signal | Hook |
 |--------|------|
-| `interruptResolvedAt` | `submit({ resume })` |
-| `threadCreatedAt` | the first `submit()` on an agent that has no thread yet |
+| `interruptResolvedAt` | the most recent `resume()` the session accepted |
+| `threadCreatedAt` | the first `submit()` on an agent that has no thread yet, when the session reports the thread it created |
+
+`threadCreatedAt` stays `null` for a thread the agent was given, because that session created nothing. Interrupts and tool calls restored from saved history are stamped when they are read, not when they first happened. The same failure published again keeps its time; a different one, or one that returns after clearing, is stamped again.
 
 <Callout type="info" title="What `kind` holds">
-`streamErrorAt().kind` is the [`AgentErrorKind`](/docs/angular/chat/guides/error-handling) of the failure — `connection`, `auth`, `server`, `interrupted`, or `aborted` — the same value `agent.error()?.kind` carries. The runtime normalizes every failure through `toAgentError()` before it reaches the lifecycle, so the discriminator is actionable. A value the runtime could not normalize falls back to the error's constructor name, which is why the type is `AgentErrorKind | string`.
+`streamErrorAt().kind` is the [`AgentErrorKind`](/docs/angular/chat/guides/error-handling) of the failure, one of `connection`, `auth`, `server`, `interrupted`, or `aborted`, and the same value `agent.error()?.kind` carries. A LangGraph session always reports one of those five. The type is `AgentErrorKind | string` because the agent mirrors whatever lifecycle source a session publishes, and another backend may name a kind of its own.
 </Callout>
 
 ## Subscribing
 
 ```typescript
 import { Component, effect } from '@angular/core';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({ /* ... */ })
 export class MyComponent {
-  private chat = injectAgent();
+  private readonly agent = injectAgent();
 
   constructor() {
     effect(() => {
-      const err = this.chat.lifecycle.streamErrorAt();
+      const err = this.agent.lifecycle.streamErrorAt();
       if (err) {
         console.log('Stream error at', err.at, 'kind:', err.kind);
       }
@@ -79,31 +86,33 @@ export class MyComponent {
 }
 ```
 
-For application-wide instrumentation, inject `AgentLifecycleRegistry` and read back the lifecycles of every live agent. It is `providedIn: 'root'`, so nothing has to be provided and every agent registers into the same instance no matter which injector built it — a route-scoped or component-scoped `provideAgent()` is still visible from the root:
+The timestamps are separate signals from the transcript, so reading one in an effect never re-runs it for a streamed token.
+
+For application-wide instrumentation, inject `AgentLifecycleRegistry` and read back the lifecycles of every live agent. It is `providedIn: 'root'`, so nothing has to be provided and every agent registers into the same instance no matter which injector built it. A route-scoped or component-scoped `provideAgent()` is still visible from the root:
 
 ```typescript
 import { inject } from '@angular/core';
-import { AgentLifecycleRegistry } from '@threadplane/langgraph';
+import { AgentLifecycleRegistry } from '@threadplane/angular';
 
 const registry = inject(AgentLifecycleRegistry);
 const lifecycles = registry.lifecycles();
 ```
 
-Registration is scoped to the agent's lifetime: an agent unregisters when the injector that created it is destroyed, so `lifecycles()` never accumulates lifecycles for agents that are gone.
+Registration is scoped to the agent's lifetime: an agent registers when it is created and unregisters when the injector that created it is destroyed, so `lifecycles()` never accumulates lifecycles for agents that are gone.
 
 `provideAgent()` also provides the `AGENT_LIFECYCLE` token, so a service that needs only the timings can inject the lifecycle without reaching for the agent:
 
 ```typescript
 import { inject } from '@angular/core';
-import { AGENT_LIFECYCLE } from '@threadplane/langgraph';
+import { AGENT_LIFECYCLE } from '@threadplane/angular';
 
 const lifecycle = inject(AGENT_LIFECYCLE); // === injectAgent().lifecycle
 ```
 
 <Callout type="warning" title="One token, one agent">
-`AGENT_LIFECYCLE` follows the same last-one-wins rule as the ref-less `injectAgent()`: when several `provideAgent(ref, …)` calls share an injector level, the token resolves the lifecycle of the **last** ref provided. Read `injectAgent(ref).lifecycle` when an injector provides more than one agent. See [provideAgent()](/docs/api/langgraph/provideAgent).
+`AGENT_LIFECYCLE` follows the same last-one-wins rule as the ref-less `injectAgent()`: when several `provideAgent(ref, …)` calls share an injector level, the token resolves the lifecycle of the **last** ref provided. Read `injectAgent(ref).lifecycle` when an injector provides more than one agent.
 </Callout>
 
 ## Reset semantics
 
-All eight signals reset on `switchThread()`. This keeps lifecycle observations scoped to the current thread.
+All eight signals reset on `switchThread()`. A session serves one thread, so the agent replaces it on a switch, and the new session starts again from `null`. This keeps lifecycle observations scoped to the current thread. The lifecycle object and its eight signals stay the same references across the switch, so an effect or a registry entry that holds them keeps working.

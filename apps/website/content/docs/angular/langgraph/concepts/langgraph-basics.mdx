@@ -4,7 +4,7 @@ description: What a LangGraph graph is made of — state, nodes, edges, checkpoi
 
 # LangGraph Basics
 
-LangGraph is a framework for building stateful AI agents as directed graphs. For an Angular developer building AI-powered applications, the sections below cover how LangGraph agents work and why `injectAgent()` is the natural bridge between your frontend and your agent backend.
+LangGraph is a framework for building stateful AI agents as directed graphs. For an Angular developer building AI-powered applications, the sections below cover how LangGraph agents work and how `injectAgent()` connects your frontend to your agent backend.
 
 <Callout type="info" title="Why graphs?">
 Graphs give you explicit control over agent behavior. Instead of a black-box prompt-and-pray approach, you define exactly how your agent reasons, when it calls tools, and where it pauses for human input. Every step is visible, testable, and debuggable.
@@ -69,7 +69,7 @@ class State(TypedDict):
     results: dict                     # Tool results
 ```
 
-This state is exactly what `injectAgent()` exposes to your Angular app through Signals.
+This state is what `injectAgent()` exposes to your Angular app through Signals: the `messages` key becomes `agent.messages()`, and the other keys arrive as `agent.state()`.
 
 ## Building Your First Agent
 
@@ -116,9 +116,20 @@ graph = builder.compile()
 
 ```typescript
 // app.config.ts
-provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'chat' });
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
-// component.ts — that is the whole Angular side
+provideAgent({
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'http://localhost:2024',
+      assistantId: 'chat',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+    }),
+});
+
+// component.ts: that is the whole Angular side
 protected readonly chat = injectAgent();
 
 // chat.messages() updates as the agent streams its response
@@ -169,9 +180,9 @@ graph = builder.compile()
 ```typescript
 const agent = injectAgent();
 
-// Watch tools execute
+// Watch tools execute. A call is `pending` until its result arrives.
 const activeTools = computed(() =>
-  agent.toolCalls().filter((tool) => tool.status === 'running')
+  agent.toolCalls().filter((tool) => tool.status === 'pending' || tool.status === 'running')
 );
 const completedTools = computed(() =>
   agent.toolCalls().filter((tool) => tool.status === 'complete')
@@ -208,14 +219,19 @@ def execute_action(state: State) -> dict:
 
 **Angular connection:** The interrupt surfaces automatically:
 ```typescript
-const agent = injectAgent();
+const agent = injectAgent<LangGraphSession>();
 
 // Show approval UI when agent pauses
-const pendingAction = computed(() => agent.interrupt());
+const pendingAction = computed(() => agent.interrupts()[0]);
 
-// User clicks approve → resume the agent
+// User clicks approve: answer the interrupt by id to resume the agent.
+// `value` is what the graph's interrupt() call returns.
 approve() {
-  agent.submit({ resume: { approved: true } });
+  const interrupt = agent.interrupts()[0];
+  if (!interrupt) return;
+  void agent.resume([
+    { interruptId: interrupt.id, status: 'resolved', value: { approved: true } },
+  ]);
 }
 ```
 
@@ -238,20 +254,26 @@ builder.add_node("analyst", analyst_subgraph)
 builder.add_conditional_edges("supervisor", lambda s: s["next_agent"])
 ```
 
-**Angular connection:** Track delegated work through dedicated subagent signals when delegation is exposed as tool calls. Configure once in `app.config.ts`:
+**Angular connection:** Track delegated work through `subagents()`. Subgraph nodes like the ones above need no configuration. When delegation is exposed as tool calls, the session relates each child to the call that started it; the default tool name is `task`, and `subagentToolNames` sets others. Configure once in `app.config.ts`:
 ```typescript
 provideAgent({
-  apiUrl: '...',
-  assistantId: 'orchestrator',
-  subagentToolNames: ['task'],
+  createSession: (context) =>
+    createSession({
+      apiUrl: '...',
+      assistantId: 'orchestrator',
+      subagentToolNames: ['task'],
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+    }),
 });
 ```
 
 Then consume from any component:
 ```typescript
-const orchestrator = injectAgent();
+const orchestrator = injectAgent<LangGraphSession>();
 
-const workers = computed(() => [...orchestrator.subagents().values()]);
+// A plain list, one entry for each child graph, in start order
+const workers = computed(() => orchestrator.subagents());
 const workerCount = computed(() => workers().length);
 ```
 
@@ -277,32 +299,40 @@ with PostgresSaver.from_conn_string(DATABASE_URL) as checkpointer:
 ```typescript
 // app.config.ts
 provideAgent({
-  apiUrl: '...',
-  assistantId: 'chat',
-  threadId: signal(localStorage.getItem('threadId')),
+  // The thread to start on: a string, null, or a signal the agent follows
+  threadId: localStorage.getItem('threadId'),
+  // Called with the id of a thread a session created
   onThreadId: (id) => localStorage.setItem('threadId', id),
+  createSession: (context) =>
+    createSession({
+      apiUrl: '...',
+      assistantId: 'chat',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+    }),
 });
 
 // component.ts
 const chat = injectAgent();
 
-// User returns tomorrow — same thread, full history restored
-// No code needed — the adapter handles it
+// User returns tomorrow: same thread, saved history restored.
+// The agent reads the selected thread's history when it starts;
+// chat.isThreadLoading() is true meanwhile.
 ```
 
 ## How `injectAgent()` Bridges the Gap
 
-This is why `injectAgent()` is the natural Angular companion for LangGraph.
+This is the path one message takes between your Angular app and the graph, and the Signal each LangGraph concept maps to.
 
 <Tabs>
 <Tab label="The data flow">
 
 <Steps>
 <Step title="Your Angular App">
-Calls `submit({ message: text })` to send user input
+Calls `agent.submit(text)` to send user input
 </Step>
-<Step title="`injectAgent()`">
-Passes input to the transport layer
+<Step title="The LangGraph session">
+Creates a thread on the first submit when it has none, then passes the input to its transport
 </Step>
 <Step title="FetchStreamTransport">
 Sends HTTP POST to LangGraph Platform, opens SSE connection
@@ -313,11 +343,11 @@ Executes graph nodes, calls tools, streams SSE events back
 <Step title="FetchStreamTransport">
 Parses SSE chunks into typed stream events
 </Step>
-<Step title="`injectAgent()`">
-Converts BehaviorSubjects to Angular Signals via `toSignal()`
+<Step title="The session and `injectAgent()`">
+The session projects the events into an immutable snapshot, and the agent exposes each snapshot field as an Angular Signal
 </Step>
 <Step title="Your Angular App">
-Templates re-render automatically via OnPush change detection
+Templates that read those Signals re-render, including under OnPush change detection
 </Step>
 </Steps>
 
@@ -325,50 +355,52 @@ Templates re-render automatically via OnPush change detection
 <Tab label="Signal mapping">
 
 ```typescript
-// Every LangGraph concept maps to a Signal. The surface splits into two
-// groups: the runtime-neutral `Agent` contract that every adapter implements,
-// and LangGraph-specific signals added by `LangGraphAgent`.
+// Every LangGraph concept maps to a Signal. The surface splits into three
+// groups: the runtime-neutral contract every session implements, what the
+// injected agent adds, and the fields only the LangGraph session publishes.
 
-// ── Signals on every agent (the `Agent` contract) ───────────────────────────
-agent.messages()       // Signal<Message[]> — runtime-neutral message history
-agent.status()         // Signal<AgentStatus> — idle/running/error
-agent.isLoading()      // Signal<boolean> — is the agent running?
-agent.error()          // Signal<AgentError | undefined> — classified failure
-agent.toolCalls()      // Signal<ToolCall[]> — tool call progress and results
-agent.state()          // Signal<Record<string, unknown>> — runtime-neutral state
+// ── On every agent (the core session contract) ──────────────────────────────
+agent.messages()       // readonly Message[]: runtime-neutral transcript
+agent.status()         // 'idle' | 'running' | 'error'
+agent.error()          // AgentError | undefined: classified failure
+agent.toolCalls()      // readonly ToolCall[]: finalized calls and their results
+agent.state()          // root graph state, without `messages`
 
-// Optional on the contract (present when the runtime supports them):
-agent.interrupt()      // Signal<AgentInterrupt | undefined> — agent is paused
-agent.subagents()      // Signal<Map<string, Subagent>> — delegated agents
+// Optional on the contract (a signal of undefined when not published):
+agent.interrupts()     // readonly AgentInterrupt[]: what a paused run waits on
+agent.subagents()      // readonly AgentSubagent[]: child agents, in start order
+agent.plan()           // readonly AgentPlanStep[]: from a `todos` list in state
+agent.checkpoints()    // readonly AgentCheckpoint[]: saved history, oldest
+                       // first. LangGraph needs `historyState: true`.
 
-// ── AgentWithHistory sub-contract (adapters with checkpoint history) ─────────
-// Not on the bare `Agent` — request/response adapters omit it. The type and
-// signal are runtime-neutral; LangGraph implements this sub-contract.
-agent.history()        // Signal<AgentCheckpoint[]> — runtime-neutral timeline
+// ── Added by the injected agent ─────────────────────────────────────────────
+agent.threadId()       // string | null: the thread the agent is on
+agent.isThreadLoading() // boolean: the selected thread's history is being read
+agent.customEvents()   // the current run's custom events, oldest first
 
-// ── LangGraph-specific signals (`LangGraphAgent`) ───────────────────────────
-// These exist because injectAgent() returns a LangGraphAgent. They are NOT
-// part of the runtime-neutral Agent contract.
-agent.value()          // Signal<T> — full LangGraph state object
-agent.hasValue()       // Signal<boolean> — true once any value/message arrived
-agent.langGraphHistory() // Signal<ThreadState[]> — raw LangGraph checkpoints
-agent.branch()         // Signal<string> — time-travel branch
-agent.experimentalBranchTree() // Signal<AgentBranchTree<T>> — branch tree
-agent.toolProgress()   // Signal<ToolProgress[]> — in-flight tool progress
-agent.queue()          // Signal<AgentQueue> — pending enqueue runs
-agent.activeSubagents() // Signal<SubagentStreamRef[]> — running subagents
-agent.customEvents()   // Signal<CustomStreamEvent[]> — raw custom events
+// ── LangGraph-specific fields (`injectAgent<LangGraphSession>()`) ───────────
+// These exist because the session is a LangGraphSession. They are NOT part of
+// the runtime-neutral contract.
+agent.history()        // checkpoint metadata of the loaded page, newest first
+agent.subgraphs()      // child graphs by namespace, with messages and state
+agent.branchTree()     // loaded checkpoints arranged by parent (`historyState`)
+agent.branch()         // the branch selected with setBranch()
+agent.toolProgress()   // progress reported through the `tools` stream mode
+agent.queue()          // queued runs waiting for the active one
+agent.langGraphMessages() // messages as LangGraph sent them (`rawMessages`)
+agent.retainedRun()    // the run reconnect() can join after a lost stream
 ```
 
-The base `subagents()` signal exposes a `Map<string, Subagent>` from the
-runtime-neutral contract, while LangGraph adds `activeSubagents()` — a filtered
-`SubagentStreamRef[]` containing only subagents whose status is `running`.
+`subagents()` is a plain read-only list from the runtime-neutral contract, not a
+map. The LangGraph session derives it from `subgraphs()`, one entry for each
+child graph and in the same order; filter it by `status` to find the children
+that are still `running`.
 
 </Tab>
 </Tabs>
 
 <Callout type="tip" title="Zero configuration streaming">
-You do not configure SSE, parse events, manage WebSocket connections, or handle reconnection. `injectAgent()` does all of that. You call `submit()` and read Signals — that is the entire API surface for your Angular code.
+You do not configure SSE or parse events. The session's transport does that. You call `submit()` and read Signals. A stream that drops is not hidden: `error()` reports it with a `recovery` hint, and the application decides whether to check the run's status.
 </Callout>
 
 ## Graph API vs Functional API
@@ -393,7 +425,7 @@ async def agent(messages):
     return response
 ```
 
-Both APIs produce the same output and work identically with `injectAgent()`. Choose the Graph API when you need conditional routing, subgraphs, or interrupts. Choose the Functional API for simple, linear workflows.
+Both APIs produce a graph that LangGraph Platform serves, so the Angular side does not change. Choose the Graph API when you need conditional routing, subgraphs, or interrupts. Choose the Functional API for simple, linear workflows.
 
 ## What's Next
 

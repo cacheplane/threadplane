@@ -1,10 +1,10 @@
 ---
-description: Pause and resume a LangGraph refund workflow, with typed payloads, captured-command retry, server checkpoint restoration, and timeout strategies
+description: Pause and resume a LangGraph refund workflow with interrupts() and resume(), plus typed payloads, retry rules, checkpoint restoration, and timeouts
 ---
 
 # Interrupts
 
-Interrupts let a LangGraph agent pause mid-execution and hand control to a human. The agent proposes an action, the graph freezes, your Angular UI shows an approval card, the person decides, and the agent resumes with that decision. `injectAgent()` surfaces the pending interrupt as an Angular Signal, so an approval flow needs no manual event wiring. The running example is a refund authorization, and this guide walks the three files that make it work.
+Interrupts let a LangGraph agent pause mid-execution and hand control to a human. The agent proposes an action, the graph freezes, your Angular UI shows an approval card, the person decides, and the agent resumes with that decision. The injected agent lists the pending interrupts in its `interrupts()` signal and answers them with `resume()`, so an approval flow needs no manual event wiring. The running example is a refund authorization, and this guide walks the three files that make it work.
 
 <Callout type="info" title="When to use interrupts">
 Use interrupts when an agent action is irreversible (sending an email, placing an order, issuing a refund), when the agent needs a human decision it cannot make on its own, or when compliance requires explicit approval before execution.
@@ -16,7 +16,7 @@ In a trip planner, proposing a booking and making the booking are different acti
 
 <RunState />
 
-The interrupt belongs to agent state; it is not another chat message. Keep the composer, progress display, and decision controls consistent with that state. The example below uses a fictional booking so you can follow the pause and resume without making a reservation.
+The interrupt belongs to agent state; it is not another chat message. Keep the composer, progress display, and decision controls consistent with that state. The example below uses a simulated refund so you can follow the pause and resume without issuing a real charge.
 
 ## What the demo does
 
@@ -28,7 +28,7 @@ Approve resumes the graph, which issues a stand-in refund and posts the refund I
 
 ## How it is built
 
-Three files carry the whole feature: a graph that stops in the middle of a run, an application config that registers the agent, and a component that maps the card's three buttons onto resume payloads. Open the Code tab to read them in place.
+Three files carry the whole feature: a graph that stops in the middle of a run, an application config that registers the agent, and a component that maps the card's three buttons onto resume values. Open the Code tab to read them in place.
 
 ### The state behind the approval card
 
@@ -72,16 +72,24 @@ A paused graph is a stored checkpoint. Serving through `langgraph dev` or LangGr
 
 ### The agent provider
 
-`provideAgent()` registers the agent once for the whole application, and it is the only provider `<chat>` requires. The example passes a factory because it resolves its connection details at runtime from the host that serves the demo.
+`provideAgent()` from `@threadplane/angular` registers the agent once for the whole application, and it is the only provider this example needs. Its config supplies `createSession`, a function that builds a LangGraph session with `createSession()` from `@threadplane/langgraph`. The agent calls it once at start and again for each thread switch. The example wraps the config in a factory because it resolves its connection details at runtime from the host that serves the demo.
 
 <ExampleCode file="app.config.ts" />
 
-Your own application does not need the factory. Pass the two values directly:
+Your own application does not need the outer factory. Pass the two connection values directly, and forward the thread the agent hands you:
 
 ```typescript
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
+
 provideAgent({
-  apiUrl: 'https://your-deployment.langgraph.app',
-  assistantId: 'interrupts',
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'interrupts',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+    }),
 });
 ```
 
@@ -93,7 +101,7 @@ Never expose a LangSmith API key in client-side code. Point `apiUrl` at a deploy
 
 ### The approval card
 
-`<chat-approval-card>` is a prebuilt composition. Give it the agent and it watches `interrupt()` for you: when a payload arrives it shows an approval panel, and when the interrupt resolves the panel goes away. Put it in a `chatInterruptTemplate` inside `<chat>` so the panel sits at the end of the transcript. `approveLabel` and `cancelLabel` name the two actions, and `presentation="dialog"` opens a modal instead. `matchKind` compares the payload's `kind` field, so the card ignores any interrupt that is not a refund approval, and `showEdit` adds the third button.
+`<chat-approval-card>` is a prebuilt composition. Give it the agent and it watches `interrupts()` for you: when a pending interrupt arrives it shows an approval panel with that interrupt's `value` as the payload, and when the interrupt resolves the panel goes away. Put it in a `chatInterruptTemplate` inside `<chat>` so the panel sits at the end of the transcript. `approveLabel` and `cancelLabel` name the two actions, and `presentation="dialog"` opens a modal instead. `matchKind` compares the payload's `kind` field, so the card picks the first pending interrupt that is a refund approval and ignores any other, and `showEdit` adds the third button.
 
 <ExampleCode file="interrupts.component.ts" region="approval-card" title="interrupts.component.ts — the card" />
 
@@ -101,11 +109,13 @@ The card owns the chrome and the buttons; the `#body` template owns the content.
 
 ### Resuming with the decision
 
-The card emits an action rather than resuming by itself, which leaves the resume payload entirely up to the component. Approve and Cancel are terminal, so the card closes and the handler submits the matching decision. Edit is not: it flips a signal, the body template grows an amount field, and the Save button submits the edited value.
+The card emits an action rather than resuming by itself, which leaves the resume value entirely up to the component. Approve and Cancel are terminal, so the handler answers with the matching decision. Edit is not: it flips a signal, the body template grows an amount field, and the Save button answers with the edited value. All three paths end in the private `answer()` method, which reads the first pending interrupt and calls `resume()`.
 
 <ExampleCode file="interrupts.component.ts" region="resume" title="interrupts.component.ts — resuming the graph" />
 
-`submit({ resume })` continues the paused run instead of starting a new one, and whatever you put in `resume` is exactly what `interrupt()` returns on the server.
+`resume(responses)` continues the paused run instead of starting a new one. Each response names one pending interrupt by its `id` and carries the status `resolved`. With one interrupt pending, the response's `value` is exactly what `interrupt()` returns on the server. LangGraph has no cancelled response, so a refusal is a value the graph reads, which is why Cancel sends `{ approved: false }`.
+
+The component injects the agent as `injectAgent<LangGraphSession>()`. Naming the session type makes `interrupts()` a list that is always present and `resume` a command that always exists. The ref-less `injectAgent()` is typed by the core contract, where both are optional: read `interrupts()?.[0]` and call `agent.resume?.(...)` there.
 
 <Callout type="info" title="Injection context">
 `injectAgent()` must run inside an Angular injection context: a field initializer, as it is here, or a constructor body.
@@ -123,10 +133,10 @@ A node reasons about the request and produces the structured payload that descri
 A node calls `interrupt({...})`, which freezes the graph. The payload is persisted in the checkpoint and streamed to the client.
 </Step>
 <Step title="The UI shows the decision">
-`injectAgent()` updates the `interrupt()` signal. The approval card reads it, matches on `kind`, and shows its panel.
+The agent's `interrupts()` signal lists the pending interrupt. The approval card reads it, matches on `kind`, and shows its panel.
 </Step>
 <Step title="The person decides">
-Approve, Edit, or Cancel. The component calls `agent.submit({ resume })` with a payload carrying the decision.
+Approve, Edit, or Cancel. The component calls `agent.resume()` with one response whose `value` carries the decision.
 </Step>
 <Step title="The agent resumes">
 LangGraph re-runs the interrupting node, `interrupt()` returns the resume value, and the graph routes on it — issuing the refund or ending the run.
@@ -135,17 +145,17 @@ LangGraph re-runs the interrupting node, `interrupt()` returns the resume value,
 
 ## Retrying a resume and restoring a thread
 
-`retry()` retains command-only submissions, including a resume with no message payload, and replays the captured command and update values. It does not append another user message. The values are captured when submitted, so later edits to the caller's object cannot change the retry. A retry also drops the previous request's abort signal, allowing a fresh request after that signal was aborted.
+`retry()` is an optional command, present when the transport can read the status of an exact run. It sends a command again only when the backend reported that command's run as failed (`error` or `timeout`), or when the thread for a first submission could not be created. The error then carries `retryable: true` and `recovery: 'retry'`. A retried resume sends the same response and no message. The response was captured when it was sent, so later edits to the caller's object cannot change the retry.
 
-Before retrying a resume whose server outcome is unknown, inspect the thread's current checkpoint. A transport failure does not prove the server rejected the decision. Checkpoint hydration restores pending interrupts when you reconnect to the same thread; retaining the thread ID and the server checkpoint is required. This adapter's retry support does not add a client claim ledger, compare-and-swap storage, or transactional rollback of streamed client state.
+A dropped stream is a different case. A transport failure does not prove the server rejected the decision, so the session reports an `interrupted` error, and `retry()` rejects while that error is shown. Where the transport can read thread history the error's `recovery` is `'check'`, and `checkStatus()` reads the saved thread without sending anything. New activity, or a different pause, settles the turn. The same pause with nothing new is inconclusive: the decision may never have landed, or may still be running before its first checkpoint, so the session neither restores the pause nor replays the decision.
 
-The retry is retained in the current client instance; reopening a browser restores the server checkpoint, not that instance's captured retry command. Inspect the restored pending interrupt and the backend outcome before deciding what action to offer. Neither a stopped stream nor a dismissed approval card proves that the backend completed or cancelled the work.
+An uncertain resume does not strand the operator. The pending interrupt lives in the server checkpoint, and the agent reads a thread's history when it selects that thread, so reloading the thread (`switchThread()` with the current id does that) restores a pause that is still pending, and the decision can be sent again. Retaining the thread ID and the server checkpoint is required. A retry, by contrast, lives in the current session: loading the thread or sending another command withdraws it, and reopening the browser restores the server checkpoint, not the captured command. Neither a stopped stream nor a dismissed approval card proves that the backend completed or cancelled the work.
 
-The runtime-neutral contract supplies `interrupt()` for display and `submit({ resume })` for the application's decision. AG-UI's `persistence`, `ready`, `interruptSession()`, `interruptGeneration`, and `reconcileInterrupt()` are adapter-specific extensions, not LangGraph restoration options. Its `requestNotDispatched` retry rule also does not describe LangGraph's captured-command retry. Server checkpoint retention and safe handling of repeated side effects remain backend responsibilities.
+`interrupts()` for display and `resume(responses)` for the decision are the core contract, so a component written against them works with any session that can pause. What a response may express is the backend's rule: this session rejects, without sending, a response that names an interrupt that is not pending, names one twice, or uses the status `cancelled`. Server checkpoint retention and safe handling of repeated side effects remain backend responsibilities.
 
 ### Migration note
 
-Command-only resumes and updates now remain available to `retry()` even when the submitted message payload was null. Code that previously resubmitted the command manually can use `retry()` after confirming it is safe to repeat. Restore an existing thread through its checkpoint before offering an approval again, and keep side effects above `interrupt()` safe to re-execute.
+The Angular-only adapter exposed one `interrupt()` signal and resumed through `submit({ resume })`. Both are gone. Read `interrupts()[0]` (or `interrupts()?.[0]` on a core-typed agent) and answer with `resume([{ interruptId, status: 'resolved', value }])`. A `command.resume` under the run settings is rejected, because the answer is the argument of `resume()`. Restore an existing thread through its checkpoint before offering an approval again, and keep side effects above `interrupt()` safe to re-execute.
 
 ## Approving more than once
 
@@ -171,21 +181,23 @@ builder.add_edge("approve_step", "execute_step")
 builder.add_conditional_edges("execute_step", should_continue)
 ```
 
-Nothing changes on the client. Each pause raises one interrupt, the card matches on `kind` exactly as before, and the same `submit({ resume })` call answers it. A card that should show progress reads the counters straight out of the payload, which is the reason to put `step_number` and `total_steps` in there rather than deriving them.
+Nothing changes on the client. Each pause raises one interrupt, the card matches on `kind` exactly as before, and the same `resume()` call answers it. A card that should show progress reads the counters straight out of the payload, which is the reason to put `step_number` and `total_steps` in there rather than deriving them.
 
 <Callout type="info" title="Reading every pending interrupt">
-`interrupt()` gives you the one interrupt a runtime-neutral UI needs. When a run pauses in several branches at once, `langGraphInterrupts()` returns the raw LangGraph array instead.
+`interrupts()` is already the whole list. When a run pauses in several branches at once, one `resume()` call can answer any of them: the answered ones are sent together, keyed by the id the backend gave each interrupt, so each response needs a value, and the others stay pending. `subgraphs()` carries the interrupts a child graph reported, for display only.
 </Callout>
 
-## Typed interrupt payloads with BagTemplate
+## Typed interrupt payloads
 
-By default an interrupt payload is untyped: the normalized `interrupt()` signal exposes `value` as `unknown`, and the example lets it reach the template untyped, giving the payload a shape only where `submitEdit()` declares its parameter. The `BagTemplate` generic gives the raw signal a real type instead.
+An interrupt's `value` is plain data whose shape belongs to the graph that paused, so the agent types it as `PlainValue`. The example lets it reach the template untyped, giving the payload a shape only where `submitEdit()` declares its parameter. Narrow it once, with a type guard, and every read after that is typed.
 
-Typing the bag means naming the agent, so this variation declares a ref with `createAgentRef()` and passes it to both `provideAgent()` and `injectAgent()`, where the example uses the unnamed form.
+Graph state is typed a different way: declare it on the session with `stateType`, and carry the session type through a ref from `createAgentRef()`. This variation passes that ref to both `provideAgent()` and `injectAgent()`, where the example uses the unnamed form.
 
 ```typescript
-import { injectAgent, type BagTemplate } from '@threadplane/langgraph';
-import { createAgentRef } from '@threadplane/chat';
+import { computed } from '@angular/core';
+import { createAgentRef, injectAgent, provideAgent } from '@threadplane/angular';
+import { type, type ToolContract } from '@threadplane/core';
+import { createSession, type LangGraphSession } from '@threadplane/langgraph';
 
 // The exact shape the graph passes to interrupt()
 interface RefundApproval {
@@ -195,29 +207,54 @@ interface RefundApproval {
   reason: string;
 }
 
+// The graph state without `messages`, as `agent.state()` reports it
 interface RefundState {
-  amount: number | null;
-  customer_id: string | null;
-  decision_approved: boolean | null;
+  amount?: number | null;
+  customer_id?: string | null;
+  decision_approved?: boolean | null;
 }
 
-type RefundBag = BagTemplate & {
-  InterruptType: RefundApproval;
-};
+type RefundSession = LangGraphSession<Record<string, ToolContract>, RefundState>;
 
-// The ref carries the state shape; the bag is passed at the inject site.
-export const REFUND_AGENT = createAgentRef<RefundState>('interrupts');
+// The ref carries the session type from the provider to every inject site.
+export const REFUND_AGENT = createAgentRef<RefundSession>('interrupts');
+
+// app.config.ts
+provideAgent(REFUND_AGENT, {
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'interrupts',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+      stateType: type<RefundState>(),
+    }),
+});
+
+function isRefundApproval(value: unknown): value is RefundApproval {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as { kind?: unknown }).kind === 'refund_approval'
+  );
+}
 
 export class TypedApprovalComponent {
-  private readonly agent = injectAgent<RefundState, RefundBag>(REFUND_AGENT);
+  private readonly agent = injectAgent(REFUND_AGENT);
 
-  readonly pending = this.agent.langGraphInterrupts();
-  //       ^? Interrupt<RefundApproval>[]
+  readonly pending = computed(() => {
+    const interrupt = this.agent.interrupts()[0];
+    return interrupt && isRefundApproval(interrupt.value)
+      ? { id: interrupt.id, payload: interrupt.value }
+      : undefined;
+  });
 
-  readonly amount = this.pending[0]?.value?.amount; // number — correct
-  readonly bad = this.pending[0]?.value?.nonexistent; // Error — property does not exist
+  readonly amount = computed(() => this.pending()?.payload.amount); // number | undefined
+  readonly approved = computed(() => this.agent.state()?.decision_approved); // typed by RefundState
 }
 ```
+
+`type<T>()` checks nothing at runtime. Pass a Standard Schema, such as a Zod object, as `stateType` to have each reported state checked as well.
 
 <Callout type="tip" title="Type your interrupts early">
 Define the payload interface next to your Python state schema. It is the contract between graph and UI, and when the Python payload changes the TypeScript interface has to change with it. Generating both from one schema is worth it once the payloads stop being trivial.
@@ -256,27 +293,28 @@ async def check_stale_interrupts():
 
 ```typescript
 import { effect } from '@angular/core';
-import { timer } from 'rxjs';
 
-// Watch for interrupts and start a timeout
+// Watch for a pending interrupt and start a timeout
 effect((onCleanup) => {
-  const pending = this.agent.interrupt();
+  const pending = this.agent.interrupts()[0];
   if (!pending) return;
-  const sub = timer(5 * 60 * 1000).subscribe(() => {
+  const timeout = setTimeout(() => {
     // Auto-reject after 5 minutes of inaction
-    void this.agent.submit({ resume: { approved: false } });
-  });
+    void this.agent.resume([
+      { interruptId: pending.id, status: 'resolved', value: { approved: false } },
+    ]);
+  }, 5 * 60 * 1000);
   // Clean up if the operator responds before the timeout
-  onCleanup(() => sub.unsubscribe());
+  onCleanup(() => clearTimeout(timeout));
 });
 ```
 
 <Callout type="warning" title="Pick one timeout strategy">
-Avoid running server-side and client-side timeouts together. If both fire, the second resume call fails because the graph already moved past the interrupt. Choose the server side for reliability, since it works even when the browser is closed, or the client side for immediacy.
+Avoid running server-side and client-side timeouts together. If both fire, the second answer arrives for a pause the graph has already moved past, and two responders to one pause are something the application has to coordinate. Choose the server side for reliability, since it works even when the browser is closed, or the client side for immediacy.
 </Callout>
 
 <Callout type="info" title="Checkpoint persistence saves you">
-With a durable server checkpointer and the same thread ID, the operator can close the browser and later restore an action that is still pending. A lost or expired checkpoint cannot be recreated from browser state; another operator or a server timeout may also have already answered it.
+With a durable server checkpointer and the same thread ID, the operator can close the browser and later restore an action that is still pending: the agent reads the thread when it selects it, and the pause returns in `interrupts()`. A lost or expired checkpoint cannot be recreated from browser state; another operator or a server timeout may also have already answered it.
 </Callout>
 
 ## What's Next

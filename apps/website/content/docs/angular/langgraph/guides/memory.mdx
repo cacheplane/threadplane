@@ -1,18 +1,18 @@
 ---
-description: How the memory example keeps learned facts in graph state, extracts them after every reply, and renders them in a live sidebar with value()
+description: How the memory example keeps learned facts in graph state, extracts them after every reply, and renders them in a live sidebar with state()
 ---
 
 # Memory
 
-Memory gives your LangGraph agent the ability to recall past interactions, user preferences, and learned facts. There are two distinct kinds: short-term memory scoped to a single thread (conversation), and long-term memory that persists across threads using the LangGraph Store API. `injectAgent()` surfaces graph state through Angular Signals, so a memory panel needs no manual state wiring. The running example is a chat that learns facts about you as you talk, and this guide walks the three files that make it work.
+Memory gives your LangGraph agent the ability to recall past interactions, user preferences, and learned facts. There are two distinct kinds: short-term memory scoped to a single thread (conversation), and long-term memory that persists across threads using the LangGraph Store API. The agent you get from `injectAgent()` exposes graph state as an Angular signal, so a memory panel needs no manual state wiring. The running example is a chat that learns facts about you as you talk, and this guide walks the three files that make it work.
 
 <Callout type="info" title="Short-term vs long-term">
-Short-term memory lives within a thread — it is the conversation history plus any custom state fields your agent accumulates during a run. Long-term memory lives in the LangGraph Store and survives across threads, users, and sessions. Think of short-term as "what happened in this conversation" and long-term as "what the agent knows about this user."
+Short-term memory lives within a thread: it is the conversation history plus any custom state fields your agent accumulates during a run. Long-term memory lives in the LangGraph Store and survives across threads, users, and sessions. Think of short-term as "what happened in this conversation" and long-term as "what the agent knows about this user."
 </Callout>
 
 ## What the demo does
 
-The Run tab shows the prebuilt `<chat>` composition beside a sidebar titled Learned Facts, which starts out saying that no facts have been learned yet. Tell the agent something about yourself — your name, where you live, the framework you work in — and the reply streams in first, then the sidebar fills with the facts the agent decided were worth keeping, one key and value per row.
+The Run tab shows the prebuilt `<chat>` composition beside a sidebar titled Learned Facts, which starts out saying that no facts have been learned yet. Tell the agent something about yourself (your name, where you live, the framework you work in) and the reply streams in first, then the sidebar fills with the facts the agent decided were worth keeping, one key and value per row.
 
 Two things are worth trying. Keep going for a few turns and watch the list grow rather than reset, because each pass merges new facts into the ones already known. Then ask the agent what it remembers about you: the facts in the sidebar are injected into the system prompt of the next reply, so it answers from the same list you are looking at.
 
@@ -60,16 +60,24 @@ The graph is a straight line: generate, then extract, then end. Putting extracti
 
 ### The agent provider
 
-`provideAgent()` registers the agent once for the whole application, and it is the only provider `<chat>` requires. The example passes a factory because it resolves its connection details at runtime from the host that serves the demo.
+`provideAgent()`, from `@threadplane/angular`, registers the agent once for the whole application. Its `createSession` function builds a LangGraph session with `createSession()` from `@threadplane/langgraph`; the agent calls it at the start and again for each new conversation. The example passes a factory because it resolves its connection details at runtime from the host that serves the demo.
 
 <ExampleCode file="app.config.ts" />
 
-Your own application does not need the factory. Pass the two values directly:
+Your own application does not need the factory. Pass the config object with the two values:
 
 ```typescript
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
+
 provideAgent({
-  apiUrl: 'https://your-deployment.langgraph.app',
-  assistantId: 'memory',
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'memory',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+    }),
 });
 ```
 
@@ -79,13 +87,15 @@ provideAgent({
 Never expose a LangSmith API key in client-side code. Point `apiUrl` at a deployment that authenticates the browser another way, or proxy the requests through your own server and attach the key there.
 </Callout>
 
-### Reading memory with value()
+### Reading memory with state()
 
-`injectAgent()` returns the agent registered above, and `value()` is the full graph state as a signal — messages, `memory`, and any other field the state schema declares. The component derives the sidebar rows from it with `computed()`, casting the state to the shape it expects and returning an empty list until a `memory` object exists.
+`injectAgent()` returns the agent registered above, and `state()` is the root graph state as a signal: `memory` and any other field the state schema declares, without `messages`, which the agent publishes as `messages()`. It is `undefined` until the backend reports a state. The component derives the sidebar rows from it with `computed()`, reading the `memory` key and returning an empty list until a `memory` object exists.
 
 <ExampleCode file="memory.component.ts" region="memory-signal" title="memory.component.ts — the memory signal" />
 
-No extra request is involved. The `memory` dict rides along with the state updates the run is already streaming, so `memoryEntries` recomputes the moment the extraction node commits.
+No extra request is involved. The `memory` dict rides along with the state updates the run is already streaming, so `memoryEntries` recomputes when the extraction node commits. The `state()` signal notifies only when the state itself changes, not on every streamed token.
+
+The state is plain data of unknown shape unless you declare it. Pass `stateType` to `createSession()`, as `type<T>()` from `@threadplane/core` or a schema, to have `state()` typed.
 
 ### Rendering the facts
 
@@ -137,21 +147,30 @@ result = graph.invoke(
 On the Angular side this takes no extra code beyond naming the thread. Pass a `threadId` to `provideAgent()`, as a signal when it changes at runtime:
 
 ```typescript
+import { signal } from '@angular/core';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
+
 const threadId = signal<string | null>(localStorage.getItem('memory-thread'));
 
 provideAgent({
-  apiUrl: 'https://your-deployment.langgraph.app',
-  assistantId: 'memory',
   threadId,
   onThreadId: (id) => localStorage.setItem('memory-thread', id),
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'memory',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+    }),
 });
 ```
 
-`agent.messages()` restores the full history on reconnect and `agent.value()` restores every custom state field with it. The [Persistence guide](/docs/angular/langgraph/guides/persistence) covers thread switching and checkpointer configuration in full.
+When the agent starts on a saved thread it reads that thread's history: `agent.messages()` restores the transcript and `agent.state()` restores every custom state field with it. The [Persistence guide](/docs/angular/langgraph/guides/persistence) covers thread switching and checkpointer configuration in full.
 
 ## Long-term memory (cross-thread) with the Store API
 
-Thread state disappears when you start a new thread. For knowledge that should outlive a conversation — preferences, learned facts, project context — use the LangGraph Store API. The Store is a key-value layer that any node can read from and write to, independent of the current thread, and a node opts into it by declaring a `store` parameter.
+Thread state disappears when you start a new thread. For knowledge that should outlive a conversation (preferences, learned facts, project context), use the LangGraph Store API. The Store is a key-value layer that any node can read from and write to, independent of the current thread, and a node opts into it by declaring a `store` parameter.
 
 ```python
 import json
@@ -212,10 +231,15 @@ builder.add_edge("save", END)
 graph = builder.compile()
 ```
 
-The identity the nodes namespace by has to come from the client. Pass it per run through `submit()`, which forwards a `config` to LangGraph:
+The identity the nodes namespace by has to come from the client. Pass it per run through `submit()`, which forwards a `config` to LangGraph. The run options are LangGraph's, so type the agent with the LangGraph session:
 
 ```typescript
-agent.submit(
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
+
+const agent = injectAgent<LangGraphSession>();
+
+void agent.submit(
   { message: text },
   { config: { configurable: { user_id: 'user_42' } } },
 );
@@ -259,7 +283,7 @@ Semantic search requires an embedding model configured on the Store. LangGraph P
 ## Memory best practices
 
 <Callout type="tip" title="Design your state schema intentionally">
-Every field in your state schema is persisted by the checkpointer. Only include fields the agent actively uses. Avoid dumping raw LLM outputs into state — extract structured data instead, as the example does when it insists on a JSON object of key-value facts.
+Every field in your state schema is persisted by the checkpointer. Only include fields the agent actively uses. Avoid dumping raw LLM outputs into state. Extract structured data instead, as the example does when it insists on a JSON object of key-value facts.
 </Callout>
 
 <Callout type="warning" title="Memory is not unlimited">
@@ -267,7 +291,7 @@ Thread state grows with every message and state update. For long-running convers
 </Callout>
 
 <Callout type="info" title="Namespace your Store keys">
-Use hierarchical namespaces like `("memories", user_id)` or `("project", project_id, "notes")` to keep long-term memories organized. This also makes cleanup straightforward — delete an entire namespace when a user requests data removal.
+Use hierarchical namespaces like `("memories", user_id)` or `("project", project_id, "notes")` to keep long-term memories organized. This also makes cleanup straightforward: delete an entire namespace when a user requests data removal.
 </Callout>
 
 ## What's Next

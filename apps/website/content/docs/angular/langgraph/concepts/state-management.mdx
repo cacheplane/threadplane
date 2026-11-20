@@ -1,5 +1,5 @@
 ---
-description: How LangGraph thread state reaches Angular Signals — designing the Python state, pinning its TypeScript shape, and keeping UI state separate
+description: How LangGraph thread state reaches Angular Signals: designing the Python state, declaring its TypeScript shape, and keeping UI state separate
 ---
 
 # State Management
@@ -25,27 +25,27 @@ The useful question is “who is allowed to change this value?” A signal makes
 
 ## State Lives on the Server
 
-In a traditional Angular app, state lives in an NgRx store or a signals-based service. In a LangGraph app, **the agent's state lives on the server** — in LangGraph Platform's checkpoint store. Your Angular app reads a projection of that state through signals while retaining its own local drafts, selections, and presentation settings.
+In a traditional Angular app, state lives in a client-side store or a signals-based service. In a LangGraph app, **the agent's state lives on the server**, in LangGraph Platform's checkpoint store. Your Angular app reads a projection of that state through signals while retaining its own local drafts, selections, and presentation settings.
 
 This separation is intentional. Agent state can span multiple LLM calls, tool executions, and human-in-the-loop interrupts. A durable checkpoint store can preserve that state across browser refreshes, reconnections, and server restarts. Configure storage and retention for your deployment; an in-memory development store cannot make that guarantee. Your Angular app submits intentional changes and reads the resulting signals. It still owns the draft and decides when local edits should become backend input.
 
 <Steps>
 <Step title="User submits input">
-Your Angular component calls `agent.submit({ message: text })`. The component may hold the draft, but the accepted message enters the agent conversation.
+Your Angular component calls `agent.submit(text)`. The component may hold the draft, but the accepted message enters the agent conversation.
 </Step>
-<Step title="`injectAgent()` sends the request">
-`@threadplane/langgraph` forwards the input to `FetchStreamTransport`, which opens an HTTP POST and SSE connection to LangGraph Platform.
+<Step title="The session sends the request">
+The `@threadplane/langgraph` session behind the agent hands the input to its transport. By default that is `FetchStreamTransport`, which opens an HTTP POST and SSE connection to LangGraph Platform.
 </Step>
 <Step title="LangGraph Platform executes the graph">
-The agent runs its nodes — calling the LLM, invoking tools, checking conditions — and streams SSE events back with incremental state updates.
+The agent runs its nodes (calling the LLM, invoking tools, checking conditions) and streams SSE events back with incremental state updates.
 </Step>
-<Step title="FetchStreamTransport parses the stream">
-Incoming SSE chunks are parsed and pushed into BehaviorSubjects — one per signal type.
+<Step title="The session projects the stream">
+The transport parses incoming SSE chunks into stream events. The session folds each event into its messages, tool calls, and graph state, and publishes the result as one immutable snapshot.
 </Step>
-<Step title="`injectAgent()` converts to Signals">
-BehaviorSubjects are converted to Angular Signals via `toSignal()`. Every update triggers Angular's change detection automatically.
+<Step title="`injectAgent()` exposes Signals">
+The agent exposes every snapshot field as its own read-only Signal. A field's Signal notifies only when that field's value changes, so a token that extends a message does not notify a view that reads only `state()`.
 
-By default, signal updates are throttled to roughly one update per animation frame (~16ms) so a burst of SSE tokens batches into a single change-detection pass instead of a storm. The `messages` signal is exempt — it propagates token-by-token so streaming text renders as it arrives. Tune or disable throttling with the `throttle?: number | false` option on `provideAgent`.
+Notifications are not throttled by default. To pace them, pass `throttle` to `createSession`: the least time in milliseconds between two notifications while a run streams. The last change is always delivered, and a change that ends the run is delivered at once.
 </Step>
 <Step title="Templates re-render">
 Components using `OnPush` re-render only when signal values change. No manual `detectChanges()`, no zone triggers, no subscriptions to manage.
@@ -54,7 +54,7 @@ Components using `OnPush` re-render only when signal values change. No manual `d
 
 ## Python State Design
 
-On the Python side, your agent's state is a `TypedDict`. The fields you define here are exactly what the state type you pin with `createAgentRef<T>()` — and pass to `provideAgent(ref, …)` and `injectAgent(ref)` — exposes in TypeScript. Getting the Python state design right is the most important architectural decision in an agent: everything downstream inherits its shape, so it is worth slowing down for.
+On the Python side, your agent's state is a `TypedDict`. The fields you define here are what the state type you declare with `stateType`, and carry from `provideAgent(ref, …)` to `injectAgent(ref)` with `createAgentRef`, describes in TypeScript. Getting the Python state design right is the most important architectural decision in an agent: everything downstream inherits its shape, so it is worth slowing down for.
 
 ### The TypedDict Pattern
 
@@ -113,7 +113,7 @@ class ProjectState(MessagesState):
 
 ### Reducers: How State Merges
 
-When a node returns `{"messages": [new_msg]}`, LangGraph does not replace the messages list — it **calls the reducer** to merge the update. This is what `Annotated[list, add]` means: use Python's `operator.add` to concatenate lists.
+When a node returns `{"messages": [new_msg]}`, LangGraph does not replace the messages list. It **calls the reducer** to merge the update. This is what `Annotated[list, add]` means: use Python's `operator.add` to concatenate lists.
 
 ```python
 from typing_extensions import TypedDict, Annotated
@@ -149,7 +149,7 @@ Nodes return only the fields they change. LangGraph merges partial updates into 
 
 ## TypeScript Interface Mapping
 
-The TypeScript interface you pin with `createAgentRef<T>()` is your contract with the Python state. Every Python state field maps to a TypeScript property. The types do not need to match exactly — they just need to be compatible with the JSON that LangGraph streams back.
+The TypeScript interface you declare as the session's `stateType` is your contract with the Python state. Every Python state field except `messages` maps to a TypeScript property; the transcript arrives separately as `agent.messages()`. The types do not need to match exactly. They need to be compatible with the JSON that LangGraph streams back.
 
 <Tabs>
 <Tab label="Python state">
@@ -172,26 +172,40 @@ class ProjectState(MessagesState):
 <Tab label="TypeScript interface">
 
 ```typescript
-import { BaseMessage } from '@langchain/core/messages';
-import { injectAgent } from '@threadplane/langgraph';
-import { createAgentRef } from '@threadplane/chat';
+import { createAgentRef, injectAgent } from '@threadplane/angular';
+import type { ToolContract } from '@threadplane/core';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
-interface ProjectState {
-  // Maps from MessagesState.messages
-  messages: BaseMessage[];
-
-  // Maps from Python fields (reducers are transparent — you see the final list)
-  files: string[];
-  analysis: { score: number; issues: string[]; summary: string } | null;
-  progress: number;
-  plan: string[];
-  error: string | null;
+// `messages` is not listed: it arrives as agent.messages(), not in state().
+// A run reports partial state before every node has written, so fields the
+// graph fills in later are optional.
+export interface ProjectState {
+  // Maps from Python fields (reducers are transparent: you see the final list)
+  files?: string[];
+  analysis?: { score: number; issues: string[]; summary: string } | null;
+  progress?: number;
+  plan?: string[];
+  error?: string | null;
 }
 
-export const PROJECT_AGENT = createAgentRef<ProjectState>('project_agent');
+export type ProjectSession = LangGraphSession<
+  Record<string, ToolContract>,
+  ProjectState
+>;
 
-// Configure in app.config.ts:
-// provideAgent(PROJECT_AGENT, { apiUrl: '...', assistantId: 'project_agent' });
+export const PROJECT_AGENT = createAgentRef<ProjectSession>('project_agent');
+
+// Configure in app.config.ts. `type` comes from @threadplane/core:
+// provideAgent(PROJECT_AGENT, {
+//   createSession: (context) =>
+//     createSession({
+//       apiUrl: '...',
+//       assistantId: 'project_agent',
+//       stateType: type<ProjectState>(),
+//       threadId: context.threadId,
+//       onThreadId: context.onThreadId,
+//     }),
+// });
 
 const agent = injectAgent(PROJECT_AGENT);
 ```
@@ -208,26 +222,28 @@ const agent = injectAgent(PROJECT_AGENT);
 | `dict[str, any]` | `Record<string, unknown>` |
 | `TypedDict` | `interface` or `type` |
 | `str \| None` | `string \| null` |
-| `list[AnyMessage]` | `BaseMessage[]` |
+| `list[AnyMessage]` | Not in `state()`. Read `agent.messages()`, a `readonly Message[]` |
 | `Annotated[list, add]` | Same as the list type — reducer is invisible |
 
 </Tab>
 </Tabs>
 
-Once you define the interface, every field is accessible via `agent.value()`:
+Once you declare the type, every field is accessible through `agent.state()`. The value is read-only, and `undefined` until the backend reports a state:
 
 ```typescript
-// Full typed state object
-const state = agent.value();         // Signal<ProjectState>
+// Typed state object
+const state = agent.state();         // ProjectState (read-only) | undefined
 
 // Computed values from nested fields
-const score = computed(() => agent.value().analysis?.score ?? 0);
-const fileCount = computed(() => agent.value().files.length);
-const isDone = computed(() => agent.value().progress === 100);
+const score = computed(() => agent.state()?.analysis?.score ?? 0);
+const fileCount = computed(() => agent.state()?.files?.length ?? 0);
+const isDone = computed(() => agent.state()?.progress === 100);
 
 // Runtime-neutral message projection for UI
-const messages = agent.messages();   // Signal<Message[]>
+const messages = agent.messages();   // readonly Message[]
 ```
+
+`type<T>()` declares the type and checks nothing at runtime. Pass a Standard Schema, such as a Zod object, as `stateType` to also check each state the backend reports. A state the schema rejects does not fail the run: `state()` stays at the last one that passed, and the LangGraph field `stateIssues()` lists what was wrong.
 
 ## State Updates During Streaming
 
@@ -235,15 +251,14 @@ The agent does not wait until it is finished to send state updates. It streams p
 
 ### How Partial Updates Arrive
 
-`injectAgent()` requests the stream modes it needs to populate its public signals by default: `['values', 'messages-tuple', 'updates', 'custom']`. Those feed state snapshots, streamed message tokens, per-node update events, and custom events respectively. Passing your own `streamMode` *replaces* that default set, so narrowing to a single mode means giving up the signals the others populate. Use `values` when you only need state snapshots, and `messages-tuple` when you only need individual message tokens.
+The session's own transport always requests the stream modes it needs to fill the agent's Signals: `values`, `messages-tuple`, `updates`, `custom`, and `checkpoints`. The first four feed state snapshots, streamed message tokens, per-node update events, and custom events; the session uses `checkpoints` to follow the position each step saved. A per-run `streamMode` *adds* modes; the ones the session needs are always kept, so you cannot narrow the set and lose a Signal. For example, the `tools` mode fills the LangGraph field `toolProgress()`. Per-run LangGraph settings are grouped under `run`:
 
 ```typescript
 const agent = injectAgent(PROJECT_AGENT);
 
-agent.submit(
-  { message: 'Update the project plan.' },
-  { streamMode: ['messages-tuple'] },
-);
+void agent.submit('Update the project plan.', {
+  run: { streamMode: ['tools'] },
+});
 ```
 
 ### Signals Update Mid-Stream
@@ -254,19 +269,21 @@ Because every state update is a new signal value, your templates reflect the age
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- Updates as each file is processed -->
-    <p>Files processed: {{ agent.value().files.length }}</p>
+    @if (agent.state(); as state) {
+      <!-- Updates as each file is processed -->
+      <p>Files processed: {{ state.files?.length ?? 0 }}</p>
 
-    <!-- Progress bar updates as agent emits progress updates -->
-    <progress [value]="agent.value().progress" max="100" />
+      <!-- Progress bar updates as agent emits progress updates -->
+      <progress [value]="state.progress ?? 0" max="100"></progress>
 
-    <!-- Plan items appear as the agent builds the plan -->
-    @for (step of agent.value().plan; track step) {
-      <li>{{ step }}</li>
+      <!-- Plan items appear as the agent builds the plan -->
+      @for (step of state.plan ?? []; track step) {
+        <li>{{ step }}</li>
+      }
     }
 
     <!-- Messages stream token by token -->
-    @for (msg of agent.messages(); track $index) {
+    @for (msg of agent.messages(); track msg.id) {
       <app-message [message]="msg" />
     }
   `
@@ -278,39 +295,38 @@ export class ProjectComponent {
 
 ### Immutability and OnPush
 
-Every signal update produces a new object reference. Angular's `OnPush` change detection compares references — when a signal emits a new value, the component re-renders. You never need to clone objects or call `markForCheck()` manually.
+Every change produces a new frozen value, and a part that did not change keeps its reference. Angular's `OnPush` change detection follows the Signals a template reads, so the component re-renders when one of them changes. You never need to clone objects or call `markForCheck()` manually.
 
 ```typescript
-// Safe: computed() re-evaluates when agent.value() changes
+// Safe: computed() re-evaluates when agent.state() changes
 const hasErrors = computed(() =>
-  (agent.value().analysis?.issues ?? []).length > 0
+  (agent.state()?.analysis?.issues ?? []).length > 0
 );
 
-// Safe: @for tracks by identity, not index, for stable DOM
-// track $index is fine for messages since they always append
-@for (msg of agent.messages(); track $index) {
+// Safe: every message has a stable id, so track by it for stable DOM
+@for (msg of agent.messages(); track msg.id) {
   <app-message [message]="msg" />
 }
 
-// Safe: null-coalescing handles state fields not yet populated
-const score = computed(() => agent.value().analysis?.score ?? 0);
+// Safe: optional chaining handles a state, or a field, not yet reported
+const score = computed(() => agent.state()?.analysis?.score ?? 0);
 ```
 
 <Callout type="tip" title="No manual subscriptions">
-`injectAgent()` uses `toSignal()` internally with an explicit `initialValue`. Signals always have a value — even before the first stream update. You never need to handle `undefined` explicitly for the signal itself, though individual state fields may be `null` until the agent populates them.
+Every Signal has a value before the first stream update: `messages()` starts as an empty list and `status()` as `'idle'`. `state()` is `undefined` until the backend reports a state, and individual state fields may be missing or `null` until the agent populates them.
 </Callout>
 
 ## Thread State vs Application State
 
 There are two kinds of state in a LangGraph Angular app, and keeping them separate makes your code far easier to reason about.
 
-**Thread state** is owned by LangGraph Platform. You read it through `injectAgent()` signals. You never write to it directly — you only send new input via `.submit()`.
+**Thread state** is owned by LangGraph Platform. You read it through `injectAgent()` signals. You never write to it directly. You send new input with `submit()`, which can carry a partial `state` for the backend to merge: `submit({ message, state })`.
 
 **Application state** is owned by your Angular component or service. It is UI-only: sidebar visibility, active tab, selected message, form input values. It has nothing to do with the agent.
 
 ```typescript
 // Defined once (e.g. in agent.ts):
-// export const CHAT_AGENT = createAgentRef<ChatState>('chat');
+// export const CHAT_AGENT = createAgentRef<ChatSession>('chat');
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -319,10 +335,10 @@ export class ChatComponent {
   // --- Thread state (from injectAgent(), read-only) ---
   protected readonly agent = injectAgent(CHAT_AGENT);
 
-  // Convenience computed values from thread state
-  readonly messages = this.agent.messages;           // Signal<Message[]>
-  readonly isLoading = this.agent.isLoading;         // Signal<boolean>
-  readonly interrupted = this.agent.interrupt;       // Signal<AgentInterrupt | undefined>
+  // Convenience values from thread state
+  readonly messages = this.agent.messages;           // Signal<readonly Message[]>
+  readonly running = computed(() => this.agent.status() === 'running');
+  readonly interrupts = this.agent.interrupts;       // Signal<readonly LangGraphInterrupt[]>
 
   // --- Application state (your Angular signals) ---
   readonly sidebarOpen = signal(true);
@@ -334,12 +350,16 @@ export class ChatComponent {
   send() {
     const text = this.inputText();
     if (!text.trim()) return;
-    this.agent.submit({ message: text });
-    this.inputText.set('');                          // UI state — clear the input
+    void this.agent.submit(text);
+    this.inputText.set('');                          // UI state: clear the input
   }
 
   approve() {
-    this.agent.submit({ resume: { approved: true } });
+    const interrupt = this.agent.interrupts()[0];
+    if (!interrupt) return;
+    void this.agent.resume([
+      { interruptId: interrupt.id, status: 'resolved', value: { approved: true } },
+    ]);
   }
 }
 ```
@@ -356,50 +376,60 @@ LangGraph Platform persists state at every node boundary using a checkpoint stor
 
 ### What This Means for Your Angular App
 
-**Resumable threads** — If the user refreshes the page or closes the browser, the thread is still there. Pass the same `threadId` to `provideAgent()` and `injectAgent()` will restore the full conversation history automatically.
+**Resumable threads**: If the user refreshes the page or closes the browser, the thread is still there. Pass the same `threadId` to `provideAgent()` and the agent reads that thread's saved history when it starts; `isThreadLoading()` is true meanwhile.
 
-**Time travel** — You can fork a thread at any checkpoint and replay it with different input. This powers the time-travel debugging guides.
+**Time travel**: You can fork a thread at any checkpoint and replay it with different input. This powers the time-travel debugging guides.
 
-**Interrupt persistence** — When the agent raises an `Interrupt`, the checkpoint captures everything. The agent can be resumed hours or days later.
+**Interrupt persistence**: When the agent raises an `Interrupt`, the checkpoint captures everything. The agent can be resumed hours or days later.
 
 ```typescript
-import { inject, signal } from '@angular/core';
+import { inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
-// app.config.ts — configure threadId/onThreadId on the provider
-// (CHAT_AGENT = createAgentRef<ChatState>('chat'), declared in agent.ts)
+// chat-page.component.ts: `providers` of the routed component, so the
+// injected ActivatedRoute is that route.
+// (CHAT_AGENT = createAgentRef<ChatSession>('chat'), declared in agent.ts)
 // The factory form runs inside an injection context, so it can inject router
-// services — a plain object literal at bootstrap cannot.
+// services. A plain object literal cannot.
 provideAgent(CHAT_AGENT, () => {
   const route = inject(ActivatedRoute);
   const router = inject(Router);
   return {
-    apiUrl: '...',
-
     // Same threadId = restored conversation history
-    threadId: signal(route.snapshot.params['threadId']),
+    threadId: route.snapshot.paramMap.get('threadId'),
 
-    // New threadId auto-created for new conversations
-    onThreadId: (id: string) => router.navigate(['/chat', id]),
+    // Called with the id of a thread a session created for a new conversation
+    onThreadId: (id: string) => void router.navigate(['/chat', id]),
+
+    createSession: (context) =>
+      createSession({
+        apiUrl: '...',
+        assistantId: 'chat',
+        // Keep each checkpoint's state for a time-travel UI
+        historyState: true,
+        threadId: context.threadId,
+        onThreadId: context.onThreadId,
+      }),
   };
 });
 
 // component.ts
 const agent = injectAgent(CHAT_AGENT);
 
-// Read checkpoint history for time-travel UI
-const history = agent.history();             // Signal<AgentCheckpoint[]>
-const rawHistory = agent.langGraphHistory(); // Signal<ThreadState[]>
-const branch = agent.branch();               // Signal<string> — active branch ID
-const branchTree = agent.experimentalBranchTree();
+// Read checkpoint history for time-travel UI (with `historyState: true`)
+const checkpoints = agent.checkpoints();   // saved states, oldest first
+const history = agent.history();           // checkpoint metadata, newest first
+const branch = agent.branch();             // the branch setBranch() selected
+const branchTree = agent.branchTree();     // checkpoints arranged by parent
 ```
 
 For full checkpoint and time-travel patterns, see the [Persistence guide](/docs/angular/langgraph/guides/persistence) and [Time Travel guide](/docs/angular/langgraph/guides/time-travel).
 
 ## Custom State Fields
 
-`messages` is just one field. Real agents carry rich state: structured plans, tool results, progress indicators, metadata, and more. Every custom field you define in Python is available in your TypeScript interface.
+`messages` is just one field. Real agents carry rich state: structured plans, tool results, progress indicators, metadata, and more. Every custom field you define in Python can be declared in your TypeScript state type and read from `agent.state()`.
 
 <Tabs>
 <Tab label="Python state">
@@ -455,29 +485,43 @@ def researcher_node(state: ResearchState) -> dict:
 <Tab label="TypeScript interface">
 
 ```typescript
-import { BaseMessage } from '@langchain/core/messages';
-import { injectAgent } from '@threadplane/langgraph';
-import { createAgentRef } from '@threadplane/chat';
+import { createAgentRef, injectAgent } from '@threadplane/angular';
+import type { ToolContract } from '@threadplane/core';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
-interface ResearchState {
-  messages: BaseMessage[];
-  plan: string[];
-  sources: string[];
-  findings: string[];
-  progress: number;
-  report: {
+// No `messages` here: the transcript is agent.messages().
+export interface ResearchState {
+  plan?: string[];
+  sources?: string[];
+  findings?: string[];
+  progress?: number;
+  report?: {
     title: string;
     summary: string;
     sections: { heading: string; content: string }[];
   } | null;
-  query: string;
-  model_used: string;
+  query?: string;
+  model_used?: string;
 }
 
-export const RESEARCH_AGENT = createAgentRef<ResearchState>('research_agent');
+export type ResearchSession = LangGraphSession<
+  Record<string, ToolContract>,
+  ResearchState
+>;
+
+export const RESEARCH_AGENT = createAgentRef<ResearchSession>('research_agent');
 
 // Configured globally in app.config.ts:
-// provideAgent(RESEARCH_AGENT, { apiUrl: '...' });
+// provideAgent(RESEARCH_AGENT, {
+//   createSession: (context) =>
+//     createSession({
+//       apiUrl: '...',
+//       assistantId: 'research_agent',
+//       stateType: type<ResearchState>(),
+//       threadId: context.threadId,
+//       onThreadId: context.onThreadId,
+//     }),
+// });
 
 // In your component:
 protected readonly agent = injectAgent(RESEARCH_AGENT);
@@ -492,26 +536,26 @@ protected readonly agent = injectAgent(RESEARCH_AGENT);
   template: `
     <!-- Progress indicator -->
     <div class="progress-bar">
-      <div [style.width.%]="agent.value().progress"></div>
+      <div [style.width.%]="progress()"></div>
     </div>
-    <p>{{ agent.value().progress }}% complete</p>
+    <p>{{ progress() }}% complete</p>
 
     <!-- Live plan as it is built -->
     <ol class="plan">
-      @for (step of agent.value().plan; track step) {
+      @for (step of agent.state()?.plan ?? []; track step) {
         <li>{{ step }}</li>
       }
     </ol>
 
     <!-- Findings stream in as each source is researched -->
     <ul class="findings">
-      @for (finding of agent.value().findings; track finding) {
+      @for (finding of agent.state()?.findings ?? []; track finding) {
         <li>{{ finding }}</li>
       }
     </ul>
 
     <!-- Final report appears when agent completes -->
-    @if (agent.value().report; as report) {
+    @if (agent.state()?.report; as report) {
       <article>
         <h1>{{ report.title }}</h1>
         <p>{{ report.summary }}</p>
@@ -527,9 +571,10 @@ protected readonly agent = injectAgent(RESEARCH_AGENT);
 })
 export class ResearchComponent {
   protected readonly agent = injectAgent(RESEARCH_AGENT);
+  protected readonly progress = computed(() => this.agent.state()?.progress ?? 0);
 
   startResearch(query: string) {
-    this.agent.submit({ message: query });
+    void this.agent.submit(query);
   }
 }
 ```
@@ -539,17 +584,19 @@ export class ResearchComponent {
 
 ### Derived State with computed()
 
-You rarely need to consume `agent.value()` raw in your template. Use `computed()` to derive clean, focused values:
+You rarely need to consume `agent.state()` raw in your template. Use `computed()` to derive clean, focused values:
 
 ```typescript
 protected readonly agent = injectAgent(RESEARCH_AGENT);
 
-// Derived signals — recalculate only when their dependencies change
-readonly progress = computed(() => this.agent.value().progress);
-readonly isPlanning = computed(() => this.agent.value().plan.length === 0 && this.agent.isLoading());
-readonly sourceCount = computed(() => this.agent.value().sources.length);
-readonly hasReport = computed(() => this.agent.value().report !== null);
-readonly reportTitle = computed(() => this.agent.value().report?.title ?? '');
+// Derived signals: recalculate only when their dependencies change
+readonly progress = computed(() => this.agent.state()?.progress ?? 0);
+readonly isPlanning = computed(
+  () => !this.agent.state()?.plan?.length && this.agent.status() === 'running'
+);
+readonly sourceCount = computed(() => this.agent.state()?.sources?.length ?? 0);
+readonly hasReport = computed(() => this.agent.state()?.report != null);
+readonly reportTitle = computed(() => this.agent.state()?.report?.title ?? '');
 ```
 
 ## What's Next
@@ -559,7 +606,7 @@ readonly reportTitle = computed(() => this.agent.value().report?.title ?? '');
     How `injectAgent()` uses Angular Signals for zero-subscription reactive rendering.
   </Card>
   <Card title="Streaming" href="/docs/angular/langgraph/guides/streaming">
-    Configure stream modes — values, messages, events — for different use cases.
+    Follow a streamed answer from the graph to the transcript.
   </Card>
   <Card title="Persistence" href="/docs/angular/langgraph/guides/persistence">
     Thread-based conversation persistence and checkpoint configuration.

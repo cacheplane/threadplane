@@ -23,6 +23,8 @@ Storage is partitioned by origin and browser storage partition. Angular and Reac
 A browser UUID is not authorization. Public state APIs fall outside this scope guarantee. Derive an authenticated namespace and enforce server authorization when your application requires it.
 </Callout>
 
+The Angular provider's `createSession` function gives each session its own scoped transport through the `transport` option of `createSession()`. The transport refuses thread creation and every run without an admitted scope, and the gate reports the same refusal to the composer through `inputBlocked()`.
+
 <ExampleCode file="cockpit/deep-agents/memory/angular/src/app/memory-scope.ts" />
 <ExampleCode file="cockpit/deep-agents/memory/angular/src/app/memory-transport.ts" />
 <ExampleCode file="cockpit/deep-agents/memory/angular/src/app/memory-agent-gate.ts" />

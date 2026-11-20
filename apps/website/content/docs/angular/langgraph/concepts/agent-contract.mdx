@@ -1,77 +1,97 @@
 ---
-description: The runtime-neutral Agent contract from @threadplane/chat — its state signals, actions, optional capabilities, and how the adapters satisfy it.
+description: The runtime-neutral session contract and the injected Angular Agent, with its state signals, commands, optional capabilities, and backends.
 ---
 
 # Agent Contract
 
-The `Agent` contract lets the trip planner render a conversation without teaching every component a backend protocol. An adapter translates runtime messages and events into the Angular signals and actions the UI consumes.
+The agent contract lets the trip planner render a conversation without teaching every component a backend protocol. A backend package translates runtime messages and events into a session, and Angular reads that session as signals and commands.
 
-`@threadplane/chat` owns the contract. `@threadplane/langgraph` and `@threadplane/ag-ui` produce objects that satisfy it. Chat primitives and compositions consume it without knowing which runtime is behind the stream.
+`@threadplane/core` owns the contract, `AgentSession`. `@threadplane/langgraph` and `@threadplane/ag-ui` each export a `createSession` that produces an object satisfying it. `@threadplane/angular` turns a session into the injected `Agent`. Chat primitives and compositions in `@threadplane/chat` consume that `Agent` without knowing which runtime is behind the stream.
 
-The UI should not care whether a response came from LangGraph Platform, AG-UI, a local mock, or a custom HTTP service. That is the point. The boundary is explicit: adapters translate runtime events into Angular signals and a small action surface.
+The UI should not care whether a response came from LangGraph Platform, AG-UI, an in-memory fake, or a custom HTTP service. That is the point. The boundary is explicit: a backend package translates runtime events into immutable snapshots and a small command surface, and one Angular provider exposes them.
 
 <StackDiagram
   highlight="contract"
-  caption="Every adapter — including one you write — meets the UI at the same Agent contract."
+  caption="Every backend, including one you write, meets the UI at the same agent contract."
 />
 
 ## Separate observation from commands
 
-Reading `messages()` observes the conversation. Calling `submit({ message })` asks the backend to advance it. A template can render progress many times during one turn without starting another request. Keep that distinction when building a custom composer, tool card, or approval panel.
+Reading `messages()` observes the conversation. Calling `submit('Plan a weekend in Portland.')` asks the backend to advance it. A template can render progress many times during one turn without starting another request. Keep that distinction when building a custom composer, tool card, or approval panel.
 
-This is the published Angular `Agent` contract. Native React source builds use the separate `AgentSession` and immutable snapshot contract from `@threadplane/core`; `useAgent(session)` observes it. The [conversation walkthrough](/docs/angular/langgraph/concepts/conversation-turns) shows both without treating their method signatures as interchangeable.
+Angular and React read the same `AgentSession`. In Angular, `provideAgent` owns the session and `injectAgent()` returns its snapshot fields as signals. In React, the application owns the session and `useAgent(session)` observes its immutable snapshot. The [conversation walkthrough](/docs/angular/langgraph/concepts/conversation-turns) shows both.
 
 ## The Contract Surface
 
-Import the contract from `@threadplane/chat`:
+Import the injected type from `@threadplane/angular`. `@threadplane/chat` re-exports it, with the core data types, for components that only render a conversation:
 
 ```ts
-import type { Agent } from '@threadplane/chat';
+import type { Agent } from '@threadplane/angular';
 ```
 
-An `Agent` has state signals, actions, optional runtime capabilities, and one event stream.
+`Agent` is derived from the session type. Every snapshot field becomes a read-only signal, every session command passes through with its own signature, and the agent adds the members it needs because it outlives any one session. For the core session, abbreviated:
 
 ```ts
 interface Agent {
-  messages: Signal<Message[]>;
+  // Snapshot fields, each a read-only signal
+  messages: Signal<readonly Message[]>;
   status: Signal<'idle' | 'running' | 'error'>;
-  isLoading: Signal<boolean>;
   error: Signal<AgentError | undefined>;
-  toolCalls: Signal<ToolCall[]>;
-  state: Signal<Record<string, unknown>>;
+  toolCalls: Signal<readonly ToolCall[]>;
+  state: Signal<PlainValue>;
+  interrupts: Signal<readonly AgentInterrupt[] | undefined>;
+  subagents: Signal<readonly AgentSubagent[] | undefined>;
+  plan: Signal<readonly AgentPlanStep[] | undefined>;
+  checkpoints: Signal<readonly AgentCheckpoint[] | undefined>;
+  inputBlocked: Signal<AgentInputBlock | undefined>;
 
-  submit(input: AgentSubmitInput, opts?: AgentSubmitOptions): Promise<void>;
+  // Commands
+  submit(input: AgentSubmitInput, options?: AgentSubmitOptions): Promise<CompleteOutcome>;
   stop(): Promise<void>;
-  retry(): Promise<void>;
-  regenerate(assistantMessageIndex: number): Promise<void>;
+  resume?(responses: readonly AgentInterruptResponse[]): Promise<CompleteOutcome>;
+  retry?(): Promise<CompleteOutcome>;
+  regenerate?(messageId: string): Promise<CompleteOutcome>;
+  checkStatus?(): Promise<void>;
+  onCustomEvent?(listener: (event: AgentSessionCustomEvent) => void): () => void;
 
-  interrupt?: Signal<AgentInterrupt | undefined>;
-  subagents?: Signal<Map<string, Subagent>>;
-  plan?: Signal<AgentPlan | undefined>;
-  clientTools?: ClientToolsCapability;
-
-  events$: Observable<AgentEvent>;
+  // Added by the agent
+  threadId: Signal<string | null>;
+  isThreadLoading: Signal<boolean>;
+  switchThread(threadId: string | null): void;
+  customEvents: Signal<readonly AgentSessionCustomEvent[]>;
+  lifecycle: AgentLifecycle;
 }
 ```
 
-The invariant is simple: durable UI state lives on signals. `events$` carries things that are not already derivable from those signals.
+The invariant is simple: durable UI state lives on signals. Custom events carry things that are not already derivable from those signals.
 
 ## Submit
 
-`submit()` is the only runtime-neutral way to advance the agent.
+`submit()` is the runtime-neutral way to send a user message.
 
 ```ts
-await agent.submit({ message: 'Explain this trace.' });
+await agent.submit('Explain this trace.');
 
 await agent.submit({
-  resume: { approved: true },
+  message: 'Use the new reviewer.',
   state: { reviewer: 'Ada' },
 });
 ```
 
-The input can carry a new user message, an interrupt resume payload, a state patch, or a combination. The adapter decides how that maps to the backend.
+The input is the message text, or an object with the text and optional structured `blocks` or a partial `state` that the backend merges before the run. A submission always carries a message. The promise resolves with the outcome of the response: `success`, `error`, `aborted`, `interrupted`, or `paused`.
 
-So chat UI sends user intent without learning a single backend protocol detail. LangGraph turns `resume` into a command. An AG-UI adapter calls `runAgent()`. A test mock just records the call.
+Answering a pause is a separate command. `resume()` takes one response for each pending interrupt it answers:
+
+```ts
+const interrupt = agent.interrupts()?.[0];
+if (interrupt) {
+  await agent.resume?.([
+    { interruptId: interrupt.id, status: 'resolved', value: { approved: true } },
+  ]);
+}
+```
+
+So chat UI sends user intent without learning a single backend protocol detail. The LangGraph session turns the response's `value` into a resume command. The AG-UI session runs the AG-UI client agent. A fake session just records the call.
 
 The second argument is intentionally small at the contract layer:
 
@@ -81,7 +101,7 @@ interface AgentSubmitOptions {
 }
 ```
 
-Runtime-specific adapters may accept richer options. `@threadplane/langgraph` exports `LangGraphSubmitOptions` for LangGraph run configuration such as checkpointing, durability, multitask strategy, and stream mode. Keep app-level code on the neutral shape unless it is intentionally using LangGraph-only behavior.
+A backend session may accept richer options. `@threadplane/langgraph` exports `LangGraphRunOptions`: `config`, `context`, and `metadata` sit beside `signal`, and per-run LangGraph settings such as `checkpointId`, `durability`, `multitaskStrategy`, and `streamMode` are grouped under `run`. Keep app-level code on the neutral shape unless it is intentionally using LangGraph-only behavior.
 
 ## Signals
 
@@ -90,99 +110,116 @@ Signals are the stable read model.
 | Signal | Meaning |
 |---|---|
 | `messages()` | Runtime-neutral message history. |
-| `status()` | `'idle'`, `'running'`, or `'error'`. |
-| `isLoading()` | Convenience boolean for active generation. |
-| `error()` | Classified `AgentError` (`kind`, `retryable`, `status`, `cause`, and `recovery` / `detail` on an `interrupted` error), or `undefined`. |
-| `toolCalls()` | Tool calls normalized for chat display. |
-| `state()` | Backend-defined state snapshot as a plain object. |
-| `interrupt?.()` | Current human-in-the-loop pause, if supported. |
-| `subagents?.()` | Delegated work keyed by tool-call id, if supported. |
-| `plan?.()` | The steps the agent declared for its work, each with a label and a `pending`, `in_progress` or `completed` status, if supported. |
+| `status()` | `'idle'`, `'running'`, or `'error'`. A run is active while it is `'running'`. |
+| `error()` | A plain `AgentError` (`kind`, `message`, `retryable`, and optional `status`, `recovery`, and `detail`), or `undefined`. It is frozen data, not an `Error` instance. |
+| `toolCalls()` | Tool calls with finalized arguments, each `pending`, `running`, `complete`, or `error`. |
+| `state()` | Application state the backend last reported, as frozen plain data. `undefined` until one arrives. |
+| `interrupts()` | What a paused run is waiting on. Empty or `undefined` when nothing is pending. |
+| `subagents()` | Child agents the root agent started, as a plain list in start order. |
+| `plan()` | The steps the agent declared for its work, each with a label and a `pending`, `in_progress` or `completed` status. |
+| `checkpoints()` | The saved history the session last loaded, oldest first. |
+| `inputBlocked()` | Present while the session refuses an ordinary submission, with a `reason`. |
 
-`checkStatus?()` sits alongside them as an optional action: a read-only reconciliation of an uncertain run outcome, offered when `error().recovery` is `check`. It never resubmits the request and never appends a message, and adapters expose it only when their transport can answer.
+`checkStatus?()` sits alongside them as an optional command: a read-only reconciliation of an uncertain run outcome, offered when `error().recovery` is `check`. It never resubmits the request and never appends a message, and a session exposes it only when its transport can answer.
 
-The LangGraph and AG-UI adapters fill `plan` from a `todos` list in agent state, the shape a deep-agents style to-do tool writes: `[{ content, status }]`. A custom adapter can do the same with `plan: agentPlan(state)`, which derives the signal from any state signal and changes only when a step does.
+The LangGraph session fills `plan` from a `todos` list in graph state, the shape a deep-agents style to-do tool writes: `[{ content, status }]`. A custom session can do the same with `agentPlanFromState(state)` from `@threadplane/core`.
 
-The optional signals matter. A simple echo adapter should not fake interrupts or subagents. Components that need those concepts feature-detect the signal and render a neutral fallback when it is absent.
+The optional members matter. A simple echo session should not fake interrupts or subagents. An optional field the session does not publish reads as a signal of `undefined`, and an optional command the session lacks is `undefined` on the agent. Components check for the command, as in `agent.resume?.(...)`, and render a neutral fallback when it is absent.
 
 ## Events
 
-`events$` is required, but it can be `EMPTY`.
+A run can emit application events that are not state: a LangGraph `custom` stream frame or an AG-UI `CUSTOM` event. `onCustomEvent` is optional on the contract; the agent keeps a listener registered across thread switches.
 
 ```ts
-import { EMPTY } from 'rxjs';
-import type { AgentEvent } from '@threadplane/chat';
-
-const events$ = EMPTY as Observable<AgentEvent>;
+// In a component constructor or field initializer.
+const release = agent.onCustomEvent?.((event) => {
+  console.log(event.name, event.data);
+});
+inject(DestroyRef).onDestroy(() => release?.());
 ```
 
-Current event variants are deliberately narrow:
+There are two ways to read them:
 
-| Event | Purpose |
+| Surface | Purpose |
 |---|---|
-| `state_update` | Sync state intended for render/generative UI stores. |
-| `custom` | Runtime-specific escape hatch with `name` and `data`. |
+| `onCustomEvent(listener)` | Each event as it arrives, as `{ name, data }`. A listener added later does not receive earlier events. |
+| `customEvents()` | A signal of the events the current run has emitted, oldest first. It is empty again when the next run starts and when the agent switches threads. |
 
-Do not mirror `messages`, `status`, `toolCalls`, `interrupt`, or `subagents` through `events$`. Put those on signals. Duplicating state creates ordering bugs and makes components guess which source wins.
+An event named `state_update` carries values for a generated-UI render store; `onAgentStateUpdate` from `@threadplane/core` follows only those. Do not mirror `messages`, `status`, `toolCalls`, `interrupts`, or `subagents` through custom events. Put those on signals. Duplicating state creates ordering bugs and makes components guess which source wins.
 
 ## Adapters And Transports
 
-`@threadplane/langgraph` exports `injectAgent()`, `provideAgent()`, `FetchStreamTransport`, `MockAgentTransport`, and `AgentTransport`.
-
-`injectAgent()` is the Angular adapter. Configured by `provideAgent({...})` at bootstrap (or in a child component's `providers` array for hierarchical DI), it connects to LangGraph, consumes stream events through a transport, and returns a `LangGraphAgent`. That object satisfies the neutral `Agent` contract and also exposes LangGraph-specific signals such as raw LangGraph messages, history, queue, branch state, and checkpoint helpers.
-
-`AgentTransport` is lower level. Use it when the backend is LangGraph-compatible but the transport needs to change: custom fetch behavior, tests, local fixtures, or a nonstandard gateway.
-
-`@threadplane/ag-ui` exports `toAgent()`, `provideAgent()`, `injectAgent()`, `FakeAgent`, and `provideFakeAgent()`.
-
-`toAgent()` wraps an AG-UI `AbstractAgent` into the same neutral contract. The AG-UI adapter reduces AG-UI events into chat signals, appends user messages on submit, calls `runAgent()`, and maps stop to `abortRun()`.
-
-## Lifecycle
-
-The UI lifecycle is intentionally boring — and boring is the goal.
-
-1. User input calls `submit({ message })`.
-2. Adapter marks the run active through `status()` and `isLoading()`.
-3. Runtime events update `messages()`, `toolCalls()`, `state()`, and optional signals.
-4. Chat components re-render from signals.
-5. `stop()` aborts the active run when supported, and `retry()` is available for failures the adapter permits retrying. An uncertain outcome requires reconciliation when supported, not automatic resubmission.
-6. `regenerate(index)` rolls back from an assistant message and reruns from the preceding user message.
-
-LangGraph adds deeper lifecycle and history surfaces. `@threadplane/langgraph` exposes `injectAgent().lifecycle`, provides the `AGENT_LIFECYCLE` token from every `provideAgent()` call, and ships a root-provided `AgentLifecycleRegistry` that collects the lifecycle of every live agent. Those are useful for telemetry, debugging, persistence, and time-travel UI. They are not required by `@threadplane/chat`. See [Agent lifecycle signals](/docs/angular/langgraph/guides/lifecycle).
-
-`LangGraphAgent` also narrows one optional member of the neutral contract: `interrupt` is required, because the LangGraph adapter always provides it. Code written against `LangGraphAgent` calls `agent.interrupt()` directly; code written against the neutral `Agent` still needs `interrupt?.()`.
-
-## Testing And Mocks
-
-Use the closest mock to the boundary you are testing.
-
-For chat components, use `mockAgent()` from `@threadplane/chat`. It gives writable signals and records `submit()` calls.
+`@threadplane/angular` exports `provideAgent()`, `injectAgent()`, and `createAgentRef()`. It imports no backend. The provider config supplies `createSession`, a function that builds a session for one thread:
 
 ```ts
-import { mockAgent, staticDelivery } from '@threadplane/chat';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
-const agent = mockAgent({
-  messages: [
-    { id: 'm1', role: 'assistant', content: 'Ready', delivery: staticDelivery('m1') },
-  ],
-  withInterrupt: true,
+provideAgent({
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'http://localhost:2024',
+      assistantId: 'chat',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+    }),
 });
 ```
 
-For LangGraph-specific code, use `mockLangGraphAgent()` or `MockAgentTransport` from `@threadplane/langgraph`. That lets you test queue, checkpoint, raw SDK, and transport behavior without pretending those details exist on every adapter.
+Configure it at bootstrap, or in a component's `providers` array for hierarchical DI. `injectAgent()` returns the `Agent` typed by the core contract. LangGraph also publishes its own fields and commands, such as raw LangGraph messages, checkpoint metadata, queued runs, the branch tree, and `fork`. Reach them by naming the session type, `injectAgent<LangGraphSession>()`, or through a typed ref from `createAgentRef<LangGraphSession>('chat')`.
 
-For AG-UI integration, use `FakeAgent` or `provideFakeAgent()` from `@threadplane/ag-ui`.
+`@threadplane/langgraph` exports `createSession()`, `FetchStreamTransport`, `MockAgentTransport`, `FakeStreamTransport`, and the `AgentTransport` type. `AgentTransport` is lower level. Pass one as `createSession({ transport })` when the backend is LangGraph-compatible but the transport needs to change: custom fetch behavior, tests, local fixtures, or a nonstandard gateway.
+
+`@threadplane/ag-ui` exports its own `createSession()`, which takes a `url` or an AG-UI client `agent`, and `FakeAgent`. The AG-UI session reduces AG-UI events into the same snapshot, runs the client agent on submit, and maps stop to `abortRun()`. The same `provideAgent` call hosts it.
+
+## Lifecycle
+
+The UI lifecycle is intentionally boring, and boring is the goal.
+
+1. User input calls `submit(text)`.
+2. The session marks the run active: `status()` becomes `'running'`.
+3. Runtime events update `messages()`, `toolCalls()`, `state()`, and the optional fields.
+4. Chat components re-render from signals.
+5. `stop()` stops the active run, and `retry()` is available for a failure whose `recovery` is `'retry'`. An uncertain outcome requires reconciliation when supported, not automatic resubmission.
+6. `regenerate(messageId)` answers the prompt behind one assistant message again. It takes that message's `id`.
+
+The agent also adds deeper lifecycle surfaces. `@threadplane/angular` exposes `injectAgent().lifecycle`, provides the `AGENT_LIFECYCLE` token from every `provideAgent()` call, and ships a root-provided `AgentLifecycleRegistry` that collects the lifecycle of every live agent. Those are useful for telemetry, debugging, and persistence. They are not required by `@threadplane/chat`. See [Agent lifecycle signals](/docs/angular/langgraph/guides/lifecycle).
+
+`LangGraphSession` also narrows optional members of the neutral contract: `interrupts`, `subagents`, `resume`, and `onCustomEvent` are always present, because the LangGraph session always provides them. Code written against `Agent<LangGraphSession>` calls `agent.interrupts()[0]` and `agent.resume(...)` directly; code written against the neutral `Agent` still needs `agent.interrupts()?.[0]` and `agent.resume?.(...)`.
+
+## Testing And Mocks
+
+Use the closest fake to the boundary you are testing.
+
+For chat components, use `mockAgent()` from `@threadplane/chat/testing`. It has the agent's own shape, with every snapshot field writable and every command recorded.
+
+```ts
+import { mockAgent } from '@threadplane/chat/testing';
+
+const agent = mockAgent({
+  messages: [{ id: 'm1', role: 'assistant', content: 'Ready' }],
+  interrupts: [{ id: 'approval-1', value: { kind: 'refund_approval' } }],
+});
+
+agent.status.set('running');
+```
+
+For a component that calls `injectAgent()`, use `provideFakeAgent()` from `@threadplane/angular/testing`. It provides the same `Agent` over an in-memory session, and `injectFakeAgentSession()` returns that session's controls. `createFakeAgentSession()` from `@threadplane/core/testing` is the session underneath both.
+
+For LangGraph-specific code, pass `MockAgentTransport` from `@threadplane/langgraph` as `createSession({ transport })`. A spec emits event batches and the real session projects them, so queue, checkpoint, and raw message behavior are tested without pretending those details exist on every backend.
+
+For AG-UI integration, pass `FakeAgent` from `@threadplane/ag-ui` as `createSession({ agent: new FakeAgent() })`.
 
 The contract is the seam you can test cheaply. Most component tests should not need a network, a LangGraph server, or an AG-UI runtime.
 
 ## What It Is Not
 
-The `Agent` contract is not a backend protocol. It does not define SSE frames, AG-UI event names, LangGraph thread state, or tool execution semantics.
+The agent contract is not a backend protocol. It does not define SSE frames, AG-UI event names, LangGraph thread state, or tool execution semantics.
 
 It is not a message database. Persistence belongs to the runtime or application state, then gets projected back through signals.
 
-It is not a full orchestration API. LangGraph-specific operations such as branch selection, queued runs, checkpoint history, and raw SDK messages stay on `LangGraphAgent`.
+It is not a full orchestration API. LangGraph-specific operations such as branch selection, queued runs, checkpoint forks, and raw LangGraph messages stay on `LangGraphSession`.
 
 It is not a UI renderer. Rendering belongs to `@threadplane/chat`, `@threadplane/render`, and A2UI surfaces. The agent only exposes the state and events those renderers need.
 
-Keep that boundary sharp. It makes adapters replaceable, tests smaller, and chat components more predictable.
+Keep that boundary sharp. It makes backends replaceable, tests smaller, and chat components more predictable.
