@@ -301,6 +301,13 @@ export interface SessionOptions {
    */
   readonly autoLoad?: boolean;
   /**
+   * Rebuild the tool-started child agents from the saved thread when history
+   * is loaded: their relation and status from the root's history, and their
+   * transcripts through `transport.getChildState`. Off by default: a history
+   * load then publishes no child, as no child event replays.
+   */
+  readonly restoreSubagents?: boolean;
+  /**
    * Keep each message as LangGraph sent it. `snapshot.langGraphMessages` and
    * `snapshot.messageMetadata` are then published. Off by default: the
    * records are large and most views need only the transcript.
@@ -766,6 +773,7 @@ export function createSession(
   const joinStream = transport.joinStream?.bind(transport);
   const getChildState = transport.getChildState?.bind(transport);
   const autoLoad = options.autoLoad === true;
+  const restoreSubagents = options.restoreSubagents === true;
   const rawMessages = options.rawMessages === true;
   let wire: WireMessages = new Map();
   let messageMetadata: Readonly<Record<string, LangGraphMessageMetadata>> = {};
@@ -3033,7 +3041,9 @@ export function createSession(
     toolCalls: readonly ToolCall[],
     history: readonly ThreadState[]
   ) {
-    const ids = delegationCallIds(toolCalls, subagentToolNames);
+    const ids = restoreSubagents
+      ? delegationCallIds(toolCalls, subagentToolNames)
+      : new Set<string>();
     const executions = mapChildExecutions(history, ids);
     const bindings = new Map<string, string>();
     const restored: LangGraphSubgraph[] = [];

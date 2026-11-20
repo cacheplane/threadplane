@@ -633,7 +633,8 @@ contract; all are optional and inert when omitted.
 
 ### Children restored from history
 
-No child event replays when a thread is loaded, so `load()` rebuilds the
+No child event replays when a thread is loaded, so by default a history load
+publishes no child. With `restoreSubagents: true`, `load()` rebuilds the
 tool-started children from what the saved thread records:
 
 - the root transcript's delegation calls and their tool results, which give

@@ -180,12 +180,26 @@ describe('child agents restored from history', () => {
       } as never,
     });
 
-  it('rebuilds each child with its tool call, status and transcript', async () => {
+  it('publishes no child from a history load unless asked to restore them', async () => {
     const getChildState = vi.fn<NonNullable<AgentTransport['getChildState']>>(
       async (_thread, namespace) => childState(namespace, `From ${namespace}`)
     );
     const { session } = fixture(
       {},
+      { getHistory: async () => history(), getChildState }
+    );
+    await session.load?.();
+    expect(session.getSnapshot().subgraphs).toEqual([]);
+    expect(session.getSnapshot().subagents).toEqual([]);
+    expect(getChildState).not.toHaveBeenCalled();
+  });
+
+  it('rebuilds each child with its tool call, status and transcript', async () => {
+    const getChildState = vi.fn<NonNullable<AgentTransport['getChildState']>>(
+      async (_thread, namespace) => childState(namespace, `From ${namespace}`)
+    );
+    const { session } = fixture(
+      { restoreSubagents: true },
       { getHistory: async () => history(), getChildState }
     );
     await session.load?.();
@@ -231,7 +245,7 @@ describe('child agents restored from history', () => {
       }
     );
     const { session } = fixture(
-      {},
+      { restoreSubagents: true },
       { getHistory: async () => history(), getChildState }
     );
     await session.load?.();
@@ -245,7 +259,10 @@ describe('child agents restored from history', () => {
   });
 
   it('restores status and relation without transport.getChildState', async () => {
-    const { session } = fixture({}, { getHistory: async () => history() });
+    const { session } = fixture(
+      { restoreSubagents: true },
+      { getHistory: async () => history() }
+    );
     await session.load?.();
     expect(
       session.getSnapshot().subagents.map((agent) => agent.status)
@@ -277,7 +294,7 @@ describe('child agents restored from history', () => {
       },
     ];
     const { session } = fixture(
-      {},
+      { restoreSubagents: true },
       {
         getHistory: async () => history(),
         async *stream() {
