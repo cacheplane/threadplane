@@ -67,7 +67,7 @@
     "type-tests": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node ./node_modules/typescript/bin/tsc --project libs/langgraph/tsconfig.runtime-tests.json"
+        "command": "node ./node_modules/typescript/bin/tsc --project libs/langgraph/tsconfig.runtime-tests.json && node ./node_modules/typescript/bin/tsc --project libs/langgraph/tsconfig.nonstrict.json"
       }
     },
     "runtime-quality": {

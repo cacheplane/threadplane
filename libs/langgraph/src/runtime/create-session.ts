@@ -1246,7 +1246,8 @@ export function createSession(
     if (values === undefined || stateType === undefined)
       return (published = { source: values, state: values });
     const reading = readState(stateType, values);
-    if (!reading.valid)
+    // Compared with `false` so the reading narrows without strict null checks.
+    if (reading.valid === false)
       return (published = {
         source: values,
         state: published.state,
@@ -1671,7 +1672,7 @@ export function createSession(
   }
   function detach(outcome: CompleteOutcome): Attempt | undefined {
     const attempt = owner;
-    if (!attempt) return;
+    if (!attempt) return undefined;
     owner = undefined;
     recoveryAttempt = undefined;
     replayable = undefined;
@@ -3820,7 +3821,7 @@ export function createSession(
       withdrawn?.abort();
     });
     return beginning.then(() => {
-      if (!read) return;
+      if (!read) return undefined;
       void readHistory(read);
       return read.result;
     });

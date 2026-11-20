@@ -127,9 +127,12 @@ export function captureExtras(
     | undefined
 ): CapturedExtras {
   if (options === undefined || options === null) return NO_EXTRAS;
-  const message = options.message;
-  if (message !== undefined && typeof message !== 'string')
+  const given = options.message;
+  if (given !== undefined && typeof given !== 'string')
     throw new TypeError('A message must be a string');
+  // Text or absent by now. Asked as `typeof` so it is typed without strict
+  // null checks too.
+  const message = typeof given === 'string' ? given : undefined;
   const content = captureBlocks(options.blocks) ?? message;
   const state = captureState(options.state);
   if (content === undefined && state === undefined) return NO_EXTRAS;

@@ -77,6 +77,22 @@ export function ownValueWithSharing(
   return shareOwnedValue(ownValue(value), ownValue(previous));
 }
 
+/**
+ * `ownValueWithSharing` for a field whose declared type is an interface. An
+ * interface has no index signature, so it is not written as `PlainValue`, and
+ * without strict null checks it cannot be asserted to be one either. The value
+ * passes the same ownership boundary, which rejects anything but plain data.
+ */
+function ownDeclaredWithSharing<T>(value: T, previous: T | undefined): T {
+  const next: unknown = value;
+  const prior: unknown = previous;
+  const owned: unknown = ownValueWithSharing(
+    next as PlainValue,
+    prior as PlainValue
+  );
+  return owned as T;
+}
+
 function shareOwnedValue(next: PlainValue, previous: PlainValue): PlainValue {
   if (Object.is(next, previous)) return previous;
   if (
@@ -344,10 +360,10 @@ export function ownSnapshot(
   const error = sameError(input.error, previous?.error)
     ? previous?.error
     : input.error && ownError(input.error);
-  const plan = ownValueWithSharing(
-    input.plan as PlainValue,
-    previous?.plan as PlainValue
-  ) as AgentSnapshot['plan'];
+  const plan = ownDeclaredWithSharing<AgentSnapshot['plan']>(
+    input.plan,
+    previous?.plan
+  );
   if (
     previous &&
     input.status === previous.status &&
@@ -489,10 +505,10 @@ export function ownSubgraph(
   const error = sameError(input.error, previous?.error)
     ? previous?.error
     : input.error && ownError(input.error);
-  const delegation = ownValueWithSharing(
-    input.delegation as PlainValue,
-    previous?.delegation as PlainValue
-  ) as LangGraphDelegation | undefined;
+  const delegation = ownDeclaredWithSharing<LangGraphDelegation | undefined>(
+    input.delegation,
+    previous?.delegation
+  );
   const streamingToolCalls = input.streamingToolCalls?.length
     ? (ownValueWithSharing(
         input.streamingToolCalls as unknown as PlainValue,

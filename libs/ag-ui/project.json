@@ -67,7 +67,7 @@
     "type-tests": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-tests.json && node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-conformance.json"
+        "command": "node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-tests.json && node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-conformance.json && node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.nonstrict.json"
       }
     },
     "runtime-quality": {

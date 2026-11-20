@@ -151,7 +151,8 @@ function stateReader(declaration: StateDeclaration | undefined) {
   return (source: PlainValue): StateView => {
     if (source === view.source) return view;
     const reading = readState(declaration, source);
-    if (!reading.valid)
+    // Compared with `false` so the reading narrows without strict null checks.
+    if (reading.valid === false)
       return (view = {
         source,
         state: view.state,

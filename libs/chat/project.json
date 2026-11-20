@@ -52,7 +52,7 @@
       "options": {
         "configFile": "libs/chat/vite.config.mts"
       },
-      "dependsOn": ["prepare-install"]
+      "dependsOn": ["prepare-install", "nonstrict-types"]
     },
     "test-devtools-bundle": {
       "executor": "nx:run-commands",
@@ -65,7 +65,15 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "node ./node_modules/typescript/bin/tsc --project libs/chat/tsconfig.type-tests.json --noEmit"
-      }
+      },
+      "dependsOn": ["nonstrict-types"]
+    },
+    "nonstrict-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ./node_modules/typescript/bin/tsc --project libs/chat/tsconfig.nonstrict.json"
+      },
+      "dependsOn": ["prepare-install"]
     },
     "prepare-install": {
       "executor": "nx:run-commands",
