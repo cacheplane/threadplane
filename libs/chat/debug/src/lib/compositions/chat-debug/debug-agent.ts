@@ -19,8 +19,9 @@ export interface DebugAgent {
   /** Application state the backend last reported; undefined until it reports one. */
   state: Signal<unknown>;
   /**
-   * The saved history the agent last loaded, oldest first. Undefined until a
-   * history is loaded and on backends that keep none.
+   * The saved history the agent last loaded, oldest first; the timeline lists
+   * it newest first. An empty list while the agent keeps a history and has
+   * read none yet; undefined on an agent that keeps none.
    */
   checkpoints?: Signal<readonly DebugAgentCheckpoint[] | undefined>;
 }

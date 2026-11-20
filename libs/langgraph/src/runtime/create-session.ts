@@ -277,7 +277,8 @@ export interface SessionOptions {
    * Keep each loaded checkpoint's state. `snapshot.checkpoints`,
    * `snapshot.messageCheckpoints` and `snapshot.branchTree` are then published
    * from every history page, and the page is read again after each run that
-   * ends in success or a pause. Off by default: a page's states can be large,
+   * ends in success or a pause. `snapshot.checkpoints` is an empty list until
+   * the first page is read. Off by default: a page's states can be large,
    * and a session otherwise keeps only checkpoint metadata in
    * `snapshot.history`.
    */
@@ -991,9 +992,16 @@ export function createSession(
     interrupts: [],
     subgraphs: [],
     history: undefined,
+    ...(options.historyState === true ? { checkpoints: [] } : {}),
   });
   let historyPage: LangGraphSnapshot['history'];
   const historyState = options.historyState === true;
+  /**
+   * What `snapshot.checkpoints` holds before a page is read: the session keeps
+   * checkpoint state, and has none yet. A view tells that apart from a session
+   * that keeps none, where the field is absent.
+   */
+  const noCheckpoints = publication.getSnapshot().checkpoints;
   let checkpointPage:
     | {
         /** The page as the backend sent it, newest first. */
@@ -1368,6 +1376,8 @@ export function createSession(
             messageCheckpoints: checkpointPage.messageCheckpoints,
             branchTree: checkpointPage.branchTree,
           }
+        : noCheckpoints
+        ? { checkpoints: noCheckpoints }
         : {}),
       ...(streamingToolCalls.length ? { streamingToolCalls } : {}),
       ...(catalogDeclared

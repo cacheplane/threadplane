@@ -103,8 +103,9 @@ export type AgentSnapshot<
       readonly pendingClientTools?: readonly ToolCall<TTools>[];
       /**
        * The saved history the session last loaded, oldest first, each entry
-       * with the state at that point. Absent until a history is loaded and on
-       * sessions whose backend keeps none.
+       * with the state at that point. Absent on sessions whose backend keeps
+       * none. A session that keeps one publishes it once loaded, and may
+       * publish an empty list before that.
        */
       readonly checkpoints?: readonly AgentCheckpoint[];
       /**

@@ -197,7 +197,10 @@ the snapshot shows the new one.
 
 `snapshot.history` holds only checkpoint metadata. A session created with
 `historyState: true` also keeps each loaded checkpoint's state and publishes
-three views of the page, all absent until a page has been read:
+three views of the page. `snapshot.checkpoints` is an empty list from the
+moment the session is created until a page has been read, so a view can tell a
+session that keeps checkpoint state and has none yet from one that keeps none,
+where the field is absent. The other two are absent until a page has been read:
 
 - `snapshot.checkpoints`: the page, oldest first, as the core contract lists a
   history. Each entry is the core `AgentCheckpoint`, with the checkpoint `id`,

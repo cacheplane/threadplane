@@ -63,7 +63,9 @@ describe('history with state and branches', () => {
       })
     );
     expect(session.threadId).toBeUndefined();
-    expect(session.getSnapshot().checkpoints).toBeUndefined();
+    // A session with `historyState` can report checkpoints, so it publishes an
+    // empty list until the first page is read.
+    expect(session.getSnapshot().checkpoints).toEqual([]);
 
     expect(await session.submit('Hello')).toBe('success');
     expect(createdThreads).toEqual([session.threadId]);

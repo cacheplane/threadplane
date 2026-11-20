@@ -98,7 +98,7 @@ Ready-to-use full-feature layouts:
 | `ChatPopupComponent`          | `<chat-popup>`           | Floating popup with a launcher button           |
 | `ChatSidebarComponent`        | `<chat-sidebar>`         | Sidebar-docked layout                           |
 | `ChatSidenavComponent`        | `<chat-sidenav>`         | Sidenav host with project/thread list panel     |
-| `ChatTimelineSliderComponent` | `<chat-timeline-slider>` | Time-travel slider for agent checkpoint history |
+| `ChatTimelineSliderComponent` | `<chat-timeline-slider>` | Time-travel slider for agent checkpoint history, listed newest first |
 | `ChatInterruptPanelComponent` | `<chat-interrupt-panel>` | Full interrupt-handling composition             |
 | `ChatApprovalCardComponent`   | `<chat-approval-card>`   | Approval/rejection dialog for HITL flows        |
 | `ChatToolCallCardComponent`   | `<chat-tool-call-card>`  | Rich card for a single tool call                |

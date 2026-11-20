@@ -86,6 +86,38 @@ describe('history with state', () => {
     expect(history).toHaveLength(4);
   });
 
+  it('publishes an empty list until a page is read, and nothing without the option', async () => {
+    const { session, getHistory } = fixture(true, []);
+    // Before any read: the session keeps checkpoint state and has none yet.
+    const initial = session.getSnapshot();
+    expect(initial.checkpoints).toEqual([]);
+    expect(Object.isFrozen(initial.checkpoints)).toBe(true);
+    expect('messageCheckpoints' in initial).toBe(false);
+    expect('branchTree' in initial).toBe(false);
+    expect(getHistory).not.toHaveBeenCalled();
+
+    // A publication that reads no page keeps the same empty list.
+    session.setBranch('c3');
+    expect(session.getSnapshot().branch).toBe('c3');
+    expect(session.getSnapshot().checkpoints).toBe(initial.checkpoints);
+
+    // A session that keeps no checkpoint state never has the field.
+    const plain = fixture(false).session.getSnapshot();
+    expect('checkpoints' in plain).toBe(false);
+  });
+
+  it('replaces the empty list with the page once one is read', async () => {
+    const { session } = fixture(true);
+    expect(session.getSnapshot().checkpoints).toEqual([]);
+    await session.load?.();
+    expect(session.getSnapshot().checkpoints?.map(({ id }) => id)).toEqual([
+      'c1',
+      'c2',
+      'c3',
+      'c4',
+    ]);
+  });
+
   it('keeps only metadata without the option', async () => {
     const { session, getHistory } = fixture(false);
     await session.load?.();

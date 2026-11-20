@@ -30,8 +30,10 @@ interface TabEntry {
 function hasHistory(
   agent: DebugAgent | DebugAgentWithHistory
 ): agent is DebugAgentWithHistory {
-  // The timeline needs a loaded history: `checkpoints()` is undefined until one
-  // is loaded, and always on a backend that keeps none.
+  // The timeline is offered to an agent that reports checkpoints: its
+  // `checkpoints()` is a list, empty until the first history is read. On an
+  // agent that keeps no checkpoint state it is undefined, and the tab is not
+  // shown.
   const checkpoints = (agent as DebugAgentWithHistory).checkpoints;
   return typeof checkpoints === 'function' && checkpoints() !== undefined;
 }
