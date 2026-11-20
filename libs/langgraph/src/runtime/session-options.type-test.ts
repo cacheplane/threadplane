@@ -161,3 +161,15 @@ export function assertHostOptions() {
   });
   return session;
 }
+
+export function assertAutoLoad() {
+  const session = createSession({
+    assistantId: 'agent',
+    threadId: 'thread',
+    autoLoad: true,
+  });
+  const loading: true | undefined = session.getSnapshot().loading;
+  void loading;
+  // @ts-expect-error Loading is published, not set.
+  session.getSnapshot().loading = true;
+}

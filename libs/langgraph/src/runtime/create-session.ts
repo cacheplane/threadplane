@@ -92,11 +92,15 @@ import {
   projectInterrupts,
   resumeValue,
 } from './interrupt-projection.js';
-import { ownMessage, ownValue } from './ownership.js';
+import { ownMessage, ownSubgraphs, ownValue } from './ownership.js';
 import {
   captureDelegationBinding,
   DEFAULT_SUBAGENT_TOOL_NAMES,
+  delegationCallIds,
+  mapChildExecutions,
   relateSubgraphs,
+  restoredDelegation,
+  type ChildExecution,
 } from './delegation-projection.js';
 import {
   captureStreamEvent,
@@ -270,6 +274,14 @@ export interface SessionOptions {
   readonly onOperationFailure?: (
     code: 'unauthorized' | 'network_blocked'
   ) => void;
+  /**
+   * Read the thread's history as soon as the session is created, when it has a
+   * `threadId` and the transport can read history. `snapshot.loading` is then
+   * published while any history read is in flight, and a failed automatic
+   * read is published as an error. Off by default: creating a session
+   * otherwise makes no request.
+   */
+  readonly autoLoad?: boolean;
   /** A development-install collector to keep informed. The host creates it. */
   readonly developmentRuntime?: LangGraphDevelopmentRuntime;
   /** A development tool told which published fields each event changed. */
@@ -721,6 +733,9 @@ export function createSession(
       : readHistoryPage;
   const canCheck = !!getHistory;
   const joinStream = transport.joinStream?.bind(transport);
+  const getChildState = transport.getChildState?.bind(transport);
+  const autoLoad = options.autoLoad === true;
+  let childRestore: AbortController | undefined;
   const createQueuedRun = transport.createQueuedRun?.bind(transport);
   const cancelRun = transport.cancelRun?.bind(transport);
   const queue: QueuedRun[] = [];
@@ -998,6 +1013,7 @@ export function createSession(
       history: historyPage,
       ...checkpointPage,
       ...(branchName ? { branch: branchName } : {}),
+      ...(autoLoad && loading ? { loading: true as const } : {}),
       ...(queue.length
         ? {
             queue: queue.map(({ id, message, createdAt }) => ({
@@ -1367,7 +1383,7 @@ export function createSession(
       attempt.branch.state = uncertainCheckpoint(attempt.branch.state);
     retained = retainBranch ?? (branch ? previousRetained : undefined);
     if (attempt || hadRetained) publish('idle');
-    else if (dropped.length) republish();
+    else if (dropped.length || (autoLoad && reading)) republish();
     for (const entry of dropped) entry.resolve('aborted');
     if (dropped.length) void cancelRuns(dropped);
     checking?.abort();
@@ -2868,6 +2884,7 @@ export function createSession(
         });
         const projectedValues = projectHistoryValues(previousValues, history);
         const projectedHistory = projectCheckpointHistory(historyPage, history);
+        const restoredChildren = restoreChildren(projected.toolCalls, history);
         const projectedCheckpoints =
           historyState && !capturedBranch ? checkpointViews(history) : undefined;
         // Even a plain projection can invoke getters supplied by a transport.
@@ -2888,7 +2905,10 @@ export function createSession(
         interrupts = projectedInterrupts;
         if (!capturedBranch) historyPage = projectedHistory;
         if (projectedCheckpoints) checkpointPage = projectedCheckpoints;
-        subgraphs = initialSubgraphs();
+        subgraphs = initialSubgraphs(restoredChildren.subgraphs);
+        for (const [segment, toolCallId] of restoredChildren.bindings)
+          if (!delegationBindings.has(segment))
+            delegationBindings.set(segment, toolCallId);
         authoredTools.clear();
         loading = undefined;
         read.resolve();
@@ -2901,15 +2921,132 @@ export function createSession(
           unsettledTools.size ? unsettledToolError() : undefined
         );
         closeLoad(read, false);
+        void restoreChildTranscripts(restoredChildren.executions);
       });
     } catch {
       await publication.command(() => {
         if (!ownsLoad(read)) return;
         loading = undefined;
         read.reject(createSafeRequestError());
+        if (autoLoad) {
+          writeLabel = { label: 'history' };
+          republish();
+        }
         closeLoad(read);
       });
     }
+  }
+
+  /**
+   * The child agents a saved thread records: one for each delegation call
+   * that history links to the task that ran it, and one for each such call
+   * that already has a result. A call still pending with no recorded task is
+   * left out, as it is while a run streams and no child has reported yet.
+   */
+  function restoreChildren(
+    toolCalls: readonly ToolCall[],
+    history: readonly ThreadState[]
+  ) {
+    const ids = delegationCallIds(toolCalls, subagentToolNames);
+    const executions = mapChildExecutions(history, ids);
+    const bindings = new Map<string, string>();
+    const restored: LangGraphSubgraph[] = [];
+    for (const id of ids) {
+      const execution = executions.get(id);
+      const delegation = restoredDelegation(
+        toolCalls,
+        subagentToolNames,
+        id,
+        execution
+      );
+      if (!delegation || (!execution && !delegation.status)) continue;
+      // Without a recorded task the call id stands in for the task id.
+      const segment = execution?.checkpointNs ?? `tools:${id}`;
+      if (segment.startsWith('tools:')) bindings.set(segment, id);
+      restored.push({
+        namespace: [segment],
+        messages: [],
+        toolCalls: [],
+        state: undefined,
+        interrupts: [],
+        delegation,
+      });
+    }
+    return {
+      subgraphs: ownSubgraphs(restored),
+      bindings,
+      executions: [...executions.values()],
+    };
+  }
+
+  /** Fills restored children with the transcripts their own checkpoints
+   * hold. A child that has streamed since, or is gone, is left alone, and a
+   * failed read leaves the child with its status and no messages. */
+  async function restoreChildTranscripts(
+    executions: readonly ChildExecution[]
+  ) {
+    childRestore?.abort();
+    childRestore = undefined;
+    if (!getChildState || !executions.length || threadId === undefined) return;
+    const controller = new AbortController();
+    childRestore = controller;
+    const id = threadId;
+    await Promise.all(
+      executions.map(async (execution) => {
+        try {
+          const saved = convertSavedMessages(
+            await getChildState(id, execution.checkpointNs, controller.signal),
+            toMessage
+          );
+          if (!saved || controller.signal.aborted) return;
+          // Only a checkpoint from the requested namespace is the child's.
+          const namespace = saved.checkpoint?.checkpoint_ns;
+          if (
+            typeof namespace !== 'string' ||
+            (namespace !== execution.checkpointNs &&
+              !namespace.startsWith(`${execution.checkpointNs}|`))
+          )
+            return;
+          const child = record(saved.values);
+          if (!child || !Array.isArray(child['messages'])) return;
+          const projected = projectHistory(initialMessageState(), [saved], {
+            interrupts: [],
+          });
+          const state = projectHistoryValues(undefined, [saved]);
+          await publication.command(() => {
+            if (disposed || childRestore !== controller) return;
+            const key = JSON.stringify([execution.checkpointNs]);
+            const index = subgraphs.subgraphs.findIndex(
+              (entry) => JSON.stringify(entry.namespace) === key
+            );
+            const entry = subgraphs.subgraphs[index];
+            if (
+              !entry ||
+              entry.messages.length ||
+              subgraphs.active.has(key) ||
+              !projected.messages.length
+            )
+              return;
+            const entries = [...subgraphs.subgraphs];
+            entries[index] = {
+              ...entry,
+              messages: projected.messages,
+              toolCalls: projected.toolCalls,
+              state,
+            };
+            subgraphs = {
+              subgraphs: ownSubgraphs(entries, subgraphs.subgraphs),
+              active: subgraphs.active,
+            };
+            writeLabel = { label: 'history' };
+            republish();
+          });
+        } catch {
+          /* The transcript is supplementary to a usable thread. */
+        }
+      })
+    );
+    if (childRestore === controller) childRestore = undefined;
   }
 
   function load(options?: { readonly signal?: AbortSignal }): Promise<void> {
@@ -2959,11 +3096,20 @@ export function createSession(
       };
       read = created;
       loading = created;
+      childRestore?.abort();
+      childRestore = undefined;
+      if (autoLoad) {
+        writeLabel = { label: 'history' };
+        republish();
+      }
       const external = options?.signal;
       if (external) {
         const abort = () => {
           void publication.command(() => {
-            if (ownsLoad(created)) closeLoad(detachLoad());
+            if (!ownsLoad(created)) return;
+            const reading = detachLoad();
+            if (autoLoad) republish();
+            closeLoad(reading);
           });
         };
         created.unlink = () => external.removeEventListener('abort', abort);
@@ -3202,6 +3348,31 @@ export function createSession(
     !!joinStream &&
     (!!suppliedTransport || ownedRetries === 0);
 
+  if (autoLoad && threadId !== undefined && getHistory)
+    void Promise.resolve().then(() => {
+      // Anything the application did first, or a dispose, takes precedence.
+      if (disposed || owner || loading || preparing) return;
+      load().catch(() =>
+        publication.command(() => {
+          if (
+            disposed ||
+            owner ||
+            loading ||
+            preparing ||
+            publication.getSnapshot().status !== 'idle'
+          )
+            return;
+          writeLabel = { label: 'history' };
+          publish('error', {
+            kind: 'server',
+            message: 'The conversation could not be loaded.',
+            retryable: false,
+            recovery: 'none',
+          });
+        })
+      );
+    });
+
   return {
     getSnapshot: publication.getSnapshot,
     get threadId() {
@@ -3272,6 +3443,8 @@ export function createSession(
         const dropped = queue.splice(0);
         publish('idle');
         for (const entry of dropped) entry.resolve('aborted');
+        childRestore?.abort();
+        childRestore = undefined;
         for (const throttled of throttles) throttled.cancel();
         throttles.clear();
         if (developmentRuntime) safely(() => developmentRuntime.dispose());

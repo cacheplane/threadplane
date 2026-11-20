@@ -591,6 +591,41 @@ contract; all are optional and inert when omitted.
   never sees it: no request is made and no thread is created for it, it is
   never offered a status check, and it is taken once.
 
+### Children restored from history
+
+No child event replays when a thread is loaded, so `load()` rebuilds the
+tool-started children from what the saved thread records:
+
+- the root transcript's delegation calls and their tool results, which give
+  each child its `toolCallId`, `description`, `name` and a `complete` or
+  `error` status;
+- the checkpoints' pushed tasks, which link a call to the task that ran it and
+  so to the child's `tools:<task id>` namespace. A finished task is linked by
+  the tool message in its result; a task still outstanding in the newest
+  checkpoint is linked by its send index and is `running`, or `error` when the
+  task carries one;
+- the child's own newest checkpoint under that namespace, read through the
+  optional `transport.getChildState`, which fills `messages`, `toolCalls` and
+  `state` shortly after the load resolves.
+
+A restored child keeps the namespace a continued run streams under, so
+resuming after a reload updates the same child. A call with a result but no
+recorded task is restored with its call id in place of the task id and no
+transcript. A call still pending with no recorded task is not shown, as during
+a run before its child reports. A transcript is only accepted from the
+requested namespace, never replaces messages a live stream delivered first, and
+a failed read leaves the child with its status. Plain subgraph nodes and
+nested delegations are not rebuilt: history does not link them to a tool call.
+
+## Automatic history load
+
+Creating a session makes no request. With `autoLoad: true`, a session that has
+a `threadId` and a transport that can read history calls `load()` on the next
+microtask, unless the application issued a command first. On such a session
+`snapshot.loading` is `true` while any history read is in flight, automatic or
+explicit, and absent otherwise. A failed automatic read is published as a
+`server` error with no recovery; an explicit `load()` still rejects instead.
+
 ## Thread directory
 
 `createLangGraphThreadDirectory` in `thread-directory.ts` implements the
