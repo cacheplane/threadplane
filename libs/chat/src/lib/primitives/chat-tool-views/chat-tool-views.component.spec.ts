@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { views } from '@threadplane/render';
 import type { RenderEvent } from '@threadplane/render';
 import { mockAgent, type MockAgent } from '../../testing/mock-agent';
-import type { Message, ToolCall } from '../../agent';
+import { staticDelivery, type Message } from '../../agent';
 import type { ClientToolLifecycle } from '../../client-tools/tool-def';
 import { ChatToolViewsComponent } from './chat-tool-views.component';
 
@@ -49,7 +49,7 @@ function mountHost(agent: MockAgent, message: Message | undefined) {
 
 describe('ChatToolViewsComponent', () => {
   let agent: MockAgent;
-  const msg: Message = { id: 'm1', role: 'assistant', content: '', toolCallIds: ['c1'] };
+  const msg: Message = { id: 'm1', role: 'assistant', content: '', toolCallIds: ['c1'], delivery: staticDelivery('m1') };
 
   beforeEach(() => {
     agent = mockAgent();
@@ -58,7 +58,7 @@ describe('ChatToolViewsComponent', () => {
   it('mounts the registered view for a matching tool name and passes running args + status', () => {
     agent.toolCalls.set([
       { id: 'c1', name: 'weather_card', args: { location: 'San Francisco' }, status: 'running' },
-    ] as ToolCall[]);
+    ]);
     const fixture = mountHost(agent, msg);
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('chat-test-weather-card')).toBeTruthy();
@@ -77,7 +77,7 @@ describe('ChatToolViewsComponent', () => {
         status: 'complete',
         result: { location: 'San Francisco', temperatureF: 68, conditions: 'Sunny' },
       },
-    ] as ToolCall[]);
+    ]);
     const fixture = mountHost(agent, msg);
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('.temp')?.textContent).toContain('68');
@@ -94,7 +94,7 @@ describe('ChatToolViewsComponent', () => {
         status: 'complete',
         result: '{"temperatureF": 68, "conditions": "Sunny"}',
       },
-    ] as ToolCall[]);
+    ]);
     const fixture = mountHost(agent, msg);
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('.temp')?.textContent).toContain('68');
@@ -106,8 +106,8 @@ describe('ChatToolViewsComponent', () => {
     agent.toolCalls.set([
       { id: 'c1', name: 'weather_card', args: { location: 'SF' }, status: 'complete', result: 'Human response: approved' },
       { id: 'c2', name: 'weather_card', args: { location: 'LA' }, status: 'complete', result: '[1, 2]' },
-    ] as ToolCall[]);
-    const twoCalls: Message = { id: 'm2', role: 'assistant', content: '', toolCallIds: ['c1', 'c2'] };
+    ]);
+    const twoCalls: Message = { id: 'm2', role: 'assistant', content: '', toolCallIds: ['c1', 'c2'], delivery: staticDelivery('m2') };
     const fixture = mountHost(agent, twoCalls);
     const el = fixture.nativeElement as HTMLElement;
     const temps = Array.from(el.querySelectorAll('.temp')).map((n) => n.textContent?.trim());
@@ -124,9 +124,8 @@ describe('ChatToolViewsComponent', () => {
         args: { location: 'San Francisco' },
         status: 'error',
         error: 'handler failed',
-        result: { error: 'handler failed' },
       },
-    ] as ToolCall[]);
+    ]);
     const fixture = mountHost(agent, msg);
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('.tool-phase')?.textContent).toContain('error');
@@ -134,10 +133,32 @@ describe('ChatToolViewsComponent', () => {
     expect(el.querySelector('.tool-error')?.textContent).toContain('handler failed');
   });
 
+  it('mounts the view for a call the model is still writing, as running with the arguments read so far', () => {
+    agent.streamingToolCalls.set([
+      { id: 'c1', name: 'weather_card', argsText: '{"location":"San Fr', args: { location: 'San Fr' } },
+    ]);
+    const fixture = mountHost(agent, msg);
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.loc')?.textContent).toContain('San Fr');
+    expect(el.querySelector('.st')?.textContent).toContain('running');
+    expect(el.querySelector('.tool-phase')?.textContent).toContain('running');
+    expect(el.querySelector('.tool-result')?.textContent).toContain('false');
+
+    // The finished call replaces the streaming one under the same id.
+    agent.streamingToolCalls.set([]);
+    agent.toolCalls.set([
+      { id: 'c1', name: 'weather_card', args: { location: 'San Francisco' }, status: 'complete', result: { temperatureF: 68 } },
+    ]);
+    fixture.detectChanges();
+    expect(el.querySelectorAll('chat-test-weather-card')).toHaveLength(1);
+    expect(el.querySelector('.loc')?.textContent).toContain('San Francisco');
+    expect(el.querySelector('.temp')?.textContent).toContain('68');
+  });
+
   it('renders nothing for an unregistered tool name', () => {
     agent.toolCalls.set([
       { id: 'c1', name: 'lookup_flight', args: { flight: 'UA1' }, status: 'complete', result: {} },
-    ] as ToolCall[]);
+    ]);
     const fixture = mountHost(agent, msg);
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('chat-test-weather-card')).toBeNull();
@@ -146,7 +167,7 @@ describe('ChatToolViewsComponent', () => {
   it('renders nothing when views is undefined', () => {
     agent.toolCalls.set([
       { id: 'c1', name: 'weather_card', args: {}, status: 'running' },
-    ] as ToolCall[]);
+    ]);
 
     @Component({
       standalone: true,
@@ -165,7 +186,7 @@ describe('ChatToolViewsComponent', () => {
   it('forwards RenderResultEvent emitted by inner chat-generative-ui via the events output', () => {
     agent.toolCalls.set([
       { id: 'c1', name: 'weather_card', args: { location: 'LA' }, status: 'running' },
-    ] as ToolCall[]);
+    ]);
 
     const emitted: RenderEvent[] = [];
 

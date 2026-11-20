@@ -9,7 +9,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import type { AgentPlanStep } from '../../agent/agent-plan';
+import type { AgentPlanStep } from '../../agent';
 import { CitationsResolverService } from '../../markdown/citations-resolver.service';
 import {
   ChatStatusPanelComponent,

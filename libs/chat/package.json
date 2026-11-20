@@ -24,6 +24,8 @@
     "@angular/common": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@angular/platform-browser": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@angular/router": "^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@threadplane/angular": "0.0.0",
+    "@threadplane/core": "0.0.0",
     "@threadplane/render": "0.3.7",
     "@threadplane/a2ui": "0.3.7",
     "@json-render/core": "^0.16.0",

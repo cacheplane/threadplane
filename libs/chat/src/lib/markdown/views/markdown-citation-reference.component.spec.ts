@@ -2,6 +2,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { CitationsResolverService } from '../citations-resolver.service';
+import { staticDelivery } from '../../agent';
 import { MarkdownCitationReferenceComponent } from './markdown-citation-reference.component';
 import type { MarkdownCitationReferenceNode } from '@cacheplane/partial-markdown';
 
@@ -37,7 +38,7 @@ describe('MarkdownCitationReferenceComponent', () => {
     const fixture = TestBed.createComponent(HostComponent);
     const svc = fixture.debugElement.injector.get(CitationsResolverService);
     svc.message.set({
-      id: 'm1', role: 'assistant', content: 'x',
+      id: 'm1', role: 'assistant', content: 'x', delivery: staticDelivery('m1'),
       citations: [{ id: 'src1', index: 1, title: 'Source', url: 'https://example.com' }],
     });
     fixture.componentInstance.node.set(makeNode('src1', 1, true));
@@ -54,7 +55,7 @@ describe('MarkdownCitationReferenceComponent', () => {
     const fixture = TestBed.createComponent(HostComponent);
     const svc = fixture.debugElement.injector.get(CitationsResolverService);
     svc.message.set({
-      id: 'm1', role: 'assistant', content: 'x',
+      id: 'm1', role: 'assistant', content: 'x', delivery: staticDelivery('m1'),
       citations: [{ id: 'src1', index: 1, title: 'Title only, no URL' }],
     });
     fixture.componentInstance.node.set(makeNode('src1', 1, true));
@@ -71,7 +72,7 @@ describe('MarkdownCitationReferenceComponent', () => {
     const fixture = TestBed.createComponent(HostComponent);
     const svc = fixture.debugElement.injector.get(CitationsResolverService);
     svc.message.set({
-      id: 'm1', role: 'assistant', content: 'x',
+      id: 'm1', role: 'assistant', content: 'x', delivery: staticDelivery('m1'),
       citations: [{ id: 'src1', index: 1, title: 'Title only, no URL' }],
     });
     fixture.componentInstance.node.set(makeNode('src1', 1, true));

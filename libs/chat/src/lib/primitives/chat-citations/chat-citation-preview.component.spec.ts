@@ -2,7 +2,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ChatCitationPreviewComponent } from './chat-citation-preview.component';
-import type { Citation } from '../../agent/citation';
+import type { Citation } from '../../agent';
 
 @Component({
   standalone: true,

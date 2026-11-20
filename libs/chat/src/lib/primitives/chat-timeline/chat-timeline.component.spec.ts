@@ -1,24 +1,60 @@
 import { describe, it, expect } from 'vitest';
-import { signal, computed } from '@angular/core';
+import { Component, viewChild } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { ChatTimelineComponent } from './chat-timeline.component';
 import { mockAgent } from '../../testing/mock-agent';
 import type { AgentCheckpoint } from '../../agent';
 
+@Component({
+  standalone: true,
+  imports: [ChatTimelineComponent],
+  template: `
+    <chat-timeline [agent]="agent" (checkpointSelected)="selected = $event">
+      <ng-template let-cp let-i="index"><span class="cp">{{ i }}:{{ cp.label }}</span></ng-template>
+    </chat-timeline>
+  `,
+})
+class Host {
+  agent = mockAgent();
+  selected: AgentCheckpoint | undefined;
+  readonly timeline = viewChild.required(ChatTimelineComponent);
+}
+
 describe('ChatTimelineComponent', () => {
+  const rendered = (el: HTMLElement) => Array.from(el.querySelectorAll('.cp')).map((n) => n.textContent).join('');
+
   it('renders a template for each checkpoint', () => {
     const checkpoints: AgentCheckpoint[] = [
       { id: 'a', label: 'nodeA', values: {} },
       { id: 'b', label: 'nodeB', values: {} },
     ];
-    const agent = mockAgent({ history: checkpoints });
+    const fixture = TestBed.createComponent(Host);
+    fixture.componentInstance.agent = mockAgent({ checkpoints });
+    fixture.detectChanges();
 
-    // Mirrors the computed inside ChatTimelineComponent:
-    // history = computed<AgentCheckpoint[]>(() => this.agent().history())
-    const agentSig = signal(agent as any);
-    const history = computed<AgentCheckpoint[]>(() => agentSig().history());
+    expect(fixture.componentInstance.timeline().history()).toHaveLength(2);
+    expect(rendered(fixture.nativeElement)).toBe('0:nodeA1:nodeB');
+  });
 
-    expect(history()).toHaveLength(2);
-    // Simulate what the @for template renders: index:label
-    const rendered = history().map((cp, i) => `${i}:${cp.label}`).join('');
-    expect(rendered).toBe('0:nodeA1:nodeB');
+  it('renders nothing while no history is loaded, then follows checkpoints()', () => {
+    const fixture = TestBed.createComponent(Host);
+    const agent = fixture.componentInstance.agent;
+    fixture.detectChanges();
+    expect(agent.checkpoints()).toBeUndefined();
+    expect(fixture.componentInstance.timeline().history()).toEqual([]);
+    expect(rendered(fixture.nativeElement)).toBe('');
+
+    agent.checkpoints.set([{ id: 'a', label: 'nodeA', values: { step: 1 } }]);
+    fixture.detectChanges();
+    expect(rendered(fixture.nativeElement)).toBe('0:nodeA');
+  });
+
+  it('emits the checkpoint passed to selectCheckpoint()', () => {
+    const fixture = TestBed.createComponent(Host);
+    fixture.componentInstance.agent = mockAgent({ checkpoints: [{ id: 'a', label: 'nodeA', values: { step: 1 } }] });
+    fixture.detectChanges();
+    const cp = fixture.componentInstance.agent.checkpoints()![0];
+    fixture.componentInstance.timeline().selectCheckpoint(cp);
+    expect(fixture.componentInstance.selected).toBe(cp);
   });
 });

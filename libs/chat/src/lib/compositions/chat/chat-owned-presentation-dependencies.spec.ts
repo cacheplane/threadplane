@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 import { ChatComponent } from './chat.component';
 import { ChatGenerativeUiComponent } from '../../primitives/chat-generative-ui/chat-generative-ui.component';
 import type { ContentClassifier } from '../../streaming/content-classifier';
-import { mockAgent } from '../../testing/mock-agent';
+import { rawMessagesAgent } from '../../../testing/raw-messages-agent';
 import { staticDelivery, streamingDelivery, type Message } from '../../agent';
 
 type GraphNode = { producerNode?: unknown[]; producers?: Link; producersTail?: Link };
@@ -41,7 +41,7 @@ describe('Chat owned presentation reactive dependency bounds', () => {
         ...Array.from({ length: history }, (_, index): Message => ({ id: `history-${index}`, role: 'assistant', content: `Answer **${index}**`, delivery: staticDelivery(`history-${index}`) })),
         { id: 'tail', role: 'assistant', content: 'Tail', delivery: streamingDelivery('tail') },
       ];
-      const agent = mockAgent({ messages, isLoading: true });
+      const agent = rawMessagesAgent({ messages, status: 'running' });
       const fixture = TestBed.createComponent(ChatComponent);
       const instance = fixture.componentInstance as unknown as ObservedChat;
       const original = instance.ownedMarkdownBodyFor;
@@ -81,7 +81,7 @@ describe('Chat owned presentation reactive dependency bounds', () => {
 
   it('keeps actual classifier metadata updates scheduled without a message or config change', async () => {
     const message: Message = { id: 'answer', role: 'assistant', content: 'Initial prose', delivery: streamingDelivery('answer') };
-    const agent = mockAgent({ messages: [message] });
+    const agent = rawMessagesAgent({ messages: [message] });
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);
     fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
@@ -99,7 +99,7 @@ describe('Chat owned presentation reactive dependency bounds', () => {
     fixture.destroy();
   });
   it('rebinds the metadata bridge to a replacement generation and stops observing the old classifier', async () => {
-    const agent = mockAgent({ messages: [{ id: 'answer', role: 'assistant', content: 'First', delivery: streamingDelivery('first') }] });
+    const agent = rawMessagesAgent({ messages: [{ id: 'answer', role: 'assistant', content: 'First', delivery: streamingDelivery('first') }] });
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);
     fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
@@ -131,7 +131,7 @@ describe('Chat owned presentation bridge lifetime', () => {
   beforeEach(() => TestBed.configureTestingModule({ imports: [ChatComponent] }));
   afterEach(() => vi.restoreAllMocks());
   it.each(['remove', 'clear', 'agent-switch', 'destroy'] as const)('releases the real row effect on %s', async action => {
-    const agent = mockAgent({ messages: [{ id: 'answer', role: 'assistant', content: 'Answer', delivery: streamingDelivery('answer') }] });
+    const agent = rawMessagesAgent({ messages: [{ id: 'answer', role: 'assistant', content: 'Answer', delivery: streamingDelivery('answer') }] });
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);
     fixture.detectChanges(); await fixture.whenStable(); fixture.detectChanges();
@@ -147,7 +147,7 @@ describe('Chat owned presentation bridge lifetime', () => {
     } else if (action === 'clear') {
       observed.clearClassifiers();
     } else if (action === 'agent-switch') {
-      fixture.componentRef.setInput('agent', mockAgent({ messages: [] }));
+      fixture.componentRef.setInput('agent', rawMessagesAgent({ messages: [] }));
       fixture.detectChanges(); await fixture.whenStable();
     } else fixture.destroy();
     expect(destroy).toHaveBeenCalledTimes(1);

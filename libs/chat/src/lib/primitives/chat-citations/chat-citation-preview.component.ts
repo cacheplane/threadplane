@@ -1,6 +1,6 @@
 // libs/chat/src/lib/primitives/chat-citations/chat-citation-preview.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import type { Citation } from '../../agent/citation';
+import type { Citation } from '../../agent';
 import {
   citationSourceVisual, citationTypeMeta, deriveDomain, formatPublished,
 } from '../../agent/citation-display';

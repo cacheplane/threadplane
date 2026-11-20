@@ -24,7 +24,7 @@ export function extractErrorMessage(error: unknown): string | null {
   return String(error);
 }
 
-/** Displays the agent error and offers retry or status recovery actions when supported. */
+/** Displays the agent error and offers Retry or Check status when the error allows it and the agent has the command. */
 @Component({
   selector: 'chat-error',
   standalone: true,
@@ -43,10 +43,10 @@ export function extractErrorMessage(error: unknown): string | null {
              to a third row and the two actions would sit differently. -->
         @if (err.recovery === 'check') {
           @if (agent().checkStatus) {
-            <button type="button" class="chat-error__check" (click)="agent().checkStatus!()">Check status</button>
+            <button type="button" class="chat-error__check" (click)="checkStatus()">Check status</button>
           }
-        } @else if (err.retryable && !retryHidden()) {
-          <button type="button" class="chat-error__retry" (click)="agent().retry()">Retry response</button>
+        } @else if (err.retryable && !retryHidden() && agent().retry) {
+          <button type="button" class="chat-error__retry" (click)="retry()">Retry response</button>
         }
         @if (err.detail) {
           <span class="chat-error__detail">{{ err.detail }}</span>
@@ -59,4 +59,15 @@ export class ChatErrorComponent {
   readonly agent = input.required<Agent>();
   /** Hide the generic Retry, which re-sends the whole request, when a narrower retry is already offered elsewhere. */
   readonly retryHidden = input(false);
+
+  // `retry` and `checkStatus` are optional commands: each control is offered
+  // only while the agent has the command. A rejection is already published as
+  // the agent's error, so it is not left unhandled here.
+  protected retry(): void {
+    this.agent().retry?.().catch(() => undefined);
+  }
+
+  protected checkStatus(): void {
+    this.agent().checkStatus?.().catch(() => undefined);
+  }
 }

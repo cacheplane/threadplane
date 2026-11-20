@@ -5234,39 +5234,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#AGENT_ERROR_MESSAGES",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AGENT_RECOVERY_DETAILS",
-      "taskIds": [
-        "T03",
-        "T21",
-        "T23",
-        "T35"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "reason": "Public v0.2.0 recovery contract; preserve safe retry/check/none behavior and user-facing error details across framework bindings."
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AGENT_RECOVERY_MESSAGES",
-      "taskIds": [
-        "T03",
-        "T21",
-        "T23",
-        "T35"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "reason": "Public v0.2.0 recovery contract; preserve safe retry/check/none behavior and user-facing error details across framework bindings."
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#Agent",
       "taskIds": [
         "T03",
@@ -5293,16 +5260,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#AgentCustomEvent",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Both framework-neutral runtime sessions expose custom events through the optional core AgentSession.onCustomEvent listener as owned plain { name, data } payloads, read the way the Angular adapters read them. A React state_update variant and the a2ui-partial bridge remain open."
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#AgentError",
       "taskIds": [
         "T03",
@@ -5325,16 +5282,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#AgentEvent",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Both framework-neutral runtime sessions expose custom events through the optional core AgentSession.onCustomEvent listener as owned plain { name, data } payloads, read the way the Angular adapters read them. A React state_update variant and the a2ui-partial bridge remain open."
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#AgentInterrupt",
       "taskIds": [
         "T28"
@@ -5355,60 +5302,6 @@
       "reason": "Public v0.2.0 recovery contract; preserve safe retry/check/none behavior and user-facing error details across framework bindings."
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#AgentRef",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentRuntimeTelemetryEvent",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentRuntimeTelemetryPayload",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentRuntimeTelemetryProperties",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentRuntimeTelemetrySink",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentStateUpdateEvent",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#AgentStatus",
       "taskIds": [
         "T03",
@@ -5427,25 +5320,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#AgentPlan",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#AgentPlanStep",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#agentPlan",
       "taskIds": [
         "T03",
         "T04"
@@ -5485,14 +5360,6 @@
       "taskIds": [
         "T03",
         "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentWithHistory",
-      "taskIds": [
-        "T29"
       ],
       "treatment": "shared",
       "status": "planned"
@@ -6325,14 +6192,6 @@
       "reason": "Retain tool declaration/coordination capability without a schema DSL, automatic argument validation/transformation or JSON Schema derivation. Optional JSON Schema metadata is caller-supplied; current Angular behavior is unchanged and future view/ask presentation remains deferred."
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#ClientToolsCapability",
-      "taskIds": [
-        "T15"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#ClientToolsCoordinator",
       "taskIds": [
         "T16"
@@ -6859,14 +6718,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#SelectPendingClientToolCallsInput",
-      "taskIds": [
-        "T15"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#StandardSchemaInferInput",
       "taskIds": [
         "T07",
@@ -6910,22 +6761,6 @@
         "T26"
       ],
       "treatment": "react",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#Subagent",
-      "taskIds": [
-        "T28"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#SubagentStatus",
-      "taskIds": [
-        "T28"
-      ],
-      "treatment": "shared",
       "status": "planned"
     },
     {
@@ -7147,15 +6982,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#createAgentRef",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#createContentClassifier",
       "taskIds": [
         "T19"
@@ -7302,15 +7128,6 @@
       "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#isAbortError",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#isAssistantMessage",
       "taskIds": [
         "T03",
@@ -7447,14 +7264,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#selectPendingClientToolCalls",
-      "taskIds": [
-        "T15"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#shouldClaimBeforeExecute",
       "taskIds": [
         "T15"
@@ -7502,15 +7311,6 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#toAgentError",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
       "status": "planned"
     },
     {
@@ -7696,25 +7496,7 @@
       "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
     },
     {
-      "id": "export:libs/chat/testing/public-api.ts#AbstractEvent",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/testing/public-api.ts#FakeAgentConfig",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/testing/public-api.ts#INTERRUPT_CONFORMANCE_BATCH",
       "taskIds": [
         "T05",
         "T31"
@@ -7733,42 +7515,6 @@
     },
     {
       "id": "export:libs/chat/testing/public-api.ts#InterruptConformanceRequest",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/testing/public-api.ts#REASONING_FIXTURE_EVENTS",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/testing/public-api.ts#REASONING_FIXTURE_MESSAGE_ID",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/testing/public-api.ts#REASONING_FIXTURE_REASONING",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/testing/public-api.ts#REASONING_FIXTURE_RESPONSE",
       "taskIds": [
         "T05",
         "T31"
@@ -10126,103 +9872,6 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/chat/src/lib/agent/agent-checkpoint.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-error.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-event.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-interrupt.ts",
-      "taskIds": [
-        "T28"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-ref.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-status.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-submit.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-with-history.ts",
-      "taskIds": [
-        "T29"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-plan.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-usage.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "source:libs/chat/src/lib/agent/citation-display.ts",
       "taskIds": [
         "T18",
@@ -10234,34 +9883,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "source:libs/chat/src/lib/agent/citation.ts",
-      "taskIds": [
-        "T18",
-        "T26"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/content-block.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "source:libs/chat/src/lib/agent/index.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/message-delivery.ts",
       "taskIds": [
         "T03",
         "T04"
@@ -10274,40 +9896,6 @@
       "taskIds": [
         "T03",
         "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/runtime-telemetry.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/subagent.ts",
-      "taskIds": [
-        "T28"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/to-agent-error.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/tool-call.ts",
-      "taskIds": [
-        "T28"
       ],
       "treatment": "shared",
       "status": "planned"
@@ -10373,14 +9961,6 @@
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/index.ts",
-      "taskIds": [
-        "T15"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
       "taskIds": [
         "T15"
       ],
@@ -11548,52 +11128,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/chat/testing/agent-conformance.ts",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/testing/agent-with-history-conformance.ts",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/testing/fake-agent-config.ts",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/testing/interrupt-conformance.ts",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "source:libs/chat/testing/public-api.ts",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/testing/reasoning-fixture.ts",
       "taskIds": [
         "T05",
         "T31"
@@ -20434,6 +19969,440 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "RenderPendingFallback: the default readiness placeholder for every registered component, mirroring Angular defineAngularRegistry's DefaultFallbackComponent."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentErrorDiagnostic",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentInputBlock",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentInterruptResponse",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentSessionCustomEvent",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentSubagent",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentSubagentStatus",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#MockAgentField",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#MockAgentLifecycle",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#PlainValue",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#StreamingToolCall",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#agentToolCalls",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Readers over the injected Agent signals for Angular components and templates: the merged list of finished and still-streaming tool calls, and a call result or error across the core union. React reads the snapshot directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#contentBlocksText",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#stopAgent",
+      "taskIds": [
+        "T16"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Stops an injected Agent together with the client tools the Angular executor is running for it, without changing the agent; replaces the executor wrapping agent.stop. In React the session owns client tool execution and its stop.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#toolCallError",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Readers over the injected Agent signals for Angular components and templates: the merged list of finished and still-streaming tool calls, and a call result or error across the core union. React reads the snapshot directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#toolCallResult",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Readers over the injected Agent signals for Angular components and templates: the merged list of finished and still-streaming tool calls, and a call result or error across the core union. React reads the snapshot directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeAgentSession",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeAgentSessionInit",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeAgentSnapshotPatch",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeAssistantStream",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeCommand",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeMessageInput",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeSubagentInput",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#HistoryConformanceFactory",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#InterruptConformanceOptions",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#MockAgent",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#MockAgentField",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#MockAgentLifecycle",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#MockAgentOptions",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#ReasoningFixture",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#ReasoningFixtureEvent",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#createFakeAgentSession",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#historyConformanceCheckpoints",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#injectFakeAgentSession",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Re-export of the Angular fake-agent provider from @threadplane/angular for tests that go through injectAgent(); React has no provider.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#interruptConformanceBatch",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#mockAgent",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#provideFakeAgent",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Re-export of the Angular fake-agent provider from @threadplane/angular for tests that go through injectAgent(); React has no provider.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#reasoningFixture",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "source:libs/chat/src/lib/agent/angular-agent.ts",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "The one module where the chat library names @threadplane/angular for the Agent type; Angular dependency injection has no React counterpart.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "source:libs/chat/src/lib/agent/read-agent.ts",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Readers over the injected Agent signals for Angular components and templates: the merged list of finished and still-streaming tool calls, and a call result or error across the core union. React reads the snapshot directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "source:libs/chat/src/lib/client-tools/stop-agent.ts",
+      "taskIds": [
+        "T16"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Stops an injected Agent together with the client tools the Angular executor is running for it, without changing the agent; replaces the executor wrapping agent.stop. In React the session owns client tool execution and its stop.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "source:libs/chat/src/testing/raw-messages-agent.ts",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Spec support only, not exported: a mock agent whose messages are neither copied nor frozen, for the specs that measure how the chat composition treats message object identity."
+    },
+    {
+      "id": "source:libs/chat/testing/conformance.ts",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "The core session conformance suites bound to Vitest under the names Angular test authors used (runAgentConformance, runAgentWithHistoryConformance, runInterruptConformance). The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
     }
   ]
 }

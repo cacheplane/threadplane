@@ -189,16 +189,16 @@ export class TimelineInspectorComponent {
   readonly selectedIndex = signal<number>(-1);
 
   readonly checkpoints = computed((): DebugCheckpoint[] =>
-    this.agent().history().map((cp, i) => toDebugCheckpoint(cp, i)),
+    (this.agent().checkpoints() ?? []).map((cp, i) => toDebugCheckpoint(cp, i)),
   );
 
   currentStateAt(i: number): Record<string, unknown> {
-    return extractStateValues(this.agent().history()[i]);
+    return extractStateValues(this.agent().checkpoints()?.[i]);
   }
 
   previousStateAt(i: number): Record<string, unknown> {
     if (i <= 0) return {};
-    return extractStateValues(this.agent().history()[i - 1]);
+    return extractStateValues(this.agent().checkpoints()?.[i - 1]);
   }
 
   @HostListener('keydown', ['$event'])

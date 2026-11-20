@@ -1,9 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ChatApprovalCardComponent } from './chat-approval-card.component';
 import { mockAgent } from '../../testing/mock-agent';
-import type { AgentInterrupt } from '../../agent/agent-interrupt';
+import type { AgentInterrupt } from '../../agent';
 import { staticDelivery } from '../../agent';
 import { CHAT_APPROVAL_RECORDS, ChatApprovalRecords } from './approval-records';
 
@@ -26,7 +27,7 @@ import { CHAT_APPROVAL_RECORDS, ChatApprovalRecords } from './approval-records';
   `,
 })
 class HostComponent {
-  agent = mockAgent({ withInterrupt: true });
+  agent = mockAgent();
   matchKind: string | undefined = undefined;
   showEdit = false;
   lastAction: string | undefined = undefined;
@@ -59,7 +60,7 @@ describe('ChatApprovalCardComponent', () => {
       value: { kind: 'refund_approval', amount: 47.5, customer_id: 'cus_a8x2k' },
       resumable: true,
     };
-    host.agent.interrupt!.set(interrupt);
+    host.agent.interrupts.set([interrupt]);
     fixture.detectChanges();
 
     const amount = fixture.nativeElement.querySelector('.amount')?.textContent?.trim();
@@ -70,32 +71,72 @@ describe('ChatApprovalCardComponent', () => {
 
   it('renders body when matchKind matches the interrupt kind', () => {
     host.matchKind = 'refund_approval';
-    host.agent.interrupt!.set({
+    host.agent.interrupts.set([{
       id: 'int-1',
       value: { kind: 'refund_approval', amount: 47.5, customer_id: 'cus_a' },
       resumable: true,
-    });
+    }]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.amount')?.textContent?.trim()).toBe('47.5');
   });
 
   it('renders nothing when matchKind does not match', () => {
     host.matchKind = 'refund_approval';
-    host.agent.interrupt!.set({
+    host.agent.interrupts.set([{
       id: 'int-2',
       value: { kind: 'delete_approval', target: 'user_42' },
       resumable: true,
-    });
+    }]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.amount')).toBeNull();
   });
 
+  it('with matchKind, answers the first pending interrupt of that kind among several', () => {
+    host.matchKind = 'refund_approval';
+    host.agent.interrupts.set([
+      { id: 'int-delete', value: { kind: 'delete_approval', target: 'user_42' } },
+      { id: 'int-refund-1', value: { kind: 'refund_approval', amount: 12, customer_id: 'cus_a' } },
+      { id: 'int-refund-2', value: { kind: 'refund_approval', amount: 99, customer_id: 'cus_b' } },
+    ]);
+    fixture.detectChanges();
+    const card = fixture.debugElement.query(By.directive(ChatApprovalCardComponent))
+      .componentInstance as ChatApprovalCardComponent;
+    // The host needs the id to answer it through agent.resume(...).
+    expect(card.interrupt()?.id).toBe('int-refund-1');
+    expect(card.interrupt()).toBe(host.agent.interrupts()?.[1]);
+    expect(fixture.nativeElement.querySelector('.amount')?.textContent?.trim()).toBe('12');
+    expect(fixture.nativeElement.querySelector('.customer')?.textContent?.trim()).toBe('cus_a');
+
+    // Once that one is answered, the next of the kind takes its place.
+    host.agent.interrupts.update((pending) => (pending ?? []).filter((entry) => entry.id !== 'int-refund-1'));
+    fixture.detectChanges();
+    expect(card.interrupt()?.id).toBe('int-refund-2');
+    expect(fixture.nativeElement.querySelector('.amount')?.textContent?.trim()).toBe('99');
+
+    host.agent.interrupts.update((pending) => (pending ?? []).filter((entry) => entry.id !== 'int-refund-2'));
+    fixture.detectChanges();
+    expect(card.interrupt()).toBeUndefined();
+    expect(fixture.nativeElement.querySelector('.amount')).toBeNull();
+  });
+
+  it('without matchKind, answers the first pending interrupt', () => {
+    host.agent.interrupts.set([
+      { id: 'int-a', value: { kind: 'refund_approval', amount: 1, customer_id: 'cus_a' } },
+      { id: 'int-b', value: { kind: 'refund_approval', amount: 2, customer_id: 'cus_b' } },
+    ]);
+    fixture.detectChanges();
+    const card = fixture.debugElement.query(By.directive(ChatApprovalCardComponent))
+      .componentInstance as ChatApprovalCardComponent;
+    expect(card.interrupt()?.id).toBe('int-a');
+    expect(fixture.nativeElement.querySelector('.amount')?.textContent?.trim()).toBe('1');
+  });
+
   it('emits "approve" when the Approve button is clicked', () => {
-    host.agent.interrupt!.set({
+    host.agent.interrupts.set([{
       id: 'int-3',
       value: { kind: 'refund_approval', amount: 10, customer_id: 'cus_a' },
       resumable: true,
-    });
+    }]);
     fixture.detectChanges();
     const approve = fixture.nativeElement.querySelector('.btn-primary') as HTMLButtonElement;
     approve.click();
@@ -103,11 +144,11 @@ describe('ChatApprovalCardComponent', () => {
   });
 
   it('emits "cancel" when the Cancel button is clicked', () => {
-    host.agent.interrupt!.set({
+    host.agent.interrupts.set([{
       id: 'int-4',
       value: { kind: 'refund_approval', amount: 10, customer_id: 'cus_a' },
       resumable: true,
-    });
+    }]);
     fixture.detectChanges();
     const cancel = fixture.nativeElement.querySelector('.btn-text') as HTMLButtonElement;
     cancel.click();
@@ -116,11 +157,11 @@ describe('ChatApprovalCardComponent', () => {
 
   it('hides the Edit button when showEdit is false', () => {
     host.showEdit = false;
-    host.agent.interrupt!.set({
+    host.agent.interrupts.set([{
       id: 'int-5',
       value: { kind: 'refund_approval', amount: 10, customer_id: 'cus_a' },
       resumable: true,
-    });
+    }]);
     fixture.detectChanges();
     const editButtons = fixture.nativeElement.querySelectorAll('button.btn-secondary');
     expect(editButtons.length).toBe(0);
@@ -128,11 +169,11 @@ describe('ChatApprovalCardComponent', () => {
 
   it('shows the Edit button and emits "edit" when showEdit is true', () => {
     host.showEdit = true;
-    host.agent.interrupt!.set({
+    host.agent.interrupts.set([{
       id: 'int-6',
       value: { kind: 'refund_approval', amount: 10, customer_id: 'cus_a' },
       resumable: true,
-    });
+    }]);
     fixture.detectChanges();
     const edit = fixture.nativeElement.querySelector('.btn-secondary') as HTMLButtonElement;
     expect(edit).not.toBeNull();
@@ -142,11 +183,11 @@ describe('ChatApprovalCardComponent', () => {
 
   it('keeps the dialog open after Edit (non-terminal), closes after Approve', () => {
     host.showEdit = true;
-    host.agent.interrupt!.set({
+    host.agent.interrupts.set([{
       id: 'int-edit-open',
       value: { kind: 'refund_approval', amount: 10, customer_id: 'cus_a' },
       resumable: true,
-    });
+    }]);
     fixture.detectChanges();
     const dialog = fixture.nativeElement.querySelector('dialog.chat-approval-card') as HTMLDialogElement;
     expect(dialog.open).toBe(true);
@@ -167,25 +208,25 @@ describe('ChatApprovalCardComponent', () => {
     const dialog = fixture.nativeElement.querySelector('dialog.chat-approval-card') as HTMLDialogElement;
     expect(dialog.open).toBe(false);
 
-    host.agent.interrupt!.set({
+    host.agent.interrupts.set([{
       id: 'int-open',
       value: { kind: 'refund_approval', amount: 1, customer_id: 'cus_a' },
       resumable: true,
-    });
+    }]);
     fixture.detectChanges();
     expect(dialog.open).toBe(true);
 
-    host.agent.interrupt!.set(undefined);
+    host.agent.interrupts.set([]);
     fixture.detectChanges();
     expect(dialog.open).toBe(false);
   });
 
   it('emits "cancel" when the native dialog cancel event fires (Escape)', () => {
-    host.agent.interrupt!.set({
+    host.agent.interrupts.set([{
       id: 'int-esc',
       value: { kind: 'refund_approval', amount: 1, customer_id: 'cus_a' },
       resumable: true,
-    });
+    }]);
     fixture.detectChanges();
     const dialog = fixture.nativeElement.querySelector('dialog.chat-approval-card') as HTMLDialogElement;
     // Native dialog dispatches 'cancel' on Escape. Simulate it directly.
@@ -214,7 +255,7 @@ describe('ChatApprovalCardComponent', () => {
   `,
 })
 class InlineHost {
-  agent = mockAgent({ withInterrupt: true });
+  agent = mockAgent();
   destructive = false;
   lastAction: string | undefined = undefined;
 }
@@ -224,7 +265,7 @@ describe('ChatApprovalCardComponent — inline', () => {
     const fixture = TestBed.createComponent(InlineHost);
     fixture.componentInstance.destructive = destructive;
     document.body.appendChild(fixture.nativeElement);
-    fixture.componentInstance.agent.interrupt!.set({ id: 'i1', value: { folder: 'Comparisons' }, resumable: true });
+    fixture.componentInstance.agent.interrupts.set([{ id: 'i1', value: { folder: 'Comparisons' }, resumable: true }]);
     fixture.detectChanges();
     TestBed.tick();
     return { fixture, root: fixture.nativeElement as HTMLElement };
@@ -277,13 +318,13 @@ describe('ChatApprovalCardComponent — inline', () => {
   template: `<chat-approval-card [agent]="agent"><ng-template #body><span class="body">Save note</span></ng-template></chat-approval-card>`,
 })
 class DefaultHost {
-  agent = mockAgent({ withInterrupt: true });
+  agent = mockAgent();
 }
 
 describe('ChatApprovalCardComponent — default presentation', () => {
   it('renders inline and never opens the dialog unless asked', () => {
     const fixture = TestBed.createComponent(DefaultHost);
-    fixture.componentInstance.agent.interrupt!.set({ id: 'i1', value: {}, resumable: true });
+    fixture.componentInstance.agent.interrupts.set([{ id: 'i1', value: {}, resumable: true }]);
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('.chat-approval-card--inline .body')).not.toBeNull();
@@ -312,7 +353,7 @@ describe('ChatApprovalCardComponent — default presentation', () => {
 })
 class RequestHost {
   agent = mockAgent({
-    withInterrupt: true,
+    
     messages: [{ id: 'm1', role: 'assistant', content: '', delivery: staticDelivery('m1') }],
   });
   readonly request = signal<unknown>(undefined);
@@ -349,11 +390,11 @@ describe('ChatApprovalCardComponent — a request that is not an interrupt', () 
 
   it('shows the request over a pending interrupt, and nothing once the request is answered', () => {
     const { fixture, root } = render({ summary: 'Fictional trip' });
-    fixture.componentInstance.agent.interrupt!.set({ id: 'i1', value: { kind: 'refund', amount: 5 }, resumable: true });
+    fixture.componentInstance.agent.interrupts.set([{ id: 'i1', value: { kind: 'refund', amount: 5 }, resumable: true }]);
     fixture.detectChanges();
     expect(root.querySelector('.summary')!.textContent).toBe('Fictional trip');
     fixture.componentInstance.request.set(undefined);
-    fixture.componentInstance.agent.interrupt!.set(undefined);
+    fixture.componentInstance.agent.interrupts.set([]);
     fixture.detectChanges();
     expect(root.querySelector('.chat-approval-card--inline')).toBeNull();
   });

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import {
   getInterruptFromAgent,
   interruptReasonText,
@@ -6,39 +7,52 @@ import {
 } from './chat-interrupt-panel.component';
 import type { InterruptAction } from './chat-interrupt-panel.component';
 import { mockAgent } from '../../testing/mock-agent';
-import type { AgentInterrupt } from '../../agent/agent-interrupt';
+import type { AgentInterrupt } from '../../agent';
 
 describe('getInterruptFromAgent()', () => {
-  it('returns undefined when agent has no interrupt property', () => {
+  it('returns undefined when the agent lists no interrupts at all', () => {
     const agent = mockAgent();
+    expect(agent.interrupts()).toBeUndefined();
     expect(getInterruptFromAgent(agent)).toBeUndefined();
   });
 
-  it('returns undefined when agent.interrupt signal is undefined', () => {
-    const agent = mockAgent({ withInterrupt: true });
+  it('returns undefined when agent.interrupts() is empty', () => {
+    const agent = mockAgent({ interrupts: [] });
+    expect(agent.interrupts()).toEqual([]);
     expect(getInterruptFromAgent(agent)).toBeUndefined();
   });
 
   it('returns the interrupt value when present', () => {
-    const agent = mockAgent({ withInterrupt: true });
+    const agent = mockAgent();
     const mockInterrupt: AgentInterrupt = { id: 'int-1', value: { question: 'Confirm?' }, resumable: true };
-    agent.interrupt!.set(mockInterrupt);
+    agent.interrupts.set([mockInterrupt]);
+    // The agent publishes its own frozen copy: same data, and the very object it lists.
+    expect(getInterruptFromAgent(agent)).toEqual(mockInterrupt);
+    expect(getInterruptFromAgent(agent)).toBe(agent.interrupts()?.[0]);
+  });
 
-    expect(getInterruptFromAgent(agent)).toBe(mockInterrupt);
+  it('returns the first interrupt when a run paused on several', () => {
+    const agent = mockAgent({
+      interrupts: [
+        { id: 'int-1', value: 'first' },
+        { id: 'int-2', value: 'second' },
+      ],
+    });
+    expect(getInterruptFromAgent(agent)?.id).toBe('int-1');
   });
 
   it('updates reactively when interrupt signal changes', () => {
-    const agent = mockAgent({ withInterrupt: true });
+    const agent = mockAgent();
     const interrupt1: AgentInterrupt = { id: 'int-1', value: 'first', resumable: true };
     const interrupt2: AgentInterrupt = { id: 'int-2', value: 'second', resumable: false };
 
-    agent.interrupt!.set(interrupt1);
-    expect(getInterruptFromAgent(agent)).toBe(interrupt1);
+    agent.interrupts.set([interrupt1]);
+    expect(getInterruptFromAgent(agent)).toEqual(interrupt1);
 
-    agent.interrupt!.set(interrupt2);
-    expect(getInterruptFromAgent(agent)).toBe(interrupt2);
+    agent.interrupts.set([interrupt2]);
+    expect(getInterruptFromAgent(agent)).toEqual(interrupt2);
 
-    agent.interrupt!.set(undefined);
+    agent.interrupts.set([]);
     expect(getInterruptFromAgent(agent)).toBeUndefined();
   });
 });
@@ -73,6 +87,24 @@ describe('interruptReasonText()', () => {
     expect(interruptReasonText(undefined)).toBe('');
   });
 
+  it('shows the backend message for a pause that carries no value', () => {
+    expect(interruptReasonText({ id: 'int-5', message: 'Approve the refund?', reason: 'tool_approval' })).toBe(
+      'Approve the refund?',
+    );
+  });
+
+  it('shows the backend reason when there is neither a value nor a message', () => {
+    expect(interruptReasonText({ id: 'int-6', reason: 'tool_approval' })).toBe('tool_approval');
+  });
+
+  it('prefers the value over the backend message', () => {
+    expect(interruptReasonText({ id: 'int-7', value: 'Please confirm', message: 'ignored' })).toBe('Please confirm');
+  });
+
+  it('keeps the empty JSON dump for a pause with no value, message or reason', () => {
+    expect(interruptReasonText({ id: 'int-8' })).toBe('""');
+  });
+
   it('falls back to JSON when reason is not a string (e.g. nested object)', () => {
     const ix: AgentInterrupt = {
       id: 'int-4',
@@ -85,6 +117,30 @@ describe('interruptReasonText()', () => {
 });
 
 describe('ChatInterruptPanelComponent', () => {
+  it('renders the first pending interrupt and emits the chosen action', () => {
+    const agent = mockAgent();
+    const fixture = TestBed.createComponent(ChatInterruptPanelComponent);
+    fixture.componentRef.setInput('agent', agent);
+    const actions: InterruptAction[] = [];
+    fixture.componentInstance.action.subscribe((action) => actions.push(action));
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.chat-interrupt-panel')).toBeNull();
+
+    agent.interrupts.set([
+      { id: 'int-1', message: 'Approve the refund?' },
+      { id: 'int-2', value: 'second' },
+    ]);
+    fixture.detectChanges();
+    expect(root.querySelector('.chat-interrupt-panel__body')?.textContent).toBe('Approve the refund?');
+    root.querySelector<HTMLButtonElement>('.btn-primary')?.click();
+    expect(actions).toEqual(['accept']);
+
+    agent.interrupts.set([]);
+    fixture.detectChanges();
+    expect(root.querySelector('.chat-interrupt-panel')).toBeNull();
+  });
+
   it('is defined', () => {
     expect(ChatInterruptPanelComponent).toBeDefined();
     expect(typeof ChatInterruptPanelComponent).toBe('function');

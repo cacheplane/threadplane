@@ -10,7 +10,7 @@ export interface ChatRunActivityTemplateContext {
   /** The agent bound to `<chat>` (`let-agent`). */
   $implicit: Agent;
   /**
-   * Whether a run is in flight (`agent.isLoading()`). Always `true` while the
+   * Whether a run is in flight (`agent.status() === 'running'`). Always `true` while the
    * template renders (`let-running="running"`).
    */
   running: boolean;
@@ -24,7 +24,7 @@ export interface ChatRunActivityTemplateContext {
    * The current run's messages: every message after the last user message,
    * or every message when there is none (`let-messages="messages"`).
    */
-  messages: Message[];
+  messages: readonly Message[];
 }
 
 /**

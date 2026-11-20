@@ -1,7 +1,7 @@
 // libs/chat/src/lib/markdown/citations-resolver.service.spec.ts
 import { TestBed } from '@angular/core/testing';
 import { CitationsResolverService } from './citations-resolver.service';
-import type { Message } from '../agent/message';
+import { staticDelivery, type Message } from '../agent';
 import type { CitationDefinition } from '@cacheplane/partial-markdown';
 
 describe('CitationsResolverService', () => {
@@ -17,7 +17,7 @@ describe('CitationsResolverService', () => {
 
   it('resolves from Message.citations first', () => {
     const msg: Message = {
-      id: 'm1', role: 'assistant', content: 'x',
+      id: 'm1', role: 'assistant', content: 'x', delivery: staticDelivery('m1'),
       citations: [{ id: 'src1', index: 1, title: 'From message', url: 'https://m.example' }],
     };
     svc.message.set(msg);
@@ -45,7 +45,7 @@ describe('CitationsResolverService', () => {
 
   it('Message.citations precedence over markdown sidecar', () => {
     const msg: Message = {
-      id: 'm1', role: 'assistant', content: 'x',
+      id: 'm1', role: 'assistant', content: 'x', delivery: staticDelivery('m1'),
       citations: [{ id: 'src1', index: 1, title: 'From message' }],
     };
     const def: CitationDefinition = {
@@ -61,7 +61,7 @@ describe('CitationsResolverService', () => {
     const lookup = svc.lookup('src1');
     expect(lookup()).toBeNull();
     svc.message.set({
-      id: 'm1', role: 'assistant', content: 'x',
+      id: 'm1', role: 'assistant', content: 'x', delivery: staticDelivery('m1'),
       citations: [{ id: 'src1', index: 1, title: 'A' }],
     });
     expect(lookup()?.citation.title).toBe('A');

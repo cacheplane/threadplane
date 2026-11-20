@@ -4,6 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { Component, EnvironmentInjector, createEnvironmentInjector, input, output, runInInjectionContext } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import type { Agent } from '../../agent';
+import { mockAgent } from '../../testing/mock-agent';
+import { ChatInterruptTemplateDirective } from '../chat/chat-interrupt-template.directive';
 import { ChatComponent } from '../chat/chat.component';
 import { ChatSidebarComponent } from './chat-sidebar.component';
 
@@ -208,5 +210,60 @@ describe('ChatSidebarComponent — edge-claim attribute', () => {
   it('launcher CSS reads PEER --tplane-chat-debug-claim-bottom (not aggregate)', () => {
     const styles = (ChatSidebarComponent as unknown as { ɵcmp: { styles: string[] } }).ɵcmp.styles.join('\n');
     expect(styles).toMatch(/\.chat-sidebar__launcher[^{]*\{[^}]*bottom:\s*calc\(1rem\s*\+\s*var\(--tplane-chat-debug-claim-bottom/);
+  });
+});
+
+@Component({
+  standalone: true,
+  imports: [ChatSidebarComponent, ChatInterruptTemplateDirective],
+  template: `
+    <chat-sidebar [agent]="agent" [open]="true">
+      <ng-template chatInterruptTemplate let-ctxAgent let-interrupt="interrupt" let-interrupts="interrupts">
+        <div
+          class="interrupt-card"
+          [attr.data-interrupt]="interrupt.id"
+          [attr.data-batch]="ids(interrupts)"
+          [attr.data-same-agent]="ctxAgent === agent"
+        ></div>
+      </ng-template>
+    </chat-sidebar>
+  `,
+})
+class InterruptTemplateHost {
+  agent = mockAgent({ messages: [{ id: 'u1', role: 'user', content: 'Refund both' }] });
+  ids(interrupts: readonly { id: string }[]): string {
+    return interrupts.map((entry) => entry.id).join(',');
+  }
+}
+
+describe('ChatSidebarComponent — projected chatInterruptTemplate', () => {
+  it('forwards the agent, the first interrupt and the whole pending batch to the inner chat', () => {
+    TestBed.configureTestingModule({ imports: [InterruptTemplateHost] });
+    const fixture = TestBed.createComponent(InterruptTemplateHost);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.interrupt-card')).toBeNull();
+
+    fixture.componentInstance.agent.interrupts.set([
+      { id: 'approve-1', value: {} },
+      { id: 'approve-2', value: {} },
+    ]);
+    fixture.detectChanges();
+    const card = root.querySelector<HTMLElement>('.chat-interrupt-region .interrupt-card');
+    expect(card).not.toBeNull();
+    expect(card?.dataset['interrupt']).toBe('approve-1');
+    expect(card?.dataset['batch']).toBe('approve-1,approve-2');
+    expect(card?.dataset['sameAgent']).toBe('true');
+
+    fixture.componentInstance.agent.interrupts.set([{ id: 'approve-2', value: {} }]);
+    fixture.detectChanges();
+    const next = root.querySelector<HTMLElement>('.interrupt-card');
+    expect(next?.dataset['interrupt']).toBe('approve-2');
+    expect(next?.dataset['batch']).toBe('approve-2');
+
+    fixture.componentInstance.agent.interrupts.set([]);
+    fixture.detectChanges();
+    expect(root.querySelector('.interrupt-card')).toBeNull();
+    fixture.destroy();
   });
 });
