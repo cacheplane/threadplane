@@ -75,7 +75,7 @@ import {
   `,
 })
 export class ChatViewComponent {
-  // chatRef = injectAgent(); // with provideAgent({...}) in the component's providers
+  // chatRef = injectAgent(); // with provideAgent({ createSession }) in the component's providers
 
   documentFor(message: Message): StreamingMarkdownDocument {
     const content = typeof message.content === 'string'
@@ -122,7 +122,7 @@ interface StreamingMarkdownDocument {
 }
 ```
 
-Use the exported `markdownDocument(content, delivery)` helper to derive it from message content and the adapter-owned `Message.delivery`. Within one generation, streaming content must be append-only. Complete the same generation once, then leave its content unchanged. A retry or replacement starts a new generation. The component uses those guarantees to preserve parser and rendered-node identity while chunks arrive.
+Use the exported `markdownDocument(content, delivery)` helper to derive it from message content and the session-owned `Message.delivery`. Within one generation, streaming content must be append-only. Complete the same generation once, then leave its content unchanged. A retry or replacement starts a new generation. The component uses those guarantees to preserve parser and rendered-node identity while chunks arrive.
 
 It resolves each markdown node type against `MARKDOWN_VIEW_REGISTRY` — a chat-internal DI token exported from `@threadplane/chat` and consumed by the markdown node components.
 

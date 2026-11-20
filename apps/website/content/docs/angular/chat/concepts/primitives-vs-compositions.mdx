@@ -144,7 +144,7 @@ The practical tradeoff is ownership. A composition owns more behavior for you. A
 
 ## Template Role Names
 
-Runtime messages use these roles:
+Messages use these roles:
 
 ```ts
 type Role = 'user' | 'assistant' | 'system' | 'tool';
@@ -165,13 +165,13 @@ The mapping is:
 | `tool` | `tool` |
 | `system` | `system` |
 
-`function` exists as a template type for compatibility with older function-message vocabulary. The current runtime-neutral `Role` type does not include `function`, so do not build new adapters around a separate function role. Normalize function output into tool messages or adapter-specific `extra` data.
+`function` exists as a template type for compatibility with older function-message vocabulary. The current `Role` type does not include `function`, so do not build new sessions around a separate function role. Normalize function output into tool messages or backend-specific `extra` data.
 
 ## Gotchas
 
 Give `<chat>` a parent with height. The composition uses flex layout and `height: 100%`; without a constrained parent, it can collapse.
 
-Do not pass a raw backend client to chat primitives. They need the `Agent` contract from `@threadplane/chat`, not a LangGraph SDK client or AG-UI `AbstractAgent`.
+Do not pass a raw backend client or a bare session to chat primitives. They need the `Agent` that `injectAgent()` from `@threadplane/angular` returns, not a LangGraph SDK client, an AG-UI `AbstractAgent`, or the object `createSession()` returns.
 
 Do not mix two agents in one shell unless you mean it. `chat-message-list`, `chat-input`, tool-call UI, and debug UI should usually point at the same `Agent` instance.
 
@@ -181,10 +181,10 @@ If you use `<chat>` and project custom pieces, stay inside the supported project
 
 ## A Conservative Path
 
-Start with `<chat>` while wiring the runtime.
+Start with `<chat>` while wiring the backend.
 
 Move individual surfaces to templates when the product needs customization.
 
 Move to primitives when layout becomes the requirement.
 
-That keeps early integration focused on the agent contract and delays UI ownership until there is a concrete reason to take it on.
+That keeps early integration focused on the agent and delays UI ownership until there is a concrete reason to take it on.

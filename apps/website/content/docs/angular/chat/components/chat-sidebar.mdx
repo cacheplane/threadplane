@@ -23,16 +23,27 @@ If you need a floating overlay that does not affect layout, use [`<chat-popup>`]
 ## Basic Usage
 
 ```typescript
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 import { ChatSidebarComponent } from '@threadplane/chat';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
   imports: [ChatSidebarComponent, RouterOutlet],
-  providers: [provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'chat', threadId: signal(null) })],
+  providers: [
+    provideAgent({
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'http://localhost:2024',
+          assistantId: 'chat',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
+    }),
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <chat-sidebar [agent]="chatAgent">
@@ -111,7 +122,8 @@ When `pushContent` is `true`, the sidebar shifts the projected `<ng-content>` to
 ```typescript
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 import { ChatSidebarComponent } from '@threadplane/chat';
 
 @Component({
@@ -127,7 +139,17 @@ import { ChatSidebarComponent } from '@threadplane/chat';
       <main><router-outlet /></main>
     </chat-sidebar>
   `,
-  providers: [provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'chat', threadId: signal(null) })],
+  providers: [
+    provideAgent({
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'http://localhost:2024',
+          assistantId: 'chat',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
+    }),
+  ],
 })
 export class AppShellComponent {
   sidebarOpen = signal(false);

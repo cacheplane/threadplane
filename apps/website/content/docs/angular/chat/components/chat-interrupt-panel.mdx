@@ -4,21 +4,21 @@ description: How the interrupts example pauses a flight booking at interrupt() a
 
 # ChatInterruptPanelComponent
 
-`ChatInterruptPanelComponent` is a composition that renders an inline card whenever the agent is waiting on a human decision. It reads the pending interrupt off the agent, prints a summary of the payload, and offers four buttons: Accept, Edit, Respond, and Ignore. It emits which one was clicked and nothing else, so the resume payload stays yours to choose. The running example is a flight booking that pauses before it completes, and this page walks the four files behind it.
+`ChatInterruptPanelComponent` is a composition that renders an inline card whenever the agent is waiting on a human decision. It reads the first pending interrupt off the agent (`agent.interrupts()?.[0]`), prints a summary of the payload, and offers four buttons: Accept, Edit, Respond, and Ignore. It emits which one was clicked and nothing else, so the resume payload stays yours to choose. The running example is a flight booking that pauses before it completes, and this page walks the four files behind it.
 
 **Selector:** `chat-interrupt-panel`
 
 ## What the demo does
 
-The Run tab shows the prebuilt `<chat>` composition beside a sidebar holding the panel and the agent status. Two welcome suggestions set up the same pause on two different paths. "Book a flight (you confirm)" asks the agent to book UA123, and "Book a flight (you cancel)" asks it to book AA404.
+The Run tab shows the prebuilt `<chat>` composition, with the panel projected into its transcript, beside a sidebar holding the agent status. Two welcome suggestions set up the same pause on two different paths. "Book a flight (you confirm)" asks the agent to book UA123, and "Book a flight (you cancel)" asks it to book AA404.
 
-Either request reaches the `book_flight` tool, which stops mid-call. The panel appears in the sidebar with the booking payload and the four buttons.
+Either request reaches the `book_flight` tool, which stops mid-call. The panel appears at the end of the transcript with the booking payload and the four buttons.
 
 Accept resumes the run with `confirm`, the tool returns a booking confirmation, and the agent relays it in the transcript. Ignore resumes with `cancel`, and the tool returns "Booking cancelled." instead. Edit and Respond render, because the panel always renders all four, but this example leaves them unhandled: a single-decision booking has nothing to edit.
 
 ## How it is built
 
-Four files carry the feature: a Python tool that pauses, the graph that runs it, an application config that registers the agent, and an Angular component that places the panel and maps its buttons onto resume payloads. Open the Code tab to read them in place.
+Four files carry the feature: a Python tool that pauses, the graph that runs it, an application config that provides the agent, and an Angular component that places the panel and maps its buttons onto resume values. Open the Code tab to read them in place.
 
 ### The tool that pauses
 
@@ -42,30 +42,32 @@ The graph is an ordinary agent and tool loop. `book_flight` is registered next t
 
 ### The agent provider
 
-`provideAgent()` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. The example passes a factory because it resolves its connection details at runtime from the host that serves the demo.
+`provideAgent()` from `@threadplane/angular` provides the agent once for the whole application, and it is the only provider the `<chat>` composition requires. Its `createSession` factory returns a LangGraph session for the thread the agent asks for. The example wraps the config in a factory because it resolves its connection details at runtime from the host that serves the demo.
 
 <ExampleCode file="app.config.ts" />
 
-Your own application does not need the factory. Pass the values directly:
+Your own application does not need the outer factory. Pass the values directly:
 
 ```typescript
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
+
 provideAgent({
-  apiUrl: 'https://your-deployment.langgraph.app',
-  assistantId: 'c-interrupts',
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'c-interrupts',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+    }),
 });
 ```
 
 `assistantId` must match the graph name in `langgraph.json`.
 
-### The panel in the sidebar
+### The panel in the transcript
 
-The panel takes one input, the agent, and renders nothing at all while no interrupt is pending, so it is safe to leave mounted permanently. This demo puts it in the sidebar next to the agent status rather than over the transcript. There is no interrupted status: a pending interrupt is a separate signal, and the panel is what reads it.
-
-<ExampleCode file="interrupts.component.ts" region="panel" title="interrupts.component.ts — the sidebar" />
-
-The status line beside it reads `agent.status()`, which is `idle`, `running`, or `error`.
-
-To place the panel in the conversation instead, project it through a [`chatInterruptTemplate`](/docs/angular/chat/components/chat-interrupt-template). `<chat>` then renders it at the end of the transcript while the interrupt is pending:
+The panel takes one input, the agent, and renders nothing at all while no interrupt is pending, so it is safe to leave mounted permanently. This demo projects it through a [`chatInterruptTemplate`](/docs/angular/chat/components/chat-interrupt-template), so `<chat>` renders it at the end of the transcript while the interrupt is pending:
 
 ```html
 <chat [agent]="agent">
@@ -75,13 +77,21 @@ To place the panel in the conversation instead, project it through a [`chatInter
 </chat>
 ```
 
+There is no interrupted status: pending interrupts are a separate signal, `agent.interrupts()`, and the panel is what reads it. The sidebar shows the status on its own.
+
+<ExampleCode file="interrupts.component.ts" region="panel" title="interrupts.component.ts — the sidebar" />
+
+The status line reads `agent.status()`, which is `idle`, `running`, or `error`. A run that paused has settled, so it reads `idle` while the panel is on screen.
+
+The panel does not need the transcript. Mount `<chat-interrupt-panel [agent]="agent" />` anywhere the agent is in scope, such as a sidebar, to keep the decision beside the conversation instead.
+
 ### Resuming with the decision
 
-The panel emits an `InterruptAction`, and the component turns the two actions it cares about into resume payloads. The graph expects a string, so `accept` submits `'confirm'` and `ignore` submits `'cancel'`.
+The panel emits an `InterruptAction`, and the component turns the two actions it cares about into resume values. The graph expects a string, so `accept` answers with `'confirm'` and `ignore` answers with `'cancel'`.
 
 <ExampleCode file="interrupts.component.ts" region="resume" title="interrupts.component.ts — resuming the run" />
 
-`submit({ resume })` continues the paused run instead of starting a new one, and whatever you put in `resume` is exactly what `interrupt()` returns on the server.
+`agent.resume(responses)` continues the paused run instead of starting a new one. Each response names one pending interrupt by `interruptId`, and the `value` of a `resolved` response is exactly what `interrupt()` returns on the server. A paused run continues once, so the handler answers every interrupt `agent.interrupts()` lists in the same call; this graph pauses on one at a time.
 
 <Callout type="info" title="The panel never resumes for you">
 `chat-interrupt-panel` emits the action and stops there. Leaving an action unhandled, as this example leaves Edit and Respond, means the run stays paused and the panel stays on screen. All four buttons always render; a wrapper does not hide individual actions. For a two-button UI, build custom controls with the lower level primitive below.
@@ -89,19 +99,19 @@ The panel emits an `InterruptAction`, and the component turns the two actions it
 
 ### A complete panel component
 
-This complete standalone Angular component uses the LangGraph provider configured above. The output binding is `(action)`. Accept and Ignore submit the flight tool's strings; Edit and Respond display an explanation and leave the run paused. The component hides the panel while submitting and displays rejected operations and agent errors.
+This complete standalone Angular component uses the agent provided above. The output binding is `(action)`. Accept and Ignore answer with the flight tool's strings; Edit and Respond display an explanation and leave the run paused. The component hides the panel while submitting and displays rejected operations and agent errors.
 
 ```typescript
 import { Component, signal } from '@angular/core';
 import { ChatInterruptPanelComponent, type InterruptAction } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   selector: 'app-flight-decision',
   standalone: true,
   imports: [ChatInterruptPanelComponent],
   template: `
-    @if (busy() || agent.isLoading()) {
+    @if (busy() || agent.status() === 'running') {
       <p role="status">Working…</p>
     } @else {
       <chat-interrupt-panel [agent]="agent" (action)="onAction($event)" />
@@ -119,20 +129,24 @@ export class FlightDecisionComponent {
   readonly notice = signal('');
 
   async onAction(action: InterruptAction): Promise<void> {
-    if (this.busy() || this.agent.isLoading()) return;
+    if (this.busy() || this.agent.status() === 'running') return;
     this.notice.set('');
     if (action === 'edit' || action === 'respond') {
       this.notice.set('This example supports Accept and Ignore only.');
       return;
     }
+    const interrupt = this.agent.interrupts()?.[0];
+    if (!interrupt || !this.agent.resume) return;
     this.busy.set(true);
     this.error.set('');
     try {
-      if (action === 'accept') {
-        await this.agent.submit({ resume: 'confirm' });
-      } else if (action === 'ignore') {
-        await this.agent.submit({ resume: 'cancel' });
-      }
+      await this.agent.resume([
+        {
+          interruptId: interrupt.id,
+          status: 'resolved',
+          value: action === 'accept' ? 'confirm' : 'cancel',
+        },
+      ]);
     } catch (error) {
       this.error.set(error instanceof Error ? error.message : 'Decision failed');
     } finally {
@@ -142,9 +156,9 @@ export class FlightDecisionComponent {
 }
 ```
 
-`confirm` and `cancel` belong to this flight tool's backend contract. A refund or Mastra tool may instead expect `{ approved: true }` or `{ approved: false }`; the button label does not define the resume payload. A protocol-native AG-UI cancelled entry has no payload and must identify the pending interrupt.
+`confirm` and `cancel` belong to this flight tool's backend contract. A refund or Mastra tool may instead expect `{ approved: true }` or `{ approved: false }`; the button label does not define the resume value. A response can also be `{ interruptId, status: 'cancelled' }`, which carries no value. A session rejects a status its backend cannot express: LangGraph has no cancelled response, so a refusal there is a value the graph reads, as above.
 
-The panel accepts the runtime-neutral `Agent`, but it does not coordinate batches, retain a rendered generation, hydrate storage, or reconcile uncertain outcomes. Applications using AG-UI's `interruptSession()`, `interruptGeneration`, `ready`, or `reconcileInterrupt()` need adapter-aware controls. LangGraph restores pending interrupts from its server checkpoint. In either adapter, disappearance of the panel alone is not evidence that the backend completed the decision.
+The panel accepts any `Agent`, but it shows only the first pending interrupt and does not coordinate batches, hydrate storage, or reconcile uncertain outcomes. An application whose runs pause on several interrupts at once reads `agent.interrupts()` and answers them together. Applications using the AG-UI session's `interruptSession()` or `persistence` reconciliation need controls that read those fields. LangGraph restores pending interrupts from its server checkpoint. With either backend, disappearance of the panel alone is not evidence that the backend completed the decision; the promise `resume` returns resolves with the continued run's outcome.
 
 ## Import
 
@@ -188,6 +202,7 @@ The panel derives one string from the interrupt value and prints it, preserving 
 
 - An object with a string `reason` field renders that field alone.
 - A string value renders directly.
+- A pause that carries no value renders the interrupt's `message`, or else its `reason`.
 - Anything else is rendered as indented JSON.
 
 The example takes the third path, since its payload is a dictionary of `type`, `summary`, and `flight` with no `reason` field, so the card shows the raw booking record.
@@ -228,7 +243,7 @@ When the four buttons are the wrong set, `ChatInterruptComponent` gives you the 
 </chat-interrupt>
 ```
 
-`value` is typed `unknown`, so narrow it in the component rather than in the template:
+`value` is plain data whose shape belongs to the graph that paused, so narrow it in the component rather than in the template:
 
 ```typescript
 summaryOf(interrupt: AgentInterrupt): string {
@@ -245,7 +260,7 @@ import { getInterrupt } from '@threadplane/chat';
 const pending = getInterrupt(agent); // AgentInterrupt | undefined
 ```
 
-An `AgentInterrupt` carries `id`, the opaque `value`, and `resumable`, which is `true` when the runtime supports `submit({ resume })`.
+An `AgentInterrupt` carries `id` and may carry the opaque `value`, a `reason`, a display `message` and the `toolCallId` it is about. `resumable` is `false` for an interrupt the session can show and cannot answer; when it is absent, the interrupt is answered through `agent.resume()` whenever the agent has that command. `getInterrupt(agent)` returns the first entry of `agent.interrupts()`, which lists them all.
 
 ## What's Next
 

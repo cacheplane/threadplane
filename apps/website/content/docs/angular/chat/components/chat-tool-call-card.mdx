@@ -38,7 +38,7 @@ A user click on the header toggles open and closed. Once toggled, the user choic
 
 | Input | Type | Default | Description |
 |---|---|---|---|
-| `[toolCall]` | `ToolCallInfo` | — (required) | `{id, name, args, status?, result?}` |
+| `[toolCall]` | `ToolCallInfo` | — (required) | `{id, name, label?, args, status?, result?, error?}` |
 | `[defaultCollapsed]` | `boolean` | `true` | Collapse on `complete`; pass `false` to keep cards always-expanded |
 
 ## ToolCallInfo
@@ -47,11 +47,17 @@ A user click on the header toggles open and closed. Once toggled, the user choic
 interface ToolCallInfo {
   id: string;
   name: string;
+  /** Readable label shown in place of the technical name, which then moves into the opened card. */
+  label?: string;
   args: unknown;
   status?: 'pending' | 'running' | 'complete' | 'error';
   result?: unknown;
+  /** Literal diagnostic error, independent of result. */
+  error?: unknown;
 }
 ```
+
+A core `ToolCall` from `agent.toolCalls()` has `result` only while its status is `complete` and `error` only while it is `error`. Map one with `toolCallResult(call)` and `toolCallError(call)` from `@threadplane/chat`, which read those fields without narrowing first.
 
 ## Basic usage
 

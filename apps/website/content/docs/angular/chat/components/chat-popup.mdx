@@ -23,15 +23,26 @@ If you need the chat to always be visible, use [`<chat>`](/docs/angular/chat/com
 ## Basic Usage
 
 ```typescript
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 import { ChatPopupComponent } from '@threadplane/chat';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [ChatPopupComponent],
-  providers: [provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'chat', threadId: signal(null) })],
+  providers: [
+    provideAgent({
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'http://localhost:2024',
+          assistantId: 'chat',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
+    }),
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- your app content here -->
@@ -97,7 +108,17 @@ Control the open state from your component:
     <button (click)="popup.openWindow()">Open Chat</button>
     <chat-popup [(open)]="chatOpen" [agent]="chatAgent" #popup />
   `,
-  providers: [provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'chat', threadId: signal(null) })],
+  providers: [
+    provideAgent({
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'http://localhost:2024',
+          assistantId: 'chat',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
+    }),
+  ],
 })
 export class AppComponent {
   chatOpen = false;

@@ -23,8 +23,9 @@ The embedded composition fills its parent container using `height: 100%` and a f
 - You do not need to show app content alongside the chat simultaneously
 
 ```typescript
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 import { ChatComponent } from '@threadplane/chat';
 
 @Component({
@@ -34,8 +35,13 @@ import { ChatComponent } from '@threadplane/chat';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     provideAgent({
-      assistantId: 'chat',
-      threadId: signal(null),
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'http://localhost:2024',
+          assistantId: 'chat',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
     }),
   ],
   template: `
@@ -63,8 +69,9 @@ The popup composition renders a circular launcher button fixed to the bottom-rig
 - Support chat, help bots, or contextual assistants
 
 ```typescript
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 import { ChatPopupComponent } from '@threadplane/chat';
 import { RouterOutlet } from '@angular/router';
 
@@ -75,8 +82,13 @@ import { RouterOutlet } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     provideAgent({
-      assistantId: 'support_agent',
-      threadId: signal(null),
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'http://localhost:2024',
+          assistantId: 'support_agent',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
     }),
   ],
   template: `
@@ -113,8 +125,9 @@ The sidebar composition renders a slide-in panel anchored to the right edge. It 
 - Dashboards, editors, or data-heavy pages where context matters
 
 ```typescript
-import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 import { ChatSidebarComponent } from '@threadplane/chat';
 import { RouterOutlet } from '@angular/router';
 
@@ -125,8 +138,13 @@ import { RouterOutlet } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     provideAgent({
-      assistantId: 'copilot_agent',
-      threadId: signal(null),
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'http://localhost:2024',
+          assistantId: 'copilot_agent',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
     }),
   ],
   template: `
@@ -172,7 +190,8 @@ is silently dropped. Render the chat as a sibling and lay the two out yourself.
 
 ```typescript
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 import { ChatComponent, ChatSidenavComponent } from '@threadplane/chat';
 import type { Thread } from '@threadplane/chat';
 
@@ -184,10 +203,15 @@ const ACTIVE_THREAD = signal<string | null>(null);
   imports: [ChatSidenavComponent, ChatComponent],
   providers: [
     provideAgent({
-      apiUrl: 'http://localhost:2024',
-      assistantId: 'chat',
       threadId: ACTIVE_THREAD,
       onThreadId: (id) => ACTIVE_THREAD.set(id),
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'http://localhost:2024',
+          assistantId: 'chat',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
     }),
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -215,7 +239,7 @@ export class ChatShellComponent {
 }
 ```
 
-Populate `threads` from your backend's thread list. The provider and the sidebar share `ACTIVE_THREAD`, so selection loads that conversation and New chat clears the current one. `onThreadId` updates the selection when the backend creates a new thread. See [Thread Routing](/docs/angular/chat/guides/thread-routing) for connecting this state to the URL.
+Populate `threads` from your backend's thread list, for example with `injectThreadDirectory()` from `@threadplane/angular`. The agent follows `ACTIVE_THREAD` and the sidebar writes it, so selection loads that conversation and New chat clears the current one. `onThreadId` updates the selection when the backend creates a new thread. See [Thread Routing](/docs/angular/chat/guides/thread-routing) for connecting this state to the URL.
 
 `[mode]` switches between `'expanded'`, `'collapsed'`, and `'drawer'`, and the
 component emits `(modeChange)` when the user presses Cmd/Ctrl+B. Cmd/Ctrl+K

@@ -8,6 +8,17 @@ description: Highlight releases of @threadplane/chat since 0.0.19, from client t
 This changelog tracks selected highlight releases, not every release. The published package is at `0.3.7`. The entries below cover the notable changes since `0.0.19`.
 </Callout>
 
+## Unreleased
+
+### Angular agent on the session contract
+
+- Breaking change, action required for every Angular application: `provideAgent()` and `injectAgent()` move to `@threadplane/angular`, and take a `createSession` factory from the backend package. `@threadplane/langgraph` and `@threadplane/ag-ui` are framework-neutral and export `createSession()`; their Angular adapters (`LangGraphAgent`, `AgUiAgent`, `toAgent`, `LangGraphThreadsAdapter`, `mockLangGraphAgent` and their own `provideAgent`, `injectAgent` and `provideFakeAgent`) are removed. Install `@threadplane/angular` and `@threadplane/core`. See [Upgrade an integration](/docs/angular/chat/migrations/upgrading#move-to-the-session-provider).
+- The injected `Agent` is the session's snapshot fields as signals plus its commands. `isLoading()` becomes `status() === 'running'`, `interrupt()` becomes `interrupts()?.[0]`, `submit({ resume })` becomes `resume(responses)`, `regenerate(index)` takes a message `id`, `history()` becomes `checkpoints()`, `subagents()` is a list, and `events$` becomes `onCustomEvent()` and `customEvents()`.
+- Threads move to `provideThreadDirectory({ createDirectory })` and `injectThreadDirectory()` in `@threadplane/angular`, over `createLangGraphThreadDirectory()` from `@threadplane/langgraph`.
+- Testing: `provideFakeAgent()` ships in `@threadplane/angular/testing` and is re-exported by `@threadplane/chat/testing`. `mockAgent()` builds an `Agent` with writable fields, and the conformance runners take a session factory.
+- Chat components keep their selectors and take the new `Agent`. `<chat-subagent-card>` and `<chat-subagents>` read the core `AgentSubagent` list.
+- LangGraph `throttle`, `historyState`, `restoreSubagents`, `rawMessages`, `transcriptNodeNames`, `subagentToolNames` and `autoLoad` are opt-in `createSession()` options, and per-run settings go under `options.run`. AG-UI `interruptTransport` defaults to `'protocol'` instead of `'auto'`.
+
 ## 0.3.7
 
 - Chat adds a configurable composer `placeholder`, public `clearDraft()` methods on `ChatComponent` and `ChatInputComponent`, and projected composer footer/status content.

@@ -24,8 +24,8 @@ The template renders once for each assistant message and receives:
 |---|---|---|
 | `let-message` (`$implicit`) | `Message` | The assistant message. Reasoning is on `message.reasoning` and `message.reasoningDurationMs`. |
 | `let-i="index"` | `number` | The message's index in `agent.messages()`. |
-| `let-toolCalls="toolCalls"` | `ToolCall[]` | The tool calls this message emitted, in order. Generative-UI dispatcher tools (`genuiToolNames`) and tools with a registered view are left out, as they are from the default tool-call cards. |
-| `let-subagents="subagents"` | `Subagent[]` | Subagents spawned by this message's tool calls, matched by `Subagent.toolCallId` and ordered like the calls. |
+| `let-toolCalls="toolCalls"` | `readonly ToolCall[]` | The tool calls this message emitted, in order. Generative-UI dispatcher tools (`genuiToolNames`) and tools with a registered view are left out, as they are from the default tool-call cards. |
+| `let-subagents="subagents"` | `readonly AgentSubagent[]` | Child agents started by this message's tool calls, matched by `AgentSubagent.toolCallId` and ordered like the calls. |
 | `let-agent="agent"` | `Agent` | The agent bound to `<chat>`. |
 
 The context object is reused while the message, its tool calls and its subagents are unchanged, so components inside the template keep stable inputs during streaming.
