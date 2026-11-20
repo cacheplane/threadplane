@@ -69,9 +69,9 @@ export function acceptApprovalCapture(
         'POST /runs/:id',
         'GET /runs/:id',
         ...(item.scenario === 'loaded' ? ['GET ', 'POST /history'] : []),
-        ...(item.unmatched
-          ? ['POST /history', 'POST /runs/:id', 'GET /runs/:id']
-          : []),
+        // The unmatched-ID diagnostic posts its command through the provider
+        // client, then a raw session loads the saved pause.
+        ...(item.unmatched ? ['POST /runs/:id', 'POST /history'] : []),
         'POST /runs/:id',
         'GET /runs/:id',
         'GET /state',
@@ -123,7 +123,9 @@ export function acceptApprovalCapture(
       responses.map((q) => q.command),
       [
         ...(item.unmatched ? [{ resume: { [item.unmatched]: 'denied' } }] : []),
-        { resume: { [item.interrupt.id]: item.answer } },
+        // One pending approval: the session sends the answer as the plain
+        // resume value.
+        { resume: item.answer },
       ]
     );
     for (const body of responses) assert.equal(body.input, null);
@@ -143,14 +145,14 @@ export function acceptApprovalCapture(
   );
   assert.equal(
     capture.requests.length,
-    46,
+    45,
     'Exact canonical application request footprint'
   );
   const result = {
     ...capture,
     accepted: true as const,
     limits: [
-      'Normal submit and decision commands use the installed default application/session factory and real directory/history admission. The unmatched-ID raw-session substep is provider routing evidence, not application decision authority.',
+      'Normal submit and decision commands use the installed default application/session factory and real directory/history admission. The unmatched-ID substep posts an ID-keyed resume command through the provider client, because the session rejects an ID that is not pending before sending; it is provider routing evidence, not application decision authority.',
       'Cleanup acknowledges synchronous application retirement, awaited raw-probe disposal and completed known-thread deletions. The private application dispose contract does not await its internal session disposal promise.',
       'A task may reuse its interrupt ID for successive pauses: the separate direct-graph feasibility probe establishes this limitation, not this HTTP proof. No remote atomicity or pause-occurrence identity is inferred from interrupt IDs.',
     ],

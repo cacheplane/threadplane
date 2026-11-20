@@ -11,6 +11,7 @@ import {
   position,
   saved,
 } from './testing/checkpoint-fixture';
+import { answerPending } from './testing/answer-pending';
 
 describe('checkpoint execution', () => {
   it.each([
@@ -121,7 +122,7 @@ describe('checkpoint execution', () => {
     });
     expect(await session.fork(position('a'), 'Run')).toBe('paused');
     expect(handler).toHaveBeenCalledOnce();
-    expect(await session.resume(null)).toBe('success');
+    expect(await session.resume(answerPending(session, null))).toBe('success');
     expect(vi.mocked(f.transport.stream).mock.calls[1][4]?.checkpoint).toEqual(
       position('tools')
     );
@@ -356,7 +357,7 @@ describe('checkpoint execution', () => {
     expect(await session.fork(position('a'), 'Pause')).toBe('paused');
     const before = session.getSnapshot();
     const reads = vi.mocked(f.transport.getState!).mock.calls.length;
-    await expect(session.resume()).rejects.toThrow();
+    await expect(session.resume(answerPending(session))).rejects.toThrow();
     expect(f.transport.getState).toHaveBeenCalledTimes(reads);
     f.states.set(
       'pause',
@@ -365,7 +366,9 @@ describe('checkpoint execution', () => {
         tasks: [{ ...tasks[0], result: { decision: true } }],
       })
     );
-    await expect(session.resume(null)).rejects.toThrow();
+    await expect(
+      session.resume(answerPending(session, null))
+    ).rejects.toThrow();
     expect(session.getSnapshot()).toBe(before);
     expect(f.transport.stream).toHaveBeenCalledTimes(1);
   });
@@ -399,9 +402,11 @@ describe('checkpoint execution', () => {
     });
     expect(await session.fork(position('a'), 'Pause')).toBe('paused');
     const external = new AbortController();
-    expect(await session.resume(null, { signal: external.signal })).toBe(
-      'success'
-    );
+    expect(
+      await session.resume(answerPending(session, null), {
+        signal: external.signal,
+      })
+    ).toBe('success');
     const stream = vi.mocked(f.transport.stream).mock.calls[1];
     expect(stream[2]).toBeNull();
     expect(stream[4]).toMatchObject({

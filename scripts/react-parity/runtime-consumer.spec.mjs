@@ -124,7 +124,7 @@ test('execution settings are required for configured submits, tool continuations
       assert.throws(() => runtime.runtimeResponse(missing), /unexpected run fields/);
     }
   }
-  const resume = { ...heldBody, ...runSettings, input: null, command: { resume: { 'final-approval': true } } };
+  const resume = { ...heldBody, ...runSettings, input: null, command: { resume: true } };
   assert.doesNotThrow(() => runtime.runtimeResponse(resume));
   for (const key of Object.keys(runSettings)) {
     const missing = { ...resume }; delete missing[key];
@@ -170,7 +170,7 @@ test('application state cannot replay on tool continuation, a later Send, or res
     assert.doesNotThrow(() => runtime.runtimeResponse(body));
     assert.throws(() => runtime.runtimeResponse({ ...body, input: { ...applicationState, ...body.input } }), /unexpected run fields/);
   }
-  const resume = { ...heldBody, ...runSettings, input: null, command: { resume: { 'final-approval': true } } };
+  const resume = { ...heldBody, ...runSettings, input: null, command: { resume: true } };
   assert.doesNotThrow(() => runtime.runtimeResponse(resume));
   assert.throws(() => runtime.runtimeResponse({ ...resume, state: applicationState }), /exact resume run fields/);
   assert.throws(() => runtime.runtimeResponse({ ...resume, input: applicationState }));
@@ -230,7 +230,7 @@ test('explicit resume maps use null input, re-pause, and complete the same assis
   assert.match(first, /"id":"final-approval"/);
   assert.match(first, /"content":"One final approval"/);
   assert.match(first, /"content":"Child final approval"/);
-  const second = runtime.runtimeResponse({ ...base, command: { resume: { 'final-approval': true } } });
+  const second = runtime.runtimeResponse({ ...base, command: { resume: true } });
   assert.match(second, /"content":"Approvals complete"/);
   assert.match(second, /"stage":"approved"/);
   assert.match(second, /"content":"Child approved"/);
@@ -242,9 +242,10 @@ test('explicit resume maps use null input, re-pause, and complete the same assis
   assert.ok([...firstMessages, ...secondMessages].every((message) => message.type === 'ai'), 'resume creates no synthetic human message');
   for (const body of [
     { ...base, command: { resume: { 'live-approval': 'yes' } } },
-    { ...base, command: { resume: { 'final-approval': false } } },
-    { ...base, command: { resume: { 'final-approval': true }, update: {} } },
-    { ...base, input: { messages: [] }, command: { resume: { 'final-approval': true } } },
+    { ...base, command: { resume: false } },
+    { ...base, command: { resume: { 'final-approval': true } } },
+    { ...base, command: { resume: true, update: {} } },
+    { ...base, input: { messages: [] }, command: { resume: true } },
   ]) assert.throws(() => runtime.runtimeResponse(body));
 });
 
@@ -383,7 +384,7 @@ test('owned runtime accepts exactly five modes and rejects otherwise valid mode 
   const stream_mode = ['values', 'messages-tuple', 'updates', 'custom', 'checkpoints'];
   const submit = { ...heldBody, stream_mode, input: { ...heldBody.input, messages: [{ id: 'exact-five-user', type: 'human', content: 'Send' }] } };
   const continuation = { ...submit, ...runSettings, input: { client_tools: heldBody.input.client_tools, messages: [{ id: 'client-tool-result-call-weather', type: 'tool', role: 'tool', tool_call_id: 'call-weather', content: '{"city":"Paris","temperature":20}' }] } };
-  const resume = { ...submit, ...runSettings, input: null, command: { resume: { 'final-approval': true } } };
+  const resume = { ...submit, ...runSettings, input: null, command: { resume: true } };
   for (const body of [submit, continuation, resume]) {
     assert.doesNotThrow(() => runtime.runtimeResponse(body), 'exact owned five-mode body');
     for (const modes of [stream_mode.slice(0, -1), [...stream_mode.slice(0, -1), 'debug'], [...stream_mode, 'debug']]) {

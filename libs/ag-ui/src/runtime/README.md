@@ -140,15 +140,31 @@ const session = createSession({ threadId, url });
 ```
 
 - `getSnapshot` returns the core snapshot,
-  `{ status, messages, toolCalls, error?, plan?, usage?, state?, stateIssues? }`,
-  together with the protocol evidence behind it: `transcript`, `subagents`,
+  `{ status, messages, toolCalls, error?, plan?, usage?, state?, stateIssues?, interrupts?, subagents }`,
+  together with the protocol evidence behind it: `transcript`,
   `earlierSubagents`, `decision`, `reasoningDurations` and `run`. `messages` and
   `toolCalls` are what the two selectors above return, and keep their
   references until they change. One publication always reads as one snapshot.
+- `interrupts` lists what a paused run waits on, from the pause until an answer
+  is sent. Each entry is the protocol's interrupt, so it has the core `id`,
+  `reason`, `message` and `toolCallId` and any other field the backend sent. It
+  is absent when nothing is waiting, and for a pause this session cannot answer.
+- `subagents` lists the current run's children as core child agents: `id`,
+  `name`, `description`, `toolCallId`, `parentId`, `status`, and the child's own
+  `messages` and `toolCalls`, which the root lists do not repeat. The protocol
+  evidence stays on each child as `started` and `terminal`. A child with
+  finished evidence is `complete`, one with error evidence is `error` and
+  carries its message, and one with neither is `running` while the root run is
+  going and `unknown` after it. A child keeps its reference until its evidence,
+  status or records change. Children of earlier runs are bare evidence in
+  `earlierSubagents`. Records are matched by run id, so a later child that
+  reuses an id also lists the earlier child's records.
 - Every publication notifies subscribers, including one that changes only
   protocol evidence such as a decision or a child.
-- `submit` takes text, or `{ message, state? }` with a state patch. `resume`
-  and the client-tool evidence are AG-UI additions to the core contract.
+- `submit` takes text, or `{ message, state? }` with a state patch.
+- `resume` is the core contract's command: it takes one response for each
+  pending interrupt, named by `id` (see "Correlated native resume").
+- The client-tool evidence is an AG-UI addition to the core contract.
 - A failed run becomes `snapshot.error`. A backend `RUN_ERROR` is a `server`
   error carrying the backend's message. A stream that ended without a terminal
   is `interrupted`. A response that was not OK carries its HTTP status: 401 and
@@ -266,7 +282,7 @@ const pending = decisionState(useAgent(session));
             id: 'approve',
             label: 'Issue refund',
             onSelect: () =>
-              void session.resume(pending.id, [
+              void session.resume([
                 { interruptId: pending.interrupts[0].id, status: 'resolved' },
               ]),
           },
@@ -287,8 +303,8 @@ const pending = decisionState(useAgent(session));
   the answer. An uncertain answer cannot be sent again.
 - The same decision in the same phase returns the same reference.
 - `ready` does not look at the clock: an interrupt past its `expiresAt` still
-  reads `ready`, and `resume` then resolves `error`.
-- What the buttons mean, and which payload answers which interrupt, stay with
+  reads `ready`, and `resume` then rejects.
+- What the buttons mean, and which value answers which interrupt, stay with
   the app. Response schemas are not interpreted.
 
 The candidate package entry exports it. The published package root does not.
@@ -342,36 +358,44 @@ Child notices do not create root decisions. Duplicate interrupt IDs retain an
 unsupported blocker. The locked SDK rejects empty wire batches before delivery;
 that error preserves an existing blocker or claim and invents no terminal.
 
-After the native pause has locally settled, explicitly answer its current token:
+After the native pause has locally settled, answer its interrupts with the core
+contract's `resume`:
 
 ```ts
 const snapshot = session.getSnapshot();
-if (
-  snapshot.decision?.kind === 'native' &&
-  !snapshot.decision.attempt &&
-  snapshot.run?.outcome
-) {
-  await session.resume(snapshot.decision.id, [
-    {
-      interruptId: 'approval',
+if (snapshot.interrupts?.length && snapshot.run?.outcome) {
+  await session.resume(
+    snapshot.interrupts.map((interrupt) => ({
+      interruptId: interrupt.id,
       status: 'resolved',
-      payload: { approved: true },
-    },
-  ]);
+      value: { approved: true },
+    }))
+  );
 }
 ```
 
-Every observed interrupt needs exactly one response with its exact ID. Resolved
-responses may omit payload; a `null` payload is treated as absent (the AG-UI 1.0
-client omits whole-optional nulls on the wire). Cancelled responses use
-`{ interruptId, status: 'cancelled' }` and cannot contain a defined payload.
-Optional metadata must be a plain record. Responses and the options signal are
+`resume` takes the responses alone and answers the pause that is pending; there
+is no pause token to pass. Every pending interrupt needs exactly one response
+with its exact ID. A resolved response may omit `value`; a `null` value is
+treated as absent (the AG-UI 1.0 client omits whole-optional nulls on the wire).
+The request carries the value as the protocol's `payload`, and so does
+`decision.attempt.responses`. A cancelled response is
+`{ interruptId, status: 'cancelled' }` and cannot carry a value. A response may
+also carry the protocol's optional `metadata`, which must be a plain record.
+
+`resume` rejects with a `TypeError`, sending nothing, when no interrupt is
+waiting, the pausing run has not settled, an answer was already sent, a run is
+active, an interrupt has expired, the responses are not an array, a response
+names an interrupt that is not pending or names one twice, or an interrupt is
+left unanswered. It resolves `aborted`, sending nothing, after disposal and when
+its signal is already aborted. Once the answer is sent it resolves with that
+run's outcome. Responses and the options signal are
 captured once before queueing; nested data is copied and frozen without freezing
 the caller. Extra runtime getters are ignored. Response schemas are opaque; this
 owner neither validates business answers nor guesses defaults or aliases.
 
-Eligibility is checked at invocation and admission. The token must identify the
-current unclaimed native generation, the current run must be locally settled,
+Eligibility is checked at invocation and admission. The pending decision must be
+the current unclaimed native generation, the current run must be locally settled,
 and every supplied expiry must parse to a time strictly in the future. An
 observing terminal callback cannot enqueue future resume intent before settlement.
 Two observers can claim only once. Admission publishes the attempt and new run
@@ -389,14 +413,14 @@ controls, not backend rejection or recovery.
 
 Each private run result reports `fetchInvoked`, recorded immediately before the
 captured fetch call. A claim cancelled before that boundary is released and can
-be retried with the same token. Once fetch was invoked, failure, EOF or abort
+be retried. Once fetch was invoked, failure, EOF or abort
 without conclusive native evidence retains the attempt and forbids replay or
 ordinary bypass. `RUN_STARTED`, local promise completion and exception properties
 do not establish server acknowledgement or socket closure. No retry, reset,
 session reconstruction or persistence/recovery guarantee is provided.
 
 Native success clears the decision at local settlement, even if a terminal
-listener selected local `aborted`. A new native pause receives a fresh token even
+listener selected local `aborted`. A new native pause is a fresh generation even
 when backend interrupt IDs repeat; old finalizers cannot clear that generation.
 Legacy observation has no resume support. Captured Strands replay establishes
 native response wire shape with synthetic completion only. Captured Mastra and

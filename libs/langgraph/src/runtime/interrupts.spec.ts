@@ -235,7 +235,9 @@ describe('session interrupt observation', () => {
     await f.emit(control([]));
     f.streams[0].finish();
     expect(await run).toBe('paused');
-    expect(f.snapshot().interrupts).toEqual([{ when: 'breakpoint' }]);
+    expect(f.snapshot().interrupts).toEqual([
+      { id: 'breakpoint', when: 'breakpoint' },
+    ]);
     expect(f.history).not.toHaveBeenCalled();
     expect(f.acquire).not.toHaveBeenCalled();
     expect(f.write).not.toHaveBeenCalled();

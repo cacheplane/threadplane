@@ -187,8 +187,8 @@ describe('native client tools over physical HTTP', () => {
         const paused = owner.getSnapshot();
         if (paused.decision?.kind !== 'native')
           throw new Error('Missing pause');
-        const done = owner.resume(paused.decision.id, [
-          { interruptId: 'approve', status: 'resolved', payload: true },
+        const done = owner.resume([
+          { interruptId: 'approve', status: 'resolved', value: true },
         ]);
         const resumed = await server.next(1);
         resumed.send(
@@ -360,8 +360,8 @@ describe('native client tools over physical HTTP', () => {
       if (paused.decision?.kind !== 'native')
         throw new Error('Missing native pause');
       expect(paused.run?.id).toBe(continuation.body.runId);
-      const done = owner.resume(paused.decision.id, [
-        { interruptId: 'approve', status: 'resolved', payload: true },
+      const done = owner.resume([
+        { interruptId: 'approve', status: 'resolved', value: true },
       ]);
       const resumed = await server.next(2);
       expect(resumed.body.resume).toEqual([
@@ -409,8 +409,8 @@ describe('native client tools over physical HTTP', () => {
       const paused = owner.getSnapshot();
       if (paused.decision?.kind !== 'native')
         throw new Error('Missing native pause');
-      const done = owner.resume(paused.decision.id, [
-        { interruptId: 'approve', status: 'resolved', payload: true },
+      const done = owner.resume([
+        { interruptId: 'approve', status: 'resolved', value: true },
       ]);
       const resumed = await server.next(1);
       resumed.send(lifecycle(resumed), lifecycle(resumed, 'RUN_FINISHED'));

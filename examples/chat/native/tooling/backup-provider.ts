@@ -286,11 +286,9 @@ export function acceptBackupCapture(
         assert.deepEqual(request.body, {
           assistant_id: 'chat',
           input: null,
+          // One pending approval: the answer is the plain resume value.
           command: {
-            resume: {
-              [item.interrupt.id]:
-                scenario === 'decline' ? 'denied' : 'approved',
-            },
+            resume: scenario === 'decline' ? 'denied' : 'approved',
           },
           ...streamOptions,
         });

@@ -120,11 +120,11 @@ describe('correlated native resume over held HTTP', () => {
         {
           interruptId: 'approval',
           status: 'resolved' as const,
-          payload: null,
+          value: null,
           metadata: { origin: 'review' },
         },
       ];
-      const done = owner.resume(firstToken, responses);
+      const done = owner.resume(responses);
       const second = await server.next(1);
       expect(second.body).toStrictEqual({
         threadId: 'thread',
@@ -168,9 +168,8 @@ describe('correlated native resume over held HTTP', () => {
       expect(
         next.decision?.kind === 'native' && next.decision.attempt
       ).toBeUndefined();
-      expect(await owner.resume(firstToken, responses)).toBe('error');
       expect(server.exchanges).toHaveLength(2);
-      const cancelled = owner.resume(nextToken, [
+      const cancelled = owner.resume([
         { interruptId: 'approval', status: 'cancelled' },
       ]);
       const third = await server.next(2);
@@ -211,9 +210,8 @@ describe('correlated native resume over held HTTP', () => {
       const owner = createSession({ threadId: 'thread', url: server.url });
       try {
         await paused(owner, server);
-        const pause = token(owner);
-        const done = owner.resume(pause, [
-          { interruptId: 'approval', status: 'resolved', payload: true },
+        const done = owner.resume([
+          { interruptId: 'approval', status: 'resolved', value: true },
         ]);
         const exchange = await server.next(1);
         const claimed = owner.getSnapshot().decision;
@@ -243,11 +241,9 @@ describe('correlated native resume over held HTTP', () => {
         expect(final.run?.terminal?.type).toBe(
           ending === 'error' ? 'RUN_ERROR' : undefined
         );
-        expect(
-          await owner.resume(pause, [
-            { interruptId: 'approval', status: 'resolved' },
-          ])
-        ).toBe('error');
+        await expect(
+          owner.resume([{ interruptId: 'approval', status: 'resolved' }])
+        ).rejects.toThrow('No interrupt is waiting for an answer.');
         expect(await owner.submit('bypass')).toBe('error');
         await owner.stop();
         expect(owner.getSnapshot()).toBe(final);
@@ -265,7 +261,6 @@ describe('correlated native resume over held HTTP', () => {
     const owner = createSession({ threadId: 'thread', url: server.url });
     try {
       await paused(owner, server);
-      const pause = token(owner);
       let stopped = false;
       owner.subscribe(() => {
         const snapshot = owner.getSnapshot();
@@ -279,7 +274,7 @@ describe('correlated native resume over held HTTP', () => {
           void owner.stop();
         }
       });
-      const done = owner.resume(pause, [
+      const done = owner.resume([
         { interruptId: 'approval', status: 'resolved' },
       ]);
       const exchange = await server.next(1);
@@ -305,11 +300,11 @@ describe('correlated native resume over held HTTP', () => {
           { id: 'approval', reason: 'Approve', expiresAt },
         ]);
         const before = owner.getSnapshot();
-        expect(
-          await owner.resume(token(owner), [
-            { interruptId: 'approval', status: 'resolved' },
-          ])
-        ).toBe('error');
+        const refused = owner.resume([
+          { interruptId: 'approval', status: 'resolved' },
+        ]);
+        await expect(refused).rejects.toThrow(TypeError);
+        await expect(refused).rejects.toThrow('The interrupt has expired');
         expect(owner.getSnapshot()).toBe(before);
         expect(server.exchanges).toHaveLength(1);
       } finally {
@@ -345,11 +340,13 @@ describe('correlated native resume over held HTTP', () => {
           kind: 'unsupported',
           sourceRunId: exchange.body.runId,
         });
-        expect(
-          await owner.resume('guessed' as PauseId, [
-            { interruptId: 'approval', status: 'resolved' },
-          ])
-        ).toBe('error');
+        await expect(
+          owner.resume([{ interruptId: 'approval', status: 'resolved' }])
+        ).rejects.toThrow(
+          interruptMode === 'native'
+            ? 'No interrupt is waiting for an answer.'
+            : 'Resume needs a settled session with a pending interrupt.'
+        );
         expect(await owner.submit('bypass')).toBe('error');
         expect(server.exchanges).toHaveLength(1);
       } finally {
@@ -404,16 +401,15 @@ describe('correlated native resume over held HTTP', () => {
       exchange.response.write(trace.replaceAll('run-1', exchange.body.runId));
       expect(await bounded(first)).toBe('paused');
       await bounded(exchange.closed);
+      const interruptId =
+        'v1:tool_call:call_A9ckGX1LrvO82OhqZinzDsom:340a4daa-b874-5aad-8309-a63b92d507dd';
+      const value = { chosen_label: 'Tuesday 10:00' };
+      // The session takes the answer as `value`; the wire carries `payload`.
       const responses = [
-        {
-          interruptId:
-            'v1:tool_call:call_A9ckGX1LrvO82OhqZinzDsom:340a4daa-b874-5aad-8309-a63b92d507dd',
-          status: 'resolved' as const,
-          payload: { chosen_label: 'Tuesday 10:00' },
-        },
+        { interruptId, status: 'resolved' as const, payload: value },
       ];
       expect(responses).toStrictEqual(captured.resume);
-      const done = owner.resume(token(owner), responses);
+      const done = owner.resume([{ interruptId, status: 'resolved', value }]);
       const resumed = await server.next(1);
       expect(resumed.body).toStrictEqual({
         threadId: 'th-int-555800',

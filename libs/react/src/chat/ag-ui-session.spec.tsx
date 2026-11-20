@@ -45,7 +45,11 @@ describe('Chat over a native AG-UI session', () => {
           toolCallName: 'search',
           parentMessageId: 'a1',
         });
-        exchange.emit({ type: 'TOOL_CALL_ARGS', toolCallId: 'c1', delta: '{"q":"tea"}' });
+        exchange.emit({
+          type: 'TOOL_CALL_ARGS',
+          toolCallId: 'c1',
+          delta: '{"q":"tea"}',
+        });
         exchange.emit({ type: 'TOOL_CALL_END', toolCallId: 'c1' });
         exchange.emit({
           type: 'TOOL_CALL_RESULT',
@@ -53,8 +57,16 @@ describe('Chat over a native AG-UI session', () => {
           messageId: 't1',
           content: '{"hits":2}',
         });
-        exchange.emit({ type: 'TEXT_MESSAGE_START', messageId: 'a2', role: 'assistant' });
-        exchange.emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'a2', delta: 'Two teas found.' });
+        exchange.emit({
+          type: 'TEXT_MESSAGE_START',
+          messageId: 'a2',
+          role: 'assistant',
+        });
+        exchange.emit({
+          type: 'TEXT_MESSAGE_CONTENT',
+          messageId: 'a2',
+          delta: 'Two teas found.',
+        });
         exchange.emit({ type: 'TEXT_MESSAGE_END', messageId: 'a2' });
         exchange.emit({
           type: 'RUN_FINISHED',
@@ -97,7 +109,13 @@ describe('Chat over a native AG-UI session', () => {
       ],
       state: {
         citations: {
-          a: [{ id: 'doc', title: 'Signals guide', url: 'https://example.test/signals' }],
+          a: [
+            {
+              id: 'doc',
+              title: 'Signals guide',
+              url: 'https://example.test/signals',
+            },
+          ],
         },
       },
     });
@@ -132,11 +150,10 @@ describe('Chat over a native AG-UI session', () => {
                     label: 'Issue refund',
                     onSelect: () =>
                       void native.resume(
-                        pending.id,
                         pending.interrupts.map((interrupt) => ({
                           interruptId: interrupt.id,
                           status: 'resolved' as const,
-                          payload: { approved: true },
+                          value: { approved: true },
                         }))
                       ),
                   },
@@ -178,15 +195,30 @@ describe('Chat over a native AG-UI session', () => {
       fireEvent.click(approve);
       const next = await act(() => fixture.started(1));
       expect((next.body as { resume?: unknown }).resume).toEqual([
-        { interruptId: 'approval', status: 'resolved', payload: { approved: true } },
+        {
+          interruptId: 'approval',
+          status: 'resolved',
+          payload: { approved: true },
+        },
       ]);
       expect(
-        (view.getByRole('button', { name: 'Issue refund' }) as HTMLButtonElement)
-          .disabled
+        (
+          view.getByRole('button', {
+            name: 'Issue refund',
+          }) as HTMLButtonElement
+        ).disabled
       ).toBe(true);
       await act(async () => {
-        next.emit({ type: 'TEXT_MESSAGE_START', messageId: 'a', role: 'assistant' });
-        next.emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'a', delta: 'Refund issued.' });
+        next.emit({
+          type: 'TEXT_MESSAGE_START',
+          messageId: 'a',
+          role: 'assistant',
+        });
+        next.emit({
+          type: 'TEXT_MESSAGE_CONTENT',
+          messageId: 'a',
+          delta: 'Refund issued.',
+        });
         next.emit({ type: 'TEXT_MESSAGE_END', messageId: 'a' });
         next.emit({
           type: 'RUN_FINISHED',

@@ -273,12 +273,17 @@ responses demonstrate the distinction between submitted and observed state.
 ## Explicit resume contract
 
 The private development session exposes
-`resume(value?: PlainValue, options?: LangGraphRunOptions)`. Supply the
-application's response for a dynamic interrupt, including an interrupt-ID map
-when responding to several interrupts. Omit the response to continue a static
-breakpoint. `false`, `0`, `''`, and `null` are responses and are preserved. The
-runtime owns a plain-data copy; it does not validate an application schema,
-select interrupt targets, or transform arguments.
+`resume(responses: readonly AgentInterruptResponse[], options?: LangGraphRunOptions)`.
+Each response names one pending interrupt by the `id` the snapshot publishes
+and has the status `resolved` with an optional `value`. When one interrupt is
+pending, its response's value is sent as the resume value as is. When several
+are pending, the answered ones are sent as an interrupt-ID map, so each needs a
+backend id and a defined value. Answer the `breakpoint` interrupt without a
+value to continue a static breakpoint. `false`, `0`, `''`, and `null` are
+values and are preserved. A response that names an interrupt that is not
+pending, names one twice, or has the status `cancelled` rejects before
+anything is sent. The runtime owns a plain-data copy; it does not validate an
+application schema, choose which interrupts to answer, or transform arguments.
 
 Resume requires an observed pause and no active run, history load, unresolved
 submission recovery, retained reconnect ownership, or unsettled tool results.
@@ -567,7 +572,7 @@ Chromium: inert mount, explicit history load, equal history refresh, empty histo
 replacement, successful text, a real local tool handler and exact
 two-request result continuation, protected visible server error, held streaming
 DOM updates and Stop, the full pause batch retained after Stop, an explicit response
-map and second pause, same-message resume completion, known-run premature EOF,
+map and second pause answered by a single plain value, same-message resume completion, known-run premature EOF,
 explicit cursor join with exact-run completion, reuse after Stop,
 then unmount/dispose/post-disposal commands. The separate thread view adds six
 scenario groups covering explicit selection/load, switching during streaming,
@@ -600,7 +605,8 @@ makes three. History fixtures contain two separate task payloads and show paused
 delivery. The Pause button sends two separate root controls and renders both
 payloads; Stop retains them without another request. Resume clears the old batch
 and observes a new pause, then a second explicit resume completes without adding
-human messages. Both null inputs and exact response maps are asserted server-side.
+human messages. Both null inputs, the exact response map for the two-interrupt
+batch and the plain value for the single final interrupt are asserted server-side.
 Drop captures its run identity from `Content-Location` and ends with a committed
 cursor. Its assistant frames omit message IDs, proving that fallback message
 identity survives the fresh delivery generation used by reconnect. Its clean

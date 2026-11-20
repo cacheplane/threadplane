@@ -3,6 +3,7 @@ import type { AgentError } from '@threadplane/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createLifecycleRecorder } from './lifecycle';
 import type { StreamEvent } from './transport.types';
+import { answerPending } from './testing/answer-pending';
 import { controlledSession } from './testing/controlled-session';
 import { saved } from './testing/checkpoint-fixture';
 
@@ -222,7 +223,7 @@ describe('lifecycle through the session', () => {
     });
     f.at(30);
     f.getHistory.mockResolvedValueOnce([paused()]);
-    const run = f.session.resume(true);
+    const run = f.session.resume(answerPending(f.session, true));
     await f.started();
     expect(f.lifecycle().interruptResolvedAt).toBe(30);
     f.at(40);

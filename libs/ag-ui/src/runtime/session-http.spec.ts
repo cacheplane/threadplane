@@ -296,8 +296,8 @@ describe('composed private session over held HTTP', () => {
       expect(settled.state).toEqual({ count: 2 });
       if (settled.decision?.kind !== 'native')
         throw new Error('Missing native pause');
-      second = owner.resume(settled.decision.id, [
-        { interruptId: 'approval', status: 'resolved', payload: true },
+      second = owner.resume([
+        { interruptId: 'approval', status: 'resolved', value: true },
       ]);
       const next = await server.next(1);
       expect(next.body).toStrictEqual({
@@ -323,12 +323,14 @@ describe('composed private session over held HTTP', () => {
       expect(owner.getSnapshot().subagents).toEqual([]);
       expect(settled).not.toHaveProperty('earlierSubagents');
       expect(settled.subagents[0].terminal?.type).toBe('SUBAGENT_FINISHED');
+      // History keeps the child's protocol evidence, by reference, without
+      // the core child fields the current run's list adds.
+      const { started, terminal: finished } = settled.subagents[0];
       expect(owner.getSnapshot().earlierSubagents).toStrictEqual([
-        settled.subagents[0],
+        { started, terminal: finished },
       ]);
-      expect(owner.getSnapshot().earlierSubagents?.[0]).toBe(
-        settled.subagents[0]
-      );
+      expect(owner.getSnapshot().earlierSubagents?.[0].started).toBe(started);
+      expect(owner.getSnapshot().earlierSubagents?.[0].terminal).toBe(finished);
       expect(owner.getSnapshot().run?.terminal).toBeUndefined();
       next.send(lifecycle(next), lifecycle(next, 'RUN_FINISHED'));
       expect(await bounded(second)).toBe('success');
@@ -351,20 +353,29 @@ describe('composed private session over held HTTP', () => {
       expect(await bounded(third)).toBe('success');
       expect(owner.getSnapshot().earlierSubagents).toBe(history);
       const latest = owner.getSnapshot().subagents;
-      expect(latest).toStrictEqual([
-        {
-          started: {
-            type: 'SUBAGENT_STARTED',
-            subagentRunId: 'child',
-            name: 'again',
-          },
-          terminal: { type: 'SUBAGENT_FINISHED', subagentRunId: 'child' },
+      const reused = {
+        started: {
+          type: 'SUBAGENT_STARTED',
+          subagentRunId: 'child',
+          name: 'again',
         },
+        terminal: { type: 'SUBAGENT_FINISHED', subagentRunId: 'child' },
+      };
+      // This turn asserts the child's identity and evidence, not its own
+      // messages and tool calls.
+      expect(latest).toHaveLength(1);
+      expect(latest).toMatchObject([
+        { id: 'child', name: 'again', status: 'complete', ...reused },
       ]);
+      expect(latest[0].started).toStrictEqual(reused.started);
+      expect(latest[0].terminal).toStrictEqual(reused.terminal);
       const fourth = owner.submit('once more');
       const last = await server.next(3);
       expect(owner.getSnapshot().subagents).toEqual([]);
-      expect(owner.getSnapshot().earlierSubagents).toStrictEqual(latest);
+      expect(owner.getSnapshot().earlierSubagents).toStrictEqual([reused]);
+      expect(owner.getSnapshot().earlierSubagents?.[0].started).toBe(
+        latest[0].started
+      );
       last.send(lifecycle(last), lifecycle(last, 'RUN_FINISHED'));
       expect(await bounded(fourth)).toBe('success');
     } finally {
@@ -481,6 +492,11 @@ describe('composed private session over held HTTP', () => {
         if (ending === 'EOF' || ending === 'error')
           expect(owner.getSnapshot().subagents).toEqual([
             {
+              id: 'open',
+              name: 'worker',
+              status: 'unknown',
+              messages: [],
+              toolCalls: [],
               started: {
                 type: 'SUBAGENT_STARTED',
                 subagentRunId: 'open',

@@ -109,11 +109,10 @@ for (const scenario of ['approval', 'batch'])
         );
         const outcome = await bounded(
           session.resume(
-            decision.id,
             decision.interrupts.map((i) => ({
               interruptId: i.id,
               status: 'resolved',
-              payload: { approved },
+              value: { approved },
             }))
           )
         );
@@ -207,11 +206,10 @@ test(
       assert.equal(d.kind, 'native');
       await bounded(
         session.resume(
-          d.id,
           d.interrupts.map((i) => ({
             interruptId: i.id,
             status: 'resolved',
-            payload: { approved },
+            value: { approved },
           }))
         )
       );
@@ -254,11 +252,10 @@ test(
           assert.equal(
             await bounded(
               session.resume(
-                d.id,
                 d.interrupts.map((i) => ({
                   interruptId: i.id,
                   status: 'resolved',
-                  payload: { approved: approve },
+                  value: { approved: approve },
                 }))
               )
             ),
@@ -399,11 +396,10 @@ for (const scenario of [
       const d = session.getSnapshot().decision;
       await bounded(
         session.resume(
-          d.id,
           d.interrupts.map((i) => ({
             interruptId: i.id,
             status: 'resolved',
-            payload: { approved: true },
+            value: { approved: true },
           }))
         )
       );

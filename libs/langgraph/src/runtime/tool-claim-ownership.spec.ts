@@ -5,6 +5,7 @@ import type { ToolExecutionStore } from '@threadplane/core/tools';
 import { createSession } from './create-session';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { deferred } from './testing/deferred';
+import { answerPending } from './testing/answer-pending';
 
 const key = { threadId: 'thread', toolCallId: 'foreign' };
 function call(id: string, messageId = `ai-${id}`): StreamEvent {
@@ -88,7 +89,7 @@ describe('tool acquire ownership', () => {
         await expect(session.submit('Bypass')).rejects.toThrow(
           /unsettled tool/
         );
-        await expect(session.resume()).rejects.toThrow();
+        await expect(session.resume(answerPending(session))).rejects.toThrow();
         await expect(session.reconnect()).rejects.toThrow();
         await session.checkStatus?.();
         expect(f.getHistory).not.toHaveBeenCalled();

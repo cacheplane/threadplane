@@ -1,4 +1,5 @@
 import type {
+  AgentInterruptResponse,
   AgentSession,
   CompleteOutcome,
   Message,
@@ -18,11 +19,12 @@ import {
   type PauseAuthority,
 } from './authority';
 
-export interface InterruptsSession extends Omit<AgentSession, 'getSnapshot'> {
+export interface InterruptsSession
+  extends Omit<AgentSession, 'getSnapshot' | 'resume'> {
   getSnapshot(): InterruptsState;
   load(options?: { readonly signal?: AbortSignal }): Promise<void>;
   resume(
-    value: 'confirm' | 'cancel',
+    responses: readonly AgentInterruptResponse[],
     options?: { readonly signal?: AbortSignal }
   ): Promise<CompleteOutcome>;
 }
@@ -387,9 +389,26 @@ export function createInterruptsApplication(options: {
         blocked();
         return;
       }
+      // A decision answers the one interrupt its authority was captured from.
+      const interruptId =
+        'text' in input ? undefined : dispatch.interrupts[0]?.id;
+      if (!('text' in input) && typeof interruptId !== 'string') {
+        selected.unsafe = true;
+        blocked();
+        return;
+      }
       const outcome = await ('text' in input
         ? selected.session.submit(input.text, { signal: admitted.signal })
-        : selected.session.resume(input.value, { signal: admitted.signal }));
+        : selected.session.resume(
+            [
+              {
+                interruptId: interruptId as string,
+                status: 'resolved',
+                value: input.value,
+              },
+            ],
+            { signal: admitted.signal }
+          ));
       if (!valid()) return;
       const live = read(selected, valid),
         turn = selected.turn;

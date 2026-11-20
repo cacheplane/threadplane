@@ -3,6 +3,7 @@ import type { Run } from '@langchain/langgraph-sdk';
 import { createSession } from './create-session';
 import { deferred } from './testing/deferred';
 import type { AgentTransport, StreamEvent } from './transport.types';
+import { answerPending } from './testing/answer-pending';
 
 const partial: StreamEvent = {
   type: 'messages',
@@ -67,24 +68,22 @@ function fixture(
 /** A completed run that echoes the submitted user message and answers it. */
 const answer =
   (content: string): Script =>
-  (payload) => [
-    {
-      type: 'values',
-      data: {
-        messages: [
-          ...(payload?.messages ?? []),
-          { type: 'ai', id: 'answer', content },
-        ],
+  (payload) =>
+    [
+      {
+        type: 'values',
+        data: {
+          messages: [
+            ...(payload?.messages ?? []),
+            { type: 'ai', id: 'answer', content },
+          ],
+        },
       },
-    },
-  ];
+    ];
 
 describe('retry', () => {
   it('sends a submission the backend reported failed again, with the same user message', async () => {
-    const f = fixture(
-      [() => [partial], answer('Done')],
-      ['error', 'success']
-    );
+    const f = fixture([() => [partial], answer('Done')], ['error', 'success']);
     expect(await f.session.submit('Question')).toBe('error');
     expect(f.session.getSnapshot()).toMatchObject({
       status: 'error',
@@ -171,7 +170,13 @@ describe('retry', () => {
   it('sends a failed resume again with the same response and no user message', async () => {
     // Each run is scripted below; run-1, the resume, is the one that fails.
     const f = fixture([], ['interrupted', 'error', 'success']);
-    f.stream.mockImplementationOnce(async function* (_a, _t, payload, _s, settings) {
+    f.stream.mockImplementationOnce(async function* (
+      _a,
+      _t,
+      payload,
+      _s,
+      settings
+    ) {
       settings?.onRunCreated?.({ run_id: 'run-0', thread_id: 't' });
       yield* answer('Waiting')(payload as Payload) as StreamEvent[];
       yield pause;
@@ -182,7 +187,9 @@ describe('retry', () => {
       settings?.onRunCreated?.({ run_id: 'run-1', thread_id: 't' });
       yield partial;
     });
-    expect(await f.session.resume({ approved: true })).toBe('error');
+    expect(
+      await f.session.resume(answerPending(f.session, { approved: true }))
+    ).toBe('error');
     expect(f.session.getSnapshot().error).toMatchObject({ recovery: 'retry' });
     f.stream.mockImplementationOnce(async function* (_a, _t, _p, _s, settings) {
       settings?.onRunCreated?.({ run_id: 'run-2', thread_id: 't' });
@@ -210,7 +217,9 @@ describe('retry', () => {
     );
     const snapshot = f.session.getSnapshot();
     expect(snapshot.error).toBeUndefined();
-    expect(snapshot.messages.filter(({ role }) => role === 'user')).toHaveLength(1);
+    expect(
+      snapshot.messages.filter(({ role }) => role === 'user')
+    ).toHaveLength(1);
     expect(snapshot.messages.some(({ id }) => id === 'partial')).toBe(false);
   });
 

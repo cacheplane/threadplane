@@ -425,12 +425,11 @@ export function createMastraApplication(options: {
       if (!ownedValid() || p.unsafe) return;
       const pending = method.call(
         p.session,
-        approval.pause,
         [
           {
             interruptId: approval.interruptId,
             status: 'resolved',
-            payload: { approved: p.approved },
+            value: { approved: p.approved },
           },
         ],
         { signal: controller.signal }

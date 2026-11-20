@@ -339,6 +339,20 @@ Disposal releases every listener and later subscriptions are inert.
 
 ## Dynamic pauses
 
+Every interrupt in the snapshot's `interrupts` has the `id` a response names: the
+backend's id when it sent one, `breakpoint` for a static breakpoint, and the
+position (`interrupt-0`) otherwise. The wire metadata stays alongside. Child
+observations in `subgraphs` keep the wire shape, where `id` is optional.
+
+`resume(responses)` is the core contract's command. Each response names one pending
+interrupt and has the status `resolved`. With one interrupt pending, its response's
+`value` is sent as the resume value, and a response with no value sends no command.
+With several pending, the answered ones are sent as one map keyed by backend id, so
+each needs an id the backend sent and a value; the others stay pending. `resume`
+rejects without sending when a response names an interrupt that is not pending,
+names one twice, or is `cancelled`: LangGraph has no cancelled response, so a
+refusal is a value the graph reads.
+
 Branch resume reads the exact retained pause before sending a decision. Task and
 interrupt identities, payloads and unconsumed task results must match. Undefined
 does not mean replay; pass an explicit defined response, including null where

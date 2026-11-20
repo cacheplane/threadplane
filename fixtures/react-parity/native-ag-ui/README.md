@@ -53,8 +53,8 @@ Use each enabled control in order:
    retains the earlier custom notice beside that terminal.
 3. **Mount React** reconnects observation without a request and displays both the
    retained notice and native terminal.
-4. **Resume** uses the observed native pause token and an explicit resolved
-   `approval` response with payload `{ approved: true }`. It sends full prior native
+4. **Resume** answers the observed native pause with an explicit resolved
+   `approval` response whose value is `{ approved: true }`. It sends full prior native
    history and `count: 2`, adds no user row or settings patch, then shows root
    `Next answer`. The diagnostic decision contains the captured running attempt.
 5. **Remove Angular**, then **Complete resume**. React receives successful
@@ -85,7 +85,7 @@ ending at EOF would be `interrupted`; local cancellation can be `aborted` even
 after terminal evidence was observed. Explicit private `legacy-observation` mode
 retains the older close-at-notice convention but supplies no resume capability.
 Any decision blocks ordinary submission. Only a settled unclaimed native pause
-can be answered once with its current token; legacy notices cannot be resumed.
+can be answered once; legacy notices cannot be resumed.
 If an invoked resume fails, ends at EOF or is stopped without conclusive native
 evidence, its retained attempt is uncertain and blocks replay and ordinary bypass.
 Local stop or reconstructing an owner is not recovery. Separate held HTTP tests

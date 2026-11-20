@@ -1,4 +1,4 @@
-import type { AgentSnapshot, Message } from '@threadplane/core';
+import type { AgentInterrupt, AgentSnapshot, Message } from '@threadplane/core';
 import {
   createMessageContent,
   type MessageRow,
@@ -140,7 +140,9 @@ function captureNative(
     toolCalls: captureData(
       ownField(raw, 'toolCalls')
     ) as AgentSnapshot['toolCalls'],
-    interrupts: captureData(ownField(raw, 'interrupts')) as readonly unknown[],
+    interrupts: captureData(
+      ownField(raw, 'interrupts')
+    ) as unknown as readonly AgentInterrupt[],
     subgraphs: captureData(ownField(raw, 'subgraphs')) as readonly unknown[],
     state: values.kind === 'available' ? values.values : undefined,
     history,

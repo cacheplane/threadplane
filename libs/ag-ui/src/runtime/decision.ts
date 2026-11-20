@@ -1,5 +1,6 @@
 import type { Interrupt } from '@ag-ui/client';
 import type {
+  AgentInterruptResponse,
   CompleteOutcome,
   DeepReadonly,
   PlainValue,
@@ -9,6 +10,17 @@ import { copyData } from '../lib/internal/copy-data.js';
 
 declare const pauseId: unique symbol;
 export type PauseId = string & { readonly [pauseId]: true };
+/**
+ * One answer for `resume`: the core response, which names a pending interrupt
+ * and resolves it with an optional `value` or cancels it, plus the protocol's
+ * optional `metadata`.
+ */
+export type InterruptResponse = AgentInterruptResponse & {
+  readonly metadata?: Readonly<Record<string, PlainValue>>;
+  /** The request's name for the answer. `resume` reads `value`. */
+  readonly payload?: never;
+};
+/** A response as the protocol carries it, with the value as its `payload`. */
 export type NativeResponse =
   | {
       readonly interruptId: string;
@@ -43,14 +55,14 @@ export interface DecisionRun {
 }
 
 export function captureResponses(
-  responses: readonly NativeResponse[]
+  responses: readonly InterruptResponse[]
 ): readonly NativeResponse[] {
   if (!Array.isArray(responses))
-    throw new TypeError('A native response array is required');
+    throw new TypeError('Resume takes an array of responses.');
   const length = responses.length;
   const selected: NativeResponse[] = [];
   for (let index = 0; index < length; index++) {
-    const { interruptId, status, payload, metadata } = responses[index];
+    const { interruptId, status, value: payload, metadata } = responses[index];
     if (
       typeof interruptId !== 'string' ||
       (status !== 'resolved' && status !== 'cancelled')
@@ -59,7 +71,7 @@ export function captureResponses(
         'Explicit interruptId and native status are required'
       );
     if (status === 'cancelled' && payload !== undefined)
-      throw new TypeError('Cancelled decisions cannot have a payload');
+      throw new TypeError('A cancelled response cannot carry a value.');
     if (
       metadata !== undefined &&
       (metadata === null ||
@@ -115,19 +127,15 @@ export function observeDecision(
 export function assertResumeEligible(
   decision: Decision | undefined,
   run: DecisionRun | undefined,
-  pause: PauseId,
   now: number
 ): NativeDecision {
   if (
     !decision ||
     decision.kind !== 'native' ||
-    decision.id !== pause ||
     decision.attempt ||
     run?.outcome === undefined
   )
-    throw new TypeError(
-      'No settled unclaimed native decision matches this pause'
-    );
+    throw new TypeError('No interrupt is waiting for an answer.');
   if (!Number.isFinite(now))
     throw new TypeError('A finite admission time is required');
   for (const interrupt of decision.interrupts) {
@@ -195,7 +203,7 @@ export function settleDecision(
  * What a view can do about the session's pending decision.
  *
  * - `observing`: the pausing run has not settled locally yet; do not answer.
- * - `ready`: the pause can be answered with `session.resume(id, responses)`.
+ * - `ready`: the pause can be answered with `session.resume(responses)`.
  * - `answering`: an answer was sent and its run is still going.
  * - `uncertain`: the answering run ended without proof that the backend took
  *   the answer. It cannot be sent again; only a new session can continue.

@@ -1,4 +1,5 @@
 import type {
+  AgentInterruptResponse,
   AgentSession,
   AgentSnapshot,
   CompleteOutcome,
@@ -8,12 +9,16 @@ import {
   type MessageRow,
 } from '@threadplane/content/messages';
 
-export interface InterruptSession extends Omit<AgentSession, 'getSnapshot'> {
+export interface InterruptSession
+  extends Omit<AgentSession, 'getSnapshot' | 'resume'> {
   getSnapshot(): AgentSnapshot & {
-    readonly interrupts: readonly { readonly value?: unknown }[];
+    readonly interrupts: readonly {
+      readonly id: string;
+      readonly value?: unknown;
+    }[];
   };
   resume(
-    value: RefundResponse,
+    responses: readonly AgentInterruptResponse[],
     options?: { readonly signal?: AbortSignal }
   ): Promise<CompleteOutcome>;
 }
@@ -112,6 +117,8 @@ export function createInterruptsApplication(options: {
   let capturedBatch:
     | ReturnType<InterruptSession['getSnapshot']>['interrupts']
     | undefined;
+  /** The id of the one interrupt behind the projected decision. */
+  let capturedId: string | undefined;
   let operation: AbortController | undefined;
   let disposed = false;
   let disposal: Promise<void> | undefined;
@@ -126,8 +133,13 @@ export function createInterruptsApplication(options: {
     if (interrupts === capturedBatch) return;
     capturedBatch = interrupts;
     const root =
-      interrupts.length === 1 ? ownData(interrupts[0], ['value']) : undefined;
-    const refund = root && refundPayload(root['value']);
+      interrupts.length === 1
+        ? ownData(interrupts[0], ['id', 'value'])
+        : undefined;
+    const id = root?.['id'];
+    const refund =
+      root && typeof id === 'string' ? refundPayload(root['value']) : undefined;
+    capturedId = refund && typeof id === 'string' ? id : undefined;
     publish({
       decision: refund ? Object.freeze({ refund }) : null,
       canSubmit: false,
@@ -234,12 +246,17 @@ export function createInterruptsApplication(options: {
     )
       return;
     const admittedBatch = capturedBatch;
+    const interruptId = capturedId;
+    if (interruptId === undefined) return;
     await perform('decision', (owned, signal) => {
       // Publishing pending state can synchronously replace the observed batch.
       // Reproject that pause without dispatching the superseded decision.
       if (owned.getSnapshot().interrupts !== admittedBatch)
         return Promise.resolve('paused');
-      return owned.resume(captured, { signal });
+      return owned.resume(
+        [{ interruptId, status: 'resolved', value: captured }],
+        { signal }
+      );
     });
   }
   async function stop() {

@@ -1,11 +1,14 @@
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import type { PlainValue } from '@threadplane/core';
-import type { LangGraphInterrupt } from './langgraph-snapshot.js';
+import type {
+  LangGraphInterrupt,
+  LangGraphWireInterrupt,
+} from './langgraph-snapshot.js';
 import { ownValue, ownValueWithSharing } from './ownership.js';
 import type { StreamEvent } from './transport.types.js';
 import { record } from './wire-message.js';
 
-type Interrupts = readonly LangGraphInterrupt[];
+type Interrupts = readonly LangGraphWireInterrupt[];
 
 const breakpoint: Interrupts = ownValue([{ when: 'breakpoint' }]) as Interrupts;
 
@@ -123,4 +126,80 @@ export function projectHistoryInterrupts(
 ): Interrupts {
   const latest = record(history[0]);
   return replace(previous, latest ? checkpointInterrupts(latest) : []);
+}
+
+const identified = new WeakMap<Interrupts, readonly LangGraphInterrupt[]>();
+
+/** The published form of a pending batch: every interrupt has the id a
+ * response names. A backend id is kept; a static breakpoint is `breakpoint`;
+ * anything else is named by position. One wire batch maps to one list. */
+export function identifyInterrupts(
+  interrupts: Interrupts
+): readonly LangGraphInterrupt[] {
+  const known = identified.get(interrupts);
+  if (known) return known;
+  const taken = new Set(
+    interrupts.flatMap(({ id }) => (typeof id === 'string' ? [id] : []))
+  );
+  const published = ownValue(
+    interrupts.map((interrupt, index) => {
+      if (typeof interrupt.id === 'string') return interrupt;
+      let id =
+        interrupt.when === 'breakpoint' ? 'breakpoint' : `interrupt-${index}`;
+      while (taken.has(id)) id = `${id}-${index}`;
+      taken.add(id);
+      return { ...interrupt, id };
+    }) as PlainValue
+  ) as unknown as readonly LangGraphInterrupt[];
+  identified.set(interrupts, published);
+  return published;
+}
+
+/**
+ * The value a resume command carries for these responses. One pending
+ * interrupt takes its response's value as is. Several are answered by backend
+ * id, so each answered interrupt needs an id the backend sent and a value.
+ */
+export function resumeValue(
+  responses: unknown,
+  pending: Interrupts
+): PlainValue | undefined {
+  if (!Array.isArray(responses) || responses.length === 0)
+    throw new TypeError('Resume requires at least one interrupt response.');
+  const published = identifyInterrupts(pending);
+  const answers = new Map<string, PlainValue | undefined>();
+  const length = responses.length;
+  for (let index = 0; index < length; index++) {
+    const response = record(responses[index]);
+    // Response getters are caller effects; read each field once.
+    const interruptId = response?.['interruptId'];
+    const status = response?.['status'];
+    const value = response?.['value'] as PlainValue | undefined;
+    if (typeof interruptId !== 'string')
+      throw new TypeError('An interrupt response names its interrupt by id.');
+    const position = published.findIndex(({ id }) => id === interruptId);
+    if (position < 0)
+      throw new TypeError(`No pending interrupt has the id "${interruptId}".`);
+    if (answers.has(interruptId))
+      throw new TypeError(`The interrupt "${interruptId}" is answered twice.`);
+    if (status === 'cancelled')
+      throw new TypeError(
+        'LangGraph cannot cancel an interrupt. Resolve it with a value the graph reads as a refusal.'
+      );
+    if (status !== 'resolved')
+      throw new TypeError('An interrupt response has the status "resolved".');
+    if (pending.length > 1) {
+      if (pending[position].id !== interruptId)
+        throw new TypeError(
+          `The interrupt "${interruptId}" has no backend id, so it cannot be answered while others are pending.`
+        );
+      if (value === undefined)
+        throw new TypeError(
+          `The response to "${interruptId}" needs a value while several interrupts are pending.`
+        );
+    }
+    answers.set(interruptId, value);
+  }
+  if (pending.length === 1) return answers.values().next().value;
+  return Object.fromEntries(answers);
 }

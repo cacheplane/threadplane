@@ -4,6 +4,7 @@ import { createSession } from './create-session';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { controlledTransport } from './testing/controlled-transport';
 import { deferred } from './testing/deferred';
+import { answerPending } from './testing/answer-pending';
 
 const ai = (content: string, id = 'shared') => ({ type: 'ai', id, content });
 const child = (content: string, namespace = ['child']): StreamEvent => ({
@@ -222,7 +223,9 @@ describe('private subgraph observations', () => {
       f.streams[0].finish();
       expect(await run).toBe('interrupted');
       expect(f.session.getSnapshot().interrupts).toEqual([]);
-      await expect(f.session.resume()).rejects.toThrow();
+      await expect(
+        f.session.resume(answerPending(f.session))
+      ).rejects.toThrow();
     }
   );
 
@@ -341,7 +344,7 @@ describe('private subgraph observations', () => {
     f.streams[0].finish();
     expect(await run).toBe('paused');
     const before = f.session.getSnapshot();
-    const resumed = f.session.resume(true);
+    const resumed = f.session.resume(answerPending(f.session, true));
     await f.started(1);
     expect(f.session.getSnapshot().subgraphs).toBe(before.subgraphs);
     await f.emit(child('New'), 1);
