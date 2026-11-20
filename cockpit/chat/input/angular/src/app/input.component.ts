@@ -9,7 +9,8 @@ import {
   messageContent,
 } from '@threadplane/chat';
 import { ExampleChatLayoutComponent, ExampleTranscriptDirective } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
 /**
  * InputComponent showcases ChatInputComponent features including
@@ -38,7 +39,7 @@ import { injectAgent } from '@threadplane/langgraph';
       title="Chat input"
       description="Try the keyboard shortcuts and customize your composer. You can draft your next message while a response arrives."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="isLoading()"
         (click)="newConversation(composer)">New conversation</button>
       <section main class="chat-demo">
         <div class="message-scroll" exampleTranscript>
@@ -69,7 +70,7 @@ import { injectAgent } from '@threadplane/langgraph';
                notification only — re-submitting it here would double the
                user message. -->
           <chat-input #composer [agent]="agent" placeholder="Ask an aviation question…"><p chatInputFooter class="composer-help">Enter to send. Shift+Enter adds a new line.</p></chat-input>
-          <p role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+          <p role="status" class="example-submission-status">{{ isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         </div>
         <!-- #endregion -->
       </section>
@@ -176,16 +177,16 @@ import { injectAgent } from '@threadplane/langgraph';
 })
 export class InputComponent {
   protected newConversation(composer: ChatInputPrimitive): void {
-    if (this.agent.isLoading()) return;
+    if (this.isLoading()) return;
     this.agent.switchThread(null);
     composer.clearDraft();
   }
 
   // #region agent-state
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 
   protected readonly streamStatus = computed(() => this.agent.status());
-  protected readonly isLoading = computed(() => this.agent.isLoading());
+  protected readonly isLoading = computed(() => this.agent.status() === 'running');
   // #endregion
   protected readonly messageContent = messageContent;
   protected readonly markdownDocument = markdownDocument;

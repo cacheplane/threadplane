@@ -1,8 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
 import { ChatComponent } from '@threadplane/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
 // #region theme-presets
 const THEMES: Record<string, Record<string, string>> = {
@@ -64,10 +65,10 @@ const THEMES: Record<string, Record<string, string>> = {
       title="Chat theming"
       description="Ask an aviation question and watch the answer arrive. Switch palettes at any time; your conversation and draft stay in place. Continue after the response is saved."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="isLoading()"
         (click)="newConversation(conversation)">New conversation</button>
       <chat placeholder="Ask an aviation question…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
       <div sidebar class="panel">
         <h3 class="cap">Theme Picker</h3>
@@ -171,12 +172,14 @@ const THEMES: Record<string, Record<string, string>> = {
 // #region apply-theme
 export class ThemingComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.isLoading()) return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
+  /** True while a run streams: the agent has no separate loading flag. */
+  protected readonly isLoading = computed(() => this.agent.status() === 'running');
 
   protected readonly themeNames = Object.keys(THEMES);
   protected readonly activeTheme = signal('dark');

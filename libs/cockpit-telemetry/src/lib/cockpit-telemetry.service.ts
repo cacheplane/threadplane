@@ -3,7 +3,7 @@ import posthog from 'posthog-js';
 import { COCKPIT_TELEMETRY_CONFIG } from './tokens';
 import { ActivationAggregator } from './activation-aggregator';
 import { CHAT_LIFECYCLE } from '@threadplane/chat';
-import { AgentLifecycleRegistry, type AgentLifecycle } from '@threadplane/langgraph';
+import { AgentLifecycleRegistry, type AgentLifecycle } from '@threadplane/angular';
 import { RENDER_LIFECYCLE } from '@threadplane/render';
 import type { CockpitEventName } from './events';
 

@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
 import { ChatDebugComponent } from '@threadplane/chat/debug';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 /**
@@ -23,10 +24,10 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
       title="Chat debug"
       description="Ask an aviation question. Watch the answer, processing result and summary arrive, then inspect the observed saved state."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="isLoading()"
         (click)="newConversation(conversation)">New conversation</button>
       <chat placeholder="Ask an aviation question…" #conversation [welcomeDisabled]="true" main [agent]="agent">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
       <chat-debug main [agent]="agent" />
     </example-chat-layout>
@@ -34,10 +35,12 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 })
 export class DebugPageComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.isLoading()) return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
+  /** True while a run streams: the agent has no separate loading flag. */
+  protected readonly isLoading = computed(() => this.agent.status() === 'running');
 }

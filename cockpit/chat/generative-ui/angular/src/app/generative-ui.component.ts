@@ -1,7 +1,8 @@
 import { exampleToolLabel } from '../../../../../shared/tool-presentation';
-import { Component, viewChild } from '@angular/core';
+import { Component, computed, viewChild } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent, views } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 import { signalStateStore } from '@threadplane/render';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
@@ -46,7 +47,7 @@ const WELCOME_SUGGESTIONS = [
       <button headerActions type="button" (click)="newConversation()">New conversation</button>
       <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask about airline operations…" [welcomeDisabled]="true" main [agent]="agent" [views]="dashboardViews" [store]="dashStore" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -64,7 +65,9 @@ const WELCOME_SUGGESTIONS = [
 export class GenerativeUiComponent {
   protected readonly toolLabel = exampleToolLabel;
   private readonly chat = viewChild(ChatComponent);
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
+  /** True while a run streams: the agent has no separate loading flag. */
+  protected readonly isLoading = computed(() => this.agent.status() === 'running');
   protected readonly dashboardViews = dashboardViews;
   protected readonly suggestions = WELCOME_SUGGESTIONS;
 
