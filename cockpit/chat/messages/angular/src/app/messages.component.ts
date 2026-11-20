@@ -9,7 +9,7 @@ import {
   messageContent,
 } from '@threadplane/chat';
 import { ExampleChatLayoutComponent, ExampleTranscriptDirective } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
 
 /**
@@ -40,7 +40,7 @@ import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
   template: `
     <example-chat-layout sidebarWidth="18rem" title="Chat messages"
       description="Ask a question and watch the answer arrive. Continue after the response is saved.">
-      <button headerActions type="button" [disabled]="agent.isLoading()" (click)="newConversation()">New conversation</button>
+      <button headerActions type="button" [disabled]="isLoading()" (click)="newConversation()">New conversation</button>
       <section main class="chat-demo">
         <div class="message-scroll" exampleTranscript>
           <!-- #region message-templates -->
@@ -159,20 +159,22 @@ export class MessagesComponent {
   protected readonly hasSubmitted = signal(false);
   protected readonly wasStopped = signal(false);
   private readonly composer = viewChild(ChatInputComponent);
-  protected readonly status = computed(() => this.agent.isLoading()
+  /** True while a run streams: the agent has no separate loading flag. */
+  protected readonly isLoading = computed(() => this.agent.status() === 'running');
+  protected readonly status = computed(() => this.isLoading()
     ? 'Receiving response…'
     : this.agent.error() ? 'Response failed. Try again.'
     : this.wasStopped() ? 'Stopped.'
     : this.hasSubmitted() ? 'Response complete.' : 'Ready.');
   protected newConversation(): void {
-    if (this.agent.isLoading()) return;
+    if (this.isLoading()) return;
     this.agent.switchThread(null);
     this.composer()?.clearDraft();
     this.hasSubmitted.set(false);
     this.wasStopped.set(false);
   }
   // Typed read: prove MessagesState flows through DI.
-  protected readonly _typedState: MessagesState = this.agent.value();
+  protected readonly _typedState: MessagesState | undefined = this.agent.state();
 
   protected readonly messageContent = messageContent;
   protected readonly markdownDocument = markdownDocument;
