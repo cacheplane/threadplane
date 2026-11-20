@@ -1,17 +1,26 @@
 import type { AgentSnapshot } from './agent-snapshot.js';
+import type { AgentClientTools } from './client-tools.js';
+import type { ContentBlock } from './content-block.js';
 import type { CompleteOutcome } from './delivery.js';
 import type { AgentInterruptResponse } from './interrupt.js';
 import type { AgentStateUpdate } from './state.js';
 import type { PlainValue, ToolContract } from './tool.js';
 
 /**
- * What a caller submits: the message text, or the text with a partial state the
- * backend merges before the run. A session that holds no state ignores `state`.
+ * What a caller submits: the message text, or the text with structured
+ * content, a partial state the backend merges before the run, or both.
+ *
+ * `blocks` sends the message as structured content, such as an image with a
+ * caption; `message` is then the text shown where blocks are not rendered
+ * (see `contentBlocksText`). A session that holds no state ignores `state`,
+ * and a session that cannot send blocks rejects them without sending. A
+ * submission always carries a message; `run` starts one without.
  */
 export type AgentSubmitInput<TState = unknown> =
   | string
   | {
       readonly message: string;
+      readonly blocks?: readonly ContentBlock[];
       readonly state?: AgentStateUpdate<TState>;
     };
 
@@ -19,6 +28,18 @@ export type AgentSubmitInput<TState = unknown> =
 export interface AgentSubmitOptions {
   readonly signal?: AbortSignal;
 }
+
+/**
+ * Options for `resume`: the cancellation signal, and what a caller may send in
+ * the same request as the answers. `state` is merged before the paused work
+ * continues, and `message` or `blocks` appends a user message, as in `submit`.
+ * A session that cannot combine them with a resume rejects without sending.
+ */
+export type AgentResumeOptions<TState = unknown> = AgentSubmitOptions & {
+  readonly message?: string;
+  readonly blocks?: readonly ContentBlock[];
+  readonly state?: AgentStateUpdate<TState>;
+};
 
 /**
  * One application event a run emitted, such as LangGraph `custom` stream output
@@ -56,6 +77,16 @@ export type AgentSession<
         input: AgentSubmitInput<TState>,
         options?: AgentSubmitOptions
       ): Promise<CompleteOutcome>;
+      /**
+       * Optional: runs the agent on the conversation as it stands, appending
+       * no user message, after merging `input.state` when given. Used to
+       * apply a state change or to continue after tool results. A session
+       * that needs a message for every run leaves the command undefined.
+       */
+      run?(
+        input?: { readonly state?: AgentStateUpdate<TState> },
+        options?: AgentSubmitOptions
+      ): Promise<CompleteOutcome>;
       stop(): Promise<void>;
       /**
        * Optional: answers the prompt behind one assistant message again. Takes
@@ -79,8 +110,14 @@ export type AgentSession<
        */
       resume?(
         responses: readonly AgentInterruptResponse[],
-        options?: AgentSubmitOptions
+        options?: AgentResumeOptions<TState>
       ): Promise<CompleteOutcome>;
+      /**
+       * Optional: tools the caller declares and runs itself after the session
+       * exists. The calls waiting for a result are in the snapshot's
+       * `pendingClientTools`.
+       */
+      readonly clientTools?: AgentClientTools;
       /** Read-only reconciliation; never retries an uncertain submission. */
       checkStatus?(): Promise<void>;
       dispose(): Promise<void>;
@@ -95,3 +132,45 @@ export type AgentSession<
       retry?(): Promise<CompleteOutcome>;
     }
   : never;
+
+/** The custom event name a backend uses to publish values for a generated-UI render store. */
+const STATE_UPDATE_EVENT = 'state_update';
+
+/**
+ * Reads a render-store update from a custom event: the data of an event named
+ * `state_update` when that data is an object, and undefined for anything else.
+ * Each key is a path in the render store and each value replaces what is there.
+ */
+export function agentStateUpdateFromEvent(
+  event: AgentSessionCustomEvent
+): Readonly<Record<string, PlainValue>> | undefined {
+  const { data } = event;
+  return event.name === STATE_UPDATE_EVENT &&
+    data !== null &&
+    typeof data === 'object' &&
+    !Array.isArray(data)
+    ? (data as Readonly<Record<string, PlainValue>>)
+    : undefined;
+}
+
+/**
+ * Follows the render-store updates a session's runs emit, for a generated-UI
+ * render store. Built on `onCustomEvent`: the listener receives the data of
+ * each `state_update` event. Returns an idempotent release, and an inert one
+ * for a session without `onCustomEvent`. Like every custom event, an update is
+ * not state: nothing replays the ones sent before the listener was added.
+ */
+export function onAgentStateUpdate(
+  session: {
+    onCustomEvent?(
+      listener: (event: AgentSessionCustomEvent) => void
+    ): () => void;
+  },
+  listener: (update: Readonly<Record<string, PlainValue>>) => void
+): () => void {
+  if (!session.onCustomEvent) return () => undefined;
+  return session.onCustomEvent((event) => {
+    const update = agentStateUpdateFromEvent(event);
+    if (update) listener(update);
+  });
+}

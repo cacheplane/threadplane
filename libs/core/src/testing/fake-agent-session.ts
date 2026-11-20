@@ -1,9 +1,20 @@
 import type {
+  AgentResumeOptions,
   AgentSession,
+  AgentSessionCustomEvent,
   AgentSubmitInput,
   AgentSubmitOptions,
 } from '../contracts/agent-session.js';
-import type { AgentStatus } from '../contracts/agent-snapshot.js';
+import type {
+  AgentInputBlock,
+  AgentStatus,
+  AgentUsage,
+} from '../contracts/agent-snapshot.js';
+import type { AgentCheckpoint } from '../contracts/checkpoint.js';
+import type {
+  ClientToolResult,
+  ClientToolSpec,
+} from '../contracts/client-tools.js';
 import {
   completeDelivery,
   staticDelivery,
@@ -11,7 +22,12 @@ import {
   type CompleteOutcome,
   type MessageDelivery,
 } from '../contracts/delivery.js';
-import { projectAgentError, type AgentError } from '../contracts/error.js';
+import {
+  projectAgentError,
+  projectErrorDiagnostic,
+  type AgentError,
+  type AgentErrorDiagnostic,
+} from '../contracts/error.js';
 import type { Message } from '../contracts/message.js';
 import type {
   AgentInterrupt,
@@ -29,6 +45,8 @@ import {
 } from '../contracts/state.js';
 import type {
   DeepReadonly,
+  PlainValue,
+  StreamingToolCall,
   ToolCall,
   ToolContract,
 } from '../contracts/tool.js';
@@ -52,8 +70,8 @@ export type FakeSubagentInput = Omit<
 };
 
 /** Snapshot fields a test may replace. Omitted fields keep their value; an
- * explicit `undefined` for `error`, `plan`, `state`, `interrupts` or
- * `subagents` removes the field. `state` replaces the whole state and is checked against the
+ * explicit `undefined` for any field but `status`, `messages` and `toolCalls`
+ * removes the field. `state` replaces the whole state and is checked against the
  * session's `stateType` when that is a schema. */
 export interface FakeAgentSnapshotPatch<
   TTools extends { [K in keyof TTools]: ToolContract } = Record<
@@ -70,13 +88,53 @@ export interface FakeAgentSnapshotPatch<
   readonly state?: NoInfer<TState> | DeepReadonly<NoInfer<TState>>;
   readonly interrupts?: readonly AgentInterrupt[];
   readonly subagents?: readonly FakeSubagentInput[];
+  readonly errorDiagnostic?: AgentErrorDiagnostic;
+  readonly usage?: AgentUsage;
+  readonly streamingToolCalls?: readonly StreamingToolCall[];
+  readonly pendingClientTools?: readonly ToolCall<TTools>[];
+  readonly checkpoints?: readonly AgentCheckpoint[];
+  readonly messageCheckpoints?: Readonly<Record<string, string>>;
+  readonly inputBlocked?: AgentInputBlock;
 }
 
 /** One recorded call to `session.resume`. */
-export interface FakeResumeCall {
+export interface FakeResumeCall<TState = unknown> {
   readonly responses: readonly AgentInterruptResponse[];
+  readonly options?: AgentResumeOptions<TState>;
+}
+
+/** One recorded call to `session.run`. */
+export interface FakeRunCall<TState = unknown> {
+  readonly input?: { readonly state?: AgentStateUpdate<TState> };
   readonly options?: AgentSubmitOptions;
 }
+
+/** One recorded call to `session.regenerate`. */
+export interface FakeRegenerateCall {
+  readonly messageId: string;
+  readonly options?: AgentSubmitOptions;
+}
+
+/** One result a caller gave through `session.clientTools`. */
+export interface FakeClientToolSettlement {
+  /** `settle` records the result; `resolve` also continues the run. */
+  readonly kind: 'settle' | 'resolve';
+  readonly toolCallId: string;
+  readonly result: ClientToolResult;
+}
+
+/**
+ * An optional session member the fake can carry. `resume` is always present;
+ * each of these is present only when listed in `commands` or when its handler
+ * is given, so a view under test offers no control the test did not ask for.
+ */
+export type FakeCommand =
+  | 'run'
+  | 'regenerate'
+  | 'retry'
+  | 'checkStatus'
+  | 'onCustomEvent'
+  | 'clientTools';
 
 /**
  * Runs after the fake removes the answered interrupts from the snapshot.
@@ -93,7 +151,22 @@ export type FakeResumeHandler<
 > = (
   responses: readonly AgentInterruptResponse[],
   fake: FakeAgentSession<TTools, TState>,
-  options?: AgentSubmitOptions
+  options?: AgentResumeOptions<TState>
+) => CompleteOutcome | void | PromiseLike<CompleteOutcome | void>;
+
+/**
+ * Runs for `run`, `regenerate` and `retry` after the fake has made its own
+ * change to the snapshot. Return the outcome the command resolves with;
+ * nothing means `'success'`. Throwing rejects the command with that error.
+ */
+export type FakeCommandHandler<
+  TTools extends { [K in keyof TTools]: ToolContract } = Record<
+    string,
+    ToolContract
+  >,
+  TState = unknown
+> = (
+  fake: FakeAgentSession<TTools, TState>
 ) => CompleteOutcome | void | PromiseLike<CompleteOutcome | void>;
 
 /** One recorded call to `session.submit`. */
@@ -136,6 +209,22 @@ export interface FakeAgentSessionInit<
   readonly stateType?: StateDeclaration<TState>;
   readonly onSubmit?: FakeSubmitHandler<TTools, TState>;
   readonly onResume?: FakeResumeHandler<TTools, TState>;
+  /** Optional session members to carry; see {@link FakeCommand}. */
+  readonly commands?: readonly FakeCommand[];
+  /** Makes `run` present and runs after it merges the state it was given. */
+  readonly onRun?: FakeCommandHandler<TTools, TState>;
+  /** Makes `regenerate` present and runs after it removes the old answer. */
+  readonly onRegenerate?: FakeCommandHandler<TTools, TState>;
+  /**
+   * Makes `retry` present and runs in place of the failed call. Without it,
+   * `retry` calls the handler of the submission, resume, run or regeneration
+   * that last failed again, with the same arguments.
+   */
+  readonly onRetry?: FakeCommandHandler<TTools, TState>;
+  /** Makes `checkStatus` present and runs when it is called. */
+  readonly onCheckStatus?: (
+    fake: FakeAgentSession<TTools, TState>
+  ) => void | PromiseLike<void>;
 }
 
 /** An assistant message that receives text until it completes. */
@@ -143,6 +232,11 @@ export interface FakeAssistantStream {
   readonly id: string;
   /** Appends text to the message content and publishes a new snapshot. */
   append(text: string): void;
+  /**
+   * Appends reasoning text. The time from the first reasoning text to the
+   * first content text, or to completion, becomes `reasoningDurationMs`.
+   */
+  appendReasoning(text: string): void;
   /** Marks the message complete and returns the session to `'idle'`, or to
    * `'error'` when the session holds an error. Later calls are ignored. */
   complete(outcome?: CompleteOutcome): void;
@@ -161,7 +255,18 @@ export interface FakeAgentSession<
   /** Submissions in call order, including ones the handler rejected. */
   readonly submits: readonly FakeSubmitCall<TState>[];
   /** Resumes in call order, including ones the fake or the handler rejected. */
-  readonly resumes: readonly FakeResumeCall[];
+  readonly resumes: readonly FakeResumeCall<TState>[];
+  /** Calls to `run` in order. */
+  readonly runs: readonly FakeRunCall<TState>[];
+  /** Calls to `regenerate` in order, including rejected ones. */
+  readonly regenerates: readonly FakeRegenerateCall[];
+  readonly retryCount: number;
+  readonly checkStatusCount: number;
+  /** Every catalog given to `clientTools.setCatalog`, in order; the last is current. */
+  readonly catalogs: readonly (readonly ClientToolSpec[])[];
+  /** Results given through `clientTools.settle` and `clientTools.resolve`, in order. */
+  readonly clientToolResults: readonly FakeClientToolSettlement[];
+  readonly flushCount: number;
   readonly stopCount: number;
   readonly disposed: boolean;
   /** Replaces the listed snapshot fields and notifies subscribers once. */
@@ -170,8 +275,10 @@ export interface FakeAgentSession<
   push(message: FakeMessageInput): Message;
   setStatus(status: AgentStatus): void;
   /** Publishes the error with status `'error'`; `undefined` clears it and
-   * returns an errored session to `'idle'`. */
-  setError(error: AgentError | undefined): void;
+   * returns an errored session to `'idle'`. `cause` is any thrown value: the
+   * fake describes it as the snapshot's `errorDiagnostic`. Replacing or
+   * clearing the error removes the earlier diagnostic. */
+  setError(error: AgentError | undefined, cause?: unknown): void;
   setToolCalls(toolCalls: readonly ToolCall<TTools>[]): void;
   /** Replaces the state; `undefined` removes it. Throws when a schema `stateType` rejects it. */
   setState(state: NoInfer<TState> | undefined): void;
@@ -179,6 +286,22 @@ export interface FakeAgentSession<
   setInterrupts(interrupts: readonly AgentInterrupt[] | undefined): void;
   /** Replaces the child agents; `undefined` removes the field. */
   setSubagents(subagents: readonly FakeSubagentInput[] | undefined): void;
+  /** Replaces the reported usage; `undefined` removes the field. */
+  setUsage(usage: AgentUsage | undefined): void;
+  /**
+   * Replaces the loaded history and, when given, the message-to-checkpoint
+   * map; `undefined` removes both.
+   */
+  setCheckpoints(
+    checkpoints: readonly AgentCheckpoint[] | undefined,
+    messageCheckpoints?: Readonly<Record<string, string>>
+  ): void;
+  /**
+   * Delivers one custom event to `onCustomEvent` listeners. A listener that
+   * throws affects neither the others nor the caller. Nothing is delivered
+   * after disposal.
+   */
+  emitCustomEvent(name: string, data?: PlainValue): void;
   /** Starts a streaming assistant message and sets status `'running'`. */
   stream(options?: {
     readonly id?: string;
@@ -189,6 +312,15 @@ export interface FakeAgentSession<
   /** Replaces the handler used by later resumes. */
   onResume(handler: FakeResumeHandler<TTools, TState> | undefined): void;
 }
+
+const plainFields = [
+  'usage',
+  'streamingToolCalls',
+  'pendingClientTools',
+  'checkpoints',
+  'messageCheckpoints',
+  'inputBlocked',
+] as const;
 
 const owned = new WeakSet<object>();
 
@@ -223,7 +355,24 @@ function own<T>(value: T, ancestors = new Set<object>()): T {
  *
  * `resume` records the call, removes the interrupts it answers and resolves
  * `'success'`, or `'paused'` while others remain. It rejects a response that
- * names an interrupt the snapshot does not list, or names one twice.
+ * names an interrupt the snapshot does not list, or names one twice. A message
+ * or state passed in its options is applied the way `submit` applies them.
+ *
+ * `run`, `regenerate`, `retry`, `checkStatus`, `onCustomEvent` and
+ * `clientTools` are optional in the contract and absent here by default, so a
+ * view under test offers no control for them. List one in `commands`, or pass
+ * its handler, to make it present:
+ *
+ * - `run` merges the state it is given and appends no message.
+ * - `regenerate` removes the named assistant message and everything after it.
+ *   It rejects during a run and for an id that names no assistant message.
+ * - `retry` resolves `'aborted'` during a run or when the snapshot holds no
+ *   error, rejects for an error that cannot be retried, and otherwise clears
+ *   the error and calls again whichever handler last rejected.
+ * - `checkStatus` counts the call and rejects during a run.
+ * - `onCustomEvent` receives what `emitCustomEvent` sends.
+ * - `clientTools` records catalogs and results. A result moves its call out of
+ *   `pendingClientTools` and completes or fails the matching tool call.
  *
  * @example
  * ```ts
@@ -255,6 +404,13 @@ export function createFakeAgentSession<
     readonly state?: DeepReadonly<TState>;
     readonly interrupts?: readonly AgentInterrupt[];
     readonly subagents?: readonly AgentSubagent[];
+    readonly errorDiagnostic?: AgentErrorDiagnostic;
+    readonly usage?: AgentUsage;
+    readonly streamingToolCalls?: readonly StreamingToolCall[];
+    readonly pendingClientTools?: readonly ToolCall<TTools>[];
+    readonly checkpoints?: readonly AgentCheckpoint[];
+    readonly messageCheckpoints?: Readonly<Record<string, string>>;
+    readonly inputBlocked?: AgentInputBlock;
   };
   const checkState = (value: unknown): DeepReadonly<TState> => {
     const reading = readState(init.stateType as StateDeclaration, value);
@@ -288,16 +444,7 @@ export function createFakeAgentSession<
     base: Snapshot | undefined,
     patch: FakeAgentSnapshotPatch<TTools, TState>
   ): Snapshot => {
-    const next: {
-      status: AgentStatus;
-      messages: readonly Message[];
-      toolCalls: readonly ToolCall<TTools>[];
-      error?: AgentError;
-      plan?: readonly AgentPlanStep[];
-      state?: DeepReadonly<TState>;
-      interrupts?: readonly AgentInterrupt[];
-      subagents?: readonly AgentSubagent[];
-    } = {
+    const next: { -readonly [K in keyof Snapshot]: Snapshot[K] } = {
       status: patch.status ?? base?.status ?? 'idle',
       messages: patch.messages
         ? own(patch.messages.map(ownMessage))
@@ -311,6 +458,14 @@ export function createFakeAgentSession<
         ? patch.error && projectAgentError(patch.error)
         : base?.error;
     if (error) next.error = error;
+    const errorDiagnostic =
+      'errorDiagnostic' in patch
+        ? patch.errorDiagnostic
+        : 'error' in patch
+        ? undefined
+        : base?.errorDiagnostic;
+    if (error && errorDiagnostic !== undefined)
+      next.errorDiagnostic = projectErrorDiagnostic(errorDiagnostic);
     const plan = 'plan' in patch ? patch.plan : base?.plan;
     if (plan) next.plan = own(plan);
     const state =
@@ -328,6 +483,11 @@ export function createFakeAgentSession<
         ? patch.subagents && own(patch.subagents.map(ownSubagent))
         : base?.subagents;
     if (subagents) next.subagents = subagents;
+    const copy = <K extends (typeof plainFields)[number]>(key: K) => {
+      const value = key in patch ? patch[key] : base?.[key];
+      if (value) next[key] = own(value) as Snapshot[K];
+    };
+    plainFields.forEach(copy);
     return Object.freeze(next);
   };
 
@@ -336,10 +496,47 @@ export function createFakeAgentSession<
   const listeners = new Set<() => void>();
   let resumeHandler = init.onResume;
   const submits: FakeSubmitCall<TState>[] = [];
-  const resumes: FakeResumeCall[] = [];
+  const resumes: FakeResumeCall<TState>[] = [];
+  const runs: FakeRunCall<TState>[] = [];
+  const regenerates: FakeRegenerateCall[] = [];
+  const catalogs: (readonly ClientToolSpec[])[] = [];
+  const clientToolResults: FakeClientToolSettlement[] = [];
+  const eventListeners = new Set<(event: AgentSessionCustomEvent) => void>();
   const streams = new Set<() => void>();
   let stopCount = 0;
+  let retryCount = 0;
+  let checkStatusCount = 0;
+  let flushCount = 0;
   let disposed = false;
+  // The handler call that last rejected, kept so `retry` can make it again.
+  type Operation = () => Promise<CompleteOutcome>;
+  let failed: Operation | undefined;
+  const attempt = async (operation: Operation): Promise<CompleteOutcome> => {
+    try {
+      const outcome = await operation();
+      failed = undefined;
+      return outcome;
+    } catch (error) {
+      failed = operation;
+      throw error;
+    }
+  };
+  const has = (command: FakeCommand, handler?: unknown): true | undefined =>
+    init.commands?.includes(command) || handler !== undefined
+      ? true
+      : undefined;
+  const alive = () => {
+    if (disposed) throw new Error('The fake agent session is disposed.');
+  };
+  const merged = (update: object | undefined) =>
+    update === undefined
+      ? {}
+      : {
+          state: {
+            ...(snapshot.state as object | undefined),
+            ...update,
+          } as NoInfer<TState>,
+        };
 
   const publish = (patch: FakeAgentSnapshotPatch<TTools, TState>) => {
     snapshot = build(snapshot, patch);
@@ -351,6 +548,42 @@ export function createFakeAgentSession<
         message.id === id ? change(message) : message
       ),
     });
+
+  const settleClientTool = (
+    kind: FakeClientToolSettlement['kind'],
+    toolCallId: string,
+    result: ClientToolResult
+  ) => {
+    alive();
+    const pending = snapshot.pendingClientTools ?? [];
+    if (!pending.some((call) => call.id === toolCallId))
+      throw new TypeError(
+        `No pending client tool call has the id "${toolCallId}".`
+      );
+    clientToolResults.push(own({ kind, toolCallId, result }));
+    const settled = (call: ToolCall<TTools>) =>
+      (call.id !== toolCallId
+        ? call
+        : result.ok
+        ? {
+            id: call.id,
+            name: call.name,
+            args: call.args,
+            status: 'complete',
+            result: result.value,
+          }
+        : {
+            id: call.id,
+            name: call.name,
+            args: call.args,
+            status: 'error',
+            error: result.error,
+          }) as ToolCall<TTools>;
+    publish({
+      toolCalls: snapshot.toolCalls.map(settled),
+      pendingClientTools: pending.filter((call) => call.id !== toolCallId),
+    });
+  };
 
   const session = {
     getSnapshot: () => snapshot,
@@ -367,30 +600,124 @@ export function createFakeAgentSession<
       options?: AgentSubmitOptions
     ): Promise<CompleteOutcome> {
       submits.push(Object.freeze(options ? { input, options } : { input }));
-      if (disposed) throw new Error('The fake agent session is disposed.');
+      alive();
       const update: AgentStateUpdate<TState> | undefined =
         typeof input === 'string' ? undefined : input.state;
+      const blocks = typeof input === 'string' ? undefined : input.blocks;
       publish({
         messages: [
           ...snapshot.messages,
           ownMessage({
             role: 'user',
             content: typeof input === 'string' ? input : input.message,
+            ...(blocks && { blocks }),
           }),
         ],
-        ...(update !== undefined && {
-          state: {
-            ...(snapshot.state as object | undefined),
-            ...(update as object),
-          } as NoInfer<TState>,
-        }),
+        ...merged(update as object | undefined),
       });
-      const outcome = await handler?.(input, fake, options);
-      return outcome ?? 'success';
+      return attempt(
+        async () => (await handler?.(input, fake, options)) ?? 'success'
+      );
     },
+    ...(has('run', init.onRun) && {
+      async run(
+        input?: { readonly state?: AgentStateUpdate<TState> },
+        options?: AgentSubmitOptions
+      ): Promise<CompleteOutcome> {
+        runs.push(
+          Object.freeze({
+            ...(input && { input }),
+            ...(options && { options }),
+          })
+        );
+        alive();
+        if (input?.state !== undefined) publish(merged(input.state as object));
+        return attempt(async () => (await init.onRun?.(fake)) ?? 'success');
+      },
+    }),
+    ...(has('regenerate', init.onRegenerate) && {
+      async regenerate(
+        messageId: string,
+        options?: AgentSubmitOptions
+      ): Promise<CompleteOutcome> {
+        regenerates.push(
+          Object.freeze(options ? { messageId, options } : { messageId })
+        );
+        alive();
+        if (snapshot.status === 'running')
+          throw new Error('A message cannot be regenerated during a run.');
+        const index = snapshot.messages.findIndex(
+          (message) => message.id === messageId
+        );
+        if (index < 0 || snapshot.messages[index].role !== 'assistant')
+          throw new TypeError(
+            `No assistant message has the id "${messageId}".`
+          );
+        publish({ messages: snapshot.messages.slice(0, index) });
+        return attempt(
+          async () => (await init.onRegenerate?.(fake)) ?? 'success'
+        );
+      },
+    }),
+    ...(has('retry', init.onRetry) && {
+      async retry(): Promise<CompleteOutcome> {
+        retryCount++;
+        alive();
+        const { error } = snapshot;
+        if (snapshot.status === 'running' || !error) return 'aborted';
+        if (
+          error.recovery === undefined
+            ? !error.retryable
+            : error.recovery !== 'retry'
+        )
+          throw new Error('This failure cannot be retried.');
+        publish({ error: undefined, status: 'idle' });
+        const operation = failed;
+        return attempt(
+          init.onRetry
+            ? async () => (await init.onRetry?.(fake)) ?? 'success'
+            : operation ?? (async () => 'success')
+        );
+      },
+    }),
+    ...(has('checkStatus', init.onCheckStatus) && {
+      async checkStatus(): Promise<void> {
+        checkStatusCount++;
+        alive();
+        if (snapshot.status === 'running')
+          throw new Error('The status cannot be checked during a run.');
+        await init.onCheckStatus?.(fake);
+      },
+    }),
+    ...(has('onCustomEvent') && {
+      onCustomEvent(listener: (event: AgentSessionCustomEvent) => void) {
+        if (disposed) return () => undefined;
+        const entry = (event: AgentSessionCustomEvent) => listener(event);
+        eventListeners.add(entry);
+        return () => {
+          eventListeners.delete(entry);
+        };
+      },
+    }),
+    ...(has('clientTools') && {
+      clientTools: Object.freeze({
+        setCatalog(specs: readonly ClientToolSpec[]) {
+          alive();
+          catalogs.push(own([...specs]));
+        },
+        settle: (toolCallId: string, result: ClientToolResult) =>
+          settleClientTool('settle', toolCallId, result),
+        async flush() {
+          flushCount++;
+          alive();
+        },
+        resolve: (toolCallId: string, result: ClientToolResult) =>
+          settleClientTool('resolve', toolCallId, result),
+      }),
+    }),
     async resume(
       responses: readonly AgentInterruptResponse[],
-      options?: AgentSubmitOptions
+      options?: AgentResumeOptions<TState>
     ): Promise<CompleteOutcome> {
       const answers = own([...responses]);
       resumes.push(
@@ -398,7 +725,7 @@ export function createFakeAgentSession<
           options ? { responses: answers, options } : { responses: answers }
         )
       );
-      if (disposed) throw new Error('The fake agent session is disposed.');
+      alive();
       const pending = snapshot.interrupts ?? [];
       const answered = new Set<string>();
       for (const { interruptId } of answers) {
@@ -415,9 +742,27 @@ export function createFakeAgentSession<
       const remaining = pending.filter(
         (interrupt) => !answered.has(interrupt.id)
       );
-      if (answered.size > 0) publish({ interrupts: remaining });
-      const outcome = await resumeHandler?.(answers, fake, options);
-      return outcome ?? (remaining.length > 0 ? 'paused' : 'success');
+      const sent = options?.message !== undefined || options?.blocks;
+      if (answered.size > 0 || sent || options?.state !== undefined)
+        publish({
+          ...(answered.size > 0 && { interrupts: remaining }),
+          ...(sent && {
+            messages: [
+              ...snapshot.messages,
+              ownMessage({
+                role: 'user',
+                content: options.message ?? '',
+                ...(options.blocks && { blocks: options.blocks }),
+              }),
+            ],
+          }),
+          ...merged(options?.state as object | undefined),
+        });
+      return attempt(
+        async () =>
+          (await resumeHandler?.(answers, fake, options)) ??
+          (remaining.length > 0 ? 'paused' : 'success')
+      );
     },
     async stop() {
       stopCount++;
@@ -427,6 +772,7 @@ export function createFakeAgentSession<
     async dispose() {
       disposed = true;
       listeners.clear();
+      eventListeners.clear();
     },
   };
 
@@ -434,6 +780,19 @@ export function createFakeAgentSession<
     session: session as unknown as AgentSession<TTools, TState>,
     submits,
     resumes,
+    runs,
+    regenerates,
+    catalogs,
+    clientToolResults,
+    get retryCount() {
+      return retryCount;
+    },
+    get checkStatusCount() {
+      return checkStatusCount;
+    },
+    get flushCount() {
+      return flushCount;
+    },
     get stopCount() {
       return stopCount;
     },
@@ -447,10 +806,16 @@ export function createFakeAgentSession<
       return next;
     },
     setStatus: (status) => publish({ status }),
-    setError: (error) =>
+    setError: (error, cause) =>
       publish(
         error
-          ? { error, status: 'error' }
+          ? {
+              error,
+              status: 'error',
+              ...(cause !== undefined && {
+                errorDiagnostic: projectErrorDiagnostic(cause),
+              }),
+            }
           : {
               error: undefined,
               status: snapshot.status === 'error' ? 'idle' : snapshot.status,
@@ -460,15 +825,43 @@ export function createFakeAgentSession<
     setState: (state) => publish({ state }),
     setInterrupts: (interrupts) => publish({ interrupts }),
     setSubagents: (subagents) => publish({ subagents }),
+    setUsage: (usage) => publish({ usage }),
+    setCheckpoints: (checkpoints, messageCheckpoints) =>
+      publish({
+        checkpoints,
+        ...((messageCheckpoints || !checkpoints) && { messageCheckpoints }),
+      }),
+    emitCustomEvent(name, data) {
+      if (disposed) return;
+      const event = own({ name, data }) as AgentSessionCustomEvent;
+      for (const listener of [...eventListeners]) {
+        try {
+          listener(event);
+        } catch {
+          // A listener's failure belongs to the listener.
+        }
+      }
+    },
     stream(options = {}) {
       const id = options.id ?? nextId('assistant');
       let open = true;
+      let reasoningStartedAt: number | undefined;
+      // Closes the reasoning phase once, measuring it from its first text.
+      const timed = (message: Message): Message => {
+        if (reasoningStartedAt === undefined) return message;
+        const reasoningDurationMs = Date.now() - reasoningStartedAt;
+        reasoningStartedAt = undefined;
+        return { ...message, reasoningDurationMs };
+      };
       const finish = (outcome: CompleteOutcome) => {
         if (!open) return;
         open = false;
         streams.delete(abort);
         replaceMessage(id, (message) =>
-          ownMessage({ ...message, delivery: completeDelivery(id, outcome) })
+          ownMessage({
+            ...timed(message),
+            delivery: completeDelivery(id, outcome),
+          })
         );
         if (snapshot.status === 'running' && streams.size === 0)
           publish({ status: snapshot.error ? 'error' : 'idle' });
@@ -492,7 +885,22 @@ export function createFakeAgentSession<
         append(text) {
           if (!open) return;
           replaceMessage(id, (message) =>
-            ownMessage({ ...message, content: message.content + text })
+            ownMessage({
+              ...timed(message),
+              content: message.content + text,
+            })
+          );
+        },
+        appendReasoning(text) {
+          if (!open) return;
+          const first = snapshot.messages.find((message) => message.id === id);
+          if (first?.reasoning === undefined && first?.content === '')
+            reasoningStartedAt = Date.now();
+          replaceMessage(id, (message) =>
+            ownMessage({
+              ...message,
+              reasoning: (message.reasoning ?? '') + text,
+            })
           );
         },
         complete: (outcome = 'success') => finish(outcome),

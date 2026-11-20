@@ -41,7 +41,10 @@ export type ToolCallStatus = 'pending' | 'running' | 'complete' | 'error';
 
 /** A mapped union preserves each declared name's argument/result relationship.
  * pending means decoded, finalized arguments awaiting execution, not partial
- * streamed JSON. Adapters keep argument fragments private until finalized. */
+ * streamed JSON. A session that shows argument fragments lists them apart as
+ * {@link StreamingToolCall} entries until they are finalized.
+ * `parts` holds a result's structured parts when the backend returned them,
+ * such as text and media parts; `result` or `error` then holds their text. */
 export type ToolCall<
   TTools extends { [K in keyof TTools]: ToolContract } = Record<
     string,
@@ -58,8 +61,34 @@ export type ToolCall<
         readonly args: SnapshotValue<A>;
       } & (
         | { readonly status: 'pending' | 'running' }
-        | { readonly status: 'complete'; readonly result: SnapshotValue<R> }
-        | { readonly status: 'error'; readonly error: string }
+        | {
+            readonly status: 'complete';
+            readonly result: SnapshotValue<R>;
+            readonly parts?: readonly PlainValue[];
+          }
+        | {
+            readonly status: 'error';
+            readonly error: string;
+            readonly parts?: readonly PlainValue[];
+          }
       )
     : never;
 }[keyof TTools & string];
+
+/**
+ * A tool call the model is still writing. Its arguments are not final, so it
+ * is not a {@link ToolCall} and is listed apart, in a snapshot's
+ * `streamingToolCalls`. Once the arguments are complete the session removes it
+ * from that list and adds a `ToolCall` with the same `id` to `toolCalls`.
+ */
+export interface StreamingToolCall {
+  readonly id: string;
+  readonly name: string;
+  /** The argument text received so far, exactly as the model wrote it. */
+  readonly argsText: string;
+  /**
+   * The arguments as far as they can be read from `argsText`, when the session
+   * parses partial JSON. A best effort: fields may be missing or cut short.
+   */
+  readonly args?: PlainValue;
+}

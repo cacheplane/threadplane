@@ -1,11 +1,18 @@
 import type { Message } from './message.js';
-import type { ToolCall } from './tool.js';
+import type { PlainValue, StreamingToolCall, ToolCall } from './tool.js';
 
 /**
- * Where a child agent stands. `unknown` means the session saw it start and saw
- * no ending, and no run is active that could still report one.
+ * Where a child agent stands. `pending` means the root agent asked for the
+ * child and it has not started; only a backend that can tell reports it.
+ * `unknown` means the session saw it start and saw no ending, and no run is
+ * active that could still report one.
  */
-export type AgentSubagentStatus = 'running' | 'complete' | 'error' | 'unknown';
+export type AgentSubagentStatus =
+  | 'pending'
+  | 'running'
+  | 'complete'
+  | 'error'
+  | 'unknown';
 
 /**
  * A child agent the root agent started, with the transcript it produced. Its
@@ -26,6 +33,14 @@ export interface AgentSubagent {
   readonly messages: readonly Message[];
   /** The child's own tool calls, referenced by `Message.toolCallIds` in `messages`. */
   readonly toolCalls: readonly ToolCall[];
+  /** The child's tool calls whose arguments are still streaming, when the session shows them. */
+  readonly streamingToolCalls?: readonly StreamingToolCall[];
+  /**
+   * The child's own state as the backend last reported it, as frozen plain
+   * data. Never checked against the session's state declaration. Absent when
+   * the backend reports no state for children.
+   */
+  readonly state?: Readonly<Record<string, PlainValue>>;
   /** Display text for the failure when `status` is `'error'` and the backend gave one. */
   readonly error?: string;
 }
