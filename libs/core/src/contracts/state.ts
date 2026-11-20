@@ -47,7 +47,15 @@ export type InferState<TDeclaration> = TDeclaration extends StateWitness<
   ? TState
   : unknown;
 
-type Portable<T> = T extends string | number | boolean | null | undefined
+// The data a snapshot can hold, written out of the given type. An open field
+// (`unknown`) is kept as it is: a snapshot reads it as plain data. A type that
+// is already plain data is kept whole, which also stops the walk at
+// `PlainValue`, a type that refers to itself and would otherwise never end.
+type Portable<T> = unknown extends T
+  ? T
+  : [T] extends [PlainValue]
+  ? T
+  : T extends string | number | boolean | null | undefined
   ? T
   : T extends (...args: never[]) => unknown
   ? never

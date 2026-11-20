@@ -8,8 +8,14 @@ export type PlainValue =
   | readonly PlainValue[]
   | { readonly [key: string]: PlainValue };
 
-/** Recursively projects readonly data, mapping unknown to PlainValue, void to undefined, and functions to never. */
+/**
+ * Recursively projects readonly data, mapping unknown to PlainValue, void to undefined, and functions to never.
+ * PlainValue itself is kept as it is: it is readonly already, and it refers to
+ * itself, so walking it would never end.
+ */
 export type DeepReadonly<T> = unknown extends T
+  ? PlainValue
+  : [T, PlainValue] extends [PlainValue, T]
   ? PlainValue
   : T extends void
   ? undefined

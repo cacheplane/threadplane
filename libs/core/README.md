@@ -24,7 +24,10 @@ snapshot's `state` is deeply readonly, and absent until the backend reports one.
 session is told its state type by one declaration: `type<T>()` for the type alone, or
 any Standard Schema value, such as a Zod object, to also check each state as it
 arrives. `InferState` reads the type from either form. `type<T>()` rejects functions,
-class instances, arrays and primitives with a sentence naming the problem. A typed
+class instances, arrays and primitives with a sentence naming the problem. A field
+may be left open at any depth: `unknown`, `unknown[]`, `Record<string, unknown>`,
+`PlainValue` and `PlainValue[]` are accepted, and the snapshot reads such a field as
+`PlainValue`. A type that refers to itself is accepted too. A typed
 session is still assignable wherever an untyped `AgentSession` is expected, and
 without a declaration `state` is plain data.
 
