@@ -2,10 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  EnvironmentInjector,
   InjectionToken,
   afterNextRender,
-  createEnvironmentInjector,
   effect,
   inject,
   signal,
@@ -16,24 +14,19 @@ import {
 import {
   ChatComponent,
   ChatInterruptPanelComponent,
-  createAgentRef,
-  type AgentRef,
   type InterruptAction,
 } from '@threadplane/chat';
 import { ChatDebugComponent } from '@threadplane/chat/debug';
 import { stagePresentationAgent } from './stage-interaction';
 import { stageWheelOwnership } from './stage-wheel';
-import {
-  FetchStreamTransport,
-  injectAgent,
-  provideAgent,
-  type AgentConfig,
-  type LangGraphAgent,
-} from '@threadplane/langgraph';
+import { createAgentRef, injectAgent, provideAgent } from '@threadplane/angular';
+import { FetchStreamTransport } from '@threadplane/langgraph';
 import { environment } from '../../environments/environment';
 import { demoViews } from '../demo-views';
+import type { DemoSession } from '../shell/agent-ref';
+import { createDemoSession, SUBAGENT_TOOL_NAMES } from '../shell/demo-session';
 import { browserStageBridge, type StageBridge, type StageState } from './stage-bridge';
-import { StageController } from './stage-controller';
+import { StageController, checkpointIdAt } from './stage-controller';
 import { StageRecordingTransport } from './stage-recording.transport';
 import { StageReplayTransport } from './stage-replay.transport';
 import { StageScript, STAGE_PROMPTS, type StageScriptHost } from './stage-script';
@@ -50,21 +43,12 @@ declare global {
 }
 
 /** The one stage agent: replay-backed normally, live + recording under `?record=1`. */
-export const STAGE_REF = createAgentRef<Record<string, unknown>>('stage');
+export const STAGE_REF = createAgentRef<DemoSession>('stage');
 
 /** Held per component instance, not at module scope: a re-entered route starts clean. */
 const STAGE_THREAD_ID = new InjectionToken<WritableSignal<string | null>>('STAGE_THREAD_ID');
 /** The recording transport in record mode; null in replay mode. */
 const STAGE_RECORDING = new InjectionToken<StageRecordingTransport | null>('STAGE_RECORDING');
-
-/**
- * Same filter the demo shell and the hero apply: the canonical graph has
- * side-effect LLM nodes (generate_title) whose tokens must not land on the
- * just-completed answer, which would trip the streaming-markdown contract and
- * stop the NEXT turn from rendering. The replay agent needs it too — the
- * recording carries the same events the live run did.
- */
-const TRANSCRIPT_NODE_NAMES = ['generate'];
 
 /** How long the record host waits to observe a submitted run actually starting. */
 const RUN_START_CAP_MS = 2000;
@@ -94,18 +78,6 @@ function isRecordMode(): boolean {
   return new URLSearchParams(location.search).get('record') === '1';
 }
 
-/**
- * `provideAgent()` registers the shared AGENT token and aliases the ref to it,
- * so two calls in ONE providers array collapse into a single agent. One child
- * environment injector per agent keeps that from biting if the stage ever
- * grows a second one.
- */
-function scopedAgent(ref: AgentRef<Record<string, unknown>>, config: AgentConfig): LangGraphAgent {
-  const injector = createEnvironmentInjector(provideAgent(ref, config), inject(EnvironmentInjector));
-  inject(DestroyRef).onDestroy(() => injector.destroy());
-  return injector.get(ref.token) as LangGraphAgent;
-}
-
 function stageProviders(replay?: StageReplayTransport): Provider[] {
   return [
     // useFactory, not useValue: this array is built once at decorator time, so
@@ -117,41 +89,41 @@ function stageProviders(replay?: StageReplayTransport): Provider[] {
       provide: STAGE_RECORDING,
       useFactory: () => {
         if (!isRecordMode()) return null;
-        const threadId = inject(STAGE_THREAD_ID);
-        let rec: StageRecordingTransport | null = null;
-        const inner = new FetchStreamTransport(environment.langGraphApiUrl, (id: string) => {
-          threadId.set(id);
-          rec?.onThreadId(id);
-        });
-        rec = new StageRecordingTransport(inner);
-        return rec;
+        return new StageRecordingTransport(new FetchStreamTransport(environment.langGraphApiUrl));
       },
     },
-    {
-      provide: STAGE_REF.token,
-      useFactory: () => {
-        const threadId = inject(STAGE_THREAD_ID);
-        const recording = inject(STAGE_RECORDING);
-        if (recording) {
-          return scopedAgent(STAGE_REF, {
-            apiUrl: environment.langGraphApiUrl,
-            assistantId: environment.assistantId,
-            threadId,
-            onThreadId: (id: string) => threadId.set(id),
-            transport: recording,
-            transcriptNodeNames: TRANSCRIPT_NODE_NAMES,
-            subagentToolNames: ['research'],
-          });
-        }
-        return scopedAgent(STAGE_REF, {
-          assistantId: 'stage-replay',
+    // The one stage agent, with the demo's session options (`createDemoSession`:
+    // the same transcript filter the shell and the hero apply, which the replay
+    // needs too — the recording carries the same events the live run did).
+    provideAgent(STAGE_REF, () => {
+      const threadId = inject(STAGE_THREAD_ID);
+      const recording = inject(STAGE_RECORDING);
+      if (recording) {
+        return {
           threadId,
-          transport: inject(StageReplayTransport),
-          transcriptNodeNames: TRANSCRIPT_NODE_NAMES,
-          subagentToolNames: ['research'],
-        });
-      },
-    },
+          // The session creates the thread; the recording is keyed on its id.
+          onThreadId: (id: string) => {
+            threadId.set(id);
+            recording.onThreadId(id);
+          },
+          createSession: (context) =>
+            createDemoSession(context, {
+              transport: recording,
+              subagentToolNames: SUBAGENT_TOOL_NAMES,
+            }),
+        };
+      }
+      const transport = inject(StageReplayTransport);
+      return {
+        threadId,
+        createSession: (context) =>
+          createDemoSession(context, {
+            assistantId: 'stage-replay',
+            transport,
+            subagentToolNames: SUBAGENT_TOOL_NAMES,
+          }),
+      };
+    }),
   ];
 }
 
@@ -183,7 +155,7 @@ function stageProviders(replay?: StageReplayTransport): Provider[] {
             role="region"
             aria-label="Approval required"
           >
-            @if (agent.interrupt?.()) {
+            @if (agent.interrupts().length) {
               <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
             }
           </div>
@@ -266,7 +238,7 @@ export class StageMode {
   private readonly threadId = inject(STAGE_THREAD_ID);
   /** Non-null only in record mode. */
   protected readonly recording = inject(STAGE_RECORDING);
-  protected readonly agent = injectAgent(STAGE_REF) as LangGraphAgent;
+  protected readonly agent = injectAgent(STAGE_REF);
   protected readonly presentationAgent = this.recording
     ? this.agent
     : stagePresentationAgent(this.agent, () => this.openLiveDemo());
@@ -278,17 +250,11 @@ export class StageMode {
     window.open(new URL('/embed', window.location.href).href, '_top');
   }
   /**
-   * The devtools' agent contract types `state` as `Signal<Record<string,
-   * unknown>>` while the untyped LangGraph agent exposes `Signal<unknown>`, so
-   * the SAME object needs a cast at this one read site. `DebugAgentWithHistory`
-   * is not exported from `@threadplane/chat/debug`, so the with-history half of
-   * the input's union is extracted from the input type itself — the panel's
-   * Timeline tab only appears for an agent that carries `history`.
+   * The devtools read the agent itself. The panel's Timeline tab appears once
+   * `agent.checkpoints()` holds a loaded history, which the stage's sessions
+   * keep (`historyState`, see `createDemoSession`).
    */
-  protected readonly debugAgent = this.agent as unknown as Extract<
-    NonNullable<ReturnType<ChatDebugComponent['agent']>>,
-    { history: unknown }
-  >;
+  protected readonly debugAgent = this.agent;
   protected readonly catalog = demoViews();
 
   /**
@@ -454,9 +420,15 @@ export class StageMode {
       this.openLiveDemo();
       return;
     }
-    await this.agent.submit(null, {
-      command: { resume: action === 'accept' ? 'approved' : 'denied' },
-    } as never);
+    const interrupt = this.agent.interrupts()[0];
+    if (!interrupt) return;
+    await this.agent.resume([
+      {
+        interruptId: interrupt.id,
+        status: 'resolved',
+        value: action === 'accept' ? 'approved' : 'denied',
+      },
+    ]);
   }
 
   private publish(state: StageState): void {
@@ -520,20 +492,22 @@ export class StageMode {
     if (!rec) return;
     const agent = this.agent;
     let researchCheckpointId: string | undefined;
+    const running = () => agent.status() === 'running';
+    const paused = () => !!agent.interrupts().length;
     // A run is only "done" for the recording once its closing history refresh
-    // has landed: the bridge refreshes history after a run closes, and a next
-    // run started before that lands cancels the refresh, leaving the previous
-    // run without a snapshot for the replay's getHistory() to serve. A run
-    // that closes on an interrupt is the exception — the bridge finalizes it
-    // as the interrupt arrives and skips the refresh, in replay as in record.
+    // has landed: the session reads the history page again after a run ends
+    // (`historyState`), and a next run started before that lands cancels the
+    // read, leaving the previous run without a snapshot for the replay's
+    // getHistory() to serve. A run that closes on an interrupt is not waited
+    // on for its snapshot: the replay serves none there and needs none.
     const settle = async (run: Promise<unknown>): Promise<void> => {
       const before = rec.recording().histories.length;
-      await waitUntil(() => agent.isLoading(), RUN_START_CAP_MS);
+      await waitUntil(running, RUN_START_CAP_MS);
       await run;
       await waitUntil(
         () =>
           !agent.isThreadLoading() &&
-          (rec.recording().histories.length > before || !!agent.interrupt?.()),
+          (rec.recording().histories.length > before || paused()),
         RELOAD_CAP_MS,
       );
     };
@@ -541,12 +515,14 @@ export class StageMode {
       beginRun: (beat, action) => rec.beginRun(beat, action),
       submit: async (message, checkpointIndex) => {
         const checkpointId =
-          checkpointIndex !== undefined ? agent.history()[checkpointIndex]?.id : undefined;
-        await settle(agent.submit({ message }, checkpointId ? ({ checkpointId } as never) : undefined));
-        if (message === STAGE_PROMPTS.subagents) researchCheckpointId = agent.history()[0]?.id;
+          checkpointIndex !== undefined ? checkpointIdAt(agent, checkpointIndex) : undefined;
+        await settle(agent.submit({ message }, checkpointId ? { run: { checkpointId } } : undefined));
+        if (message === STAGE_PROMPTS.subagents) researchCheckpointId = checkpointIdAt(agent, 0);
       },
       resume: async (value) => {
-        await settle(agent.submit(null, { command: { resume: value } } as never));
+        const interrupt = agent.interrupts()[0];
+        if (!interrupt) throw new Error('stage resume without a pending interrupt');
+        await settle(agent.resume([{ interruptId: interrupt.id, status: 'resolved', value }]));
       },
       reload: async () => {
         // The reload's snapshot is stamped with the run count at the moment
@@ -567,12 +543,14 @@ export class StageMode {
         );
         rec.markReload();
       },
-      isRunning: () => agent.isLoading(),
-      hasInterrupt: () => !!agent.interrupt?.(),
+      isRunning: running,
+      hasInterrupt: paused,
       forkIndex: () => {
         // Capture the completed research turn before the 90-day proposal:
         // the alternative keeps both sources and the child's findings.
-        const i = agent.history().findIndex((s) => s.id === researchCheckpointId);
+        const i = (agent.history() ?? []).findIndex(
+          (saved) => saved.checkpoint?.checkpoint_id === researchCheckpointId,
+        );
         if (i < 0) throw new Error('stage research checkpoint missing; refusing to fork without the saved research');
         return i;
       },

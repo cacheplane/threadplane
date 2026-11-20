@@ -1,6 +1,17 @@
 /** Keep UI commands out of the recorded agent; the controller retains the original. */
 export function stagePresentationAgent<T extends object>(agent: T, openLive: () => void): T {
-  const commands = new Set(['submit', 'stop', 'regenerate', 'retry', 'switchThread', 'reset']);
+  const commands = new Set([
+    'submit',
+    'stop',
+    'resume',
+    'regenerate',
+    'retry',
+    'runWithoutMessage',
+    'checkStatus',
+    'reconnect',
+    'fork',
+    'switchThread',
+  ]);
   const goLive = async () => { openLive(); };
   return new Proxy(agent, {
     get(target, key, receiver) {

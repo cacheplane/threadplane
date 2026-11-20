@@ -1,53 +1,62 @@
-import { signal } from '@angular/core';
+import type { signal } from '@angular/core';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router, NavigationEnd } from '@angular/router';
+import { provideAgent, provideThreadDirectory } from '@threadplane/angular';
+import type { ThreadEntry } from '@threadplane/core';
 import {
-  LangGraphThreadsAdapter,
-  LANGGRAPH_THREADS_CONFIG,
-  provideAgent,
+  createSession,
   FakeStreamTransport,
   type AgentTransport,
 } from '@threadplane/langgraph';
 import { DemoShell, shouldSyncCheckpoint, extractItinerary, isConflict } from './demo-shell.component';
-import { DEMO_AGENT_REF } from './agent-ref';
+import { DEMO_AGENT_REF, type DemoSession } from './agent-ref';
+import type { DemoThreadDirectory } from './demo-threads';
 import { ItineraryStore, type ItineraryStop } from '../itinerary-store';
 
-function createThreadsAdapterMock() {
-  const threads = signal([]);
-  const archivedThreads = signal([]);
+/** An empty in-memory thread directory: every command succeeds and changes nothing. */
+function createDirectoryFake(): DemoThreadDirectory {
+  const snapshot = { threads: [], archived: [], status: 'idle' as const };
   return {
-    threads: threads.asReadonly(),
-    archivedThreads: archivedThreads.asReadonly(),
+    getSnapshot: () => snapshot,
+    subscribe: () => () => undefined,
     refresh: async () => undefined,
-    getThread: async () => null,
-    create: async () => 'new-thread',
-    delete: async () => undefined,
+    create: async () => ({ id: 'new-thread' }),
     rename: async () => undefined,
-    archive: async () => undefined,
-    unarchive: async () => undefined,
-    pin: async () => undefined,
-    unpin: async () => undefined,
-    moveToProject: async () => undefined,
+    remove: async () => undefined,
+    setArchived: async () => undefined,
+    setPinned: async () => undefined,
     reorderPinned: async () => undefined,
+    setProject: async () => undefined,
+    dispose: () => undefined,
   };
 }
 
-const threadsAdapterProvider = {
-  provide: LangGraphThreadsAdapter,
-  useFactory: createThreadsAdapterMock,
-};
+/**
+ * What the backend answers when the shell validates a thread id from the URL.
+ * Null (no such thread) unless a spec says the thread exists.
+ */
+const readThread = vi.fn<(threadId: string) => Promise<ThreadEntry | null>>(async () => null);
+beforeEach(() => readThread.mockReset().mockResolvedValue(null));
+
+const threadsAdapterProvider = provideThreadDirectory<DemoThreadDirectory>({
+  createDirectory: createDirectoryFake,
+  getThread: (threadId) => readThread(threadId),
+});
 
 describe('DemoShell — approval decisions', () => {
   afterEach(() => vi.restoreAllMocks());
 
   function decisionShell() {
-    const submit = vi.fn().mockResolvedValue(undefined);
+    const resume = vi.fn().mockResolvedValue('success');
     const shell = Object.create(DemoShell.prototype) as DemoShell;
     Object.defineProperty(shell, 'agent', {
-      value: { interrupt: () => ({ value: { reason: 'Review this plan' } }), submit },
+      value: {
+        interrupts: () => [{ id: 'pause-1', value: { reason: 'Review this plan' } }],
+        resume,
+      },
     });
-    return { shell, submit };
+    return { shell, resume };
   }
 
   it.each([
@@ -55,19 +64,29 @@ describe('DemoShell — approval decisions', () => {
     ['ignore', 'denied'],
     ['edit', 'Use a smaller scope'],
     ['respond', 'Please keep the latest backup'],
-  ] as const)('submits the %s decision to the existing session', async (action, resume) => {
-    const { shell, submit } = decisionShell();
-    const prompt = vi.spyOn(window, 'prompt').mockReturnValue(resume);
+  ] as const)('answers the pending interrupt with the %s decision on the existing session', async (action, value) => {
+    const { shell, resume } = decisionShell();
+    const prompt = vi.spyOn(window, 'prompt').mockReturnValue(value);
     await shell.onInterruptAction(action);
-    expect(submit).toHaveBeenCalledExactlyOnceWith(null, { command: { resume } });
+    expect(resume).toHaveBeenCalledExactlyOnceWith([
+      { interruptId: 'pause-1', status: 'resolved', value },
+    ]);
     expect(prompt).toHaveBeenCalledTimes(action === 'edit' || action === 'respond' ? 1 : 0);
   });
 
   it.each(['edit', 'respond'] as const)('keeps the interrupt pending when %s is cancelled', async action => {
-    const { shell, submit } = decisionShell();
+    const { shell, resume } = decisionShell();
     vi.spyOn(window, 'prompt').mockReturnValue(null);
     await shell.onInterruptAction(action);
-    expect(submit).not.toHaveBeenCalled();
+    expect(resume).not.toHaveBeenCalled();
+  });
+
+  it('answers nothing when no interrupt is pending', async () => {
+    const resume = vi.fn();
+    const shell = Object.create(DemoShell.prototype) as DemoShell;
+    Object.defineProperty(shell, 'agent', { value: { interrupts: () => [], resume } });
+    await shell.onInterruptAction('accept');
+    expect(resume).not.toHaveBeenCalled();
   });
 });
 
@@ -556,8 +575,8 @@ describe('DemoShell — URL knob hydration', () => {
 
   it('preserves query params on thread switch (signal→URL effect)', async () => {
     // The destination exists; otherwise validation correctly redirects to /embed.
-    vi.spyOn(TestBed.inject(LangGraphThreadsAdapter), 'getThread').mockResolvedValue({
-      id: 'xyz123', title: 'Existing thread',
+    readThread.mockResolvedValue({
+      id: 'xyz123', title: 'Existing thread', pinned: false, archived: false, projectId: null,
     });
     const router = TestBed.inject(Router);
     await router.navigateByUrl('/embed?model=gpt-5-nano');
@@ -706,6 +725,13 @@ describe('DemoShell — App-mode cockpit layout', () => {
  *  submit so a spec can assert the shell's state injection. */
 class CapturingTransport extends FakeStreamTransport {
   lastPayload: unknown = undefined;
+  constructor() {
+    super({ delayMs: 0 });
+  }
+  /** A session without a thread creates one before its first run. */
+  async createThread(): Promise<string> {
+    return 'capturing-thread';
+  }
   override async *stream(
     assistantId: string,
     threadId: string | null,
@@ -761,6 +787,19 @@ describe('extractItinerary — value → stops', () => {
   });
 });
 
+/** The demo agent over a transport a spec can read, in place of the backend. */
+function capturingAgent(transport: AgentTransport) {
+  return provideAgent(DEMO_AGENT_REF, {
+    createSession: (context) =>
+      createSession({
+        assistantId: 'fake',
+        transport,
+        threadId: context.threadId,
+        onThreadId: context.onThreadId,
+      }) as DemoSession,
+  });
+}
+
 describe('DemoShell — submit injects itinerary into state', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -768,7 +807,6 @@ describe('DemoShell — submit injects itinerary into state', () => {
       providers: [
         threadsAdapterProvider,
         ItineraryStore,
-        { provide: LANGGRAPH_THREADS_CONFIG, useValue: { apiUrl: 'http://localhost:2024' } },
         provideRouter([
           { path: 'embed', component: DemoShell },
           { path: '', pathMatch: 'full', redirectTo: 'embed' },
@@ -787,26 +825,46 @@ describe('DemoShell — submit injects itinerary into state', () => {
       set: {
         providers: [
           { provide: ItineraryStore, useValue: store },
-          ...provideAgent(DEMO_AGENT_REF, {
-            assistantId: 'fake',
-            transport: capturing,
-          }),
+          ...capturingAgent(capturing),
         ],
       },
     });
 
     const fx = TestBed.createComponent(DemoShell);
     fx.detectChanges();
-    const shell = fx.componentInstance as unknown as {
-      agent: { submit: (i: unknown) => Promise<void> };
-    };
+    const shell = fx.componentInstance;
 
     store.add(1, 'Louvre');
-    await shell.agent.submit({ messages: [{ role: 'user', content: 'hi' }] });
+    await shell.agent.submit({ message: 'hi' });
 
-    const payload = capturing.lastPayload as { itinerary?: ItineraryStop[] };
+    const payload = capturing.lastPayload as {
+      itinerary?: ItineraryStop[];
+      messages?: { content?: unknown }[];
+    };
     expect(payload.itinerary).toEqual(store.stops());
     expect(payload.itinerary?.[0].place).toBe('Louvre');
+    // The state rides with the message; it does not replace it.
+    expect(payload.messages?.map((message) => message.content)).toEqual(['hi']);
+  });
+
+  it('adds the shell state to a plain-text submit and keeps the state the caller sent', async () => {
+    const capturing = new CapturingTransport();
+    TestBed.overrideComponent(DemoShell, {
+      set: { providers: [ItineraryStore, ...capturingAgent(capturing)] },
+    });
+
+    const fx = TestBed.createComponent(DemoShell);
+    fx.detectChanges();
+    const shell = fx.componentInstance;
+
+    await shell.agent.submit('hello');
+    expect((capturing.lastPayload as { model?: unknown }).model).toBe(shell.model());
+
+    await shell.agent.submit({ message: 'again', state: { gen_ui_mode: 'json-render' } });
+    const payload = capturing.lastPayload as { model?: unknown; gen_ui_mode?: unknown };
+    // The shell's live selection wins over a state the caller supplied.
+    expect(payload.gen_ui_mode).toBe(shell.genUiMode());
+    expect(payload.model).toBe(shell.model());
   });
 
   it('sends reasoning_effort null by default and the explicit choice otherwise', async () => {
@@ -815,28 +873,22 @@ describe('DemoShell — submit injects itinerary into state', () => {
       set: {
         providers: [
           ItineraryStore,
-          ...provideAgent(DEMO_AGENT_REF, {
-            assistantId: 'fake',
-            transport: capturing,
-          }),
+          ...capturingAgent(capturing),
         ],
       },
     });
 
     const fx = TestBed.createComponent(DemoShell);
     fx.detectChanges();
-    const shell = fx.componentInstance as unknown as {
-      agent: { submit: (i: unknown) => Promise<void> };
-      effort: { (): string; set: (v: string) => void };
-    };
+    const shell = fx.componentInstance;
 
     // No selection → the model's own default effort applies server-side.
     expect(shell.effort()).toBe('default');
-    await shell.agent.submit({ messages: [{ role: 'user', content: 'hi' }] });
+    await shell.agent.submit({ message: 'hi' });
     expect((capturing.lastPayload as { reasoning_effort?: unknown }).reasoning_effort).toBeNull();
 
     shell.effort.set('high');
-    await shell.agent.submit({ messages: [{ role: 'user', content: 'again' }] });
+    await shell.agent.submit({ message: 'again' });
     expect((capturing.lastPayload as { reasoning_effort?: unknown }).reasoning_effort).toBe('high');
   });
 });

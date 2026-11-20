@@ -1,5 +1,32 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCanonicalDemoRuntimeTelemetrySink } from './runtime-telemetry';
+import { createCanonicalDemoRuntimeTelemetrySink, oncePerAgent } from './runtime-telemetry';
+
+describe('oncePerAgent', () => {
+  it('forwards the first runtime_instance_created and drops the ones later sessions report', async () => {
+    const sink = vi.fn().mockResolvedValue(undefined);
+    const once = oncePerAgent(sink);
+    const created = {
+      event: 'tplane:runtime_instance_created',
+      properties: { transport: 'langgraph', surface: 'agent' },
+    } as const;
+    const request = {
+      event: 'tplane:runtime_request_created',
+      properties: { transport: 'langgraph', surface: 'agent', requestType: 'submit' },
+    } as const;
+
+    await once(created);
+    // A thread switch builds a new session, which reports itself again.
+    await once(created);
+    await once(request);
+    await once(request);
+
+    expect(sink.mock.calls.map(([payload]) => payload.event)).toEqual([
+      'tplane:runtime_instance_created',
+      'tplane:runtime_request_created',
+      'tplane:runtime_request_created',
+    ]);
+  });
+});
 
 describe('createCanonicalDemoRuntimeTelemetrySink', () => {
   it('forwards runtime events through browser telemetry with canonical demo properties', async () => {

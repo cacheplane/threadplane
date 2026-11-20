@@ -4,18 +4,20 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import {
-  injectAgent as injectAgUiAgent,
-  provideFakeAgent,
-} from '@threadplane/ag-ui';
+import { createSession as createAgUiSession } from '@threadplane/ag-ui';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 import { ChatComponent } from '@threadplane/chat';
-import { provideAgent as provideLangGraphAgent } from '@threadplane/langgraph';
+import { type as stateType } from '@threadplane/core';
+import { createSession as createLangGraphSession } from '@threadplane/langgraph';
 import { RenderSpecComponent } from '@threadplane/render';
 import { provideThreadplaneTelemetry } from '@threadplane/telemetry/browser';
 
 const PACKAGE_REFS = [
+  ['ag-ui', createAgUiSession],
   ['chat', ChatComponent],
-  ['langgraph', provideLangGraphAgent],
+  ['core', stateType],
+  ['langgraph', createLangGraphSession],
   ['render', RenderSpecComponent],
   ['telemetry', provideThreadplaneTelemetry],
 ] as const;
@@ -26,10 +28,16 @@ const PACKAGE_REFS = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<aside aria-label="Threadplane compatibility probes">
     <span data-threadplane-compatibility="ag-ui">{{
-      agUiReady ? 'AG-UI ready' : 'AG-UI unavailable'
+      packageReady('ag-ui') ? 'AG-UI ready' : 'AG-UI unavailable'
+    }}</span>
+    <span data-threadplane-compatibility="angular">{{
+      angularReady ? 'angular ready' : 'angular unavailable'
     }}</span>
     <span data-threadplane-compatibility="chat">{{
       packageReady('chat') ? 'chat ready' : 'chat unavailable'
+    }}</span>
+    <span data-threadplane-compatibility="core">{{
+      packageReady('core') ? 'core ready' : 'core unavailable'
     }}</span>
     <span data-threadplane-compatibility="langgraph">{{
       packageReady('langgraph') ? 'langgraph ready' : 'langgraph unavailable'
@@ -55,8 +63,16 @@ const PACKAGE_REFS = [
   ],
 })
 class CompatibilityProbeComponent {
-  private readonly agUiAgent = injectAgUiAgent();
-  protected readonly agUiReady = Boolean(this.agUiAgent);
+  /**
+   * The Angular binding is ready when its provider builds an agent this
+   * component can inject and read: here over the in-memory fake session, so
+   * the probe needs no backend.
+   */
+  private readonly agent = injectAgent();
+  protected readonly angularReady =
+    typeof provideAgent === 'function' &&
+    Array.isArray(this.agent.messages()) &&
+    this.agent.status() === 'idle';
   private readonly packageRefs = Object.fromEntries(PACKAGE_REFS) as Record<
     string,
     unknown

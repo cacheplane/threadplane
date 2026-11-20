@@ -1,16 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { provideAgent, FakeStreamTransport } from '@threadplane/langgraph';
-import { DEMO_AGENT_REF } from './shell/agent-ref';
+import { injectAgent } from '@threadplane/angular';
+import { provideFakeAgent } from '@threadplane/angular/testing';
+import type { DemoAgent } from './shell/agent-ref';
+import { DEMO_AGENT } from './shell/shell-tokens';
 import { ItineraryPanelComponent } from './itinerary-panel.component';
 import { ItineraryStore } from './itinerary-store';
 
-// Bind the DEMO_AGENT_REF token to an in-process fake LangGraph agent so
-// injectAgent(DEMO_AGENT_REF) in the panel resolves without a backend.
-const fakeAgentProvider = provideAgent(DEMO_AGENT_REF, {
-  assistantId: 'fake',
-  transport: new FakeStreamTransport(),
-});
+// The panel reads the shell's agent through DEMO_AGENT. Bind that token to an
+// in-memory fake agent so the panel resolves without a shell or a backend.
+const fakeAgentProvider = [
+  ...provideFakeAgent({ delayMs: 0 }),
+  { provide: DEMO_AGENT, useFactory: () => injectAgent() as unknown as DemoAgent },
+];
 
 describe('ItineraryPanelComponent — agent-edit pulse', () => {
   beforeEach(() => localStorage.clear());

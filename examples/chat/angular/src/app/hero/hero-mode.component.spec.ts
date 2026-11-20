@@ -1,5 +1,9 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { provideAgent } from '@threadplane/angular';
+import type { DemoAgent } from '../shell/agent-ref';
+import { createDemoSession } from '../shell/demo-session';
+import { HERO_REPLAY_REF } from './hero-agent-refs';
 import { HeroMode, isReplayOnly } from './hero-mode.component';
 import { TYPE_DELAY_MS } from './hero-script';
 import { HeroReplayTransport } from './hero-replay.transport';
@@ -125,10 +129,29 @@ describe('HeroMode', () => {
   });
 
   it('a rejecting replay stop does not throw and takeover still lands live', async () => {
-    const replayAgent = fx.componentInstance.activeAgent();
-    (replayAgent as { stop: () => Promise<void> }).stop = () => Promise.reject(new Error('x'));
+    // The injected agent cannot be patched, so the replay agent is provided
+    // again over a session whose stop() rejects. The later provider wins.
+    const stop = vi.fn(() => Promise.reject(new Error('x')));
+    const transport = new HeroReplayTransport({ sleep: async () => void 0 }, async () => recording);
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ imports: [HeroMode] });
+    TestBed.overrideComponent(HeroMode, {
+      set: {
+        providers: [
+          ...HeroMode.providersForTest(transport),
+          ...provideAgent(HERO_REPLAY_REF, {
+            createSession: (context) =>
+              Object.assign(createDemoSession(context, { assistantId: 'hero-replay', transport }), { stop }),
+          }),
+        ],
+      },
+    });
+    fx = TestBed.createComponent(HeroMode);
+    fx.detectChanges();
+    await fx.whenStable();
 
     expect(() => fx.componentInstance.takeControl()).not.toThrow();
+    expect(stop).toHaveBeenCalledOnce();
     fx.detectChanges();
     // Let the rejected promise's .catch() microtask settle.
     await Promise.resolve();
@@ -392,8 +415,18 @@ describe('HeroMode ?replay=only (third-party embeds)', () => {
     await fx.whenStable();
   }
 
-  function liveAgentOf(c: HeroMode): { submit: (...a: unknown[]) => unknown } {
-    return (c as unknown as { liveAgent: { submit: (...a: unknown[]) => unknown } }).liveAgent;
+  function liveAgentOf(c: HeroMode): DemoAgent {
+    return (c as unknown as { liveAgent: DemoAgent }).liveAgent;
+  }
+
+  /**
+   * A submit puts the user's message in the transcript at once and starts a
+   * run, so an agent with neither was never submitted to.
+   */
+  function expectNeverSubmitted(agent: DemoAgent): void {
+    expect(agent.messages()).toEqual([]);
+    expect(agent.status()).toBe('idle');
+    expect(agent.threadId()).toBeNull();
   }
 
   beforeEach(() => {
@@ -428,7 +461,6 @@ describe('HeroMode ?replay=only (third-party embeds)', () => {
   it('pointerdown, focusin and takeControl() never switch to the live agent', async () => {
     await mount(async () => recording);
     const c = fx.componentInstance;
-    const submit = vi.spyOn(liveAgentOf(c), 'submit');
     const replayAgent = c.activeAgent();
     const surface = (fx.nativeElement as HTMLElement).querySelector('[data-hero-surface]') as HTMLElement;
     surface.dispatchEvent(new Event('pointerdown', { bubbles: true }));
@@ -439,7 +471,7 @@ describe('HeroMode ?replay=only (third-party embeds)', () => {
     expect(c.activeAgent()).toBe(replayAgent);
     expect((fx.nativeElement as HTMLElement).querySelector('[data-hero-banner]')).toBeNull();
     expect(states).not.toContain('live');
-    expect(submit).not.toHaveBeenCalled();
+    expectNeverSubmitted(liveAgentOf(c));
   });
 
   it('blurs a visitor focusing the composer instead of letting them type into the replay', async () => {
@@ -471,13 +503,12 @@ describe('HeroMode ?replay=only (third-party embeds)', () => {
       throw new Error('404');
     });
     const c = fx.componentInstance;
-    const submit = vi.spyOn(liveAgentOf(c), 'submit');
     await c.boot();
     fx.detectChanges();
     expect(c.mode()).toBe('replay');
     expect(states).toContain('ready');
     expect(states).not.toContain('live');
-    expect(submit).not.toHaveBeenCalled();
+    expectNeverSubmitted(liveAgentOf(c));
     error.mockRestore();
   });
 });
