@@ -186,10 +186,12 @@ const session = createSession({ threadId, url });
   `retryable: false` and `recovery: 'none'`: a stream that ended without a
   terminal, a response that was not OK and a request that got no response leave
   open whether the backend did the work.
-- The session has no `checkStatus`. AG-UI defines no read-only way to ask a backend
-  what became of a run: `HttpAgent` only posts new runs, and it does not
-  implement the client's optional `connect` hook. Reconciling an uncertain run
-  would therefore mean sending a request, which a status check must never do.
+- The session has `checkStatus` when the application configures
+  `persistence.reconcile` (see "Durability"). AG-UI itself defines no read-only
+  way to ask a backend what became of a run: `HttpAgent` only posts new runs,
+  and it does not implement the client's optional `connect` hook. So the
+  question goes to the application's own reconciler, and a session without one
+  has no `checkStatus` and never reports `recovery: 'check'`.
 - `usage` is the token usage the settled run's `RUN_FINISHED` or `RUN_ERROR`
   reported, one entry per provider and model, with only the provider and model
   labels and finite counts copied. It is absent while a run is going and after a
@@ -332,6 +334,108 @@ const pending = decisionState(useAgent(session));
   the app. Response schemas are not interpreted.
 
 The candidate package entry exports it. The published package root does not.
+
+## Durability
+
+A session can restore its thread when it is created and keep it saved as it
+changes, as the Angular adapter did with `persistence`, `replay` and `ready`:
+
+```ts
+const session = createSession({
+  threadId,
+  url,
+  replay: httpReplay({ url: (id) => `/api/threads/${id}/events` }),
+  persistence: { namespace: 'my-app', store, reconcile },
+});
+await session.ready;
+```
+
+- `ready` resolves once the thread is restored, and at once for a session with
+  neither option. Until then `snapshot.inputBlocked` is `'hydrating'`, and
+  `submit`, `resume`, `retry` and `regenerate` wait for it before they run. It
+  rejects only when the stored thread could not be read; a failed replay does
+  not reject it.
+- `replay` is `(threadId, signal) => events`: a promise of an array, or
+  anything with an observable's `subscribe`. Replay wins whenever it returns at
+  least one event, and `persistence` is then not read. An empty result, a
+  failure, or events that cannot be folded fall back to `persistence`, or to
+  the thread the session was created with. `signal` aborts on `dispose`.
+  `httpReplay({ url, fetch?, headers? })` covers `GET url(threadId)` answering
+  `{ events }`, with a `404` read as no events.
+- Each replayed run goes through the pipeline a live response goes through, so
+  retired shapes and chunk events are read as they are live, and is applied the
+  way a live event is. A run stops at its terminal event. A run with no
+  terminal is settled `interrupted` and the thread is left idle. A run after a
+  paused one is that pause's answer. User messages a `RUN_STARTED.input`
+  carries are added. Reasoning durations come from the events' `timestamp`s and
+  are absent without them. A paused last run restores as a pending interrupt
+  that `resume` answers.
+- `persistence` is `{ namespace, store, reconcile? }`. The store has
+  `load(key)` and `compareAndSwap(key, expectedRevision, next)`. A record is
+  plain JSON: `{ version: 1, namespace, threadId, revision, messages, state?,
+  subagents?, pause? }`, where `pause` holds the pending interrupts, the
+  command profile when one applies, and the `attempt` when an answer was sent.
+  A pause this session cannot answer is not saved.
+- The thread is saved after every command settles, before an answer is sent,
+  and when the answering run reports `RUN_STARTED`. The save before sending is
+  awaited: an answer that could not be saved is not sent, and its claim is
+  released.
+- Writes use the revision. A write that loses its compare-and-swap is not
+  retried: another writer owns the thread. That, and a store that fails, put
+  the session in `inputBlocked: 'storage'` with an error whose message is the
+  storage copy. `submit` then resolves `error` and the other commands reject
+  until `reconcileInterrupt` succeeds.
+- A pause restored without an answer is `ready`. A pause restored with its
+  answer is `uncertain`, because the record cannot say how that run ended:
+  `resume` rejects and `submit` is refused. Only reconciliation continues.
+- The format is this runtime's own. Records the Angular adapter wrote are not
+  read.
+
+### Reconciliation
+
+`persistence.reconcile(record)` asks the application's backend what became of
+the saved thread and answers `{ status: 'unknown' }` or a status with the
+thread as it now stands:
+
+- `pending`: the pause still waits and no answer arrived. `pause` has no
+  `attempt`.
+- `acknowledged`: the answer arrived and its run started; how it ended is not
+  known. `pause` keeps its `attempt`.
+- `completed`: the answer's run ended. `pause` is absent, or is a new pause
+  from another run.
+
+An answer that does not fit its status is rejected and nothing is written.
+
+- `session.reconcileInterrupt()` is present with `persistence`. It adopts
+  whatever the reconciler reports, including `acknowledged`, clears a storage
+  hold, and rejects after disposal, while a run or another check is going,
+  without a reconciler, and when the backend does not know.
+- `session.checkStatus()` is present with a reconciler, and is the core
+  contract's command. An answer that was sent and not proven taken publishes
+  `error.recovery: 'check'`, and the session asks once on its own. It settles
+  only on `completed` or `pending`; `acknowledged`, `unknown` and a reconciler
+  that throws leave the error in place so the check can be offered again. It
+  never sends the answer again. An ordinary failed submission is never checked.
+- While a check runs `inputBlocked` is `'checking'`, `submit` resolves `error`
+  and the other commands reject.
+
+### Interrupt session
+
+`interruptSession(snapshot)` reads the full interrupt batch and its request
+ownership, as the Angular adapter's `interruptSession` did:
+`{ phase, id?, interrupts, runId?, command?, attempt? }`.
+
+- `phase` is `none`, `collecting` (the pausing run has not settled), `pending`,
+  `resuming`, `acknowledged`, `uncertain`, `recovery-required` or
+  `unsupported`. Claiming and sending are one step in a session, so there is no
+  `claimed`.
+- `acknowledged` and `recovery-required` need a durable session: only it
+  records that the answering run reported `RUN_STARTED`. Elsewhere that event
+  is not taken as proof of anything, and a sent answer that fails is
+  `uncertain`.
+- `id` changes with every new pause, as the legacy `generation` did. `attempt`
+  is the answer that was claimed: its run, responses and command.
+- The same decision in the same phase returns the same reference.
 
 ## Custom events
 

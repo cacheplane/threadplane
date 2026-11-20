@@ -161,7 +161,9 @@ function ownResult(value: unknown, ancestors = new Set<object>()): unknown {
  * cancellation/continuation and invokes the fetch guard; this module does not. */
 export function createClientToolLedger<C extends Record<string, ToolContract>>(
   names: readonly (keyof C & string)[],
-  initial: Transcript
+  initial: Transcript,
+  /** The history is a restored pause: its unresolved calls await the answer. */
+  restoredPause = false
 ) {
   const catalog = new Set<string>(names);
   const attempts = new WeakMap<object, Physical>();
@@ -428,7 +430,7 @@ export function createClientToolLedger<C extends Record<string, ToolContract>>(
     );
     return message;
   };
-  integrity(ownTranscript(initial), [], '');
+  if (!restoredPause) integrity(ownTranscript(initial), [], '');
   return {
     startPhysical(input: {
       runId: string;

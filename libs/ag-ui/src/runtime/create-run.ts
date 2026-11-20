@@ -41,6 +41,14 @@ export interface RunHandle {
   done: Promise<RunResult>;
 }
 
+/**
+ * What a `RUN_FINISHED` outcome settles a run as. An outcome this runtime does
+ * not know settles `error`.
+ */
+export function finishedOutcome(outcome: unknown): CompleteOutcome {
+  return finishedResult(outcome).outcome;
+}
+
 function finishedResult(outcome: unknown): RunOutcome {
   if (outcome == null) return { outcome: 'success' };
   if (typeof outcome === 'object' && 'type' in outcome) {

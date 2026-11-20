@@ -120,6 +120,16 @@ export const INTERRUPTED_COPY = Object.freeze({
   detail: 'Trying again could repeat it.',
 });
 const FAILED = 'The agent request failed.';
+/** Shown when the saved thread could not be read or written. */
+export const STORAGE_COPY =
+  'The saved conversation could not be read or written.';
+const STORAGE_ERROR: AgentError = Object.freeze({
+  kind: 'server',
+  message: STORAGE_COPY,
+  retryable: false,
+  recovery: 'none',
+  detail: 'Reconcile the thread before sending another request.',
+});
 /** The same wording the LangGraph runtime uses for a rejected credential. */
 export const AUTH_COPY = 'Authentication failed. Check your credentials.';
 
@@ -133,8 +143,11 @@ export const AUTH_COPY = 'Authentication failed. Check your credentials.';
 function failure(
   native: Observation,
   canRetry: boolean,
+  canCheck: boolean,
   previous?: AgentError
 ): AgentError {
+  if (native.hold === 'storage')
+    return previous?.message === STORAGE_COPY ? previous : STORAGE_ERROR;
   const terminal = native.run?.terminal;
   const reported =
     terminal?.type === 'RUN_ERROR' && 'message' in terminal
@@ -156,13 +169,24 @@ function failure(
   // leaves open whether the request did its work, so sending it again could
   // repeat it.
   const retryable = canRetry && failedWithRunError(native);
+  // An answer that was sent and not proven taken can be asked about, when the
+  // application configured a reconciler to ask.
+  const recovery = retryable
+    ? 'retry'
+    : canCheck &&
+      native.decision?.kind === 'native' &&
+      native.decision.attempt &&
+      native.run?.outcome !== undefined
+    ? 'check'
+    : 'none';
   if (
     previous &&
     previous.kind === kind &&
     previous.message === message &&
     previous.detail === detail &&
     previous.status === status &&
-    previous.retryable === retryable
+    previous.retryable === retryable &&
+    previous.recovery === recovery
   )
     return previous;
   return Object.freeze({
@@ -170,7 +194,7 @@ function failure(
     message,
     ...(status !== undefined && { status }),
     retryable,
-    recovery: retryable ? 'retry' : 'none',
+    recovery,
     ...(detail !== undefined && { detail }),
   });
 }
@@ -222,6 +246,7 @@ function usage(native: Observation): AgentUsage | undefined {
 function project(
   native: Observation,
   canRetry: boolean,
+  canCheck: boolean,
   view: StateView,
   previous?: SessionSnapshot
 ): SessionSnapshot {
@@ -229,7 +254,7 @@ function project(
   const toolCalls = projectToolCalls(native, previous?.toolCalls);
   const error =
     native.status === 'error'
-      ? failure(native, canRetry, previous?.error)
+      ? failure(native, canRetry, canCheck, previous?.error)
       : undefined;
   const used = usage(native);
   const { state: _document, subagents: _children, ...evidence } = native;
@@ -272,7 +297,8 @@ function project(
  */
 export function createPresenter(
   declaration: StateDeclaration | undefined,
-  canRetry: boolean | ((observation: Observation) => boolean)
+  canRetry: boolean | ((observation: Observation) => boolean),
+  canCheck = false
 ): (observation: Observation) => SessionSnapshot {
   const readView = stateReader(declaration);
   let seen: Observation | undefined;
@@ -282,6 +308,7 @@ export function createPresenter(
       current = project(
         observation,
         typeof canRetry === 'function' ? canRetry(observation) : canRetry,
+        canCheck,
         readView(observation.state),
         current
       );

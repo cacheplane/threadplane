@@ -68,6 +68,8 @@ export type NativeDecision = {
     readonly responses: readonly NativeResponse[];
     /** The command a command answer sends in place of `resume`. */
     readonly forwardedProps?: CommandProps;
+    /** The answering run reported `RUN_STARTED`: the backend has the answer. */
+    readonly acknowledged?: true;
   };
 };
 export type Decision =
@@ -120,6 +122,38 @@ export function captureResponses(
     );
   }
   return Object.freeze(selected);
+}
+
+/** A fresh pause generation for evidence that can begin an answerable pause. */
+export function pauseFor(
+  evidence: OwnedRootTerminal,
+  transport: InterruptTransport | undefined
+): PauseId | undefined {
+  return (evidence.type === 'RUN_FINISHED' &&
+    evidence.outcome?.type === 'interrupt') ||
+    (evidence.type === 'CUSTOM' && answersNotice(transport))
+    ? (crypto.randomUUID() as PauseId)
+    : undefined;
+}
+
+/**
+ * Records that the run answering `decision` has started on the backend.
+ * Returns the same decision for any other run, and once it is recorded.
+ */
+export function acknowledgeDecision(
+  decision: Decision | undefined,
+  runId: string
+): Decision | undefined {
+  if (
+    decision?.kind !== 'native' ||
+    decision.attempt?.runId !== runId ||
+    decision.attempt.acknowledged
+  )
+    return decision;
+  return Object.freeze({
+    ...decision,
+    attempt: Object.freeze({ ...decision.attempt, acknowledged: true as const }),
+  });
 }
 
 /** A notice's value as the Angular adapter read it: JSON text becomes its data. */
@@ -432,4 +466,96 @@ export function decisionState(snapshot: {
     known.set(phase, state);
   }
   return state;
+}
+
+/**
+ * The pending pause with its request ownership, as the Angular adapter's
+ * `interruptSession` reported it.
+ *
+ * - `none`: nothing is waiting.
+ * - `collecting`: the pausing run has not settled locally yet.
+ * - `pending`: the pause can be answered.
+ * - `resuming`: an answer was claimed and its run is going. Claiming and
+ *   sending are one step here, so there is no separate `claimed`.
+ * - `acknowledged`: the answering run reported `RUN_STARTED` and is going.
+ * - `uncertain`: the answering run ended with no proof the backend took the
+ *   answer, before it reported `RUN_STARTED`.
+ * - `recovery-required`: the answering run ended after it had started on the
+ *   backend. Only reconciliation can say how.
+ * - `unsupported`: a pause this session cannot answer.
+ */
+export interface InterruptSession {
+  readonly phase:
+    | 'none'
+    | 'collecting'
+    | 'pending'
+    | 'resuming'
+    | 'acknowledged'
+    | 'uncertain'
+    | 'recovery-required'
+    | 'unsupported';
+  /** Changes with every new pause, as the legacy `generation` did. */
+  readonly id?: PauseId;
+  readonly interrupts: readonly OwnedInterrupt[];
+  /** The run that paused. */
+  readonly runId?: string;
+  /** Present when the pause is answered through `forwardedProps.command`. */
+  readonly command?: NativeDecision['command'];
+  /** The answer that was claimed: its run, responses and command. */
+  readonly attempt?: NativeDecision['attempt'];
+}
+
+const noInterrupts: readonly OwnedInterrupt[] = Object.freeze([]);
+const noSession: InterruptSession = Object.freeze({
+  phase: 'none',
+  interrupts: noInterrupts,
+});
+const sessions = new WeakMap<Decision, Map<string, InterruptSession>>();
+
+/**
+ * Display only: reads the full interrupt batch and how far its answer has got
+ * from a session snapshot. The same decision in the same phase returns the
+ * same reference.
+ */
+export function interruptSession(snapshot: {
+  readonly decision?: Decision;
+  readonly run?: DecisionRun;
+}): InterruptSession {
+  const { decision, run } = snapshot;
+  if (!decision) return noSession;
+  const settled = run?.outcome !== undefined;
+  const attempt = decision.kind === 'native' ? decision.attempt : undefined;
+  const phase: InterruptSession['phase'] =
+    decision.kind !== 'native'
+      ? 'unsupported'
+      : !attempt
+      ? settled
+        ? 'pending'
+        : 'collecting'
+      : attempt.acknowledged
+      ? settled
+        ? 'recovery-required'
+        : 'acknowledged'
+      : settled
+      ? 'uncertain'
+      : 'resuming';
+  let known = sessions.get(decision);
+  if (!known) sessions.set(decision, (known = new Map()));
+  let session = known.get(phase);
+  if (!session) {
+    session = Object.freeze(
+      decision.kind === 'native'
+        ? {
+            phase,
+            id: decision.id,
+            interrupts: decision.interrupts,
+            runId: decision.sourceRunId,
+            ...(decision.command && { command: decision.command }),
+            ...(attempt && { attempt }),
+          }
+        : { phase, interrupts: noInterrupts, runId: decision.sourceRunId }
+    );
+    known.set(phase, session);
+  }
+  return session;
 }
