@@ -2,6 +2,7 @@
 import { signal } from '@angular/core';
 import type { AgentQueueEntry, AgentTransport, LangGraphSubmitOptions, StreamEvent } from '@threadplane/langgraph';
 import type { ThreadState } from '@langchain/langgraph-sdk';
+import { ReplayUserIds } from '../replay-user-ids';
 import { validateStageRecording, type StageRecording } from './stage-recording.types';
 import { buildTimeline, type StageTimeline } from './stage-timeline';
 
@@ -32,6 +33,8 @@ export class StageReplayTransport implements AgentTransport {
   /** Index of the next run `stream()` will answer. Reload runs are skipped. */
   private nextRun = 0;
   get runIndex(): number { return this.nextRun; }
+  /** Renames the recorded prompts to the ids the replaying session sent. */
+  private readonly userIds = new ReplayUserIds();
   private readonly appliedCount = signal(0);
   readonly appliedSignal = this.appliedCount.asReadonly();
 
@@ -56,11 +59,12 @@ export class StageReplayTransport implements AgentTransport {
   reset(): void {
     this.generation += 1;
     this.nextRun = 0;
+    this.userIds.reset();
     this.appliedCount.set(0);
     this.wakeAll();
   }
 
-  async *stream(_a: string, _thread: string | null, _payload: unknown, abortSignal: AbortSignal, _o?: LangGraphSubmitOptions): AsyncIterable<StreamEvent> {
+  async *stream(_a: string, _thread: string | null, payload: unknown, abortSignal: AbortSignal, _o?: LangGraphSubmitOptions): AsyncIterable<StreamEvent> {
     const gen = this.generation;
     const tl = await this.ready();
     if (abortSignal.aborted || gen !== this.generation) return;
@@ -68,6 +72,7 @@ export class StageReplayTransport implements AgentTransport {
     const entry = tl.runs[this.nextRun];
     if (!entry) return;
     this.nextRun += 1;
+    this.userIds.adopt(payload, entry.run.events);
     for (const { tMs, event } of entry.run.events) {
       while (entry.startMs + tMs > this.t) {
         if (abortSignal.aborted || gen !== this.generation) return;
@@ -75,8 +80,17 @@ export class StageReplayTransport implements AgentTransport {
       }
       if (abortSignal.aborted || gen !== this.generation) return;
       this.appliedCount.update((n) => n + 1);
-      yield event;
+      yield this.userIds.translate(event);
     }
+  }
+
+  /**
+   * A session without a thread creates one before its first run. The stage
+   * always adopts the recorded thread first, so this only satisfies the
+   * session's requirement that a supplied transport can create a thread.
+   */
+  async createThread(): Promise<string> {
+    return (await this.getRecording()).threadId;
   }
 
   private wait(abortSignal: AbortSignal): Promise<void> {
@@ -91,12 +105,12 @@ export class StageReplayTransport implements AgentTransport {
   /**
    * The snapshot recorded at exactly this replay position, or none.
    *
-   * A stale snapshot is deliberately NOT served: the bridge treats history as
-   * authoritative at the close of every run and projects it over the
-   * transcript (stream-manager.bridge.ts, finalizeClosedAttempt →
-   * refreshHistory(force: true)), so answering an at-or-before snapshot would
-   * snap the replayed transcript back to whatever the recorder last captured.
-   * Serving nothing leaves the streamed transcript alone. The recorder must
+   * A stale snapshot is deliberately NOT served: a session reads the history
+   * page again when a run ends, for its checkpoint views (`historyState`), and
+   * a thread it adopts is restored from the page it loads. Answering an
+   * at-or-before snapshot would hand it checkpoints, and on a reload a whole
+   * transcript, from whatever the recorder last captured. Serving nothing
+   * leaves the streamed transcript and the views alone. The recorder must
    * therefore capture a snapshot after every run it wants restored (the
    * reload run above all).
    *
@@ -109,7 +123,9 @@ export class StageReplayTransport implements AgentTransport {
     if (this.runIndex === 0) return [];
     const rec = await this.getRecording();
     for (let i = rec.histories.length - 1; i >= 0; i--) {
-      if (rec.histories[i].afterRun === this.runIndex) return rec.histories[i].states as ThreadState[];
+      if (rec.histories[i].afterRun === this.runIndex) {
+        return this.userIds.translate(rec.histories[i].states) as ThreadState[];
+      }
     }
     return [];
   }

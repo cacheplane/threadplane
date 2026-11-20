@@ -18,13 +18,19 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs/operators';
 import {
   injectAgent,
+  injectThreadDirectory,
   provideAgent,
-  LangGraphThreadsAdapter,
-  LANGGRAPH_THREADS_CONFIG,
-  createLangGraphClient,
   refreshOnRunEnd,
+} from '@threadplane/angular';
+import {
+  createLangGraphClient,
+  type LangGraphSubmitState,
+  type LangGraphTelemetrySink,
 } from '@threadplane/langgraph';
-import { DEMO_AGENT_REF, type DemoState } from './agent-ref';
+import { DEMO_AGENT_REF, type DemoAgent, type DemoState } from './agent-ref';
+import { createDemoSession, SUBAGENT_TOOL_NAMES } from './demo-session';
+import type { DemoThreadDirectory } from './demo-threads';
+import { regenerateFromCheckpoint } from './regenerate';
 import { ItineraryStore, type ItineraryStop } from '../itinerary-store';
 import { itineraryClientTools } from '../client-tools';
 import { ThreadplaneTelemetryService } from '@threadplane/telemetry/browser';
@@ -40,14 +46,13 @@ import {
   type ThreadActionAdapter,
   type Thread,
   type ProjectActionAdapter,
-  type AgentRuntimeTelemetrySink,
 } from '@threadplane/chat';
 import { PalettePersistence } from './palette-persistence.service';
 import { ProjectsService } from './projects.service';
 import { MapCanvasComponent } from '../map-canvas.component';
 import { ItineraryPanelComponent } from '../itinerary-panel.component';
 import { DEMO_AGENT } from './shell-tokens';
-import { createCanonicalDemoRuntimeTelemetrySink } from './runtime-telemetry';
+import { createCanonicalDemoRuntimeTelemetrySink, oncePerAgent } from './runtime-telemetry';
 import { environment } from '../../environments/environment';
 
 export type DemoMode = 'embed' | 'popup' | 'sidebar';
@@ -63,10 +68,40 @@ const TELEMETRY_SURFACE = 'canonical_demo';
 // DemoShell instance reads/writes the same signals. The demo bootstraps a
 // single DemoShell, so module scope is equivalent to instance scope.
 const threadIdState = signal<string | null>(null);
-// Populated by the DemoShell `agent` field initializer. The agent provider's
-// static config delegates telemetry to this sink so it can read the live
+// Populated by the DemoShell `agent` field initializer. Every session the
+// agent creates delegates telemetry to this sink so it can read the live
 // model selection + injected telemetry service (which the static config can't).
-let telemetrySink: AgentRuntimeTelemetrySink | undefined;
+let telemetrySink: LangGraphTelemetrySink | undefined;
+
+/**
+ * The agent the shell hands out: the injected agent, with `submit` adding the
+ * shell's live selections to the run's input state. The injected `Agent`
+ * cannot be patched in place, so this is a view of it; every other member is
+ * the injected agent's own. A run with no message (`submit(null)`) is passed
+ * through untouched: it continues the thread from its saved state.
+ *
+ * `regenerate` is the demo's own (see `regenerateFromCheckpoint`): it answers
+ * a prompt again through that same submit, from the checkpoint before it.
+ */
+export function withSubmitState(
+  agent: DemoAgent,
+  readState: () => LangGraphSubmitState<DemoState>,
+): DemoAgent {
+  const submit: DemoAgent['submit'] = (input, options) => {
+    if (input == null) return agent.submit(input, options);
+    const given = typeof input === 'string' ? { message: input } : input;
+    return agent.submit({ ...given, state: { ...given.state, ...readState() } }, options);
+  };
+  const regenerate = regenerateFromCheckpoint(agent, submit);
+  return new Proxy(agent, {
+    get: (target, key, receiver) =>
+      key === 'submit'
+        ? submit
+        : key === 'regenerate'
+          ? regenerate
+          : Reflect.get(target, key, receiver),
+  });
+}
 
 /** Parse `/embed`, `/embed/<threadId>`, `/popup/<threadId>` etc. into
  *  `{mode, threadId}`. Source of truth for URL ↔ signal sync — see
@@ -80,7 +115,7 @@ function parseUrl(url: string): { mode: DemoMode; threadId: string | null } {
 
 // ── Itinerary ↔ checkpoint sync helpers (Task 9) ────────────────────────────
 // Extracted as pure functions so the sync decisions are unit-testable without
-// driving the agent's derived `value()`/`isLoading()` signals (which the fake
+// driving the agent's derived `state()`/`status()` signals (which the fake
 // transport harness can't emit). The effects below stay thin wrappers.
 
 /**
@@ -104,7 +139,7 @@ export function shouldSyncCheckpoint(
   return json !== lastJson;
 }
 
-/** Pull the itinerary array out of a graph-state `value()` snapshot, or null
+/** Pull the itinerary array out of a graph-state `state()` snapshot, or null
  *  when the state has no (well-formed) itinerary to hydrate from. */
 export function extractItinerary(value: unknown): ItineraryStop[] | null {
   if (value && typeof value === 'object') {
@@ -144,17 +179,15 @@ export function isConflict(err: unknown): boolean {
   templateUrl: './demo-shell.component.html',
   styleUrl: './demo-shell.component.css',
   providers: [
-    // Scoped agent (Option B): the config watches the active-thread signal,
+    // Scoped agent (Option B): the agent follows the active-thread signal,
     // mirrors auto-created ids back, and routes telemetry through the shell's
     // model selection — all per-instance. The telemetry sink delegates to the
     // shell-built sink (populated in the constructor) since the real sink needs
     // the injected telemetry service + live model() read.
-    // Typed via DEMO_AGENT_REF so injectAgent(DEMO_AGENT_REF) returns a
-    // LangGraphAgent<DemoState>. Static config: client retry options are
-    // single-sourced in the adapter, so no lazy factory is needed here.
+    // Typed via DEMO_AGENT_REF so injectAgent(DEMO_AGENT_REF) returns an
+    // Agent<DemoSession>. The agent asks for a new session on every thread
+    // switch; the client options arrive in `context` from AGENT_CLIENT_OPTIONS.
     provideAgent(DEMO_AGENT_REF, {
-      apiUrl: environment.langGraphApiUrl,
-      assistantId: environment.assistantId,
       threadId: threadIdState,
       onThreadId: (id: string) => {
         // The signal→URL effect picks this up and stamps the new id
@@ -162,14 +195,15 @@ export function isConflict(err: unknown): boolean {
         // the source of truth.
         threadIdState.set(id);
       },
-      // Phase 3B: tells SubagentTracker to treat `research` tool calls as
-      // subagent dispatches and to materialize agent.subagents() from the
-      // resulting tools:<id>-namespaced stream events.
-      subagentToolNames: ['research'],
-      // The canonical graph has side-effect LLM nodes such as generate_title;
-      // only the generate node's token stream belongs in the chat transcript.
-      transcriptNodeNames: ['generate'],
-      telemetry: (event) => telemetrySink?.(event),
+      createSession: (context) =>
+        createDemoSession(context, {
+          // Relates `research` tool calls to the child graphs they start, so
+          // agent.subagents() carries each child's tool call and task.
+          subagentToolNames: SUBAGENT_TOOL_NAMES,
+          // At most one render per frame while tokens stream.
+          throttle: 16,
+          telemetry: (event) => telemetrySink?.(event),
+        }),
     }),
     { provide: DEMO_AGENT, useFactory: () => inject(DemoShell).agent },
   ],
@@ -179,7 +213,7 @@ export class DemoShell {
   private readonly persistence = inject(PalettePersistence);
   private readonly document = inject(DOCUMENT);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-  protected readonly threadsSvc = inject(LangGraphThreadsAdapter);
+  protected readonly threadsSvc = injectThreadDirectory<DemoThreadDirectory>();
   protected readonly projectsSvc = inject(ProjectsService);
   private readonly telemetry = inject(ThreadplaneTelemetryService);
 
@@ -193,11 +227,8 @@ export class DemoShell {
   readonly clientTools = itineraryClientTools();
 
   /** Out-of-band SDK client used to push the working itinerary to the durable
-   *  checkpoint (`threads.updateState`) between runs. `LANGGRAPH_THREADS_CONFIG`
-   *  is optional so knob/routing unit tests that don't provide it still run. */
-  private readonly lgClient = createLangGraphClient(
-    inject(LANGGRAPH_THREADS_CONFIG, { optional: true })?.apiUrl ?? environment.langGraphApiUrl,
-  );
+   *  checkpoint (`threads.updateState`) between runs. */
+  private readonly lgClient = createLangGraphClient(environment.langGraphApiUrl);
 
   /** JSON of the last itinerary we synced (either pushed OR hydrated). Breaks
    *  the hydrate→push→hydrate echo loop — see `shouldSyncCheckpoint`. */
@@ -329,19 +360,19 @@ export class DemoShell {
     // metadata.title on the first user message via generate_title;
     // a refresh after run-end picks up the new title in the drawer without
     // needing a manual thread switch or reload.
-    refreshOnRunEnd(this.agent, () => this.threadsSvc.refresh());
+    refreshOnRunEnd(this.agent, this.threadsSvc);
 
     // ── Itinerary ↔ checkpoint sync (Task 9) ────────────────────────────────
     // The checkpoint (per-thread graph state) is the durable record; the
     // ItineraryStore is the live working copy. We sync client-authoritatively.
 
     // (2) Hydrate the store from the checkpoint on reload / thread switch.
-    // Reads the agent's graph-state value(); when it carries an itinerary
+    // Reads the agent's graph state(); when it carries an itinerary
     // array, replaces the working copy. Stamps lastSyncedItinerary with the
     // incoming JSON so the push effect below sees "no change" and skips —
     // this is the other half of the echo-loop guard.
     effect(() => {
-      const incoming = extractItinerary(this.agent.value());
+      const incoming = extractItinerary(this.agent.state());
       if (incoming === null) return;
       // Don't let a behind/empty server snapshot wipe a populated local working
       // copy: during a plan the client tools fill the store before the checkpoint
@@ -664,46 +695,32 @@ export class DemoShell {
   };
 
   /**
-   * Shared agent instance. Patched submit injects state.model on every
-   * submission so the graph picks up the latest model selection without
-   * a reconnect.
+   * Shared agent instance. Its submit adds state.model (and the other knobs)
+   * to every submission so the graph picks up the latest selection without a
+   * reconnect.
    */
-  readonly agent = (() => {
+  readonly agent: DemoAgent = (() => {
     // The agent itself is constructed by `provideAgent({...})` in the
     // @Component providers above (thread binding + subagentToolNames live
     // there). That static config can't read component state, so it delegates
     // telemetry to the module-level `telemetrySink` — which we populate here
-    // from the injected telemetry service + live model() read.
-    telemetrySink = createCanonicalDemoRuntimeTelemetrySink(
-      this.telemetry,
-      () => this.model(),
+    // from the injected telemetry service + live model() read, before the
+    // agent (and with it the first session) is created.
+    telemetrySink = oncePerAgent(
+      createCanonicalDemoRuntimeTelemetrySink(this.telemetry, () => this.model()),
     );
-    const a = injectAgent(DEMO_AGENT_REF);
+    const injected = injectAgent(DEMO_AGENT_REF);
     void this.telemetry.capture('tplane:browser_chat_init', { surface: TELEMETRY_SURFACE });
-    const orig = a.submit.bind(a);
-    (a as { submit: typeof a.submit }).submit = (async (
-      input: Parameters<typeof a.submit>[0],
-      opts?: Parameters<typeof a.submit>[1],
-    ) => {
-      return orig(
-        {
-          ...(input ?? {}),
-          state: {
-            ...((input as { state?: Record<string, unknown> })?.state ?? {}),
-            model: this.model(),
-            reasoning_effort: this.effort() === 'default' ? null : this.effort(),
-            gen_ui_mode: this.genUiMode(),
-            itinerary: this.itinerary.stops(),
-          },
-        },
-        opts,
-      );
-    }) as typeof a.submit;
-    return a;
+    return withSubmitState(injected, () => ({
+      model: this.model(),
+      reasoning_effort: this.effort() === 'default' ? null : this.effort(),
+      gen_ui_mode: this.genUiMode(),
+      itinerary: this.itinerary.stops().map((stop) => ({ ...stop })),
+    }));
   })();
 
   /** Typed read: proves DemoState flows through DI. Not used at runtime. */
-  protected readonly _demoState: DemoState = this.agent.value();
+  protected readonly _demoModel: string | null | undefined = this.agent.state()?.model;
 
   protected onModeChange(next: DemoMode | string): void {
     // Embed can't coexist with App mode (its full-bleed chat covers the
@@ -925,15 +942,15 @@ export class DemoShell {
 
   /**
    * Translates the four-action vocabulary from chat-interrupt-panel
-   * into Command(resume=value) submissions. Phase 3A demo affordance:
+   * into the answer `agent.resume()` sends. Phase 3A demo affordance:
    * window.prompt() for `edit` and `respond`. A production app would
    * inline a textarea editor.
    */
   async onInterruptAction(action: InterruptAction): Promise<void> {
-    const interrupt = this.agent.interrupt?.();
+    const interrupt = this.agent.interrupts()[0];
     if (!interrupt) return;
 
-    let resume: unknown;
+    let resume: string;
     switch (action) {
       case 'accept':
         resume = 'approved';
@@ -959,6 +976,8 @@ export class DemoShell {
         break;
     }
 
-    await this.agent.submit(null, { command: { resume } } as never);
+    await this.agent.resume([
+      { interruptId: interrupt.id, status: 'resolved', value: resume },
+    ]);
   }
 }

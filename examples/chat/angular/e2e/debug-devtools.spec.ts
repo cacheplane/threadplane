@@ -1,10 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { openChatDevtools, openDemo } from './test-helpers';
+import { openChatDevtools, openDemo, sendPromptAndWait } from './test-helpers';
 
 test('chat-debug devtools: opens from the sidenav with accessible controls and closes cleanly', async ({
   page,
 }) => {
-  await openDemo(page, '/embed');
+  // The Timeline tab lists the thread's saved checkpoints, so it exists once
+  // a thread has a history to list: after the first exchange.
+  await sendPromptAndWait(page, 'say hi briefly');
   await openChatDevtools(page);
 
   const panel = page.getByRole('region', { name: 'Chat devtools' });

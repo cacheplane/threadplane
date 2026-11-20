@@ -2,7 +2,8 @@
 
 Scope: validates the **published** `@threadplane/*` packages render and behave
 correctly in a fresh consumer. Run after any release or whenever
-changes land in libs/chat, libs/langgraph, libs/render, libs/ag-ui.
+changes land in libs/angular, libs/core, libs/chat, libs/langgraph,
+libs/render, libs/ag-ui.
 
 ## Pre-flight
 
@@ -120,7 +121,8 @@ renders correctly both during streaming and after completion.
 - [ ] Collapsed sidenav shows the debug status dot without the text label
 - [ ] Debug dot pulses while the agent is streaming
 - [ ] Click the footer debug button — debug panel opens
-- [ ] Panel shows current agent state and timeline when checkpoint history is available
+- [ ] Panel shows current agent state; the Timeline tab appears once the thread has a
+      saved checkpoint (after the first exchange, or on a reloaded thread)
 - [ ] Panel updates live as messages stream
 - [ ] Click the close affordance — panel unmounts; launcher remains
 
@@ -172,6 +174,8 @@ renders correctly both during streaming and after completion.
 
 - [ ] Stop the Python server (`Ctrl+C` on :2024) and try sending — UI
       surfaces an error in `<chat-error>`, does not crash
+- [ ] The error offers `Check status`, not a retry: a stream that failed
+      before any response may still have reached the backend
 - [ ] Restart Python server and send again — recovers without reload
 - [ ] Send with `OPENAI_API_KEY` invalid — error surfaces; no infinite spinner
 
