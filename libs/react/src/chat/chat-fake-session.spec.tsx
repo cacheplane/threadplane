@@ -10,8 +10,9 @@ import {
   createFakeAgentSession,
   type FakeAssistantStream,
 } from '@threadplane/core/testing';
+import type { AgentSession, CompleteOutcome } from '@threadplane/core';
 import { useAgent } from '../use-agent';
-import { Chat } from './index';
+import { Chat, type RenderInterrupt } from './index';
 
 afterEach(cleanup);
 
@@ -167,4 +168,137 @@ it('lets the subagents prop replace the session child agents', () => {
       (card) => card.dataset['subagentId']
     )
   ).toEqual(['mine']);
+});
+
+const card: RenderInterrupt = (interrupt, respond) => (
+  <div data-interrupt={interrupt.id} data-answered={String(respond.answered)}>
+    <p>{interrupt.message}</p>
+    <button
+      type="button"
+      disabled={respond.sending}
+      onClick={() => respond.resolve({ approved: true })}
+    >
+      Approve {interrupt.id}
+    </button>
+    <button type="button" onClick={() => respond.cancel()}>
+      Cancel {interrupt.id}
+    </button>
+  </div>
+);
+
+it('shows nothing for a pending interrupt unless renderInterrupt is set', () => {
+  const fake = createFakeAgentSession({
+    interrupts: [{ id: 'i1', message: 'Refund $20?' }],
+  });
+  const view = render(<Chat session={fake.session} />);
+  expect(view.queryByText('Refund $20?')).toBeNull();
+  expect(
+    view.getByRole('textbox', { name: 'Message' }).getAttribute('placeholder')
+  ).not.toBe('Answer the approval to continue');
+});
+
+it('answers one interrupt through session.resume from renderInterrupt', async () => {
+  const fake = createFakeAgentSession({
+    interrupts: [{ id: 'i1', message: 'Refund $20?' }],
+  });
+  const view = render(<Chat session={fake.session} renderInterrupt={card} />);
+  expect(view.getByText('Refund $20?')).toBeTruthy();
+  // The composer waits on the answer, as it does for the approval slot.
+  expect(
+    view.getByRole('textbox', { name: 'Message' }).getAttribute('placeholder')
+  ).toBe('Answer the approval to continue');
+  await act(async () => {
+    fireEvent.click(view.getByRole('button', { name: 'Approve i1' }));
+  });
+  expect(fake.resumes.map((call) => call.responses)).toEqual([
+    [{ interruptId: 'i1', status: 'resolved', value: { approved: true } }],
+  ]);
+  // The fake removes an answered interrupt; the card goes with it.
+  expect(view.queryByText('Refund $20?')).toBeNull();
+});
+
+it('holds answers until every pending interrupt has one, then sends them together', async () => {
+  const fake = createFakeAgentSession({
+    interrupts: [
+      { id: 'i1', message: 'First?' },
+      { id: 'i2', message: 'Second?' },
+    ],
+  });
+  const view = render(<Chat session={fake.session} renderInterrupt={card} />);
+  await act(async () => {
+    fireEvent.click(view.getByRole('button', { name: 'Cancel i2' }));
+  });
+  expect(fake.resumes).toHaveLength(0);
+  expect(
+    view.container
+      .querySelector('[data-interrupt="i2"]')
+      ?.getAttribute('data-answered')
+  ).toBe('true');
+  await act(async () => {
+    fireEvent.click(view.getByRole('button', { name: 'Approve i1' }));
+  });
+  // One resume, in the order the session lists the interrupts.
+  expect(fake.resumes.map((call) => call.responses)).toEqual([
+    [
+      { interruptId: 'i1', status: 'resolved', value: { approved: true } },
+      { interruptId: 'i2', status: 'cancelled' },
+    ],
+  ]);
+});
+
+it('lets the interrupts be answered again after resume rejects', async () => {
+  let fail = true;
+  const fake = createFakeAgentSession({
+    interrupts: [{ id: 'i1', message: 'Refund $20?' }],
+  });
+  // A session that refuses the first answer and leaves the interrupt pending.
+  const session: AgentSession = {
+    ...fake.session,
+    resume: (responses, options) =>
+      fail
+        ? Promise.reject(new TypeError('Not accepted'))
+        : (fake.session.resume?.(
+            responses,
+            options
+          ) as Promise<CompleteOutcome>),
+  };
+  const errors: unknown[] = [];
+  const view = render(
+    <Chat
+      session={session}
+      renderInterrupt={card}
+      onInterruptError={(error) => errors.push(error)}
+    />
+  );
+  await act(async () => {
+    fireEvent.click(view.getByRole('button', { name: 'Approve i1' }));
+  });
+  expect(errors).toHaveLength(1);
+  expect(errors[0]).toBeInstanceOf(TypeError);
+  expect(fake.resumes).toHaveLength(0);
+  // Still pending, and its control is usable again.
+  const again = view.getByRole('button', { name: 'Approve i1' });
+  expect((again as HTMLButtonElement).disabled).toBe(false);
+  fail = false;
+  await act(async () => {
+    fireEvent.click(again);
+  });
+  expect(errors).toHaveLength(1);
+  expect(fake.resumes).toHaveLength(1);
+  expect(view.queryByText('Refund $20?')).toBeNull();
+});
+
+it('leaves the approval slot to the app when approval is set', () => {
+  const fake = createFakeAgentSession({
+    interrupts: [{ id: 'i1', message: 'Refund $20?' }],
+  });
+  const view = render(
+    <Chat
+      session={fake.session}
+      renderInterrupt={card}
+      approval={<p>App approval</p>}
+    />
+  );
+  expect(view.getByText('App approval')).toBeTruthy();
+  expect(view.queryByText('Refund $20?')).toBeNull();
 });
