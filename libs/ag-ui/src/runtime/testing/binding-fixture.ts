@@ -1,6 +1,6 @@
 import type { RunAgentInput } from '@ag-ui/client';
 import type { StateDeclaration } from '@threadplane/core';
-import { createSession, type SessionOptions } from '../create-session';
+import { createSession, type SessionCommonOptions } from '../create-session';
 
 // Consumer specs assert the declared protocol version without depending on @ag-ui/* directly.
 export { PROTOCOL_VERSION } from '@ag-ui/client';
@@ -79,7 +79,7 @@ function controlledFetchResponse(
 export function bindingFixture<
   D extends StateDeclaration | undefined = undefined
 >(
-  options: Partial<Omit<SessionOptions, 'url' | 'fetch' | 'stateType'>> & {
+  options: Omit<SessionCommonOptions, 'stateType'> & {
     stateType?: D;
   } = {}
 ) {

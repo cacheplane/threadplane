@@ -40,6 +40,7 @@ import {
 } from './session-observation.js';
 import { nextInvocation, type Subagents } from './subagents.js';
 import { createRun, httpFailure, type RunHandle } from './create-run.js';
+import type { RequestSource, SessionAgent } from './create-http-request.js';
 import { createPublication } from './session-publication.js';
 import {
   createPresenter,
@@ -83,10 +84,17 @@ import {
   type SubmitInput,
 } from './submit-input.js';
 
-export interface SessionOptions
-  extends Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'>,
-    DurabilityOptions {
-  readonly threadId: string;
+/** The options every session takes, whatever it sends its requests with. */
+export interface SessionCommonOptions extends DurabilityOptions {
+  /**
+   * The thread this session owns. Absent, the handed agent's `threadId` is
+   * used, or else a new one is generated; read it from `session.threadId`.
+   * `persistence` needs one the application chose, and `replay` is skipped
+   * without one: a new conversation has nothing to replay.
+   */
+  readonly threadId?: string;
+  /** Names the agent, when an endpoint serves more than one. Published as `session.agentId`. */
+  readonly agentId?: string;
   readonly messages?: readonly Message[] | Transcript;
   readonly state?: unknown;
   /**
@@ -106,6 +114,35 @@ export interface SessionOptions
    */
   readonly interruptTransport?: InterruptTransport;
 }
+/** A session that posts each run to an HTTP endpoint. */
+export interface HttpSessionSource
+  extends Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'> {
+  readonly agent?: undefined;
+}
+/**
+ * A session over an AG-UI client agent the application built, HTTP or not, as
+ * the Angular adapter's `toAgent(source)` allowed. The session calls the
+ * agent's `run` with each request's full input; it does not use `runAgent`,
+ * and neither reads nor changes the agent's own messages and state.
+ */
+export interface AgentSessionSource {
+  readonly agent: SessionAgent;
+  readonly url?: undefined;
+  readonly headers?: undefined;
+  readonly fetch?: undefined;
+}
+export type SessionOptions = SessionCommonOptions &
+  (HttpSessionSource | AgentSessionSource);
+/** Options as the factory captured them: one read of each, thread resolved. */
+interface CapturedOptions
+  extends Omit<SessionCommonOptions, 'threadId'>,
+    RequestSource {
+  readonly threadId: string;
+}
+/** The session's options with its state declaration as the type parameter. */
+type DeclaredOptions<D> = Omit<SessionCommonOptions, 'stateType'> & {
+  readonly stateType?: D;
+} & (HttpSessionSource | AgentSessionSource);
 /**
  * A new root invocation observes no children yet; settled ones become history.
  * `transcript` is the history the new invocation begins with, when it is not
@@ -122,6 +159,10 @@ function nextInvocationSubagents(
   );
 }
 export interface Session<TState = unknown> {
+  /** The thread this session owns. The factory always supplies it. */
+  readonly threadId?: string;
+  /** The agent's name, when the session was given one. */
+  readonly agentId?: string;
   /** The state declaration this session was created with, when it has one. */
   readonly stateType?: StateDeclaration<TState>;
   getSnapshot(): SessionSnapshot<TState>;
@@ -237,7 +278,12 @@ function durableSession<S extends Session>(
   };
 }
 /** The thread a session starts with, held while a durable one is restored. */
-function startingObservation(options: SessionOptions): Observation {
+function startingObservation(
+  options: Pick<
+    SessionCommonOptions,
+    'messages' | 'state' | 'subagents' | 'persistence' | 'replay'
+  >
+): Observation {
   const initial = initialObservation(
     options.messages,
     options.state,
@@ -338,23 +384,24 @@ export function createSession<
   T extends Record<string, FunctionToolDefinition>,
   D extends StateDeclaration | undefined = undefined
 >(
-  options: Omit<SessionOptions, 'stateType'> & { readonly stateType?: D },
+  options: DeclaredOptions<D>,
   tools: T & CheckedTools<T>
 ): ClientToolSession<ToolContracts<T>, InferState<D>>;
 export function createSession<
   D extends StateDeclaration | undefined = undefined
 >(
-  options: Omit<SessionOptions, 'stateType'> & { readonly stateType?: D }
+  options: DeclaredOptions<D>
 ): Session<InferState<D>>;
 export function createSession(
   options: SessionOptions,
   tools?: Record<string, FunctionToolDefinition>
 ): Session {
+
   const {
-    threadId,
     url,
     headers,
     fetch,
+    agent,
     messages,
     state,
     stateType,
@@ -362,9 +409,20 @@ export function createSession(
     interruptMode = 'native',
     interruptTransport,
     persistence,
-    replay,
   } = options;
-  if (!threadId) throw new TypeError('A nonempty threadId is required');
+  const given = options.threadId;
+  if (given !== undefined && !given)
+    throw new TypeError('A nonempty threadId is required');
+  if (agent !== undefined && url !== undefined)
+    throw new TypeError('A session takes a url or an agent, not both');
+  // The thread the application chose, on the option or on its own agent.
+  const stable = given ?? (agent?.threadId || undefined);
+  if (persistence && stable === undefined)
+    throw new TypeError('Persistence requires a stable threadId');
+  const threadId = stable ?? crypto.randomUUID();
+  const agentId = options.agentId ?? agent?.agentId;
+  // A new conversation has nothing to replay.
+  const replay = stable === undefined ? undefined : options.replay;
   const catalog = tools === undefined ? undefined : captureClientTools(tools);
   if (catalog !== undefined)
     return createToolsOwner(
@@ -373,6 +431,8 @@ export function createSession(
         url,
         headers,
         fetch,
+        agent,
+        agentId,
         messages,
         state,
         stateType,
@@ -384,14 +444,19 @@ export function createSession(
       },
       catalog
     );
-  const factory = createRun({ url, headers, fetch, interruptMode });
+  const factory = createRun({
+    url,
+    headers,
+    fetch,
+    agent,
+    agentId,
+    interruptMode,
+  });
   // Legacy observation answers nothing unless a profile answers its notice.
   const answerable =
     interruptMode === 'native' || answersNotice(interruptTransport);
   const reasoningClock = createReasoningClock();
   const initial = startingObservation({
-    threadId,
-    url,
     messages,
     state,
     subagents,
@@ -637,6 +702,8 @@ export function createSession(
     });
   };
   const session: Session = {
+    threadId,
+    ...(agentId !== undefined && { agentId }),
     ...(stateType !== undefined && { stateType }),
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
@@ -908,7 +975,7 @@ export function createSession(
 /** A command can own several physical runs, but never lends execution authority
  * to a superseding submit. The legacy no-catalog owner above remains separate. */
 function createToolsOwner(
-  options: SessionOptions,
+  options: CapturedOptions,
   catalog: ReturnType<typeof captureClientTools>
 ): Session {
   const { threadId, interruptMode = 'native', interruptTransport } = options;
@@ -1635,6 +1702,8 @@ function createToolsOwner(
     );
   };
   const session: Session = {
+    threadId,
+    ...(options.agentId !== undefined && { agentId: options.agentId }),
     ...(options.stateType !== undefined && { stateType: options.stateType }),
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>

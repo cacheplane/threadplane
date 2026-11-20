@@ -52,6 +52,39 @@ This module is private source, not a public backend export or a core
 observers and transcript components continue to consume the same native owner;
 no second store or forwarding bag is introduced.
 
+## Where requests go
+
+`createSession` takes either an HTTP endpoint or an AG-UI client agent the
+application built:
+
+```ts
+const overHttp = createSession({ url, headers, fetch, threadId, agentId });
+const overAgent = createSession({ agent: new MyWebSocketAgent(config) });
+```
+
+- `agent` is any `AbstractAgent`, HTTP or not, as the Angular adapter's
+  `toAgent(source)` took. `url`, `headers` and `fetch` belong to the HTTP form;
+  passing both forms throws.
+- The session calls the agent's `run(input)` with each request's full input and
+  puts its events through the same pipeline an HTTP response goes through. It
+  does not call `runAgent`, and neither reads nor changes the agent's own
+  `messages` and `state`: the session's snapshot is the one authority.
+- Calling `run` is what counts as the request having been sent, so an answer
+  cancelled before `run` is released as one cancelled before fetch is.
+- Stopping, a superseding submission and a failure unsubscribe from the stream
+  and call the agent's `abortRun()`. A run that reached its own terminal event
+  is left without calling it. An agent that has an `abortController`, as
+  `HttpAgent` does, gets a new one before each run, as `runAgent` gives it.
+- `threadId` is optional. The session uses the option, else the handed agent's
+  own `threadId`, else a new identifier, and publishes it as
+  `session.threadId`. An empty string throws. `persistence` needs a thread the
+  application chose (the option, or the agent's), and `replay` is skipped
+  without one.
+- `agentId` names the agent when an endpoint serves more than one. It is passed
+  to the HTTP agent the session sends with and published as `session.agentId`;
+  a handed agent's own `agentId` is used when the option is absent. The
+  protocol does not put it on the wire.
+
 ## Core messages and reasoning time
 
 `projectMessages(snapshot, previous?)` and `projectToolCalls(snapshot,
