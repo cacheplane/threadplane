@@ -212,6 +212,8 @@ The agent adds:
 | `threadId()` | The thread the agent is on, or `null` before one exists. |
 | `switchThread(id \| null)` | Moves to another thread, or to a new empty one. |
 | `isThreadLoading()` | True while the selected thread's history is read. |
+| `sessionEpoch()` | How many times the session underneath was replaced. |
+| `onStop(listener)` | Calls `listener` each time `stop()` is called. |
 | `customEvents()` | The current run's custom events, oldest first. |
 | `lifecycle` | Milestone timestamps as signals; also `AGENT_LIFECYCLE`. |
 
@@ -259,13 +261,40 @@ itself keeps a listener registered across thread switches.
 on a thread switch. `AgentLifecycleRegistry`, provided in the root injector,
 lists the lifecycle of every live agent for instrumentation.
 
+### For libraries: a stop, and a replaced session
+
+A library that runs work of its own for an agent, such as a client tool handler
+in the browser, registers `agent.onStop(listener)`. The listener is called each
+time `stop()` is called on the agent, before the session is told, through any
+reference to `agent.stop`. The registration outlives thread switches and ends
+with the returned release or with the agent. A thread switch stops the old
+session itself and calls no listener.
+
+`agent.sessionEpoch()` is 0 for the session the agent was built with and one
+more after each thread switch, including a reload of the same thread. Read it
+in an effect to redo what belongs to one session, such as handing the new
+session a client tool catalog. It does not move when a session reports the
+thread it created.
+
+A host can have each agent registered for development-install collection by
+providing a registrar, a function with the signature of the telemetry
+package's `registerDevelopmentRuntimePolicy`, under
+`ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR`. The agent is registered once; its
+policy asks the current session's `isDevelopmentRuntimeEnabled()` each time and
+is false for a session without that member. This package does not import the
+telemetry package.
+
 ### Without a backend
 
 ```ts
+import { provideFakeAgent } from '@threadplane/angular/testing';
+
 providers: [provideFakeAgent({ tokens: ['Hi', ' there'], delayMs: 0 })];
 ```
 
-`provideFakeAgent` provides the same `Agent` over the in-memory session from
+`provideFakeAgent` and `injectFakeAgentSession` are in the
+`@threadplane/angular/testing` entry, so the root entry imports no testing
+code. `provideFakeAgent` provides the same `Agent` over the in-memory session from
 `@threadplane/core/testing`. Each submit streams a canned reply; a new thread is
 named on its first submit, and a thread comes back with its messages when the
 agent returns to it. `injectFakeAgentSession()` returns a signal of the current
@@ -280,3 +309,93 @@ optional commands of the core contract and the first-party backends, any name in
 `AgentConfig.optionalCommands`, and names that tools probe on arbitrary objects,
 such as `then` and `toJSON`. A backend that adds an optional command lists it in
 `optionalCommands`.
+
+## The injected thread directory
+
+`provideThreadDirectory` gives a component tree one view of a core
+`ThreadDirectory`: its snapshot as signals and its commands. The package
+imports no backend; the config supplies a function that creates the directory.
+
+```ts
+import {
+  injectAgent,
+  injectThreadDirectory,
+  provideThreadDirectory,
+  refreshOnRunEnd,
+} from '@threadplane/angular';
+
+// app.config.ts
+providers: [
+  provideThreadDirectory({
+    createDirectory: ({ clientOptions }) =>
+      createLangGraphThreadDirectory({ apiUrl, clientOptions }),
+  }),
+];
+
+// component
+readonly threads = injectThreadDirectory();
+constructor() {
+  void this.threads.refresh();
+  refreshOnRunEnd(injectAgent(), this.threads);
+}
+```
+
+| Member | What it is |
+| --- | --- |
+| `threads()` | Active threads, pinned first. |
+| `archivedThreads()` | Archived threads. |
+| `projects()` | Project names, or `undefined` when there are none to show. |
+| `status()` | `'idle'`, `'loading'` or `'error'`. |
+| `error()` | The last load failure; cleared by a successful load. |
+| `isLoading()` | True while `status()` is `'loading'`. |
+| `directory` | The `ThreadDirectory` underneath. |
+| `refresh(options?)` | Reads the list again. A failed load is published, not thrown. |
+| `getThread(id)` | One thread, or `null` when the backend says it does not exist. |
+| `create(metadata?)` | Creates a thread; resolves with its id, or `null` on failure. |
+| `rename`, `delete`, `archive`, `unarchive`, `pin`, `unpin`, `moveToProject`, `reorderPinned` | Row commands. |
+| `createProject`, `renameProject`, `removeProject` | Project commands. |
+
+Nothing is loaded until `refresh()` is called. A command the directory does not
+offer is `undefined`, so a view offers no control for it. Naming the directory
+type, `injectThreadDirectory<MyDirectory>()`, types the commands that type
+guarantees as present. A row or project command shows at once, rolls back when
+it fails and rejects with the directory's error. The view owns the directory
+and disposes it with its injector.
+
+The row commands carry the names a thread list uses for its actions, and each
+list item is the directory's entry plus `status`, so the view binds to the chat
+library's thread views directly:
+
+```html
+<chat-sidenav
+  [threads]="threads.threads()"
+  [archivedThreads]="threads.archivedThreads()"
+  [actions]="threads"
+/>
+<chat-thread-sidebar [directory]="threads.directory" [agent]="agent" />
+```
+
+`createDirectory` runs once, in the view's injection context, so it may call
+`inject()`. It receives `clientOptions` from `AGENT_CLIENT_OPTIONS` and the
+host's operation failure reporter. A config may also be a
+`() => ThreadDirectoryConfig` factory.
+
+### Reading one thread
+
+`getThread(id)` answers from `ThreadDirectoryConfig.getThread` when the config
+has one, else from the directory's own `get(id)`. It resolves with the thread,
+or with `null` when the backend says there is no such thread, and rejects when
+the backend could not be asked.
+
+The core contract has no command that reads one thread. With neither source the
+view can answer only for a thread the directory lists: it reads the list once
+if the thread is not in it, and rejects for a thread that is still not listed,
+because a list is not proof that a thread does not exist.
+
+### Run-end helpers
+
+`refreshOnRunEnd(agent, fn)` calls `fn` each time the agent's status leaves
+`'running'`, and keeps following the agent across thread switches.
+`refreshOnTransition(signal, isActive, fn)` is the general form for a state
+machine of the app's own. Both take a function or anything with `refresh()`,
+swallow a rejected refresh, and must be called in an injection context.

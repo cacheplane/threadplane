@@ -14,6 +14,7 @@
   "files": [
     "chat/package.json",
     "markdown/package.json",
+    "testing/package.json",
     "fesm2022/*.mjs",
     "fesm2022/*.mjs.map",
     "types/**/*.d.ts",
