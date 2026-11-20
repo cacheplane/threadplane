@@ -1,5 +1,5 @@
 import type { Message } from './message.js';
-import type { ToolCall } from './tool.js';
+import type { PlainValue, StreamingToolCall, ToolCall } from './tool.js';
 
 /**
  * Where a child agent stands. `unknown` means the session saw it start and saw
@@ -26,6 +26,14 @@ export interface AgentSubagent {
   readonly messages: readonly Message[];
   /** The child's own tool calls, referenced by `Message.toolCallIds` in `messages`. */
   readonly toolCalls: readonly ToolCall[];
+  /** The child's tool calls whose arguments are still streaming, when the session shows them. */
+  readonly streamingToolCalls?: readonly StreamingToolCall[];
+  /**
+   * The child's own state as the backend last reported it, as frozen plain
+   * data. Never checked against the session's state declaration. Absent when
+   * the backend reports no state for children.
+   */
+  readonly state?: Readonly<Record<string, PlainValue>>;
   /** Display text for the failure when `status` is `'error'` and the backend gave one. */
   readonly error?: string;
 }

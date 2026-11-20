@@ -1,6 +1,12 @@
 import type { AgentError } from './error.js';
 import type { Message } from './message.js';
-import type { DeepReadonly, ToolCall, ToolContract } from './tool.js';
+import type {
+  DeepReadonly,
+  StreamingToolCall,
+  ToolCall,
+  ToolContract,
+} from './tool.js';
+import type { AgentCheckpoint } from './checkpoint.js';
 import type { AgentPlanStep } from './plan.js';
 import type { AgentInterrupt } from './interrupt.js';
 import type { AgentSubagent } from './subagent.js';
@@ -24,6 +30,18 @@ export interface AgentUsageEntry {
 /** Usage for the most recent finished or failed run, one entry per provider and model. */
 export interface AgentUsage {
   readonly entries: readonly AgentUsageEntry[];
+}
+
+/**
+ * Why a session refuses an ordinary submission for now, such as a pause that
+ * must be answered or a recovery that must finish first. Commands that resolve
+ * the block, such as `resume`, stay available.
+ */
+export interface AgentInputBlock {
+  /** The cause in the backend's own words, such as `interrupt` or `reconciling`. */
+  readonly reason: string;
+  /** Display text for the person waiting, when the session supplies one. */
+  readonly message?: string;
 }
 
 /** Session execution state exposed alongside messages, tool calls, and an optional failure. */
@@ -64,5 +82,35 @@ export type AgentSnapshot<
        * sessions that report none.
        */
       readonly subagents?: readonly AgentSubagent[];
+      /**
+       * Tool calls the model is still writing, in the order they began. A call
+       * leaves this list when its arguments are final and it enters
+       * `toolCalls` under the same id. Absent on sessions that keep argument
+       * fragments to themselves.
+       */
+      readonly streamingToolCalls?: readonly StreamingToolCall[];
+      /**
+       * Calls to client tools that wait for a result from the caller, answered
+       * through `session.clientTools`. Each is also listed in `toolCalls`.
+       * Absent on sessions without that capability.
+       */
+      readonly pendingClientTools?: readonly ToolCall<TTools>[];
+      /**
+       * The saved history the session last loaded, oldest first, each entry
+       * with the state at that point. Absent until a history is loaded and on
+       * sessions whose backend keeps none.
+       */
+      readonly checkpoints?: readonly AgentCheckpoint[];
+      /**
+       * For each assistant message `id`, the `id` of the checkpoint that first
+       * held it. Absent when the session does not relate the two.
+       */
+      readonly messageCheckpoints?: Readonly<Record<string, string>>;
+      /**
+       * Present while the session refuses ordinary submissions; a view
+       * disables its composer and may show why. Absent when `submit` is
+       * accepted and on sessions that never refuse one for this reason.
+       */
+      readonly inputBlocked?: AgentInputBlock;
     }
   : never;

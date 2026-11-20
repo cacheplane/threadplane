@@ -85,3 +85,57 @@ pausing.onResume(() => 'done');
 const firstResume: string | undefined =
   pausing.resumes[0]?.responses[0]?.interruptId;
 void firstResume;
+
+// Optional members stay optional on the fake's session, and their records are typed.
+import type { AgentCheckpoint, CompleteOutcome } from '../index.js';
+import {
+  runAgentSessionConformance,
+  runInterruptConformance,
+  type InterruptConformanceHarness,
+} from './index.js';
+
+const capable = createFakeAgentSession({
+  commands: ['run', 'regenerate', 'retry', 'checkStatus', 'clientTools'],
+  stateType: type<Board>(),
+  onRetry: (fake) => {
+    const count: number = fake.retryCount;
+    void count;
+    return 'paused';
+  },
+});
+const regenerated: Promise<CompleteOutcome> | undefined =
+  capable.session.regenerate?.('m');
+// @ts-expect-error optional commands may be absent
+void capable.session.retry();
+void capable.session.run?.({ state: { draft: 'x' } });
+// @ts-expect-error run state follows the declared state
+void capable.session.run?.({ state: { draft: 1 } });
+const sentState: Partial<Board> | undefined = capable.runs[0]?.input?.state;
+const resumedState: Partial<Board> | undefined =
+  capable.resumes[0]?.options?.state;
+// @ts-expect-error records are readonly
+capable.regenerates.push({ messageId: 'm' });
+// @ts-expect-error only known commands can be listed
+createFakeAgentSession({ commands: ['fork'] });
+const history: readonly AgentCheckpoint[] = [{ id: 'c', values: {} }];
+capable.setCheckpoints(history, { m: 'c' });
+// @ts-expect-error a checkpoint carries its values
+capable.setCheckpoints([{ id: 'c' }]);
+capable.emitCustomEvent('progress', { step: 1 });
+// @ts-expect-error event data is plain data
+capable.emitCustomEvent('progress', new Date());
+void [regenerated, sentState, resumedState];
+
+// Conformance suites take any session and any runner with describe and it.
+declare const runner: {
+  describe(name: string, body: () => void): void;
+  it(name: string, body: () => void | Promise<void>): void;
+};
+runAgentSessionConformance('typed', () => typed, runner);
+runAgentSessionConformance('stateful', () => statefulSession, runner);
+// @ts-expect-error a runner is required: the suites import no test framework
+runAgentSessionConformance('typed', () => typed);
+declare const harness: InterruptConformanceHarness;
+runInterruptConformance('typed', () => harness, runner, { restoration: true });
+// @ts-expect-error a harness supplies the session and the backend controls
+runInterruptConformance('typed', () => ({ session: typed }), runner);

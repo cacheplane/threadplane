@@ -19,6 +19,12 @@ export interface AgentInterrupt {
   readonly message?: string;
   /** The tool call this pause is about, when the backend relates the two. */
   readonly toolCallId?: string;
+  /**
+   * `false` when the session can show this interrupt and cannot answer it
+   * through `resume`. Absent means it is answered through `resume` whenever
+   * the session has that command.
+   */
+  readonly resumable?: boolean;
 }
 
 /**

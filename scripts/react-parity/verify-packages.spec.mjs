@@ -819,10 +819,17 @@ test('React chat entry supports the outcome registry and status panel', () => {
   }
 });
 
-test('core testing entry exposes only the fake session factory', () => {
+test('core testing entry exposes only the fake session factory and the session conformance suites', () => {
+  const entry = () => Object.fromEntries(packageVerifier.supportedExportNames('core/testing').map((name) => [name, () => {}]));
   assert.throws(() => packageVerifier.assertSupportedExports('core/testing', {}), /createFakeAgentSession/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('core/testing', { createFakeAgentSession() {} }));
-  assert.throws(() => packageVerifier.assertSupportedExports('core/testing', { createFakeAgentSession() {}, mockAgent() {} }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('core/testing', { createFakeAgentSession() {} }), /agentSessionConformanceScenarios/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('core/testing', entry()));
+  assert.throws(() => packageVerifier.assertSupportedExports('core/testing', { ...entry(), mockAgent() {} }), /unexpected/);
+  for (const name of packageVerifier.supportedExportNames('core/testing')) {
+    const partial = entry();
+    delete partial[name];
+    assert.throws(() => packageVerifier.assertSupportedExports('core/testing', partial), new RegExp(name));
+  }
 });
 
 test('JSON feature exposes only its owned factory', () => {
