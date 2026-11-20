@@ -1,6 +1,7 @@
 import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
 import { ApplicationConfig } from '@angular/core';
-import { provideAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -10,8 +11,13 @@ export const appConfig: ApplicationConfig = {
         throw new Error('incompatible runtime');
       }
       return {
-        url: connection.url,
-        interruptTransport: 'mastra-command',
+        createSession: (context) =>
+          createSession({
+            url: connection.url,
+            threadId: context.threadId ?? undefined,
+            interruptTransport: 'mastra-command',
+            reportOperationFailure: context.reportOperationFailure,
+          }),
       };
     }),
   ],

@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
+import type { Session } from '@threadplane/ag-ui';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { CurrencyPipe } from '@angular/common';
 
@@ -30,8 +31,10 @@ const WELCOME_SUGGESTIONS = [
  * The handler maps each action to a structured resume payload back to the
  * graph.
  *
- * The agent is wired in `app.config.ts` via a `provideAgent(() => ...)` factory and
- * retrieved here with `injectAgent()`.
+ * The agent is wired in `app.config.ts` via a `provideAgent(() => ...)` factory
+ * whose `createSession` builds the AG-UI session, and retrieved here with
+ * `injectAgent()`. The session's `interruptTransport: 'auto'` answers the
+ * bridge's `CUSTOM on_interrupt` notice through `forwardedProps.command`.
  */
 @Component({
   selector: 'app-interrupts',
@@ -52,7 +55,7 @@ const WELCOME_SUGGESTIONS = [
     >
       <div main class="interrupts-shell">
       <chat placeholder="Ask a fictional refund request…" [welcomeDisabled]="true" [agent]="agent" class="interrupts-chat">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
           <div chatWelcomeSuggestions>
             @for (s of suggestions; track s.value) {
               <chat-welcome-suggestion
@@ -195,7 +198,7 @@ export class InterruptsComponent {
   protected readonly editing = signal(false);
   protected readonly editAmount = signal<number | null>(null);
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<Session>();
 
   protected send(text: string): void {
     void this.agent.submit({ message: text });
@@ -204,10 +207,10 @@ export class InterruptsComponent {
   // #region resume
   protected onAction(action: ChatApprovalAction): void {
     if (action === 'approve') {
-      void this.agent.submit({ resume: { approved: true } });
+      this.answer({ approved: true });
       this.resetEdit();
     } else if (action === 'cancel') {
-      void this.agent.submit({ resume: { approved: false } });
+      this.answer({ approved: false });
       this.resetEdit();
     } else if (action === 'edit') {
       this.editing.set(true);
@@ -216,8 +219,15 @@ export class InterruptsComponent {
 
   protected submitEdit(payload: { amount: number }): void {
     const next = this.editAmount() ?? payload.amount;
-    void this.agent.submit({ resume: { approved: true, amount: next } });
+    this.answer({ approved: true, amount: next });
     this.resetEdit();
+  }
+
+  /** Answers the pending interrupt with `value`. */
+  private answer(value: { approved: boolean; amount?: number }): void {
+    const interrupt = this.agent.interrupts()?.[0];
+    if (!interrupt) return;
+    void this.agent.resume([{ interruptId: interrupt.id, status: 'resolved', value }]);
   }
 
   private resetEdit(): void {

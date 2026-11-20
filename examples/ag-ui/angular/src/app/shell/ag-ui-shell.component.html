@@ -65,7 +65,7 @@
       <app-itinerary-panel class="ag-ui-shell__itinerary-overlay" />
       <div class="ag-ui-shell__main">
         <router-outlet />
-        @if (agent.interrupt && agent.interrupt()) {
+        @if (agent.interrupts()?.length) {
           <div class="ag-ui-shell__interrupt-panel" role="region" aria-label="Approval required">
             <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
           </div>
@@ -76,7 +76,7 @@
     <div class="ag-ui-shell__body">
       <div class="ag-ui-shell__main">
         <router-outlet />
-        @if (agent.interrupt && agent.interrupt()) {
+        @if (agent.interrupts()?.length) {
           <div class="ag-ui-shell__interrupt-panel" role="region" aria-label="Approval required">
             <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
           </div>

@@ -7,7 +7,7 @@ test('tool-views: weather_card tool call renders the registered component with r
   // The registered WeatherCardComponent (app-weather-card) must mount for the
   // weather_card tool call and show the deterministic result. Proves: aimock
   // returned the tool call, ag-ui-langgraph emitted TOOL_CALL_* events, the
-  // adapter reduced them into toolCalls(), and the chat composition bridged
+  // session projected them into toolCalls(), and the chat composition bridged
   // the call into the views registry via the synthetic-spec path.
   const card = page.locator('app-weather-card');
   await expect(card).toBeVisible({ timeout: 30000 });

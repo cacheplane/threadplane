@@ -10,6 +10,9 @@
   "include": ["src/**/*.ts"],
   "references": [
     {
+      "path": "../../../libs/angular"
+    },
+    {
       "path": "../../../libs/ag-ui"
     },
     {

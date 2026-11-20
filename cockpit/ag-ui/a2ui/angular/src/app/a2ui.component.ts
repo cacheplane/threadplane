@@ -2,7 +2,7 @@ import { exampleToolLabel } from '../../../../../shared/tool-presentation';
 import { Component } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent, a2uiBasicCatalog } from '@threadplane/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 
 const WELCOME_SUGGESTIONS = [
   {
@@ -28,7 +28,7 @@ const WELCOME_SUGGESTIONS = [
     >
       <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask for a flight form…" [welcomeDisabled]="true" main [agent]="agent" [views]="catalog" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion [label]="s.label" [value]="s.value" [description]="s.description" (selected)="send($event)" />
