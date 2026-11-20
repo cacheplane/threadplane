@@ -1306,6 +1306,42 @@
       "reason": "Test-only recording of one OpenAI Responses run, read by the response identity regression spec; excluded from production imports and the package."
     },
     {
+      "id": "asset:libs/ag-ui/tsconfig.nonstrict.json",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "complete",
+      "note": "Type-checks the library's shipped sources with strict mode off, as example and cockpit apps compile them through path aliases. Run by the library's type-tests target."
+    },
+    {
+      "id": "asset:libs/angular/tsconfig.nonstrict.json",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "complete",
+      "note": "Type-checks the library's shipped sources with strict mode off, as example and cockpit apps compile them through path aliases. Run by the library's type-tests target."
+    },
+    {
+      "id": "asset:libs/chat/tsconfig.nonstrict.json",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "complete",
+      "note": "Type-checks the library's shipped sources with strict mode off, as example and cockpit apps compile them through path aliases. Run by the library's type-tests target."
+    },
+    {
+      "id": "asset:libs/langgraph/tsconfig.nonstrict.json",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "complete",
+      "note": "Type-checks the library's shipped sources with strict mode off, as example and cockpit apps compile them through path aliases. Run by the library's type-tests target."
+    },
+    {
       "id": "asset:libs/langgraph/tsconfig.json",
       "taskIds": [
         "T02",

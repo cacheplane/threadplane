@@ -151,6 +151,7 @@ export function backendPackageShape() {
       'src/**/*.d.ts.map',
       '.install-collector/development-install.mjs',
       '.install-collector/development-install.d.ts',
+      '.install-collector/development-install.d.mts',
       'install/*.cjs',
       'LICENSE.md',
       'README.md',
@@ -169,8 +170,9 @@ export function backendPackageShape() {
     scripts: { postinstall: 'node install/postinstall.cjs' },
   };
 }
+const installBridgeEdge = '../../.install-collector/development-install.mjs';
 const packagedFile =
-  /^(?:package\.json|README\.md|LICENSE\.md|\.install-collector\/development-install\.(?:mjs|d\.ts)|install\/[a-z-]+\.cjs|src\/.*\.(?:js|d\.ts|d\.ts\.map))$/;
+  /^(?:package\.json|README\.md|LICENSE\.md|\.install-collector\/development-install\.(?:mjs|d\.ts|d\.mts)|install\/[a-z-]+\.cjs|src\/.*\.(?:js|d\.ts|d\.ts\.map))$/;
 
 /**
  * Checks a built or installed backend package: its publishable manifest, its
@@ -244,6 +246,16 @@ export function backendPackageViolations(directory, definition) {
             );
         if (!definition.imports.includes(specifier) && !typeOnly)
           errors.push(`Forbidden candidate import ${specifier} in ${name}`);
+        continue;
+      }
+      // The one edge out of `src`: the module that describes the installation
+      // reads the bridge the install step rewrites, by its path in the package.
+      if (
+        specifier === installBridgeEdge &&
+        /^src\/runtime\/development-install\.(?:js|d\.ts)$/.test(name)
+      ) {
+        if (!existsSync(resolve(dirname(path), specifier)))
+          errors.push(`Missing install bridge ${specifier} from ${name}`);
         continue;
       }
       if (!specifier.endsWith('.js')) {
