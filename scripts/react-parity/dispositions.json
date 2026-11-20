@@ -19940,6 +19940,366 @@
       "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
     },
     {
+      "id": "export:libs/angular/src/public-api.ts#AGENT_CLIENT_OPTIONS",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AGENT_LIFECYCLE",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#Agent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentConfig",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentConfigInput",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentControls",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentFieldSignals",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentLifecycle",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentLifecycleRegistry",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentOperationFailureReporter",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentRef",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentSessionContext",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentSessionLike",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentSnapshotOf",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#FakeAgentConfig",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#createAgent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#createAgentRef",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#injectAgent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#injectFakeAgentSession",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#provideAgent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#provideAgentClientOptions",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#provideFakeAgent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵAGENT_OPERATION_FAILURE_REPORTER",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/agent-lifecycle.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/agent-ref.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/agent-tokens.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/agent.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/provide-agent.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/provide-fake-agent.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/testing/scripted-session.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Test-only scripted session used by the Angular Agent layer specs; it is not exported and ships in no package.",
+      "note": "Drives publications, custom events, lifecycle marks and history reads by hand so thread-switch races are deterministic."
+    },
+    {
       "id": "source:libs/react/src/use-agent-state.ts",
       "taskIds": [
         "T06",

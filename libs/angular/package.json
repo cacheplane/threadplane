@@ -2,7 +2,7 @@
   "name": "@threadplane/angular",
   "version": "0.0.0",
   "private": true,
-  "description": "Private Angular binding for observing app-owned agent sessions.",
+  "description": "Private Angular binding for agent sessions: the injected Agent and observers for app-owned sessions.",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
