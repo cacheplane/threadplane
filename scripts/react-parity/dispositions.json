@@ -12776,7 +12776,51 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private projection of the session's child graphs into the core contract's child agents: an id, the starting node's name, a status and the child's own messages and tool calls.",
-      "note": "Covered by runtime specs. LangGraph does not relate a child graph to a tool call, so toolCallId and description are never set."
+      "note": "Covered by runtime specs. A child the session related to a root tool call carries that call's toolCallId, description and subagent type."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/delegation-projection.ts",
+      "taskIds": [
+        "T09",
+        "T10"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private relation of a tool-started child graph to the root tool call that started it, from the middleware's binding event, the task text or the single outstanding call, and the mapping of saved tasks to tool calls used to restore children from history.",
+      "note": "Covered by runtime specs. Plain subgraph nodes and nested delegations are never related."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/checkpoint-tree.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of a loaded history page with each checkpoint's state: the checkpoint list, the assistant message to checkpoint record, the branch tree and the selection of one branch's checkpoints.",
+      "note": "Covered by runtime specs. Opt-in through historyState; a session otherwise keeps only checkpoint metadata."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/session-hooks.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private host seams of the session: the telemetry sink, development collector, devtools sink and scripted-run source types, listener throttling, and the message deserializer applied to stream events and saved checkpoints.",
+      "note": "Covered by runtime specs. The development collector and the devtools emitter are created by the host; the neutral runtime only calls them."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/raw-data.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of what LangGraph sent beside the transcript: the wire record of each message, stream metadata by message, tool progress from the tools stream mode, token usage for a settled command, and tool calls paired with their results.",
+      "note": "Covered by runtime specs. Raw messages and metadata are opt-in through rawMessages; usage and tool progress appear when the backend reports them."
     },
     {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
@@ -19842,7 +19886,7 @@
       "treatment": "shared",
       "status": "in-progress",
       "reason": "Framework-neutral lifecycle timestamps for a session: first stream event, latest failure with its kind, first interrupt, latest resume, first saved-history read, and first tool call start and finish, as an observable beside the snapshot.",
-      "note": "Staged in the private session. The Angular AgentLifecycle signals and registry are unchanged and not built on it. No threadCreatedAt, since a session never creates its thread; nothing resets, since a session serves one thread."
+      "note": "Staged in the private session. The Angular AgentLifecycle signals and registry are unchanged and not built on it. threadCreatedAt is set when the session creates its own thread; nothing resets, since a session serves one thread."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#useThreadRouting",

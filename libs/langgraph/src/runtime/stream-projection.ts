@@ -379,6 +379,27 @@ export function projectStream(
   return { state, projection };
 }
 
+/**
+ * Whether a root message event may enter the transcript. With no node names,
+ * every event may. A streamed message chunk names its node in
+ * `messageMetadata.langgraph_node`; one from a node outside the list is kept
+ * out. Events that name no node, full-state events and child-graph events are
+ * never filtered here.
+ */
+export function isTranscriptEvent(
+  event: StreamEvent,
+  nodeNames: readonly string[] | undefined
+): boolean {
+  if (!nodeNames?.length) return true;
+  if ((event.namespace?.length ?? 0) > 0 || event.type.includes('|'))
+    return true;
+  if (event.type !== 'messages' && !event.type.startsWith('messages/'))
+    return true;
+  if (event.type !== 'messages/partial' && !event.messageMetadata) return true;
+  const node = record(event.messageMetadata)?.['langgraph_node'];
+  return typeof node !== 'string' || nodeNames.includes(node);
+}
+
 export function finalizeProjection(
   state: MessageState,
   projection: StreamProjection

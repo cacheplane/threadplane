@@ -9,6 +9,7 @@ import {
   type ToolCall,
 } from '@threadplane/core';
 import type {
+  LangGraphDelegation,
   LangGraphInterrupt,
   LangGraphPublication,
   LangGraphWireInterrupt,
@@ -324,6 +325,20 @@ export function ownSnapshot(
   });
 }
 
+/** Optional backend fields that are plain data and present only when set. */
+const plainExtras = [
+  'checkpoints',
+  'messageCheckpoints',
+  'branchTree',
+  'branch',
+  'queue',
+  'loading',
+  'toolProgress',
+  'langGraphMessages',
+  'messageMetadata',
+  'usage',
+] as const satisfies readonly (keyof LangGraphSnapshot)[];
+
 /** One backend aggregate, composing the core fields and owned application data. */
 export function ownLangGraphSnapshot(
   input: LangGraphPublication,
@@ -356,8 +371,19 @@ export function ownLangGraphSnapshot(
     input.stateIssues,
     previous?.stateIssues
   ) as LangGraphSnapshot['stateIssues'];
+  const extras: Record<string, PlainValue> = {};
+  let sameExtras = true;
+  for (const key of plainExtras) {
+    const value = ownValueWithSharing(
+      input[key] as PlainValue,
+      previous?.[key] as PlainValue
+    );
+    if (value !== previous?.[key]) sameExtras = false;
+    if (value !== undefined) extras[key] = value;
+  }
   if (
     core === previous &&
+    sameExtras &&
     history === previous?.history &&
     state === previous?.state &&
     stateIssues === previous?.stateIssues &&
@@ -382,6 +408,7 @@ export function ownLangGraphSnapshot(
     subgraphs,
     subagents,
     ...(reconnect ? { reconnect } : {}),
+    ...extras,
   });
 }
 
@@ -417,8 +444,13 @@ export function ownSubgraph(
   const error = sameError(input.error, previous?.error)
     ? previous?.error
     : input.error && ownError(input.error);
+  const delegation = ownValueWithSharing(
+    input.delegation as PlainValue,
+    previous?.delegation as PlainValue
+  ) as LangGraphDelegation | undefined;
   if (
     previous &&
+    delegation === previous.delegation &&
     namespace === previous.namespace &&
     messages === previous.messages &&
     toolCalls === previous.toolCalls &&
@@ -434,6 +466,7 @@ export function ownSubgraph(
     state,
     interrupts,
     ...(error ? { error } : {}),
+    ...(delegation ? { delegation } : {}),
   });
 }
 
@@ -452,6 +485,7 @@ export function ownSubgraphs(
         a.toolCalls === b.toolCalls &&
         a.state === b.state &&
         a.interrupts === b.interrupts &&
+        a.delegation === b.delegation &&
         sameError(a.error, b.error))
   );
 }

@@ -20,13 +20,57 @@ import type {
   ToolExecutionStore,
 } from '@threadplane/core/tools';
 import type { ThreadState } from '@langchain/langgraph-sdk';
-import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport.js';
+import {
+  FetchStreamTransport,
+  normalizeSdkEvent,
+} from '../lib/transport/fetch-stream.transport.js';
+import {
+  changedSignals,
+  convertEventMessages,
+  convertSavedMessages,
+  errorClass,
+  safely,
+  throttleListener,
+  type A2uiClientCapabilities,
+  type LangGraphDevelopmentRuntime,
+  type LangGraphDevtoolsSink,
+  type LangGraphScriptedRuns,
+  type LangGraphTelemetryEvent,
+  type LangGraphTelemetrySink,
+} from './session-hooks.js';
+export type {
+  A2uiClientCapabilities,
+  LangGraphDevelopmentRuntime,
+  LangGraphDevtoolsSignal,
+  LangGraphDevtoolsSink,
+  LangGraphScriptedRun,
+  LangGraphScriptedRuns,
+  LangGraphTelemetryEvent,
+  LangGraphTelemetryPayload,
+  LangGraphTelemetrySink,
+} from './session-hooks.js';
 import {
   initialMessageState,
   reduceMessages,
   type MessageState,
 } from './message-reducer.js';
 import { createReasoningTimer } from './reasoning-timing.js';
+import {
+  observeHistoryWireMessages,
+  observeMessageMetadata,
+  observeToolProgress,
+  observeUsage,
+  observeWireMessages,
+  projectUsage,
+  projectWireMessages,
+  type UsageObservation,
+  type WireMessages,
+} from './raw-data.js';
+export {
+  getToolCalls,
+  langGraphToolCalls,
+  type LangGraphToolCallWithResult,
+} from './raw-data.js';
 import {
   createLifecycleRecorder,
   type LangGraphLifecycleSource,
@@ -37,7 +81,23 @@ import {
   projectHistory,
 } from './history-projection.js';
 import { projectCheckpointHistory } from './checkpoint-history.js';
+import {
+  projectBranchTree,
+  projectCheckpoints,
+  projectMessageCheckpoints,
+  type LangGraphBranchTree,
+  type LangGraphCheckpoint,
+} from './checkpoint-tree.js';
+export {
+  selectBranch,
+  type LangGraphBranchFork,
+  type LangGraphBranchNode,
+  type LangGraphBranchTree,
+  type LangGraphCheckpoint,
+} from './checkpoint-tree.js';
 import type {
+  LangGraphMessageMetadata,
+  LangGraphToolProgress,
   LangGraphWireInterrupt,
   LangGraphSnapshot,
   LangGraphState,
@@ -50,7 +110,16 @@ import {
   projectInterrupts,
   resumeValue,
 } from './interrupt-projection.js';
-import { ownMessage, ownValue } from './ownership.js';
+import { ownMessage, ownSubgraphs, ownValue } from './ownership.js';
+import {
+  captureDelegationBinding,
+  DEFAULT_SUBAGENT_TOOL_NAMES,
+  delegationCallIds,
+  mapChildExecutions,
+  relateSubgraphs,
+  restoredDelegation,
+  type ChildExecution,
+} from './delegation-projection.js';
 import {
   captureStreamEvent,
   initialSubgraphs,
@@ -75,7 +144,10 @@ import {
   type CapturedRunOptions,
   type LangGraphRunOptions,
 } from './run-options.js';
-export type { LangGraphRunOptions } from './run-options.js';
+export type {
+  LangGraphRunOptions,
+  LangGraphRunSettings,
+} from './run-options.js';
 export {
   createLangGraphThreadDirectory,
   type LangGraphThreadDirectoryOptions,
@@ -93,6 +165,7 @@ import {
   rebaseRun,
   type RunEvidence,
 } from './run-recovery.js';
+import type { LangGraphSubmitOptions } from './transport.types.js';
 import { createSafeRequestError } from './operation-errors.js';
 import { createToolPersistence } from './tool-persistence.js';
 import { hasInvocationConflict } from './tool-invocations.js';
@@ -119,6 +192,7 @@ import {
   failureProjection,
   finalizeProjection,
   interruptionError,
+  isTranscriptEvent,
   projectStream,
   record,
   type StreamProjection,
@@ -159,6 +233,85 @@ export interface SessionOptions {
    * the schema rejects is withheld and described in `snapshot.stateIssues`.
    */
   readonly stateType?: StateDeclaration;
+  /**
+   * Node names whose streamed message chunks enter the transcript. Omit it to
+   * accept every root node. Use it when a graph has side-effect model nodes,
+   * such as title generation, whose output is not chat content. Messages a
+   * node writes to the graph state still arrive with that state, and child
+   * graphs are never affected: their messages belong to `subgraphs`.
+   */
+  readonly transcriptNodeNames?: readonly string[];
+  /**
+   * Names of the root tools that start a child agent; `['task']` when omitted.
+   * A child graph started by such a call, whose arguments carry a
+   * `subagent_type`, is related to it: see `LangGraphSubgraph.delegation`.
+   * Pass an empty list to relate nothing.
+   */
+  readonly subagentToolNames?: readonly string[];
+  /**
+   * Keep each loaded checkpoint's state. `snapshot.checkpoints`,
+   * `snapshot.messageCheckpoints` and `snapshot.branchTree` are then published
+   * from every history page, and the page is read again after each run that
+   * ends in success or a pause. Off by default: a page's states can be large,
+   * and a session otherwise keeps only checkpoint metadata in
+   * `snapshot.history`.
+   */
+  readonly historyState?: boolean;
+  /**
+   * The state `snapshot.state` holds until the backend reports one. It is
+   * published as given, without the `stateType` check, and never sent.
+   */
+  readonly initialValues?: Readonly<Record<string, PlainValue>>;
+  /**
+   * Converts each wire message, from a stream event or a saved checkpoint, of
+   * the root graph or a child, before the session reads it. Return the plain
+   * wire shape the session projects (`type` or `role`, `id`, `content`,
+   * `tool_calls`, `tool_call_id`). A message the function throws on is read
+   * as it was sent.
+   */
+  readonly toMessage?: (message: unknown) => unknown;
+  /**
+   * The least time, in milliseconds, between two calls to a `subscribe`
+   * listener while a run streams. The snapshot is never delayed, the last
+   * change is always delivered, and a change that ends the run is delivered
+   * at once. Off when omitted, `false` or `0`.
+   */
+  readonly throttle?: number | false;
+  /**
+   * Generated UI capabilities to advertise to the graph. They are sent with
+   * every run that has input, under the `a2ui_client_capabilities` state key.
+   */
+  readonly a2uiClientCapabilities?: A2uiClientCapabilities;
+  /** Receives the session's runtime telemetry events. `false` is the same as omitting it. */
+  readonly telemetry?: LangGraphTelemetrySink | false;
+  /**
+   * Told when a request of the owned SDK transport was refused as
+   * unauthorized or blocked by the network. Supplying it also makes the owned
+   * transport report generic errors only. A supplied transport ignores it.
+   */
+  readonly onOperationFailure?: (
+    code: 'unauthorized' | 'network_blocked'
+  ) => void;
+  /**
+   * Read the thread's history as soon as the session is created, when it has a
+   * `threadId` and the transport can read history. `snapshot.loading` is then
+   * published while any history read is in flight, and a failed automatic
+   * read is published as an error. Off by default: creating a session
+   * otherwise makes no request.
+   */
+  readonly autoLoad?: boolean;
+  /**
+   * Keep each message as LangGraph sent it. `snapshot.langGraphMessages` and
+   * `snapshot.messageMetadata` are then published. Off by default: the
+   * records are large and most views need only the transcript.
+   */
+  readonly rawMessages?: boolean;
+  /** A development-install collector to keep informed. The host creates it. */
+  readonly developmentRuntime?: LangGraphDevelopmentRuntime;
+  /** A development tool told which published fields each event changed. */
+  readonly devtools?: LangGraphDevtoolsSink;
+  /** Development only: a source of scripted runs that stand in for the network. */
+  readonly scriptedRuns?: LangGraphScriptedRuns;
 }
 
 /** Backend-private capability; core sessions and borrowed observers stay minimal. */
@@ -173,10 +326,24 @@ export type LangGraphSession<
   /** The session's thread: the given `threadId`, or the thread it created on
    * the first submit. Undefined until that thread exists. */
   readonly threadId: string | undefined;
+  /**
+   * Starts a run. With `null` or `undefined` the run has no input: the graph
+   * continues from the thread's saved state, and no user message is added.
+   * With `run.multitaskStrategy: 'enqueue'` during a run, the run is queued
+   * instead and the promise resolves with its outcome once it has been joined.
+   */
   submit(
-    input: LangGraphSubmitInput<TState>,
+    input: LangGraphSubmitInput<TState> | null | undefined,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
+  /**
+   * Removes one queued run and asks the backend to cancel it. Resolves `true`
+   * when the backend confirmed; `false` when the run is not queued, the
+   * transport cannot cancel, or the request failed.
+   */
+  cancelQueued(runId: string): Promise<boolean>;
+  /** Removes every queued run and asks the backend to cancel each. */
+  clearQueue(): Promise<void>;
   fork(
     checkpoint: CheckpointReference,
     input: LangGraphSubmitInput<TState>,
@@ -185,6 +352,20 @@ export type LangGraphSession<
   reconnect(options?: {
     readonly signal?: AbortSignal;
   }): Promise<CompleteOutcome>;
+  /**
+   * Joins a run of this thread by id and projects its stream: one started
+   * elsewhere, or before a reload. `lastEventId` continues after that event;
+   * without it the run is joined from its first event, which the backend
+   * serves only for a resumable stream. It replaces an active run the way a
+   * submit does, adds no user message, and resolves with the joined run's
+   * outcome, or `'aborted'` when the session has no thread yet. `reconnect`
+   * remains the way to continue the session's own retained run.
+   */
+  joinStream(
+    runId: string,
+    lastEventId?: string,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome>;
   /**
    * Answers pending interrupts and continues the paused graph. One pending
    * interrupt receives its response's value as the resume value. Several are
@@ -196,6 +377,13 @@ export type LangGraphSession<
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
+  /**
+   * Selects the branch a view shows and publishes it as `snapshot.branch`. The
+   * value is the fork choices joined with `>`, as `selectBranch` reads it; an
+   * empty string selects the default branch. It is a view selection only: no
+   * request is made and the transcript does not change.
+   */
+  setBranch(branch: string): Promise<void>;
   /** Always present here: `custom` stream frames as application events. */
   onCustomEvent(listener: (event: AgentSessionCustomEvent) => void): () => void;
   /** When this session first saw each milestone; see `LangGraphLifecycle`. */
@@ -228,7 +416,19 @@ type AttemptInput =
       readonly value: PlainValue | undefined;
       /** The pending interrupts this decision answers, for history reconciliation. */
       readonly interrupts: readonly LangGraphWireInterrupt[];
+      /** A run with no input at all, from `submit(null)`: nothing is answered. */
+      readonly bare?: boolean;
     };
+
+interface QueuedRun {
+  readonly id: string;
+  readonly message?: string;
+  readonly createdAt: number;
+  readonly input: AttemptInput;
+  readonly runOptions: CapturedRunOptions | undefined;
+  readonly result: Promise<CompleteOutcome>;
+  readonly resolve: (outcome: CompleteOutcome) => void;
+}
 
 interface PhysicalRun {
   readonly batch: ReturnType<ReturnType<typeof createToolBuffer>['snapshot']>;
@@ -259,6 +459,14 @@ interface Attempt {
   groups: number;
   physical?: PhysicalRun;
   joinCursor?: string;
+  /** Join the known run from its first event, with no cursor. */
+  joinStart?: boolean;
+  /** The run started from a checkpoint the session could not rewind to. */
+  travel?: boolean;
+  /** A development tool scripted this run; the backend never saw it. */
+  scripted?: boolean;
+  /** For telemetry: when the command began. */
+  startedAt?: number;
   handoffIds: readonly string[];
   iterator?: AsyncIterator<StreamEvent>;
   unlink?: () => void;
@@ -368,10 +576,95 @@ export function createSession(
   const ownedRetries = ownedClientOptions?.maxRetries ?? 0;
   const transport =
     suppliedTransport ??
-    new FetchStreamTransport(options.apiUrl ?? '', undefined, {
-      ...ownedClientOptions,
-      maxRetries: ownedRetries,
-    });
+    new FetchStreamTransport(
+      options.apiUrl ?? '',
+      undefined,
+      {
+        ...ownedClientOptions,
+        maxRetries: ownedRetries,
+      },
+      typeof options.onOperationFailure === 'function'
+        ? options.onOperationFailure
+        : undefined
+    );
+  const toMessage =
+    typeof options.toMessage === 'function' ? options.toMessage : undefined;
+  const telemetry =
+    typeof options.telemetry === 'function' ? options.telemetry : undefined;
+  const developmentRuntime = options.developmentRuntime;
+  const devtools = options.devtools;
+  const scriptedRuns = options.scriptedRuns;
+  const a2uiClientCapabilities = options.a2uiClientCapabilities
+    ? ownValue({
+        supportedCatalogIds: options.a2uiClientCapabilities.supportedCatalogIds,
+        ...(options.a2uiClientCapabilities.inlineCatalogs !== undefined
+          ? { inlineCatalogs: options.a2uiClientCapabilities.inlineCatalogs }
+          : {}),
+      })
+    : undefined;
+  const throttleMs =
+    typeof options.throttle === 'number' && options.throttle > 0
+      ? options.throttle
+      : 0;
+  function report(
+    event: LangGraphTelemetryEvent,
+    properties: {
+      requestType?: string;
+      durationMs?: number;
+      errorClass?: string;
+    } = {}
+  ) {
+    if (!telemetry) return;
+    safely(() =>
+      telemetry({
+        event,
+        properties: { transport: 'langgraph', surface: 'agent', ...properties },
+      })
+    );
+  }
+  /** Reports one command to telemetry and the development collector. */
+  function reportRequest(attempt: Attempt, requestType: string) {
+    attempt.startedAt = Date.now();
+    if (developmentRuntime) safely(() => developmentRuntime.touch());
+    report('tplane:runtime_request_created', { requestType });
+    report('tplane:stream_started');
+  }
+  /** The run payload for a submission: its messages, state and what the
+   * session itself advertises. */
+  function runPayload(
+    messages: readonly unknown[],
+    state?: LangGraphInputState
+  ): Record<string, unknown> {
+    const payload = createSubmitPayload(messages, catalog, state);
+    if (a2uiClientCapabilities)
+      payload['a2ui_client_capabilities'] = a2uiClientCapabilities;
+    return payload;
+  }
+  function takeScript() {
+    if (!scriptedRuns) return null;
+    try {
+      const script = scriptedRuns.take();
+      return script && Array.isArray(script.frames) ? script : null;
+    } catch {
+      return null;
+    }
+  }
+  /** A scripted run's frames, normalized as the owned transport normalizes
+   * the SDK's and delivered one per turn, as a stream would. */
+  async function* streamScript(
+    frames: readonly { readonly event: string; readonly data: unknown }[],
+    signal: AbortSignal
+  ): AsyncIterable<StreamEvent> {
+    for (const frame of frames) {
+      await Promise.resolve();
+      if (signal.aborted) {
+        const error = new Error('Scripted run aborted.');
+        error.name = 'AbortError';
+        throw error;
+      }
+      yield normalizeSdkEvent(frame.event as StreamEvent['type'], frame.data);
+    }
+  }
   const protectedTransport =
     transport instanceof FetchStreamTransport &&
     transport.protectsOperationErrors;
@@ -406,10 +699,13 @@ export function createSession(
     current.id = (async () => {
       try {
         const id = await create(current.controller.signal);
-        if (typeof id !== 'string' || !id) throw new Error('Invalid thread id.');
+        if (typeof id !== 'string' || !id)
+          throw new Error('Invalid thread id.');
         if (creation !== current || disposed) throw createSafeRequestError();
         creation = undefined;
         threadId = id;
+        lifecycle.mark('threadCreatedAt');
+        lifecycle.flush();
         try {
           onThreadId?.(id);
         } catch {
@@ -455,26 +751,83 @@ export function createSession(
       }
     }
   );
-  const getHistory =
+  const readHistoryPage =
     typeof transport.getHistory === 'function'
       ? transport.getHistory.bind(transport)
       : undefined;
+  const getHistory: typeof readHistoryPage =
+    readHistoryPage && toMessage
+      ? async (id, signal) =>
+          (await readHistoryPage(id, signal)).map((saved) =>
+            convertSavedMessages(saved, toMessage)
+          )
+      : readHistoryPage;
   const canCheck = !!getHistory;
   const joinStream = transport.joinStream?.bind(transport);
+  const getChildState = transport.getChildState?.bind(transport);
+  const autoLoad = options.autoLoad === true;
+  const rawMessages = options.rawMessages === true;
+  let wire: WireMessages = new Map();
+  let messageMetadata: Readonly<Record<string, LangGraphMessageMetadata>> = {};
+  let hasMessageMetadata = false;
+  let toolProgress: ReadonlyMap<string, LangGraphToolProgress> = new Map();
+  let usageObserved: UsageObservation = new Map();
+  let usage: ReturnType<typeof projectUsage>;
+  let childRestore: AbortController | undefined;
+  const createQueuedRun = transport.createQueuedRun?.bind(transport);
+  const cancelRun = transport.cancelRun?.bind(transport);
+  const queue: QueuedRun[] = [];
   const getRunStatus = transport.getRunStatus?.bind(transport);
   type RunStatus = Awaited<ReturnType<NonNullable<typeof getRunStatus>>>;
-  const getState = transport.getState?.bind(transport);
+  const readSavedState = transport.getState?.bind(transport);
+  const getState: typeof readSavedState =
+    readSavedState && toMessage
+      ? async (id, checkpoint, signal) =>
+          convertSavedMessages(
+            await readSavedState(id, checkpoint, signal),
+            toMessage
+          )
+      : readSavedState;
   const canReconnect = !!joinStream && !!getRunStatus;
+  const initialValues = options.initialValues
+    ? (record(ownValue(options.initialValues)) as LangGraphState | undefined)
+    : undefined;
   const publication = createPublication({
     status: 'idle',
     messages: [],
     toolCalls: [],
-    state: undefined,
+    state: initialValues,
     interrupts: [],
     subgraphs: [],
     history: undefined,
   });
   let historyPage: LangGraphSnapshot['history'];
+  const historyState = options.historyState === true;
+  let checkpointPage:
+    | {
+        readonly checkpoints: readonly LangGraphCheckpoint[];
+        readonly messageCheckpoints: Readonly<Record<string, string>>;
+        readonly branchTree: LangGraphBranchTree;
+      }
+    | undefined;
+  /** Derives the published checkpoint views once for each distinct page. */
+  function checkpointViews(
+    history: readonly ThreadState[]
+  ): typeof checkpointPage {
+    const checkpoints = projectCheckpoints(
+      checkpointPage?.checkpoints,
+      history
+    );
+    return checkpoints === checkpointPage?.checkpoints
+      ? checkpointPage
+      : {
+          checkpoints,
+          messageCheckpoints: projectMessageCheckpoints(checkpoints),
+          branchTree: projectBranchTree(checkpoints),
+        };
+  }
+  let branchName = '';
+  let pageRefresh: AbortController | undefined;
   let subgraphs = initialSubgraphs(publication.getSnapshot().subgraphs);
   let state = initialMessageState();
   const reasoningTimer = createReasoningTimer();
@@ -503,8 +856,15 @@ export function createSession(
       if (!present.has(key)) subgraphTimers.delete(key);
     return changed ? timed : observed;
   }
+  const subagentToolNames: ReadonlySet<string> = new Set(
+    (options.subagentToolNames ?? DEFAULT_SUBAGENT_TOOL_NAMES).filter(
+      (name) => typeof name === 'string'
+    )
+  );
+  /** `tools:<task id>` namespace segment to the tool call that started it. */
+  const delegationBindings = new Map<string, string>();
   const lifecycle = createLifecycleRecorder();
-  let values: LangGraphState | undefined;
+  let values: LangGraphState | undefined = initialValues;
   let interrupts: readonly LangGraphWireInterrupt[] =
     publication.getSnapshot().interrupts;
   let owner: Attempt | undefined;
@@ -634,12 +994,19 @@ export function createSession(
   }
 
   const owns = (attempt: Attempt) => owner === attempt && !disposed;
+  const transcriptNodeNames = options.transcriptNodeNames
+    ? Object.freeze(
+        [...options.transcriptNodeNames].filter(
+          (name) => typeof name === 'string'
+        )
+      )
+    : undefined;
   const stateType = options.stateType;
   let published: {
     readonly source: LangGraphState | undefined;
     readonly state: LangGraphState | undefined;
     readonly issues?: readonly string[];
-  } = { source: undefined, state: undefined };
+  } = { source: initialValues, state: initialValues };
   /** The state to publish for the current values, checked once per reported state. */
   function readPublishedState(): typeof published {
     if (values === published.source) return published;
@@ -681,14 +1048,42 @@ export function createSession(
       toolCalls: state.toolCalls,
     });
     const reading = readPublishedState();
+    const before = devtools && publication.getSnapshot();
     publication.publish({
       status,
       history: historyPage,
+      ...checkpointPage,
+      ...(branchName ? { branch: branchName } : {}),
+      ...(autoLoad && loading ? { loading: true as const } : {}),
+      ...(toolProgress.size
+        ? { toolProgress: [...toolProgress.values()] }
+        : {}),
+      ...(rawMessages
+        ? {
+            langGraphMessages: projectWireMessages(state.messages, wire),
+            ...(hasMessageMetadata ? { messageMetadata } : {}),
+          }
+        : {}),
+      ...(usage ? { usage } : {}),
+      ...(queue.length
+        ? {
+            queue: queue.map(({ id, message, createdAt }) => ({
+              id,
+              ...(message !== undefined ? { message } : {}),
+              createdAt,
+            })),
+          }
+        : {}),
       state: reading.state,
       ...(reading.issues ? { stateIssues: reading.issues } : {}),
       ...(plan ? { plan } : {}),
       interrupts: identifyInterrupts(interrupts),
-      subgraphs: timedSubgraphs(subgraphs.subgraphs),
+      subgraphs: relateSubgraphs(
+        timedSubgraphs(subgraphs.subgraphs),
+        state.toolCalls,
+        subagentToolNames,
+        delegationBindings
+      ),
       ...(retained?.run.evidence.runId
         ? { reconnect: { runId: retained.run.evidence.runId } }
         : {}),
@@ -706,8 +1101,35 @@ export function createSession(
         : state.toolCalls,
       ...(error ? { error } : {}),
     });
+    if (devtools && before) reportWrites(before);
     // Last, so a lifecycle listener runs where a snapshot listener would.
     lifecycle.flush();
+  }
+  /** What the next publication is attributed to in a development tool. */
+  let writeLabel: { readonly event?: string; readonly label?: string } = {};
+  let customWrite = false;
+  function reportWrites(before: LangGraphSnapshot) {
+    const sink = devtools;
+    if (!sink) return;
+    const { event, label = 'run:end' } = writeLabel;
+    writeLabel = {};
+    const names = [
+      ...changedSignals(before, publication.getSnapshot()),
+      ...(customWrite ? (['custom'] as const) : []),
+    ];
+    customWrite = false;
+    const write = () => {
+      for (const name of names) sink.wrote(name);
+    };
+    safely(() => {
+      if (event === undefined) return sink.outside(label, write);
+      sink.begin(event);
+      try {
+        write();
+      } finally {
+        sink.end();
+      }
+    });
   }
   function invalidateCheck() {
     revision += 1;
@@ -789,13 +1211,79 @@ export function createSession(
       attempt.branch.state = uncertainCheckpoint(attempt.branch.state);
     recoveryAttempt = error?.recovery === 'check' ? attempt : undefined;
     replayable = error?.recovery === 'retry' ? { attempt, state } : undefined;
+    // Usage belongs to a settled run; a stopped one reports none.
+    usage = outcome === 'aborted' ? undefined : projectUsage(usageObserved);
     publish(error ? 'error' : 'idle', error);
+    if (outcome !== 'aborted') {
+      const durationMs = Date.now() - (attempt.startedAt ?? Date.now());
+      if (error)
+        report('tplane:stream_errored', {
+          durationMs,
+          errorClass: errorClass(error),
+        });
+      else report('tplane:stream_ended', { durationMs });
+    }
+    if (
+      historyState &&
+      !error &&
+      (outcome === 'success' || outcome === 'paused')
+    )
+      void refreshHistoryPage();
+    // A run from a checkpoint the session could not rewind to leaves the saved
+    // branch as the only account of the transcript.
+    if (attempt.travel && !error && getHistory)
+      void load().catch(() => undefined);
+    else if (queue.length && (!error || (error.recovery ?? 'none') === 'none'))
+      drainQueue();
     // An error can end local consumption before the HTTP body closes. SDK
     // iterator return releases its reader; abort also cancels our request.
     close(
       attempt,
       outcome === 'error' || hasInvocationConflict(state.invocations)
     );
+  }
+  /** Reads the history page again after a run, for the checkpoint views only.
+   * The transcript is the stream's; a failed or superseded read changes nothing. */
+  async function refreshHistoryPage() {
+    if (!getHistory || threadId === undefined || branch || disposed) return;
+    pageRefresh?.abort();
+    const controller = new AbortController();
+    pageRefresh = controller;
+    const current = () =>
+      pageRefresh === controller &&
+      !disposed &&
+      !owner &&
+      !loading &&
+      !preparing &&
+      !branch;
+    try {
+      const history = await getHistory(thread(), controller.signal);
+      await publication.command(() => {
+        if (!current()) return;
+        const page = projectCheckpointHistory(historyPage, history);
+        const views = checkpointViews(history);
+        if (!current()) return;
+        pageRefresh = undefined;
+        historyPage = page;
+        checkpointPage = views;
+        writeLabel = { label: 'history' };
+        republish();
+      });
+    } catch {
+      /* The page stays as it was last read. */
+    } finally {
+      if (pageRefresh === controller) pageRefresh = undefined;
+    }
+  }
+  function cancelPageRefresh() {
+    const previous = pageRefresh;
+    pageRefresh = undefined;
+    previous?.abort();
+  }
+  /** Publishes changed backend fields under the status already published. */
+  function republish() {
+    const { status, error } = publication.getSnapshot();
+    publish(status, error);
   }
   function detach(outcome: CompleteOutcome): Attempt | undefined {
     const attempt = owner;
@@ -861,7 +1349,7 @@ export function createSession(
             definition,
             call,
             attempt.controller.signal,
-            { threadId: thread(), toolCallId: call.id },
+            { threadId: threadId ?? '', toolCallId: call.id },
             store,
             groups >= 10
           );
@@ -927,6 +1415,8 @@ export function createSession(
       : 'complete';
   }
   function stopExecution() {
+    cancelPageRefresh();
+    const dropped = queue.splice(0);
     const preparation = detachPreparation();
     const hadRetained = !!retained;
     const previousRetained = retained;
@@ -950,10 +1440,103 @@ export function createSession(
       attempt.branch.state = uncertainCheckpoint(attempt.branch.state);
     retained = retainBranch ?? (branch ? previousRetained : undefined);
     if (attempt || hadRetained) publish('idle');
+    else if (dropped.length || (autoLoad && reading)) republish();
+    for (const entry of dropped) entry.resolve('aborted');
+    if (dropped.length) void cancelRuns(dropped);
     checking?.abort();
     if (attempt) close(attempt, true);
     closeLoad(reading);
     closePreparation(preparation);
+  }
+
+  /** Asks the backend to cancel runs the session no longer waits for. */
+  async function cancelRuns(entries: readonly QueuedRun[]): Promise<boolean> {
+    if (!cancelRun || threadId === undefined) return false;
+    const id = threadId;
+    const results = await Promise.all(
+      entries.map(async (entry) => {
+        try {
+          await cancelRun(id, entry.id, new AbortController().signal);
+          return true;
+        } catch {
+          return false;
+        }
+      })
+    );
+    return results.every(Boolean);
+  }
+
+  /** The run-creation settings for one physical run of an attempt. The
+   * session's own needs come first; a caller's settings add to them. */
+  function requestOptions(
+    attempt: Pick<Attempt, 'runOptions' | 'input'>,
+    choices: {
+      readonly from?: OwnedCheckpointPosition;
+      readonly capture?: (run: { run_id: string; thread_id?: string }) => void;
+      readonly resuming?: boolean;
+      readonly first: boolean;
+      readonly notify?: () => boolean;
+    }
+  ): LangGraphSubmitOptions | undefined {
+    const { from, capture, first } = choices;
+    const answer =
+      choices.resuming &&
+      attempt.input.kind === 'resume' &&
+      attempt.input.value !== undefined
+        ? { resume: attempt.input.value }
+        : undefined;
+    if (suppliedTransport && !attempt.runOptions && !capture && !answer)
+      return undefined;
+    const { run: settings, ...base } = attempt.runOptions ?? {};
+    const {
+      command,
+      checkpoint,
+      checkpointId,
+      streamMode,
+      onRunCreated,
+      ...passed
+    } = settings ?? {};
+    const required = !suppliedTransport || from;
+    const modes =
+      required || streamMode
+        ? [
+            ...new Set([
+              ...(required ? checkpointStreamModes : []),
+              ...(streamMode ?? []),
+            ]),
+          ]
+        : undefined;
+    const sent =
+      first && (command || answer) ? { ...command, ...answer } : undefined;
+    const created =
+      capture || onRunCreated
+        ? (run: { run_id: string; thread_id?: string }) => {
+            capture?.(run);
+            if (!onRunCreated || choices.notify?.() === false) return;
+            try {
+              onRunCreated(run);
+            } catch {
+              /* Application callbacks cannot affect the run. */
+            }
+          }
+        : undefined;
+    return {
+      ...base,
+      ...(capture
+        ? { streamResumable: true, onDisconnect: 'continue' as const }
+        : {}),
+      ...passed,
+      ...(from
+        ? { checkpoint: from }
+        : first && checkpoint !== undefined
+        ? { checkpoint }
+        : first && checkpointId !== undefined
+        ? { checkpointId }
+        : {}),
+      ...(modes ? { streamMode: modes } : {}),
+      ...(created ? { onRunCreated: created } : {}),
+      ...(sent ? { command: sent } : {}),
+    };
   }
 
   function reconcile(attempt: Attempt, history: ThreadState[]) {
@@ -1089,8 +1672,16 @@ export function createSession(
       (attempt.input.kind === 'submit' ||
         (attempt.input.kind === 'resume' && attempt.groups === 0)) &&
       canCheck &&
+      !attempt.scripted &&
       !attempt.physical?.evidence.unsafe;
-    if (threadId === undefined) {
+    // Development only: an armed scripted run stands in for the network, so
+    // it creates no thread either.
+    let script =
+      attempt.joinStart || attempt.joinCursor !== undefined
+        ? null
+        : takeScript();
+    if (script) attempt.scripted = true;
+    if (threadId === undefined && !script) {
       // The first submit of a session without a thread creates it before the
       // run. A replacing submit waits for the same request.
       try {
@@ -1106,7 +1697,8 @@ export function createSession(
       let input = attempt.input.kind === 'submit' ? attempt.input.messages : [];
       while (owns(attempt)) {
         assertInvocationIdentity();
-        const joining = attempt.joinCursor;
+        const joinCursor = attempt.joinCursor;
+        const joining = joinCursor !== undefined || attempt.joinStart === true;
         const run: PhysicalRun =
           joining && attempt.physical
             ? attempt.physical
@@ -1124,13 +1716,17 @@ export function createSession(
         const resuming = groups === 0 && attempt.input.kind === 'resume';
         const payload = resuming
           ? null
-          : createSubmitPayload(
+          : runPayload(
               [...batch.messages, ...input],
-              catalog,
               !joining && groups === 0 && attempt.input.kind === 'submit'
                 ? attempt.input.state
                 : undefined
             );
+        const scripted = joining
+          ? null
+          : script ?? (groups > 0 ? takeScript() : null);
+        script = null;
+        if (scripted) attempt.scripted = true;
         const from =
           attempt.branch && !joining
             ? readyCheckpoint(attempt.branch.state).position
@@ -1163,43 +1759,26 @@ export function createSession(
             ? joinStream(
                 thread(),
                 run.evidence.runId,
-                joining,
+                joinCursor,
                 attempt.controller.signal,
                 ...(!suppliedTransport || attempt.branch
                   ? [{ streamMode: [...checkpointStreamModes] }]
                   : [])
               )
+            : scripted
+            ? streamScript(scripted.frames, attempt.controller.signal)
             : transport.stream(
                 assistantId,
                 thread(),
                 payload,
                 attempt.controller.signal,
-                !suppliedTransport ||
-                  attempt.runOptions ||
-                  canReconnect ||
-                  (resuming &&
-                    attempt.input.kind === 'resume' &&
-                    attempt.input.value !== undefined)
-                  ? {
-                      ...attempt.runOptions,
-                      ...(from ? { checkpoint: from } : {}),
-                      ...(!suppliedTransport || from
-                        ? { streamMode: [...checkpointStreamModes] }
-                        : {}),
-                      ...(canReconnect
-                        ? {
-                            streamResumable: true,
-                            onDisconnect: 'continue' as const,
-                            onRunCreated: capture,
-                          }
-                        : {}),
-                      ...(resuming &&
-                      attempt.input.kind === 'resume' &&
-                      attempt.input.value !== undefined
-                        ? { command: { resume: attempt.input.value } }
-                        : {}),
-                    }
-                  : undefined
+                requestOptions(attempt, {
+                  from,
+                  ...(canReconnect ? { capture } : {}),
+                  resuming,
+                  first: groups === 0,
+                  notify: () => owns(attempt),
+                })
               );
         attempt.iterator = events[Symbol.asyncIterator]();
         if (!owns(attempt)) {
@@ -1212,10 +1791,17 @@ export function createSession(
           if (next.done) break;
           // Run creation precedes stream frames. A later callback cannot safely
           // attach an identity to already consumed data, including reentrant getters.
+          const firstEvent = !run.received;
           run.received = true;
-          const event = captureStreamEvent(next.value);
+          const event = convertEventMessages(
+            captureStreamEvent(next.value),
+            toMessage
+          );
           if (!owns(attempt)) return;
+          if (developmentRuntime && firstEvent)
+            safely(() => developmentRuntime.milestone('transport.connected'));
           const custom = captureCustomEvent(event);
+          const binding = captureDelegationBinding(event);
           const previousState = state;
           const previousValues = values;
           const previousInterrupts = interrupts;
@@ -1234,17 +1820,15 @@ export function createSession(
           const checkpoint = attempt.branch
             ? captureCheckpointEvent(event, thread())
             : undefined;
-          const cursor = advanceCursor(previousEvidence, event, joining);
+          const cursor = advanceCursor(previousEvidence, event, joinCursor);
           if (!owns(attempt)) return;
           if (cursor.replay) {
             run.evidence = cursor.evidence;
             throw new Error('The joined stream repeated its requested cursor.');
           }
-          const projected = projectStream(
-            previousState,
-            previousProjection,
-            event
-          );
+          const projected = isTranscriptEvent(event, transcriptNodeNames)
+            ? projectStream(previousState, previousProjection, event)
+            : { state: previousState, projection: previousProjection };
           const projectedValues = projectValues(previousValues, event);
           const projectedInterrupts = projectInterrupts(
             previousInterrupts,
@@ -1266,6 +1850,25 @@ export function createSession(
               ? cursor.evidence
               : { unsafe: true };
           if (checkpoint) run.checkpoint = checkpoint;
+          toolProgress = observeToolProgress(
+            toolProgress,
+            event,
+            protectedTransport
+          );
+          usageObserved = observeUsage(
+            usageObserved,
+            event,
+            attempt.projection.baselineIds
+          );
+          if (rawMessages) {
+            wire = observeWireMessages(wire, event);
+            const metadata = observeMessageMetadata(messageMetadata, event);
+            if (metadata !== messageMetadata) hasMessageMetadata = true;
+            messageMetadata = metadata;
+          }
+          // The backend's statement outranks inference but never rewrites it.
+          if (binding && !delegationBindings.has(binding.segment))
+            delegationBindings.set(binding.segment, binding.toolCallId);
           state = projected.state;
           values = projectedValues;
           interrupts = projectedInterrupts;
@@ -1280,6 +1883,8 @@ export function createSession(
             return;
           }
           lifecycle.mark('streamStartedAt');
+          writeLabel = { event: event.type };
+          customWrite = !!custom;
           publish('running');
           // publish drains observer commands before returning. Never dispatch or
           // read on behalf of an attempt a listener just stopped/superseded.
@@ -1465,6 +2070,7 @@ export function createSession(
             groups += 1;
             attempt.groups = groups;
             attempt.joinCursor = undefined;
+            attempt.joinStart = false;
             attempt.physical = undefined;
             subgraphs = initialSubgraphs(subgraphs.subgraphs);
             attempt.subgraphs = subgraphs;
@@ -1595,8 +2201,14 @@ export function createSession(
   function beginAttempt(
     input: AttemptInput,
     external?: AbortSignal,
-    runOptions?: CapturedRunOptions
+    runOptions?: CapturedRunOptions,
+    requestType = input.kind === 'submit'
+      ? 'submit'
+      : input.bare
+      ? 'continue'
+      : 'resume'
   ): Attempt {
+    cancelPageRefresh();
     const reading = detachLoad();
     const checking = invalidateCheck();
     const previous = detach('interrupted');
@@ -1644,6 +2256,9 @@ export function createSession(
     recoveryAttempt = undefined;
     replayable = undefined;
     retained = undefined;
+    toolProgress = new Map();
+    usageObserved = new Map();
+    usage = undefined;
 
     if (input.kind === 'submit')
       state = reduceMessages(state, {
@@ -1670,7 +2285,10 @@ export function createSession(
       if (external.aborted) abort();
     }
     if (owns(created)) {
-      if (input.kind === 'resume') lifecycle.mark('interruptResolvedAt');
+      if (input.kind === 'resume' && !input.bare)
+        lifecycle.mark('interruptResolvedAt');
+      reportRequest(created, requestType);
+      writeLabel = { label: 'run:start' };
       publish('running');
     }
     checking?.abort();
@@ -1839,10 +2457,11 @@ export function createSession(
   }
 
   function submit(
-    input: LangGraphSubmitInput,
+    input: LangGraphSubmitInput | null | undefined,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
+    let queued: Parameters<typeof enqueueRun>[0] | undefined;
     const beginning = publication.command(() => {
       if (disposed) return;
       admitSubmission();
@@ -1857,7 +2476,10 @@ export function createSession(
         capturedLoad !== loading
       )
         return;
-      const captured = captureSubmitInput(input);
+      const captured =
+        input === null || input === undefined
+          ? undefined
+          : captureSubmitInput(input);
       if (
         disposed ||
         external?.aborted ||
@@ -1874,23 +2496,247 @@ export function createSession(
       )
         return;
       admitSubmission();
-      attempt = beginAttempt(
+      const settings = runOptions?.run;
+      const from =
+        settings?.checkpointId ?? settings?.checkpoint?.checkpoint_id;
+      if (from !== undefined && branch)
+        throw new Error(
+          'A checkpoint branch starts its runs from its own checkpoint.'
+        );
+      const attemptInput: AttemptInput = captured
+        ? {
+            kind: 'submit',
+            state: captured.state,
+            messages: [
+              {
+                type: 'human',
+                id: crypto.randomUUID(),
+                content: captured.message,
+              },
+            ],
+          }
+        : { kind: 'resume', value: undefined, interrupts, bare: true };
+      if (settings?.multitaskStrategy === 'enqueue' && owner) {
+        if (threadId === undefined)
+          throw new Error('A run cannot be queued before its thread exists.');
+        if (!createQueuedRun || !joinStream)
+          throw new Error(
+            'Queueing requires transport.createQueuedRun() and transport.joinStream().'
+          );
+        queued = { input: attemptInput, runOptions, external };
+        return;
+      }
+      // The local transcript goes back to the checkpoint when its state is
+      // known, so the run's stream continues from what the checkpoint held.
+      const source =
+        from === undefined
+          ? undefined
+          : checkpointPage?.checkpoints.find(
+              (checkpoint) => checkpoint.id === from
+            );
+      if (source) {
+        const saved = [source.saved as unknown as ThreadState];
+        const projected = projectHistory(state, saved, {
+          interrupts: [],
+          ...(typedTools
+            ? { registeredTools: new Set(definitions.keys()) }
+            : {}),
+        });
+        if (hasInvocationConflict(projected.invocations))
+          throw new Error(invocationConflictError().message);
+        state = projected;
+        values = projectHistoryValues(values, saved);
+        authoredTools.clear();
+      }
+      attempt = beginAttempt(attemptInput, external, runOptions);
+      if (from !== undefined && !source) attempt.travel = true;
+    });
+    return beginning.then(() => {
+      if (queued) return enqueueRun(queued);
+      if (!attempt) return 'aborted';
+      void execute(attempt);
+      return attempt.result;
+    });
+  }
+
+  /** Creates a queued run on the backend and waits for its turn. */
+  async function enqueueRun(request: {
+    readonly input: AttemptInput;
+    readonly runOptions: CapturedRunOptions | undefined;
+    readonly external: AbortSignal | undefined;
+  }): Promise<CompleteOutcome> {
+    const create = createQueuedRun;
+    if (!create || threadId === undefined) throw createSafeRequestError();
+    if (developmentRuntime) safely(() => developmentRuntime.touch());
+    report('tplane:runtime_request_created', { requestType: 'enqueue' });
+    const { input } = request;
+    let run: RunEvidence;
+    let created: { run_id: string; thread_id?: string };
+    try {
+      const entry = await create(
+        assistantId,
+        threadId,
+        input.kind === 'submit'
+          ? runPayload(input.messages, input.state)
+          : null,
+        request.external ?? new AbortController().signal,
         {
-          kind: 'submit',
-          state: captured.state,
-          messages: [
-            {
-              type: 'human',
-              id: crypto.randomUUID(),
-              content: captured.message,
-            },
-          ],
-        },
-        external,
-        runOptions
+          ...requestOptions(request, {
+            first: true,
+            // The queue calls back once the run is recorded.
+            notify: () => false,
+          }),
+          ...(canReconnect
+            ? { streamResumable: true, onDisconnect: 'continue' as const }
+            : {}),
+          multitaskStrategy: 'enqueue',
+          onRunCreated: undefined,
+        }
       );
+      created = { run_id: entry.id, thread_id: entry.threadId };
+      run = captureRun({}, created, threadId);
+    } catch {
+      throw createSafeRequestError();
+    }
+    if (run.unsafe || !run.runId) throw createSafeRequestError();
+    const id = run.runId;
+    return publication.command(() => {
+      // The backend still runs it, but a disposed session observes nothing.
+      if (disposed) return 'aborted' as const;
+      let resolve!: QueuedRun['resolve'];
+      const result = new Promise<CompleteOutcome>((done) => {
+        resolve = done;
+      });
+      queue.push({
+        id,
+        ...(input.kind === 'submit'
+          ? { message: input.messages[0].content }
+          : {}),
+        createdAt: Date.now(),
+        input,
+        runOptions: request.runOptions,
+        result,
+        resolve,
+      });
+      try {
+        request.runOptions?.run?.onRunCreated?.(created);
+      } catch {
+        /* Application callbacks cannot affect the run. */
+      }
+      writeLabel = { label: 'queue' };
+      if (owner) republish();
+      // The active run can end while the queued one is being created.
+      else drainQueue();
+      return result;
+    });
+  }
+
+  /** Joins the oldest queued run once nothing else owns the session. */
+  function drainQueue() {
+    let attempt: Attempt | undefined;
+    void publication
+      .command(() => {
+        if (
+          disposed ||
+          owner ||
+          loading ||
+          preparing ||
+          branch ||
+          !joinStream ||
+          !queue.length
+        )
+          return;
+        const entry = queue.shift() as QueuedRun;
+        attempt = beginAttempt(
+          entry.input,
+          undefined,
+          entry.runOptions,
+          'join_queued'
+        );
+        attempt.physical = {
+          batch: buffer.snapshot(),
+          evidence: { runId: entry.id },
+          captureOpen: false,
+          received: false,
+          confirmed: false,
+        };
+        attempt.joinStart = true;
+        void attempt.result.then(entry.resolve);
+      })
+      .then(() => {
+        if (attempt) void execute(attempt);
+      });
+  }
+
+  function joinRun(
+    runId: string,
+    lastEventId?: string,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome> {
+    let attempt: Attempt | undefined;
+    const beginning = publication.command(() => {
+      if (disposed) return;
+      if (!joinStream)
+        throw new Error('Joining a run requires transport.joinStream().');
+      if (lastEventId !== undefined && typeof lastEventId !== 'string')
+        throw new TypeError('lastEventId must be a string.');
+      admitSubmission();
+      const capturedRevision = revision;
+      const external = options?.signal;
+      if (
+        disposed ||
+        external?.aborted ||
+        capturedRevision !== revision ||
+        threadId === undefined
+      )
+        return;
+      const evidence = captureRun({}, { run_id: runId }, threadId);
+      if (evidence.unsafe || !evidence.runId)
+        throw new TypeError('joinStream requires a valid run id.');
+      attempt = beginAttempt(
+        { kind: 'resume', value: undefined, interrupts, bare: true },
+        external,
+        undefined,
+        'join'
+      );
+      attempt.physical = {
+        batch: buffer.snapshot(),
+        evidence,
+        captureOpen: false,
+        received: false,
+        confirmed: false,
+      };
+      if (lastEventId) attempt.joinCursor = lastEventId;
+      else attempt.joinStart = true;
     });
     return dispatch(beginning, () => attempt);
+  }
+
+  function cancelQueued(runId: string): Promise<boolean> {
+    return publication
+      .command(() => {
+        const index = queue.findIndex((entry) => entry.id === runId);
+        if (disposed || index < 0) return undefined;
+        const [entry] = queue.splice(index, 1);
+        republish();
+        entry.resolve('aborted');
+        return entry;
+      })
+      .then((entry) => (entry ? cancelRuns([entry]) : false));
+  }
+
+  function clearQueue(): Promise<void> {
+    return publication
+      .command(() => {
+        if (disposed || !queue.length) return [];
+        const entries = queue.splice(0);
+        republish();
+        for (const entry of entries) entry.resolve('aborted');
+        return entries;
+      })
+      .then(async (entries) => {
+        if (entries.length) await cancelRuns(entries);
+      });
   }
 
   function resume(
@@ -2072,7 +2918,11 @@ export function createSession(
         external.addEventListener('abort', abort, { once: true });
         if (external.aborted) abort();
       }
-      if (owns(created)) publish('running');
+      if (owns(created)) {
+        reportRequest(created, 'reconnect');
+        writeLabel = { label: 'run:start' };
+        publish('running');
+      }
       checking?.abort();
     });
     return dispatch(beginning, () => attempt);
@@ -2113,6 +2963,14 @@ export function createSession(
         });
         const projectedValues = projectHistoryValues(previousValues, history);
         const projectedHistory = projectCheckpointHistory(historyPage, history);
+        const restoredChildren = restoreChildren(projected.toolCalls, history);
+        const projectedWire = rawMessages
+          ? observeHistoryWireMessages(history)
+          : wire;
+        const projectedCheckpoints =
+          historyState && !capturedBranch
+            ? checkpointViews(history)
+            : undefined;
         // Even a plain projection can invoke getters supplied by a transport.
         // Such a getter can submit/stop/dispose; never commit its stale result.
         if (!ownsLoad(read)) return;
@@ -2129,26 +2987,152 @@ export function createSession(
         state = projected;
         values = projectedValues;
         interrupts = projectedInterrupts;
+        if (rawMessages) wire = projectedWire;
+        toolProgress = new Map();
         if (!capturedBranch) historyPage = projectedHistory;
-        subgraphs = initialSubgraphs();
+        if (projectedCheckpoints) checkpointPage = projectedCheckpoints;
+        subgraphs = initialSubgraphs(restoredChildren.subgraphs);
+        for (const [segment, toolCallId] of restoredChildren.bindings)
+          if (!delegationBindings.has(segment))
+            delegationBindings.set(segment, toolCallId);
         authoredTools.clear();
         loading = undefined;
         read.resolve();
         if (history.length > 0) lifecycle.mark('threadPersistedAt');
+        if (developmentRuntime && projected.messages.length > 0)
+          safely(() => developmentRuntime.milestone('thread.persisted'));
+        writeLabel = { label: 'history' };
         publish(
           unsettledTools.size ? 'error' : 'idle',
           unsettledTools.size ? unsettledToolError() : undefined
         );
         closeLoad(read, false);
+        void restoreChildTranscripts(restoredChildren.executions);
       });
     } catch {
       await publication.command(() => {
         if (!ownsLoad(read)) return;
         loading = undefined;
         read.reject(createSafeRequestError());
+        if (autoLoad) {
+          writeLabel = { label: 'history' };
+          republish();
+        }
         closeLoad(read);
       });
     }
+  }
+
+  /**
+   * The child agents a saved thread records: one for each delegation call
+   * that history links to the task that ran it, and one for each such call
+   * that already has a result. A call still pending with no recorded task is
+   * left out, as it is while a run streams and no child has reported yet.
+   */
+  function restoreChildren(
+    toolCalls: readonly ToolCall[],
+    history: readonly ThreadState[]
+  ) {
+    const ids = delegationCallIds(toolCalls, subagentToolNames);
+    const executions = mapChildExecutions(history, ids);
+    const bindings = new Map<string, string>();
+    const restored: LangGraphSubgraph[] = [];
+    for (const id of ids) {
+      const execution = executions.get(id);
+      const delegation = restoredDelegation(
+        toolCalls,
+        subagentToolNames,
+        id,
+        execution
+      );
+      if (!delegation || (!execution && !delegation.status)) continue;
+      // Without a recorded task the call id stands in for the task id.
+      const segment = execution?.checkpointNs ?? `tools:${id}`;
+      if (segment.startsWith('tools:')) bindings.set(segment, id);
+      restored.push({
+        namespace: [segment],
+        messages: [],
+        toolCalls: [],
+        state: undefined,
+        interrupts: [],
+        delegation,
+      });
+    }
+    return {
+      subgraphs: ownSubgraphs(restored),
+      bindings,
+      executions: [...executions.values()],
+    };
+  }
+
+  /** Fills restored children with the transcripts their own checkpoints
+   * hold. A child that has streamed since, or is gone, is left alone, and a
+   * failed read leaves the child with its status and no messages. */
+  async function restoreChildTranscripts(
+    executions: readonly ChildExecution[]
+  ) {
+    childRestore?.abort();
+    childRestore = undefined;
+    if (!getChildState || !executions.length || threadId === undefined) return;
+    const controller = new AbortController();
+    childRestore = controller;
+    const id = threadId;
+    await Promise.all(
+      executions.map(async (execution) => {
+        try {
+          const saved = convertSavedMessages(
+            await getChildState(id, execution.checkpointNs, controller.signal),
+            toMessage
+          );
+          if (!saved || controller.signal.aborted) return;
+          // Only a checkpoint from the requested namespace is the child's.
+          const namespace = saved.checkpoint?.checkpoint_ns;
+          if (
+            typeof namespace !== 'string' ||
+            (namespace !== execution.checkpointNs &&
+              !namespace.startsWith(`${execution.checkpointNs}|`))
+          )
+            return;
+          const child = record(saved.values);
+          if (!child || !Array.isArray(child['messages'])) return;
+          const projected = projectHistory(initialMessageState(), [saved], {
+            interrupts: [],
+          });
+          const state = projectHistoryValues(undefined, [saved]);
+          await publication.command(() => {
+            if (disposed || childRestore !== controller) return;
+            const key = JSON.stringify([execution.checkpointNs]);
+            const index = subgraphs.subgraphs.findIndex(
+              (entry) => JSON.stringify(entry.namespace) === key
+            );
+            const entry = subgraphs.subgraphs[index];
+            if (
+              !entry ||
+              entry.messages.length ||
+              subgraphs.active.has(key) ||
+              !projected.messages.length
+            )
+              return;
+            const entries = [...subgraphs.subgraphs];
+            entries[index] = {
+              ...entry,
+              messages: projected.messages,
+              toolCalls: projected.toolCalls,
+              state,
+            };
+            subgraphs = {
+              subgraphs: ownSubgraphs(entries, subgraphs.subgraphs),
+              active: subgraphs.active,
+            };
+            writeLabel = { label: 'history' };
+            republish();
+          });
+        } catch {
+          /* The transcript is supplementary to a usable thread. */
+        }
+      })
+    );
+    if (childRestore === controller) childRestore = undefined;
   }
 
   function load(options?: { readonly signal?: AbortSignal }): Promise<void> {
@@ -2182,6 +3166,7 @@ export function createSession(
         recoveryAttempt = undefined;
         withdrawn = invalidateCheck();
       }
+      cancelPageRefresh();
       const previous = detachLoad();
       let resolve!: HistoryRead['resolve'];
       let reject!: HistoryRead['reject'];
@@ -2197,11 +3182,20 @@ export function createSession(
       };
       read = created;
       loading = created;
+      childRestore?.abort();
+      childRestore = undefined;
+      if (autoLoad) {
+        writeLabel = { label: 'history' };
+        republish();
+      }
       const external = options?.signal;
       if (external) {
         const abort = () => {
           void publication.command(() => {
-            if (ownsLoad(created)) closeLoad(detachLoad());
+            if (!ownsLoad(created)) return;
+            const reading = detachLoad();
+            if (autoLoad) republish();
+            closeLoad(reading);
           });
         };
         created.unlink = () => external.removeEventListener('abort', abort);
@@ -2240,7 +3234,12 @@ export function createSession(
       const previous = failed.attempt;
       state = previous.baseline.state;
       values = previous.baseline.values;
-      attempt = beginAttempt(previous.input, undefined, previous.runOptions);
+      attempt = beginAttempt(
+        previous.input,
+        undefined,
+        previous.runOptions,
+        'retry'
+      );
     });
     // No attempt means nothing ran: `aborted`, as for an ignored submit.
     return dispatch(beginning, () => attempt);
@@ -2425,6 +3424,9 @@ export function createSession(
       options
     );
   }
+  const throttles = new Set<{ cancel(): void }>();
+  if (developmentRuntime) safely(() => developmentRuntime.touch());
+  report('tplane:runtime_instance_created');
   const canRegenerate =
     !!getHistory &&
     !!getState &&
@@ -2432,13 +3434,52 @@ export function createSession(
     !!joinStream &&
     (!!suppliedTransport || ownedRetries === 0);
 
+  if (autoLoad && threadId !== undefined && getHistory)
+    void Promise.resolve().then(() => {
+      // Anything the application did first, or a dispose, takes precedence.
+      if (disposed || owner || loading || preparing) return;
+      load().catch(() =>
+        publication.command(() => {
+          if (
+            disposed ||
+            owner ||
+            loading ||
+            preparing ||
+            publication.getSnapshot().status !== 'idle'
+          )
+            return;
+          writeLabel = { label: 'history' };
+          publish('error', {
+            kind: 'server',
+            message: 'The conversation could not be loaded.',
+            retryable: false,
+            recovery: 'none',
+          });
+        })
+      );
+    });
+
   return {
     getSnapshot: publication.getSnapshot,
     get threadId() {
       return threadId;
     },
-    subscribe: (notify) =>
-      disposed ? () => undefined : publication.subscribe(notify),
+    subscribe: (notify) => {
+      if (disposed) return () => undefined;
+      if (!throttleMs) return publication.subscribe(notify);
+      const throttled = throttleListener(
+        notify,
+        throttleMs,
+        () => publication.getSnapshot().status !== 'running'
+      );
+      throttles.add(throttled);
+      const release = publication.subscribe(throttled);
+      return () => {
+        throttles.delete(throttled);
+        throttled.cancel();
+        release();
+      };
+    },
     onCustomEvent: (listener) =>
       disposed ? () => undefined : publication.onCustomEvent(listener),
     lifecycle: {
@@ -2447,10 +3488,22 @@ export function createSession(
         disposed ? () => undefined : lifecycle.source.subscribe(notify),
     },
     submit,
+    cancelQueued,
+    clearQueue,
     fork,
+    setBranch: (selected) =>
+      publication.command(() => {
+        if (typeof selected !== 'string')
+          throw new TypeError('A branch is a string.');
+        if (disposed || selected === branchName) return;
+        branchName = selected;
+        writeLabel = { label: 'branch' };
+        republish();
+      }),
     ...(canRegenerate ? { regenerate } : {}),
     resume,
     reconnect,
+    joinStream: joinRun,
     stop: () =>
       publication.command(() => {
         if (disposed) return;
@@ -2464,6 +3517,7 @@ export function createSession(
       publication.command(() => {
         if (disposed) return;
         disposed = true;
+        cancelPageRefresh();
         const pendingThread = creation;
         creation = undefined;
         const preparation = detachPreparation();
@@ -2472,7 +3526,14 @@ export function createSession(
         const checking = invalidateCheck();
         const attempt = detach('aborted');
         recoveryAttempt = undefined;
+        const dropped = queue.splice(0);
         publish('idle');
+        for (const entry of dropped) entry.resolve('aborted');
+        childRestore?.abort();
+        childRestore = undefined;
+        for (const throttled of throttles) throttled.cancel();
+        throttles.clear();
+        if (developmentRuntime) safely(() => developmentRuntime.dispose());
         publication.clearListeners();
         lifecycle.clearListeners();
         checking?.abort();
