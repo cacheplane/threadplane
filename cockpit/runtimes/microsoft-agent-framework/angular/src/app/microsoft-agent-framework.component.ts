@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, computed } from '@angular/core';
 import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
+import type { Session } from '@threadplane/ag-ui';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { CurrencyPipe } from '@angular/common';
 
@@ -30,13 +31,14 @@ interface ExpenseDraft {
  *
  * The whole point of this example: this component is byte-for-byte the same
  * kind of UI code every LangGraph-backed AG-UI example uses — `provideAgent`
- * + `injectAgent()` from `@threadplane/ag-ui`, the `@threadplane/chat`
+ * + `injectAgent()` from `@threadplane/angular` over `createSession` from
+ * `@threadplane/ag-ui`, the `@threadplane/chat`
  * primitives — while the backend is a genuinely non-LangGraph runtime
  * (agent-framework behind the agent-framework-ag-ui bridge).
  *
  * Interrupts arrive as the protocol-standard
  * `RUN_FINISHED.outcome = { type: 'interrupt', interrupts: [...] }` (not the
- * LangGraph bridge's CUSTOM `on_interrupt`), and `submit({ resume })` goes
+ * LangGraph bridge's CUSTOM `on_interrupt`), and `agent.resume(responses)` goes
  * out as the protocol-standard top-level `resume` entry array.
  *
  * Shared state streams predictively: while the model is still emitting the
@@ -63,7 +65,7 @@ interface ExpenseDraft {
     >
       <div main class="maf-shell">
       <chat placeholder="Ask about a fictional expense…" [welcomeDisabled]="true" [agent]="agent" class="maf-chat">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
           <div chatWelcomeSuggestions>
             @for (s of suggestions; track s.value) {
               <chat-welcome-suggestion
@@ -220,12 +222,12 @@ interface ExpenseDraft {
 export class MicrosoftAgentFrameworkComponent {
   protected readonly suggestions = WELCOME_SUGGESTIONS;
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<Session>();
 
   // #region expense-state
   /** Shared state streamed from the backend (STATE_SNAPSHOT / STATE_DELTA). */
   protected readonly expense = computed(() => {
-    // Example apps compile lib source with strict:false — cast at the read site.
+    // The session declares no state type, so the document is cast at the read site.
     const state = this.agent.state() as { expense?: ExpenseDraft } | undefined;
     const e = state?.expense;
     return e && e.vendor !== undefined ? e : undefined;
@@ -235,13 +237,12 @@ export class MicrosoftAgentFrameworkComponent {
   // #region approval-wiring
   /**
    * The pending approval request from the protocol-standard interrupt
-   * outcome. The reducer stores it as `{ interrupts: [...], runId }`; each
+   * outcome. `agent.interrupts()` lists the outcome's entries; each
    * entry's `metadata.agent_framework.function_call` carries the tool name
    * and parsed arguments.
    */
   private readonly approvalCall = computed(() => {
-    const value = this.agent.interrupt?.()?.value as { interrupts?: unknown[] } | undefined;
-    const first = value?.interrupts?.[0] as
+    const first = this.agent.interrupts()?.[0] as
       | { metadata?: { agent_framework?: { function_call?: { name?: string; arguments?: unknown } } } }
       | undefined;
     return first?.metadata?.agent_framework?.function_call;
@@ -260,10 +261,17 @@ export class MicrosoftAgentFrameworkComponent {
 
   protected onAction(action: ChatApprovalAction): void {
     if (action === 'approve') {
-      void this.agent.submit({ resume: { approved: true } });
+      this.answer({ approved: true });
     } else if (action === 'cancel') {
-      void this.agent.submit({ resume: { approved: false } });
+      this.answer({ approved: false });
     }
+  }
+
+  /** Answers the pending interrupt with `value`. */
+  private answer(value: { approved: boolean }): void {
+    const interrupt = this.agent.interrupts()?.[0];
+    if (!interrupt) return;
+    void this.agent.resume([{ interruptId: interrupt.id, status: 'resolved', value }]);
   }
   // #endregion
 }

@@ -2,8 +2,10 @@
 
 Build an Angular chat UI over the neutral `Agent` contract:
 
-- Provide the agent with `provideAgent({ url })` from `@threadplane/ag-ui`
-  and retrieve it with `injectAgent()` — no backend-specific code.
+- Provide the agent with `provideAgent({ createSession })` from
+  `@threadplane/angular`, where `createSession` calls
+  `createSession({ url, interruptTransport: 'mastra-command' })` from
+  `@threadplane/ag-ui`, and retrieve it with `injectAgent()`.
 - Render the conversation with `<chat [agent]="agent">` from
   `@threadplane/chat`.
 - Mirror the backend's shared `packing_list` state (`agent.state()`) into a
@@ -15,9 +17,11 @@ Build an Angular chat UI over the neutral `Agent` contract:
   as a `CUSTOM on_interrupt` payload (`{ toolCallId, toolName,
   suspendPayload, runId }`) followed by the protocol-standard
   `RUN_FINISHED` interrupt outcome; read the suspend payload from
-  `agent.interrupt()?.value`.
-- Map Approve/Cancel to `agent.submit({ resume: { approved: true | false } })`.
-  The adapter sends the Mastra resume shape on the wire:
+  `agent.interrupts()?.[0]?.value`.
+- Map Approve/Cancel to `agent.resume([{ interruptId, status: 'resolved',
+  value: { approved: true | false } }])`, with `interruptId` the `id` of
+  `agent.interrupts()[0]`.
+  The `mastra-command` transport sends the Mastra resume shape on the wire:
   `forwardedProps.command = { resume, interruptEvent: { toolCallId, runId } }`.
 - Do not build a subagents surface: Mastra reserves `ACTIVITY_*` events for
   background tasks (a measured red cell in the runtime-portability matrix).

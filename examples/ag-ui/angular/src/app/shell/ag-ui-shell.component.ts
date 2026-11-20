@@ -8,7 +8,7 @@ import {
   untracked,
 } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 import {
   ChatInterruptPanelComponent,
   ChatSelectComponent,
@@ -17,7 +17,7 @@ import {
 import { PalettePersistence } from './palette-persistence.service';
 import { ItineraryPanelComponent } from '../itinerary-panel.component';
 import { MapCanvasComponent } from '../map-canvas.component';
-import { itineraryClientTools, ITINERARY_AGENT } from '../client-tools';
+import { itineraryClientTools, ITINERARY_AGENT, ItineraryRunState } from '../client-tools';
 import { environment } from '../../environments/environment';
 
 export type DemoMode = 'embed' | 'popup' | 'sidebar';
@@ -133,35 +133,20 @@ export class AgUiShell {
   // can inject the shared ItineraryStore. Modes bind this to <chat [clientTools]>.
   readonly clientTools = itineraryClientTools();
 
-  // ── Shared agent: submit wrapper merges the knobs into input.state ──────
-  // injectAgent(ITINERARY_AGENT) returns AgUiAgent<ItineraryState>, so
-  // a.submit's input type carries { state?: ItineraryState } — no cast needed
-  // to spread the palette knobs into state.
-  readonly agent = (() => {
-    const a = injectAgent(ITINERARY_AGENT);
-    const orig = a.submit.bind(a);
-    (a as { submit: typeof a.submit }).submit = (async (
-      input: Parameters<typeof a.submit>[0],
-      opts?: Parameters<typeof a.submit>[1],
-    ) => {
-      return orig(
-        {
-          ...(input ?? {}),
-          state: {
-            ...(input?.state ?? {}),
-            model: this.model(),
-            reasoning_effort: this.effort() === DEFAULTS.effort ? null : this.effort(),
-            gen_ui_mode: this.genUiMode(),
-          },
-        },
-        opts,
-      );
-    }) as typeof a.submit;
-    return a;
-  })();
+  // ── Shared agent: every run carries the knobs in its state ──────────────
+  // The injected Agent cannot be patched, so the merge lives in the session:
+  // app.config wraps each session's submit/resume with `withRunState`, which
+  // asks ItineraryRunState for the knobs as they are when a request is sent.
+  readonly agent = injectAgent(ITINERARY_AGENT);
 
   constructor() {
-    // Routed mode components read the shared wrapped agent via
+    inject(ItineraryRunState).read = () => ({
+      model: this.model(),
+      reasoning_effort: this.effort() === DEFAULTS.effort ? null : this.effort(),
+      gen_ui_mode: this.genUiMode(),
+    });
+
+    // Routed mode components read the shared agent via
     // `inject(AgUiShell).agent` — no token needed.
     // Keep mode() in sync with navigation.
     this.router.events.subscribe(() => {
@@ -246,12 +231,12 @@ export class AgUiShell {
     this.persistence.write('colorScheme', v);
   }
 
-  /** Same four-action vocabulary as the canonical shell; resumes via
-   *  AG-UI's submit({ resume }) path (forwardedProps.command.resume). */
+  /** Same four-action vocabulary as the canonical shell; answers the pending
+   *  interrupt with agent.resume (forwardedProps.command.resume on the wire). */
   protected async onInterruptAction(action: InterruptAction): Promise<void> {
-    const interrupt = this.agent.interrupt?.();
+    const interrupt = this.agent.interrupts()?.[0];
     if (!interrupt) return;
-    let resume: unknown;
+    let resume: string;
     switch (action) {
       case 'accept': resume = 'approved'; break;
       case 'edit': {
@@ -267,6 +252,6 @@ export class AgUiShell {
       }
       case 'ignore': resume = 'denied'; break;
     }
-    await this.agent.submit({ resume });
+    await this.agent.resume([{ interruptId: interrupt.id, status: 'resolved', value: resume }]);
   }
 }

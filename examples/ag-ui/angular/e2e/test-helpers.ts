@@ -196,7 +196,7 @@ export async function waitForFinalAssistant(page: Page): Promise<Locator> {
  *
  * "Finalized" means `chat-message[data-role="assistant"][data-streaming="false"]`.
  * The attribute reflects the message's authoritative delivery phase and flips
- * only when the adapter completes that message generation.
+ * only when the session completes that message generation.
  *
  * Use this helper for final-state assertions. Tests that intentionally verify
  * progressive rendering should sample the streaming message directly.

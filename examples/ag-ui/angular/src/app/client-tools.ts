@@ -1,5 +1,7 @@
-import { inject } from '@angular/core';
-import { tools, action, view, ask, type ClientToolRegistry, createAgentRef } from '@threadplane/chat';
+import { Injectable, inject } from '@angular/core';
+import { createAgentRef } from '@threadplane/angular';
+import type { Session } from '@threadplane/ag-ui';
+import { tools, action, view, ask, type ClientToolRegistry } from '@threadplane/chat';
 import { z } from 'zod/v4';
 import { ItineraryStore } from './itinerary-store';
 import { GeocodingService } from './geocoding.service';
@@ -12,19 +14,54 @@ import { ClearDayConfirmComponent } from './clear-day-confirm.component';
  * the Angular shell writes them into every `submit()` call so the backend
  * can pick up the user's palette choices.
  */
-export interface ItineraryState {
+export type ItineraryState = {
   model?: string;
-  reasoning_effort?: string;
+  /** `null` sends no effort, so the model's own default applies. */
+  reasoning_effort?: string | null;
   gen_ui_mode?: string;
-}
+};
+
+/** The itinerary agent's AG-UI session, with its state document typed. */
+export type ItinerarySession = Session<ItineraryState>;
 
 /**
  * Typed DI handle for the itinerary AG-UI agent.
  * Pass to `provideAgent(ITINERARY_AGENT, config)` in app.config and
  * `injectAgent(ITINERARY_AGENT)` at the inject site for a typed
- * `AgUiAgent<ItineraryState>` without repeating the generic everywhere.
+ * `Agent<ItinerarySession>` without repeating the generic everywhere.
  */
-export const ITINERARY_AGENT = createAgentRef<ItineraryState>('ItineraryAgent');
+export const ITINERARY_AGENT = createAgentRef<ItinerarySession>('ItineraryAgent');
+
+/**
+ * The palette knobs every run carries in its state. The shell owns the knob
+ * signals and sets `read`; the session factory in app.config asks it each time
+ * a request is sent, so a run always carries the knobs as they are then.
+ */
+@Injectable({ providedIn: 'root' })
+export class ItineraryRunState {
+  read: () => ItineraryState = () => ({});
+}
+
+/**
+ * Returns `session` with the run state merged into the state patch of every
+ * `submit` and `resume`, whoever calls them: the chat composition's composer,
+ * a welcome suggestion, the itinerary panel or the interrupt panel. The knobs
+ * win over a caller's own patch for the same key.
+ */
+export function withRunState(
+  session: ItinerarySession,
+  read: () => ItineraryState,
+): ItinerarySession {
+  return {
+    ...session,
+    submit: (input, options) => {
+      const base = typeof input === 'string' ? { message: input } : input;
+      return session.submit({ ...base, state: { ...base.state, ...read() } }, options);
+    },
+    resume: (responses, options) =>
+      session.resume(responses, { ...options, state: { ...options?.state, ...read() } }),
+  };
+}
 
 /** Schema for the `clear_day` ask tool — exported in case consumers want to
  *  derive types from it (e.g. `ViewProps<typeof CLEAR_DAY_SCHEMA>`). */

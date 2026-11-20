@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ChatComponent, tools, action, view, ask } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { z } from 'zod/v4';
 import { WeatherCardComponent } from './weather-card.component';
@@ -13,7 +13,7 @@ import { weatherCardSchema, confirmBookingSchema } from './schemas';
  * the result); `weather_card` is a VIEW (the model fills its props, rendered
  * inline, auto-acknowledged); `confirm_booking` is an ASK (an interactive
  * component whose emitted value becomes the result). The catalog is shipped to
- * the model via the AG-UI adapter; the backend graph binds the client stubs
+ * the model via the AG-UI session; the backend graph binds the client stubs
  * (no server implementation) and ends the turn so the browser executes them.
  *
  * Under `strict: true` the typed `view`/`ask` overloads verify at compile time
@@ -85,7 +85,7 @@ function waitForAbortableDelay(ms: number, signal: AbortSignal): Promise<void> {
       description="Five browser tools demonstrate simulated weather, a cancellable status check and an explicit fictional booking decision."
     >
       <chat placeholder="Try an example prompt…" [welcomeDisabled]="true" main [agent]="agent" [clientTools]="clientTools" class="flex-1 min-w-0">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
     </example-chat-layout>
   `,
