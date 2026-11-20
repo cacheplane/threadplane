@@ -1,11 +1,18 @@
 import type { ThreadState } from '@langchain/langgraph-sdk';
-import type { DeepReadonly, PlainValue } from '@threadplane/core';
+import type {
+  AgentCheckpoint,
+  DeepReadonly,
+  PlainValue,
+} from '@threadplane/core';
 import type { LangGraphState } from './langgraph-snapshot.js';
 import { ownValue, ownValueWithSharing } from './ownership.js';
 import { record, roleOf } from './wire-message.js';
 
-/** One saved checkpoint of a loaded history page, with the state it holds. */
-export interface LangGraphCheckpoint {
+/**
+ * One saved checkpoint of a loaded history page, with the state it holds: the
+ * core contract's checkpoint, with the LangGraph record alongside.
+ */
+export interface LangGraphCheckpoint extends AgentCheckpoint {
   /** The checkpoint id; undefined when the backend sent none. */
   readonly id: string | undefined;
   /** The first node the checkpoint would run next; undefined at the end. */
@@ -24,7 +31,7 @@ export interface LangGraphBranchNode {
 }
 export interface LangGraphBranchFork {
   readonly type: 'fork';
-  /** The alternative continuations, newest first. */
+  /** The alternative continuations, oldest first: the last is the newest. */
   readonly items: readonly LangGraphBranchTree[];
 }
 /** A history page as a tree: a run of checkpoints, splitting where a
@@ -202,9 +209,10 @@ export function selectBranch(
         const node = candidate.items[0];
         return node?.type === 'node' ? node.value.id : undefined;
       };
+      // Alternatives are listed oldest first, so the last is the newest.
       next =
         item.items.find((candidate) => first(candidate) === chosen[depth]) ??
-        item.items[0];
+        item.items[item.items.length - 1];
       depth += 1;
       break;
     }

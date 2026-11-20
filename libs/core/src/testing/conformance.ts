@@ -304,7 +304,10 @@ export function agentSessionConformanceScenarios(
           (outcome) => ({ outcome }),
           () => undefined
         ),
-        new Promise<undefined>((resolve) => setTimeout(resolve, 50)),
+        // Called with no argument: Node's timer types pass none through.
+        new Promise<undefined>((resolve) =>
+          setTimeout(() => resolve(undefined), 50)
+        ),
       ]);
       // A rejection or a run still in flight says nothing about the outcome.
       if (settled)

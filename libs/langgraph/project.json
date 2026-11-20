@@ -72,6 +72,17 @@
         "command": "node ./node_modules/typescript/bin/tsc --project libs/langgraph/tsconfig.runtime-tests.json"
       }
     },
+    "runtime-live": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "commands": [
+          "node ./node_modules/typescript/bin/tsc --project libs/langgraph/tsconfig.live.json",
+          "node ./node_modules/vitest/vitest.mjs run --config libs/langgraph/vite.live.config.mts"
+        ],
+        "parallel": false
+      }
+    },
     "prepare-install": {
       "executor": "nx:run-commands",
       "cache": true,

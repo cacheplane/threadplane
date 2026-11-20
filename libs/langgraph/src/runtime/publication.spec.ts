@@ -188,19 +188,19 @@ describe('private snapshot publication', () => {
     const descriptor = { runId: 'run' };
     const publication = createPublication({
       ...snapshot(),
-      reconnect: descriptor,
+      retainedRun: descriptor,
     });
     const before = publication.getSnapshot();
     descriptor.runId = 'mutated';
-    expect(before.reconnect).toEqual({ runId: 'run' });
-    expect(Object.isFrozen(before.reconnect)).toBe(true);
+    expect(before.retainedRun).toEqual({ runId: 'run' });
+    expect(Object.isFrozen(before.retainedRun)).toBe(true);
     let calls = 0;
     publication.subscribe(() => calls++);
-    publication.publish({ ...snapshot(), reconnect: { runId: 'run' } });
+    publication.publish({ ...snapshot(), retainedRun: { runId: 'run' } });
     expect(publication.getSnapshot()).toBe(before);
     expect(calls).toBe(0);
     publication.publish(snapshot());
-    expect(publication.getSnapshot().reconnect).toBeUndefined();
+    expect(publication.getSnapshot().retainedRun).toBeUndefined();
     expect(calls).toBe(1);
   });
 
@@ -262,7 +262,11 @@ describe('private snapshot publication', () => {
           const interrupts = [
             { id: 'queued', value: { choices: ['continue'] } },
           ];
-          publication.publish({ ...snapshot('two'), state: values, interrupts });
+          publication.publish({
+            ...snapshot('two'),
+            state: values,
+            interrupts,
+          });
           values.count = 99;
           interrupts[0].value.choices.push('late mutation');
         }

@@ -7,6 +7,7 @@ import {
 } from './checkpoint-authority';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { controlledSession } from './testing/controlled-session';
+import { expectFailedLoad } from './testing/failed-load';
 import {
   checkpointEvent,
   fixture as checkpointFixture,
@@ -262,7 +263,10 @@ describe('session citation ownership', () => {
         await expect(f.session.load!()).rejects.not.toThrow(
           'PRIVATE_PROVIDER_DATA'
         );
-        expect(f.session.getSnapshot()).toBe(before);
+        expectFailedLoad(f.session.getSnapshot(), before);
+        expect(JSON.stringify(f.session.getSnapshot())).not.toContain(
+          'PRIVATE_PROVIDER_DATA'
+        );
       } else {
         const run = f.session.submit('Go');
         await f.started();

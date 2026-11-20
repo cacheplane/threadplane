@@ -50,7 +50,7 @@ const session = createFixtureSession('/api', 'checkpoint-thread', () => {
             Drop branch
           </button>
           <button
-            [disabled]="busy() || !snapshot().reconnect"
+            [disabled]="busy() || !snapshot().retainedRun"
             (click)="reconnect()"
           >
             Reconnect branch
@@ -136,7 +136,7 @@ export class CheckpointApp {
       ['text', 'Observed transcript', view.transcript],
       ['values', 'Observed values', view.values],
       ['history', 'Last loaded history page', view.history],
-      ['reconnect', 'Reconnect run', snapshot.reconnect?.runId ?? ''],
+      ['reconnect', 'Reconnect run', snapshot.retainedRun?.runId ?? ''],
       ['handlers', 'Tool handler calls', String(handlerCalls)],
     ];
   }

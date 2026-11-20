@@ -82,6 +82,10 @@ export function projectSubagents(
         status: state,
         messages: child.messages,
         toolCalls: child.toolCalls,
+        ...(child.streamingToolCalls?.length && {
+          streamingToolCalls: child.streamingToolCalls,
+        }),
+        ...(child.state && { state: child.state }),
         ...(state === 'error' && message && { error: message }),
         namespace,
       });

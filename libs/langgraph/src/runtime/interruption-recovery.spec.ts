@@ -103,7 +103,7 @@ describe('lost approval pause on a confirmed interrupted run', () => {
       status: 'idle',
       error: undefined,
     });
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
     expect(f.session.getSnapshot().interrupts).toEqual([
       { id: 'approval', value: 'Proceed?' },
     ]);
@@ -124,7 +124,7 @@ describe('lost approval pause on a confirmed interrupted run', () => {
         message: 'The LangGraph run did not complete successfully.',
       },
     });
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
     expect(f.session.getSnapshot().interrupts).toEqual([]);
     await expect(f.session.reconnect()).rejects.toThrow();
   });
@@ -159,7 +159,7 @@ describe('read-only recovery for a dispatched run', () => {
     const original = f.session.getSnapshot();
     expect(original).toMatchObject({
       status: 'error',
-      reconnect: { runId: 'run-1' },
+      retainedRun: { runId: 'run-1' },
       error: {
         kind: 'interrupted',
         retryable: false,
@@ -181,7 +181,7 @@ describe('read-only recovery for a dispatched run', () => {
       status: 'idle',
       error: undefined,
     });
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
     expect(f.session.getSnapshot().messages.at(-1)).toMatchObject({
       content: committed.content,
       delivery: { outcome: 'success' },
@@ -200,7 +200,7 @@ describe('read-only recovery for a dispatched run', () => {
       status: 'idle',
       error: undefined,
     });
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
     expect(f.session.getSnapshot().messages.at(-1)).toMatchObject({
       content: committed.content,
       delivery: { outcome: 'success' },
@@ -213,7 +213,7 @@ describe('read-only recovery for a dispatched run', () => {
     expect(f.getHistory).toHaveBeenCalledTimes(1);
     expect(f.session.getSnapshot()).toMatchObject({
       status: 'error',
-      reconnect: { runId: 'run-1' },
+      retainedRun: { runId: 'run-1' },
       error: { recovery: 'check' },
     });
     f.getHistory.mockImplementation(async () => [f.turn([committed])]);
@@ -222,7 +222,7 @@ describe('read-only recovery for a dispatched run', () => {
       status: 'idle',
       error: undefined,
     });
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
   });
 
   it('still offers nothing without history even when the run is retained for reconnect', async () => {
@@ -230,7 +230,7 @@ describe('read-only recovery for a dispatched run', () => {
     expect(await f.session.submit('Question')).toBe('interrupted');
     expect(f.session.checkStatus).toBeUndefined();
     expect(f.session.getSnapshot()).toMatchObject({
-      reconnect: { runId: 'run-1' },
+      retainedRun: { runId: 'run-1' },
       error: {
         recovery: 'none',
         message: RECOVERY_COPY.messages.none,
@@ -254,7 +254,7 @@ describe('read-only recovery for a dispatched run', () => {
         message: 'The LangGraph run did not complete successfully.',
       },
     });
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
     await expect(f.session.reconnect()).rejects.toThrow();
     // A second check has nothing left to inspect.
     await f.session.checkStatus?.();
@@ -376,7 +376,7 @@ describe('read-only recovery for a resume attempt', () => {
       error: undefined,
     });
     expect(f.session.getSnapshot().interrupts).toEqual([]);
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
     expect(f.session.getSnapshot().messages.at(-1)).toMatchObject({
       id: 'resumed-answer',
       content: 'Approved work',
@@ -545,7 +545,7 @@ describe('read-only recovery for a resume attempt', () => {
     );
     expect(f.getHistory).toHaveBeenCalledTimes(1);
     expect(f.session.getSnapshot().interrupts).toEqual([again]);
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
   });
 
   it('does not correlate when the resumed turn user message is missing from history', async () => {

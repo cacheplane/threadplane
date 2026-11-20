@@ -142,7 +142,7 @@ function selectedFixture(
 ) {
   let runtime = {
     status,
-    reconnect,
+    retainedRun: reconnect,
     history: [],
     interrupts: [] as { id: string; value: unknown }[],
     messages: [],

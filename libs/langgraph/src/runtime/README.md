@@ -200,16 +200,17 @@ the snapshot shows the new one.
 `historyState: true` also keeps each loaded checkpoint's state and publishes
 three views of the page, all absent until a page has been read:
 
-- `snapshot.checkpoints`: the page, newest first. Each entry has the checkpoint
-  `id`, a `label` (the first node it would run next), its `values` (the saved
-  graph state, `messages` included) and `saved`, the checkpoint as the backend
-  sent it.
+- `snapshot.checkpoints`: the page, oldest first, as the core contract lists a
+  history. Each entry is the core `AgentCheckpoint`, with the checkpoint `id`,
+  a `label` (the first node it would run next) and its `values` (the saved
+  graph state, `messages` included), plus `saved`, the checkpoint as the
+  backend sent it. `snapshot.history` keeps the backend's order, newest first.
 - `snapshot.messageCheckpoints`: a record from an assistant message id to the
   id of the newest checkpoint whose assistant messages end with it. Checkpoints
   without an id are skipped.
 - `snapshot.branchTree`: the page arranged by parent checkpoint. A `sequence`
   holds `node` items and, where a checkpoint has several children, a `fork`
-  whose `items` are the alternative sequences, newest first. A node's `value`
+  whose `items` are the alternative sequences, oldest first. A node's `value`
   is the entry in `checkpoints` and its `path` lists the fork choices that lead
   to it. A page that starts mid-thread is rooted at its newest lineage.
 
@@ -224,8 +225,8 @@ large.
 as `snapshot.branch`, absent for the default branch. `branch` is the fork
 choices joined with `>`. It is a view selection: nothing is requested and the
 transcript does not change. `selectBranch(tree, branch)` returns that branch's
-checkpoints, oldest first, following the newest continuation at any fork the
-branch does not name.
+checkpoints, oldest first, following the newest continuation (the last of a
+fork's `items`) at any fork the branch does not name.
 
 ## Run settings
 
@@ -260,6 +261,13 @@ with `run.command` to route or update the graph, or after an external state
 update. It is recovered, retried and reconnected like a resume, but it answers
 nothing and does not mark `interruptResolvedAt`.
 
+`runWithoutMessage({ state }?, options?)` is the core contract's command for
+the same run. A `state` is sent as the run's input, so the graph merges it and
+runs on the conversation as it stands; without one the input is null. Either
+way, client tool results that were settled and not yet written travel with the
+run as its `messages`, so they are never dropped by a run that adds no user
+message.
+
 ### A run from a checkpoint
 
 `run.checkpointId` starts the run from that checkpoint; the thread gains a
@@ -282,6 +290,12 @@ run is joined from its first event with `transport.joinStream`; its user
 message enters the transcript at that point. Queued runs are not joined after
 an outcome that offers a check or a retry, so that recovery is not replaced;
 they are joined after the next run that ends cleanly.
+
+LangGraph orders queued runs by when they were created. When the transport
+reports run creation (the owned transport does), a queued submission is sent
+only after the active run exists on the backend, or has streamed its first
+event, or has ended. Queued any earlier, it could run ahead of the run it was
+meant to follow.
 
 `cancelQueued(runId)` removes one run and `clearQueue()` removes all, each
 asking the backend to cancel through `transport.cancelRun`; the removed
@@ -348,7 +362,7 @@ when the stream dropped, or a newer run may have cancelled this one. The runtime
 disambiguates through history before settling; pending interrupts for this turn
 mean paused, anything else is the failed run.
 
-`snapshot.reconnect` and `session.reconnect()` are LangGraph-specific extensions,
+`snapshot.retainedRun` and `session.reconnect()` are LangGraph-specific extensions,
 not part of the core contract: they join the retained physical run from its last
 cursor when `joinStream` and `getRunStatus` exist and the run is not confirmed
 ended. Portable callers use `checkStatus()`; a resolved check clears the retained
@@ -539,6 +553,82 @@ A child agent keeps its reference while its child graph and status are
 unchanged. Child agents give no command authority: answering a pause is the
 root session's `resume`.
 
+## Core contract members
+
+The session produces the optional members of the core contract
+(`@threadplane/core`, "What a session may also carry") with the core types.
+
+- **Structured content.** A message whose wire content holds more than text
+  (an image, an inline tool invocation, a tool result) carries `blocks`, the
+  core `ContentBlock` list; `content` is still the text of its text blocks. A
+  text-only message, however the backend split it, has no `blocks`. Chunks
+  carry fragments, so blocks arrive with the full message.
+  `submit({ message, blocks })` sends text and image blocks as the human
+  message's content (`image` becomes `image_url`) and shows them on the user
+  message; a tool
+  block is rejected before anything is sent. `Message.extra` holds the wire
+  fields the transcript does not otherwise publish (`additional_kwargs`,
+  `response_metadata`, `usage_metadata`, `tool_calls`, a tool message's
+  `status` and `artifact`), only on a session created with `rawMessages: true`.
+- **Tool calls.** `snapshot.streamingToolCalls` lists the calls whose
+  arguments the root model is still writing, from the message stream's tool
+  call chunks: `argsText` as written and `args`, a best reading of it. A call
+  leaves the list when its finalized form enters `toolCalls` under the same
+  id, and nothing is left when the run settles. A child's are in
+  `subagents[].streamingToolCalls`. A tool message with `status: 'error'`
+  settles its call as `error`, with the message text as `error`, live and from
+  history; a failed delegation therefore makes its child `error`. A tool
+  message whose content is an array gives the call `parts`, that array.
+- **Error diagnostics.** `snapshot.errorDiagnostic` describes what the
+  published error was classified from, when the session read it: an error
+  event the backend sent, a failure with an HTTP status, or a malformed
+  response. It is absent for a failure reported in the session's own words (a
+  dropped stream, a failed history read, a thread that could not be created)
+  and always absent with a protected owned transport, which keeps failures
+  generic.
+- **Child agents.** `subagents[].state` is the child graph's state. The
+  `pending` status is never reported: LangGraph names a child by a namespace
+  that exists only once the child runs, so a child asked for and not yet
+  started has no stable id to be listed under.
+- **Refused input.** `snapshot.inputBlocked` is present, with a `reason` and a
+  `message`, exactly while `submit` would reject: `tool-conflict` (a tool
+  invocation identity conflict), `checkpoint` (a checkpoint branch with active
+  or unsettled work), `unsettled-tools` (a tool whose result is unresolved)
+  and `persisting-tools` (tool results being written). A pending interrupt
+  does not block input here: a new message replaces the pause.
+- **History.** `checkpoints` and `messageCheckpoints` are the core fields, on
+  a session created with `historyState: true`: see "History with state".
+  `messageCheckpoints` keeps the Angular agent's rule, the newest checkpoint
+  whose assistant messages end with the message, which for a message followed
+  by another turn is the checkpoint that already holds the next prompt.
+- **Running without a message.** `runWithoutMessage`: see "A run with no
+  input".
+- **Resume options.** `resume(responses, { message, blocks, state })` sends a
+  user message and a state update in the same request as the answers, in the
+  resume command's `update`, merged over `run.command.update` (which must then
+  be a record). The message is added to the transcript under the id that is
+  sent, and the turn that follows is anchored on it.
+- **Client tools.** A session created without a fixed `tools` map has
+  `session.clientTools`. `setCatalog(specs)` replaces the catalog sent as
+  `client_tools` with later runs. Once a catalog has been declared,
+  `snapshot.pendingClientTools` lists the calls to declared tools that have no
+  result, between runs only; each is the entry `toolCalls` lists.
+  `settle(id, result)` records a result: the call shows it at once, and its
+  tool message (`client-tool-result-<id>`) is staged. `flush()` writes the
+  staged messages with `transport.updateState` without starting a run, keeps
+  them staged when the write fails, and rejects without that method.
+  `resolve(id, result)` settles and then starts a run without a message that
+  carries the staged messages and the catalog. Each throws for an id that is
+  not pending. A session with a fixed `tools` map runs its tools itself and
+  has no `clientTools`.
+- **Render-store updates.** A `custom` frame `{ name: 'state_update', data }`
+  is delivered by `onCustomEvent` under that name, so the core helper
+  `onAgentStateUpdate(session, listener)` follows it.
+
+`snapshot.retainedRun` (formerly `snapshot.reconnect`) names the run
+`reconnect()` can join. It was renamed so that a binding which exposes snapshot
+fields and commands on one object can show both.
+
 ## Raw LangGraph data
 
 The transcript in `snapshot.messages` is text and tool data. A view that needs
@@ -647,7 +737,9 @@ tool-started children from what the saved thread records:
   task carries one;
 - the child's own newest checkpoint under that namespace, read through the
   optional `transport.getChildState`, which fills `messages`, `toolCalls` and
-  `state` shortly after the load resolves.
+  `state` shortly after the load resolves. LangGraph API 0.7.96 answers that
+  read with HTTP 400 for a child agent started inside a tool, so against that
+  backend a restored child has its relation and status and no transcript.
 
 A restored child keeps the namespace a continued run streams under, so
 resuming after a reload updates the same child. A call with a result but no
@@ -664,8 +756,11 @@ Creating a session makes no request. With `autoLoad: true`, a session that has
 a `threadId` and a transport that can read history calls `load()` on the next
 microtask, unless the application issued a command first. On such a session
 `snapshot.loading` is `true` while any history read is in flight, automatic or
-explicit, and absent otherwise. A failed automatic read is published as a
-`server` error with no recovery; an explicit `load()` still rejects instead.
+explicit, and absent otherwise. A failed read, automatic or explicit, is
+published as a `server` error with no recovery ("The conversation could not be
+loaded."); an explicit `load()` also rejects. Nothing loaded is replaced, what
+was thrown stays out of the snapshot, and the next successful read clears the
+error.
 
 ## Thread directory
 
@@ -703,8 +798,20 @@ changes a thread; `refreshDirectoryOnRunEnd` refreshes after each run.
 ## Verification
 
 Run `langgraph:runtime-quality`, `langgraph:runtime-type-tests` and
-`langgraph:type-tests`. Actual server coverage lives in the client-tools and
-interrupts cockpit `checkpoint-session.spec.ts` files; adjacent protocol tests
+`langgraph:type-tests`. `core-conformance.spec.ts` runs the core contract's
+session, history and interrupt conformance suites against this session.
+
+`npx nx run langgraph:runtime-live` runs the live-backend suite in
+`libs/langgraph/live`: real sessions on the owned SDK transport against real
+`langgraph dev` processes for the cockpit graphs, with the model replaced by
+recorded fixtures. It needs `uv`, Python 3.12 and the `langgraph` CLI, and
+starts one backend at a time. It covers `transcriptNodeNames`, child agents and
+their relation to tool calls, `restoreSubagents`, history with state,
+`messageCheckpoints`, a run from a checkpoint, `setBranch`, run settings,
+queueing, `joinStream`, `autoLoad`, interrupts and `resume` with a state and a
+message, client tools, and the core members described below. Further server
+coverage lives in the client-tools and interrupts cockpit
+`checkpoint-session.spec.ts` files; adjacent protocol tests
 characterize the locked SDK/backend behavior. Installed Angular/React consumers
 verify shared ownership and lifecycle regressions separately. No replay API,
 branch-tree UI, cross-client lease, public package migration or release is implied.
