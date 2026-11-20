@@ -1,5 +1,5 @@
 import type { Message } from '@ag-ui/client';
-import { ownTranscript, type Transcript } from './transcript.js';
+import { namedApart, ownTranscript, type Transcript } from './transcript.js';
 
 /** Applies a MESSAGES_SNAPSHOT with @ag-ui/client 1.0.1's role policy and the
  * snapshot's own order:
@@ -15,34 +15,46 @@ import { ownTranscript, type Transcript } from './transcript.js';
  * its call and reasoning before the wrong step, in display and in the next
  * request), reject duplicate IDs, always replace same-ID records, leave
  * null-attribution sanitation to request egress, and do not read the client's
- * `authoritativeActivityTypes` snapshot metadata. */
+ * `authoritativeActivityTypes` snapshot metadata.
+ * An activity record and a tool result may share an ID and are then two
+ * records (see `namedApart`): neither replaces nor duplicates the other. */
 export function reconcileTranscript(
   previous: Transcript,
   snapshot: readonly Message[] | Transcript
 ): Transcript {
   const captured = ownTranscript(snapshot);
-  const incoming = new Set<string>();
+  const incoming = new Map<string, Transcript[number][]>();
+  /** The record of `among` that `message` is, when it is there. */
+  const same = (
+    among: readonly Transcript[number][] | undefined,
+    message: Transcript[number]
+  ) => among?.find((other) => !namedApart(other.role, message.role));
   let hasActivity = false;
   let hasReasoning = false;
   for (const message of captured) {
-    if (incoming.has(message.id))
+    const named = incoming.get(message.id);
+    if (same(named, message))
       throw new TypeError('Duplicate message IDs in snapshot');
-    incoming.add(message.id);
+    if (named) named.push(message);
+    else incoming.set(message.id, [message]);
     if (message.role === 'activity') hasActivity = true;
     if (message.role === 'reasoning') hasReasoning = true;
   }
 
-  const previousIds = new Set<string>();
+  const previousIds = new Map<string, Transcript[number][]>();
   const leading: Transcript[number][] = [];
-  const kept = new Map<string, Transcript[number][]>();
+  const kept = new Map<Transcript[number], Transcript[number][]>();
   let anchor: Transcript[number][] = leading;
   for (const message of previous) {
-    if (previousIds.has(message.id))
+    const named = previousIds.get(message.id);
+    if (same(named, message))
       throw new TypeError('Duplicate message IDs in previous transcript');
-    previousIds.add(message.id);
-    if (incoming.has(message.id)) {
-      anchor = [];
-      kept.set(message.id, anchor);
+    if (named) named.push(message);
+    else previousIds.set(message.id, [message]);
+    const replacement = same(incoming.get(message.id), message);
+    if (replacement) {
+      anchor = kept.get(replacement) ?? [];
+      kept.set(replacement, anchor);
     } else if (
       (message.role === 'activity' && !hasActivity) ||
       (message.role === 'reasoning' && !hasReasoning)
@@ -52,7 +64,7 @@ export function reconcileTranscript(
   const result = [...leading];
   for (const message of captured) {
     result.push(message);
-    const local = kept.get(message.id);
+    const local = kept.get(message);
     if (local) result.push(...local);
   }
   if (

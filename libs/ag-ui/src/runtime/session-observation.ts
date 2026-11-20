@@ -11,7 +11,7 @@ import type {
   DeepReadonly,
   PlainValue,
 } from '@threadplane/core';
-import { ownTranscript, type Transcript } from './transcript.js';
+import { namedApart, ownTranscript, type Transcript } from './transcript.js';
 import {
   applySubagent,
   restoredSubagents,
@@ -109,11 +109,15 @@ export function failedWithRunError(snapshot: Observation): boolean {
 }
 /** Session policy, not an SDK guarantee: identifiers are global in history. */
 export function assertTranscriptIdentity(transcript: Transcript): void {
-  const messages = new Set<string>();
+  const messages = new Map<string, Transcript[number]['role'][]>();
   const calls = new Set<string>();
   for (const message of transcript) {
-    if (messages.has(message.id)) throw new TypeError('Duplicate message ID');
-    messages.add(message.id);
+    const roles = messages.get(message.id);
+    // An activity record and a tool result may share an identifier.
+    if (roles?.some((role) => !namedApart(role, message.role)))
+      throw new TypeError('Duplicate message ID');
+    if (roles) roles.push(message.role);
+    else messages.set(message.id, [message.role]);
     if (message.role !== 'assistant') continue;
     for (const call of message.toolCalls ?? []) {
       if (calls.has(call.id)) throw new TypeError('Duplicate tool call ID');

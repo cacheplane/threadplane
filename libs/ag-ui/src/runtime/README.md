@@ -247,10 +247,18 @@ const session = createSession({ threadId, url });
   response that was not OK is why the run failed, and clears it with the next
   run.
 - A backend `RUN_ERROR` for a submission is `retryable: true` with
-  `recovery: 'retry'`. Every other error has
+  `recovery: 'retry'`. So is a submission whose stream closed before it
+  produced any event, as the Angular adapter treated it: nothing of that run
+  was shown, and `retry` rebuilds the request from what it sent. Its error is
+  `interrupted` with the message "The response was interrupted before it
+  started. Try again." and no detail. A regenerate and a retry count as a
+  submission here; an answer to a pause and a continuation that carried local
+  tool results never do. Every other error has
   `retryable: false` and `recovery: 'none'`: a stream that ended without a
-  terminal, a response that was not OK and a request that got no response leave
-  open whether the backend did the work.
+  terminal after any event, a response that was not OK, a request that got no
+  response and a stream that failed instead of closing leave
+  open whether the backend did the work. What a failure says about itself never
+  makes it retryable.
 - An answer is retryable in one case: its request provably reached no run. It
   was never made, or the backend refused it with its own `RUN_ERROR` before
   any `RUN_STARTED`. The pause is then pending again, the error is
@@ -393,7 +401,8 @@ await session.submit({ message: 'Go on', state: { topic: 'refunds' } });
 ### Retry
 
 Every session has `retry()`. Without a client-tool catalog it sends the
-last submission again after its run failed with a backend `RUN_ERROR`,
+last submission again after its run failed with a backend `RUN_ERROR`, or
+after its stream closed before it produced any event,
 rebuilding the request from exactly the history and state that submission sent.
 No second user message is added, and the failed run's output and state changes
 are dropped. It resolves `aborted` without sending while a run is active, when
@@ -417,6 +426,13 @@ failure leaves the backend outcome open.
   an unsupported call, the group limit) is not a retryable failure.
 - A `RUN_ERROR` settles that the run failed, not that it did nothing. Work the
   backend did before failing can be repeated.
+- A stream that closed before any event does not prove the request did
+  nothing either: a server that took the request and lost its stream before
+  the first byte looks the same. The retry is offered because the request is
+  rebuilt from what was sent and adds no second user message. With a
+  client-tool catalog it applies to a command's first request only, and lifts
+  the same `uncertain` blocker. A continuation that closed that way is not
+  retried.
 
 ### Regenerate
 
@@ -941,9 +957,31 @@ What these backends showed:
   does not list it.
 - Mastra needs the `interruptEvent` of `mastra-command`. Answered with
   `legacy-command`, it pauses again.
-- An activity record and a tool result cannot share an identifier: the session
-  keeps one record for each. The Angular adapter kept activities apart from
-  messages and accepted that.
+- The activity convention names a delegation's activity record with its tool
+  call id, and today's graph gives the tool result that id too. The session
+  keeps one record of each (see "Activity records and tool results").
+
+## Activity records and tool results
+
+Record identifiers are unique in a transcript, with one exception: an activity
+record and a tool result may share one. A backend in the activity convention
+names a delegation's activity record with its tool call id, and may name the
+tool result the same way. The Angular adapter kept activities in a store apart
+from messages, so the two never met. The session keeps both in one transcript
+as two records.
+
+- A `TOOL_CALL_RESULT` whose `messageId` an activity record has adds or updates
+  the tool result and leaves the activity record alone. An `ACTIVITY_SNAPSHOT`
+  or `ACTIVITY_DELTA` whose `messageId` a tool result has does the same the
+  other way round. Either may arrive first.
+- A `MESSAGES_SNAPSHOT` matches each of the two with its own kind: a tool
+  result in the snapshot replaces the tool result and leaves the activity
+  record under the rule below.
+- A restored or saved thread may hold the pair. Requests still send the tool
+  result and never the activity record.
+- Any other two records with one identifier are still one record or an error,
+  as before: two tool results, two activity records, or either with a user,
+  assistant or reasoning record.
 
 ## Messages snapshots
 

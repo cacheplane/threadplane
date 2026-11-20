@@ -177,6 +177,13 @@ export const INTERRUPTED_COPY = Object.freeze({
     'The connection dropped. We could not confirm whether the request completed.',
   detail: 'Trying again could repeat it.',
 });
+/**
+ * Shown for a stream that closed before it produced any event, when the
+ * request is one `retry` can send again. The LangGraph runtime keeps the same
+ * wording for its `retry` recovery; a runtime spec fails when the two drift.
+ */
+export const UNANSWERED_COPY =
+  'The response was interrupted before it started. Try again.';
 const FAILED = 'The agent request failed.';
 /** Shown when the saved thread could not be read or written. */
 export const STORAGE_COPY =
@@ -226,10 +233,12 @@ function failure(
     : protect
     ? PROTECTED_COPY
     : reported || FAILED;
-  const detail = interrupted ? INTERRUPTED_COPY.detail : undefined;
+  const detail =
+    interrupted && !unanswered ? INTERRUPTED_COPY.detail : undefined;
   // `retryable` is the owner's word: the backend's own RUN_ERROR settled what
-  // happened, or the request provably never left. Any other failure leaves
-  // open whether the request did its work, so sending it again could repeat it.
+  // happened, the request provably never left, or its stream closed before
+  // any event. Any other failure leaves open whether the request did its
+  // work, so sending it again could repeat it.
   // An answer that was sent and not proven taken can be asked about, when the
   // application configured a reconciler to ask.
   const recovery = retryable
@@ -303,8 +312,6 @@ function usage(native: Observation): AgentUsage | undefined {
   usageViews.set(reported, projected);
   return projected ?? undefined;
 }
-
-const diagnostics = new WeakMap<object, AgentErrorDiagnostic>();
 
 /**
  * Records what a failed run was classified from, for the `errorDiagnostic` a

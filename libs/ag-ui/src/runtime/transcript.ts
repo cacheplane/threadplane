@@ -4,6 +4,22 @@ import { copyData } from './copy-data.js';
 
 export type Transcript = readonly DeepReadonly<Message>[];
 
+/**
+ * True for an activity record and a tool result. Those two are named
+ * independently: a backend may give a delegation's activity record the
+ * identifier of that delegation's tool result, and the transcript then holds
+ * one record of each. Any other two records with one identifier are the same
+ * record.
+ */
+export function namedApart(
+  a: Transcript[number]['role'],
+  b: Transcript[number]['role']
+): boolean {
+  return (
+    (a === 'activity' && b === 'tool') || (a === 'tool' && b === 'activity')
+  );
+}
+
 /** Captures full observed protocol data without interpreting or normalizing it. */
 export function ownTranscript(
   messages: readonly Message[] | Transcript

@@ -499,6 +499,24 @@ function answerUnsent(
   );
 }
 
+/**
+ * True when the failed run of `observation` is `runId` and its stream closed
+ * before it produced any event. The owner passes the run of a saved request
+ * it marked so, and `undefined` otherwise.
+ */
+function closedUnanswered(
+  observation: Observation,
+  runId: string | undefined
+): boolean {
+  return (
+    runId !== undefined &&
+    observation.status === 'error' &&
+    observation.run?.id === runId &&
+    observation.run.outcome === 'interrupted' &&
+    !observation.decision
+  );
+}
+
 /** Tells the lifecycle recorder about each publication. */
 function followLifecycle(
   publication: {
@@ -615,6 +633,8 @@ interface Attempt {
   starting: boolean;
   /** The backend reported `RUN_STARTED` for this request. */
   started: boolean;
+  /** An event of this request reached the session. */
+  observed: boolean;
   finished: boolean;
 }
 
@@ -714,6 +734,8 @@ export function createSession(
         readonly runId: string;
         readonly transcript: Transcript;
         readonly state: PlainValue;
+        /** Its stream closed before any event, so it can be sent again. */
+        readonly unanswered?: true;
       }
     | undefined;
   /** The latest answer sent, kept until another command replaces it. */
@@ -726,7 +748,12 @@ export function createSession(
     createPresenter(
       stateType,
       (observation) =>
-        failedWithRunError(observation) || answerUnsent(observation, answered),
+        failedWithRunError(observation) ||
+        closedUnanswered(
+          observation,
+          saved?.unanswered ? saved.runId : undefined
+        ) ||
+        answerUnsent(observation, answered),
       persistence?.reconcile !== undefined,
       instruments.protect
     )
@@ -800,6 +827,17 @@ export function createSession(
       if (outcome === 'success' && pausedByNotice(decision, attempt.id))
         outcome = 'paused';
       attempt.ended?.(outcome);
+      // A submission whose stream closed before any event is sent again by
+      // `retry`: nothing it produced can be repeated on screen, and the
+      // request is rebuilt from what it sent. An answer never qualifies.
+      if (
+        saved &&
+        saved.runId === attempt.id &&
+        outcome === 'interrupted' &&
+        !attempt.observed &&
+        !decision
+      )
+        saved = { ...saved, unanswered: true };
       instruments.cause('run:end');
       const run = Object.freeze({
         ...previous.run,
@@ -875,6 +913,7 @@ export function createSession(
       input,
       (delivered) => {
         if (!current(attempt)) return;
+        attempt.observed = true;
         if (delivered.type === 'RUN_STARTED') attempt.started = true;
         lifecycle.mark('streamStartedAt');
         // createRun delivers the SDK's normalized/verified union through its
@@ -965,6 +1004,7 @@ export function createSession(
       cleanup: () => undefined,
       starting: false,
       started: false,
+      observed: false,
       finished: false,
     };
     void done.then(resolve);
@@ -1373,12 +1413,15 @@ export function createSession(
             resolve('aborted');
             return;
           }
-          if (!failedWithRunError(previous)) {
+          if (
+            !failedWithRunError(previous) &&
+            !closedUnanswered(previous, last.unanswered && last.runId)
+          ) {
             resolve('error');
             return;
           }
           const id = crypto.randomUUID();
-          saved = { ...last, runId: id };
+          saved = { runId: id, transcript: last.transcript, state: last.state };
           // The failed run's output and state changes are dropped: the request
           // is rebuilt from exactly what the failed submission sent.
           admit(
@@ -1490,6 +1533,8 @@ function createToolsOwner(
         readonly runId: string;
         readonly transcript: Transcript;
         readonly state: PlainValue;
+        /** Its stream closed before any event, so it can be sent again. */
+        readonly unanswered?: true;
       }
     | undefined;
   /**
@@ -1502,7 +1547,8 @@ function createToolsOwner(
     ).clientTools?.blocker;
     const runId = saved?.runId;
     return (
-      failedWithRunError(observation) &&
+      (failedWithRunError(observation) ||
+        closedUnanswered(observation, saved?.unanswered && runId)) &&
       runId !== undefined &&
       runId === observation.run?.id &&
       (!blocker ||
@@ -1523,6 +1569,8 @@ function createToolsOwner(
     starting: boolean;
     /** The backend reported `RUN_STARTED` for this request. */
     started: boolean;
+    /** An event of this request reached the session. */
+    observed: boolean;
     settled: boolean;
     fetchInvoked: boolean;
   }
@@ -1848,6 +1896,18 @@ function createToolsOwner(
         terminal.outcome?.type === 'interrupt')
     )
       pausedPhysical = physical;
+    // A command's first request whose stream closed before any event is sent
+    // again by `retry`. An answer and a continuation that carried local tool
+    // results never qualify: the backend may have taken them.
+    if (
+      saved &&
+      saved.runId === physical.id &&
+      outcome === 'interrupted' &&
+      !physical.observed &&
+      physical.kind !== 'client-tool-continuation' &&
+      !decision
+    )
+      saved = { ...saved, unanswered: true };
     const nativeSuccess =
       !noticed &&
       terminal?.type === 'RUN_FINISHED' &&
@@ -2007,6 +2067,7 @@ function createToolsOwner(
     physical.handle = runner.start(
       input,
       (delivered) => {
+        physical.observed = true;
         publication.command(() => {
           if (
             !owns(command, physical) ||
@@ -2152,6 +2213,7 @@ function createToolsOwner(
       }),
       starting: false,
       started: false,
+      observed: false,
       settled: false,
       fetchInvoked: false,
     };
@@ -2206,6 +2268,7 @@ function createToolsOwner(
       }),
       starting: false,
       started: false,
+      observed: false,
       settled: false,
       fetchInvoked: false,
     };

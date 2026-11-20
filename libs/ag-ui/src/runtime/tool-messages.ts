@@ -8,7 +8,7 @@ import {
   type ToolCallResultEvent,
 } from '@ag-ui/client';
 import { copyData } from './copy-data.js';
-import type { Transcript } from './transcript.js';
+import { namedApart, type Transcript } from './transcript.js';
 
 export type ToolMessageEvent =
   | ToolCallStartEvent
@@ -19,10 +19,15 @@ export type ToolMessageEvent =
 type Assistant = Extract<Transcript[number], { role: 'assistant' }>;
 type Call = NonNullable<Assistant['toolCalls']>[number];
 
-function messageIndex(previous: Transcript, id: string): number {
+/**
+ * `result` looks for a tool result's own record: an activity record with the
+ * same identifier is a different record (see `namedApart`).
+ */
+function messageIndex(previous: Transcript, id: string, result = false): number {
   let found = -1;
   for (let index = 0; index < previous.length; index++) {
     if (previous[index].id !== id) continue;
+    if (result && namedApart(previous[index].role, 'tool')) continue;
     if (found !== -1) throw new TypeError('Duplicate target message ID');
     found = index;
   }
@@ -67,7 +72,7 @@ export function applyToolMessage(
   const selected = selectedCall(previous, toolCallId);
   if (type === EventType.TOOL_CALL_RESULT) {
     const { messageId, content } = event;
-    const index = messageIndex(previous, messageId);
+    const index = messageIndex(previous, messageId, true);
     const current = index === -1 ? undefined : previous[index];
     if (
       current &&
