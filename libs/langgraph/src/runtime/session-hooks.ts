@@ -71,7 +71,10 @@ export type LangGraphDevtoolsSignal =
 
 /** A run a development tool scripted: its frames stand in for the network. */
 export interface LangGraphScriptedRun {
-  readonly frames: readonly { readonly event: string; readonly data: unknown }[];
+  readonly frames: readonly {
+    readonly event: string;
+    readonly data: unknown;
+  }[];
 }
 export interface LangGraphScriptedRuns {
   /** The armed run, taken once, or null when none is armed. */

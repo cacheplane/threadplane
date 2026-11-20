@@ -89,8 +89,9 @@ export async function assertRunSettings() {
   await session.submit('Go', { multitaskStrategy: 'enqueue' });
   // @ts-expect-error An unknown strategy is rejected.
   await session.submit('Go', { run: { multitaskStrategy: 'later' } });
+  const checkpoint = { thread_id: 't', checkpoint_ns: '', checkpoint_id: 'c' };
   // @ts-expect-error A fork always carries a message.
-  await session.fork({ thread_id: 't', checkpoint_ns: '', checkpoint_id: 'c' }, null);
+  await session.fork(checkpoint, null);
 }
 
 export async function assertJoinStream() {

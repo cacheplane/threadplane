@@ -107,13 +107,14 @@ export function projectBranchTree(
       value,
       path: [],
     }));
-    return ownValue(root as unknown as PlainValue) as unknown as LangGraphBranchTree;
+    return ownValue(
+      root as unknown as PlainValue
+    ) as unknown as LangGraphBranchTree;
   }
   const ids = new Set<string>();
   const children = new Map<string, LangGraphCheckpoint[]>();
   for (const checkpoint of checkpoints) {
-    const parent =
-      checkpoint.saved.parent_checkpoint?.checkpoint_id ?? ROOT;
+    const parent = checkpoint.saved.parent_checkpoint?.checkpoint_id ?? ROOT;
     const siblings = children.get(parent) ?? [];
     siblings.push(checkpoint);
     children.set(parent, siblings);
@@ -172,7 +173,9 @@ export function projectBranchTree(
       pending.push({ id: value.id, sequence, path });
     }
   }
-  return ownValue(root as unknown as PlainValue) as unknown as LangGraphBranchTree;
+  return ownValue(
+    root as unknown as PlainValue
+  ) as unknown as LangGraphBranchTree;
 }
 
 /**

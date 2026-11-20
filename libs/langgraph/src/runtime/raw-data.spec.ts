@@ -78,9 +78,13 @@ describe('raw LangGraph messages', () => {
 
   it('gives a streaming message as its latest chunk with the text so far', async () => {
     const active = controlledTransport<StreamEvent>();
-    const session = fixture([], { rawMessages: true }, {
-      stream: () => active.stream,
-    });
+    const session = fixture(
+      [],
+      { rawMessages: true },
+      {
+        stream: () => active.stream,
+      }
+    );
     const run = session.submit('Hi');
     for (const content of ['Hel', 'lo']) {
       active.release({
@@ -119,14 +123,20 @@ describe('raw LangGraph messages', () => {
   it('follows a history load and is absent without the option', async () => {
     const history = [
       {
-        values: { messages: [{ type: 'human', id: 'u', content: 'Hi' }, final] },
+        values: {
+          messages: [{ type: 'human', id: 'u', content: 'Hi' }, final],
+        },
         next: [],
         tasks: [],
       } as unknown as ThreadState,
     ];
-    const session = fixture([], { rawMessages: true }, {
-      getHistory: async () => history,
-    });
+    const session = fixture(
+      [],
+      { rawMessages: true },
+      {
+        getHistory: async () => history,
+      }
+    );
     await session.load?.();
     expect(session.getSnapshot().langGraphMessages).toEqual([
       { type: 'human', id: 'u', content: 'Hi' },
@@ -178,10 +188,20 @@ describe('tool progress', () => {
     expect('toolProgress' in session.getSnapshot()).toBe(false);
     const run = session.submit('Hi');
     active.release(
-      tool({ event: 'on_tool_start', name: 'search', toolCallId: 'c1', input: { q: 'x' } })
+      tool({
+        event: 'on_tool_start',
+        name: 'search',
+        toolCallId: 'c1',
+        input: { q: 'x' },
+      })
     );
     active.release(
-      tool({ event: 'on_tool_event', name: 'search', toolCallId: 'c1', data: { step: 1 } })
+      tool({
+        event: 'on_tool_event',
+        name: 'search',
+        toolCallId: 'c1',
+        data: { step: 1 },
+      })
     );
     active.release(tool({ event: 'on_tool_start', name: 'other' }));
     await vi.waitFor(() =>
@@ -197,9 +217,16 @@ describe('tool progress', () => {
       ])
     );
     active.release(
-      tool({ event: 'on_tool_end', name: 'search', toolCallId: 'c1', output: 'ok' })
+      tool({
+        event: 'on_tool_end',
+        name: 'search',
+        toolCallId: 'c1',
+        output: 'ok',
+      })
     );
-    active.release(tool({ event: 'on_tool_error', name: 'other', error: 'boom' }));
+    active.release(
+      tool({ event: 'on_tool_error', name: 'other', error: 'boom' })
+    );
     active.release({
       type: 'values',
       data: { messages: [{ type: 'ai', id: 'a', content: 'Done' }] },
@@ -207,12 +234,14 @@ describe('tool progress', () => {
     active.finish();
     await run;
     expect(
-      session.getSnapshot().toolProgress?.map((entry) => [
-        entry.name,
-        entry.state,
-        entry.result,
-        entry.error,
-      ])
+      session
+        .getSnapshot()
+        .toolProgress?.map((entry) => [
+          entry.name,
+          entry.state,
+          entry.result,
+          entry.error,
+        ])
     ).toEqual([
       ['search', 'completed', 'ok', undefined],
       ['other', 'error', undefined, 'boom'],
@@ -221,13 +250,13 @@ describe('tool progress', () => {
 
   it('ignores malformed events and hides error detail for a protected transport', () => {
     const none = new Map();
-    expect(observeToolProgress(none, tool({ event: 'x', name: 'a' }), false)).toBe(
+    expect(
+      observeToolProgress(none, tool({ event: 'x', name: 'a' }), false)
+    ).toBe(none);
+    expect(observeToolProgress(none, tool({ name: 'a' }), false)).toBe(none);
+    expect(observeToolProgress(none, { type: 'values', data: {} }, false)).toBe(
       none
     );
-    expect(observeToolProgress(none, tool({ name: 'a' }), false)).toBe(none);
-    expect(
-      observeToolProgress(none, { type: 'values', data: {} }, false)
-    ).toBe(none);
     expect(
       observeToolProgress(
         none,
@@ -241,7 +270,9 @@ describe('tool progress', () => {
 describe('usage', () => {
   const chunk = (id: string, metadata: object): StreamEvent => ({
     type: 'messages',
-    messages: [{ type: 'AIMessageChunk', id, content: 'x', usage_metadata: metadata }],
+    messages: [
+      { type: 'AIMessageChunk', id, content: 'x', usage_metadata: metadata },
+    ],
     messageMetadata: { ls_provider: 'acme', ls_model_name: 'model-1' },
   });
 
@@ -317,7 +348,11 @@ describe('usage', () => {
             yield {
               type: 'messages',
               messages: [
-                { type: 'AIMessageChunk', id: 'a', usage_metadata: usage(9, 1) },
+                {
+                  type: 'AIMessageChunk',
+                  id: 'a',
+                  usage_metadata: usage(9, 1),
+                },
               ],
               messageMetadata: {},
             };
@@ -329,7 +364,12 @@ describe('usage', () => {
             data: {
               messages: [
                 first,
-                { type: 'ai', id: 'b', content: 'Two', usage_metadata: usage(3, 2) },
+                {
+                  type: 'ai',
+                  id: 'b',
+                  content: 'Two',
+                  usage_metadata: usage(3, 2),
+                },
               ],
             },
           };
@@ -349,7 +389,10 @@ describe('usage', () => {
 
   it('is absent when nothing was reported or the run was stopped', async () => {
     const session = fixture([
-      { type: 'values', data: { messages: [{ type: 'ai', id: 'a', content: 'x' }] } },
+      {
+        type: 'values',
+        data: { messages: [{ type: 'ai', id: 'a', content: 'x' }] },
+      },
     ]);
     await session.submit('Hi');
     expect('usage' in session.getSnapshot()).toBe(false);
@@ -391,7 +434,10 @@ describe('thread creation time', () => {
     await session.submit('Again');
     expect(session.lifecycle.getSnapshot().threadCreatedAt).toBe(created);
     const given = fixture([
-      { type: 'values', data: { messages: [{ type: 'ai', id: 'a', content: 'x' }] } },
+      {
+        type: 'values',
+        data: { messages: [{ type: 'ai', id: 'a', content: 'x' }] },
+      },
     ]);
     await given.submit('Hi');
     expect(given.lifecycle.getSnapshot().threadCreatedAt).toBeNull();

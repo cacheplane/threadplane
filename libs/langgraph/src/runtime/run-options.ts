@@ -134,7 +134,10 @@ function captureRunSettings(run: LangGraphRunSettings): CapturedRunSettings {
   const checkpoint = run.checkpoint;
   if (checkpoint !== undefined) {
     requireRecord(checkpoint);
-    if (typeof checkpoint.checkpoint_id !== 'string' || !checkpoint.checkpoint_id)
+    if (
+      typeof checkpoint.checkpoint_id !== 'string' ||
+      !checkpoint.checkpoint_id
+    )
       throw new TypeError('run.checkpoint requires a checkpoint_id.');
     captured['checkpoint'] = ownValue(checkpoint as PlainValue);
   }

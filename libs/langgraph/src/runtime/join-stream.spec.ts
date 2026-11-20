@@ -14,7 +14,10 @@ const answer = (id: string, content: string, sseId?: string): StreamEvent => ({
   ...(sseId ? { sseId } : {}),
 });
 
-function fixture(extra: Partial<AgentTransport> = {}, threadId: string | null = 'thread') {
+function fixture(
+  extra: Partial<AgentTransport> = {},
+  threadId: string | null = 'thread'
+) {
   const stream = vi.fn<AgentTransport['stream']>(async function* () {
     yield answer('first', 'One');
   });
@@ -64,7 +67,9 @@ describe('joining a run by id', () => {
     const active = controlledTransport<StreamEvent>();
     const { session } = fixture({ stream: () => active.stream });
     const first = session.submit('Hi');
-    await vi.waitFor(() => expect(session.getSnapshot().status).toBe('running'));
+    await vi.waitFor(() =>
+      expect(session.getSnapshot().status).toBe('running')
+    );
     const joined = session.joinStream('run-2');
     expect(await first).toBe('interrupted');
     expect(await joined).toBe('success');
@@ -84,7 +89,9 @@ describe('joining a run by id', () => {
     const run = session.joinStream('run-2', undefined, {
       signal: controller.signal,
     });
-    await vi.waitFor(() => expect(session.getSnapshot().status).toBe('running'));
+    await vi.waitFor(() =>
+      expect(session.getSnapshot().status).toBe('running')
+    );
     controller.abort();
     expect(await run).toBe('aborted');
     expect(session.getSnapshot().status).toBe('idle');

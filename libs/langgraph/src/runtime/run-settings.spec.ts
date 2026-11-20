@@ -84,7 +84,7 @@ describe('run settings', () => {
     expect(stream).not.toHaveBeenCalled();
   });
 
-  it('keeps the modes and callbacks the session needs and adds the caller\'s', async () => {
+  it("keeps the modes and callbacks the session needs and adds the caller's", async () => {
     const created = vi.fn(() => {
       throw new Error('ignored');
     });
@@ -196,7 +196,10 @@ describe('a run from a checkpoint', () => {
       historyState: true,
       transport: {
         stream,
-        getHistory: async () => [saved('c2', later), saved('c1', [user, first])],
+        getHistory: async () => [
+          saved('c2', later),
+          saved('c1', [user, first]),
+        ],
       },
     });
     sessions.push(session);
@@ -232,7 +235,11 @@ describe('a run from a checkpoint', () => {
     history.splice(
       0,
       1,
-      saved('c3', [user, first, { type: 'ai', id: 'a3', content: 'A different turn' }])
+      saved('c3', [
+        user,
+        first,
+        { type: 'ai', id: 'a3', content: 'A different turn' },
+      ])
     );
     expect(
       await session.submit(null, {
@@ -278,7 +285,15 @@ describe('queued runs', () => {
       transport: { stream, joinStream, createQueuedRun, cancelRun, ...extra },
     });
     sessions.push(session);
-    return { session, active, joined, stream, joinStream, createQueuedRun, cancelRun };
+    return {
+      session,
+      active,
+      joined,
+      stream,
+      joinStream,
+      createQueuedRun,
+      cancelRun,
+    };
   }
   const enqueue = { run: { multitaskStrategy: 'enqueue' } } as const;
 

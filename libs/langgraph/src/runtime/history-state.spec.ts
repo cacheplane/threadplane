@@ -170,7 +170,9 @@ describe('history with state', () => {
     const history = page();
     const { session, getHistory } = fixture(true, history);
     await session.load?.();
-    history.unshift(saved('c5', 'c4', [user, second, { type: 'ai', id: 'a9' }]));
+    history.unshift(
+      saved('c5', 'c4', [user, second, { type: 'ai', id: 'a9' }])
+    );
     expect(await session.submit('Go')).toBe('success');
     const transcript = session.getSnapshot().messages;
     await vi.waitFor(() =>
@@ -198,7 +200,10 @@ describe('history with state', () => {
       historyState: true,
       transport: {
         async *stream() {
-          yield { type: 'values', data: { messages: [{ type: 'ai', id: 'a9' }] } };
+          yield {
+            type: 'values',
+            data: { messages: [{ type: 'ai', id: 'a9' }] },
+          };
         },
         getHistory,
       },

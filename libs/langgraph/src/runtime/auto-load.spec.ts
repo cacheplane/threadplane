@@ -256,14 +256,21 @@ describe('child agents restored from history', () => {
     const events: StreamEvent[] = [
       {
         type: 'values|tools:task-b',
-        data: { messages: [{ type: 'ai', id: 'live', content: 'Still going' }] },
+        data: {
+          messages: [{ type: 'ai', id: 'live', content: 'Still going' }],
+        },
       },
       {
         type: 'values',
         data: {
           messages: [
             ...messages,
-            { type: 'tool', id: 'rb', tool_call_id: 'call-b', content: 'B done' },
+            {
+              type: 'tool',
+              id: 'rb',
+              tool_call_id: 'call-b',
+              content: 'B done',
+            },
             { type: 'ai', id: 'final', content: 'All done' },
           ],
         },

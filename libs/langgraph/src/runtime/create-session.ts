@@ -608,7 +608,11 @@ export function createSession(
       : 0;
   function report(
     event: LangGraphTelemetryEvent,
-    properties: { requestType?: string; durationMs?: number; errorClass?: string } = {}
+    properties: {
+      requestType?: string;
+      durationMs?: number;
+      errorClass?: string;
+    } = {}
   ) {
     if (!telemetry) return;
     safely(() =>
@@ -695,7 +699,8 @@ export function createSession(
     current.id = (async () => {
       try {
         const id = await create(current.controller.signal);
-        if (typeof id !== 'string' || !id) throw new Error('Invalid thread id.');
+        if (typeof id !== 'string' || !id)
+          throw new Error('Invalid thread id.');
         if (creation !== current || disposed) throw createSafeRequestError();
         creation = undefined;
         threadId = id;
@@ -809,7 +814,10 @@ export function createSession(
   function checkpointViews(
     history: readonly ThreadState[]
   ): typeof checkpointPage {
-    const checkpoints = projectCheckpoints(checkpointPage?.checkpoints, history);
+    const checkpoints = projectCheckpoints(
+      checkpointPage?.checkpoints,
+      history
+    );
     return checkpoints === checkpointPage?.checkpoints
       ? checkpointPage
       : {
@@ -1047,7 +1055,9 @@ export function createSession(
       ...checkpointPage,
       ...(branchName ? { branch: branchName } : {}),
       ...(autoLoad && loading ? { loading: true as const } : {}),
-      ...(toolProgress.size ? { toolProgress: [...toolProgress.values()] } : {}),
+      ...(toolProgress.size
+        ? { toolProgress: [...toolProgress.values()] }
+        : {}),
       ...(rawMessages
         ? {
             langGraphMessages: projectWireMessages(state.messages, wire),
@@ -1213,7 +1223,11 @@ export function createSession(
         });
       else report('tplane:stream_ended', { durationMs });
     }
-    if (historyState && !error && (outcome === 'success' || outcome === 'paused'))
+    if (
+      historyState &&
+      !error &&
+      (outcome === 'success' || outcome === 'paused')
+    )
       void refreshHistoryPage();
     // A run from a checkpoint the session could not rewind to leaves the saved
     // branch as the only account of the transcript.
@@ -1708,7 +1722,9 @@ export function createSession(
                 ? attempt.input.state
                 : undefined
             );
-        const scripted = joining ? null : script ?? (groups > 0 ? takeScript() : null);
+        const scripted = joining
+          ? null
+          : script ?? (groups > 0 ? takeScript() : null);
         script = null;
         if (scripted) attempt.scripted = true;
         const from =
@@ -2481,7 +2497,8 @@ export function createSession(
         return;
       admitSubmission();
       const settings = runOptions?.run;
-      const from = settings?.checkpointId ?? settings?.checkpoint?.checkpoint_id;
+      const from =
+        settings?.checkpointId ?? settings?.checkpoint?.checkpoint_id;
       if (from !== undefined && branch)
         throw new Error(
           'A checkpoint branch starts its runs from its own checkpoint.'
@@ -2951,7 +2968,9 @@ export function createSession(
           ? observeHistoryWireMessages(history)
           : wire;
         const projectedCheckpoints =
-          historyState && !capturedBranch ? checkpointViews(history) : undefined;
+          historyState && !capturedBranch
+            ? checkpointViews(history)
+            : undefined;
         // Even a plain projection can invoke getters supplied by a transport.
         // Such a getter can submit/stop/dispose; never commit its stale result.
         if (!ownsLoad(read)) return;

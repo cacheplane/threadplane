@@ -164,7 +164,12 @@ export function observeToolProgress(
       entry = { ...base, state: 'starting', input: own(data['input']) };
       break;
     case 'on_tool_event':
-      entry = { ...base, ...existing, state: 'running', data: own(data['data']) };
+      entry = {
+        ...base,
+        ...existing,
+        state: 'running',
+        data: own(data['data']),
+      };
       break;
     case 'on_tool_end':
       entry = {
@@ -213,7 +218,8 @@ function readUsage(
   const input = record(usage['input_token_details']);
   const output = record(usage['output_token_details']);
   const entry = {
-    provider: text(response?.['model_provider']) ?? text(metadata?.['ls_provider']),
+    provider:
+      text(response?.['model_provider']) ?? text(metadata?.['ls_provider']),
     model:
       text(response?.['model_name']) ??
       text(response?.['model']) ??
@@ -366,8 +372,6 @@ export function getToolCalls(
 ): readonly LangGraphToolCallWithResult[] {
   const id = aiMessage['id'];
   return typeof id === 'string'
-    ? langGraphToolCalls(messages).filter(
-        (call) => call.aiMessage['id'] === id
-      )
+    ? langGraphToolCalls(messages).filter((call) => call.aiMessage['id'] === id)
     : [];
 }

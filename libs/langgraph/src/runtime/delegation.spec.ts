@@ -1,10 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ThreadState } from '@langchain/langgraph-sdk';
 import { createSession, type SessionOptions } from './create-session';
-import {
-  mapChildExecutions,
-  relateSubgraphs,
-} from './delegation-projection';
+import { mapChildExecutions, relateSubgraphs } from './delegation-projection';
 import type { StreamEvent } from './transport.types';
 
 const sessions: { dispose(): Promise<void> }[] = [];
@@ -30,7 +27,9 @@ const child = (segment: string, task?: string): StreamEvent => ({
   type: `values|${segment}`,
   data: {
     messages: [
-      ...(task ? [{ type: 'human', id: `${segment}-task`, content: task }] : []),
+      ...(task
+        ? [{ type: 'human', id: `${segment}-task`, content: task }]
+        : []),
       { type: 'ai', id: `${segment}-answer`, content: 'Found it' },
     ],
   },
@@ -200,7 +199,14 @@ describe('child graphs related to tool calls', () => {
     expect(
       relateSubgraphs(
         subgraphs,
-        [{ id: 'c', name: 'task', args: { subagent_type: 'abc' }, status: 'pending' }],
+        [
+          {
+            id: 'c',
+            name: 'task',
+            args: { subagent_type: 'abc' },
+            status: 'pending',
+          },
+        ],
         new Set(['task']),
         bindings
       )
@@ -236,8 +242,18 @@ describe('child graphs related to tool calls', () => {
         status: 'pending' as const,
       },
     ];
-    const first = relateSubgraphs(subgraphs, calls, new Set(['task']), bindings);
-    const second = relateSubgraphs(subgraphs, calls, new Set(['task']), bindings);
+    const first = relateSubgraphs(
+      subgraphs,
+      calls,
+      new Set(['task']),
+      bindings
+    );
+    const second = relateSubgraphs(
+      subgraphs,
+      calls,
+      new Set(['task']),
+      bindings
+    );
     expect(first[0].delegation?.toolCallId).toBe('c');
     expect(second[0]).toBe(first[0]);
     expect(bindings.get('tools:a')).toBe('c');
@@ -302,7 +318,13 @@ describe('child executions in saved history', () => {
   it('omits calls that history does not link', () => {
     expect(
       mapChildExecutions(
-        [saved({ tasks: [{ id: 't', name: 'tools', path: ['__pregel_pull'] }] as never })],
+        [
+          saved({
+            tasks: [
+              { id: 't', name: 'tools', path: ['__pregel_pull'] },
+            ] as never,
+          }),
+        ],
         new Set(['call-a'])
       ).size
     ).toBe(0);

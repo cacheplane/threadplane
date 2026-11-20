@@ -145,7 +145,9 @@ describe('toMessage', () => {
         },
         toMessage
       )['data']
-    ).toEqual({ values: { messages: [{ type: 'ai', id: 'a', content: 'A' }] } });
+    ).toEqual({
+      values: { messages: [{ type: 'ai', id: 'a', content: 'A' }] },
+    });
   });
 });
 
@@ -153,7 +155,10 @@ describe('throttle', () => {
   it('limits listener calls while a run streams and delivers the end at once', async () => {
     vi.useFakeTimers();
     const active = controlledTransport<StreamEvent>();
-    const { session } = fixture({ throttle: 50 }, { stream: () => active.stream });
+    const { session } = fixture(
+      { throttle: 50 },
+      { stream: () => active.stream }
+    );
     const notify = vi.fn();
     const seen: string[] = [];
     session.subscribe(() => {
@@ -202,8 +207,14 @@ describe('throttle', () => {
 
   it('is off by default', async () => {
     const { session } = fixture({}, {}, [
-      { type: 'messages/partial', messages: [{ type: 'ai', id: 'a', content: 'A' }] },
-      { type: 'messages/partial', messages: [{ type: 'ai', id: 'a', content: 'AB' }] },
+      {
+        type: 'messages/partial',
+        messages: [{ type: 'ai', id: 'a', content: 'A' }],
+      },
+      {
+        type: 'messages/partial',
+        messages: [{ type: 'ai', id: 'a', content: 'AB' }],
+      },
       answer('a', 'ABC'),
     ]);
     const notify = vi.fn();
@@ -286,7 +297,9 @@ describe('telemetry', () => {
     const active = controlledTransport<StreamEvent>();
     const { session } = fixture({ telemetry }, { stream: () => active.stream });
     const run = session.submit('Go');
-    await vi.waitFor(() => expect(session.getSnapshot().status).toBe('running'));
+    await vi.waitFor(() =>
+      expect(session.getSnapshot().status).toBe('running')
+    );
     await session.stop();
     expect(await run).toBe('aborted');
     expect(telemetry.mock.calls.map(([payload]) => payload.event)).toEqual([

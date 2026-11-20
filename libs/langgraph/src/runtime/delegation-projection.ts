@@ -219,8 +219,7 @@ export function mapChildExecutions(
     toolCallId,
     checkpointNs: `${task['name'] as string}:${task['id'] as string}`,
     outstanding,
-    failed:
-      outstanding && typeof task['error'] === 'string' && !!task['error'],
+    failed: outstanding && typeof task['error'] === 'string' && !!task['error'],
   });
   for (const saved of history)
     for (const task of pushTasks(saved)) {
