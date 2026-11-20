@@ -2825,6 +2825,18 @@ export function createSession(
     input: LangGraphSubmitInput,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome> {
+    return forkFrom(checkpoint, input, options, false);
+  }
+
+  /** `fork`, optionally from the checkpoint a run saved when it accepted its
+   * input. Only `regenerate` asks for that: the new input replaces the one
+   * still waiting there. */
+  function forkFrom(
+    checkpoint: CheckpointReference,
+    input: LangGraphSubmitInput,
+    options: LangGraphRunOptions | undefined,
+    pendingInput: boolean
+  ): Promise<CompleteOutcome> {
     let preparation: Preparation | undefined;
     const beginning = publication.command(() => {
       if (disposed) return;
@@ -2852,7 +2864,7 @@ export function createSession(
       if (!current()) return;
       admitBranchCommand();
       preparation = prepare(position, external, (raw) => {
-        const source = captureCompletedCheckpoint(raw, position);
+        const source = captureCompletedCheckpoint(raw, position, pendingInput);
         let projected = projectHistory(state, [source.state], {
           interrupts: [],
           ...(typedTools
@@ -3918,10 +3930,13 @@ export function createSession(
       throw new Error(
         'The checkpoint before that prompt is not in the loaded history.'
       );
-    return fork(
+    // On a real backend that checkpoint is the one the prompt's own run saved
+    // when it accepted its input: its only remaining work is that input.
+    return forkFrom(
       source.checkpoint as CheckpointReference,
       prompt.content,
-      options
+      options,
+      true
     );
   }
   /** Records one client tool result: the call shows it at once, and its

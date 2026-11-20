@@ -217,8 +217,23 @@ newest saved checkpoint that does not hold that prompt yet, submitting the
 prompt's text there. The earlier answer stays on its old branch in the thread;
 the snapshot shows the new one.
 
+- On a LangGraph server that checkpoint is the one the prompt's own run saved
+  when it accepted its input: its state is the conversation before the prompt,
+  and its only remaining work is the graph's entry (`next: ['__start__']`), which
+  has not yet written the prompt. A thread's first prompt has no other checkpoint
+  before it. `regenerate` accepts exactly that shape, one `__start__` task with
+  no error and no interrupt, because the server replaces the waiting input with
+  the new one. Any other remaining work is refused, and `fork` itself still
+  requires a completed checkpoint.
 - The command exists only when the transport has `getHistory`, `getState`,
   `getRunStatus` and `joinStream`, the same capabilities `fork` needs.
+- With the owned SDK transport it also requires `clientOptions.maxRetries` to be
+  0, which is the default. A session created with a non-zero `maxRetries` has no
+  `regenerate` command, so a chat view shows no Regenerate action: the SDK would
+  repeat a creation request whose outcome it could not see, and at a checkpoint
+  each repeat that arrived starts another branch. Leave `maxRetries` unset to
+  keep regenerate; a creation request that got no response is still offered a
+  retry (see "A creation request that got no response").
 - It rejects for an id that is not an assistant message, when no prompt
   precedes it, while a response is running, when the conversation changes
   while history is read, and when no such checkpoint is in the history page the

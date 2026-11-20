@@ -235,6 +235,80 @@ describe('history with state and branches', () => {
   });
 });
 
+describe('regenerate', () => {
+  it('answers a prompt again on the real server, for the first turn and a later one', async () => {
+    const session = track(liveSession(backend));
+    expect(typeof session.regenerate).toBe('function');
+    expect(await session.submit('Hello')).toBe('success');
+    const [prompt, answer] = session.getSnapshot().messages;
+
+    // The only checkpoint before the first prompt is the one its run saved
+    // when it accepted the input, with the graph's entry still to run.
+    const before = await backend.client.threads.getHistory(
+      session.threadId as string
+    );
+    expect(before.at(-1)?.next).toEqual(['__start__']);
+    expect(messagesOf(before.at(-1)?.values as Record<string, unknown>)).toEqual(
+      []
+    );
+
+    expect(await session.regenerate?.(answer.id)).toBe('success');
+    const again = session.getSnapshot();
+    expect(again.status).toBe('idle');
+    expect(texts(again.messages)).toEqual([
+      ['user', 'Hello'],
+      ['assistant', HI],
+    ]);
+    // A new answer to a newly sent prompt: neither keeps its old id.
+    expect(again.messages[1].id).not.toBe(answer.id);
+    expect(again.messages[0].id).not.toBe(prompt.id);
+    // The server's newest state is the regenerated turn, asked once.
+    const saved = await backend.saved(session.threadId as string);
+    expect(
+      messagesOf(saved.values as Record<string, unknown>).map(
+        (message) => message.id
+      )
+    ).toEqual(again.messages.map((message) => message.id));
+    // The earlier answer is still in the thread, on its own branch.
+    const history = await backend.client.threads.getHistory(
+      session.threadId as string
+    );
+    expect(
+      history.some((state) =>
+        messagesOf(state.values as Record<string, unknown>).some(
+          (message) => message.id === answer.id
+        )
+      )
+    ).toBe(true);
+
+    // A later turn, on the regenerated branch, regenerates the same way.
+    expect(await session.submit('Continue the original path.')).toBe('success');
+    const second = session.getSnapshot().messages;
+    expect(second.at(-1)?.content).toBe(ORIGINAL);
+    expect(await session.regenerate?.(second.at(-1)?.id as string)).toBe(
+      'success'
+    );
+    const third = session.getSnapshot().messages;
+    expect(texts(third)).toEqual([
+      ['user', 'Hello'],
+      ['assistant', HI],
+      ['user', 'Continue the original path.'],
+      ['assistant', ORIGINAL],
+    ]);
+    expect(third.at(-1)?.id).not.toBe(second.at(-1)?.id);
+    // The first turn is untouched by regenerating the second.
+    expect(third.slice(0, 2).map((message) => message.id)).toEqual(
+      again.messages.map((message) => message.id)
+    );
+    const tip = await backend.saved(session.threadId as string);
+    expect(
+      messagesOf(tip.values as Record<string, unknown>).map(
+        (message) => message.id
+      )
+    ).toEqual(third.map((message) => message.id));
+  });
+});
+
 describe('run settings', () => {
   it('passes metadata, config and run settings to the run it creates, and continues a breakpoint without a message', async () => {
     const session = track(liveSession(backend));
