@@ -79,8 +79,7 @@ function controlledFetchResponse(
 export function bindingFixture<
   D extends StateDeclaration | undefined = undefined
 >(
-  options: Pick<SessionOptions, 'messages' | 'state'> & {
-    threadId?: string;
+  options: Partial<Omit<SessionOptions, 'url' | 'fetch' | 'stateType'>> & {
     stateType?: D;
   } = {}
 ) {

@@ -37,6 +37,7 @@ import {
   failedWithRunError,
   initialObservation,
   type Observation,
+  type OwnedRootTerminal,
 } from './session-observation.js';
 import { nextInvocation, type Subagents } from './subagents.js';
 import { createRun, httpFailure, type RunHandle } from './create-run.js';
@@ -47,12 +48,18 @@ import {
   type SessionSnapshot,
 } from './agent-session.js';
 import { createReasoningClock } from './reasoning-clock.js';
-import type { InterruptMode } from './interrupt-mode.js';
+import {
+  answersNotice,
+  type InterruptMode,
+  type InterruptTransport,
+} from './interrupt-mode.js';
 import {
   assertResumeEligible,
   captureResponses,
   claimDecision,
   observeDecision,
+  type Decision,
+  pausedByNotice,
   settleDecision,
   type InterruptResponse,
   type NativeResponse,
@@ -82,6 +89,13 @@ export interface SessionOptions
   /** Child evidence saved with this thread, published as `earlierSubagents`. Their attributed messages belong in `messages`. */
   readonly subagents?: Subagents;
   readonly interruptMode?: InterruptMode;
+  /**
+   * How a pause is answered. Absent, a session answers the protocol's own
+   * interrupt outcome only, as with `'protocol'`. `'auto'`,
+   * `'legacy-command'` and `'mastra-command'` also answer a
+   * `CUSTOM on_interrupt` notice, through `forwardedProps.command`.
+   */
+  readonly interruptTransport?: InterruptTransport;
 }
 /**
  * A new root invocation observes no children yet; settled ones become history.
@@ -212,6 +226,39 @@ function regeneratePrompt(transcript: Transcript, messageId: string): number {
     if (transcript[index].role === 'user' && root(index)) return index;
   throw new Error('No prompt precedes that message.');
 }
+/** A fresh pause generation for evidence that can begin an answerable pause. */
+function pauseFor(
+  evidence: OwnedRootTerminal,
+  transport: InterruptTransport | undefined
+): PauseId | undefined {
+  return (evidence.type === 'RUN_FINISHED' &&
+    evidence.outcome?.type === 'interrupt') ||
+    (evidence.type === 'CUSTOM' && answersNotice(transport))
+    ? (crypto.randomUUID() as PauseId)
+    : undefined;
+}
+/**
+ * What a request carries for the answer it sends, when `runId` is the run
+ * answering `decision`: the protocol's `resume` entries, or the command of a
+ * command profile in `forwardedProps`. Each request owns its copies.
+ */
+function answerFields(
+  decision: Decision | undefined,
+  runId: string
+): Pick<RunAgentInput, 'forwardedProps' | 'resume'> {
+  const attempt =
+    decision?.kind === 'native' && decision.attempt?.runId === runId
+      ? decision.attempt
+      : undefined;
+  if (attempt?.forwardedProps)
+    return { forwardedProps: copyData(attempt.forwardedProps, false) };
+  return {
+    forwardedProps: {},
+    ...(attempt && {
+      resume: copyData(attempt.responses, false) as ResumeEntry[],
+    }),
+  };
+}
 interface Attempt {
   readonly id: string;
   readonly controller: AbortController;
@@ -253,6 +300,7 @@ export function createSession(
     stateType,
     subagents,
     interruptMode = 'native',
+    interruptTransport,
   } = options;
   if (!threadId) throw new TypeError('A nonempty threadId is required');
   const catalog = tools === undefined ? undefined : captureClientTools(tools);
@@ -268,10 +316,14 @@ export function createSession(
         stateType,
         subagents,
         interruptMode,
+        interruptTransport,
       },
       catalog
     );
   const factory = createRun({ url, headers, fetch, interruptMode });
+  // Legacy observation answers nothing unless a profile answers its notice.
+  const answerable =
+    interruptMode === 'native' || answersNotice(interruptTransport);
   const reasoningClock = createReasoningClock();
   const initial = initialObservation(messages, state, subagents);
   const publication = createPublication(
@@ -311,14 +363,18 @@ export function createSession(
     if (active === attempt) {
       active = undefined;
       const previous = publication.getObservation();
+      const decision = settleDecision(
+        previous.decision,
+        { id: attempt.id, outcome, terminal: previous.run?.terminal },
+        fetchInvoked
+      );
+      // The run announced a pause and then finished in the ordinary way.
+      if (outcome === 'success' && pausedByNotice(decision, attempt.id))
+        outcome = 'paused';
       publication.publish(
         Object.freeze({
           ...previous,
-          decision: settleDecision(
-            previous.decision,
-            { id: attempt.id, outcome, terminal: previous.run?.terminal },
-            fetchInvoked
-          ),
+          decision,
           status:
             outcome === 'error' || outcome === 'interrupted' ? 'error' : 'idle',
           run: Object.freeze({
@@ -354,14 +410,7 @@ export function createSession(
         state: requestState(value.state),
         tools: catalog === undefined ? [] : requestClientTools(catalog),
         context: [],
-        forwardedProps: {},
-        ...(decision?.kind === 'native' &&
-          decision.attempt?.runId === attempt.id && {
-            resume: copyData(
-              decision.attempt.responses,
-              false
-            ) as ResumeEntry[],
-          }),
+        ...answerFields(decision, attempt.id),
       };
     } catch {
       publication.command(() =>
@@ -396,22 +445,17 @@ export function createSession(
             : notice !== previous.run?.legacyInterrupt
             ? notice
             : undefined;
-        if (evidence) {
-          const pause =
-            evidence.type === 'RUN_FINISHED' &&
-            evidence.outcome?.type === 'interrupt'
-              ? (crypto.randomUUID() as PauseId)
-              : undefined;
+        if (evidence)
           next = Object.freeze({
             ...next,
             decision: observeDecision(
               previous.decision,
               attempt.id,
               evidence,
-              pause
+              pauseFor(evidence, interruptTransport),
+              interruptTransport
             ),
           });
-        }
         if (current(attempt)) publication.publish(next);
         const custom = captureCustomEvent(event as AGUIEvent);
         if (custom && current(attempt)) publication.emitCustomEvent(custom);
@@ -510,7 +554,7 @@ export function createSession(
         let captured: readonly NativeResponse[];
         try {
           const previous = publication.getObservation();
-          if (interruptMode !== 'native' || active)
+          if (!answerable || active)
             throw new TypeError(NOT_SETTLED);
           captured = captureResponses(responses);
           claimDecision(
@@ -538,7 +582,7 @@ export function createSession(
           let id: string;
           try {
             const previous = publication.getObservation();
-            if (active || interruptMode !== 'native')
+            if (active || !answerable)
               throw new TypeError(NOT_SETTLED);
             const decision = assertResumeEligible(
               previous.decision,
@@ -759,8 +803,10 @@ function createToolsOwner(
   options: SessionOptions,
   catalog: ReturnType<typeof captureClientTools>
 ): Session {
-  const { threadId, interruptMode = 'native' } = options;
+  const { threadId, interruptMode = 'native', interruptTransport } = options;
   const factory = createRun(options);
+  const answerable =
+    interruptMode === 'native' || answersNotice(interruptTransport);
   const reasoningClock = createReasoningClock();
   const initial = initialObservation(
     options.messages,
@@ -1069,23 +1115,34 @@ function createToolsOwner(
     if (!owns(command, physical)) return;
     const previous = publication.getObservation();
     const terminal = previous.run?.terminal;
+    const decision = settleDecision(
+      previous.decision,
+      { id: physical.id, outcome, terminal },
+      fetchInvoked
+    );
+    // The run announced a pause and then finished in the ordinary way.
+    const noticed =
+      (outcome === 'success' || outcome === 'paused') &&
+      pausedByNotice(decision, physical.id);
+    if (noticed) {
+      outcome = 'paused';
+      ledger.markPaused(physical.token);
+    }
     if (
-      previous.decision?.kind === 'native' &&
-      terminal?.type === 'RUN_FINISHED' &&
-      terminal.outcome?.type === 'interrupt'
+      noticed ||
+      (previous.decision?.kind === 'native' &&
+        terminal?.type === 'RUN_FINISHED' &&
+        terminal.outcome?.type === 'interrupt')
     )
       pausedPhysical = physical;
     const nativeSuccess =
+      !noticed &&
       terminal?.type === 'RUN_FINISHED' &&
       (terminal.outcome == null || terminal.outcome.type === 'success');
     publication.publish(
       Object.freeze({
         ...previous,
-        decision: settleDecision(
-          previous.decision,
-          { id: physical.id, outcome, terminal },
-          fetchInvoked
-        ),
+        decision,
         run: Object.freeze({
           ...previous.run,
           id: physical.id,
@@ -1199,14 +1256,7 @@ function createToolsOwner(
         state: requestState(snapshot.state),
         tools: requestClientTools(catalog),
         context: [],
-        forwardedProps: {},
-        ...(snapshot.decision?.kind === 'native' &&
-          snapshot.decision.attempt?.runId === physical.id && {
-            resume: copyData(
-              snapshot.decision.attempt.responses,
-              false
-            ) as ResumeEntry[],
-          }),
+        ...answerFields(snapshot.decision, physical.id),
       };
     } catch {
       publication.command(() =>
@@ -1256,10 +1306,8 @@ function createToolsOwner(
                 previous.decision,
                 physical.id,
                 evidence,
-                evidence.type === 'RUN_FINISHED' &&
-                  evidence.outcome?.type === 'interrupt'
-                  ? (crypto.randomUUID() as PauseId)
-                  : undefined
+                pauseFor(evidence, interruptTransport),
+                interruptTransport
               ),
             });
           if (
@@ -1538,7 +1586,7 @@ function createToolsOwner(
             resolve('aborted');
             return;
           }
-          if (interruptMode !== 'native') throw new TypeError(NOT_SETTLED);
+          if (!answerable) throw new TypeError(NOT_SETTLED);
           const previous = publication.getObservation();
           captured = captureResponses(responses);
           claimDecision(

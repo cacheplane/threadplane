@@ -360,7 +360,8 @@ custom notices and unrelated custom events do not become root notices.
 
 An explicit `interruptMode: 'legacy-observation'` preserves the legacy convention:
 the root custom notice occupies both evidence fields, selects `paused` and closes
-the response. This option provides observation only, not legacy resume support.
+the response. This option provides observation only; answering a notice is
+`interruptTransport`'s job (see "Interrupt resume profiles").
 Neither mode parses JSON strings, executes response schemas or guesses providers.
 `RUN_FINISHED.outcome` maps `success` (or no outcome) to `success`, a native
 `interrupt` batch to `paused` and `cancelled` to `aborted`, matching the public
@@ -372,6 +373,60 @@ owner, selecting local `aborted` while retaining the accepted native terminal.
 A native notice followed only by EOF selects `interrupted`; stopping at the
 notice selects `aborted`, with no invented native terminal. New runs reset these
 run-local fields while retaining history and shared state.
+
+## Interrupt resume profiles
+
+`interruptTransport` selects how a session answers a pause, with the values the
+Angular adapter's option had:
+
+```ts
+const session = createSession({ threadId, url, interruptTransport: 'auto' });
+```
+
+- Absent or `'protocol'`: only the protocol's own interrupt outcome is answered,
+  with top-level `resume` entries. A `CUSTOM on_interrupt` notice installs a
+  decision this session cannot answer, as described below.
+- `'auto'`: the protocol's outcome is answered natively and wins over a notice
+  in the same run. A notice with no such outcome is answered through
+  `forwardedProps.command`: in the Mastra shape when the notice's value names a
+  `toolCallId`, and as `{ command: { resume } }` otherwise.
+- `'legacy-command'`: every pause, a notice or the protocol's outcome, is
+  answered as `forwardedProps: { command: { resume } }`.
+- `'mastra-command'`: every pause is answered as
+  `forwardedProps: { command: { resume, interruptEvent: { toolCallId, runId } } }`.
+  `toolCallId` comes from the notice, and `runId` from the notice or else the
+  run that paused. `resume` rejects when the notice names no `toolCallId`.
+
+A notice the session can answer is one entry in `snapshot.interrupts`:
+`{ id, reason: 'on_interrupt', value, toolCallId? }`. `value` is what the notice
+carried, with JSON text read as its data, and `toolCallId` is set when the value
+names one. The pause is answered with the same `resume` command, and the
+response's `value` becomes the command's `resume`:
+
+```ts
+const [interrupt] = session.getSnapshot().interrupts ?? [];
+await session.resume([
+  { interruptId: interrupt.id, status: 'resolved', value: { approved: true } },
+]);
+```
+
+- The request carries the command in `forwardedProps` and no top-level `resume`.
+- A command answers exactly one interrupt with a resolved response that has a
+  value. `resume` rejects, sending nothing, for a cancelled response, a missing
+  value, and a protocol batch of several interrupts under a command profile.
+- A run that sends a notice and then finishes in the ordinary way settles
+  `paused`, and the pause stays until its answer's run succeeds. Without a
+  profile that answers notices the same finish settles `success` and clears
+  the notice, as before.
+- A repeated notice in one run updates the same pause. A notice in the
+  answering run starts a new pause with a new `id`.
+- With `interruptMode: 'legacy-observation'` the notice still closes the
+  response; a profile that answers notices makes that pause answerable too.
+- Sending, failure and uncertainty follow "Correlated native resume": a claim
+  cancelled before fetch is released, and a sent answer whose run ends without
+  proof stays `uncertain`.
+- With a client-tool catalog the answer travels with the unresolved calls
+  observed at the pause, as for a native pause.
 
 ## Correlated native resume
 
@@ -446,7 +501,8 @@ session reconstruction or persistence/recovery guarantee is provided.
 Native success clears the decision at local settlement, even if a terminal
 listener selected local `aborted`. A new native pause is a fresh generation even
 when backend interrupt IDs repeat; old finalizers cannot clear that generation.
-Legacy observation has no resume support. Captured Strands replay establishes
+Legacy observation has no resume support unless `interruptTransport` selects a
+profile that answers notices. Captured Strands replay establishes
 native response wire shape with synthetic completion only. Captured Mastra and
 translated Microsoft evidence do not establish provider resume interoperability.
 

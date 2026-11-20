@@ -789,6 +789,16 @@ export function createClientToolLedger<C extends Record<string, ToolContract>>(
       return capture;
     },
     /**
+     * Records that this request paused for a decision announced by a notice,
+     * whose `RUN_FINISHED` reads as an ordinary finish. The owner has already
+     * correlated the pause; this grants no admission or handler authority.
+     */
+    markPaused(token: object): void {
+      const physical = physicalFor(token);
+      physical.paused = true;
+      physical.success = false;
+    },
+    /**
      * Lifts the blocker a failed run left when it is exactly the one `retry`
      * may answer: `uncertain`, installed for that run, naming no call. Returns
      * whether the ledger is unblocked. Any other blocker stays.
