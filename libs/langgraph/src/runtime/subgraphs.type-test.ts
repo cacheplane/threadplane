@@ -1,6 +1,13 @@
-import type { AgentSession, Message, PlainValue } from '@threadplane/core';
+import type {
+  AgentSession,
+  AgentSubagent,
+  Message,
+  PlainValue,
+  ToolCall,
+} from '@threadplane/core';
 import { createSession } from './create-session';
 import type { LangGraphSubgraph } from './langgraph-snapshot';
+import type { LangGraphSubagent } from './subagent-projection';
 const session = createSession({
   assistantId: 'a',
   threadId: 't',
@@ -20,6 +27,18 @@ const snapshot = session.getSnapshot();
 const children: readonly LangGraphSubgraph[] = snapshot.subgraphs;
 const messages: readonly Message[] = children[0].messages;
 const payload: PlainValue = children[0].state?.['any'];
+// Child graphs are also published as the core contract's child agents.
+const agents: readonly LangGraphSubagent[] = snapshot.subagents;
+const coreAgents: readonly AgentSubagent[] | undefined =
+  observer.getSnapshot().subagents;
+const agentCalls: readonly ToolCall[] = agents[0].toolCalls;
+const childCalls: readonly ToolCall[] = children[0].toolCalls;
+const path: readonly string[] = agents[0].namespace;
+// @ts-expect-error The child agents are derived, not assigned.
+snapshot.subagents = [];
+// @ts-expect-error A child agent exposes no commands.
+agents[0].resume([]);
+void [coreAgents, agentCalls, childCalls, path];
 // @ts-expect-error Observation collection is readonly.
 snapshot.subgraphs = [];
 // @ts-expect-error Observation arrays are readonly.

@@ -12768,6 +12768,17 @@
       "note": "Resume projection preserves unchanged baseline delivery, attributes current same-ID activity, and limits finalized tool eligibility to the resumed turn across stream batches and follow-ups. Live pause delivery still uses the shared root interrupt batch. Broader T09 migration remains open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/subagent-projection.ts",
+      "taskIds": [
+        "T09",
+        "T10"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of the session's child graphs into the core contract's child agents: an id, the starting node's name, a status and the child's own messages and tool calls.",
+      "note": "Covered by runtime specs. LangGraph does not relate a child graph to a tool call, so toolCallId and description are never set."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
       "taskIds": [
         "T09",
@@ -19227,7 +19238,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private core AgentSession view of the native owner: a snapshot derived from the native one with the message and tool-call selectors, change-only notification, a display error for a failed run, and text submit, stop and dispose forwarded to the owner.",
-      "note": "Covered by runtime specs and a React Chat integration spec over the real owner. Exported from the test-only candidate package entry and checked from installed tarballs; not exported from the published package root. A rejected credential (401 or 403) is an auth error and another HTTP status is carried on a server error. State patches, native resume, client-tool evidence, a status check and a failure without a response are not represented."
+      "note": "Covered by runtime specs and a React Chat integration spec over the real owner. Exported from the test-only candidate package entry and checked from installed tarballs; not exported from the published package root. A rejected credential (401 or 403) is an auth error and another HTTP status is carried on a server error. Client-tool evidence, a status check and a failure without a response are not represented in the core fields."
     },
     {
       "id": "source:libs/ag-ui/src/runtime/child-projection.ts",

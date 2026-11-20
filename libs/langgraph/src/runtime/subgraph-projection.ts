@@ -95,7 +95,7 @@ function replace(
   previous: SubgraphObservation,
   namespace: readonly string[],
   child: ChildProjection,
-  entry: LangGraphSubgraph
+  entry: Omit<LangGraphSubgraph, 'toolCalls'>
 ): SubgraphObservation {
   const key = JSON.stringify(namespace);
   const active = new Map(previous.active);
@@ -104,7 +104,11 @@ function replace(
     (value) => JSON.stringify(value.namespace) === key
   );
   const entries = [...previous.subgraphs];
-  const projected = ownSubgraph(entry, previous.subgraphs[index]);
+  // The child's reducer state is the one source of its tool calls.
+  const projected = ownSubgraph(
+    { ...entry, toolCalls: child.state.toolCalls },
+    previous.subgraphs[index]
+  );
   if (index < 0) entries.push(projected);
   else entries[index] = projected;
   return { active, subgraphs: ownSubgraphs(entries, previous.subgraphs) };

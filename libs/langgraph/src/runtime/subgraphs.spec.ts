@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ThreadState } from '@langchain/langgraph-sdk';
+import type { AgentSession } from '@threadplane/core';
 import { createSession } from './create-session';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { controlledTransport } from './testing/controlled-transport';
@@ -74,6 +75,82 @@ function fixture() {
 }
 afterEach(async () => {
   await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
+});
+
+describe('child graphs as core child agents', () => {
+  it('publishes one child agent for each child graph, with its own transcript', async () => {
+    const f = fixture();
+    expect(f.session.getSnapshot().subagents).toEqual([]);
+    const run = f.session.submit('Go');
+    await f.started();
+    await f.emit(child('Found it', ['research:1']));
+    await f.emit(child('Nested', ['research:1', 'tools:2']));
+    const running = f.session.getSnapshot();
+    expect(running.subagents).toHaveLength(2);
+    const [research, nested] = running.subagents;
+    expect(research).toMatchObject({
+      id: '["research:1"]',
+      name: 'research',
+      status: 'running',
+      namespace: ['research:1'],
+      toolCalls: [],
+    });
+    expect('parentId' in research).toBe(false);
+    expect(nested).toMatchObject({
+      id: '["research:1","tools:2"]',
+      name: 'tools',
+      parentId: research.id,
+      status: 'running',
+    });
+    // The child agent and the child graph share one transcript.
+    expect(research.messages).toBe(running.subgraphs[0].messages);
+    expect(research.messages[0].content).toBe('Found it');
+    // The root transcript does not repeat a child's messages.
+    expect(running.messages.map((message) => message.content)).toEqual(['Go']);
+
+    // A change to one child leaves the other child agent's reference alone.
+    await f.emit(child(' again', ['research:1', 'tools:2']));
+    const next = f.session.getSnapshot();
+    expect(next.subagents[0]).toBe(research);
+    expect(next.subagents[1]).not.toBe(nested);
+    // A root-only event keeps the whole list.
+    await f.emit({ ...child('Root'), namespace: undefined });
+    expect(f.session.getSnapshot().subagents).toBe(next.subagents);
+
+    await f.emit(full('Root answer'));
+    f.streams[0].finish();
+    expect(await run).toBe('success');
+    const settled = f.session.getSnapshot();
+    expect(settled.subagents.map((entry) => entry.status)).toEqual([
+      'complete',
+      'complete',
+    ]);
+    // A core observer reads the same children.
+    const observer: AgentSession = f.session;
+    expect(observer.getSnapshot().subagents?.[0]?.id).toBe('["research:1"]');
+  });
+
+  it('reports a failed child as error and an aborted one as unknown', async () => {
+    const f = fixture();
+    const run = f.session.submit('Go');
+    await f.started();
+    await f.emit(child('Working', ['ok:1']));
+    await f.emit(child('Working', ['bad:2']));
+    await f.emit({
+      type: 'error',
+      namespace: ['bad:2'],
+      data: { error: 'Boom', message: 'The search failed' },
+    });
+    const failed = f.session.getSnapshot().subagents[1];
+    expect(failed.status).toBe('error');
+    expect(typeof failed.error).toBe('string');
+    expect(f.session.getSnapshot().subagents[0].status).toBe('running');
+    await f.session.stop();
+    expect(await run).toBe('aborted');
+    expect(
+      f.session.getSnapshot().subagents.map((entry) => entry.status)
+    ).toEqual(['unknown', 'error']);
+  });
 });
 
 describe('private subgraph observations', () => {
@@ -196,6 +273,18 @@ describe('private subgraph observations', () => {
       recovery: 'none',
     });
     expect(JSON.stringify(snapshot)).not.toContain('SECRET');
+    // The child's call is the child's own: listed with it, not at the root.
+    expect(snapshot.subgraphs[0].toolCalls.map((call) => call.id)).toEqual([
+      'child-tool',
+    ]);
+    expect(snapshot.subagents[0].toolCalls).toBe(
+      snapshot.subgraphs[0].toolCalls
+    );
+    expect(snapshot.subagents[0].messages[0].toolCallIds).toEqual([
+      'child-tool',
+    ]);
+    expect(snapshot.subagents[0]).toMatchObject({ status: 'error' });
+    expect(snapshot.subagents[0].error).not.toContain('SECRET');
     expect(snapshot.subgraphs[0].messages[0].delivery).toMatchObject({
       outcome: 'error',
     });

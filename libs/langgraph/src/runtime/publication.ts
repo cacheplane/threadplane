@@ -1,12 +1,12 @@
 import type { AgentSessionCustomEvent } from '@threadplane/core';
-import type { LangGraphSnapshot } from './langgraph-snapshot.js';
+import type { LangGraphPublication } from './langgraph-snapshot.js';
 import { ownLangGraphSnapshot } from './ownership.js';
 
 /** Backend-private publication. Listener failures are reported once to the
  * optional callback and otherwise ignored; reporter failures are contained too.
  * Neither kind of failure changes execution state or rejects a command. */
 export function createPublication(
-  initial: LangGraphSnapshot,
+  initial: LangGraphPublication,
   reportListenerError: (error: unknown) => void = () => undefined
 ) {
   let current = ownLangGraphSnapshot(initial);
@@ -36,7 +36,7 @@ export function createPublication(
     }
   }
 
-  function publish(input: LangGraphSnapshot): void {
+  function publish(input: LangGraphPublication): void {
     // Capture external ingress now, including when a listener queues a publish.
     const captured = ownLangGraphSnapshot(input, current);
     schedule(() => {
