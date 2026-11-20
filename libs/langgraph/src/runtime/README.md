@@ -292,6 +292,19 @@ failed queue request rejects with a safe error and leaves the active run
 alone. With nothing running, an `enqueue` submission starts at once and passes
 the strategy to the backend.
 
+## Joining a run by id
+
+`session.joinStream(runId, lastEventId?, { signal }?)` projects a run of this
+thread that the session did not start: one created by another client, by a
+schedule, or before a reload. Without `lastEventId` the run is joined from its
+first event, which the backend serves only for a resumable stream; with it the
+stream continues after that event. Joining replaces an active run the way a
+submit does, adds no user message, creates no run and takes no run settings.
+It resolves with the joined run's outcome, settled from the exact run status
+when the transport has `getRunStatus`, and `'aborted'` when the session has no
+thread yet. It rejects without `transport.joinStream` and for an invalid run
+id. `reconnect()` is still the way to continue the session's own retained run.
+
 ## Interruptions and recovery
 
 A stream that closes without this runtime's own terminal evidence settles as

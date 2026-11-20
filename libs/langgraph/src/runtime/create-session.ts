@@ -248,6 +248,20 @@ export type LangGraphSession<
     readonly signal?: AbortSignal;
   }): Promise<CompleteOutcome>;
   /**
+   * Joins a run of this thread by id and projects its stream: one started
+   * elsewhere, or before a reload. `lastEventId` continues after that event;
+   * without it the run is joined from its first event, which the backend
+   * serves only for a resumable stream. It replaces an active run the way a
+   * submit does, adds no user message, and resolves with the joined run's
+   * outcome, or `'aborted'` when the session has no thread yet. `reconnect`
+   * remains the way to continue the session's own retained run.
+   */
+  joinStream(
+    runId: string,
+    lastEventId?: string,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome>;
+  /**
    * Answers pending interrupts and continues the paused graph. One pending
    * interrupt receives its response's value as the resume value. Several are
    * answered by backend id, each with a value. LangGraph has no cancelled
@@ -2314,6 +2328,48 @@ export function createSession(
       });
   }
 
+  function joinRun(
+    runId: string,
+    lastEventId?: string,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome> {
+    let attempt: Attempt | undefined;
+    const beginning = publication.command(() => {
+      if (disposed) return;
+      if (!joinStream)
+        throw new Error('Joining a run requires transport.joinStream().');
+      if (lastEventId !== undefined && typeof lastEventId !== 'string')
+        throw new TypeError('lastEventId must be a string.');
+      admitSubmission();
+      const capturedRevision = revision;
+      const external = options?.signal;
+      if (
+        disposed ||
+        external?.aborted ||
+        capturedRevision !== revision ||
+        threadId === undefined
+      )
+        return;
+      const evidence = captureRun({}, { run_id: runId }, threadId);
+      if (evidence.unsafe || !evidence.runId)
+        throw new TypeError('joinStream requires a valid run id.');
+      attempt = beginAttempt(
+        { kind: 'resume', value: undefined, interrupts, bare: true },
+        external
+      );
+      attempt.physical = {
+        batch: buffer.snapshot(),
+        evidence,
+        captureOpen: false,
+        received: false,
+        confirmed: false,
+      };
+      if (lastEventId) attempt.joinCursor = lastEventId;
+      else attempt.joinStart = true;
+    });
+    return dispatch(beginning, () => attempt);
+  }
+
   function cancelQueued(runId: string): Promise<boolean> {
     return publication
       .command(() => {
@@ -2913,6 +2969,7 @@ export function createSession(
     ...(canRegenerate ? { regenerate } : {}),
     resume,
     reconnect,
+    joinStream: joinRun,
     stop: () =>
       publication.command(() => {
         if (disposed) return;

@@ -92,3 +92,16 @@ export async function assertRunSettings() {
   // @ts-expect-error A fork always carries a message.
   await session.fork({ thread_id: 't', checkpoint_ns: '', checkpoint_id: 'c' }, null);
 }
+
+export async function assertJoinStream() {
+  const session = createSession({ assistantId: 'agent', threadId: 'thread' });
+  const outcome: 'success' | 'error' | 'interrupted' | 'aborted' | 'paused' =
+    await session.joinStream('run', 'event', {
+      signal: new AbortController().signal,
+    });
+  void outcome;
+  // @ts-expect-error A run id is required.
+  await session.joinStream();
+  // @ts-expect-error Joining creates no run, so it takes no run settings.
+  await session.joinStream('run', undefined, { run: {} });
+}
