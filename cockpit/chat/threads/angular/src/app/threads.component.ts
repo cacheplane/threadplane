@@ -2,7 +2,11 @@ import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
 import { Component, computed, signal } from '@angular/core';
 import { ChatComponent, ChatThreadSidebarComponent } from '@threadplane/chat';
 import { injectAgent, injectThreadDirectory, provideAgent } from '@threadplane/angular';
-import { createSession, type LangGraphSession } from '@threadplane/langgraph';
+import {
+  createSession,
+  type LangGraphSession,
+  type LangGraphThreadDirectory,
+} from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 // #region active-thread-signal
@@ -17,7 +21,7 @@ export const activeThreadIdState = signal<string | null>(null);
 /**
  * ThreadsComponent demonstrates multi-thread conversation management
  * backed by the real LangGraph SDK. Passes the injected thread directory's
- * `directory` (`injectThreadDirectory()` from `@threadplane/angular`, built
+ * `directory` (`injectThreadDirectory<LangGraphThreadDirectory>()` from `@threadplane/angular`, built
  * by `createLangGraphThreadDirectory` from `@threadplane/langgraph`) to
  * the connected `<chat-thread-sidebar>`, which lists, renames, pins,
  * reorders, archives, deletes and files threads into projects (project names
@@ -98,7 +102,9 @@ export const activeThreadIdState = signal<string | null>(null);
   `],
 })
 export class ThreadsComponent {
-  protected readonly threads = injectThreadDirectory();
+  // Naming the directory type types the commands the LangGraph directory
+  // always has as present, so `create` is called without `?.`.
+  protected readonly threads = injectThreadDirectory<LangGraphThreadDirectory>();
 
   /** Writable signal the agent watches — assigning to it switches the
    *  active thread without forcing a full agent rebuild. */
@@ -143,9 +149,7 @@ export class ThreadsComponent {
   }
 
   protected async onNewThread(conversation?: ChatComponent): Promise<void> {
-    // `create` is optional on the neutral directory contract; the LangGraph
-    // directory provides it.
-    const id = await this.threads.create?.();
+    const id = await this.threads.create();
     if (id) {
       this.agent.switchThread(id);
       this.activeThreadId.set(id);

@@ -14,13 +14,25 @@ import { DEMO_AGENT_REF, type DemoSession } from './agent-ref';
 import type { DemoThreadDirectory } from './demo-threads';
 import { ItineraryStore, type ItineraryStop } from '../itinerary-store';
 
-/** An empty in-memory thread directory: every command succeeds and changes nothing. */
+/**
+ * What the backend answers when the shell validates a thread id from the URL.
+ * Null (no such thread) unless a spec says the thread exists.
+ */
+const readThread = vi.fn<(threadId: string) => Promise<ThreadEntry | null>>(async () => null);
+beforeEach(() => readThread.mockReset().mockResolvedValue(null));
+
+/**
+ * An empty in-memory thread directory: every command succeeds and changes
+ * nothing. One thread is read through `get`, as the LangGraph directory does.
+ */
 function createDirectoryFake(): DemoThreadDirectory {
   const snapshot = { threads: [], archived: [], status: 'idle' as const };
   return {
     getSnapshot: () => snapshot,
     subscribe: () => () => undefined,
     refresh: async () => undefined,
+    get: (threadId) => readThread(threadId),
+    pinnedOrderOf: () => undefined,
     create: async () => ({ id: 'new-thread' }),
     rename: async () => undefined,
     remove: async () => undefined,
@@ -32,16 +44,8 @@ function createDirectoryFake(): DemoThreadDirectory {
   };
 }
 
-/**
- * What the backend answers when the shell validates a thread id from the URL.
- * Null (no such thread) unless a spec says the thread exists.
- */
-const readThread = vi.fn<(threadId: string) => Promise<ThreadEntry | null>>(async () => null);
-beforeEach(() => readThread.mockReset().mockResolvedValue(null));
-
 const threadsAdapterProvider = provideThreadDirectory<DemoThreadDirectory>({
   createDirectory: createDirectoryFake,
-  getThread: (threadId) => readThread(threadId),
 });
 
 describe('DemoShell — approval decisions', () => {

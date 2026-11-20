@@ -8,6 +8,7 @@ import {
   auditRuntimeTargetSource,
   contextDevelopmentKey,
   defaultDeprecatedReporterOptionNames,
+  defaultDirectoryReporterOptionNames,
   defaultReporterOptionNames,
   hasExactImportBinding,
   inspectRuntimeTargetSource,
@@ -175,9 +176,9 @@ const directoryOptionMembers = declaredOptionMembers(
   'LangGraphThreadDirectoryOptions'
 );
 /**
- * The same for the thread directory. It declares no reporter option today, so
- * a refused thread-list request is not reported and no wiring can change
- * that; the audit starts requiring the reporter when the option appears.
+ * The same for the thread directory, which takes the reporter as
+ * `reportOperationFailure`. The audit requires it because this list is not
+ * empty; were the option removed, the requirement would go with it.
  */
 const directoryReporterOptionNames = directoryOptionMembers.filter((name) =>
   /OperationFailure$/.test(name)
@@ -1967,10 +1968,10 @@ describe('cockpit capability wiring', () => {
       import { AGENT_CLIENT_OPTIONS, provideThreadDirectory } from '@threadplane/angular';
       import { createLangGraphThreadDirectory, type LangGraphClientOptions } from '@threadplane/langgraph';
     `;
-    const contextOptions =
-      'apiUrl: connection.apiUrl, clientOptions: context.clientOptions as LangGraphClientOptions | undefined,';
-    const connectionOptions =
-      'apiUrl: connection.apiUrl, clientOptions: connection.clientOptions,';
+    const reporterOption =
+      'reportOperationFailure: context.reportOperationFailure,';
+    const contextOptions = `apiUrl: connection.apiUrl, clientOptions: context.clientOptions as LangGraphClientOptions | undefined, ${reporterOption}`;
+    const connectionOptions = `apiUrl: connection.apiUrl, clientOptions: connection.clientOptions, ${reporterOption}`;
     const directoryReturn = (options: string) =>
       `return { createDirectory: (context) => createLangGraphThreadDirectory({ ${options} }) };`;
     const directoryProvider = (options: string) =>
@@ -2189,9 +2190,9 @@ describe('cockpit capability wiring', () => {
         .join('\n')
     ).toMatch(/a LangGraph thread directory cannot list the threads of an ag-ui agent/);
 
-    // The directory's own refused requests. Today it has no option for the
-    // reporter, so one passed anyway is dropped; once it declares an option,
-    // a directory wired without it is the mistake.
+    // The directory's own refused requests. The directory takes the host's
+    // reporter as `reportOperationFailure`, so a directory wired without it
+    // is the mistake: its refused requests would never reach the cockpit.
     const withDirectoryReporter = (source: string, names: string[]) =>
       inspectRuntimeTargetSource(
         source,
@@ -2200,46 +2201,56 @@ describe('cockpit capability wiring', () => {
         undefined,
         { directoryReporterOptionNames: names }
       );
-    const reportingSource = appConfig(
-      directoryProvider(
-        `${connectionOptions} reportOperationFailure: context.reportOperationFailure,`
+    expect(inspect(directSource).issues).toEqual([]);
+    expect(
+      inspect(directSource).threadDirectoryProviders.map(
+        ({ canonical }) => canonical
       )
-    );
-    expect(details(reportingSource)).toMatch(
-      /passed as reportOperationFailure, which the thread directory does not accept; the reporter is dropped/
-    );
-    expect(
-      withDirectoryReporter(reportingSource, ['reportOperationFailure']).issues
-    ).toEqual([]);
-    expect(
-      withDirectoryReporter(
-        reportingSource,
-        ['reportOperationFailure']
-      ).threadDirectoryProviders.map(({ canonical }) => canonical)
     ).toEqual([true]);
-    const silent = withDirectoryReporter(directSource, [
-      'reportOperationFailure',
-    ]);
-    expect(silent.threadDirectoryProviders[0].canonical).toBe(false);
-    expect(silent.issues).toEqual([
-      {
-        kind: 'thread-directory-wiring',
-        detail:
-          "createLangGraphThreadDirectory must be given the provider context's reportOperationFailure as reportOperationFailure",
-      },
-    ]);
+    const silentSource = changed(directSource, reporterOption, '');
+    for (const silent of [
+      // The audit's default, and the name read from the directory's options.
+      inspect(silentSource),
+      withDirectoryReporter(silentSource, directoryReporterOptionNames),
+    ]) {
+      expect(silent.threadDirectoryProviders[0].canonical).toBe(false);
+      expect(silent.issues).toEqual([
+        {
+          kind: 'thread-directory-wiring',
+          detail:
+            "createLangGraphThreadDirectory must be given the provider context's reportOperationFailure as reportOperationFailure",
+        },
+      ]);
+    }
+    expect(mismatches(silentSource)).toContain(directoryMismatch);
     expect(
-      withDirectoryReporter(
+      inspect(
         changed(
-          reportingSource,
+          directSource,
           'reportOperationFailure: context.reportOperationFailure',
           'reportOperationFailure: () => undefined'
-        ),
-        ['reportOperationFailure']
+        )
       ).issues.map(({ detail }) => detail)
     ).toEqual([
       "reportOperationFailure must be the provider context's reportOperationFailure",
     ]);
+    expect(
+      details(
+        changed(directSource, 'reportOperationFailure:', 'onOperationFailure:')
+      )
+    ).toMatch(
+      /passed as onOperationFailure, which the thread directory does not accept \(it takes reportOperationFailure\); the reporter is dropped/
+    );
+    // The audit follows the names it is told: a directory that declared no
+    // reporter option could not be given one.
+    expect(
+      withDirectoryReporter(directSource, [])
+        .issues.map(({ detail }) => detail)
+        .join('\n')
+    ).toMatch(
+      /passed as reportOperationFailure, which the thread directory does not accept; the reporter is dropped/
+    );
+    expect(withDirectoryReporter(silentSource, []).issues).toEqual([]);
 
     // The registration array itself must stay explicit.
     const trailingSpread = changed(
@@ -2314,9 +2325,11 @@ describe('cockpit capability wiring', () => {
     expect(directoryOptionMembers).toEqual(
       expect.arrayContaining(['apiUrl', 'clientOptions', 'client'])
     );
-    // The directory factory is offered the reporter too. Whether the
-    // directory can take it is read from its options (today it cannot), and
-    // the audit requires it from the day the options declare it.
+    // The directory factory is offered the reporter too, and the directory
+    // takes it: the name is read from its options, and the audit requires it.
+    expect(directoryReporterOptionNames).toEqual(
+      defaultDirectoryReporterOptionNames
+    );
     expect(
       declaredOptionMembers(
         resolve(libsRoot, 'angular/src'),

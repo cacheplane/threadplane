@@ -43,7 +43,8 @@ import * as ts from 'typescript';
  * - `session-outside-provider-factory`: a session or directory built anywhere
  *   but its provider factory, where there is no provider context at all.
  * - `thread-directory-wiring`: a thread list read from another deployment
- *   than the agent's, or without the agent's client options.
+ *   than the agent's, without the agent's client options, or without the
+ *   host's failure reporter.
  * - `direct-agent-construction`: a client, transport or agent built by hand.
  * - `environment-config-outside-entrypoint`, `browser-state-read`,
  *   `global-runtime-secret-read`, `imported-runtime-secret`,
@@ -129,14 +130,18 @@ export const defaultDeprecatedReporterOptionNames: ReporterOptionNames = {
   'ag-ui': [],
 };
 
+/** The option the thread directory takes the reporter under (2026-11-20). */
+export const defaultDirectoryReporterOptionNames: readonly string[] = [
+  'reportOperationFailure',
+];
+
 export interface RuntimeWiringAuditOptions {
   readonly reporterOptionNames?: ReporterOptionNames;
   readonly deprecatedReporterOptionNames?: ReporterOptionNames;
   /**
-   * The option `createLangGraphThreadDirectory` takes the reporter under.
-   * Empty while the directory declares none (2026-11-20): its refused
-   * requests then go unreported, and no application wiring can change that.
-   * Once the directory declares one, the audit requires it.
+   * The option `createLangGraphThreadDirectory` takes the reporter under,
+   * which the audit requires. An empty list says the directory declares none:
+   * its refused requests then go unreported and no wiring can change that.
    */
   readonly directoryReporterOptionNames?: readonly string[];
 }
@@ -1548,7 +1553,8 @@ export function inspectRuntimeTargetSource(
     options.reporterOptionNames ?? defaultReporterOptionNames;
   // Every name any backend takes the reporter under, plus the context's own.
   const directoryReporterOptionNames =
-    options.directoryReporterOptionNames ?? [];
+    options.directoryReporterOptionNames ??
+    defaultDirectoryReporterOptionNames;
   const deprecatedReporterOptionNames =
     options.deprecatedReporterOptionNames ??
     (options.reporterOptionNames
