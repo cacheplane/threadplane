@@ -277,6 +277,36 @@ describe('startClientToolExecutor()', () => {
     expect(seen[0].aborted).toBe(false);
   });
 
+  it('aborts in-flight function tools on a plain agent.stop(), with no stopAgent call', async () => {
+    const seen: AbortSignal[] = [];
+    const registry = tools({
+      slow: action('slow', z.object({}), async (_args, context) => {
+        seen.push(context.signal);
+        return new Promise<string>(() => undefined);
+      }),
+    });
+    const { pending, capability } = makeFakeCapability();
+    // The mock's own stop, which tells its stop listeners as the real agent does.
+    const agent = {
+      ...mockAgent(),
+      clientTools: capability,
+      pendingClientTools: pending,
+    } satisfies Agent;
+
+    TestBed.runInInjectionContext(() => {
+      startClientToolExecutor(agent, registry);
+    });
+
+    pending.set([{ id: 'slow-1', name: 'slow', args: {}, status: 'pending' }]);
+    TestBed.flushEffects();
+    await drainMicrotasks();
+    expect(seen[0].aborted).toBe(false);
+
+    // An app's own stop control calls the agent directly.
+    await agent.stop();
+    expect(seen[0].aborted).toBe(true);
+  });
+
   it('aborts in-flight function tools on stop and settles them without continuing the run', async () => {
     let complete!: (value: string) => void;
     const completion = new Promise<string>((resolve) => {

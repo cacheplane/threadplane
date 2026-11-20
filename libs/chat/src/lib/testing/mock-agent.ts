@@ -152,6 +152,8 @@ export function mockAgent(opts: MockAgentOptions = {}): MockAgent {
   const customEvents = signal<readonly AgentSessionCustomEvent[]>([]);
   const lifecycle = Object.fromEntries(LIFECYCLE_KEYS.map((key) => [key, signal(null)])) as unknown as MockAgentLifecycle;
   const switchThreadCalls: (string | null)[] = [];
+  const stopListeners = new Set<() => void>();
+  const sessionEpoch = signal(0);
   if (session.onCustomEvent) session.onCustomEvent((event) => customEvents.update((events) => [...events, event]));
 
   const members: MockAgentMembers = {
@@ -184,7 +186,20 @@ export function mockAgent(opts: MockAgentOptions = {}): MockAgent {
   const agent = {
     ...members,
     submit: bind('submit'),
-    stop: bind('stop'),
+    stop: (() => {
+      const stop = session.stop.bind(session);
+      return () => {
+        for (const listener of [...stopListeners]) listener();
+        return stop();
+      };
+    })(),
+    sessionEpoch: sessionEpoch.asReadonly(),
+    onStop(listener: () => void): () => void {
+      stopListeners.add(listener);
+      return () => {
+        stopListeners.delete(listener);
+      };
+    },
     resume: bind('resume'),
     regenerate: bind('regenerate'),
     retry: bind('retry'),

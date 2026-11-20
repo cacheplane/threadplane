@@ -54,8 +54,11 @@ export function startClientToolExecutor(
   // them. The registration is released with the executor: agents often outlive
   // the components that start executors.
   const release = registerClientToolAbort(agent, abortAll);
+  // A plain `agent.stop()` cancels the handlers too: the agent tells us.
+  const releaseStop = agent.onStop(abortAll);
   destroyRef.onDestroy(() => {
     release();
+    releaseStop();
     abortAll();
   });
 

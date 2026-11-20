@@ -10,9 +10,9 @@ export { mockAgent } from '@threadplane/chat';
 export type { MockAgent, MockAgentField, MockAgentLifecycle, MockAgentOptions } from '@threadplane/chat';
 // See `src/lib/agent/angular-agent.ts` for why the rule is off on these lines.
 // eslint-disable-next-line @nx/enforce-module-boundaries
-export { injectFakeAgentSession, provideFakeAgent } from '@threadplane/angular';
+export { injectFakeAgentSession, provideFakeAgent } from '@threadplane/angular/testing';
 // eslint-disable-next-line @nx/enforce-module-boundaries
-export type { FakeAgentConfig } from '@threadplane/angular';
+export type { FakeAgentConfig } from '@threadplane/angular/testing';
 export {
   assertReasoningFixtureMessages,
   createFakeAgentSession,
