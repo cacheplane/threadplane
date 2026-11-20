@@ -518,6 +518,7 @@ const SUPPORTED_EXPORTS = {
     'ToolObservation',
     'SubagentCard',
     'subagentsFromEvidence',
+    'sessionSubagents',
     'Welcome',
     'WelcomeSuggestion',
     'Suggestions',
