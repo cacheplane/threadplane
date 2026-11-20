@@ -22,6 +22,7 @@ import type {
 import {
   captureClientTools,
   requestClientTools,
+  type ClientToolBlocker,
   type ClientToolSessionSnapshot,
 } from './client-tools.js';
 import { createClientToolLedger } from './client-tool-ledger.js';
@@ -129,8 +130,9 @@ export interface Session<TState = unknown> {
    * dropped. Resolves `aborted` without sending while a run is active, when
    * nothing failed or when the last run was not a failed submission. Rejects
    * without sending when the error's `recovery` is not `'retry'`: the failure
-   * leaves the backend outcome open. Absent on the client-tool owner, which
-   * blocks every dispatched failure as uncertain.
+   * leaves the backend outcome open. With a client-tool catalog it sends the
+   * failed request again, whichever request of the command that was, and runs
+   * no handler a second time.
    */
   retry?(): Promise<CompleteOutcome>;
   /**
@@ -142,7 +144,8 @@ export interface Session<TState = unknown> {
    * Rejects without sending while a run is active, while a decision is
    * waiting, after disposal, for an id that is not an assistant record, and
    * when no user message precedes it. `retry` can send a failed regenerate
-   * again. Absent on the client-tool owner, whose ledger owns its history.
+   * again. With a client-tool catalog it also forgets the client-tool calls
+   * of the dropped records, and rejects while a blocker is installed.
    */
   regenerate?(
     messageId: string,
@@ -189,6 +192,25 @@ function captureCustomEvent(
   } catch {
     return undefined;
   }
+}
+/**
+ * Where the history ends for a regenerate of `messageId`: the index of the
+ * root user message before that root assistant (or reasoning) record. Throws
+ * the reason when there is no such record or no prompt before it.
+ */
+function regeneratePrompt(transcript: Transcript, messageId: string): number {
+  const root = (index: number) =>
+    typeof transcript[index].subagentRunId !== 'string';
+  const at = transcript.findIndex(
+    (record, index) =>
+      record.id === messageId &&
+      (record.role === 'assistant' || record.role === 'reasoning') &&
+      root(index)
+  );
+  if (at < 0) throw new Error('Regenerate needs the id of an assistant message.');
+  for (let index = at - 1; index >= 0; index--)
+    if (transcript[index].role === 'user' && root(index)) return index;
+  throw new Error('No prompt precedes that message.');
 }
 interface Attempt {
   readonly id: string;
@@ -697,23 +719,7 @@ export function createSession(
               throw new Error('Cannot regenerate while a response is running.');
             if (previous.decision)
               throw new Error('Cannot regenerate while a decision is waiting.');
-            const { transcript } = previous;
-            const root = (index: number) =>
-              typeof transcript[index].subagentRunId !== 'string';
-            const at = transcript.findIndex(
-              (record, index) =>
-                record.id === messageId &&
-                (record.role === 'assistant' || record.role === 'reasoning') &&
-                root(index)
-            );
-            if (at < 0)
-              throw new Error(
-                'Regenerate needs the id of an assistant message.'
-              );
-            for (let index = at - 1; index >= 0 && prompt < 0; index--)
-              if (transcript[index].role === 'user' && root(index))
-                prompt = index;
-            if (prompt < 0) throw new Error('No prompt precedes that message.');
+            prompt = regeneratePrompt(previous.transcript, messageId);
           } catch (error) {
             reject(error);
             return;
@@ -770,9 +776,36 @@ function createToolsOwner(
       ...initial,
       clientTools: ledger.snapshot(),
     }),
-    // This owner has no retry, so no failure is offered as retryable.
-    createPresenter(options.stateType, false)
+    // Only the failed request this owner can rebuild is offered as retryable.
+    createPresenter(options.stateType, (observation) => retryable(observation))
   );
+  /** The last request sent that was not an answer to a decision. */
+  let saved:
+    | {
+        readonly runId: string;
+        readonly transcript: Transcript;
+        readonly state: PlainValue;
+      }
+    | undefined;
+  /**
+   * A backend `RUN_ERROR` for the saved request, with nothing in the ledger in
+   * doubt beyond the blocker that failure itself installed.
+   */
+  const retryable = (observation: Observation): boolean => {
+    const blocker = (
+      observation as { clientTools?: { blocker?: ClientToolBlocker } }
+    ).clientTools?.blocker;
+    const runId = saved?.runId;
+    return (
+      failedWithRunError(observation) &&
+      runId !== undefined &&
+      runId === observation.run?.id &&
+      (!blocker ||
+        (blocker.reason === 'uncertain' &&
+          blocker.sourceRunId === runId &&
+          !blocker.callIds.length))
+    );
+  };
   interface Physical {
     readonly id: string;
     readonly token: object;
@@ -1151,6 +1184,13 @@ function createToolsOwner(
               pausedPhysical.token
             )
           : ledger.captureRequest(snapshot.transcript);
+      saved = resuming
+        ? undefined
+        : {
+            runId: physical.id,
+            transcript: capture.transcript,
+            state: snapshot.state,
+          };
       input = {
         threadId,
         runId: physical.id,
@@ -1544,6 +1584,105 @@ function createToolsOwner(
           } catch (error) {
             reject(error);
           }
+        });
+      }),
+    retry: () =>
+      new Promise<CompleteOutcome>((resolve, reject) => {
+        if (disposed) {
+          resolve('aborted');
+          return;
+        }
+        const published = publication.getSnapshot();
+        if (published.status !== 'error') {
+          resolve('aborted');
+          return;
+        }
+        if (published.error?.recovery !== 'retry') {
+          reject(new Error(UNSAFE_RETRY));
+          return;
+        }
+        publication.command(() => {
+          const previous = publication.getObservation();
+          const last = saved;
+          if (
+            disposed ||
+            active ||
+            !last ||
+            previous.status !== 'error' ||
+            previous.run?.id !== last.runId
+          ) {
+            resolve('aborted');
+            return;
+          }
+          if (!retryable(previous) || !ledger.releaseUncertain(last.runId)) {
+            resolve('error');
+            return;
+          }
+          const id = crypto.randomUUID();
+          // The failed run's output and state changes are dropped: the request
+          // is rebuilt from what the failed request sent, local tool results
+          // included. No handler runs again for them.
+          admit(
+            Object.freeze({
+              ...previous,
+              status: 'running',
+              transcript: last.transcript,
+              state: last.state,
+              ...nextInvocationSubagents(previous, last.transcript),
+              run: Object.freeze({ id }),
+            }),
+            id,
+            undefined,
+            resolve
+          );
+        });
+      }),
+    regenerate: (messageId, options) =>
+      new Promise<CompleteOutcome>((resolve, reject) => {
+        const signal = options?.signal;
+        publication.command(() => {
+          const previous = publication.getObservation();
+          let prompt: number;
+          try {
+            if (disposed) throw new Error('The session is disposed.');
+            if (active)
+              throw new Error('Cannot regenerate while a response is running.');
+            if (previous.decision)
+              throw new Error('Cannot regenerate while a decision is waiting.');
+            if (ledger.snapshot().blocker && !retryable(previous))
+              throw new Error(
+                'Cannot regenerate while client tool calls are unresolved.'
+              );
+            prompt = regeneratePrompt(previous.transcript, messageId);
+          } catch (error) {
+            reject(error);
+            return;
+          }
+          if (signal?.aborted) {
+            resolve('aborted');
+            return;
+          }
+          if (saved) ledger.releaseUncertain(saved.runId);
+          // Keep the prompt: it ends the history and is the next run's input.
+          const transcript = Object.freeze(
+            previous.transcript.slice(0, prompt + 1)
+          );
+          // The calls of the dropped records are dropped with them. A new
+          // answer that calls a tool runs its handler again.
+          ledger.forgetDropped(transcript);
+          const id = crypto.randomUUID();
+          admit(
+            Object.freeze({
+              ...previous,
+              status: 'running',
+              transcript,
+              ...nextInvocationSubagents(previous, transcript),
+              run: Object.freeze({ id }),
+            }),
+            id,
+            signal,
+            resolve
+          );
         });
       }),
   };

@@ -132,7 +132,7 @@ function failure(
   const detail = interrupted ? INTERRUPTED_COPY.detail : undefined;
   // Only the backend's own RUN_ERROR settles what happened. Any other failure
   // leaves open whether the request did its work, so sending it again could
-  // repeat it, and the native owner has no status check to find out.
+  // repeat it.
   const retryable = canRetry && failedWithRunError(native);
   if (
     previous &&
@@ -242,7 +242,7 @@ function project(
  */
 export function createPresenter(
   declaration: StateDeclaration | undefined,
-  canRetry: boolean
+  canRetry: boolean | ((observation: Observation) => boolean)
 ): (observation: Observation) => SessionSnapshot {
   const readView = stateReader(declaration);
   let seen: Observation | undefined;
@@ -251,7 +251,7 @@ export function createPresenter(
     if (observation !== seen || !current) {
       current = project(
         observation,
-        canRetry,
+        typeof canRetry === 'function' ? canRetry(observation) : canRetry,
         readView(observation.state),
         current
       );

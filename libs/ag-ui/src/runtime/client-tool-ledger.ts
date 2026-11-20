@@ -788,6 +788,42 @@ export function createClientToolLedger<C extends Record<string, ToolContract>>(
       captures.set(capture, batch);
       return capture;
     },
+    /**
+     * Lifts the blocker a failed run left when it is exactly the one `retry`
+     * may answer: `uncertain`, installed for that run, naming no call. Returns
+     * whether the ledger is unblocked. Any other blocker stays.
+     */
+    releaseUncertain(sourceRunId: string): boolean {
+      if (
+        blocker &&
+        blocker.reason === 'uncertain' &&
+        blocker.sourceRunId === sourceRunId &&
+        !blocker.callIds.length
+      )
+        blocker = undefined;
+      return !blocker;
+    },
+    /**
+     * Forgets every admitted call whose assistant record is not in `history`,
+     * with its result and their places. For a history the owner cut on
+     * purpose: without this the overlay would put the dropped rows back.
+     */
+    forgetDropped(history: Transcript): void {
+      const kept = new Set(history.map((message) => message.id));
+      for (const [id, invocation] of consumed) {
+        if (kept.has(invocation.owner.id)) continue;
+        consumed.delete(id);
+        calls.delete(id);
+        results.delete(id);
+      }
+      for (const result of results.values()) kept.add(result.id);
+      for (let index = ownedOrder.length - 1; index >= 0; index--) {
+        const id = ownedOrder[index];
+        if (kept.has(id)) continue;
+        ownedOrder.splice(index, 1);
+        ownedRoles.delete(id);
+      }
+    },
     markFetchInvoked(capture: ClientToolRequestCapture): void {
       const batch = captures.get(capture);
       if (!batch) throw new TypeError('Unknown request capture');

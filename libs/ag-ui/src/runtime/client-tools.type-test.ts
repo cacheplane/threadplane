@@ -55,6 +55,13 @@ for (const call of owner.getSnapshot().clientTools.calls) {
 }
 // @ts-expect-error snapshot calls cannot be mutated
 owner.getSnapshot().clientTools.calls.push({});
+// A client-tool session retries and regenerates like any other session.
+const retried: Promise<'success' | 'paused' | 'aborted' | 'interrupted' | 'error'> | undefined =
+  owner.retry?.();
+void retried;
+void owner.regenerate?.('assistant-id', { signal: new AbortController().signal });
+// @ts-expect-error regenerate takes a message id, not an index
+void owner.regenerate?.(3);
 const empty = createSession(options, {});
 const impossible: readonly never[] = empty.getSnapshot().clientTools.calls;
 void impossible;

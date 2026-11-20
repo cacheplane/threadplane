@@ -182,7 +182,7 @@ const session = createSession({ threadId, url });
   response that was not OK is why the run failed, and clears it with the next
   run.
 - A backend `RUN_ERROR` for a submission is `retryable: true` with
-  `recovery: 'retry'` when the session has `retry`. Every other error has
+  `recovery: 'retry'`. Every other error has
   `retryable: false` and `recovery: 'none'`: a stream that ended without a
   terminal, a response that was not OK and a request that got no response leave
   open whether the backend did the work.
@@ -234,7 +234,7 @@ await session.submit({ message: 'Go on', state: { topic: 'refunds' } });
 
 ### Retry
 
-The session created without a client-tool catalog has `retry()`. It sends the
+Every session has `retry()`. Without a client-tool catalog it sends the
 last submission again after its run failed with a backend `RUN_ERROR`,
 rebuilding the request from exactly the history and state that submission sent.
 No second user message is added, and the failed run's output and state changes
@@ -245,14 +245,20 @@ failure leaves the backend outcome open.
 
 - A failed resume is not retried. Its decision stays `uncertain`, as described
   under "Correlated native resume".
-- The client-tool owner has no `retry`: it treats every failure after a request
-  was sent as uncertain and blocks further commands, so nothing could be retried.
+- With a client-tool catalog, `retry()` sends the failed request again,
+  whichever request of the command that was: the submission itself, or the
+  continuation that carried local tool results. The request is rebuilt from what
+  the failed one sent, so results the handlers already produced travel again and
+  no handler runs a second time. The session still installs its `uncertain`
+  blocker for the failure, so an ordinary `submit` cannot bypass it; `retry`
+  lifts exactly that blocker. Any other blocker (a conflict, a cancelled call,
+  an unsupported call, the group limit) is not a retryable failure.
 - A `RUN_ERROR` settles that the run failed, not that it did nothing. Work the
   backend did before failing can be repeated.
 
 ### Regenerate
 
-A session without a client-tool catalog has `regenerate(messageId, options?)`,
+Every session has `regenerate(messageId, options?)`,
 with the same semantics as the Angular adapter's `regenerate`. It takes the `id`
 of a root assistant record, or of the reasoning record a reasoning-only answer is
 shown under, which is the `id` the snapshot's `messages` give that message. It keeps the history
@@ -267,8 +273,13 @@ added again. Regenerating an earlier answer drops every later turn.
   `retry`, from the same trimmed history.
 - It is the core session's `regenerate`, so React `Chat` offers Regenerate on
   assistant messages.
-- The client-tool session has no `regenerate`: its ledger owns the history of the
-  calls it ran, and trimming that history is not supported.
+- With a client-tool catalog, `regenerate` also forgets the client-tool calls
+  that belonged to the dropped records, with their results, so
+  `clientTools.calls` lists only the calls of the history that remains. A new
+  answer that calls a tool runs its handler again, as a new call, even when the
+  backend reuses a dropped call's identifier. It rejects while a blocker is
+  installed, except the blocker a backend `RUN_ERROR` left, which it lifts as
+  `retry` does.
 
 ### Approvals
 
