@@ -5,9 +5,9 @@ description: Register specialists on the task tool and inspect delegation throug
 
 # Subagents
 
-Angular is the default example on this guide. Choose React in **Framework** for native parent task cards and separate current-session child observations. Both frontends share the same Python graph, prompt and runtime. The card tracking and description-based attribution described below apply to Angular only.
+Angular is the default example on this guide. Choose React in **Framework** for native parent task cards and separate current-session child observations. Both frontends share the same Python graph, prompt and runtime. The cards and the sidebar described below are the Angular example's.
 
-Delegation in Deep Agents is one tool. `SubAgentMiddleware` registers a tool named `task` taking `{ description, subagent_type }`, and each call runs a real child graph with its own system prompt, its own tools, and its own transcript. Nothing about that is special on the wire — it is an ordinary tool call — and yet the browser renders it as a child agent, because `task` is the name the subagent tracker already watches for. The running example is an aviation dispatch desk, and this page walks the three files behind it.
+Delegation in Deep Agents is one tool. `SubAgentMiddleware` registers a tool named `task` taking `{ description, subagent_type }`, and each call runs a real child graph with its own system prompt, its own tools, and its own transcript. Nothing about that is special on the wire — it is an ordinary tool call — and yet the browser renders it as a child agent, because `task` is the tool name the session already treats as starting a child. The running example is an aviation dispatch desk, and this page walks the three files behind it.
 
 ## What the Angular demo does
 
@@ -59,17 +59,17 @@ Both halves matter, and the first one matters for a reason worth reading the nex
 
 ### Providing the Angular agent
 
-`provideAgent()` from `@threadplane/langgraph` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. `subagentToolNames: ['task']` is already the default, so the line changes nothing at runtime and is there to say which tool call means that a child started. The example resolves its connection at runtime because the host that serves the demo decides which runtime is attached; your own application passes `apiUrl` and `assistantId` directly.
+`provideAgent()` from `@threadplane/angular` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. Its `createSession` function calls `createSession()` from `@threadplane/langgraph`. `subagentToolNames: ['task']` is already that session's default, so the line changes nothing at runtime and is there to say which tool call means that a child started. The example resolves its connection at runtime because the host that serves the demo decides which runtime is attached; your own application passes `apiUrl` and `assistantId` to `createSession()` directly.
 
 <ExampleCode file="app.config.ts" />
 
 ### Reading Angular dispatches
 
-`injectAgent()` returns the agent, and `agent.subagents()` is a signal holding a map of the dispatches in the current thread. The sidebar spreads that map into an array once and derives both numbers from it, so the two counts can never disagree.
+`injectAgent()` returns the agent, and `agent.subagents()` is a signal holding a plain list of the child agents the current run reported, in start order. A child the session related to a `task` call carries that call's id as `toolCallId`. The sidebar filters the list down to those once and derives both numbers from the result, so the two counts can never disagree.
 
 <ExampleCode file="subagents.component.ts" region="dispatch-signals" title="subagents.component.ts — the dispatch signals" />
 
-`status` is itself a signal on each record, so it is called rather than read.
+Each entry is plain data, so `status` is read as a property: `running` while the child works, then `complete` or `error` once its `task` call has a result.
 
 ### The sidebar
 
@@ -81,18 +81,18 @@ The `<chat>` composition already renders every dispatch as a card inside the con
 
 Two independent things have to happen for a `task` call to render as a child agent, and they come from opposite ends of the run.
 
-The first is registration. When the orchestrator's message carries a `task` tool call, the tracker records a dispatch keyed by the tool-call id, reading `subagent_type` out of the arguments. That name becomes the card's label, and a call with no usable `subagent_type` is ignored rather than tracked. Registration is also what makes the card its own thing in the transcript: `<chat-tool-calls>` groups adjacent calls of the same name into one collapsed strip, but a call that spawned a subagent is always its own group, so four `task` calls in one turn stay four cards instead of collapsing into a single grouped strip. A dispatch is invisible while it is still `pending` — the map behind `subagents()` filters those out — so those four calls briefly render as one grouped tool-call strip before their cards appear.
+The first is the dispatch. When the orchestrator's message carries a `task` tool call, the session counts it as a delegation, reading `subagent_type` and `description` out of the arguments. That type becomes the card's label, and a call with no usable `subagent_type` is not counted. The relation is also what makes the card its own thing in the transcript: `<chat-tool-calls>` groups adjacent calls of the same name into one collapsed strip, but a call that started a child is always its own group, so four `task` calls in one turn stay four cards instead of collapsing into a single grouped strip. A child is listed in `subagents()` only once its child graph reports, because LangGraph names a child by a namespace that exists only once the child runs, so those four calls briefly render as one grouped tool-call strip before their cards appear.
 
-The second is attribution: deciding which child stream belongs to which dispatch. This is the part that is not free. A child runs under a `tools:<id>` namespace whose id is a checkpoint identifier assigned independently of the parent's tool-call id, and the two are not linked anywhere on the wire. So the adapter matches on content instead. `SubAgentMiddleware` seeds each child with a single human message whose content is the dispatch `description`, verbatim, and the adapter matches that first message against the `description` argument of each unclaimed dispatch — exactly first, then by containment either way.
+The second is attribution: deciding which child stream belongs to which dispatch. This is the part that is not free. A child runs under a `tools:<id>` namespace whose id is a checkpoint identifier assigned independently of the parent's tool-call id, and the two are not linked anywhere on the wire. So the session matches on content instead. `SubAgentMiddleware` seeds each child with a single human message whose content is the dispatch `description`, verbatim, and the session matches that first message against the `description` argument of each unrelated dispatch — exactly first, then by containment either way.
 
 <Callout type="warning" title="Why the prompt insists on one airport per dispatch">
-The deepagents `task` tool cannot announce its binding, so inside this graph the description is the only signal that survives fan-out; a graph that announces its children through the [Threadplane middleware](/docs/angular/langgraph/guides/subgraphs) gets an exact binding instead. With one child outstanding the adapter can fall back to claiming the single unmatched dispatch, but with four outstanding at once there is nothing positional to fall back on: arrival order is not dispatch order, and guessing would put one specialist's transcript in another specialist's card. Descriptions that name their airport keep the four apart. Two dispatches whose descriptions are identical give the ladder nothing to tell them apart: the exact rung claims the first unmapped dispatch, so the second child lands on the wrong card rather than on none.
+The deepagents `task` tool cannot announce its binding, so inside this graph the description is the only signal that survives fan-out; a graph that announces its children through the [Threadplane middleware](/docs/angular/langgraph/guides/subgraphs) gets an exact binding instead. With one dispatch outstanding the session can fall back to claiming that single unrelated dispatch, but with four outstanding at once there is nothing positional to fall back on: arrival order is not dispatch order, and guessing would put one specialist's transcript in another specialist's card. Descriptions that name their airport keep the four apart. Two dispatches whose descriptions are identical give the ladder nothing to tell them apart: the exact rung claims the first unrelated dispatch, so a child can land on its sibling's card.
 </Callout>
 
-Until a stream is attributed its chunks are held rather than dropped, and they are replayed into the card the moment the match lands. An unmatched Angular dispatch can show an empty card. Description matching is a heuristic and can misattribute children, particularly when descriptions are identical. The native React preview instead presents separate unlinked namespace observations and never uses this matching heuristic.
+A child the session has not related yet is still listed in `subagents()`, with its own messages and no `toolCallId`, and a relation never changes once it is made. The sidebar's filter leaves an unrelated child out of both counts. Description matching is a heuristic and can misattribute children, particularly when descriptions are identical. The native React preview presents its child observations separately from the parent task cards.
 
 <Callout type="tip" title="The description is doing two jobs">
-A dispatch `description` is both the child's opening instruction and the key the adapter attributes its output by. A vague description costs twice: the child starts with less to go on, and its stream is harder to tell from its siblings.
+A dispatch `description` is both the child's opening instruction and the key the session attributes its output by. A vague description costs twice: the child starts with less to go on, and its stream is harder to tell from its siblings.
 </Callout>
 
 ## What's Next
@@ -105,7 +105,7 @@ A dispatch `description` is both the child's opening instruction and the key the
     The card component on its own, including what it renders for a child.
   </Card>
   <Card title="Subgraphs" href="/docs/angular/langgraph/guides/subgraphs">
-    How namespaced child execution is attributed underneath the tracker.
+    How namespaced child execution is related to the tool call that started it.
   </Card>
   <Card title="Filesystem" href="/docs/angular/deep-agents/capabilities/filesystem">
     The workspace the agent writes into while it works.

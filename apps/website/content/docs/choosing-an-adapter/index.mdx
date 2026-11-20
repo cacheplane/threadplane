@@ -5,7 +5,7 @@ description: Decide between @threadplane/langgraph and @threadplane/ag-ui for yo
 
 # Choosing an adapter
 
-Threadplane ships two adapters that connect a backend agent runtime to `<chat>` in `@threadplane/chat`. Both produce the same runtime-neutral `Agent` contract; pick one based on what your backend speaks.
+Threadplane ships two adapters that connect a backend agent runtime to `<chat>` in `@threadplane/chat`. Each is a framework-neutral package whose `createSession()` implements the same session contract from `@threadplane/core`, and `@threadplane/angular` turns either session into the `Agent` your components inject; pick one based on what your backend speaks.
 
 ## At a glance
 
@@ -16,20 +16,26 @@ Threadplane ships two adapters that connect a backend agent runtime to `<chat>` 
 
 ## Code comparison
 
-The two adapters share the same public surface — `provideAgent`, `injectAgent`, and an adapter-specific `AgentConfig`. Component code stays the same; the provider import and config shape change.
+The two adapters share the same Angular surface: one `provideAgent` and one `injectAgent`, both from `@threadplane/angular`. Component code stays the same; the `createSession` import and its options change.
 
 ### LangGraph adapter
 
 ```ts
-import { provideAgent, injectAgent } from '@threadplane/langgraph';
+import { provideAgent, injectAgent } from '@threadplane/angular';
 import { ChatComponent } from '@threadplane/chat';
+import { createSession } from '@threadplane/langgraph';
 
 // app.config.ts
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      apiUrl: 'https://your-langgraph-deployment',
-      assistantId: 'your-graph-name',
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'https://your-langgraph-deployment',
+          assistantId: 'your-graph-name',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
     }),
   ],
 };
@@ -44,12 +50,21 @@ export class App {
 ### AG-UI adapter
 
 ```ts
-import { provideAgent, injectAgent } from '@threadplane/ag-ui';
+import { provideAgent, injectAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 import { ChatComponent } from '@threadplane/chat';
 
 // app.config.ts
 export const appConfig: ApplicationConfig = {
-  providers: [provideAgent({ url: 'https://your.agent.endpoint' })],
+  providers: [
+    provideAgent({
+      createSession: (context) =>
+        createSession({
+          url: 'https://your.agent.endpoint',
+          threadId: context.threadId ?? undefined,
+        }),
+    }),
+  ],
 };
 
 // component
@@ -59,30 +74,35 @@ export class App {
 }
 ```
 
-The component body is byte-identical. The only thing that changes is the import path and the config shape passed to `provideAgent()`.
+The component body is byte-identical. The only thing that changes is which package `createSession` comes from and the options it takes.
 
 ## What about both?
 
-Mixing both adapters in one app is unusual — most apps talk to one backend. If you genuinely need both, use TypeScript import renaming:
+Mixing both adapters in one app is unusual — most apps talk to one backend. If you genuinely need both, rename the two `createSession` imports and give each agent its own ref:
 
 ```ts
-import { provideAgent as provideLangGraphAgent } from '@threadplane/langgraph';
-import { provideAgent as provideAgUiAgent } from '@threadplane/ag-ui';
+import { createAgentRef, provideAgent } from '@threadplane/angular';
+import { createSession as createAgUiSession, type Session } from '@threadplane/ag-ui';
+import { createSession as createLangGraphSession, type LangGraphSession } from '@threadplane/langgraph';
+
+export const PLANNER = createAgentRef<LangGraphSession>('planner');
+export const SUPPORT = createAgentRef<Session>('support');
 ```
 
-Each adapter uses its own private DI token internally, so providing both does not cause a runtime DI collision — but the developer ergonomics get awkward, and `<chat [agent]="agent" />` can only bind one Agent at a time. Pick one adapter per app.
+Each `provideAgent(ref, …)` call builds its own agent, so the two do not collide, and `injectAgent(PLANNER)` and `injectAgent(SUPPORT)` return distinct agents. The ref-less `injectAgent()` can name only one of them, and each `<chat [agent]="agent" />` binds one agent at a time. Pick one adapter per app unless you have a reason not to.
 
 ## Testing
 
-Three layers of test doubles, smallest scope first:
+Four layers of test doubles, smallest scope first:
 
 | Layer | Use | What is real | When |
 |---|---|---|---|
-| **Contract mock** | `mockAgent()` (chat) / `mockLangGraphAgent()` (langgraph) | nothing — you set `messages()`, `status()` directly | component/unit tests |
-| **Fake backend** | `provideFakeAgent({ tokens })` (both adapters) | the real adapter pipeline; canned wire events | adapter-integration tests, in-browser, no server |
+| **Contract mock** | `mockAgent()` from `@threadplane/chat/testing` | nothing — you set `messages`, `status` directly | component/unit tests |
+| **Fake agent** | `provideFakeAgent({ tokens })` from `@threadplane/angular/testing` | the real injected agent over an in-memory session; a canned reply | tests that go through `injectAgent()`, in-browser, no server |
+| **Scripted backend** | `MockAgentTransport` (langgraph) / `FakeAgent` (ag-ui), passed to `createSession()` | the real session projection; scripted wire events | session-integration tests, no server |
 | **LLM fixture replay** | aimock (workspace examples e2e) | the whole stack incl. a real graph; only the LLM is replayed | full end-to-end |
 
-Reach for the smallest layer that covers your test. Do not stand up aimock when a `mockAgent` unit test suffices, and do not hand-roll a transport when `provideFakeAgent` exists.
+Reach for the smallest layer that covers your test. Do not stand up aimock when a `mockAgent` unit test suffices, and do not hand-roll a session when `provideFakeAgent` exists.
 
 ## Measured runtime support
 
@@ -122,16 +142,16 @@ Shared state works on Strands, but it is snapshot-only and it is opt-in per tool
 AWS Strands and Microsoft Agent Framework signal an interrupt only through the protocol-standard `RUN_FINISHED` outcome, `{ type: 'interrupt', interrupts: [...] }`.
 The LangGraph bridge signals it only through a `CUSTOM` event named `on_interrupt`.
 Mastra emits both.
-The adapter retains both conventions in one interrupt session. In `auto` mode the native batch takes precedence regardless of arrival order.
+By default (`interruptTransport: 'protocol'`) the session answers only the protocol-standard outcome. With `interruptTransport: 'auto'` it answers both conventions, and the protocol's outcome wins over a notice in the same run.
 
 **Resume payloads are not portable, so the adapter shapes them per runtime.**
 Mastra reads the decision from `forwardedProps.command.resume` and the suspended tool's identifiers from `command.interruptEvent`. Configure `interruptTransport: 'mastra-command'` for this integration because it also emits native outcomes.
 AWS Strands and Microsoft Agent Framework both read the protocol-standard top-level `resume` array. The adapter requires every pending interrupt ID exactly once. Resolved entries carry the decision as `payload`; cancelled entries omit it.
 The LangGraph bridge reads `forwardedProps.command.resume`.
-You pass one neutral `submit({ resume })`, and the adapter shapes the request using the observed batch and configured transport profile. The backend still defines what the decision payload means.
+You call one neutral `agent.resume(responses)`, and the session shapes the request using the observed batch and configured transport profile. The backend still defines what the decision payload means.
 
 **Recovery belongs to the adapter and backend.**
-AG-UI can restore a thread by replaying its protocol events from a server that kept them, or restore client state through an application-owned `persistence` store with atomic compare-and-swap and authoritative reconciliation; only replay brings back reasoning and subagent detail. The native LangGraph adapter uses LangGraph's thread and checkpoint APIs. Neither a shared Angular approval component nor a stored client record guarantees exactly-once server execution or recreates a lost checkpoint.
+AG-UI can restore a thread by replaying its protocol events from a server that kept them, or restore client state through an application-owned `persistence` store with atomic compare-and-swap and authoritative reconciliation; only replay brings back reasoning and subagent detail. The LangGraph session uses LangGraph's thread and checkpoint APIs. Neither a shared Angular approval component nor a stored client record guarantees exactly-once server execution or recreates a lost checkpoint.
 
 **The Mastra row is hosted on its own lane.**
 Its cells come from a real Mastra server driven with live model calls, and its transcripts are committed and replayed like the others.
@@ -162,13 +182,13 @@ Each runtime has a standalone Angular example bound through `@threadplane/ag-ui`
 - [`cockpit/runtimes/microsoft-agent-framework`](https://github.com/cacheplane/threadplane/tree/main/cockpit/runtimes/microsoft-agent-framework) — Python, hosted in that same FastAPI deployment, running beside the Strands and LangGraph topics in one process.
 - [`cockpit/runtimes/mastra`](https://github.com/cacheplane/threadplane/tree/main/cockpit/runtimes/mastra) — TypeScript, hosted by a Node AG-UI service, because the upstream Mastra integration ships an in-process bridge rather than an HTTP endpoint.
 
-In all three, the component binds the agent through `injectAgent()` and renders `<chat [agent]="agent" />`; the shared-state panels and approval cards around it are demo-specific, and each example wraps `provideAgent()` in a factory only because it resolves its endpoint at runtime.
+In all three, the component binds the agent through `injectAgent()` and renders `<chat [agent]="agent" />`; the shared-state panels and approval cards around it are demo-specific, and each example passes `provideAgent()` a config factory only because it resolves its endpoint at runtime.
 
 ## Why two adapters?
 
-The `Agent` contract from `@threadplane/chat` is intentionally runtime-neutral. The two adapters exist because they bridge different on-the-wire protocols into that contract:
+The session contract from `@threadplane/core` is intentionally runtime-neutral, and so is the `Agent` that `@threadplane/angular` derives from it. The two adapters exist because they bridge different on-the-wire protocols into that contract:
 
-- `@threadplane/langgraph` talks to the LangGraph SDK directly. You get LangGraph-specific features (thread state, branching, multitask strategies) typed end-to-end.
+- `@threadplane/langgraph` talks to the LangGraph SDK directly. You get LangGraph-specific features (thread state, branching, multitask strategies) typed end-to-end when you inject the agent with the `LangGraphSession` type.
 - `@threadplane/ag-ui` consumes the AG-UI event protocol. Any backend that emits AG-UI events plugs in, regardless of what graph engine sits behind it.
 
 Both adapters are MIT-licensed and live in the same monorepo.

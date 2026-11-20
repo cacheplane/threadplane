@@ -4,10 +4,10 @@ description: How the subgraphs example routes a turn into a compiled child graph
 
 # Subgraphs
 
-Subgraphs let you compose larger agents from smaller, focused units. A compiled `StateGraph` becomes a node in a parent graph, and `injectAgent()` streams the whole composition through the same message, state, tool-call, and custom-event signals as a single graph. The running example is a research orchestrator: the parent decides per turn whether to enter the child at all, and this guide walks the three files that make it work.
+Subgraphs let you compose larger agents from smaller, focused units. A compiled `StateGraph` becomes a node in a parent graph, and the injected agent reports the whole composition through the same message, state, tool-call, and custom-event signals as a single graph. The running example is a research orchestrator: the parent decides per turn whether to enter the child at all, and this guide walks the three files that make it work.
 
 <Callout type="info" title="Subgraphs vs subagents">
-LangGraph subgraphs are graph nodes. Deep Agents-style subagents are delegated tool calls. `injectAgent()` requests subgraph streams by default, and every namespaced child run appears in the `subagents()` signal — tool-dispatched children under their tool-call id (matched via `subagentToolNames` + `subagent_type`), plain subgraph nodes under their namespace key, named by node. A child's tokens live on its stream and never merge into the parent transcript.
+LangGraph subgraphs are graph nodes. Deep Agents-style subagents are delegated tool calls. The session requests subgraph streams by default, and every child graph a run reports appears on the agent twice. `subgraphs()` is the LangGraph field: each entry keeps the child's namespace, its interrupts, and the delegation that started it. `subagents()` is the core contract's plain list of the same children, in the same order. A plain subgraph node is named by its node. A child started by a delegation tool (matched via `subagentToolNames` and a `subagent_type` argument) also carries that call's `toolCallId` and is named by the requested type. A child's messages live on its own entry and never merge into the parent transcript.
 </Callout>
 
 ## What the demo does
@@ -62,23 +62,33 @@ The child runs as its own graph with its own step sequence, and LangGraph emits 
 
 ### The typed agent ref
 
-The Angular side declares the parent's state once and hands it to a ref that both the provider and the component use. Because `SubgraphsState` names the two shared keys, `agent.value()` is typed at every read site.
+The Angular side declares the parent's state once, names the session type that carries it, and hands that to a ref that both the provider and the component use. Because `SubgraphsState` names the two shared keys, `agent.state()` is typed at every read site.
 
 <ExampleCode file="agent-ref.ts" />
 
-The application config registers that ref with `provideAgent()`.
+The application config registers that ref with `provideAgent()`, and declares the same state type on the session with `stateType`.
 
-The running example registers the provider through a factory that reads its connection from the host that serves the demo, which is how the same build runs locally and in production. Your own application passes the two connection values as literals, and keeps `transcriptNodeNames` exactly as the example sets it:
+The running example wraps its config in a factory that reads its connection from the host that serves the demo, which is how the same build runs locally and in production. Your own application passes the two connection values as literals, and keeps `stateType` and `transcriptNodeNames` exactly as the example sets them:
 
 ```typescript
+import { provideAgent } from '@threadplane/angular';
+import { type } from '@threadplane/core';
+import { createSession } from '@threadplane/langgraph';
+
 provideAgent(SUBGRAPHS_AGENT, {
-  apiUrl: 'https://your-deployment.langgraph.app',
-  assistantId: 'subgraphs',
-  transcriptNodeNames: ['answer'],
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'subgraphs',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+      stateType: type<SubgraphsState>(),
+      transcriptNodeNames: ['answer'],
+    }),
 }),
 ```
 
-`assistantId` must match the graph name in `langgraph.json`. `transcriptNodeNames` whitelists the *top-level* nodes whose message tokens belong in the chat transcript, which here means the `answer` node alone. The parent's other node runs a structured-output call of its own, and the whitelist is what keeps that traffic out of the chat.
+`assistantId` must match the graph name in `langgraph.json`. `transcriptNodeNames` lists the *top-level* nodes whose streamed message chunks belong in the chat transcript, which here means the `answer` node alone. The parent's other node runs a structured-output call of its own, and the list is what keeps that traffic out of the chat while the answer streams.
 
 <Callout type="warning" title="Keep the API key on the server">
 Never expose a LangSmith API key in client-side code. Point `apiUrl` at a deployment that authenticates the browser another way, or proxy the requests through your own server and attach the key there.
@@ -86,7 +96,7 @@ Never expose a LangSmith API key in client-side code. Point `apiUrl` at a deploy
 
 ### Reading the boundary from Angular
 
-`injectAgent(SUBGRAPHS_AGENT)` returns `LangGraphAgent<SubgraphsState>`, so `agent.value()` is a typed signal over the parent graph's live state as its `values` events arrive. The two shared keys are read straight off it, and a non-empty topic doubles as the "did the run nest?" signal because it is exactly what the conditional edge routes on.
+`injectAgent(SUBGRAPHS_AGENT)` returns `Agent<SubgraphsSession>`, so `agent.state()` is a typed signal over the parent graph's state as LangGraph reports it, without `messages`. It is `undefined` until the graph reports a state. The two shared keys are read straight off it, and a non-empty topic doubles as the "did the run nest?" signal because it is exactly what the conditional edge routes on.
 
 <ExampleCode file="subgraphs.component.ts" region="agent" title="subgraphs.component.ts — the shared keys" />
 
@@ -94,11 +104,11 @@ The sidebar renders `topic()` and `brief()` under the route line, so watching th
 
 ### The same child, seen as a stream
 
-`agent.value()` is one view of the child. `agent.subagents()` is the other: a Map of every namespaced child run, which for a plain subgraph node is keyed by the namespace segment and named by the node. No configuration turns it on — the entry appears on the child's first streamed event and settles with the run.
+`agent.state()` is one view of the child. `agent.subagents()` is the other: a plain readonly list with one entry for each child graph the run reported. For a plain subgraph node the entry's `id` is made from the child's namespace path and its `name` is the node. No configuration turns it on: the entry appears once the child graph reports, and its `status` settles with the run.
 
 <ExampleCode file="subgraphs.component.ts" region="child-streams" title="subgraphs.component.ts — the child as a stream" />
 
-`status()` and `name` come off each `Subagent` entry in the `subagents()` map, which is why the mapped objects carry a called signal rather than the entry itself.
+`id`, `name`, and `status` are plain fields on each entry, not signals. The list is the signal, and an entry keeps its reference while its child graph and status are unchanged.
 
 <Callout type="info" title="Injection context">
 `injectAgent()` must run inside an Angular injection context: a field initializer, as it is here, or a constructor body.
@@ -106,22 +116,27 @@ The sidebar renders `topic()` and `brief()` under the route line, so watching th
 
 ## Tracking delegated subagent execution
 
-The `subagents()` signal contains a Map of active child streams. Tool-dispatched children — Deep Agents' default `task` tool or your own delegation tools — are keyed by tool-call id and named by their `subagent_type`. Plain subgraph nodes, as in the example above, are keyed by their namespace segment and named by node; they register on their first streamed event and settle with the run.
+The `subagents()` signal holds a readonly list of the child agents the current run reported, in the order they were first observed. Tool-dispatched children, whether from Deep Agents' default `task` tool or your own delegation tools, carry the `toolCallId` of the call that started them, its task as `description`, and the requested `subagent_type` as `name`. Plain subgraph nodes, as in the example above, are named by node and have no `toolCallId`.
 
-Nested delegation — a subagent that itself dispatches a delegation tool — surfaces as its own entry too, keyed by its namespace path (truncated at the innermost delegation segment) and treated like a plain subgraph stream. Each level of delegation gets its own stream; the map stays flat, so there is no parent/child linking between the entries.
+Nested delegation, a child that starts a child of its own, appears as its own entry too. Its `parentId` is the `id` of the enclosing child, so the list stays flat while the tree can be rebuilt from it. A nested child is never related to a tool call: only a child that a root tool call started is.
 
-Tool-dispatched children need one option the example does not set, because the example has no delegation tool:
+Tool-dispatched children are related through one session option. Its default is `['task']`, so set it when a delegation tool has another name:
 
 ```typescript
 // app.config.ts
 provideAgent(ORCHESTRATOR, {
-  apiUrl: 'https://your-deployment.langgraph.app',
-  assistantId: 'orchestrator',
-  subagentToolNames: ['task', 'delegate_to_researcher'],
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'orchestrator',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+      subagentToolNames: ['task', 'delegate_to_researcher'],
+    }),
 }),
 ```
 
-`ORCHESTRATOR` and `PIPELINE` here stand for agent refs created the same way as `SUBGRAPHS_AGENT`.
+`ORCHESTRATOR` here stands for an agent ref created the same way as `SUBGRAPHS_AGENT`, as `createAgentRef<LangGraphSession>('orchestrator')`.
 
 With that in place, the same lookups work on either flavor:
 
@@ -130,14 +145,16 @@ const orchestrator = injectAgent(ORCHESTRATOR);
 
 // Only the active ones
 const running = computed(() =>
-  [...orchestrator.subagents().values()].filter(
-    (subagent) => subagent.status() === 'pending' || subagent.status() === 'running'
-  )
+  orchestrator.subagents().filter((subagent) => subagent.status === 'running')
 );
 
-// Lookup helpers for common UI paths
-const specific = computed(() => orchestrator.getSubagent('research-tool-call-id'));
-const researchers = computed(() => orchestrator.getSubagentsByType('researcher'));
+// Lookups for common UI paths
+const specific = computed(() =>
+  orchestrator.subagents().find((subagent) => subagent.toolCallId === 'research-tool-call-id')
+);
+const researchers = computed(() =>
+  orchestrator.subagents().filter((subagent) => subagent.name === 'researcher')
+);
 
 // React to count changes
 effect(() => {
@@ -146,41 +163,47 @@ effect(() => {
 ```
 
 <Callout type="tip" title="Subagent tool names">
-Set `subagentToolNames` to the tool names that spawn subagents. `injectAgent()` uses this to identify tool calls that create subagent streams.
+Set `subagentToolNames` to the tool names that start a child agent. The session uses it to relate a child graph to the tool call that started it.
 
-Registration is skipped silently unless the tool call also carries a valid `subagent_type` argument: a string of 3-50 characters, starting with a letter, containing only letters, digits, `_`, or `-`. A value like `qa` (too short) or `2nd_pass` (leading digit) produces no subagent and no error, so `subagents()` stays empty with nothing in the console to explain it.
+The relation is skipped silently unless the tool call also carries a valid `subagent_type` argument: a string of 3-50 characters, starting with a letter, containing only letters, digits, `_`, or `-`. A value like `qa` (too short) or `2nd_pass` (leading digit) relates nothing and raises no error, so the child is listed without a `toolCallId` or a description, with nothing in the console to explain it.
 </Callout>
+
+No child event replays when a saved thread is loaded, so a reloaded thread lists no children by default. Create the session with `restoreSubagents: true` to rebuild the tool-started ones from what the thread saved: their relation and status from the root transcript, and their own messages where the backend can serve a child's state. Plain subgraph nodes and nested delegations are not rebuilt.
 
 ## Subagent stream details
 
-Each `SubagentStreamRef` exposes its own reactive signals — status, messages, and values — so you can surface granular progress in your UI.
+Each entry is a plain snapshot of one child: its `status`, its own `messages` and `toolCalls`, its `state`, and an `error` text when it failed. Derive what your UI needs from the list.
 
 ```typescript
-// Access a specific subagent by its tool call ID
+// Find a specific subagent by the tool call that started it
 const researchAgent = computed(() =>
-  orchestrator.getSubagent('research-tool-call-id')
+  orchestrator.subagents().find((subagent) => subagent.toolCallId === 'research-tool-call-id')
 );
 
-// Or get the subagents spawned by a specific AI message with tool calls
+// Or get the subagents started by one assistant message's tool calls
 const messageAgents = computed(() => {
-  const message = selectedAiMessage();
-  return message ? orchestrator.getSubagentsByMessage(message) : [];
+  const ids = selectedAssistantMessage()?.toolCallIds ?? [];
+  return orchestrator
+    .subagents()
+    .filter((subagent) => subagent.toolCallId !== undefined && ids.includes(subagent.toolCallId));
 });
 
 // Track its progress
-const researchStatus = computed(() => researchAgent()?.status());
-const researchMessages = computed(() => researchAgent()?.messages() ?? []);
+const researchStatus = computed(() => researchAgent()?.status);
+const researchMessages = computed(() => researchAgent()?.messages ?? []);
 ```
+
+`status` is `running` while the root run is going, except that a child related to a tool call is `complete` or `error` as soon as that call has a result. After the run, a child whose last message succeeded is `complete`, a child a pause stopped is still `running`, because a resume continues it, and a child with no conclusive ending is `unknown`. This session never reports `pending`: LangGraph names a child by a namespace that exists only once the child runs.
 
 ## How child streams get matched to tool calls
 
-A child graph invoked inside a `@tool` body streams under a `tools:<uuid>` namespace — and that uuid is a **checkpoint id**, assigned independently of the tool-call id. Nothing on the wire links the two. `injectAgent()` bridges the gap in three tiers, in order of preference:
+A child graph invoked inside a `@tool` body streams under a `tools:<uuid>` namespace — and that uuid is a **checkpoint id**, assigned independently of the tool-call id. Nothing on the wire links the two. The session bridges the gap in three tiers, in order of preference:
 
 1. **A server-announced binding** (exact, works under any concurrency — see below)
-2. **The description ladder**: the child's first human message is compared against each pending tool call's `description` argument — exact match, then substring in either direction
-3. **A positional fallback** that fires only when *exactly one* tool child is outstanding — with several in flight, arrival order is not dispatch order, and guessing would cross-wire the cards, so ambiguous streams stay buffered instead
+2. **The description ladder**: the child's first message is compared against the `description` argument of each call that is not yet related: an exact match, or one containing the other
+3. **A positional fallback** that applies only when *exactly one* unrelated call is still pending or running. With several in flight, arrival order is not dispatch order, and guessing would cross-wire the cards, so an ambiguous child stays unrelated instead
 
-Tier 3 covers the common sequential shape (one dispatch per assistant turn). For parallel fan-out, or a delegation tool whose argument is not named `description`, announce the binding from the server — the tool body is the one place both halves are known:
+Tier 3 covers the common sequential shape (one dispatch per assistant turn). For parallel fan-out, or a delegation tool whose argument is not named `description`, announce the binding from the server. The tool body is the one place both halves are known:
 
 ```python
 from typing import Annotated, Literal
@@ -203,9 +226,9 @@ async def task(
     return result["messages"][-1].content
 ```
 
-The required `subagent_type` argument registers this call as a `researcher` subagent. The announcement then binds its child stream to that registered call; it does not create the registration itself.
+The required `subagent_type` argument makes this call a delegation to a `researcher`. The announcement then binds the child graph to that call; it does not make a call a delegation by itself.
 
-`announce_subagent` (threadplane-middleware ≥ 0.0.2) emits one custom event pairing the config's `checkpoint_ns` with the injected tool-call id. `injectAgent()` consumes it, attributes the stream exactly — replaying any chunks that arrived before the announcement — and never lets it override an established mapping. It returns `False` instead of raising when anything it needs is unavailable (outside a run, no namespace, no id), so it needs no guarding.
+`announce_subagent`, from the `threadplane-middleware` Python package, emits one custom event pairing the config's `checkpoint_ns` with the injected tool-call id. The session reads it as protocol, so it is not delivered to `onCustomEvent()`, and relates the child exactly. A relation never changes once it is made. The helper returns `False` instead of raising when anything it needs is unavailable (outside a run, no namespace, no id), so it needs no guarding.
 
 <Callout title="Announce even in sequential graphs">
 It costs one line, upgrades attribution from heuristic to exact, and your graph keeps working unchanged if you later parallelize dispatch.
@@ -220,51 +243,51 @@ const pipeline = injectAgent(PIPELINE);
 
 // Derive a summary of all subagent states
 const pipelineStatus = computed(() => {
-  const entries = [...pipeline.subagents().entries()];
+  const children = pipeline.subagents();
 
   return {
-    total: entries.length,
-    pending: entries.filter(([, a]) => a.status() === 'pending').length,
-    running: entries.filter(([, a]) => a.status() === 'running').length,
-    done: entries.filter(([, a]) => a.status() === 'complete').length,
-    failed: entries.filter(([, a]) => a.status() === 'error').length,
+    total: children.length,
+    running: children.filter((child) => child.status === 'running').length,
+    done: children.filter((child) => child.status === 'complete').length,
+    failed: children.filter((child) => child.status === 'error').length,
+    unknown: children.filter((child) => child.status === 'unknown').length,
   };
 });
 ```
 
+`PIPELINE` is another agent ref, created the same way as `ORCHESTRATOR`.
+
 ## Child messages and the parent transcript
 
-Child messages never appear in the parent's `messages()` signal — a namespaced stream belongs to its child, and `messages()` is the parent's transcript. That is a classification rule, not a heuristic: any event carrying a namespace is child content.
+Child messages never appear in the parent's `messages()` signal: a namespaced stream belongs to its child, and `messages()` is the parent's transcript. That is a classification rule, not a heuristic: any event carrying a namespace is child content.
 
-What the transcript shows once the run settles is decided by state instead. A child that shares the parent's `messages` key writes into the parent's message list, and that list arrives with the authoritative `values` sync at the end of the run. The example's child has no `messages` key, so nothing it produces can ever land there. Render a child's live output from its own stream, as the example does with `subagents()`.
+What the transcript shows once the run settles is decided by state instead. A child that shares the parent's `messages` key writes into the parent's message list, and a message the graph saves to its state arrives with that state. The example's child has no `messages` key, so nothing it produces can ever land there. Render a child's live output from its own stream, as the example does with `subagents()`.
 
-Streamed chunks from *top-level* side-effect nodes — a router, a title generator — are a separate concern, and the one `transcriptNodeNames` exists for.
+Streamed chunks from *top-level* side-effect nodes, such as a router or a title generator, are a separate concern, and the one `transcriptNodeNames` exists for.
 
 ## Error handling per subagent
 
-Each subagent exposes its own `status()` signal. A failure changes that subagent's status to `'error'` without necessarily stopping sibling delegates.
+Each entry carries its own `status`. A failure changes that child's status to `'error'`, with the display text in `error`, without necessarily stopping sibling delegates.
 
 ```typescript
 // Collect all failed subagents reactively
 const failedAgents = computed(() =>
-  [...orchestrator.subagents().entries()].filter(
-    ([, agent]) => agent.status() === 'error'
-  )
+  orchestrator.subagents().filter((subagent) => subagent.status === 'error')
 );
 
-// One effect over the derived list — it re-runs as subagents appear and fail.
+// One effect over the derived list. It re-runs as subagents appear and fail.
 effect(() => {
-  for (const [id] of failedAgents()) {
-    console.error(`Subagent ${id} failed`);
+  for (const subagent of failedAgents()) {
+    console.error(`Subagent ${subagent.id} failed: ${subagent.error ?? 'no detail'}`);
     // Retry, surface to user, or fall back gracefully
   }
 });
 ```
 
-Derive the list first, then react to it. Looping over a `subagents()` snapshot to create one `effect()` per entry does not work: the read happens outside a reactive context so it never re-runs, subagents that appear later never get an effect, and `effect()` needs an injection context.
+Derive the list first, then react to it. Reading `subagents()` once, outside a reactive context, gives you one snapshot of the list: children that appear later are not in it, and a child that fails later is a new entry that the snapshot never sees. `effect()` also needs an injection context.
 
 <Callout type="warning" title="Partial failures">
-Always check `failedAgents()` before presenting final results. A completed orchestrator can still have subagents that errored — success at the top level does not guarantee all delegates succeeded.
+Always check `failedAgents()` before presenting final results. A completed orchestrator can still have subagents that errored: success at the top level does not guarantee all delegates succeeded.
 </Callout>
 
 ## When to use subagents vs a single agent
@@ -279,7 +302,7 @@ None of those three come from compiling a child graph. A narrow context window f
 
 <CardGroup cols={2}>
   <Card title="Streaming" href="/docs/angular/langgraph/guides/streaming">
-    Understand how `injectAgent()` surfaces tokens, status, and errors in real time.
+    Understand how the injected agent surfaces tokens, status, and errors in real time.
   </Card>
   <Card title="Time Travel" href="/docs/angular/langgraph/guides/time-travel">
     Inspect earlier states and replay alternate execution paths with checkpoint history.
@@ -287,7 +310,7 @@ None of those three come from compiling a child graph. A narrow context window f
   <Card title="Testing" href="/docs/angular/langgraph/guides/testing">
     Write unit and integration tests for orchestrator graphs and subagent interactions.
   </Card>
-  <Card title="API Reference" href="/docs/api/langgraph/injectAgent">
-    Full reference for `injectAgent()` options, signals, and subagent configuration.
+  <Card title="API Reference" href="/docs/api/langgraph">
+    The generated reference for `@threadplane/langgraph`, including the session options for subagents.
   </Card>
 </CardGroup>

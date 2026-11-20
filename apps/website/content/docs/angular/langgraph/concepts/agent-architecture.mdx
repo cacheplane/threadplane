@@ -4,10 +4,10 @@ description: How planning, tool execution, subagents, and checkpoints work in a 
 
 # Agent Architecture
 
-How AI agents work — the planning, execution, and tool-calling lifecycle that `injectAgent()` connects your Angular app to. This page walks the Python patterns behind modern agents and see exactly how each one surfaces in Angular through `@threadplane/langgraph`.
+How AI agents work: the planning, execution, and tool-calling lifecycle that `injectAgent()` connects your Angular app to. This page walks the Python patterns behind modern agents and shows how each one surfaces in Angular through `@threadplane/angular` and a `@threadplane/langgraph` session.
 
 <Callout type="info" title="Python + Angular, both sides">
-Every section below shows the Python backend code first, then the Angular frontend code that consumes it. You need both halves to build a production agent application — LangGraph handles the intelligence, `injectAgent()` handles the reactivity.
+Every section below shows the Python backend code first, then the Angular frontend code that consumes it. You need both halves to build a production agent application: LangGraph handles the intelligence, and `injectAgent()` handles the reactivity.
 </Callout>
 
 ## The Agent Loop
@@ -16,7 +16,7 @@ Every agent follows a five-phase cycle. It is worth understanding, because each 
 
 <Steps>
 <Step title="Receive">
-The user sends a message. On the Angular side, `submit()` posts input to LangGraph Platform. On the Python side, the message lands in the graph's `messages` state key.
+The user sends a message. On the Angular side, `submit()` sends the message to LangGraph Platform. On the Python side, the message lands in the graph's `messages` state key.
 
 ```python
 class AgentState(TypedDict):
@@ -27,7 +27,7 @@ class AgentState(TypedDict):
 
 </Step>
 <Step title="Plan">
-The LLM examines the full message history plus any accumulated state. It decides what to do next — respond directly, call one or more tools, or delegate to a subagent.
+The LLM examines the full message history plus any accumulated state. It decides what to do next: respond directly, call one or more tools, or delegate to a subagent.
 
 ```python
 def plan(state: AgentState, config: RunnableConfig) -> dict:
@@ -44,7 +44,7 @@ def plan(state: AgentState, config: RunnableConfig) -> dict:
 
 </Step>
 <Step title="Execute">
-If the LLM decided to call tools, LangGraph routes to the tool node. Tools run — database queries, API calls, code execution — and their results feed back into state as `ToolMessage` entries.
+If the LLM decided to call tools, LangGraph routes to the tool node. Tools run (database queries, API calls, code execution) and their results feed back into state as `ToolMessage` entries.
 
 ```python
 from langgraph.prebuilt import ToolNode
@@ -56,11 +56,11 @@ tool_node = ToolNode(tools)
 
 </Step>
 <Step title="Respond">
-After tools finish (or if no tools were needed), the agent streams its final response token by token. `injectAgent()` updates the `messages()` signal in real time so your Angular template re-renders incrementally.
+After tools finish (or if no tools were needed), the agent streams its final response token by token. The session publishes each change, and the agent's `messages()` signal updates so your Angular template re-renders incrementally.
 
 ```html
-<!-- Angular side — messages update as tokens arrive -->
-@if (agent.isLoading()) {
+<!-- Angular side: messages update as tokens arrive -->
+@if (agent.status() === 'running') {
   <app-typing-indicator />
 }
 @for (msg of agent.messages(); track msg.id) {
@@ -70,7 +70,7 @@ After tools finish (or if no tools were needed), the agent streams its final res
 
 </Step>
 <Step title="Checkpoint">
-LangGraph checkpoints the full state — messages, tool results, plan, everything. The agent may loop back to Plan (if tools returned data that needs further reasoning) or finish. The checkpoint is what enables time-travel debugging via `history()`.
+LangGraph checkpoints the full state: messages, tool results, plan, everything. The agent may loop back to Plan (if tools returned data that needs further reasoning) or finish. The checkpoint is what enables time-travel debugging through `checkpoints()`.
 
 ```python
 from langgraph.checkpoint.postgres import PostgresSaver
@@ -158,11 +158,7 @@ graph = builder.compile()
 
 ```typescript
 import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
-import { injectAgent } from '@threadplane/langgraph';
-
-interface AgentState {
-  messages: BaseMessage[];
-}
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   selector: 'app-react-agent',
@@ -184,18 +180,21 @@ interface AgentState {
 export class ReactAgentComponent {
   protected readonly agent = injectAgent();
 
+  // The graph's `messages` key arrives as the transcript, not as state.
   messages = this.agent.messages;
 
-  // Tool calls with status, args, and result data
+  // A call waits as `pending` until its result arrives.
   activeTools = computed(() =>
-    this.agent.toolCalls().filter((tool) => tool.status === 'running')
+    this.agent
+      .toolCalls()
+      .filter((tool) => tool.status === 'pending' || tool.status === 'running')
   );
   completedTools = computed(() =>
     this.agent.toolCalls().filter((tool) => tool.status === 'complete')
   );
 
   send(text: string) {
-    this.agent.submit({ message: text });
+    void this.agent.submit(text);
   }
 }
 ```
@@ -207,7 +206,7 @@ The key insight: `should_continue` is the decision point. If the LLM's response 
 
 ## Tool Calling Deep Dive
 
-Tools are how agents interact with the outside world. Both halves matter here — the Python definition and the Angular consumption.
+Tools are how agents interact with the outside world. Both halves matter here: the Python definition and the Angular consumption.
 
 ### Defining Tools in Python
 
@@ -242,24 +241,18 @@ The LLM reads the docstring to decide when to call a tool. A vague docstring lik
 
 ### How Tools Surface in Angular
 
-When the agent calls a tool, `injectAgent()` exposes the execution lifecycle through `toolCalls()`:
+When the agent calls a tool, the injected agent exposes the call and its result through `toolCalls()`:
 
 <Tabs>
 <Tab label="toolCalls()">
 
 ```typescript
-// toolCalls() — tool calls with status, args, and results
-// Updates in real time as tools start and complete
+// toolCalls(): tool calls with id, name, args, and status.
+// A call enters the list once the model has finished writing its arguments.
+// It is `pending` until its result arrives, then `complete` or `error`.
 
-const agent = injectAgent();
-
-// Each entry has: id, name, args, status, and optional result
-const activeTools = computed(() =>
-  agent.toolCalls().filter((tool) => tool.status === 'running')
-);
-
-// Template usage
 @Component({
+  imports: [JsonPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @for (tool of activeTools(); track tool.id) {
@@ -272,8 +265,12 @@ const activeTools = computed(() =>
   `,
 })
 export class ToolProgressComponent {
+  private readonly agent = injectAgent();
+
   activeTools = computed(() =>
-    this.agent.toolCalls().filter((tool) => tool.status === 'running')
+    this.agent
+      .toolCalls()
+      .filter((tool) => tool.status === 'pending' || tool.status === 'running')
   );
 }
 ```
@@ -282,12 +279,9 @@ export class ToolProgressComponent {
 <Tab label="completed calls">
 
 ```typescript
-const completedTools = computed(() =>
-  agent.toolCalls().filter((tool) => tool.status === 'complete')
-);
-
-// Each entry has: id, name, args, status, result, error
+// A complete call carries `result`. A failed call carries `error`, a string.
 @Component({
+  imports: [JsonPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @for (call of completedTools(); track call.id) {
@@ -301,14 +295,18 @@ const completedTools = computed(() =>
         </div>
         <div class="result">
           <h4>Output</h4>
-          <pre>{{ call.result }}</pre>
+          <pre>{{ call.result | json }}</pre>
         </div>
       </details>
     }
   `,
 })
 export class ToolResultsComponent {
-  completedTools = computed(() => this.agent.toolCalls());
+  private readonly agent = injectAgent();
+
+  completedTools = computed(() =>
+    this.agent.toolCalls().filter((tool) => tool.status === 'complete')
+  );
 }
 ```
 
@@ -332,8 +330,8 @@ The `should_continue` conditional edge detects `tool_calls` and routes to the `t
 <Step title="SSE event streams">
 LangGraph Platform streams the tool call and result as SSE events to the Angular client.
 </Step>
-<Step title="`injectAgent()` updates signals">
-`toolCalls()` updates as the tool moves through pending, running, complete, and error states. Each update triggers OnPush change detection.
+<Step title="The agent updates its signals">
+`toolCalls()` lists the call as `pending` once its arguments are final, then as `complete` with its result or `error` with the failure text. Each change notifies the OnPush views that read the signal.
 </Step>
 </Steps>
 
@@ -408,14 +406,8 @@ graph = builder.compile()
 
 ```typescript
 import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
-import { injectAgent } from '@threadplane/langgraph';
-
-interface OrchestratorState {
-  messages: BaseMessage[];
-  next_agent: string;
-  research_output: string;
-  analysis_output: string;
-}
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
 @Component({
   selector: 'app-multi-agent',
@@ -424,42 +416,43 @@ interface OrchestratorState {
     <app-chat [messages]="messages()" />
 
     <aside class="agent-panel">
-      <h3>Active Delegated Work</h3>
-      @for (tool of activeTools(); track tool.id) {
+      <h3>Delegated Work In This Run</h3>
+      @for (worker of activeWorkers(); track worker.id) {
         <app-agent-card
-          [name]="tool.name"
-          [status]="tool.status"
-          [input]="tool.args" />
+          [name]="worker.name"
+          [status]="worker.status"
+          [messages]="worker.messages" />
       }
     </aside>
 
     <footer class="all-agents">
-      <h3>Completed Tool Results</h3>
-      @for (tool of completedTools(); track tool.id) {
-        <app-tool-summary
-          [name]="tool.name"
-          [result]="tool.result" />
+      <h3>Finished Specialists</h3>
+      @for (worker of finishedWorkers(); track worker.id) {
+        <app-agent-summary
+          [name]="worker.name"
+          [messages]="worker.messages" />
       }
     </footer>
   `,
 })
 export class MultiAgentComponent {
-  protected readonly orchestrator = injectAgent();
+  protected readonly orchestrator = injectAgent<LangGraphSession>();
 
+  // The supervisor's transcript. A child's streamed chunks stay on the child.
   messages = this.orchestrator.messages;
 
-  // Currently running delegated work with live status
-  activeTools = computed(() =>
-    this.orchestrator.toolCalls().filter((tool) => tool.status === 'running')
+  // One entry for each child graph the run reported, in start order.
+  // A subgraph node reads `running` while the root run is going.
+  activeWorkers = computed(() =>
+    this.orchestrator.subagents().filter((worker) => worker.status === 'running')
   );
 
-  // Completed tool calls with results
-  completedTools = computed(() =>
-    this.orchestrator.toolCalls().filter((tool) => tool.status === 'complete')
+  finishedWorkers = computed(() =>
+    this.orchestrator.subagents().filter((worker) => worker.status === 'complete')
   );
 
   send(text: string) {
-    this.orchestrator.submit({ message: text });
+    void this.orchestrator.submit(text);
   }
 }
 ```
@@ -468,7 +461,7 @@ export class MultiAgentComponent {
 </Tabs>
 
 <Callout type="tip" title="subagentToolNames is the key">
-The `subagentToolNames` option tells `injectAgent()` which tool calls spawn subagents. The default Deep Agents tool name is `task`; set this option when your graph uses custom delegation tool names. Ordinary LangGraph subgraph nodes need no configuration: they appear in `subagents()` under their namespace key, named by node, and their streamed output stays on that child stream rather than the parent transcript.
+The `subagentToolNames` option of `createSession` names the root tools that start a child agent, so the session can relate each child to the tool call that started it. The default is `['task']`, the Deep Agents tool name; set this option when your graph uses custom delegation tool names. Ordinary LangGraph subgraph nodes, such as the specialists above, need no configuration: each appears in `subagents()` with an `id` made from its namespace and a `name` taken from its node, and its streamed output stays on that child rather than the parent transcript.
 </Callout>
 
 ## Error Handling and Recovery
@@ -499,47 +492,53 @@ query_database.handle_tool_error = True
 ### How Errors Surface in Angular
 
 ```typescript
-const agent = injectAgent();
-
-// The error() signal captures both transport and agent errors
-const error = computed(() => agent.error());
-
-// In your template
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (error()) {
-      <app-error-banner [error]="error()" (retry)="retry()" />
+    @if (agent.error(); as error) {
+      <app-error-banner
+        [message]="error.message"
+        [detail]="error.detail"
+        [canRetry]="canRetry()"
+        (retry)="retry()" />
     }
   `,
 })
 export class AgentComponent {
-  error = computed(() => this.agent.error());
+  protected readonly agent = injectAgent();
+
+  // error() is a plain AgentError: kind, message, detail, recovery.
+  // It is frozen data, not an Error instance.
+  protected readonly canRetry = computed(
+    () => this.agent.error()?.recovery === 'retry' && this.agent.retry !== undefined
+  );
 
   retry() {
-    // Re-run the last submitted input; clears error() and sets loading
-    this.agent.retry();
+    // Sends the failed submission again without adding a second user message
+    void this.agent.retry?.();
   }
 }
 ```
+
+`retry()` is offered only for a failure whose `recovery` is `'retry'`: the backend reported the run itself as failed, or the thread could not be created. A stream that drops leaves the outcome uncertain, so its error carries `recovery: 'check'` and the read-only `checkStatus()` is the safe action. See [Angular Signals](/docs/angular/langgraph/concepts/angular-signals) for a component that offers both.
 
 ### Error Recovery Strategies
 
 | Error type | Python behavior | Angular signal |
 |---|---|---|
-| Tool throws `ToolException` | Error fed back to LLM, agent retries | `toolCalls()` shows error in result |
-| Tool throws unexpected error | LangGraph catches it, marks tool as failed | `error()` fires with details |
-| LLM returns invalid tool args | ToolNode validation fails, error fed to LLM | `toolCalls()` shows failed status |
-| Transport error (network) | N/A | `error()` fires, `status()` becomes `'error'` |
-| Agent exceeds recursion limit | Graph raises `GraphRecursionError` | `error()` fires with recursion message |
+| Tool throws `ToolException` | Error fed back to LLM as a `ToolMessage`, agent retries | When that message has `status: 'error'`, the `toolCalls()` entry has `status: 'error'` and the text in `error` |
+| Tool throws unexpected error | The exception is not handled and the run fails | `error()` is set and `status()` becomes `'error'` |
+| LLM returns invalid tool args | ToolNode validation fails, error fed to LLM | The `toolCalls()` entry has `status: 'error'` |
+| Transport error (network) | N/A | `error()` is set with `kind: 'interrupted'`, `status()` becomes `'error'` |
+| Agent exceeds recursion limit | Graph raises `GraphRecursionError` and the run fails | `error()` is set and `status()` becomes `'error'` |
 
 <Callout type="warning" title="Recursion limits">
-LangGraph defaults to 25 recursion steps. If your agent loops between `model` and `tools` more than 25 times, it stops with a `GraphRecursionError`. Increase the limit in production by passing it in the run config — `graph.invoke(input, config={"recursion_limit": 50})` — or redesign the agent to converge faster.
+LangGraph defaults to 25 recursion steps. If your agent loops between `model` and `tools` more than 25 times, it stops with a `GraphRecursionError`. Increase the limit in production by passing it in the run config, `graph.invoke(input, config={"recursion_limit": 50})`, or redesign the agent to converge faster.
 </Callout>
 
 ## Checkpointing and Debugging
 
-Every time a node completes, LangGraph saves a checkpoint — a full snapshot of the agent's state at that moment. `injectAgent()` exposes this checkpoint timeline to Angular, giving you time-travel debugging for free.
+Every time a node completes, LangGraph saves a checkpoint: a full snapshot of the agent's state at that moment. A session created with `historyState: true` publishes this checkpoint timeline, and the agent exposes it to Angular as `checkpoints()`.
 
 ### How Checkpoints Work
 
@@ -567,45 +566,55 @@ with PostgresSaver.from_conn_string(DATABASE_URL) as checkpointer:
 ```typescript
 // app.config.ts
 provideAgent({
-  apiUrl: '...',
-  assistantId: 'react_agent',
-  threadId: signal('thread_abc123'),
+  threadId: 'thread_abc123',
+  createSession: (context) =>
+    createSession({
+      apiUrl: '...',
+      assistantId: 'react_agent',
+      // Keep each checkpoint's state and read the page again after every run
+      historyState: true,
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+    }),
 });
 
 // component.ts
-const agent = injectAgent();
+protected readonly agent = injectAgent<LangGraphSession>();
 
-// Full checkpoint timeline — every state snapshot
-const timeline = computed(() => agent.history());
+// The checkpoint timeline, oldest first. Undefined until a page is read.
+protected readonly timeline = computed(() => this.agent.checkpoints() ?? []);
 
-// Current branch (for time-travel)
-const branch = computed(() => agent.branch());
+// The branch a view selected with setBranch(); undefined for the default
+protected readonly branch = computed(() => this.agent.branch());
 ```
+
+`historyState` is an option you turn on, because a page of checkpoint states can be large. `branch()`, `setBranch()`, and the other LangGraph fields are typed when the agent is injected as `injectAgent<LangGraphSession>()` or through a typed ref.
 
 ### Building a Debug Timeline
 
-Each entry in `agent.history()` is an `AgentCheckpoint` — a runtime-neutral snapshot of one point in the run:
+Each entry in `agent.checkpoints()` extends `AgentCheckpoint`, a runtime-neutral snapshot of one point in the run:
 
 ```typescript
 interface AgentCheckpoint {
-  /** Adapter-opaque checkpoint id (LangGraph's checkpoint_id). Pass this back to time-travel. */
-  id?: string;
-  /** Human-friendly label — typically the next node to run. */
-  label?: string;
-  /** State snapshot captured at this checkpoint. */
-  values: Record<string, unknown>;
+  /** Backend-opaque checkpoint id (LangGraph's checkpoint_id). Pass this back to time-travel. */
+  readonly id?: string;
+  /** Display text for the point, such as the next node to run. */
+  readonly label?: string;
+  /** The state at this point, as frozen plain data. */
+  readonly values: Readonly<Record<string, PlainValue>>;
 }
 ```
 
-Bind to those fields when you render the timeline (for the raw per-node metadata LangGraph attaches, read `agent.langGraphHistory()` instead):
+Bind to those fields when you render the timeline. For checkpoint metadata without the saved state, read `agent.history()` instead: it lists the loaded page newest first, with each entry's `checkpoint`, `parent_checkpoint`, `created_at`, and `next`.
 
 ```typescript
 @Component({
   selector: 'app-debug-timeline',
+  imports: [JsonPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="timeline">
-      @for (checkpoint of history(); track checkpoint.id) {
+      @for (checkpoint of checkpoints(); track checkpoint.id ?? $index) {
         <button
           [class.active]="checkpoint.id === currentCheckpoint()"
           (click)="timeTravel(checkpoint.id)">
@@ -621,28 +630,35 @@ Bind to those fields when you render the timeline (for the raw per-node metadata
   `,
 })
 export class DebugTimelineComponent {
-  history = computed(() => this.agent.history());
+  protected readonly agent = injectAgent<LangGraphSession>();
+
+  checkpoints = computed(() => this.agent.checkpoints() ?? []);
   currentCheckpoint = signal<string | null>(null);
 
   selectedState = computed(() => {
     const id = this.currentCheckpoint();
-    return this.history().find(c => c.id === id)?.values;
+    return this.checkpoints().find((c) => c.id === id)?.values;
   });
 
-  timeTravel(checkpointId: string) {
+  timeTravel(checkpointId: string | undefined) {
+    if (!checkpointId) return;
     this.currentCheckpoint.set(checkpointId);
-    this.agent.submit({}, { checkpointId });
+    // Per-run LangGraph settings are grouped under `run`.
+    void this.agent.submit(
+      { message: 'Try a different approach from here.' },
+      { run: { checkpointId } },
+    );
   }
 }
 ```
 
 <Callout type="tip" title="Time-travel is branching">
-When you submit from a previous checkpoint, LangGraph creates a new branch from that point. The original timeline is preserved. The `branch()` signal tells you which branch is currently active. See the [Time Travel guide](/docs/angular/langgraph/guides/time-travel) for the full walkthrough.
+When you submit from a previous checkpoint, LangGraph creates a new branch from that point. The original timeline is preserved. `setBranch()` records which branch a view shows, and the `branch()` signal reads that selection back; it starts no run. See the [Time Travel guide](/docs/angular/langgraph/guides/time-travel) for the full walkthrough.
 </Callout>
 
 ## Choosing an Architecture
 
-Not every application needs a multi-agent swarm. Here is how to pick the right level of complexity — and why simpler usually wins until it does not.
+Not every application needs a multi-agent swarm. Here is how to pick the right level of complexity, and why simpler usually wins until it does not.
 
 ### Single Agent with Tools
 
@@ -680,7 +696,7 @@ def execute_action(state: AgentState) -> dict:
     return perform_action(state["pending_action"])
 ```
 
-**Angular signals used:** `messages()`, `interrupt()`, `status()` plus `submit({ resume })` to approve
+**Angular signals used:** `messages()`, `interrupts()`, `status()` plus `resume(responses)` to approve
 
 ### Multi-Agent Supervisor
 
@@ -694,7 +710,7 @@ builder.add_node("analyst", analyst_subgraph)
 builder.add_conditional_edges("supervisor", route_to_agent)
 ```
 
-**Angular signals used:** `messages()`, `toolCalls()`, `status()`; `subagents()` for every child graph — tool-dispatched or a plain subgraph node
+**Angular signals used:** `messages()`, `toolCalls()`, `status()`; `subagents()` for every child graph, tool-dispatched or a plain subgraph node
 
 ### Decision Matrix
 
@@ -706,7 +722,7 @@ builder.add_conditional_edges("supervisor", route_to_agent)
 | State isolation | Shared | Shared + interrupt | Only if you design it |
 | Angular complexity | Low | Medium | Higher |
 
-State isolation is the one row that is not automatic. Adding a compiled graph as a node — as in the supervisor example above — runs the child against the parent's state schema, so parent and child read and write the same channels. To actually isolate a specialist, give its `StateGraph` its own state schema and share only the keys you want crossing the boundary: LangGraph passes a subgraph node through the keys the two schemas have in common.
+State isolation is the one row that is not automatic. Adding a compiled graph as a node, as in the supervisor example above, runs the child against the parent's state schema, so parent and child read and write the same channels. To actually isolate a specialist, give its `StateGraph` its own state schema and share only the keys you want crossing the boundary: LangGraph passes a subgraph node through the keys the two schemas have in common.
 
 <Callout type="tip" title="Start simple">
 Begin with a single agent and tools. Add human-in-the-loop when you need approval flows. Graduate to multi-agent only when a single agent's context window cannot hold all the tools and instructions it needs.

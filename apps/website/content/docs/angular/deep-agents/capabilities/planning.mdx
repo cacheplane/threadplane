@@ -49,7 +49,7 @@ The tool replaces the entire list, so two calls in the same turn would be ambigu
 
 ### Providing the agent
 
-`provideAgent()` from `@threadplane/langgraph` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. The example resolves its connection at runtime because the host that serves the demo decides which runtime is attached; your own application passes `apiUrl` and `assistantId` directly.
+`provideAgent()` from `@threadplane/angular` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. Its `createSession` function calls `createSession()` from `@threadplane/langgraph`, once at start and again for each thread switch. The example resolves its connection at runtime because the host that serves the demo decides which runtime is attached; your own application passes `apiUrl` and `assistantId` to `createSession()` directly.
 
 <ExampleCode file="app.config.ts" />
 
@@ -61,7 +61,7 @@ A todo is two fields. There is no identifier, no timestamp, and no separate pres
 
 ### Projecting todos into a signal
 
-`injectAgent()` returns the agent, and `agent.value()` is a signal holding the latest graph state, so the panel is a `computed()` over that state and nothing more. The status is narrowed against the known list on the way through, because a graph state key is not a typed contract and an unexpected value would otherwise reach a template that switches on it.
+`injectAgent()` returns the agent, and `agent.state()` is a signal holding the latest graph state, or `undefined` before the backend reports one, so the panel is a `computed()` over that state and nothing more. The status is narrowed against the known list on the way through, because a graph state key is not a typed contract and an unexpected value would otherwise reach a template that switches on it.
 
 <ExampleCode file="planning.component.ts" region="todos-signal" title="planning.component.ts — the projection" />
 
@@ -75,7 +75,7 @@ The panel renders the array it was given: an empty state before the first `write
 
 ## How todos reach the browser
 
-`todos` travels as graph state, not as a custom event. The adapter subscribes to the `values`, `messages-tuple`, `updates`, and `custom` stream modes by default, and each `values` payload becomes the new `agent.value()`. Nothing in the application subscribes to anything, and nothing merges: because `write_todos` replaces the list, the panel renders whatever the last snapshot held.
+`todos` travels as graph state, not as a custom event. The session requests the `values`, `messages-tuple`, `updates`, `custom`, and `checkpoints` stream modes for every run, and each `values` payload becomes the new `agent.state()`, without its `messages`. Nothing in the application subscribes to anything, and nothing merges: because `write_todos` replaces the list, the panel renders whatever the last snapshot held.
 
 The middleware declares `todos` as state the graph emits rather than as input a caller supplies. The plan is therefore something to read and render, never something the panel writes back — the model owns it from the first call to the last.
 
@@ -92,6 +92,6 @@ The middleware declares `todos` as state the graph emits rather than as input a 
     A file the agent keeps about itself across threads.
   </Card>
   <Card title="Streaming" href="/docs/angular/langgraph/guides/streaming">
-    How the values channel reaches `agent.value()`.
+    How the values channel reaches `agent.state()`.
   </Card>
 </CardGroup>

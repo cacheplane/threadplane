@@ -15,43 +15,49 @@ Angular 20–22 project using a Node.js version supported by that Angular major.
 </Callout>
 
 <Steps>
-<Step title="Install the package">
+<Step title="Install the packages">
 
 ```bash
-npm install @threadplane/langgraph @threadplane/chat @langchain/core @langchain/langgraph-sdk
+npm install @threadplane/angular @threadplane/core @threadplane/langgraph @threadplane/chat @langchain/core @langchain/langgraph-sdk
 ```
 
-npm 7 and newer install peer dependencies automatically, so this command also brings in `@threadplane/telemetry` and the peers `@threadplane/chat` declares — `@threadplane/render`, `@threadplane/a2ui`, `zod`, `@json-render/core`, and `marked`. Listing the LangChain peers explicitly keeps stricter package managers quiet; the full contract is in the [Installation](/docs/angular/langgraph/getting-started/installation) guide.
+`@threadplane/angular` holds the provider and `injectAgent()`. `@threadplane/langgraph` holds `createSession()`, the LangGraph implementation of the session contract in `@threadplane/core`. npm 7 and newer install peer dependencies automatically, so this command also brings in the peers `@threadplane/chat` declares — `@threadplane/telemetry`, `@threadplane/render`, `@threadplane/a2ui`, `zod`, `@json-render/core`, and `marked`. Listing the LangChain peers explicitly keeps stricter package managers quiet; the full contract is in the [Installation](/docs/angular/langgraph/getting-started/installation) guide.
 
 </Step>
 <Step title="Configure the provider">
 
-Add `provideAgent()` to your application config with your LangGraph Platform URL and assistant id.
+Add `provideAgent()` to your application config. Its `createSession` function builds a LangGraph session from your LangGraph Platform URL and assistant id. The agent calls it once at start and again each time it moves to another thread, and `context` carries the thread to use.
 
 ```typescript
 // app.config.ts
 import type { ApplicationConfig } from '@angular/core';
-import { provideAgent } from '@threadplane/langgraph';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      apiUrl: 'http://localhost:2024',
-      // 'chat' maps to the key in your langgraph.json "graphs" config
-      assistantId: 'chat',
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'http://localhost:2024',
+          // 'chat' maps to the key in your langgraph.json "graphs" config
+          assistantId: 'chat',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
     }),
   ],
 };
 ```
 
 <Callout type="info" title="Threads are optional here">
-Persisting a `threadId` so conversations survive a page refresh is opt-in — leave it out for the minimal path and add it later. See [Persistence](/docs/angular/langgraph/guides/persistence).
+Without a configured `threadId`, the session creates a thread on the first submit. Persisting that id so conversations survive a page refresh is opt-in — leave it out for the minimal path and add it later. See [Persistence](/docs/angular/langgraph/guides/persistence).
 </Callout>
 
 </Step>
 <Step title="Create a chat component">
 
-Now wire up the UI. Call `injectAgent()` in a component field initializer — read its state through Angular Signals and call its methods to submit or stop a run.
+Now wire up the UI. Call `injectAgent()` in a component field initializer — read the agent's fields through Angular Signals and call its commands to submit or stop a run.
 
 <Tabs>
 <Tab label="TypeScript">
@@ -60,8 +66,7 @@ Now wire up the UI. Call `injectAgent()` in a component field initializer — re
 // chat.component.ts
 import { Component, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { messageContent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   selector: 'app-chat',
@@ -72,16 +77,15 @@ import { injectAgent } from '@threadplane/langgraph';
 })
 export class ChatComponent {
   input = signal('');
-  protected readonly messageContent = messageContent;
 
   protected readonly chat = injectAgent();
 
-  isStreaming = computed(() => this.chat.isLoading());
+  isStreaming = computed(() => this.chat.status() === 'running');
 
   send() {
     const msg = this.input();
-    if (!msg.trim() || this.chat.isLoading()) return;
-    this.chat.submit({ message: msg });
+    if (!msg.trim() || this.isStreaming()) return;
+    void this.chat.submit(msg);
     this.input.set('');
   }
 }
@@ -95,7 +99,7 @@ export class ChatComponent {
 <div class="chat">
   @for (msg of chat.messages(); track msg.id) {
     <div [class]="msg.role">
-      <p>{{ messageContent(msg) }}</p>
+      <p>{{ msg.content }}</p>
     </div>
   }
 
@@ -147,39 +151,50 @@ Open `http://localhost:4200` and start chatting with your agent.
 
 ## Follow the first turn
 
-Type “Plan a weekend in Portland” and press Send. The component passes one new user message to `submit`; it does not replace the transcript. While the backend runs, `isLoading()` disables another submission and `messages()` updates as text arrives. `messageContent()` extracts display text from either supported content shape.
+Type “Plan a weekend in Portland” and press Send. The component passes the new message text to `submit`; it does not replace the transcript. While the backend runs, `status()` is `'running'`, which disables another submission, and `messages()` updates as text arrives. Each message's `content` is always its display text.
 
-The signal named `input` holds only the unsent draft. The adapter owns the observed messages. Keeping them separate lets the user type another draft without changing the answer in progress. This small template renders plain text; use the [chat composition](/docs/angular/chat/getting-started/quickstart) for Markdown, tool calls, and the standard controls.
+The signal named `input` holds only the unsent draft. The session owns the observed messages. Keeping them separate lets the user type another draft without changing the answer in progress. This small template renders plain text; use the [chat composition](/docs/angular/chat/getting-started/quickstart) for Markdown, tool calls, and the standard controls.
 
 <TurnSequence />
 
 ## Typed state via AgentRef
 
-By default, `injectAgent()` returns an agent typed as `Record<string, unknown>`. Create a typed ref at module scope and pass the same ref to the provider and inject helper to carry your graph's state shape through Angular DI:
+By default, `injectAgent()` returns an agent typed by the core session contract: `state()` is plain data, and the fields and commands only LangGraph has are not on the type. Create a typed ref at module scope and pass the same ref to the provider and inject helper to carry the LangGraph session type, with your graph's state shape, through Angular DI:
 
 ```typescript
-import { createAgentRef } from '@threadplane/chat';
-import { provideAgent, injectAgent } from '@threadplane/langgraph';
+import { createAgentRef, injectAgent, provideAgent } from '@threadplane/angular';
+import { type, type ToolContract } from '@threadplane/core';
+import { createSession, type LangGraphSession } from '@threadplane/langgraph';
 
 interface TripState {
-  day: number;
-  places: string[];
+  day?: number;
+  places?: string[];
 }
 
-export const TRIP = createAgentRef<TripState>('trip');
+type TripSession = LangGraphSession<Record<string, ToolContract>, TripState>;
+
+export const TRIP = createAgentRef<TripSession>('trip');
 
 // app.config.ts providers
 provideAgent(TRIP, {
-  apiUrl: 'http://localhost:2024',
-  assistantId: 'chat',
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'http://localhost:2024',
+      assistantId: 'chat',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+      stateType: type<TripState>(),
+    }),
 });
 
 // In a component field initializer or another Angular injection context:
-const agent = injectAgent(TRIP); // LangGraphAgent<TripState>
-agent.state().places; // string[]
+const agent = injectAgent(TRIP); // Agent<TripSession>
+agent.state()?.places; // readonly string[] | undefined
 ```
 
-The optional ref name appears in Angular DI error messages. The ref comes from `@threadplane/chat`, so the same typed handle can be used with either adapter. See the generated [`provideAgent()` reference](/docs/api/langgraph/provideAgent) for its overloads.
+`state()` is the root graph state without `messages`, and it is `undefined` until the backend reports one. A run often reports partial state before the graph has written every field, so declare the fields the graph fills in later as optional. `type<T>()` checks nothing at runtime; pass a Standard Schema, such as a Zod object, as `stateType` to check each reported state as well.
+
+The optional ref name appears in Angular DI error messages. The ref comes from `@threadplane/angular` and carries a session type, so the same kind of handle works with any backend's session.
 
 ## Next steps
 
@@ -202,7 +217,7 @@ The optional ref name appears in Angular DI error messages. The ref comes from `
   <Card title="LangGraph Basics" href="/docs/angular/langgraph/concepts/langgraph-basics">
     Graphs, nodes, edges, and state for Angular developers
   </Card>
-  <Card title="API Reference" href="/docs/api/langgraph/injectAgent">
-    Complete `injectAgent()` function reference
+  <Card title="API Reference" href="/docs/api/langgraph">
+    Generated reference for `@threadplane/langgraph`
   </Card>
 </CardGroup>
