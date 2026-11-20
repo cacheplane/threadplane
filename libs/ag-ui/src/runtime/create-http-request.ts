@@ -19,12 +19,24 @@ export type HttpRequestOutcome =
 export interface HttpRequestHandle {
   abort(): void;
   /**
-   * Leaves a stream whose run has already ended: the response is closed, and
-   * a handed agent is not told to abort a run that is over.
+   * Leaves a stream whose run has already ended. No further event is
+   * delivered, and the response is read to its own end, so a browser records a
+   * request that completed and the server is not cut off while it finishes. A
+   * stream still open after `LEAVE_MS` is closed, so a server that holds it
+   * open cannot hold the connection. A handed agent is not told to abort a run
+   * that is over. `abort()` still closes it at once. See "Leaving a response
+   * at the terminal event" in the runtime README.
    */
   close(): void;
   done: Promise<HttpRequestOutcome>;
 }
+
+/**
+ * How long, in milliseconds, a response may stay open after its run's
+ * terminal event before the session closes it. A server normally ends the
+ * response right after that event.
+ */
+export const LEAVE_MS = 250;
 
 function withOwnedReaderCleanup(
   response: Response,
@@ -149,9 +161,11 @@ export function createHttpRequest(config: RequestSource) {
       let subscription:
         | ReturnType<ReturnType<HttpAgent['run']>['subscribe']>
         | undefined;
+      let leave: ReturnType<typeof setTimeout> | undefined;
       const settle = (outcome: HttpRequestOutcome) => {
         if (settled) return;
         settled = true;
+        clearTimeout(leave);
         signal?.removeEventListener('abort', abort);
         try {
           subscription?.unsubscribe();
@@ -171,8 +185,13 @@ export function createHttpRequest(config: RequestSource) {
       };
       const abort = () => settle({ status: 'aborted' });
       const close = () => {
+        if (settled || leaving) return;
         leaving = true;
-        abort();
+        // The stream's own end settles this request as `closed`, with nothing
+        // cancelled. The timer is the bound on a stream that never ends.
+        leave = setTimeout(abort, LEAVE_MS);
+        // A pending close must not keep a Node process alive.
+        (leave as { unref?(): void }).unref?.();
       };
       if (signal?.aborted) {
         abort();
@@ -240,7 +259,8 @@ export function createHttpRequest(config: RequestSource) {
         if (!settled) {
           subscription = events.subscribe({
             next: (event) => {
-              if (settled) return;
+              // After its terminal event a run has nothing more to deliver.
+              if (settled || leaving) return;
               try {
                 onEvent(event);
               } catch (error) {

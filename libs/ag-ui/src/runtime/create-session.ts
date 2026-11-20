@@ -1039,6 +1039,8 @@ export function createSession(
     revision++;
     return new Promise((resolve) => {
       publication.command(() => {
+        // A response left open after its run ended is closed with the session.
+        factory.release();
         if (permanent) {
           disposed = true;
           durability?.dispose();
@@ -2292,6 +2294,8 @@ function createToolsOwner(
     revision++;
     return new Promise<void>((resolve) =>
       publication.command(() => {
+        // A response left open after its run ended is closed with the session.
+        factory.release();
         if (permanent) {
           disposed = true;
           durability?.dispose();

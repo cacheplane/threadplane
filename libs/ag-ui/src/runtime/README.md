@@ -87,6 +87,36 @@ const overAgent = createSession({ agent: new MyWebSocketAgent(config) });
   a handed agent's own `agentId` is used when the option is absent. The
   protocol does not put it on the wire.
 
+### Leaving a response at the terminal event
+
+A run's result is settled by its terminal event (`RUN_FINISHED`, `RUN_ERROR`,
+or the legacy interrupt notice), not by the end of the HTTP response. The
+snapshot, the returned promise and the next command never wait for the
+response to end.
+
+After that event the session keeps reading the response until the server ends
+it, as the Angular adapter did through `HttpAgent.runAgent()`. The browser then
+records a request that completed, and the server is not cut off while it
+finishes. Nothing read after the terminal event is delivered or changes
+anything.
+
+- The response has `LEAVE_MS` (250 ms) to end by itself. One still open then
+  is closed: the session unsubscribes, which cancels the response reader, and
+  aborts that request's own `AbortController`. A server that holds the stream
+  open therefore cannot hold the connection, and never holds the session.
+- `stop()` and `dispose()` close such a response at once and cancel its timer.
+  A new command does not: each HTTP request has its own agent and controller,
+  so the earlier response ends or reaches its bound beside the new run.
+- A run that is still going is aborted at once by `stop()`, `dispose()`, a
+  superseding command and the caller's signal, as before.
+- A handed agent is treated the same way: the session stays subscribed until
+  its stream completes or the bound passes, and never calls `abortRun()` for a
+  run that reached its terminal event.
+- The timer does not keep a Node process alive.
+
+When a server holds the response open past the bound, the browser records that
+request as cancelled (`net::ERR_ABORTED`), although the run succeeded.
+
 ## Core messages and reasoning time
 
 `projectMessages(snapshot, previous?)` and `projectToolCalls(snapshot,
