@@ -27,7 +27,7 @@ export async function verifyAngularInstallBridge(parseCollectionBatch) {
   const run = (cmd, args, options = {}) =>
     execute(cmd, args, {
       cwd: temporary,
-      timeout: Number(process.env.VERIFY_TIMEOUT_MS) || 90000,
+      timeout: 90000,
       maxBuffer: 4 * 1024 * 1024,
       ...options,
     });
@@ -171,10 +171,12 @@ import {
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession, FakeAgent } from '@threadplane/ag-ui';
 import { createSession as createLangGraphSession } from '@threadplane/langgraph';
-import { ChatComponent } from '@threadplane/chat';
+// Any export loads the chat package's entry, which registers the collector. A
+// small one keeps the production build of this proof short.
+import { staticDelivery } from '@threadplane/chat';
 import { RenderElementComponent } from '@threadplane/render';
 const target = globalThis as any;
-target.fixtureExports = { createLangGraphSession, ChatComponent, RenderElementComponent };
+target.fixtureExports = { createLangGraphSession, staticDelivery, RenderElementComponent };
 if (target.exercise) {
   // A root injector without a platform, so the same code runs with no DOM.
   const injector = Injector.create({
