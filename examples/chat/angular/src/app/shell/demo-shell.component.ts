@@ -21,6 +21,7 @@ import {
   injectThreadDirectory,
   provideAgent,
   refreshOnRunEnd,
+  withAgentOverrides,
 } from '@threadplane/angular';
 import {
   createLangGraphClient,
@@ -76,8 +77,10 @@ let telemetrySink: LangGraphTelemetrySink | undefined;
 /**
  * The agent the shell hands out: the injected agent, with `submit` adding the
  * shell's live selections to the run's input state. The injected `Agent`
- * cannot be patched in place, so this is a view of it; every other member is
- * the injected agent's own. A run with no message (`submit(null)`) is passed
+ * cannot be patched in place, so this is derived from it with
+ * `withAgentOverrides`; every other member is the injected agent's own. Chat
+ * keys its per-agent state on the agent object, so the shell hands this one
+ * derived agent (`DEMO_AGENT`) to every surface. A run with no message (`submit(null)`) is passed
  * through untouched: it continues the thread from its saved state.
  *
  * `regenerate` is the demo's own (see `regenerateFromCheckpoint`): it answers
@@ -93,14 +96,7 @@ export function withSubmitState(
     return agent.submit({ ...given, state: { ...given.state, ...readState() } }, options);
   };
   const regenerate = regenerateFromCheckpoint(agent, submit);
-  return new Proxy(agent, {
-    get: (target, key, receiver) =>
-      key === 'submit'
-        ? submit
-        : key === 'regenerate'
-          ? regenerate
-          : Reflect.get(target, key, receiver),
-  });
+  return withAgentOverrides(agent, { submit, regenerate });
 }
 
 /** Parse `/embed`, `/embed/<threadId>`, `/popup/<threadId>` etc. into

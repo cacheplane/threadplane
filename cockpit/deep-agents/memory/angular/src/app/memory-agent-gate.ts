@@ -1,5 +1,9 @@
 import { computed } from '@angular/core';
-import type { Agent } from '@threadplane/angular';
+import {
+  withAgentOverrides,
+  type Agent,
+  type AgentOverrides,
+} from '@threadplane/angular';
 import { MemoryScope } from './memory-scope';
 
 /** The two members the gate replaces. */
@@ -9,9 +13,10 @@ type Gated = Pick<Agent, 'inputBlocked' | 'submit'>;
  * A denied submission resolves locally, as `'aborted'`, so void composer handlers
  * cannot reject.
  *
- * The result forwards every other read to the agent. The injected agent reads
- * each member from its current session when asked, so a spread copy would miss
- * a field the session publishes later. */
+ * The result is derived with `withAgentOverrides`: it serves the two gated
+ * members and forwards every other read to the agent at the time of the read.
+ * Chat keys its per-agent state on the agent object, so the component hands
+ * this one derived agent to everything that takes an agent. */
 export function guardMemoryAgent<T extends Gated>(
   agent: T,
   scope: MemoryScope
@@ -28,10 +33,5 @@ export function guardMemoryAgent<T extends Gated>(
       return agent.submit(input, options);
     },
   };
-  return new Proxy(agent, {
-    get: (target, key) =>
-      Object.hasOwn(gate, key)
-        ? gate[key as keyof Gated]
-        : Reflect.get(target, key),
-  });
+  return withAgentOverrides(agent, gate as AgentOverrides<T>);
 }
