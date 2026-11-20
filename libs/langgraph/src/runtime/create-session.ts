@@ -119,6 +119,7 @@ import {
   failureProjection,
   finalizeProjection,
   interruptionError,
+  isTranscriptEvent,
   projectStream,
   record,
   type StreamProjection,
@@ -159,6 +160,14 @@ export interface SessionOptions {
    * the schema rejects is withheld and described in `snapshot.stateIssues`.
    */
   readonly stateType?: StateDeclaration;
+  /**
+   * Node names whose streamed message chunks enter the transcript. Omit it to
+   * accept every root node. Use it when a graph has side-effect model nodes,
+   * such as title generation, whose output is not chat content. Messages a
+   * node writes to the graph state still arrive with that state, and child
+   * graphs are never affected: their messages belong to `subgraphs`.
+   */
+  readonly transcriptNodeNames?: readonly string[];
 }
 
 /** Backend-private capability; core sessions and borrowed observers stay minimal. */
@@ -634,6 +643,13 @@ export function createSession(
   }
 
   const owns = (attempt: Attempt) => owner === attempt && !disposed;
+  const transcriptNodeNames = options.transcriptNodeNames
+    ? Object.freeze(
+        [...options.transcriptNodeNames].filter(
+          (name) => typeof name === 'string'
+        )
+      )
+    : undefined;
   const stateType = options.stateType;
   let published: {
     readonly source: LangGraphState | undefined;
@@ -1240,11 +1256,9 @@ export function createSession(
             run.evidence = cursor.evidence;
             throw new Error('The joined stream repeated its requested cursor.');
           }
-          const projected = projectStream(
-            previousState,
-            previousProjection,
-            event
-          );
+          const projected = isTranscriptEvent(event, transcriptNodeNames)
+            ? projectStream(previousState, previousProjection, event)
+            : { state: previousState, projection: previousProjection };
           const projectedValues = projectValues(previousValues, event);
           const projectedInterrupts = projectInterrupts(
             previousInterrupts,

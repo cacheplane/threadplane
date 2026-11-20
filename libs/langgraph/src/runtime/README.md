@@ -58,6 +58,17 @@ media/block order for rendering, add multimodal input, or establish provider,
 SSR or performance parity. The legacy Angular extractor remains a bounded
 duplicate until the separate backend cutover.
 
+## Transcript node names
+
+`createSession({ transcriptNodeNames })` names the root nodes whose streamed
+message chunks enter `snapshot.messages`. A chunk names its node in
+`messageMetadata.langgraph_node`; one from a node outside the list is not
+projected. Omit the option to accept every root node. Use it when a graph has
+side-effect model nodes, such as title generation, whose output is not chat
+content. A chunk that names no node is accepted, and a message the graph saves
+to its state still arrives with that state. Child graphs are never filtered:
+their messages belong to `snapshot.subgraphs`. The list is copied at creation.
+
 ## Owned citations
 
 History, root streams and read-only child streams project citations from
