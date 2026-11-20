@@ -51,7 +51,11 @@ export const appConfig: ApplicationConfig = {
           withRunState(
             createSession({
               url: environment.agentUrl,
-              threadId: context.threadId ?? undefined,
+              // The session names a new conversation's thread and reports
+              // it, so agent.threadId() is set with no code here.
+              threadId: context.threadId,
+              onThreadId: context.onThreadId,
+              reportOperationFailure: context.reportOperationFailure,
               developmentRuntime: context.developmentRuntime,
               stateType: type<ItineraryState>(),
               interruptTransport: 'auto',

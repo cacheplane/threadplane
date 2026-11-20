@@ -210,7 +210,8 @@ const fixtureSessionOptions: Record<CompatibleRuntimeAdapter, string> = {
         ${defaultReporterOptionNames.langgraph[0]}: context.reportOperationFailure,
         developmentRuntime: context.developmentRuntime,`,
   'ag-ui': `url: connection.url,
-        threadId: context.threadId ?? undefined,
+        threadId: context.threadId,
+        onThreadId: context.onThreadId,
         ${defaultReporterOptionNames['ag-ui'][0]}: context.reportOperationFailure,
         developmentRuntime: context.developmentRuntime,`,
 };
@@ -2301,9 +2302,9 @@ describe('cockpit capability wiring', () => {
     expect(providerContextKeys.has(contextDevelopmentKey)).toBe(true);
     expect(sessionOptionMembers.langgraph).toContain(contextDevelopmentKey);
     expect(sessionOptionMembers['ag-ui']).toContain(contextDevelopmentKey);
-    // The AG-UI session names its own thread and takes no callback for it.
-    // If it gains one, the audit's AG-UI contract must start requiring it.
-    expect(sessionOptionMembers['ag-ui']).not.toContain('onThreadId');
+    // The AG-UI session names a new conversation's thread and reports it
+    // through `onThreadId`, which the audit's AG-UI contract requires.
+    expect(sessionOptionMembers['ag-ui']).toContain('onThreadId');
     expect(
       declaredOptionMembers(
         resolve(libsRoot, 'angular/src'),
@@ -2356,9 +2357,18 @@ describe('cockpit capability wiring', () => {
   it('accepts every correct form of the session wiring', () => {
     expect(sessionIssues('langgraph', langGraphOptions)).toEqual([]);
     expect(sessionIssues('ag-ui', agUiOptions)).toEqual([]);
-    // The AG-UI session's thread option needs no `?? undefined` to be wired.
+    // The AG-UI session takes `threadId: null` for a new conversation, so the
+    // applications pass the context's value as it is. The `?? undefined` they
+    // needed before that still reads as the context's thread.
     expect(
-      sessionIssues('ag-ui', changed(agUiOptions, ' ?? undefined', ''))
+      sessionIssues(
+        'ag-ui',
+        changed(
+          agUiOptions,
+          'threadId: context.threadId,',
+          'threadId: context.threadId ?? undefined,'
+        )
+      )
     ).toEqual([]);
     // Options that belong to the application, not to the connection.
     expect(
@@ -2559,9 +2569,28 @@ describe('cockpit capability wiring', () => {
     [
       'a session that ignores the thread it is asked to open',
       'ag-ui',
-      () => changed(agUiOptions, 'threadId: context.threadId ?? undefined,', ''),
+      () => changed(agUiOptions, 'threadId: context.threadId,', ''),
       ['session-context-wiring'],
       /threadId must be the provider context's threadId/,
+    ],
+    [
+      'an AG-UI session whose own thread id is never reported to the agent',
+      'ag-ui',
+      () => changed(agUiOptions, 'onThreadId: context.onThreadId,', ''),
+      ['session-context-wiring'],
+      /onThreadId must be the provider context's onThreadId: a session that does not report the thread it names or creates leaves the agent without a thread id/,
+    ],
+    [
+      'an AG-UI thread callback that bypasses the agent',
+      'ag-ui',
+      () =>
+        changed(
+          agUiOptions,
+          'onThreadId: context.onThreadId',
+          'onThreadId: (id: string) => remember(id)'
+        ),
+      ['session-context-wiring'],
+      /onThreadId must be the provider context's onThreadId/,
     ],
     [
       'a created thread that is never reported to the agent',
@@ -4264,7 +4293,8 @@ describe('cockpit capability wiring', () => {
     ).toContain('context.reportOperationFailure');
     expect(agUi[0].sessionProperties).toMatchObject({
       url: 'connection.url',
-      threadId: 'context.threadId ?? undefined',
+      threadId: 'context.threadId',
+      onThreadId: 'context.onThreadId',
     });
     expect(
       reporterOptionNames['ag-ui'].map((name) => agUi[0].sessionProperties[name])

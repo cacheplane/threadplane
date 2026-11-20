@@ -4,7 +4,8 @@ import * as ts from 'typescript';
  * Syntax-tree audit of how a configurable cockpit Angular application wires
  * its agent to the cockpit's runtime connection.
  *
- * The wiring it pins (LangGraph; AG-UI passes `url` and its own names):
+ * The wiring it pins (LangGraph; AG-UI passes `url` in place of the three
+ * connection members, and the same context members):
  *
  *   provideAgent(() => {
  *     const connection = injectCockpitRuntimeConnection();
@@ -273,7 +274,10 @@ const sessionContract: Readonly<
   'ag-ui': {
     module: '@threadplane/ag-ui',
     connection: ['url'],
-    context: ['threadId'],
+    // The AG-UI session names a new conversation's thread itself and reports
+    // it through `onThreadId`, as the LangGraph session reports the thread it
+    // creates. Without it `agent.threadId()` stays null after the first run.
+    context: ['threadId', 'onThreadId'],
     bypass: ['agent', 'fetch'],
   },
 };
@@ -2504,7 +2508,11 @@ export function inspectRuntimeTargetSource(
       if (!value || contextKeyOf(shape, value) !== name) {
         report(
           'session-context-wiring',
-          `${name} must be the provider context's ${name}: a session that ignores it does not follow the agent's thread`
+          `${name} must be the provider context's ${name}: ${
+            name === 'onThreadId'
+              ? 'a session that does not report the thread it names or creates leaves the agent without a thread id'
+              : "a session that ignores it does not follow the agent's thread"
+          }`
         );
       }
     }

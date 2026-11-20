@@ -14,7 +14,8 @@ export const appConfig: ApplicationConfig = {
         createSession: (context) =>
           createSession({
             url: connection.url,
-            threadId: context.threadId ?? undefined,
+            threadId: context.threadId,
+            onThreadId: context.onThreadId,
             interruptTransport: 'auto',
             reportOperationFailure: context.reportOperationFailure,
             developmentRuntime: context.developmentRuntime,
