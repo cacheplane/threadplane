@@ -1,7 +1,12 @@
 # @threadplane/angular
 
-Private, unpublished Angular binding for app-owned sessions. The root exports
-`observeAgent(session)`, which accepts `getSnapshot()` and `subscribe(notify)`
+The Angular binding for agent sessions, published to npm. It provides the one
+Angular provider, `provideAgent({ createSession })`, the injected `Agent` (a
+signal view of a session), the thread directory view, and the session
+observers. A backend package such as `@threadplane/langgraph` or
+`@threadplane/ag-ui` supplies `createSession`; this package imports neither.
+
+The root also exports `observeAgent(session)`, which accepts `getSnapshot()` and `subscribe(notify)`
 methods and returns a read-only `Signal<TSnapshot>`. The observer contract is
 structural:
 
@@ -59,20 +64,20 @@ release function. The owner is responsible for immutable snapshots; a readonly
 Signal prevents replacing its value through the binding but does not freeze data
 or add deep readonly types to caller-authored mutable fields.
 
-Keep the concrete session type when observing backend-specific fields. The private
-LangGraph fixture exposes a broad readonly `values` map on its snapshot: `undefined`
+Keep the concrete session type when observing backend-specific fields. The
+LangGraph session exposes a broad readonly `values` map on its snapshot: `undefined`
 means no current application-values map is observed, while `{}` is an observed
 empty map. The binding preserves that field without inferring an application
 schema, validating values, or issuing extra reads. Values and messages arrive in
-the same immutable snapshot. This does not make the private backend factory public
-or add state-writing, SSR, or hydration support.
+the same immutable snapshot. Observing adds no state-writing, SSR, or hydration
+support.
 
-The private AG-UI session is also observed directly: its native snapshot contains
+The AG-UI session is also observed directly: its native snapshot contains
 `transcript`, `state`, `subagents` and root `run` evidence. Partial tool arguments
 remain raw protocol strings; observing them does not authorize tool execution or
-invent core pending-tool states. Integration tests borrow the actual private
-owner through a browser-safe Fetch API fixture. This is not a public AG-UI factory
-or a claim that shared display components accept every native snapshot.
+invent core pending-tool states. Integration tests run the actual session
+through a browser-safe Fetch API fixture. This is not a claim that shared
+display components accept every native snapshot.
 
 No backend constructor is exported here: sessions come from the backend
 packages' `createSession`. This package does not claim full SSR or hydration
@@ -119,7 +124,7 @@ or execute tools. Updating text preserves its mounted section and arguments DOM;
 remounting creates new DOM.
 
 The root remains headless. These text views do not provide Markdown, execution
-controls, citations, reasoning, full chat parity, SSR or hydration. The private AG-UI
+controls, citations, reasoning, full chat parity, SSR or hydration. The AG-UI
 review uses O(N) pure root-text selection with optional previous-output row reuse
 bounded to current rows. Framework memoization follows immutable transcript
 references and is disposable; it is not another owner or execution controller.
@@ -400,7 +405,7 @@ with `null` when the backend says there is no such thread, and rejects when the
 backend could not be asked. The LangGraph directory has `get`, so no reader
 needs configuring for it: a missing or malformed id answers `null`.
 
-The core contract has no command that reads one thread. With neither source the
+`get` is optional in the core contract. With neither source the
 view can answer only for a thread the directory lists: it reads the list once
 if the thread is not in it, and rejects for a thread that is still not listed,
 because a list is not proof that a thread does not exist.
