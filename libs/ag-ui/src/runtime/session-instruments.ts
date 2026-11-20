@@ -38,7 +38,10 @@ export type SessionTelemetrySink = (payload: {
 
 /** One scripted run: the protocol events to serve in place of a request. */
 export interface ScriptedRun {
-  readonly events: readonly { readonly type: string; readonly [key: string]: unknown }[];
+  readonly events: readonly {
+    readonly type: string;
+    readonly [key: string]: unknown;
+  }[];
 }
 
 /** Development hooks a host passes to follow or drive a session. */
@@ -84,7 +87,8 @@ export interface InstrumentOptions {
 }
 
 /** What a protected session shows for any failure a server described. */
-export const PROTECTED_COPY = 'The server ran into an error. You can try again.';
+export const PROTECTED_COPY =
+  'The server ran into an error. You can try again.';
 
 /** The snapshot fields a devtools report can name. */
 const REPORTED = [

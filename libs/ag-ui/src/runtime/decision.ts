@@ -152,7 +152,10 @@ export function acknowledgeDecision(
     return decision;
   return Object.freeze({
     ...decision,
-    attempt: Object.freeze({ ...decision.attempt, acknowledged: true as const }),
+    attempt: Object.freeze({
+      ...decision.attempt,
+      acknowledged: true as const,
+    }),
   });
 }
 
@@ -195,8 +198,7 @@ export function observeDecision(
       return previous;
     if (previous?.kind === 'unsupported') return previous;
     // A repeated notice in one run updates the same pause.
-    const pause =
-      previous?.kind === 'native' && !answering ? previous.id : id;
+    const pause = previous?.kind === 'native' && !answering ? previous.id : id;
     if (pause === undefined)
       throw new TypeError('A fresh pause generation is required');
     const value = noticeValue(evidence.value);

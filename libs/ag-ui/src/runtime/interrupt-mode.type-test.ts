@@ -38,8 +38,9 @@ createSession({ threadId: 't', url: 'unused', interruptTransport: 'mastra' });
 // @ts-expect-error a run observes; only a session answers
 createRun({ url: 'unused', interruptTransport: 'auto' });
 // A notice the session can answer publishes its value on the interrupt.
-const [pending] = createSession({ threadId: 't', url: 'unused' }).getSnapshot()
-  .interrupts ?? [];
+const [pending] =
+  createSession({ threadId: 't', url: 'unused' }).getSnapshot().interrupts ??
+  [];
 const reason: string | undefined = pending?.reason;
 void reason;
 void pending?.value;

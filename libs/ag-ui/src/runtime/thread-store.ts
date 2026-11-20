@@ -294,7 +294,9 @@ export function createThreadStore(
       ))
     ) {
       conflicted = true;
-      throw new Error('Thread storage conflict: another writer owns this thread');
+      throw new Error(
+        'Thread storage conflict: another writer owns this thread'
+      );
     }
     record = next;
   };
@@ -344,8 +346,7 @@ export function createThreadStore(
           (status === 'acknowledged' && !pause?.attempt) ||
           (status === 'completed' &&
             pause &&
-            (pause.attempt ||
-              pause.sourceRunId === before.pause?.sourceRunId))
+            (pause.attempt || pause.sourceRunId === before.pause?.sourceRunId))
         )
           throw new Error('Invalid authoritative recovery answer');
         await write(content);

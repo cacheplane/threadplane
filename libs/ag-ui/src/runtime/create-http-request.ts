@@ -186,28 +186,28 @@ export function createHttpRequest(config: RequestSource) {
         const source = agent
           ? undefined
           : new HttpAgent({
-          ...captured,
-          fetch: async (url, init) => {
-            if (
-              settled ||
-              signal?.aborted ||
-              controller?.signal.aborted ||
-              beforeFetch?.() === false
-            ) {
-              abort();
-              throw new DOMException(
-                'Request cancelled before fetch',
-                'AbortError'
-              );
-            }
-            // The private gate and captured fetch are adjacent: no application
-            // callback or asynchronous work may obscure the invocation boundary.
-            return withOwnedReaderCleanup(
-              await (send as NonNullable<typeof send>)(url, init),
-              () => settled
-            );
-          },
-        });
+              ...captured,
+              fetch: async (url, init) => {
+                if (
+                  settled ||
+                  signal?.aborted ||
+                  controller?.signal.aborted ||
+                  beforeFetch?.() === false
+                ) {
+                  abort();
+                  throw new DOMException(
+                    'Request cancelled before fetch',
+                    'AbortError'
+                  );
+                }
+                // The private gate and captured fetch are adjacent: no application
+                // callback or asynchronous work may obscure the invocation boundary.
+                return withOwnedReaderCleanup(
+                  await (send as NonNullable<typeof send>)(url, init),
+                  () => settled
+                );
+              },
+            });
         controller = source?.abortController;
         // A handed agent has no fetch to guard: calling its `run` is the
         // boundary the guard stands at, and what counts as invoked.
@@ -216,9 +216,13 @@ export function createHttpRequest(config: RequestSource) {
           const handed = agent as SessionAgent;
           if (settled || signal?.aborted || beforeFetch?.() === false) {
             abort();
-            throw new DOMException('Request cancelled before run', 'AbortError');
+            throw new DOMException(
+              'Request cancelled before run',
+              'AbortError'
+            );
           }
-          if (handed.abortController) handed.abortController = new AbortController();
+          if (handed.abortController)
+            handed.abortController = new AbortController();
           ran = true;
           return handed.run(admitted);
         };
@@ -229,9 +233,9 @@ export function createHttpRequest(config: RequestSource) {
         const boundary = new CompatibilityBoundary();
         const events = boundary
           // the boundary rewrites `messages` on the input it is given; keep the caller's object intact.
-          .run({ ...input }, ({
+          .run({ ...input }, {
             run,
-          } satisfies Pick<AbstractAgent, 'run'>) as unknown as AbstractAgent)
+          } satisfies Pick<AbstractAgent, 'run'> as unknown as AbstractAgent)
           .pipe(enforceEvents(), transformChunks(), verifyEvents());
         if (!settled) {
           subscription = events.subscribe({

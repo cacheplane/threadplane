@@ -148,8 +148,7 @@ export function collectReplay(
           resolve(events);
         },
       });
-      if (!ended && !signal.aborted)
-        release = () => subscription.unsubscribe();
+      if (!ended && !signal.aborted) release = () => subscription.unsubscribe();
       else if (signal.aborted) subscription.unsubscribe();
       return;
     }

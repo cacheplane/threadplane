@@ -14,7 +14,12 @@ const started = (runId: string, prompts?: object[]) =>
     ...(prompts && { input: { threadId: 't', runId, messages: prompts } }),
   });
 const finished = (runId: string, outcome?: object) =>
-  ev({ type: 'RUN_FINISHED', threadId: 't', runId, ...(outcome && { outcome }) });
+  ev({
+    type: 'RUN_FINISHED',
+    threadId: 't',
+    runId,
+    ...(outcome && { outcome }),
+  });
 const user = (id: string, content: string) => ({ id, role: 'user', content });
 const text = (messageId: string, delta: string) => [
   ev({ type: 'TEXT_MESSAGE_START', messageId, role: 'assistant' }),
@@ -23,13 +28,32 @@ const text = (messageId: string, delta: string) => [
 ];
 const drained = [
   started('r1', [user('u1', 'Find flights')]),
-  ev({ type: 'REASONING_MESSAGE_START', messageId: 'think', role: 'reasoning', timestamp: 1000 }),
-  ev({ type: 'REASONING_MESSAGE_CONTENT', messageId: 'think', delta: 'Checking' }),
+  ev({
+    type: 'REASONING_MESSAGE_START',
+    messageId: 'think',
+    role: 'reasoning',
+    timestamp: 1000,
+  }),
+  ev({
+    type: 'REASONING_MESSAGE_CONTENT',
+    messageId: 'think',
+    delta: 'Checking',
+  }),
   ev({ type: 'REASONING_MESSAGE_END', messageId: 'think', timestamp: 1750 }),
-  ev({ type: 'TOOL_CALL_START', toolCallId: 'c1', toolCallName: 'search', parentMessageId: 'a1' }),
+  ev({
+    type: 'TOOL_CALL_START',
+    toolCallId: 'c1',
+    toolCallName: 'search',
+    parentMessageId: 'a1',
+  }),
   ev({ type: 'TOOL_CALL_ARGS', toolCallId: 'c1', delta: '{"to":"Rome"}' }),
   ev({ type: 'TOOL_CALL_END', toolCallId: 'c1' }),
-  ev({ type: 'TOOL_CALL_RESULT', messageId: 'tr1', toolCallId: 'c1', content: '2 flights' }),
+  ev({
+    type: 'TOOL_CALL_RESULT',
+    messageId: 'tr1',
+    toolCallId: 'c1',
+    content: '2 flights',
+  }),
   ...text('a2', 'Two flights found'),
   ev({ type: 'STATE_SNAPSHOT', snapshot: { city: 'Rome' } }),
   finished('r1'),
@@ -77,19 +101,27 @@ describe('foldReplay', () => {
   it('expands chunk events as the live pipeline does', async () => {
     const { observation } = await foldReplay('t', [
       started('r1'),
-      ev({ type: 'TEXT_MESSAGE_CHUNK', messageId: 'a1', role: 'assistant', delta: 'Hel' }),
+      ev({
+        type: 'TEXT_MESSAGE_CHUNK',
+        messageId: 'a1',
+        role: 'assistant',
+        delta: 'Hel',
+      }),
       ev({ type: 'TEXT_MESSAGE_CHUNK', messageId: 'a1', delta: 'lo' }),
       finished('r1'),
     ]);
-    expect(projectMessages(observation).map((message) => message.content)).toEqual([
-      'Hello',
-    ]);
+    expect(
+      projectMessages(observation).map((message) => message.content)
+    ).toEqual(['Hello']);
   });
 
   it('restores a parked run as a pending pause', async () => {
     const { observation } = await foldReplay('t', [
       started('r1', [user('u1', 'Book it')]),
-      finished('r1', { type: 'interrupt', interrupts: [{ id: 'i1', reason: 'approval' }] }),
+      finished('r1', {
+        type: 'interrupt',
+        interrupts: [{ id: 'i1', reason: 'approval' }],
+      }),
     ]);
     expect(observation.status).toBe('idle');
     expect(observation.run).toMatchObject({ id: 'r1', outcome: 'paused' });
@@ -103,23 +135,35 @@ describe('foldReplay', () => {
   it('treats a run after a pause as the answer to that pause', async () => {
     const { observation } = await foldReplay('t', [
       started('r1', [user('u1', 'Book it')]),
-      finished('r1', { type: 'interrupt', interrupts: [{ id: 'i1', reason: 'approval' }] }),
+      finished('r1', {
+        type: 'interrupt',
+        interrupts: [{ id: 'i1', reason: 'approval' }],
+      }),
       started('r2'),
       ...text('a1', 'Booked'),
       finished('r2'),
     ]);
     expect(observation.decision).toBeUndefined();
     expect(observation.run).toMatchObject({ id: 'r2', outcome: 'success' });
-    expect(observation.transcript.map((record) => record.id)).toEqual(['u1', 'a1']);
+    expect(observation.transcript.map((record) => record.id)).toEqual([
+      'u1',
+      'a1',
+    ]);
   });
 
   it('restores a custom interrupt notice a resume profile can answer', async () => {
     const stored = [
       started('r1'),
-      ev({ type: 'CUSTOM', name: 'on_interrupt', value: '{"question":"Proceed?"}' }),
+      ev({
+        type: 'CUSTOM',
+        name: 'on_interrupt',
+        value: '{"question":"Proceed?"}',
+      }),
       finished('r1'),
     ];
-    const answerable = await foldReplay('t', stored, { interruptTransport: 'auto' });
+    const answerable = await foldReplay('t', stored, {
+      interruptTransport: 'auto',
+    });
     expect(answerable.observation.run?.outcome).toBe('paused');
     expect(answerable.observation.decision).toMatchObject({
       kind: 'native',
@@ -134,21 +178,42 @@ describe('foldReplay', () => {
   it('keeps child events under their child and out of the root messages', async () => {
     const { observation } = await foldReplay('t', [
       started('r1', [user('u1', 'Research')]),
-      ev({ type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'researcher' }),
-      ev({ type: 'TEXT_MESSAGE_START', messageId: 'c-a', role: 'assistant', subagentRunId: 'child' }),
-      ev({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'c-a', delta: 'Found', subagentRunId: 'child' }),
-      ev({ type: 'TEXT_MESSAGE_END', messageId: 'c-a', subagentRunId: 'child' }),
+      ev({
+        type: 'SUBAGENT_STARTED',
+        subagentRunId: 'child',
+        name: 'researcher',
+      }),
+      ev({
+        type: 'TEXT_MESSAGE_START',
+        messageId: 'c-a',
+        role: 'assistant',
+        subagentRunId: 'child',
+      }),
+      ev({
+        type: 'TEXT_MESSAGE_CONTENT',
+        messageId: 'c-a',
+        delta: 'Found',
+        subagentRunId: 'child',
+      }),
+      ev({
+        type: 'TEXT_MESSAGE_END',
+        messageId: 'c-a',
+        subagentRunId: 'child',
+      }),
       ev({ type: 'SUBAGENT_FINISHED', subagentRunId: 'child' }),
       ...text('a1', 'Done'),
       finished('r1'),
     ]);
     const [child] = projectSubagents(observation);
-    expect(child).toMatchObject({ id: 'child', name: 'researcher', status: 'complete' });
+    expect(child).toMatchObject({
+      id: 'child',
+      name: 'researcher',
+      status: 'complete',
+    });
     expect(child.messages.map((message) => message.content)).toEqual(['Found']);
-    expect(projectMessages(observation).map((message) => message.content)).toEqual([
-      'Research',
-      'Done',
-    ]);
+    expect(
+      projectMessages(observation).map((message) => message.content)
+    ).toEqual(['Research', 'Done']);
   });
 
   it('settles a run the replay ends in the middle of as interrupted and leaves the thread idle', async () => {
@@ -163,17 +228,26 @@ describe('foldReplay', () => {
   });
 
   it('leaves a replayed RUN_ERROR as a failed thread, redacted when asked', async () => {
-    const stored = [started('r1'), ev({ type: 'RUN_ERROR', message: 'secret detail', code: 'X' })];
+    const stored = [
+      started('r1'),
+      ev({ type: 'RUN_ERROR', message: 'secret detail', code: 'X' }),
+    ];
     const plain = await foldReplay('t', stored);
     expect(plain.observation).toMatchObject({
       status: 'error',
-      run: { outcome: 'error', terminal: { type: 'RUN_ERROR', message: 'secret detail' } },
+      run: {
+        outcome: 'error',
+        terminal: { type: 'RUN_ERROR', message: 'secret detail' },
+      },
     });
     const redacted = await foldReplay('t', stored, {
       redact: () => ({ type: 'RUN_ERROR', message: 'generic' } as never),
     });
     expect(JSON.stringify(redacted)).not.toContain('secret detail');
-    expect(redacted.events.at(-1)).toEqual({ type: 'RUN_ERROR', message: 'generic' });
+    expect(redacted.events.at(-1)).toEqual({
+      type: 'RUN_ERROR',
+      message: 'generic',
+    });
   });
 
   it('ignores what a run sends after its terminal event, as a live run does', async () => {
@@ -213,11 +287,17 @@ describe('foldReplay', () => {
   it.each([
     ['events before the first run', [...text('a1', 'x'), started('r1')]],
     ['a run without an id', [ev({ type: 'RUN_STARTED', threadId: 't' })]],
-    ['a run of another thread', [ev({ type: 'RUN_STARTED', threadId: 'other', runId: 'r1' })]],
+    [
+      'a run of another thread',
+      [ev({ type: 'RUN_STARTED', threadId: 'other', runId: 'r1' })],
+    ],
     ['an entry without a type', [started('r1'), ev({ messageId: 'a1' })]],
     [
       'content for a message that never started',
-      [started('r1'), ev({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'ghost', delta: 'x' })],
+      [
+        started('r1'),
+        ev({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'ghost', delta: 'x' }),
+      ],
     ],
     [
       'a finish while a message is still open',
@@ -236,7 +316,9 @@ describe('collectReplay', () => {
   const live = () => new AbortController().signal;
   it('collects a promise of events and an observable that completes', async () => {
     const events = [started('r1'), finished('r1')];
-    expect(await collectReplay(async () => events, 't', live())).toEqual(events);
+    expect(await collectReplay(async () => events, 't', live())).toEqual(
+      events
+    );
     const unsubscribe = vi.fn();
     const observable = {
       subscribe(observer: { next(event: BaseEvent): void; complete(): void }) {
@@ -250,9 +332,13 @@ describe('collectReplay', () => {
 
   it('rejects a source that throws, errors or resolves to something else', async () => {
     await expect(
-      collectReplay(() => {
-        throw new Error('sync');
-      }, 't', live())
+      collectReplay(
+        () => {
+          throw new Error('sync');
+        },
+        't',
+        live()
+      )
     ).rejects.toThrow('sync');
     await expect(
       collectReplay(() => Promise.reject(new Error('async')), 't', live())
@@ -294,7 +380,12 @@ describe('collectReplay', () => {
 describe('httpReplay', () => {
   const signal = new AbortController().signal;
   const serve = (status: number, body?: unknown) =>
-    vi.fn(async () => new Response(body === undefined ? null : JSON.stringify(body), { status }));
+    vi.fn(
+      async () =>
+        new Response(body === undefined ? null : JSON.stringify(body), {
+          status,
+        })
+    );
 
   it('gets the events of a thread with the given headers', async () => {
     const fetch = serve(200, { events: [started('r1'), finished('r1')] });
@@ -316,7 +407,11 @@ describe('httpReplay', () => {
       httpReplay({ url: () => '/events', fetch })('t', signal);
     expect(await source(serve(404))).toEqual([]);
     await expect(source(serve(500))).rejects.toThrow('status 500');
-    await expect(source(serve(200, { items: [] }))).rejects.toThrow('events array');
-    await expect(source(serve(200, { events: [{ id: 1 }] }))).rejects.toThrow('string type');
+    await expect(source(serve(200, { items: [] }))).rejects.toThrow(
+      'events array'
+    );
+    await expect(source(serve(200, { events: [{ id: 1 }] }))).rejects.toThrow(
+      'string type'
+    );
   });
 });

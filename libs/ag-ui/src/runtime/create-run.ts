@@ -1,8 +1,4 @@
-import {
-  EventType,
-  type BaseEvent,
-  type RunAgentInput,
-} from '@ag-ui/client';
+import { EventType, type BaseEvent, type RunAgentInput } from '@ag-ui/client';
 import type { CompleteOutcome } from '@threadplane/core';
 import {
   isLegacyInterruptTerminal,

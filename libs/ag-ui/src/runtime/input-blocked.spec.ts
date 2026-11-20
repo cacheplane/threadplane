@@ -43,7 +43,9 @@ describe('inputBlocked', () => {
       expect(await session.submit('Bypass')).toBe('error');
       expect(fixture.exchanges).toHaveLength(1);
 
-      const answered = session.resume([{ interruptId: 'i', status: 'resolved' }]);
+      const answered = session.resume([
+        { interruptId: 'i', status: 'resolved' },
+      ]);
       const second = await fixture.started(1);
       expect(session.getSnapshot().inputBlocked).toBe('decision');
       second.emit({
@@ -53,6 +55,53 @@ describe('inputBlocked', () => {
       });
       expect(await answered).toBe('success');
       expect(session.getSnapshot().inputBlocked).toBeUndefined();
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
+  it('rejects an answer aimed at an earlier pause whose interrupt ids repeat', async () => {
+    const fixture = bindingFixture();
+    const session = fixture.session;
+    const pauseOn = (exchange: Awaited<ReturnType<typeof fixture.started>>) =>
+      exchange.emit({
+        type: 'RUN_FINISHED',
+        threadId: exchange.body.threadId,
+        runId: exchange.body.runId,
+        outcome: {
+          type: 'interrupt',
+          interrupts: [{ id: 'i', reason: 'approval' }],
+        },
+      });
+    const yes = [{ interruptId: 'i', status: 'resolved' as const }];
+    try {
+      const paused = session.submit('Go');
+      pauseOn(await fixture.started());
+      await paused;
+      const first = session.getSnapshot().decision;
+      if (first?.kind !== 'native') throw new Error('No pause.');
+      // The first control answers, and the backend pauses again on the same id.
+      const answered = session.resume(yes, { pause: first.id });
+      pauseOn(await fixture.started(1));
+      expect(await answered).toBe('paused');
+      const second = session.getSnapshot().decision;
+      if (second?.kind !== 'native') throw new Error('No pause.');
+      expect(second.id).not.toBe(first.id);
+
+      await expect(session.resume(yes, { pause: first.id })).rejects.toThrow(
+        'Stale pause'
+      );
+      expect(fixture.exchanges).toHaveLength(2);
+      // The pause is untouched and its own control still answers it.
+      expect(session.getSnapshot().decision).toBe(second);
+      const again = session.resume(yes, { pause: second.id });
+      const third = await fixture.started(2);
+      third.emit({
+        type: 'RUN_FINISHED',
+        threadId: third.body.threadId,
+        runId: third.body.runId,
+      });
+      expect(await again).toBe('success');
     } finally {
       await fixture.cleanup();
     }
@@ -79,7 +128,9 @@ describe('inputBlocked', () => {
         threadId: 't',
         url: 'unused',
         fetch: async () =>
-          new Response('', { headers: { 'content-type': 'text/event-stream' } }),
+          new Response('', {
+            headers: { 'content-type': 'text/event-stream' },
+          }),
       },
       { f: { description: 'f', handler: () => 1 } }
     );

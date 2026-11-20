@@ -64,6 +64,7 @@ import {
   pausedByNotice,
   settleDecision,
   type InterruptResponse,
+  type NativeDecision,
   type NativeResponse,
 } from './decision.js';
 
@@ -165,6 +166,25 @@ function nextInvocationSubagents(
     transcript.length
   );
 }
+/** What `resume` takes beside the responses. */
+export interface ResumeOptions {
+  readonly signal?: AbortSignal;
+  /**
+   * The `id` of the pause a control was rendered for, from
+   * `decisionState(snapshot)` or `interruptSession(snapshot)`. When given,
+   * `resume` rejects without sending unless that pause is the one pending, so
+   * a control left over from an earlier pause cannot answer a later one whose
+   * interrupts reuse the same identifiers.
+   */
+  readonly pause?: string;
+}
+/** Rejects an answer aimed at a pause that is no longer the pending one. */
+function assertCurrentPause(decision: NativeDecision, pause: unknown): void {
+  if (pause !== undefined && pause !== decision.id)
+    throw new TypeError(
+      'Stale pause: read the pending decision again before answering.'
+    );
+}
 export interface Session<TState = unknown> {
   /** The thread this session owns. The factory always supplies it. */
   readonly threadId?: string;
@@ -190,7 +210,7 @@ export interface Session<TState = unknown> {
    */
   resume(
     responses: readonly InterruptResponse[],
-    options?: { readonly signal?: AbortSignal }
+    options?: ResumeOptions
   ): Promise<CompleteOutcome>;
   stop(): Promise<void>;
   dispose(): Promise<void>;
@@ -328,7 +348,8 @@ export type ClientToolSession<
 function captureCustomEvent(
   event: AGUIEvent
 ): AgentSessionCustomEvent | undefined {
-  if (event.type !== 'CUSTOM' || event.name === 'on_interrupt') return undefined;
+  if (event.type !== 'CUSTOM' || event.name === 'on_interrupt')
+    return undefined;
   let value: unknown = event.value;
   if (typeof value === 'string') {
     try {
@@ -360,7 +381,8 @@ function regeneratePrompt(transcript: Transcript, messageId: string): number {
       (record.role === 'assistant' || record.role === 'reasoning') &&
       root(index)
   );
-  if (at < 0) throw new Error('Regenerate needs the id of an assistant message.');
+  if (at < 0)
+    throw new Error('Regenerate needs the id of an assistant message.');
   for (let index = at - 1; index >= 0; index--)
     if (transcript[index].role === 'user' && root(index)) return index;
   throw new Error('No prompt precedes that message.');
@@ -414,14 +436,11 @@ export function createSession<
 ): ClientToolSession<ToolContracts<T>, InferState<D>>;
 export function createSession<
   D extends StateDeclaration | undefined = undefined
->(
-  options: DeclaredOptions<D>
-): Session<InferState<D>>;
+>(options: DeclaredOptions<D>): Session<InferState<D>>;
 export function createSession(
   options: SessionOptions,
   tools?: Record<string, FunctionToolDefinition>
 ): Session {
-
   const {
     url,
     headers,
@@ -688,7 +707,12 @@ export function createSession(
     if (!current(attempt)) attempt.handle.abort();
     void attempt.handle.done.then((result) =>
       publication.command(() =>
-        finish(attempt, result.outcome, result.fetchInvoked, httpFailure(result))
+        finish(
+          attempt,
+          result.outcome,
+          result.fetchInvoked,
+          httpFailure(result)
+        )
       )
     );
   };
@@ -779,8 +803,10 @@ export function createSession(
       new Promise<CompleteOutcome>((resolve, reject) => {
         const beforeSignal = revision;
         let signal: AbortSignal | undefined;
+        let pause: unknown;
         try {
           signal = options?.signal;
+          pause = options?.pause;
         } catch {
           resolve(disposed || revision !== beforeSignal ? 'aborted' : 'error');
           return;
@@ -793,14 +819,15 @@ export function createSession(
         let captured: readonly NativeResponse[];
         try {
           const previous = publication.getObservation();
-          if (!answerable || active)
-            throw new TypeError(NOT_SETTLED);
+          if (!answerable || active) throw new TypeError(NOT_SETTLED);
           captured = captureResponses(responses);
-          claimDecision(
-            assertResumeEligible(previous.decision, previous.run, Date.now()),
-            captured,
-            ''
+          const eligible = assertResumeEligible(
+            previous.decision,
+            previous.run,
+            Date.now()
           );
+          assertCurrentPause(eligible, pause);
+          claimDecision(eligible, captured, '');
         } catch (error) {
           if (disposed || signal?.aborted || revision !== beforeInput)
             resolve('aborted');
@@ -821,13 +848,13 @@ export function createSession(
           let id: string;
           try {
             const previous = publication.getObservation();
-            if (active || !answerable)
-              throw new TypeError(NOT_SETTLED);
+            if (active || !answerable) throw new TypeError(NOT_SETTLED);
             const decision = assertResumeEligible(
               previous.decision,
               previous.run,
               Date.now()
             );
+            assertCurrentPause(decision, pause);
             id = crypto.randomUUID();
             next = Object.freeze({
               ...previous,
@@ -1072,7 +1099,6 @@ function createToolsOwner(
       instruments.protect
     )
   );
-  instruments.follow(publication);
   /** The last request sent that was not an answer to a decision. */
   let saved:
     | {
@@ -1100,6 +1126,8 @@ function createToolsOwner(
           !blocker.callIds.length))
     );
   };
+  // Reading a snapshot asks `retryable`, so this follows its definition.
+  instruments.follow(publication);
   interface Physical {
     readonly id: string;
     readonly token: object;
@@ -1129,35 +1157,35 @@ function createToolsOwner(
     ? createDurability(
         { ...options, redact: instruments.redact },
         {
-        publication,
-        replayed: (events) => events.forEach(instruments.raw),
-        active: () => active !== undefined,
-        disposed: () => disposed,
-        adopt: (observation) => {
-          const decision = observation.decision;
-          // A restored pause keeps the calls that were unresolved when it
-          // paused; they travel with its answer.
-          ledger = createClientToolLedger<Record<string, ToolContract>>(
-            [...catalog.keys()],
-            observation.transcript,
-            decision?.kind === 'native'
-          );
-          saved = undefined;
-          pausedPhysical = undefined;
-          if (decision?.kind === 'native') {
-            const token = ledger.startPhysical({
-              runId: decision.sourceRunId,
-              threadId,
-              transcript: observation.transcript,
-            });
-            ledger.markPaused(token);
-            pausedPhysical = { id: decision.sourceRunId, token };
-          }
-          instruments.cause('history');
-          publication.publish(
-            Object.freeze({ ...observation, clientTools: ledger.snapshot() })
-          );
-        },
+          publication,
+          replayed: (events) => events.forEach(instruments.raw),
+          active: () => active !== undefined,
+          disposed: () => disposed,
+          adopt: (observation) => {
+            const decision = observation.decision;
+            // A restored pause keeps the calls that were unresolved when it
+            // paused; they travel with its answer.
+            ledger = createClientToolLedger<Record<string, ToolContract>>(
+              [...catalog.keys()],
+              observation.transcript,
+              decision?.kind === 'native'
+            );
+            saved = undefined;
+            pausedPhysical = undefined;
+            if (decision?.kind === 'native') {
+              const token = ledger.startPhysical({
+                runId: decision.sourceRunId,
+                threadId,
+                transcript: observation.transcript,
+              });
+              ledger.markPaused(token);
+              pausedPhysical = { id: decision.sourceRunId, token };
+            }
+            instruments.cause('history');
+            publication.publish(
+              Object.freeze({ ...observation, clientTools: ledger.snapshot() })
+            );
+          },
         }
       )
     : undefined;
@@ -1913,9 +1941,11 @@ function createToolsOwner(
         }
         const before = revision;
         let signal: AbortSignal | undefined;
+        let pause: unknown;
         let captured: readonly NativeResponse[];
         try {
           signal = options?.signal;
+          pause = options?.pause;
           if (disposed || signal?.aborted || revision !== before) {
             resolve('aborted');
             return;
@@ -1923,11 +1953,13 @@ function createToolsOwner(
           if (!answerable) throw new TypeError(NOT_SETTLED);
           const previous = publication.getObservation();
           captured = captureResponses(responses);
-          claimDecision(
-            assertResumeEligible(previous.decision, previous.run, Date.now()),
-            captured,
-            ''
+          const eligible = assertResumeEligible(
+            previous.decision,
+            previous.run,
+            Date.now()
           );
+          assertCurrentPause(eligible, pause);
+          claimDecision(eligible, captured, '');
         } catch (error) {
           if (disposed || signal?.aborted || revision !== before)
             resolve('aborted');
@@ -1950,6 +1982,7 @@ function createToolsOwner(
               previous.run,
               Date.now()
             );
+            assertCurrentPause(decision, pause);
             const id = crypto.randomUUID();
             admit(
               Object.freeze({
@@ -2071,9 +2104,5 @@ function createToolsOwner(
         });
       }),
   };
-  return durableSession(
-    session,
-    durability,
-    options.persistence !== undefined
-  );
+  return durableSession(session, durability, options.persistence !== undefined);
 }

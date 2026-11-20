@@ -30,7 +30,8 @@ class ScriptedAgent extends AbstractAgent {
     this.aborts();
   }
   emit(index: number, ...events: object[]) {
-    for (const event of events) this.runs[index].subscriber.next(event as BaseEvent);
+    for (const event of events)
+      this.runs[index].subscriber.next(event as BaseEvent);
   }
   lifecycle(index: number, type: 'RUN_STARTED' | 'RUN_FINISHED') {
     const { threadId, runId } = this.runs[index].input;
@@ -44,7 +45,10 @@ class ScriptedAgent extends AbstractAgent {
 
 describe('a session over a client agent', () => {
   it('sends each request through the agent with the full input, and reads its events', async () => {
-    const agent = new ScriptedAgent({ threadId: 'agent-thread', agentId: 'planner' });
+    const agent = new ScriptedAgent({
+      threadId: 'agent-thread',
+      agentId: 'planner',
+    });
     const session = createSession({ agent, state: { city: 'Rome' } });
     expect(session.threadId).toBe('agent-thread');
     expect(session.agentId).toBe('planner');
@@ -59,20 +63,26 @@ describe('a session over a client agent', () => {
       context: [],
       forwardedProps: {},
     });
-    expect(run.input.messages).toMatchObject([{ role: 'user', content: 'Plan a visit' }]);
+    expect(run.input.messages).toMatchObject([
+      { role: 'user', content: 'Plan a visit' },
+    ]);
     agent.lifecycle(0, 'RUN_STARTED');
     // Chunk events are expanded as for an HTTP response.
     agent.emit(
       0,
-      { type: 'TEXT_MESSAGE_CHUNK', messageId: 'a1', role: 'assistant', delta: 'Day ' },
+      {
+        type: 'TEXT_MESSAGE_CHUNK',
+        messageId: 'a1',
+        role: 'assistant',
+        delta: 'Day ',
+      },
       { type: 'TEXT_MESSAGE_CHUNK', messageId: 'a1', delta: 'one' }
     );
     agent.lifecycle(0, 'RUN_FINISHED');
     expect(await done).toBe('success');
-    expect(session.getSnapshot().messages.map((message) => message.content)).toEqual([
-      'Plan a visit',
-      'Day one',
-    ]);
+    expect(
+      session.getSnapshot().messages.map((message) => message.content)
+    ).toEqual(['Plan a visit', 'Day one']);
     // The session is its own authority: the agent's history is not touched.
     expect(agent.messages).toEqual([]);
     expect(agent.aborts).not.toHaveBeenCalled();
@@ -87,8 +97,15 @@ describe('a session over a client agent', () => {
   });
 
   it('prefers the options over what the agent names', () => {
-    const agent = new ScriptedAgent({ threadId: 'agent-thread', agentId: 'planner' });
-    const session = createSession({ agent, threadId: 'mine', agentId: 'other' });
+    const agent = new ScriptedAgent({
+      threadId: 'agent-thread',
+      agentId: 'planner',
+    });
+    const session = createSession({
+      agent,
+      threadId: 'mine',
+      agentId: 'other',
+    });
     expect(session.threadId).toBe('mine');
     expect(session.agentId).toBe('other');
   });
@@ -119,7 +136,10 @@ describe('a session over a client agent', () => {
     const second = await agent.started(1);
     second.subscriber.error(new Error('socket closed'));
     expect(await failed).toBe('error');
-    expect(session.getSnapshot().error).toMatchObject({ kind: 'server', retryable: false });
+    expect(session.getSnapshot().error).toMatchObject({
+      kind: 'server',
+      retryable: false,
+    });
     await session.dispose();
   });
 
@@ -134,10 +154,15 @@ describe('a session over a client agent', () => {
       type: 'RUN_FINISHED',
       threadId,
       runId,
-      outcome: { type: 'interrupt', interrupts: [{ id: 'i1', reason: 'approval' }] },
+      outcome: {
+        type: 'interrupt',
+        interrupts: [{ id: 'i1', reason: 'approval' }],
+      },
     });
     expect(await paused).toBe('paused');
-    const yes = [{ interruptId: 'i1', status: 'resolved' as const, value: true }];
+    const yes = [
+      { interruptId: 'i1', status: 'resolved' as const, value: true },
+    ];
     const controller = new AbortController();
     const cancelled = session.resume(yes, { signal: controller.signal });
     controller.abort();
@@ -170,7 +195,12 @@ describe('a session over a client agent', () => {
     agent.lifecycle(0, 'RUN_STARTED');
     agent.emit(
       0,
-      { type: 'TOOL_CALL_START', toolCallId: 'c1', toolCallName: 'add', parentMessageId: 'a1' },
+      {
+        type: 'TOOL_CALL_START',
+        toolCallId: 'c1',
+        toolCallName: 'add',
+        parentMessageId: 'a1',
+      },
       { type: 'TOOL_CALL_ARGS', toolCallId: 'c1', delta: '{"value":1}' },
       { type: 'TOOL_CALL_END', toolCallId: 'c1' }
     );
@@ -197,7 +227,9 @@ describe('a session over a client agent', () => {
       fetch: async (_url, init) => {
         const body = JSON.parse(String(init?.body)) as RunAgentInput;
         bodies.push(body);
-        expect(new Headers(init?.headers).get('authorization')).toBe('Bearer x');
+        expect(new Headers(init?.headers).get('authorization')).toBe(
+          'Bearer x'
+        );
         if (bodies.length === 1)
           // Held open until the test stops the run.
           return new Response(new ReadableStream<Uint8Array>(), {
@@ -249,7 +281,9 @@ describe('thread and agent identity', () => {
   });
 
   it('publishes the agentId it was given, with and without client tools', () => {
-    expect(createSession({ url, threadId: 't', agentId: 'planner' }).agentId).toBe('planner');
+    expect(
+      createSession({ url, threadId: 't', agentId: 'planner' }).agentId
+    ).toBe('planner');
     const tools = createSession(
       { url, threadId: 't', agentId: 'planner' },
       { f: { description: 'f', handler: () => 1 } }
@@ -259,7 +293,9 @@ describe('thread and agent identity', () => {
   });
 
   it('rejects an empty thread, a url with an agent, and persistence without a chosen thread', () => {
-    expect(() => createSession({ url, threadId: '' })).toThrow('A nonempty threadId is required');
+    expect(() => createSession({ url, threadId: '' })).toThrow(
+      'A nonempty threadId is required'
+    );
     expect(() =>
       createSession({ url, agent: new ScriptedAgent() } as never)
     ).toThrow('a url or an agent, not both');
@@ -269,7 +305,10 @@ describe('thread and agent identity', () => {
     );
     // An agent's own thread is one the application chose.
     expect(
-      createSession({ agent: new ScriptedAgent({ threadId: 'kept' }), persistence }).threadId
+      createSession({
+        agent: new ScriptedAgent({ threadId: 'kept' }),
+        persistence,
+      }).threadId
     ).toBe('kept');
   });
 

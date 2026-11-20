@@ -5,7 +5,11 @@ import { createSession } from './create-session';
 import { decisionState, interruptSession } from './decision';
 import { bindingFixture } from './testing/binding-fixture';
 import { memoryStore } from './testing/memory-store';
-import type { ReconcileAnswer, SessionPersistence, ThreadRecord } from './thread-store';
+import type {
+  ReconcileAnswer,
+  SessionPersistence,
+  ThreadRecord,
+} from './thread-store';
 
 type Fixture = ReturnType<typeof bindingFixture>;
 type Exchange = Awaited<ReturnType<Fixture['started']>>;
@@ -16,7 +20,10 @@ const finish = (exchange: Exchange, outcome?: unknown) =>
     runId: exchange.body.runId,
     ...(outcome !== undefined && { outcome }),
   });
-const approval = { type: 'interrupt', interrupts: [{ id: 'i1', reason: 'approval' }] };
+const approval = {
+  type: 'interrupt',
+  interrupts: [{ id: 'i1', reason: 'approval' }],
+};
 const yes = [{ interruptId: 'i1', status: 'resolved' as const, value: true }];
 const settle = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
@@ -29,7 +36,11 @@ function durable(
     store: memory.store,
     ...(reconcile && { reconcile }),
   };
-  return { memory, persistence, saved: () => memory.record('app', 'native-thread') };
+  return {
+    memory,
+    persistence,
+    saved: () => memory.record('app', 'native-thread'),
+  };
 }
 /** A session that submitted once and paused for approval. */
 async function paused(persistence: SessionPersistence) {
@@ -37,8 +48,16 @@ async function paused(persistence: SessionPersistence) {
   await fixture.session.ready;
   const run = fixture.session.submit('Book it');
   const first = await fixture.started();
-  first.emit({ type: 'TEXT_MESSAGE_START', messageId: 'a1', role: 'assistant' });
-  first.emit({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'a1', delta: 'Shall I?' });
+  first.emit({
+    type: 'TEXT_MESSAGE_START',
+    messageId: 'a1',
+    role: 'assistant',
+  });
+  first.emit({
+    type: 'TEXT_MESSAGE_CONTENT',
+    messageId: 'a1',
+    delta: 'Shall I?',
+  });
   first.emit({ type: 'TEXT_MESSAGE_END', messageId: 'a1' });
   finish(first, approval);
   expect(await run).toBe('paused');
@@ -112,7 +131,9 @@ describe('persistence', () => {
       const answered = second.session.resume(yes);
       const exchange = await second.started();
       // The answer was saved before it was sent.
-      expect(saved()?.pause?.attempt).toMatchObject({ runId: exchange.body.runId });
+      expect(saved()?.pause?.attempt).toMatchObject({
+        runId: exchange.body.runId,
+      });
       expect(exchange.body.resume).toEqual([
         { interruptId: 'i1', status: 'resolved', payload: true },
       ]);
@@ -130,7 +151,9 @@ describe('persistence', () => {
   it('restores a sent answer as uncertain: only reconciliation continues', async () => {
     const { persistence, saved } = durable();
     const first = await truncated(persistence);
-    expect(interruptSession(first.session.getSnapshot()).phase).toBe('recovery-required');
+    expect(interruptSession(first.session.getSnapshot()).phase).toBe(
+      'recovery-required'
+    );
     expect(first.session.getSnapshot().error?.recovery).toBe('none');
     await settle();
     expect(saved()?.pause?.attempt).toMatchObject({ acknowledged: true });
@@ -169,7 +192,10 @@ describe('persistence', () => {
     try {
       // Another writer takes the thread.
       const key = JSON.stringify(['app', 'native-thread']);
-      memory.records.set(key, { ...(memory.records.get(key) as ThreadRecord), revision: 7 });
+      memory.records.set(key, {
+        ...(memory.records.get(key) as ThreadRecord),
+        revision: 7,
+      });
       expect(await fixture.session.resume(yes)).toBe('error');
       expect(fixture.exchanges).toHaveLength(1);
       const snapshot = fixture.session.getSnapshot();
@@ -191,10 +217,12 @@ describe('persistence', () => {
   it('rejects ready and holds the session when the saved thread cannot be read', async () => {
     const memory = memoryStore();
     let broken = true;
-    const reconcile = vi.fn(async (record: ThreadRecord): Promise<ReconcileAnswer> => ({
-      status: 'completed',
-      messages: record.messages,
-    }));
+    const reconcile = vi.fn(
+      async (record: ThreadRecord): Promise<ReconcileAnswer> => ({
+        status: 'completed',
+        messages: record.messages,
+      })
+    );
     const fixture = bindingFixture({
       persistence: {
         namespace: 'app',
@@ -237,7 +265,10 @@ describe('reconcileInterrupt and checkStatus', () => {
   };
   const completed = (record: ThreadRecord): ReconcileAnswer => ({
     status: 'completed',
-    messages: [...record.messages, { id: 'a2', role: 'assistant', content: 'Booked' }],
+    messages: [
+      ...record.messages,
+      { id: 'a2', role: 'assistant', content: 'Booked' },
+    ],
     state: record.state,
   });
 
@@ -246,7 +277,9 @@ describe('reconcileInterrupt and checkStatus', () => {
     expect('checkStatus' in plain.session).toBe(false);
     expect(typeof plain.session.reconcileInterrupt).toBe('function');
     await plain.cleanup();
-    const checking = bindingFixture({ persistence: answering(completed).persistence });
+    const checking = bindingFixture({
+      persistence: answering(completed).persistence,
+    });
     expect(typeof checking.session.checkStatus).toBe('function');
     await checking.cleanup();
   });
@@ -289,7 +322,9 @@ describe('reconcileInterrupt and checkStatus', () => {
       });
       await vi.waitFor(() => expect(reconcile).toHaveBeenCalledOnce());
       expect(await fixture.session.submit('Bypass')).toBe('error');
-      await expect(fixture.session.resume(yes)).rejects.toThrow('A status check is in progress.');
+      await expect(fixture.session.resume(yes)).rejects.toThrow(
+        'A status check is in progress.'
+      );
       await expect(fixture.session.reconcileInterrupt?.()).rejects.toThrow(
         'A status check is in progress.'
       );
@@ -309,12 +344,20 @@ describe('reconcileInterrupt and checkStatus', () => {
       status: 'pending',
       messages: record.messages,
       state: record.state,
-      pause: { sourceRunId: record.pause?.sourceRunId ?? '', interrupts: approval.interrupts },
+      pause: {
+        sourceRunId: record.pause?.sourceRunId ?? '',
+        interrupts: approval.interrupts,
+      },
     }));
     const fixture = await truncated(persistence);
     try {
-      const snapshot = await fixture.changed((next) => next.interrupts !== undefined);
-      expect(snapshot).toMatchObject({ status: 'idle', interrupts: approval.interrupts });
+      const snapshot = await fixture.changed(
+        (next) => next.interrupts !== undefined
+      );
+      expect(snapshot).toMatchObject({
+        status: 'idle',
+        interrupts: approval.interrupts,
+      });
       expect(snapshot.error).toBeUndefined();
       const answered = fixture.session.resume(yes);
       finish(await fixture.started(2));
@@ -365,7 +408,9 @@ describe('reconcileInterrupt and checkStatus', () => {
       await fixture.changed((snapshot) => snapshot.inputBlocked === 'decision');
       await expect(fixture.session.checkStatus?.()).resolves.toBeUndefined();
       expect(fixture.session.getSnapshot().error?.recovery).toBe('check');
-      await expect(fixture.session.reconcileInterrupt?.()).rejects.toThrow('backend unreachable');
+      await expect(fixture.session.reconcileInterrupt?.()).rejects.toThrow(
+        'backend unreachable'
+      );
       expect(fixture.session.getSnapshot().inputBlocked).toBe('decision');
     } finally {
       await fixture.cleanup();
@@ -400,17 +445,25 @@ describe('reconcileInterrupt and checkStatus', () => {
     release({ status: 'completed', messages: [] });
     await settle();
     expect(fixture.session.getSnapshot().messages).toBe(before);
-    await expect(fixture.session.checkStatus?.()).rejects.toThrow('The session is disposed.');
+    await expect(fixture.session.checkStatus?.()).rejects.toThrow(
+      'The session is disposed.'
+    );
     await expect(fixture.session.reconcileInterrupt?.()).rejects.toThrow(
       'The session is disposed.'
     );
 
-    const busy = bindingFixture({ persistence: answering(completed).persistence });
+    const busy = bindingFixture({
+      persistence: answering(completed).persistence,
+    });
     await busy.session.ready;
     const run = busy.session.submit('Go');
     const exchange = await busy.started();
-    await expect(busy.session.checkStatus?.()).rejects.toThrow('Stop the active request');
-    await expect(busy.session.reconcileInterrupt?.()).rejects.toThrow('Stop the active request');
+    await expect(busy.session.checkStatus?.()).rejects.toThrow(
+      'Stop the active request'
+    );
+    await expect(busy.session.reconcileInterrupt?.()).rejects.toThrow(
+      'Stop the active request'
+    );
     finish(exchange);
     await run;
     await busy.cleanup();
@@ -433,7 +486,12 @@ describe('replay', () => {
     ev({ type: 'TEXT_MESSAGE_START', messageId: 'a1', role: 'assistant' }),
     ev({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'a1', delta: 'Shall I?' }),
     ev({ type: 'TEXT_MESSAGE_END', messageId: 'a1' }),
-    ev({ type: 'RUN_FINISHED', threadId: 'native-thread', runId: 'r1', outcome: approval }),
+    ev({
+      type: 'RUN_FINISHED',
+      threadId: 'native-thread',
+      runId: 'r1',
+      outcome: approval,
+    }),
   ];
 
   it('rebuilds the thread from its events and wins over persistence without reading it', async () => {
@@ -443,7 +501,10 @@ describe('replay', () => {
     try {
       expect(fixture.session.getSnapshot().inputBlocked).toBe('hydrating');
       await fixture.session.ready;
-      expect(replay).toHaveBeenCalledWith('native-thread', expect.any(AbortSignal));
+      expect(replay).toHaveBeenCalledWith(
+        'native-thread',
+        expect.any(AbortSignal)
+      );
       expect(memory.calls.load).toBe(0);
       const snapshot = fixture.session.getSnapshot();
       expect(snapshot.messages.map((message) => message.content)).toEqual([
@@ -454,7 +515,10 @@ describe('replay', () => {
       const answered = fixture.session.resume(yes);
       const exchange = await fixture.started();
       // The next request carries the replayed history.
-      expect(exchange.body.messages.map((message) => message.id)).toEqual(['u1', 'a1']);
+      expect(exchange.body.messages.map((message) => message.id)).toEqual([
+        'u1',
+        'a1',
+      ]);
       finish(exchange);
       expect(await answered).toBe('success');
     } finally {
@@ -465,19 +529,29 @@ describe('replay', () => {
   it.each([
     ['returns nothing', async () => []],
     ['fails', async () => Promise.reject(new Error('offline'))],
-    ['cannot be folded', async () => [ev({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'x', delta: 'x' })]],
-  ])('falls back to persistence, without rejecting ready, when replay %s', async (_name, replay) => {
-    const { persistence } = durable();
-    const { fixture: first } = await paused(persistence);
-    await first.cleanup();
-    const fixture = bindingFixture({ persistence, replay });
-    try {
-      await expect(fixture.session.ready).resolves.toBeUndefined();
-      expect(fixture.session.getSnapshot().interrupts).toEqual(approval.interrupts);
-    } finally {
-      await fixture.cleanup();
+    [
+      'cannot be folded',
+      async () => [
+        ev({ type: 'TEXT_MESSAGE_CONTENT', messageId: 'x', delta: 'x' }),
+      ],
+    ],
+  ])(
+    'falls back to persistence, without rejecting ready, when replay %s',
+    async (_name, replay) => {
+      const { persistence } = durable();
+      const { fixture: first } = await paused(persistence);
+      await first.cleanup();
+      const fixture = bindingFixture({ persistence, replay });
+      try {
+        await expect(fixture.session.ready).resolves.toBeUndefined();
+        expect(fixture.session.getSnapshot().interrupts).toEqual(
+          approval.interrupts
+        );
+      } finally {
+        await fixture.cleanup();
+      }
     }
-  });
+  );
 
   it('keeps the thread it was created with when replay returns nothing and nothing is saved', async () => {
     const fixture = bindingFixture({
@@ -514,17 +588,37 @@ describe('replay', () => {
 describe('durability with client tools', () => {
   it('restores a pause with its unresolved backend call, and answers it', async () => {
     const { persistence, saved } = durable();
-    const bodies: { runId: string; threadId: string; messages: unknown[]; resume?: unknown }[] = [];
+    const bodies: {
+      runId: string;
+      threadId: string;
+      messages: unknown[];
+      resume?: unknown;
+    }[] = [];
     const replies = [
       (body: (typeof bodies)[number]) => [
         { type: 'RUN_STARTED', threadId: body.threadId, runId: body.runId },
-        { type: 'TOOL_CALL_START', toolCallId: 'tc-1', toolCallName: 'book', parentMessageId: 'a1' },
+        {
+          type: 'TOOL_CALL_START',
+          toolCallId: 'tc-1',
+          toolCallName: 'book',
+          parentMessageId: 'a1',
+        },
         { type: 'TOOL_CALL_END', toolCallId: 'tc-1' },
-        { type: 'RUN_FINISHED', threadId: body.threadId, runId: body.runId, outcome: approval },
+        {
+          type: 'RUN_FINISHED',
+          threadId: body.threadId,
+          runId: body.runId,
+          outcome: approval,
+        },
       ],
       (body: (typeof bodies)[number]) => [
         { type: 'RUN_STARTED', threadId: body.threadId, runId: body.runId },
-        { type: 'TOOL_CALL_RESULT', messageId: 'tr-1', toolCallId: 'tc-1', content: 'booked' },
+        {
+          type: 'TOOL_CALL_RESULT',
+          messageId: 'tr-1',
+          toolCallId: 'tc-1',
+          content: 'booked',
+        },
         { type: 'RUN_FINISHED', threadId: body.threadId, runId: body.runId },
       ],
     ];
@@ -559,7 +653,9 @@ describe('durability with client tools', () => {
     expect(restored.clientTools.blocker).toBeUndefined();
     expect(restored.interrupts).toEqual(approval.interrupts);
     expect(await second.resume(yes)).toBe('success');
-    expect(bodies[1].resume).toEqual([{ interruptId: 'i1', status: 'resolved', payload: true }]);
+    expect(bodies[1].resume).toEqual([
+      { interruptId: 'i1', status: 'resolved', payload: true },
+    ]);
     expect(JSON.stringify(bodies[1].messages)).toContain('tc-1');
     expect(second.getSnapshot().clientTools.blocker).toBeUndefined();
     await settle();

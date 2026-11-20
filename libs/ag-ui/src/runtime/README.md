@@ -420,7 +420,7 @@ await session.ready;
 - `persistence` is `{ namespace, store, reconcile? }`. The store has
   `load(key)` and `compareAndSwap(key, expectedRevision, next)`. A record is
   plain JSON: `{ version: 1, namespace, threadId, revision, messages, state?,
-  subagents?, pause? }`, where `pause` holds the pending interrupts, the
+subagents?, pause? }`, where `pause` holds the pending interrupts, the
   command profile when one applies, and the `attempt` when an answer was sent.
   A pause this session cannot answer is not saved.
 - The thread is saved after every command settles, before an answer is sent,
@@ -695,6 +695,13 @@ run's outcome. Responses and the options signal are
 captured once before queueing; nested data is copied and frozen without freezing
 the caller. Extra runtime getters are ignored. Response schemas are opaque; this
 owner neither validates business answers nor guesses defaults or aliases.
+
+`resume(responses, { pause })` also takes the `id` of the pause a control was
+rendered for, from `decisionState(snapshot)` or `interruptSession(snapshot)`.
+It then rejects, sending nothing, unless that pause is the one pending, so a
+control left over from an earlier pause cannot answer a later one whose
+interrupts reuse the same identifiers. This is the Angular adapter's
+`interruptGeneration` guard. Without `pause` the pending pause is answered.
 
 Eligibility is checked at invocation and admission. The pending decision must be
 the current unclaimed native generation, the current run must be locally settled,

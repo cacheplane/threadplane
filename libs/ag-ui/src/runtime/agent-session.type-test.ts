@@ -102,7 +102,10 @@ const overHttpAgent = createSession({
   agentId: 'planner',
   stateType: type<Draft>(),
 });
-const agentCore: AgentSession<Record<string, ToolContract>, Draft> = overHttpAgent;
+const agentCore: AgentSession<
+  Record<string, ToolContract>,
+  Draft
+> = overHttpAgent;
 void agentCore;
 const thread: string | undefined = overAgent.threadId;
 const agentName: string | undefined = overAgent.agentId;

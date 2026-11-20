@@ -18,8 +18,15 @@ const persistence: SessionPersistence = {
       ? { status: 'completed', messages: record.messages, state: record.state }
       : { status: 'unknown' },
 };
-const replay: ReplaySource = httpReplay({ url: (id) => `/threads/${id}/events` });
-const session = createSession({ threadId: 't', url: 'unused', persistence, replay });
+const replay: ReplaySource = httpReplay({
+  url: (id) => `/threads/${id}/events`,
+});
+const session = createSession({
+  threadId: 't',
+  url: 'unused',
+  persistence,
+  replay,
+});
 // Still a core session: checkStatus is the core contract's own command.
 const core: AgentSession = session;
 void core.checkStatus?.();
@@ -36,8 +43,12 @@ const streamed: ReplaySource = () => ({
   },
 });
 createSession({ threadId: 't', url: 'unused', replay: streamed });
-// @ts-expect-error a replay source returns events, not a thread record
-createSession({ threadId: 't', url: 'unused', replay: async () => ({ messages: [] }) });
+createSession({
+  threadId: 't',
+  url: 'unused',
+  // @ts-expect-error a replay source returns events, not a thread record
+  replay: async () => ({ messages: [] }),
+});
 // @ts-expect-error persistence needs a namespace
 createSession({ threadId: 't', url: 'unused', persistence: { store } });
 const bad: ReconcileAnswer = {

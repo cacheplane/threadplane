@@ -39,7 +39,10 @@ describe('interruptTransport', () => {
         JSON.stringify({ question: 'Proceed?' })
       );
       // The run finished in the ordinary way, and the session is paused.
-      expect(snapshot).toMatchObject({ status: 'idle', inputBlocked: 'decision' });
+      expect(snapshot).toMatchObject({
+        status: 'idle',
+        inputBlocked: 'decision',
+      });
       expect(snapshot.run?.outcome).toBe('paused');
       expect(interrupt).toMatchObject({
         reason: 'on_interrupt',
@@ -53,7 +56,11 @@ describe('interruptTransport', () => {
       expect(await session.submit('Bypass')).toBe('error');
 
       const answered = session.resume([
-        { interruptId: interrupt.id, status: 'resolved', value: { approved: true } },
+        {
+          interruptId: interrupt.id,
+          status: 'resolved',
+          value: { approved: true },
+        },
       ]);
       const second = await fixture.started(1);
       expect(second.body.forwardedProps).toEqual({
@@ -101,7 +108,9 @@ describe('interruptTransport', () => {
   it("names the pausing run when a 'mastra-command' notice has no run id", async () => {
     const fixture = bindingFixture({ interruptTransport: 'mastra-command' });
     try {
-      const { exchange, interrupt } = await noticed(fixture, { toolCallId: 'tc-1' });
+      const { exchange, interrupt } = await noticed(fixture, {
+        toolCallId: 'tc-1',
+      });
       const answered = fixture.session.resume([
         { interruptId: interrupt.id, status: 'resolved', value: false },
       ]);
@@ -239,7 +248,9 @@ describe('interruptTransport', () => {
         { interruptId: 'native-1', status: 'resolved', value: 'yes' },
       ]);
       const second = await fixture.started(1);
-      expect(second.body.forwardedProps).toEqual({ command: { resume: 'yes' } });
+      expect(second.body.forwardedProps).toEqual({
+        command: { resume: 'yes' },
+      });
       expect('resume' in second.body).toBe(false);
       finish(second);
       expect(await answered).toBe('success');
@@ -337,11 +348,20 @@ describe('interruptTransport', () => {
   });
 
   it('answers a notice through a session with client tools, keeping its unresolved call', async () => {
-    const bodies: { messages: unknown[]; forwardedProps?: unknown; runId: string; threadId: string }[] = [];
+    const bodies: {
+      messages: unknown[];
+      forwardedProps?: unknown;
+      runId: string;
+      threadId: string;
+    }[] = [];
     const replies: ((body: (typeof bodies)[number]) => unknown[])[] = [
       (body) => [
         { type: 'RUN_STARTED', threadId: body.threadId, runId: body.runId },
-        { type: 'TOOL_CALL_START', toolCallId: 'tc-1', toolCallName: 'backend' },
+        {
+          type: 'TOOL_CALL_START',
+          toolCallId: 'tc-1',
+          toolCallName: 'backend',
+        },
         { type: 'TOOL_CALL_END', toolCallId: 'tc-1' },
         { type: 'CUSTOM', name: 'on_interrupt', value: { toolCallId: 'tc-1' } },
         { type: 'RUN_FINISHED', threadId: body.threadId, runId: body.runId },
@@ -367,7 +387,9 @@ describe('interruptTransport', () => {
           bodies.push(body);
           const events = replies[bodies.length - 1](body);
           return new Response(
-            events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join(''),
+            events
+              .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+              .join(''),
             { headers: { 'content-type': 'text/event-stream' } }
           );
         },

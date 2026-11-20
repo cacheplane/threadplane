@@ -9,7 +9,11 @@ const finish = (exchange: Exchange) =>
     threadId: exchange.body.threadId,
     runId: exchange.body.runId,
   });
-const activity = (messageId: string, content: object, activityType = 'subagent') => ({
+const activity = (
+  messageId: string,
+  content: object,
+  activityType = 'subagent'
+) => ({
   type: 'ACTIVITY_SNAPSHOT',
   messageId,
   activityType,
@@ -19,7 +23,8 @@ const activity = (messageId: string, content: object, activityType = 'subagent')
 async function applied(fixture: Fixture, exchange: Exchange, marker: string) {
   exchange.emit({ type: 'STATE_SNAPSHOT', snapshot: { marker } });
   return fixture.changed(
-    (snapshot) => (snapshot.state as { marker?: string } | undefined)?.marker === marker
+    (snapshot) =>
+      (snapshot.state as { marker?: string } | undefined)?.marker === marker
   );
 }
 
@@ -36,11 +41,23 @@ describe('child agents from subagent activity records', () => {
           toolCallId: 'tc-1',
           status: 'running',
           messages: [
-            { id: 'c1', role: 'assistant', content: 'Looking', toolCallIds: ['k1'], reasoning: 'Plan' },
+            {
+              id: 'c1',
+              role: 'assistant',
+              content: 'Looking',
+              toolCallIds: ['k1'],
+              reasoning: 'Plan',
+            },
             { role: 'tool', content: 'three hits' },
           ],
           toolCalls: [
-            { id: 'k1', name: 'search', args: { q: 'x' }, status: 'complete', result: 3 },
+            {
+              id: 'k1',
+              name: 'search',
+              args: { q: 'x' },
+              status: 'complete',
+              result: 3,
+            },
             { name: 'no id' },
           ],
         })
@@ -76,15 +93,27 @@ describe('child agents from subagent activity records', () => {
           id: 'act-1-1',
           role: 'assistant',
           content: 'three hits',
-          delivery: { generation: 'act-1-1', phase: 'complete', outcome: 'success' },
+          delivery: {
+            generation: 'act-1-1',
+            phase: 'complete',
+            outcome: 'success',
+          },
         },
       ]);
       expect(child.toolCalls).toEqual([
-        { id: 'k1', name: 'search', args: { q: 'x' }, status: 'complete', result: 3 },
+        {
+          id: 'k1',
+          name: 'search',
+          args: { q: 'x' },
+          status: 'complete',
+          result: 3,
+        },
       ]);
       expect(Object.isFrozen(child)).toBe(true);
       // The record is the child's, not a root message.
-      expect(streaming.messages.map((message) => message.content)).toEqual(['Research']);
+      expect(streaming.messages.map((message) => message.content)).toEqual([
+        'Research',
+      ]);
 
       // An unrelated publication keeps the child and the list.
       const again = await applied(fixture, first, 'two');
@@ -117,7 +146,9 @@ describe('child agents from subagent activity records', () => {
       const run = fixture.session.submit('Go');
       const first = await fixture.started();
       first.emit(activity('plain', { text: 'Working' }));
-      first.emit(activity('failed', { status: 'error', state: { error: 'No access' } }));
+      first.emit(
+        activity('failed', { status: 'error', state: { error: 'No access' } })
+      );
       first.emit(activity('other', { text: 'not a child' }, 'progress'));
       const live = await applied(fixture, first, 'one');
       expect(live.subagents.map((child) => [child.id, child.status])).toEqual([
@@ -135,7 +166,9 @@ describe('child agents from subagent activity records', () => {
       expect(live.subagents[0].name).toBeUndefined();
       expect(live.subagents[0].started.name).toBe('');
       expect(live.subagents[1]).toMatchObject({ error: 'No access' });
-      expect(live.subagents[1].messages[0].delivery).toMatchObject({ outcome: 'error' });
+      expect(live.subagents[1].messages[0].delivery).toMatchObject({
+        outcome: 'error',
+      });
       finish(first);
       await run;
       // With no ending and no run going, what became of it is not known.
@@ -150,7 +183,9 @@ describe('child agents from subagent activity records', () => {
     try {
       const one = fixture.session.submit('One');
       const first = await fixture.started();
-      first.emit(activity('act-1', { name: 'writer', status: 'complete', text: 'Draft' }));
+      first.emit(
+        activity('act-1', { name: 'writer', status: 'complete', text: 'Draft' })
+      );
       finish(first);
       await one;
       const settled = fixture.session.getSnapshot().subagents[0];
@@ -158,7 +193,11 @@ describe('child agents from subagent activity records', () => {
 
       const two = fixture.session.submit('Two');
       const second = await fixture.started(1);
-      second.emit({ type: 'SUBAGENT_STARTED', subagentRunId: 'evt-1', name: 'reviewer' });
+      second.emit({
+        type: 'SUBAGENT_STARTED',
+        subagentRunId: 'evt-1',
+        name: 'reviewer',
+      });
       second.emit(activity('act-2', { name: 'checker' }));
       const live = await applied(fixture, second, 'one');
       expect(
@@ -182,11 +221,20 @@ describe('child agents from subagent activity records', () => {
     try {
       const run = fixture.session.submit('Go');
       const first = await fixture.started();
-      first.emit({ type: 'SUBAGENT_STARTED', subagentRunId: 'same', name: 'from events' });
-      first.emit(activity('same', { name: 'from activity', status: 'complete' }));
+      first.emit({
+        type: 'SUBAGENT_STARTED',
+        subagentRunId: 'same',
+        name: 'from events',
+      });
+      first.emit(
+        activity('same', { name: 'from activity', status: 'complete' })
+      );
       const live = await applied(fixture, first, 'one');
       expect(live.subagents).toHaveLength(1);
-      expect(live.subagents[0]).toMatchObject({ name: 'from events', status: 'running' });
+      expect(live.subagents[0]).toMatchObject({
+        name: 'from events',
+        status: 'running',
+      });
       first.emit({ type: 'SUBAGENT_FINISHED', subagentRunId: 'same' });
       finish(first);
       await run;

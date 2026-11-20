@@ -22,32 +22,52 @@ const pause = {
 };
 const attempt = {
   runId: 'r2',
-  responses: [{ interruptId: 'i1', status: 'resolved' as const, payload: true }],
+  responses: [
+    { interruptId: 'i1', status: 'resolved' as const, payload: true },
+  ],
 };
 
 describe('createThreadStore', () => {
   it('requires a nonempty scope and keeps namespaces and threads apart', async () => {
     const memory = memoryStore();
-    expect(() => createThreadStore({ namespace: ' ', store: memory.store }, 't')).toThrow(
-      'identifiers must be nonempty'
-    );
-    expect(() => createThreadStore({ namespace: 'app', store: memory.store }, '')).toThrow(
-      'identifiers must be nonempty'
-    );
-    await createThreadStore({ namespace: 'a', store: memory.store }, 'b:c').save(thread);
-    await createThreadStore({ namespace: 'a:b', store: memory.store }, 'c').save(thread);
+    expect(() =>
+      createThreadStore({ namespace: ' ', store: memory.store }, 't')
+    ).toThrow('identifiers must be nonempty');
+    expect(() =>
+      createThreadStore({ namespace: 'app', store: memory.store }, '')
+    ).toThrow('identifiers must be nonempty');
+    await createThreadStore(
+      { namespace: 'a', store: memory.store },
+      'b:c'
+    ).save(thread);
+    await createThreadStore(
+      { namespace: 'a:b', store: memory.store },
+      'c'
+    ).save(thread);
     expect(memory.records.size).toBe(2);
   });
 
   it('saves with rising revisions and loads frozen copies', async () => {
     const memory = memoryStore();
-    const store = createThreadStore({ namespace: 'app', store: memory.store }, 't');
+    const store = createThreadStore(
+      { namespace: 'app', store: memory.store },
+      't'
+    );
     expect(await store.load()).toBeNull();
     await store.save(thread);
     await store.save({ ...thread, pause });
     const saved = memory.record('app', 't');
-    expect(saved).toMatchObject({ version: 1, namespace: 'app', threadId: 't', revision: 1, pause });
-    const loaded = await createThreadStore({ namespace: 'app', store: memory.store }, 't').load();
+    expect(saved).toMatchObject({
+      version: 1,
+      namespace: 'app',
+      threadId: 't',
+      revision: 1,
+      pause,
+    });
+    const loaded = await createThreadStore(
+      { namespace: 'app', store: memory.store },
+      't'
+    ).load();
     expect(loaded).toEqual(saved);
     expect(Object.isFrozen(loaded?.messages)).toBe(true);
   });
@@ -61,9 +81,13 @@ describe('createThreadStore', () => {
     await second.load();
     await first.save({ ...thread, pause });
     const writes = memory.calls.compareAndSwap;
-    await expect(second.save(thread)).rejects.toThrow('another writer owns this thread');
+    await expect(second.save(thread)).rejects.toThrow(
+      'another writer owns this thread'
+    );
     // The losing save is not sent again.
-    await expect(second.save(thread)).rejects.toThrow('another writer owns this thread');
+    await expect(second.save(thread)).rejects.toThrow(
+      'another writer owns this thread'
+    );
     expect(memory.calls.compareAndSwap).toBe(writes + 1);
     await second.load();
     await second.save(thread);
@@ -87,7 +111,11 @@ describe('createThreadStore', () => {
               fail = false;
               throw new Error('disk full');
             }
-            const wrote = await memory.store.compareAndSwap(key, expected, next);
+            const wrote = await memory.store.compareAndSwap(
+              key,
+              expected,
+              next
+            );
             order.push(`end ${next.revision}`);
             return wrote;
           },
@@ -106,28 +134,50 @@ describe('createThreadStore', () => {
   it('rejects a record of another scope, version or shape', async () => {
     const memory = memoryStore();
     const key = JSON.stringify(['app', 't']);
-    const base = { version: 1, namespace: 'app', threadId: 't', revision: 0, ...thread };
+    const base = {
+      version: 1,
+      namespace: 'app',
+      threadId: 't',
+      revision: 0,
+      ...thread,
+    };
     const load = (record: object) => {
       memory.records.set(key, record as never);
-      return createThreadStore({ namespace: 'app', store: memory.store }, 't').load();
+      return createThreadStore(
+        { namespace: 'app', store: memory.store },
+        't'
+      ).load();
     };
-    await expect(load({ ...base, version: 2 })).rejects.toThrow('identity or revision');
-    await expect(load({ ...base, threadId: 'other' })).rejects.toThrow('identity or revision');
-    await expect(load({ ...base, revision: -1 })).rejects.toThrow('identity or revision');
-    await expect(load({ ...base, messages: 'none' })).rejects.toThrow('Invalid saved thread');
+    await expect(load({ ...base, version: 2 })).rejects.toThrow(
+      'identity or revision'
+    );
+    await expect(load({ ...base, threadId: 'other' })).rejects.toThrow(
+      'identity or revision'
+    );
+    await expect(load({ ...base, revision: -1 })).rejects.toThrow(
+      'identity or revision'
+    );
+    await expect(load({ ...base, messages: 'none' })).rejects.toThrow(
+      'Invalid saved thread'
+    );
     await expect(
       load({ ...base, messages: [thread.messages[0], thread.messages[0]] })
     ).rejects.toThrow('Duplicate message ID');
-    await expect(load({ ...base, pause: { ...pause, interrupts: [] } })).rejects.toThrow(
-      'needs its interrupts'
-    );
     await expect(
-      load({ ...base, pause: { ...pause, attempt: { ...attempt, responses: [] } } })
+      load({ ...base, pause: { ...pause, interrupts: [] } })
+    ).rejects.toThrow('needs its interrupts');
+    await expect(
+      load({
+        ...base,
+        pause: { ...pause, attempt: { ...attempt, responses: [] } },
+      })
     ).rejects.toThrow('does not match its interrupts');
   });
 
   describe('reconcile', () => {
-    const setup = async (answer: ReconcileAnswer | (() => Promise<ReconcileAnswer>)) => {
+    const setup = async (
+      answer: ReconcileAnswer | (() => Promise<ReconcileAnswer>)
+    ) => {
       const memory = memoryStore();
       const reconcile = vi.fn(async () =>
         typeof answer === 'function' ? answer() : answer
@@ -139,12 +189,24 @@ describe('createThreadStore', () => {
     };
 
     it('stores a completed answer and passes the reconciler a copy of the latest record', async () => {
-      const done = { messages: [...thread.messages, { id: 'a2', role: 'assistant', content: 'Booked' }] };
-      const { memory, reconcile, store, config } = await setup({ status: 'completed', ...done } as never);
+      const done = {
+        messages: [
+          ...thread.messages,
+          { id: 'a2', role: 'assistant', content: 'Booked' },
+        ],
+      };
+      const { memory, reconcile, store, config } = await setup({
+        status: 'completed',
+        ...done,
+      } as never);
       // Another writer moved the record on; reconcile asks about that one.
       const other = createThreadStore(config, 't');
       await other.load();
-      await other.save({ ...thread, state: { city: 'Oslo' }, pause: { ...pause, attempt } });
+      await other.save({
+        ...thread,
+        state: { city: 'Oslo' },
+        pause: { ...pause, attempt },
+      });
       const record = await store.reconcile();
       expect(reconcile).toHaveBeenCalledWith(
         expect.objectContaining({ revision: 1, state: { city: 'Oslo' } })
@@ -168,21 +230,35 @@ describe('createThreadStore', () => {
       const again = await setup({
         status: 'completed',
         ...thread,
-        pause: { sourceRunId: 'r2', interrupts: [{ id: 'i2', reason: 'approval' }] },
+        pause: {
+          sourceRunId: 'r2',
+          interrupts: [{ id: 'i2', reason: 'approval' }],
+        },
       });
       expect((await again.store.reconcile())?.pause?.sourceRunId).toBe('r2');
     });
 
     it.each<[string, ReconcileAnswer]>([
       ['an unknown outcome', { status: 'unknown' }],
-      ['a pending answer that keeps the attempt', { status: 'pending', ...thread, pause: { ...pause, attempt } }],
+      [
+        'a pending answer that keeps the attempt',
+        { status: 'pending', ...thread, pause: { ...pause, attempt } },
+      ],
       ['a pending answer without a pause', { status: 'pending', ...thread }],
-      ['an acknowledged answer without the attempt', { status: 'acknowledged', ...thread, pause }],
-      ['a completed answer that keeps the old pause', { status: 'completed', ...thread, pause }],
+      [
+        'an acknowledged answer without the attempt',
+        { status: 'acknowledged', ...thread, pause },
+      ],
+      [
+        'a completed answer that keeps the old pause',
+        { status: 'completed', ...thread, pause },
+      ],
       ['a status it does not know', { status: 'done', ...thread } as never],
     ])('rejects %s and leaves the store untouched', async (_name, answer) => {
       const { memory, store } = await setup(answer);
-      await expect(store.reconcile()).rejects.toThrow(/Recovery requires|Invalid authoritative/);
+      await expect(store.reconcile()).rejects.toThrow(
+        /Recovery requires|Invalid authoritative/
+      );
       expect(memory.record('app', 't')).toMatchObject({ revision: 0 });
     });
 
@@ -190,13 +266,21 @@ describe('createThreadStore', () => {
       const memory = memoryStore();
       const reconcile = vi.fn();
       expect(
-        await createThreadStore({ namespace: 'app', store: memory.store, reconcile }, 't').reconcile()
+        await createThreadStore(
+          { namespace: 'app', store: memory.store, reconcile },
+          't'
+        ).reconcile()
       ).toBeNull();
       expect(reconcile).not.toHaveBeenCalled();
-      const plain = createThreadStore({ namespace: 'app', store: memory.store }, 't');
+      const plain = createThreadStore(
+        { namespace: 'app', store: memory.store },
+        't'
+      );
       expect(plain.canReconcile).toBe(false);
       await plain.save(thread);
-      await expect(plain.reconcile()).rejects.toThrow('requires a persistence reconciler');
+      await expect(plain.reconcile()).rejects.toThrow(
+        'requires a persistence reconciler'
+      );
     });
   });
 });
@@ -208,13 +292,19 @@ describe('thread content', () => {
       status: 'idle',
       state: { city: 'Rome' },
       run: { id: 'r1', outcome: 'paused' },
-      decision: { kind: 'native', sourceRunId: 'r1', interrupts: pause.interrupts },
+      decision: {
+        kind: 'native',
+        sourceRunId: 'r1',
+        interrupts: pause.interrupts,
+      },
     });
     expect(contentOf(observation)).toEqual({ ...thread, pause });
   });
 
   it('restores a pause saved with its answer as one whose run is over', () => {
-    const observation = observationOf(ownContent({ ...thread, pause: { ...pause, attempt } }));
+    const observation = observationOf(
+      ownContent({ ...thread, pause: { ...pause, attempt } })
+    );
     expect(observation.run).toEqual({ id: 'r2', outcome: 'interrupted' });
     expect(observation.decision).toMatchObject({ attempt });
   });
@@ -223,7 +313,10 @@ describe('thread content', () => {
     const observation = observationOf(ownContent({ messages: [] }));
     expect(contentOf(observation)).toEqual({ messages: [] });
     expect(
-      contentOf({ ...observation, decision: { kind: 'unsupported', sourceRunId: 'r1' } })
+      contentOf({
+        ...observation,
+        decision: { kind: 'unsupported', sourceRunId: 'r1' },
+      })
     ).toEqual({ messages: [] });
   });
 });

@@ -22,9 +22,13 @@ const devtools: SessionDevtools = {
 };
 const session = createSession({
   url: 'https://agent.invalid',
-  a2uiClientCapabilities: { supportedCatalogIds: ['basic'], inlineCatalogs: [{}] },
+  a2uiClientCapabilities: {
+    supportedCatalogIds: ['basic'],
+    inlineCatalogs: [{}],
+  },
   telemetry: sink,
-  reportOperationFailure: (code: 'unauthorized' | 'network_blocked') => void code,
+  reportOperationFailure: (code: 'unauthorized' | 'network_blocked') =>
+    void code,
   devtools,
 });
 createSession({ url: 'https://agent.invalid', telemetry: false });
@@ -32,11 +36,20 @@ const release: (() => void) | undefined = session.onRawEvent?.(
   (event: AGUIEvent) => void event.type
 );
 void release;
-// @ts-expect-error capabilities list catalog identifiers
-createSession({ url: 'u', a2uiClientCapabilities: { supportedCatalogIds: 'basic' } });
+createSession({
+  url: 'u',
+  // @ts-expect-error capabilities list catalog identifiers
+  a2uiClientCapabilities: { supportedCatalogIds: 'basic' },
+});
 // @ts-expect-error a sink is a function, or false to turn reporting off
 createSession({ url: 'u', telemetry: true });
-// @ts-expect-error a reporter is told a code, not an error
-createSession({ url: 'u', reportOperationFailure: (error: Error) => void error });
-// @ts-expect-error a scripted run has events
-createSession({ url: 'u', devtools: { takeScriptedRun: () => ({ frames: [] }) } });
+createSession({
+  url: 'u',
+  // @ts-expect-error a reporter is told a code, not an error
+  reportOperationFailure: (error: Error) => void error,
+});
+createSession({
+  url: 'u',
+  // @ts-expect-error a scripted run has events
+  devtools: { takeScriptedRun: () => ({ frames: [] }) },
+});
