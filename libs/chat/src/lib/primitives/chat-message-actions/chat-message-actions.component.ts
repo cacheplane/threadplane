@@ -21,6 +21,7 @@ import { CHAT_MESSAGE_ACTIONS_STYLES } from '../../styles/chat-message-actions.s
     '[attr.aria-label]': '"Message actions"',
   },
   template: `
+    @if (canRegenerate()) {
     <button
       type="button"
       class="chat-message-actions__btn"
@@ -37,6 +38,7 @@ import { CHAT_MESSAGE_ACTIONS_STYLES } from '../../styles/chat-message-actions.s
         <path d="M3 21v-5h5" />
       </svg>
     </button>
+    }
     <button
       type="button"
       class="chat-message-actions__btn"
@@ -90,7 +92,14 @@ export class ChatMessageActionsComponent {
   /** When true, the regenerate button is disabled (e.g. while the agent is streaming). */
   readonly disabled = input<boolean>(false);
 
-  /** Emitted when the user clicks regenerate. Wire this to `agent.regenerate(index)`. */
+  /**
+   * Whether to offer Regenerate at all. `regenerate` is an optional agent
+   * command: bind `!!agent.regenerate` so no control is shown for an agent
+   * that cannot do it. Defaults to true.
+   */
+  readonly canRegenerate = input<boolean>(true);
+
+  /** Emitted when the user clicks regenerate. Wire this to `agent.regenerate(message.id)`. */
   readonly regenerate = output<void>();
   /** Emitted with 'up' or 'down' when the user rates the response. */
   readonly rate = output<'up' | 'down'>();

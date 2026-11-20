@@ -8,8 +8,7 @@ import {
   type StreamingMarkdownDocument,
 } from '../../streaming/streaming-markdown.component';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
-import type { Subagent, SubagentStatus } from '../../agent/subagent';
-import type { Message, ToolCall } from '../../agent';
+import { toolCallResult, type AgentSubagent, type AgentSubagentStatus, type Message, type ToolCall } from '../../agent';
 import type { ToolActivityInfo } from '../../primitives/chat-tool-activity/chat-tool-activity.component';
 import { outcomeSources, type ToolActivityOutcome, type ToolActivitySource } from '../../primitives/chat-tool-activity/tool-outcome';
 import { CitationsResolverService } from '../../markdown/citations-resolver.service';
@@ -20,28 +19,33 @@ import { CitationsResolverService } from '../../markdown/citations-resolver.serv
  * preferred way to style status visually is via the `data-status` attribute
  * + CSS selectors (see component styles below).
  */
-export function statusColor(status: SubagentStatus): string {
+export function statusColor(status: AgentSubagentStatus): string {
   switch (status) {
     case 'pending':  return 'background: var(--tplane-chat-surface-alt); color: var(--tplane-chat-text-muted);';
     case 'running':  return 'background: var(--tplane-chat-warning-bg); color: var(--tplane-chat-warning-text);';
     case 'complete': return 'color: var(--tplane-chat-success-text);';
     case 'error':    return 'background: var(--tplane-chat-error-bg); color: var(--tplane-chat-error-text);';
+    // Started, with no ending seen and no run that could still report one.
+    case 'unknown':  return 'background: var(--tplane-chat-surface-alt); color: var(--tplane-chat-text-muted);';
   }
 }
 
-const STATUS_LABELS: Record<SubagentStatus, string> = {
+const STATUS_LABELS: Record<AgentSubagentStatus, string> = {
   pending: 'Pending',
   running: 'Running',
   complete: 'Complete',
   error: 'Failed',
+  unknown: 'Status unavailable',
 };
 
-function statusToTraceState(s: SubagentStatus): TraceState {
+function statusToTraceState(s: AgentSubagentStatus): TraceState {
   switch (s) {
     case 'pending':  return 'pending';
     case 'running':  return 'running';
     case 'complete': return 'done';
     case 'error':    return 'error';
+    // No longer working, and not known to have failed.
+    case 'unknown':  return 'done';
   }
 }
 
@@ -60,6 +64,7 @@ function statusToTraceState(s: SubagentStatus): TraceState {
       font-size: var(--tplane-chat-font-size-xs);
       font-weight: 500;
     }
+    .sac__pill[data-status="unknown"],
     .sac__pill[data-status="pending"] { background: var(--tplane-chat-surface-alt); color: var(--tplane-chat-text-muted); }
     .sac__pill[data-status="running"] { background: var(--tplane-chat-warning-bg); color: var(--tplane-chat-warning-text); }
     .sac__pill[data-status="complete"] { color: var(--tplane-chat-success-text); }
@@ -81,10 +86,10 @@ function statusToTraceState(s: SubagentStatus): TraceState {
     <chat-trace [state]="state()">
       <span traceLabel>
         <!-- The space keeps a screen reader from running the name and status together. -->
-        <span class="sac__name">{{ subagent().name ?? 'Subagent' }}</span>&ngsp;<span class="sac__pill" [attr.data-status]="subagent().status()">{{ statusLabel() }}</span>
+        <span class="sac__name">{{ subagent().name ?? 'Subagent' }}</span>&ngsp;<span class="sac__pill" [attr.data-status]="subagent().status">{{ statusLabel() }}</span>
       </span>
       <div class="sac__count" traceMeta>{{ messageCount() }}</div>
-      @for (m of subagent().messages(); track m.id) {
+      @for (m of subagent().messages; track m.id) {
         <div class="sac__msg" [attr.data-role]="m.role">
           @if (m.reasoning) {
             <div class="sac__reasoning">{{ m.reasoning }}</div>
@@ -101,7 +106,7 @@ function statusToTraceState(s: SubagentStatus): TraceState {
   `,
 })
 export class ChatSubagentCardComponent {
-  readonly subagent = input.required<Subagent>();
+  readonly subagent = input.required<AgentSubagent>();
   /** App-owned readable labels for the subagent's own tool calls. Technical names stay inside each opened call. */
   readonly toolLabel = input<((name: string) => string | undefined) | undefined>(undefined);
   /**
@@ -110,8 +115,8 @@ export class ChatSubagentCardComponent {
    */
   readonly toolOutcome = input<((activity: ToolActivityInfo) => ToolActivityOutcome | undefined) | undefined>(undefined);
   /** The status in reader's words; `data-status` keeps the raw value for styling. */
-  protected readonly statusLabel = computed(() => STATUS_LABELS[this.subagent().status()]);
-  readonly state = computed<TraceState>(() => statusToTraceState(this.subagent().status()));
+  protected readonly statusLabel = computed(() => STATUS_LABELS[this.subagent().status]);
+  readonly state = computed<TraceState>(() => statusToTraceState(this.subagent().status));
   /** Sources declared for the subagent's completed calls; empty without `toolOutcome`. */
   private readonly sources = computed<readonly ToolActivitySource[]>(() => {
     const decode = this.toolOutcome();
@@ -125,7 +130,7 @@ export class ChatSubagentCardComponent {
       }
     };
     return outcomeSources(
-      (this.subagent().toolCalls?.() ?? []).flatMap((tc) => {
+      this.subagent().toolCalls.flatMap((tc) => {
         if (tc.status !== 'complete') return [];
         const activity: ToolActivityInfo = {
           id: tc.id,
@@ -146,7 +151,7 @@ export class ChatSubagentCardComponent {
   });
   /** "1 message" / "3 messages". The spawning call's ID is not shown: it means nothing to a reader. */
   protected readonly messageCount = computed(() => {
-    const count = this.subagent().messages().length;
+    const count = this.subagent().messages.length;
     return `${count} ${count === 1 ? 'message' : 'messages'}`;
   });
   private readonly markdownDocuments = new Map<string, StreamingMarkdownDocument>();
@@ -161,7 +166,7 @@ export class ChatSubagentCardComponent {
     effect(() => {
       let liveIds: Set<string>;
       try {
-        liveIds = new Set(this.subagent().messages().map((message) => message.id));
+        liveIds = new Set(this.subagent().messages.map((message) => message.id));
       } catch {
         return;
       }
@@ -190,14 +195,13 @@ export class ChatSubagentCardComponent {
   }
 
   protected textOf(m: Message): string {
-    const c = m.content;
-    return typeof c === 'string' ? c : '';
+    return m.content;
   }
 
   protected toolCallsFor(m: Message): ToolCall[] {
     const ids = m.toolCallIds ?? [];
     if (ids.length === 0) return [];
-    const all = this.subagent().toolCalls?.() ?? [];
+    const all = this.subagent().toolCalls;
     return ids.map((id) => all.find((tc) => tc.id === id)).filter((tc): tc is ToolCall => !!tc);
   }
 
@@ -207,7 +211,7 @@ export class ChatSubagentCardComponent {
       name: tc.name,
       label: this.toolLabel()?.(tc.name),
       args: tc.args,
-      result: tc.result,
+      result: toolCallResult(tc),
       status: tc.status,
     };
   }

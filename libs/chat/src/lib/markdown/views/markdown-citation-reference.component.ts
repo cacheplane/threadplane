@@ -10,7 +10,7 @@ import {
 import type { ConnectedPosition } from '../../primitives/overlay/connected-position';
 import { ChatCitationPreviewComponent } from '../../primitives/chat-citations/chat-citation-preview.component';
 import { deriveDomain } from '../../agent/citation-display';
-import type { Citation } from '../../agent/citation';
+import type { Citation } from '../../agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_CITATION_MARKER_STYLES } from '../../styles/chat-citations.styles';
 

@@ -5,7 +5,7 @@ import { ChatComponent } from './chat.component';
 import { ChatMessageComponent } from '../../primitives/chat-message/chat-message.component';
 import { ChatStreamingMdComponent } from '../../streaming/streaming-markdown.component';
 import type { ContentClassifier } from '../../streaming/content-classifier';
-import { mockAgent } from '../../testing/mock-agent';
+import { rawMessagesAgent } from '../../../testing/raw-messages-agent';
 import { completeDelivery, staticDelivery, streamingDelivery, type Message } from '../../agent';
 
 const HISTORY_COUNT = 1000;
@@ -22,13 +22,14 @@ function conversation(): Message[] {
       id: 'active-answer',
       role: 'assistant',
       content: 'Initial tail',
-      delivery: streamingDelivery('active-generation'),
+      // A copy: the delivery helpers freeze, and one spec edits this object in place.
+      delivery: { ...streamingDelivery('active-generation') },
     },
   ];
 }
 
 function mountedConversation() {
-  const agent = mockAgent({ messages: conversation(), isLoading: true });
+  const agent = rawMessagesAgent({ messages: conversation(), status: 'running' });
   const fixture = TestBed.createComponent(ChatComponent);
   fixture.componentRef.setInput('agent', agent);
   fixture.detectChanges();

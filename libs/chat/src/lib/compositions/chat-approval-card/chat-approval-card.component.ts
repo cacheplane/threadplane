@@ -15,7 +15,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import type { Agent } from '../../agent';
+import type { Agent, AgentInterrupt } from '../../agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { ChatStatusPanelComponent } from '../../primitives/chat-status-panel/chat-status-panel.component';
 import { CHAT_APPROVAL_RECORDS } from './approval-records';
@@ -193,21 +193,23 @@ export class ChatApprovalCardComponent {
   private readonly injector = inject(Injector);
   private readonly records = inject(CHAT_APPROVAL_RECORDS, { optional: true });
 
-  private readonly interrupt = computed(() => this.agent().interrupt?.());
+  /**
+   * The pending interrupt this card answers: the first one the agent lists, or
+   * with `matchKind` the first whose value has that `kind`.
+   */
+  readonly interrupt = computed((): AgentInterrupt | undefined => {
+    const want = this.matchKind();
+    return (this.agent().interrupts() ?? []).find((pending) => {
+      if (want === undefined) return true;
+      const value = pending.value;
+      return !!value && typeof value === 'object' && (value as { kind?: unknown }).kind === want;
+    });
+  });
 
-  protected readonly payload = computed(() => {
+  protected readonly payload = computed((): unknown => {
     const request = this.request();
     if (request !== undefined && request !== null) return request;
-    const i = this.interrupt();
-    if (!i) return undefined;
-    const v = i.value as { kind?: unknown } | undefined;
-    const want = this.matchKind();
-    if (want !== undefined) {
-      if (!v || typeof v !== 'object' || (v as { kind?: unknown }).kind !== want) {
-        return undefined;
-      }
-    }
-    return v;
+    return this.interrupt()?.value;
   });
 
   constructor() {

@@ -1,4 +1,4 @@
-import { effect } from '@angular/core';
+import { effect, untracked } from '@angular/core';
 import { views, type ViewRegistry } from '@threadplane/render';
 import type { RenderEvent, RenderViewEntry } from '@threadplane/render';
 import type { Agent, ToolCall } from '../agent';
@@ -12,7 +12,8 @@ import type { ClientToolExecutionGuard } from './client-tool-execution-guard';
 import type { ClientToolSpec } from './to-json-schema';
 import { deriveJsonSchema } from './to-json-schema';
 import { startClientToolExecutor } from './client-tool-executor';
-import type { ClientToolsCapability, ClientToolResult } from './client-tools-capability';
+import type { AgentClientTools } from '@threadplane/core';
+import { isPendingClientTool, toSessionCatalog, toSessionResult, type ClientToolResult } from './client-tools-capability';
 
 /** Connects client tools to an agent and routes rendered tool events back to the runtime. */
 export interface ClientToolsCoordinator {
@@ -126,9 +127,9 @@ export function createClientToolsCoordinator(
     };
   }
 
-  function groupFor(agent: Agent, cap: ClientToolsCapability, tc: ToolCall): PendingToolGroup {
+  function groupFor(agent: Agent, tc: ToolCall): PendingToolGroup {
     if (currentGroup?.ids.has(tc.id)) return currentGroup;
-    const pending = cap.pending();
+    const pending = untracked(() => agent.pendingClientTools() ?? []);
     const calls = pending.some((pendingCall) => pendingCall.id === tc.id)
       ? pending
       : [tc];
@@ -136,8 +137,8 @@ export function createClientToolsCoordinator(
     return currentGroup;
   }
 
-  function shouldHandleClientToolCall(agent: Agent, cap: ClientToolsCapability, tc: ToolCall): boolean {
-    return groupFor(agent, cap, tc).allowed;
+  function shouldHandleClientToolCall(agent: Agent, tc: ToolCall): boolean {
+    return groupFor(agent, tc).allowed;
   }
 
   function warnMissingSettle(tc: ToolCall): void {
@@ -153,7 +154,7 @@ export function createClientToolsCoordinator(
     );
   }
 
-  function flushSettledResults(cap: ClientToolsCapability): void {
+  function flushSettledResults(cap: AgentClientTools): void {
     if (!cap.flush) {
       console.warn(
         'Client tool results were settled with no follow-up run, but the agent capability does not implement flush(); results may not reach the server.',
@@ -166,15 +167,23 @@ export function createClientToolsCoordinator(
   }
 
   function settleClientToolCall(
-    cap: ClientToolsCapability,
     agent: Agent,
     tc: ToolCall,
-    result: ClientToolResult,
+    value: ClientToolResult,
     mayContinue = true,
   ): void {
-    const group = groupFor(agent, cap, tc);
+    const group = groupFor(agent, tc);
     if (group.settledIds.has(tc.id)) return;
     group.settledIds.add(tc.id);
+    // The capability is read now, not when the coordinator connected: a thread
+    // switch replaces the session and its capability. A result for a call the
+    // agent no longer lists has nowhere to go, and the session would reject it.
+    const cap = agent.clientTools;
+    if (!cap || !untracked(() => isPendingClientTool(agent, tc.id))) {
+      if (Array.from(group.ids).every((id) => group.settledIds.has(id)) && group.allowed) currentGroup = undefined;
+      return;
+    }
+    const result = toSessionResult(value);
 
     const groupComplete = Array.from(group.ids).every((id) => group.settledIds.has(id));
 
@@ -226,49 +235,64 @@ export function createClientToolsCoordinator(
   return {
     viewRegistry,
     connect(agent: Agent): void {
-      const cap = agent.clientTools;
-      if (!cap) return;
-      cap.setCatalog(toClientToolSpecs(registry));
+      if (!agent.clientTools) return;
+      const catalog = toSessionCatalog(toClientToolSpecs(registry));
+      // The catalog belongs to a session, and a thread switch replaces the
+      // session without telling anyone. Every switch publishes another
+      // session's snapshot, so follow the snapshot and send the catalog again
+      // whenever the capability object is not the one that last received it.
+      // The first catalog is sent at once, so a run submitted right after
+      // connect() carries it.
+      let cataloged: AgentClientTools | undefined = agent.clientTools;
+      cataloged.setCatalog(catalog);
+      effect(() => {
+        agent.threadId();
+        agent.messages();
+        agent.status();
+        const cap = agent.clientTools;
+        if (!cap || cap === cataloged) return;
+        cataloged = cap;
+        untracked(() => cap.setCatalog(catalog));
+      });
       startClientToolExecutor(agent, registry, {
         executionGuard: options.executionGuard,
         shouldExecuteToolCall: (tc) => {
-          if (shouldHandleClientToolCall(agent, cap, tc)) return true;
+          if (shouldHandleClientToolCall(agent, tc)) return true;
           // Blocked before executing: record why, so the model sees a reason
           // instead of an unanswered tool call.
-          settleClientToolCall(cap, agent, tc, {
+          settleClientToolCall(agent, tc, {
             ok: false,
             error: `client tool continuation limit reached; ${tc.name} was not executed`,
           });
           return false;
         },
-        settleToolCall: (tc, result) => settleClientToolCall(cap, agent, tc, result),
+        settleToolCall: (tc, result) => settleClientToolCall(agent, tc, result),
         // Cancelled calls reuse the same group bookkeeping (so the flush-once-
         // per-group property holds) but are forced down the settle+flush path.
         settleWithoutContinuing: (tc, result) =>
-          settleClientToolCall(cap, agent, tc, result, false),
+          settleClientToolCall(agent, tc, result, false),
       }); // function tools
       // Auto-ack `view` tools: they render but produce no user value.
       effect(() => {
-        for (const tc of cap.pending()) {
+        for (const tc of agent.pendingClientTools() ?? []) {
           const def: ClientToolDef | undefined = registry[tc.name];
           if (!def || def.kind !== 'view') continue;
           if (ackedViews.has(tc.id)) continue;
           ackedViews.add(tc.id);
-          settleClientToolCall(cap, agent, tc, { ok: true, value: { shown: true } });
+          untracked(() => settleClientToolCall(agent, tc, { ok: true, value: { shown: true } }));
         }
       });
     },
     handleRenderEvent(agent: Agent, event: RenderEvent): void {
       if (event.type !== 'result') return;
-      const cap = agent.clientTools;
-      if (!cap) return;
+      if (!agent.clientTools) return;
       // elementKey is the tool NAME in the tool-view spec; resolve the pending `ask`
       // call for that name with the component's emitted value.
       const name = event.elementKey;
-      const pending = cap.pending().find(
+      const pending = (agent.pendingClientTools() ?? []).find(
         (tc: ToolCall) => tc.name === name && registry[tc.name]?.kind === 'ask',
       );
-      if (pending) settleClientToolCall(cap, agent, pending, { ok: true, value: event.value });
+      if (pending) settleClientToolCall(agent, pending, { ok: true, value: event.value });
     },
   };
 }

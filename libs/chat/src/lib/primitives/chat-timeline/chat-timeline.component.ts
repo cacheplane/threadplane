@@ -3,9 +3,9 @@ import {
   TemplateRef, ChangeDetectionStrategy,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import type { AgentWithHistory, AgentCheckpoint } from '../../agent';
+import type { Agent, AgentCheckpoint } from '../../agent';
 
-/** Projects agent history checkpoints through a supplied template and emits selections dispatched through selectCheckpoint(). */
+/** Projects the agent's saved history (`agent.checkpoints()`) through a supplied template and emits selections dispatched through selectCheckpoint(). */
 @Component({
   selector: 'chat-timeline',
   standalone: true,
@@ -23,13 +23,13 @@ import type { AgentWithHistory, AgentCheckpoint } from '../../agent';
   `,
 })
 export class ChatTimelineComponent {
-  readonly agent = input.required<AgentWithHistory>();
+  readonly agent = input.required<Agent>();
 
   readonly checkpointSelected = output<AgentCheckpoint>();
 
   readonly templateRef = contentChild(TemplateRef);
 
-  readonly history = computed<AgentCheckpoint[]>(() => this.agent().history());
+  readonly history = computed<readonly AgentCheckpoint[]>(() => this.agent().checkpoints() ?? []);
 
   selectCheckpoint(cp: AgentCheckpoint): void {
     this.checkpointSelected.emit(cp);

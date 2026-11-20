@@ -1,36 +1,39 @@
 // Shared types
 export type { MessageTemplateType } from './lib/chat.types';
 
-// Agent contract (runtime-neutral)
+// Agent contract. `Agent` is the instance `injectAgent()` from
+// `@threadplane/angular` returns, and the data types are the ones
+// `@threadplane/core` defines; they are re-exported so a component that only
+// renders a conversation needs one import.
 export type {
   Agent,
-  AgentWithHistory,
-  Citation,
-  CompleteOutcome,
-  Message,
-  MessageDelivery,
-  Role,
-  ContentBlock,
-  ToolCall,
-  ToolCallStatus,
-  AgentStatus,
+  AgentCheckpoint,
+  AgentError,
+  AgentErrorDiagnostic,
+  AgentErrorKind,
+  AgentInputBlock,
   AgentInterrupt,
-  Subagent,
-  SubagentStatus,
+  AgentInterruptResponse,
+  AgentPlanStep,
+  AgentRecovery,
+  AgentSessionCustomEvent,
+  AgentStatus,
+  AgentSubagent,
+  AgentSubagentStatus,
   AgentSubmitInput,
   AgentSubmitOptions,
-  AgentEvent,
-  AgentStateUpdateEvent,
-  AgentCustomEvent,
-  AgentCheckpoint,
   AgentUsage,
   AgentUsageEntry,
-  AgentPlan,
-  AgentPlanStep,
-  AgentRuntimeTelemetryEvent,
-  AgentRuntimeTelemetryPayload,
-  AgentRuntimeTelemetryProperties,
-  AgentRuntimeTelemetrySink,
+  Citation,
+  CompleteOutcome,
+  ContentBlock,
+  Message,
+  MessageDelivery,
+  PlainValue,
+  Role,
+  StreamingToolCall,
+  ToolCall,
+  ToolCallStatus,
 } from './lib/agent';
 export {
   isUserMessage,
@@ -40,18 +43,12 @@ export {
   streamingDelivery,
   completeDelivery,
   staticDelivery,
-  createAgentRef,
-  AgentError,
-  AGENT_ERROR_MESSAGES,
-  AGENT_RECOVERY_MESSAGES,
-  AGENT_RECOVERY_DETAILS,
-  toAgentError,
-  isAbortError,
-  agentPlan,
   agentPlanFromState,
+  contentBlocksText,
+  agentToolCalls,
+  toolCallResult,
+  toolCallError,
 } from './lib/agent';
-export type { AgentRef } from './lib/agent';
-export type { AgentErrorKind, AgentRecovery } from './lib/agent';
 
 // Primitives
 export { ChatMessageListComponent, getMessageType } from './lib/primitives/chat-message-list/chat-message-list.component';
@@ -299,9 +296,8 @@ export type { ViewProps } from './lib/client-tools/component-inputs';
 /** Inferred argument type for a schema (alias of StandardSchemaInferOutput). */
 export type ToolArgs<S extends import('./lib/client-tools/tool-def').StandardSchemaV1> = import('./lib/client-tools/tool-def').StandardSchemaInferOutput<S>;
 export type { ClientToolSpec } from './lib/client-tools/to-json-schema';
-export type { ClientToolsCapability, ClientToolResult } from './lib/client-tools/client-tools-capability';
-export { selectPendingClientToolCalls } from './lib/client-tools/select-pending-client-tool-calls';
-export type { SelectPendingClientToolCallsInput } from './lib/client-tools/select-pending-client-tool-calls';
+export type { ClientToolResult } from './lib/client-tools/client-tools-capability';
+export { stopAgent } from './lib/client-tools/stop-agent';
 export { validateArgs, executeFunctionTool } from './lib/client-tools/execute';
 export { startClientToolExecutor } from './lib/client-tools/client-tool-executor';
 export type { ClientToolExecutorOptions } from './lib/client-tools/client-tool-executor';
@@ -323,7 +319,7 @@ export type { ClientToolsCoordinator } from './lib/client-tools/client-tools-coo
 
 // Test utilities (no vitest dep — safe to ship in the main runtime bundle)
 export { mockAgent } from './lib/testing/mock-agent';
-export type { MockAgent, MockAgentOptions } from './lib/testing/mock-agent';
+export type { MockAgent, MockAgentField, MockAgentLifecycle, MockAgentOptions } from './lib/testing/mock-agent';
 
 // Conformance helpers ship from the secondary entry point @threadplane/chat/testing
 // (they import vitest at module level; keeping them out of the main bundle).

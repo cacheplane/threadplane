@@ -9,16 +9,21 @@ export interface ChatInterruptTemplateContext {
   /** The agent bound to `<chat>` (`let-agent`). */
   $implicit: Agent;
   /**
-   * The pending interrupt, read from `agent.interrupt()`
-   * (`let-interrupt="interrupt"`). Runtimes that expose a full interrupt
-   * batch do so on their own agent type, reachable through `$implicit`.
+   * The first pending interrupt, `agent.interrupts()[0]`
+   * (`let-interrupt="interrupt"`).
    */
   interrupt: AgentInterrupt;
+  /**
+   * Every interrupt the paused run waits on, in the agent's order
+   * (`let-interrupts="interrupts"`). A run continues once, so answer them
+   * together with one `agent.resume(responses)`.
+   */
+  interrupts: readonly AgentInterrupt[];
 }
 
 /**
  * Registers an interrupt renderer on `<chat>`. While the agent has a pending
- * interrupt (`agent.interrupt()` is defined), the template renders at the
+ * interrupt (`agent.interrupts()` lists one), the template renders at the
  * end of the transcript, inside the scroll region and after any run
  * activity, so approval cards and other human-in-the-loop UI sit in the
  * conversation. With no pending interrupt, or no template, nothing renders:
@@ -29,7 +34,10 @@ export interface ChatInterruptTemplateContext {
  * ```html
  *   <chat [agent]="agent">
  *     <ng-template chatInterruptTemplate let-agent let-interrupt="interrupt">
- *       <my-approval-card [interrupt]="interrupt" (decide)="agent.submit({ resume: $event })" />
+ *       <my-approval-card
+ *         [interrupt]="interrupt"
+ *         (decide)="agent.resume?.([{ interruptId: interrupt.id, status: 'resolved', value: $event }])"
+ *       />
  *     </ng-template>
  *   </chat>
  * ```

@@ -1,17 +1,42 @@
-export type { FakeAgentConfig } from './fake-agent-config';
-export { runAgentConformance } from './agent-conformance';
+// Test helpers for apps and backends that render through `@threadplane/chat`.
+//
+// - `mockAgent()`: an `Agent` with writable fields and recorded commands, for
+//   component tests that need no injector.
+// - `provideFakeAgent()` / `injectFakeAgentSession()`: the real injected agent
+//   over an in-memory session, for tests that go through `injectAgent()`.
+// - `createFakeAgentSession()`: the session underneath both.
+// - `run*Conformance`: the core session conformance suites, bound to Vitest.
+export { mockAgent } from '@threadplane/chat';
+export type { MockAgent, MockAgentField, MockAgentLifecycle, MockAgentOptions } from '@threadplane/chat';
+// See `src/lib/agent/angular-agent.ts` for why the rule is off on these lines.
+// eslint-disable-next-line @nx/enforce-module-boundaries
+export { injectFakeAgentSession, provideFakeAgent } from '@threadplane/angular';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+export type { FakeAgentConfig } from '@threadplane/angular';
 export {
-  runInterruptConformance,
-  INTERRUPT_CONFORMANCE_BATCH,
-  type InterruptConformanceHarness,
-  type InterruptConformanceRequest,
-} from './interrupt-conformance';
-export { runAgentWithHistoryConformance } from './agent-with-history-conformance';
-export {
-  REASONING_FIXTURE_MESSAGE_ID,
-  REASONING_FIXTURE_REASONING,
-  REASONING_FIXTURE_RESPONSE,
-  REASONING_FIXTURE_EVENTS,
   assertReasoningFixtureMessages,
-  type AbstractEvent,
-} from './reasoning-fixture';
+  createFakeAgentSession,
+  historyConformanceCheckpoints,
+  interruptConformanceBatch,
+  reasoningFixture,
+} from '@threadplane/core/testing';
+export type {
+  FakeAgentSession,
+  FakeAgentSessionInit,
+  FakeAgentSnapshotPatch,
+  FakeAssistantStream,
+  FakeCommand,
+  FakeMessageInput,
+  FakeSubagentInput,
+  HistoryConformanceFactory,
+  InterruptConformanceHarness,
+  InterruptConformanceOptions,
+  InterruptConformanceRequest,
+  ReasoningFixture,
+  ReasoningFixtureEvent,
+} from '@threadplane/core/testing';
+export {
+  runAgentConformance,
+  runAgentWithHistoryConformance,
+  runInterruptConformance,
+} from './conformance';

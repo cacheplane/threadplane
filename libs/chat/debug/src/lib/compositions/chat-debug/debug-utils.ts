@@ -9,5 +9,5 @@ export function toDebugCheckpoint(cp: DebugAgentCheckpoint, index: number): Debu
 }
 
 export function extractStateValues(cp: DebugAgentCheckpoint | undefined): Record<string, unknown> {
-  return cp?.values ?? {};
+  return { ...cp?.values };
 }
