@@ -325,6 +325,14 @@ export function ownSnapshot(
   });
 }
 
+/** Optional backend fields that are plain data and present only when set. */
+const plainExtras = [
+  'checkpoints',
+  'messageCheckpoints',
+  'branchTree',
+  'branch',
+] as const satisfies readonly (keyof LangGraphSnapshot)[];
+
 /** One backend aggregate, composing the core fields and owned application data. */
 export function ownLangGraphSnapshot(
   input: LangGraphPublication,
@@ -357,8 +365,19 @@ export function ownLangGraphSnapshot(
     input.stateIssues,
     previous?.stateIssues
   ) as LangGraphSnapshot['stateIssues'];
+  const extras: Record<string, PlainValue> = {};
+  let sameExtras = true;
+  for (const key of plainExtras) {
+    const value = ownValueWithSharing(
+      input[key] as PlainValue,
+      previous?.[key] as PlainValue
+    );
+    if (value !== previous?.[key]) sameExtras = false;
+    if (value !== undefined) extras[key] = value;
+  }
   if (
     core === previous &&
+    sameExtras &&
     history === previous?.history &&
     state === previous?.state &&
     stateIssues === previous?.stateIssues &&
@@ -383,6 +402,7 @@ export function ownLangGraphSnapshot(
     subgraphs,
     subagents,
     ...(reconnect ? { reconnect } : {}),
+    ...extras,
   });
 }
 

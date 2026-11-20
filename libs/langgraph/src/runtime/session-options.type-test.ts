@@ -30,3 +30,26 @@ export function assertDelegation() {
   // @ts-expect-error A relation is read-only.
   if (subgraph.delegation) subgraph.delegation.toolCallId = 'other';
 }
+
+export async function assertHistoryState() {
+  const session = createSession({
+    assistantId: 'agent',
+    threadId: 'thread',
+    historyState: true,
+  });
+  const snapshot = session.getSnapshot();
+  const id: string | undefined = snapshot.checkpoints?.[0].id;
+  const parent: string | null | undefined =
+    snapshot.checkpoints?.[0].saved.parent_checkpoint?.checkpoint_id;
+  const checkpoint: string | undefined = snapshot.messageCheckpoints?.['a'];
+  const branch: string | undefined = snapshot.branch;
+  const item = snapshot.branchTree?.items[0];
+  if (item?.type === 'node') void item.value.values;
+  if (item?.type === 'fork') void item.items[0].items;
+  await session.setBranch('a>b');
+  // @ts-expect-error A branch is a string.
+  await session.setBranch(1);
+  // @ts-expect-error Checkpoints are read-only.
+  snapshot.checkpoints?.push(snapshot.checkpoints[0]);
+  void [id, parent, checkpoint, branch];
+}

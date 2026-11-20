@@ -194,6 +194,39 @@ the snapshot shows the new one.
 - After the read, every rule of `fork` applies, including its refusal to
   replace active or unsettled work.
 
+## History with state
+
+`snapshot.history` holds only checkpoint metadata. A session created with
+`historyState: true` also keeps each loaded checkpoint's state and publishes
+three views of the page, all absent until a page has been read:
+
+- `snapshot.checkpoints`: the page, newest first. Each entry has the checkpoint
+  `id`, a `label` (the first node it would run next), its `values` (the saved
+  graph state, `messages` included) and `saved`, the checkpoint as the backend
+  sent it.
+- `snapshot.messageCheckpoints`: a record from an assistant message id to the
+  id of the newest checkpoint whose assistant messages end with it. Checkpoints
+  without an id are skipped.
+- `snapshot.branchTree`: the page arranged by parent checkpoint. A `sequence`
+  holds `node` items and, where a checkpoint has several children, a `fork`
+  whose `items` are the alternative sequences, newest first. A node's `value`
+  is the entry in `checkpoints` and its `path` lists the fork choices that lead
+  to it. A page that starts mid-thread is rooted at its newest lineage.
+
+`load()` fills them, and the page is read again after every run that ends in
+success or a pause. That read updates only these views and `history`; the
+transcript stays the stream's, and a read a newer command overtakes is dropped.
+Everything is owned frozen data and keeps its reference while a page is equal
+to the last one. The option is off by default because a page's states can be
+large.
+
+`session.setBranch(branch)` records which branch a view shows and publishes it
+as `snapshot.branch`, absent for the default branch. `branch` is the fork
+choices joined with `>`. It is a view selection: nothing is requested and the
+transcript does not change. `selectBranch(tree, branch)` returns that branch's
+checkpoints, oldest first, following the newest continuation at any fork the
+branch does not name.
+
 ## Interruptions and recovery
 
 A stream that closes without this runtime's own terminal evidence settles as

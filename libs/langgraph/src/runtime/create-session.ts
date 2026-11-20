@@ -37,6 +37,20 @@ import {
   projectHistory,
 } from './history-projection.js';
 import { projectCheckpointHistory } from './checkpoint-history.js';
+import {
+  projectBranchTree,
+  projectCheckpoints,
+  projectMessageCheckpoints,
+  type LangGraphBranchTree,
+  type LangGraphCheckpoint,
+} from './checkpoint-tree.js';
+export {
+  selectBranch,
+  type LangGraphBranchFork,
+  type LangGraphBranchNode,
+  type LangGraphBranchTree,
+  type LangGraphCheckpoint,
+} from './checkpoint-tree.js';
 import type {
   LangGraphWireInterrupt,
   LangGraphSnapshot,
@@ -180,6 +194,15 @@ export interface SessionOptions {
    * Pass an empty list to relate nothing.
    */
   readonly subagentToolNames?: readonly string[];
+  /**
+   * Keep each loaded checkpoint's state. `snapshot.checkpoints`,
+   * `snapshot.messageCheckpoints` and `snapshot.branchTree` are then published
+   * from every history page, and the page is read again after each run that
+   * ends in success or a pause. Off by default: a page's states can be large,
+   * and a session otherwise keeps only checkpoint metadata in
+   * `snapshot.history`.
+   */
+  readonly historyState?: boolean;
 }
 
 /** Backend-private capability; core sessions and borrowed observers stay minimal. */
@@ -217,6 +240,13 @@ export type LangGraphSession<
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
+  /**
+   * Selects the branch a view shows and publishes it as `snapshot.branch`. The
+   * value is the fork choices joined with `>`, as `selectBranch` reads it; an
+   * empty string selects the default branch. It is a view selection only: no
+   * request is made and the transcript does not change.
+   */
+  setBranch(branch: string): Promise<void>;
   /** Always present here: `custom` stream frames as application events. */
   onCustomEvent(listener: (event: AgentSessionCustomEvent) => void): () => void;
   /** When this session first saw each milestone; see `LangGraphLifecycle`. */
@@ -496,6 +526,29 @@ export function createSession(
     history: undefined,
   });
   let historyPage: LangGraphSnapshot['history'];
+  const historyState = options.historyState === true;
+  let checkpointPage:
+    | {
+        readonly checkpoints: readonly LangGraphCheckpoint[];
+        readonly messageCheckpoints: Readonly<Record<string, string>>;
+        readonly branchTree: LangGraphBranchTree;
+      }
+    | undefined;
+  /** Derives the published checkpoint views once for each distinct page. */
+  function checkpointViews(
+    history: readonly ThreadState[]
+  ): typeof checkpointPage {
+    const checkpoints = projectCheckpoints(checkpointPage?.checkpoints, history);
+    return checkpoints === checkpointPage?.checkpoints
+      ? checkpointPage
+      : {
+          checkpoints,
+          messageCheckpoints: projectMessageCheckpoints(checkpoints),
+          branchTree: projectBranchTree(checkpoints),
+        };
+  }
+  let branchName = '';
+  let pageRefresh: AbortController | undefined;
   let subgraphs = initialSubgraphs(publication.getSnapshot().subgraphs);
   let state = initialMessageState();
   const reasoningTimer = createReasoningTimer();
@@ -719,6 +772,8 @@ export function createSession(
     publication.publish({
       status,
       history: historyPage,
+      ...checkpointPage,
+      ...(branchName ? { branch: branchName } : {}),
       state: reading.state,
       ...(reading.issues ? { stateIssues: reading.issues } : {}),
       ...(plan ? { plan } : {}),
@@ -830,12 +885,56 @@ export function createSession(
     recoveryAttempt = error?.recovery === 'check' ? attempt : undefined;
     replayable = error?.recovery === 'retry' ? { attempt, state } : undefined;
     publish(error ? 'error' : 'idle', error);
+    if (historyState && !error && (outcome === 'success' || outcome === 'paused'))
+      void refreshHistoryPage();
     // An error can end local consumption before the HTTP body closes. SDK
     // iterator return releases its reader; abort also cancels our request.
     close(
       attempt,
       outcome === 'error' || hasInvocationConflict(state.invocations)
     );
+  }
+  /** Reads the history page again after a run, for the checkpoint views only.
+   * The transcript is the stream's; a failed or superseded read changes nothing. */
+  async function refreshHistoryPage() {
+    if (!getHistory || threadId === undefined || branch || disposed) return;
+    pageRefresh?.abort();
+    const controller = new AbortController();
+    pageRefresh = controller;
+    const current = () =>
+      pageRefresh === controller &&
+      !disposed &&
+      !owner &&
+      !loading &&
+      !preparing &&
+      !branch;
+    try {
+      const history = await getHistory(thread(), controller.signal);
+      await publication.command(() => {
+        if (!current()) return;
+        const page = projectCheckpointHistory(historyPage, history);
+        const views = checkpointViews(history);
+        if (!current()) return;
+        pageRefresh = undefined;
+        historyPage = page;
+        checkpointPage = views;
+        republish();
+      });
+    } catch {
+      /* The page stays as it was last read. */
+    } finally {
+      if (pageRefresh === controller) pageRefresh = undefined;
+    }
+  }
+  function cancelPageRefresh() {
+    const previous = pageRefresh;
+    pageRefresh = undefined;
+    previous?.abort();
+  }
+  /** Publishes changed backend fields under the status already published. */
+  function republish() {
+    const { status, error } = publication.getSnapshot();
+    publish(status, error);
   }
   function detach(outcome: CompleteOutcome): Attempt | undefined {
     const attempt = owner;
@@ -967,6 +1066,7 @@ export function createSession(
       : 'complete';
   }
   function stopExecution() {
+    cancelPageRefresh();
     const preparation = detachPreparation();
     const hadRetained = !!retained;
     const previousRetained = retained;
@@ -1639,6 +1739,7 @@ export function createSession(
     external?: AbortSignal,
     runOptions?: CapturedRunOptions
   ): Attempt {
+    cancelPageRefresh();
     const reading = detachLoad();
     const checking = invalidateCheck();
     const previous = detach('interrupted');
@@ -2155,6 +2256,8 @@ export function createSession(
         });
         const projectedValues = projectHistoryValues(previousValues, history);
         const projectedHistory = projectCheckpointHistory(historyPage, history);
+        const projectedCheckpoints =
+          historyState && !capturedBranch ? checkpointViews(history) : undefined;
         // Even a plain projection can invoke getters supplied by a transport.
         // Such a getter can submit/stop/dispose; never commit its stale result.
         if (!ownsLoad(read)) return;
@@ -2172,6 +2275,7 @@ export function createSession(
         values = projectedValues;
         interrupts = projectedInterrupts;
         if (!capturedBranch) historyPage = projectedHistory;
+        if (projectedCheckpoints) checkpointPage = projectedCheckpoints;
         subgraphs = initialSubgraphs();
         authoredTools.clear();
         loading = undefined;
@@ -2224,6 +2328,7 @@ export function createSession(
         recoveryAttempt = undefined;
         withdrawn = invalidateCheck();
       }
+      cancelPageRefresh();
       const previous = detachLoad();
       let resolve!: HistoryRead['resolve'];
       let reject!: HistoryRead['reject'];
@@ -2490,6 +2595,14 @@ export function createSession(
     },
     submit,
     fork,
+    setBranch: (selected) =>
+      publication.command(() => {
+        if (typeof selected !== 'string')
+          throw new TypeError('A branch is a string.');
+        if (disposed || selected === branchName) return;
+        branchName = selected;
+        republish();
+      }),
     ...(canRegenerate ? { regenerate } : {}),
     resume,
     reconnect,
@@ -2506,6 +2619,7 @@ export function createSession(
       publication.command(() => {
         if (disposed) return;
         disposed = true;
+        cancelPageRefresh();
         const pendingThread = creation;
         creation = undefined;
         const preparation = detachPreparation();

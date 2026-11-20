@@ -12790,6 +12790,17 @@
       "note": "Covered by runtime specs. Plain subgraph nodes and nested delegations are never related."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/checkpoint-tree.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of a loaded history page with each checkpoint's state: the checkpoint list, the assistant message to checkpoint record, the branch tree and the selection of one branch's checkpoints.",
+      "note": "Covered by runtime specs. Opt-in through historyState; a session otherwise keeps only checkpoint metadata."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
       "taskIds": [
         "T09",

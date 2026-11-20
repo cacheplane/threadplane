@@ -10,6 +10,10 @@ import type {
 } from '@threadplane/core';
 import type { LangGraphSubagent } from './subagent-projection.js';
 import type { Interrupt, ThreadState } from '@langchain/langgraph-sdk';
+import type {
+  LangGraphBranchTree,
+  LangGraphCheckpoint,
+} from './checkpoint-tree.js';
 
 /** Compact metadata from an explicitly loaded page, without repeated state data. */
 export type LangGraphHistoryEntry = DeepReadonly<
@@ -101,4 +105,16 @@ export type LangGraphSnapshot<
    * for each and in the same order.
    */
   readonly subagents: readonly LangGraphSubagent[];
+  /**
+   * The loaded history page with each checkpoint's state, newest first.
+   * Present only on a session created with `historyState: true`, once a page
+   * has been read.
+   */
+  readonly checkpoints?: readonly LangGraphCheckpoint[];
+  /** Assistant message id to the id of the checkpoint that ends with it. With `checkpoints`. */
+  readonly messageCheckpoints?: Readonly<Record<string, string>>;
+  /** `checkpoints` arranged by parent, splitting at each fork. With `checkpoints`. */
+  readonly branchTree?: LangGraphBranchTree;
+  /** The branch `setBranch` last selected; absent for the default branch. */
+  readonly branch?: string;
 };
