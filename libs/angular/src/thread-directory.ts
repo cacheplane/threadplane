@@ -34,6 +34,11 @@ export type ThreadListItem = {
   readonly updatedAt?: number;
   readonly status: 'active' | 'archived';
   readonly pinned: boolean;
+  /**
+   * The saved rank among pinned threads, when the directory keeps one
+   * (`ThreadDirectory.pinnedOrderOf`). `threads()` is already in this order.
+   */
+  readonly pinnedOrder?: number;
   readonly archived: boolean;
   readonly projectId: string | null;
 };
@@ -133,9 +138,10 @@ export interface ThreadDirectoryView<
    * the thread it was asking about.
    *
    * The answer comes from `ThreadDirectoryConfig.getThread`, else from the
-   * directory's own `get`. With neither, only a thread the directory lists can
-   * be answered for: the list is read once if the thread is not in it, and a
-   * thread still not listed rejects, because a list is not proof of absence.
+   * directory's `get`, which the core contract leaves optional. With neither,
+   * only a thread the directory lists can be answered for: the list is read
+   * once if the thread is not in it, and a thread still not listed rejects,
+   * because a list is not proof of absence.
    */
   getThread(threadId: string): Promise<ThreadListItem | null>;
   /**
@@ -212,11 +218,6 @@ export interface ThreadDirectoryView<
   >;
 }
 
-/** A directory that can also read one thread; not part of the core contract. */
-type ReadsOneThread = {
-  get?(threadId: string): Promise<ThreadEntry | null>;
-};
-
 /**
  * Builds the {@link ThreadDirectoryView} for a directory factory. Call it in
  * an injection context; `provideThreadDirectory` does. The directory is
@@ -263,6 +264,7 @@ export function createThreadDirectoryView<TDirectory extends ThreadDirectory>(
   const toItem = (entry: ThreadEntry): ThreadListItem => {
     let item = items.get(entry);
     if (!item) {
+      const pinnedOrder = directory.pinnedOrderOf?.(entry);
       item = Object.freeze({
         id: entry.id,
         title: entry.title,
@@ -271,6 +273,7 @@ export function createThreadDirectoryView<TDirectory extends ThreadDirectory>(
           : { updatedAt: entry.updatedAt }),
         status: entry.archived ? 'archived' : 'active',
         pinned: entry.pinned,
+        ...(pinnedOrder === undefined ? {} : { pinnedOrder }),
         archived: entry.archived,
         projectId: entry.projectId,
       });
@@ -305,7 +308,7 @@ export function createThreadDirectoryView<TDirectory extends ThreadDirectory>(
       current.archived.find((entry) => entry.id === threadId)
     );
   };
-  const own = (directory as ReadsOneThread).get;
+  const own = directory.get;
   const readOne =
     config.getThread ??
     (typeof own === 'function'
@@ -384,8 +387,12 @@ export const ɵTHREAD_DIRECTORY = new InjectionToken<ThreadDirectoryView>(
  * ```ts
  * providers: [
  *   provideThreadDirectory({
- *     createDirectory: ({ clientOptions }) =>
- *       createLangGraphThreadDirectory({ apiUrl, clientOptions }),
+ *     createDirectory: ({ clientOptions, reportOperationFailure }) =>
+ *       createLangGraphThreadDirectory({
+ *         apiUrl,
+ *         clientOptions,
+ *         reportOperationFailure,
+ *       }),
  *   }),
  * ];
  * ```
@@ -411,9 +418,10 @@ export function provideThreadDirectory<TDirectory extends ThreadDirectory>(
 /**
  * Retrieves the thread directory view provided in the current injection
  * context. The result is typed by the core contract, where every command is
- * optional; name the directory type, `injectThreadDirectory<MyDirectory>()`,
- * to have the commands it guarantees typed as present. That is not checked
- * against the provider.
+ * optional; name the directory type, for example
+ * `injectThreadDirectory<LangGraphThreadDirectory>()`, to have the commands it
+ * guarantees typed as present, so they are called without `?.`. That is not
+ * checked against the provider.
  *
  * @example
  * ```ts

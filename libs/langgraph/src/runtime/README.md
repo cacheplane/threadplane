@@ -785,20 +785,57 @@ existing one. With `browserOrigin`, a cross-origin `apiUrl` is rejected.
 An entry is read from thread metadata: `title` (trimmed, else `titleFallback`,
 default "New chat"), `archived`, `pinned`, `pinnedOrder` and `projectId`.
 `threads` holds the active conversations, pinned ones first in their saved
-order; `archived` holds the rest. Nothing is read until `refresh()` is called.
-A failed read never rejects: it is published as `status: 'error'` and the lists
-keep the last successful result. `status` is `'loading'` only until the first
-successful read or while recovering from an error.
+order; `archived` holds the rest. An entry does not carry `pinnedOrder`:
+`pinnedOrderOf(entry)` answers the saved rank of an entry this package
+produced, or `undefined` when the thread has none. Nothing is read until
+`refresh()` is called. A failed read never rejects: it is published as
+`status: 'error'` and the lists keep the last successful result. `status` is
+`'loading'` only until the first successful read or while recovering from an
+error.
+
+`refresh()` reads the thread list and publishes it, then reads the project
+names and publishes again, and resolves after both. A failed thread read makes
+that one request and no project read.
+
+`get(id, { signal }?)` reads one thread, listed or not, without changing the
+snapshot. It resolves with the entry, or with `null` when the server answers
+404 (no such thread) or 422 (the id is not one a thread could have). Any other
+failure rejects with the safe error, so a caller can tell "missing" from "could
+not ask". A listed thread that has not changed resolves with the listed entry
+itself.
 
 Mutations (`create`, `rename`, `remove`, `setArchived`, `setPinned`,
 `reorderPinned`, `setProject`) apply optimistically, roll back and reject with a
-safe error on failure, and confirm with a later read. A read that started before
-a mutation settled never undoes it, and error bodies are never read.
+safe error on failure, and confirm with a later read of the thread list; they
+do not wait for the project names. A project command does. A read that started
+before a mutation settled never undoes it, and error bodies are never read.
 
 Project names live in the LangGraph Store (`project-store.ts`), namespace
 `['threadplane', 'projects']`, one item per project with value `{ name }`. Pass
 `projects: false` to turn them off. When the Store API is unavailable, threads
 still list and `projects` is absent.
+
+`reportOperationFailure` receives `'unauthorized'` when a request is answered
+401 or 403 and `'network_blocked'` when a request never reached the server. It
+applies to the client built from `apiUrl` only; with a supplied `client` nothing
+is reported. The Angular `provideThreadDirectory` factory receives the host's
+reporter as `reportOperationFailure`; pass it on.
+
+### Differences from the removed `LangGraphThreadsAdapter`
+
+| | Removed adapter | This directory |
+| --- | --- | --- |
+| Title of a thread with none | `'Untitled'` | `'New chat'`. Pass `titleFallback: 'Untitled'` to keep the old text. |
+| Retries | The SDK default (4), or `clientOptions.maxRetries` | Never, for the client built from `apiUrl`: `maxRetries` is forced to 0 so a failure shows at once. A supplied `client` keeps its own setting. |
+| Failures | Passed through as thrown unless default headers or a reporter were configured | Always the safe `LangGraphRequestError`; status and body are never exposed. |
+| `create` failing | Resolved `null` and logged | Rejects. The Angular view's `create` still resolves `null` and logs. |
+| `pinnedOrder` | A field of each row | `pinnedOrderOf(entry)`; the Angular view puts it on each list item. |
+| Thread ids in request paths | Sent as given | URL-encoded. |
+| Console output | `console.debug` on each refresh, `console.error` on a failed one | None. A failed read is published as `status: 'error'`. |
+| Cancellation | Not abortable | `refresh`, `get` and `create` take a `signal`; `dispose()` aborts what is in flight. |
+
+Single-thread reads, the order of thread and project reads, operation failure
+reporting and optimistic mutations behave as they did.
 
 The shared suite in `testing/thread-directory-conformance.ts` runs against this
 directory. Limits: one page

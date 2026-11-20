@@ -108,7 +108,7 @@ The package root is the whole public surface. Everything is exported from `@thre
 - `MockAgentTransport`: a scripted transport. A spec emits event batches and the real session projects them.
 - `FakeStreamTransport` and `FakeStreamTransportConfig`: a transport that streams a canned reply, for offline demos.
 
-Pass either as `createSession({ transport })`. Neither is for production use. For a session with no transport at all, use `createFakeAgentSession` from `@threadplane/core/testing`.
+Pass either as `createSession({ transport })`, with or without a `threadId`: both name a new thread on the first submit. Neither is for production use. For a session with no transport at all, use `createFakeAgentSession` from `@threadplane/core/testing`.
 
 `@threadplane/langgraph/development-install` is the one secondary entry. It exports `installationToken`, described under "Installation collection" below.
 

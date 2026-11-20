@@ -363,7 +363,8 @@ it fails and rejects with the directory's error. The view owns the directory
 and disposes it with its injector.
 
 The row commands carry the names a thread list uses for its actions, and each
-list item is the directory's entry plus `status`, so the view binds to the chat
+list item is the directory's entry plus `status` (and `pinnedOrder`, the saved
+rank among pinned threads, when the directory keeps one), so the view binds to the chat
 library's thread views directly:
 
 ```html
@@ -383,9 +384,10 @@ host's operation failure reporter. A config may also be a
 ### Reading one thread
 
 `getThread(id)` answers from `ThreadDirectoryConfig.getThread` when the config
-has one, else from the directory's own `get(id)`. It resolves with the thread,
-or with `null` when the backend says there is no such thread, and rejects when
-the backend could not be asked.
+has one, else from the directory's `get(id)`. It resolves with the thread, or
+with `null` when the backend says there is no such thread, and rejects when the
+backend could not be asked. The LangGraph directory has `get`, so no reader
+needs configuring for it: a missing or malformed id answers `null`.
 
 The core contract has no command that reads one thread. With neither source the
 view can answer only for a thread the directory lists: it reads the list once
