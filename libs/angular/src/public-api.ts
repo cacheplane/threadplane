@@ -26,6 +26,13 @@ export type {
   AgentDevelopmentRuntimeRegistrar,
   AgentOperationFailureReporter,
 } from './agent-tokens';
+export { ɵsetAgentDevelopmentHost } from './development-host';
+export type {
+  AgentDevelopmentInstall,
+  AgentDevelopmentRuntime,
+  AgentDevelopmentRuntimeFactory,
+  ɵAgentDevelopmentHost,
+} from './development-host';
 export {
   createThreadDirectoryView,
   injectThreadDirectory,

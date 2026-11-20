@@ -84,6 +84,9 @@ export type {
 // Host hooks: telemetry and devtools.
 export type {
   ScriptedRun,
+  SessionDevelopmentInstall,
+  SessionDevelopmentRuntime,
+  SessionDevelopmentRuntimeFactory,
   SessionDevtools,
   SessionRequestType,
   SessionTelemetryEvent,

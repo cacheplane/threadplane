@@ -1,6 +1,7 @@
 import type { AGUIEvent, HttpAgentConfig } from '@ag-ui/client';
 import type { CompleteOutcome, PlainValue } from '@threadplane/core';
 import { copyData } from './copy-data.js';
+import { buildDevelopmentRuntime } from './development-install.js';
 import {
   protectedFetch,
   type OperationFailureReporter,
@@ -35,6 +36,41 @@ export type SessionTelemetrySink = (payload: {
   readonly event: SessionTelemetryEvent;
   readonly properties: SessionTelemetryProperties;
 }) => void | Promise<void>;
+
+/** A development-install collector the host supplies; the session only calls it. */
+export interface SessionDevelopmentRuntime {
+  touch(): void;
+  milestone(
+    kind:
+      | 'transport.connected'
+      | 'runtime.first_stream_completed'
+      | 'interrupt.handled',
+    durationMs?: number
+  ): void;
+  dispose(): void;
+}
+
+/**
+ * What this package tells a host that builds the collector for it: which
+ * package is installed, and whether this session may collect.
+ */
+export interface SessionDevelopmentInstall {
+  readonly integration: 'ag-ui';
+  readonly packageName: '@threadplane/ag-ui';
+  readonly packageVersion: string;
+  /**
+   * The package-local token the install step wrote, in an Angular development
+   * build. Null everywhere else, and in a package installed without scripts.
+   */
+  readonly installationToken: string | null;
+  /** False once the app supplied its own `telemetry` option, `false` included. */
+  readonly enabled: () => boolean;
+}
+
+/** Builds the collector for one session from what the package knows of itself. */
+export type SessionDevelopmentRuntimeFactory = (
+  install: SessionDevelopmentInstall
+) => SessionDevelopmentRuntime | undefined;
 
 /** One scripted run: the protocol events to serve in place of a request. */
 export interface ScriptedRun {
@@ -76,6 +112,14 @@ export interface InstrumentOptions {
   /** Receives the session's lifecycle moments. Absent or `false` reports nothing. */
   readonly telemetry?: SessionTelemetrySink | false;
   /**
+   * A development-install collector to keep informed, or a factory that builds
+   * one from what this package knows of its own installation. The host owns
+   * the collector; the session only calls it, and sends nothing itself.
+   */
+  readonly developmentRuntime?:
+    | SessionDevelopmentRuntime
+    | SessionDevelopmentRuntimeFactory;
+  /**
    * Told when a request is refused for its credential (`unauthorized`) or gets
    * no response (`network_blocked`). A session with a reporter also protects
    * what a failure shows: the backend's `RUN_ERROR` text and code, a failed
@@ -106,6 +150,33 @@ const REPORTED = [
   'clientTools',
 ] as const;
 
+/** The events that show a backend answered, as the Angular adapter counted them. */
+const CONNECTED = new Set([
+  'RUN_STARTED',
+  'RUN_FINISHED',
+  'RUN_ERROR',
+  'TEXT_MESSAGE_START',
+  'TEXT_MESSAGE_CONTENT',
+  'TEXT_MESSAGE_END',
+  'REASONING_MESSAGE_START',
+  'REASONING_MESSAGE_CONTENT',
+  'REASONING_MESSAGE_CHUNK',
+  'REASONING_MESSAGE_END',
+  'TOOL_CALL_START',
+  'TOOL_CALL_ARGS',
+  'TOOL_CALL_END',
+  'TOOL_CALL_RESULT',
+  'STATE_SNAPSHOT',
+  'STATE_DELTA',
+  'MESSAGES_SNAPSHOT',
+  'CUSTOM',
+  'SUBAGENT_STARTED',
+  'SUBAGENT_FINISHED',
+  'SUBAGENT_ERROR',
+  'ACTIVITY_SNAPSHOT',
+  'ACTIVITY_DELTA',
+]);
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -120,6 +191,25 @@ export function createInstruments(options: InstrumentOptions) {
       ? undefined
       : (copyData(options.a2uiClientCapabilities, true) as PlainValue);
   const listeners = new Set<{ listener: (event: AGUIEvent) => void }>();
+  // The legacy rule: collection is on unless the app chose a destination of
+  // its own, and `telemetry: false` is such a choice.
+  const developmentEnabled = () => options.telemetry === undefined;
+  const development: SessionDevelopmentRuntime | undefined =
+    typeof options.developmentRuntime === 'function'
+      ? buildDevelopmentRuntime(options.developmentRuntime, developmentEnabled)
+      : options.developmentRuntime;
+  /** The collector is the host's: nothing it does can change a run. */
+  const collect = (use: (runtime: SessionDevelopmentRuntime) => void) => {
+    if (!development) return;
+    try {
+      use(development);
+    } catch {
+      /* Optional collection cannot change what the session does. */
+    }
+  };
+  // What the collector may still learn from the request being served.
+  let awaitingFirstEvent = false;
+  let scripted = false;
   let cause = 'reset';
   const tell = (
     event: SessionTelemetryEvent,
@@ -137,8 +227,11 @@ export function createInstruments(options: InstrumentOptions) {
       /* Telemetry cannot change what the session does. */
     }
   };
+  collect((runtime) => runtime.touch());
   tell('tplane:runtime_instance_created');
   return {
+    /** Whether a host may run development-install collection for this session. */
+    developmentEnabled,
     /** Failures are shown and reported without what the server said. */
     protect: reportOperationFailure !== undefined,
     /** The fetch a session sends with: guarded when a reporter is configured. */
@@ -161,7 +254,10 @@ export function createInstruments(options: InstrumentOptions) {
         : state,
     /** Reports a request and returns how to report its end. */
     request: (requestType: SessionRequestType) => {
-      if (!telemetry) return () => undefined;
+      collect((runtime) => runtime.touch());
+      awaitingFirstEvent = development !== undefined;
+      scripted = false;
+      if (!telemetry && !development) return () => undefined;
       const startedAt = Date.now();
       tell('tplane:runtime_request_created', { requestType });
       tell('tplane:stream_started');
@@ -170,6 +266,13 @@ export function createInstruments(options: InstrumentOptions) {
         if (settled) return;
         settled = true;
         const durationMs = Date.now() - startedAt;
+        // A run the backend completed, with nothing left to answer. A
+        // scripted run never reached a backend, so it proves nothing.
+        if (outcome === 'success' && !scripted)
+          collect((runtime) => {
+            runtime.milestone('runtime.first_stream_completed', durationMs);
+            if (requestType === 'resume') runtime.milestone('interrupt.handled');
+          });
         if (outcome === 'error' || outcome === 'interrupted')
           tell('tplane:stream_errored', {
             durationMs,
@@ -192,6 +295,7 @@ export function createInstruments(options: InstrumentOptions) {
         return undefined;
       }
       if (!script || !Array.isArray(script.events)) return undefined;
+      scripted = true;
       const events = script.events;
       return async (_url, init) => {
         const input = JSON.parse(String(init?.body)) as {
@@ -210,6 +314,13 @@ export function createInstruments(options: InstrumentOptions) {
           headers: { 'content-type': 'text/event-stream' },
         });
       };
+    },
+    /** Tells the collector the backend answered, on a request's first event. */
+    received: (event: AGUIEvent): void => {
+      if (!awaitingFirstEvent || !CONNECTED.has(event.type)) return;
+      awaitingFirstEvent = false;
+      if (!scripted)
+        collect((runtime) => runtime.milestone('transport.connected'));
     },
     /** Names what causes the publications that follow. */
     cause: (label: string): void => {
@@ -256,6 +367,7 @@ export function createInstruments(options: InstrumentOptions) {
       }
     },
     clear: (): void => {
+      collect((runtime) => runtime.dispose());
       listeners.clear();
     },
   };

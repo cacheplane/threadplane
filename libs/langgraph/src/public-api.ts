@@ -5,7 +5,9 @@
 export { createSession } from './runtime/create-session.js';
 export type {
   A2uiClientCapabilities,
+  LangGraphDevelopmentInstall,
   LangGraphDevelopmentRuntime,
+  LangGraphDevelopmentRuntimeFactory,
   LangGraphDevtoolsSignal,
   LangGraphDevtoolsSink,
   LangGraphResumeOptions,

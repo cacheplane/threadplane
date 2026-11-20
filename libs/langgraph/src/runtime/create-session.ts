@@ -40,6 +40,7 @@ import {
   throttleListener,
   type A2uiClientCapabilities,
   type LangGraphDevelopmentRuntime,
+  type LangGraphDevelopmentRuntimeFactory,
   type LangGraphDevtoolsSink,
   type LangGraphScriptedRuns,
   type LangGraphTelemetryEvent,
@@ -47,7 +48,9 @@ import {
 } from './session-hooks.js';
 export type {
   A2uiClientCapabilities,
+  LangGraphDevelopmentInstall,
   LangGraphDevelopmentRuntime,
+  LangGraphDevelopmentRuntimeFactory,
   LangGraphDevtoolsSignal,
   LangGraphDevtoolsSink,
   LangGraphScriptedRun,
@@ -183,7 +186,11 @@ import {
   type RunEvidence,
 } from './run-recovery.js';
 import type { LangGraphSubmitOptions } from './transport.types.js';
-import { createSafeRequestError } from './operation-errors.js';
+import {
+  createSafeRequestError,
+  isUnansweredRunCreation,
+} from './operation-errors.js';
+import { buildDevelopmentRuntime } from './development-install.js';
 import { createToolPersistence } from './tool-persistence.js';
 import { hasInvocationConflict } from './tool-invocations.js';
 import { observeInvocation } from './tool-invocations.js';
@@ -330,8 +337,14 @@ export interface SessionOptions {
    * records are large and most views need only the transcript.
    */
   readonly rawMessages?: boolean;
-  /** A development-install collector to keep informed. The host creates it. */
-  readonly developmentRuntime?: LangGraphDevelopmentRuntime;
+  /**
+   * A development-install collector to keep informed, or a factory that builds
+   * one from what this package knows of its own installation. The host owns
+   * the collector; the session only calls it.
+   */
+  readonly developmentRuntime?:
+    | LangGraphDevelopmentRuntime
+    | LangGraphDevelopmentRuntimeFactory;
   /** A development tool told which published fields each event changed. */
   readonly devtools?: LangGraphDevtoolsSink;
   /** Development only: a source of scripted runs that stand in for the network. */
@@ -391,6 +404,12 @@ export type LangGraphSession<
    * transport cannot cancel, or the request failed.
    */
   cancelQueued(runId: string): Promise<boolean>;
+  /**
+   * Whether a host may run development-install collection for this session:
+   * true unless the session was created with a `telemetry` option, `false`
+   * included. The session itself collects nothing.
+   */
+  isDevelopmentRuntimeEnabled(): boolean;
   /** Removes every queued run and asks the backend to cancel each. */
   clearQueue(): Promise<void>;
   fork(
@@ -608,6 +627,8 @@ interface Attempt {
   scripted?: boolean;
   /** For telemetry: when the command began. */
   startedAt?: number;
+  /** For the development collector: what created the request. */
+  requestType?: string;
   /** Queued submissions waiting for this command's run to exist on the backend. */
   created?: (() => void)[];
   handoffIds: readonly string[];
@@ -734,7 +755,13 @@ export function createSession(
     typeof options.toMessage === 'function' ? options.toMessage : undefined;
   const telemetry =
     typeof options.telemetry === 'function' ? options.telemetry : undefined;
-  const developmentRuntime = options.developmentRuntime;
+  // The legacy rule: collection is on unless the app chose a destination of
+  // its own, and `telemetry: false` is such a choice.
+  const developmentEnabled = () => options.telemetry === undefined;
+  const developmentRuntime: LangGraphDevelopmentRuntime | undefined =
+    typeof options.developmentRuntime === 'function'
+      ? buildDevelopmentRuntime(options.developmentRuntime, developmentEnabled)
+      : options.developmentRuntime;
   const devtools = options.devtools;
   const scriptedRuns = options.scriptedRuns;
   const a2uiClientCapabilities = options.a2uiClientCapabilities
@@ -768,6 +795,7 @@ export function createSession(
   /** Reports one command to telemetry and the development collector. */
   function reportRequest(attempt: Attempt, requestType: string) {
     attempt.startedAt = Date.now();
+    attempt.requestType = requestType;
     if (developmentRuntime) safely(() => developmentRuntime.touch());
     report('tplane:runtime_request_created', { requestType });
     report('tplane:stream_started');
@@ -1518,6 +1546,22 @@ export function createSession(
           errorClass: errorClass(error),
         });
       else report('tplane:stream_ended', { durationMs });
+      // A run the backend completed, with nothing left to answer. A scripted
+      // run never reached a backend, so it proves nothing.
+      if (
+        developmentRuntime &&
+        outcome === 'success' &&
+        !error &&
+        !attempt.scripted
+      )
+        safely(() => {
+          developmentRuntime.milestone(
+            'runtime.first_stream_completed',
+            durationMs
+          );
+          if (attempt.requestType === 'resume')
+            developmentRuntime.milestone('interrupt.handled');
+        });
     }
     if (
       historyState &&
@@ -4021,6 +4065,7 @@ export function createSession(
     // Only the exact run's status can settle a failure, so without it nothing
     // could ever be retried and the command is left out.
     ...(getRunStatus ? { retry } : {}),
+    isDevelopmentRuntimeEnabled: developmentEnabled,
     dispose: () =>
       publication.command(() => {
         if (disposed) return;

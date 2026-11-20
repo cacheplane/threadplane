@@ -74,9 +74,9 @@ invent core pending-tool states. Integration tests borrow the actual private
 owner through a browser-safe Fetch API fixture. This is not a public AG-UI factory
 or a claim that shared display components accept every native snapshot.
 
-No backend constructor is exported here; the current real LangGraph runtime is
-still a private development composition seam. This API is under development and
-does not claim full SSR, hydration, or feature parity. The Angular peer range
+No backend constructor is exported here: sessions come from the backend
+packages' `createSession`. This package does not claim full SSR or hydration
+support. The Angular peer range
 follows existing workspace policy; it is not a compatibility-matrix claim.
 
 Build with `npx nx build angular` (ng-packagr and partial Angular compilation).

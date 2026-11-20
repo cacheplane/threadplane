@@ -285,6 +285,12 @@ export interface Session<TState = unknown> {
   stop(): Promise<void>;
   dispose(): Promise<void>;
   /**
+   * Whether a host may run development-install collection for this session:
+   * true unless the session was created with a `telemetry` option, `false`
+   * included. The session itself collects nothing.
+   */
+  isDevelopmentRuntimeEnabled(): boolean;
+  /**
    * Sends the last submission again after its run failed with a backend
    * `RUN_ERROR`. The request carries the history and state that submission
    * sent, so no second user message is added and the failed run's output is
@@ -874,6 +880,7 @@ export function createSession(
         // createRun delivers the SDK's normalized/verified union through its
         // BaseEvent callback. No second schema parse or sequence verifier.
         const event = instruments.redact(delivered as AGUIEvent);
+        instruments.received(event);
         const previous = publication.getObservation();
         let next = reasoningClock.observe(
           event as AGUIEvent,
@@ -1435,6 +1442,7 @@ export function createSession(
       }),
     stop: () => close(false),
     dispose: () => close(true),
+    isDevelopmentRuntimeEnabled: instruments.developmentEnabled,
   };
   return durableSession(session, durability, persistence !== undefined);
 }
@@ -2009,6 +2017,7 @@ function createToolsOwner(
           if (delivered.type === 'RUN_STARTED') physical.started = true;
           lifecycle.mark('streamStartedAt');
           const event = instruments.redact(delivered as AGUIEvent);
+          instruments.received(event);
           const previous = publication.getObservation();
           let next = reasoningClock.observe(
             event as AGUIEvent,
@@ -2336,6 +2345,7 @@ function createToolsOwner(
       disposed ? () => undefined : instruments.onRawEvent(listener),
     stop: () => close(false),
     dispose: () => close(true),
+    isDevelopmentRuntimeEnabled: instruments.developmentEnabled,
     submit: (input, options) =>
       begin(() => {
         const captured = captureSubmit(input);

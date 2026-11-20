@@ -34,9 +34,38 @@ export type LangGraphTelemetrySink = (
 /** A development-install collector the host supplies; the session only calls it. */
 export interface LangGraphDevelopmentRuntime {
   touch(): void;
-  milestone(kind: 'transport.connected' | 'thread.persisted'): void;
+  milestone(
+    kind:
+      | 'transport.connected'
+      | 'thread.persisted'
+      | 'runtime.first_stream_completed'
+      | 'interrupt.handled',
+    durationMs?: number
+  ): void;
   dispose(): void;
 }
+
+/**
+ * What this package tells a host that builds the collector for it: which
+ * package is installed, and whether this session may collect.
+ */
+export interface LangGraphDevelopmentInstall {
+  readonly integration: 'langgraph';
+  readonly packageName: '@threadplane/langgraph';
+  readonly packageVersion: string;
+  /**
+   * The package-local token the install step wrote, in an Angular development
+   * build. Null everywhere else, and in a package installed without scripts.
+   */
+  readonly installationToken: string | null;
+  /** False once the app supplied its own `telemetry` option, `false` included. */
+  readonly enabled: () => boolean;
+}
+
+/** Builds the collector for one session from what the package knows of itself. */
+export type LangGraphDevelopmentRuntimeFactory = (
+  install: LangGraphDevelopmentInstall
+) => LangGraphDevelopmentRuntime | undefined;
 
 /**
  * A development tool's view of what each event changed. `begin` and `end`

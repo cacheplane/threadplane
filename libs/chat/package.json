@@ -50,6 +50,7 @@
   },
   "sideEffects": [
     "**/chat-tokens.ts",
+    "**/development-host.ts",
     "./fesm2022/threadplane-chat.mjs",
     "**/*.css"
   ],

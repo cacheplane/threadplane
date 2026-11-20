@@ -17,8 +17,14 @@ import {
   AGENT_CLIENT_OPTIONS,
   ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR,
   ɵAGENT_OPERATION_FAILURE_REPORTER,
+  type AgentDevelopmentRuntimeRegistrar,
   type AgentOperationFailureReporter,
 } from './agent-tokens';
+import {
+  ɵrelayDevelopmentRuntime,
+  ɵwhenAgentDevelopmentHost,
+  type AgentDevelopmentRuntimeFactory,
+} from './development-host';
 
 /** The least a session must offer for an {@link Agent} to stand in front of it. */
 export interface AgentSessionLike {
@@ -128,6 +134,14 @@ export interface AgentSessionContext {
   readonly clientOptions: object | undefined;
   /** The host's operation failure reporter, when provided. */
   readonly reportOperationFailure: AgentOperationFailureReporter | undefined;
+  /**
+   * Builds the session's development-install collector. A first-party session
+   * takes it as its `developmentRuntime` option and calls it with what its
+   * package knows of its own installation. It is inert unless a host with the
+   * collector is loaded (the chat package registers one), and outside a
+   * development build in a browser.
+   */
+  readonly developmentRuntime: AgentDevelopmentRuntimeFactory;
 }
 
 /** Configuration for one injected agent. */
@@ -264,10 +278,11 @@ function lifecycleSource(
  * is read automatically and `isThreadLoading` is true meanwhile. A failed read
  * leaves the thread empty.
  *
- * When the host provides a development-runtime registrar, the agent is
- * registered with it once. Its policy asks the current session's
+ * The agent is registered once for development-install collection: with the
+ * registrar the host provides, or else with the page's collector host when
+ * one is loaded. Its policy asks the current session's
  * `isDevelopmentRuntimeEnabled()` each time, and is false for a session
- * without that member.
+ * without that member. Each session is handed `context.developmentRuntime`.
  */
 export function createAgent<TSession extends AgentSessionLike>(
   config: AgentConfig<TSession>
@@ -279,7 +294,9 @@ export function createAgent<TSession extends AgentSessionLike>(
     inject(AGENT_CLIENT_OPTIONS, { optional: true }) ?? undefined;
   const reportOperationFailure =
     inject(ɵAGENT_OPERATION_FAILURE_REPORTER, { optional: true }) ?? undefined;
-  const registerDevelopmentRuntime =
+  // A registrar given through DI wins. Otherwise the agent is registered with
+  // the page's collector host, now or when one is loaded.
+  const registerDevelopmentRuntime: AgentDevelopmentRuntimeRegistrar =
     inject(ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR, { optional: true }) ??
     undefined;
   const optionalCommands = new Set([
@@ -351,6 +368,7 @@ export function createAgent<TSession extends AgentSessionLike>(
           },
           clientOptions,
           reportOperationFailure,
+          developmentRuntime: ɵrelayDevelopmentRuntime,
         })
       )
     );
@@ -596,11 +614,7 @@ export function createAgent<TSession extends AgentSessionLike>(
   configs.set(agent, config);
   if (registerDevelopmentRuntime)
     try {
-      registerDevelopmentRuntime(agent, () => {
-        const current = session();
-        const enabled = current['isDevelopmentRuntimeEnabled'];
-        return typeof enabled === 'function' && enabled.call(current) === true;
-      });
+      registerDevelopmentRuntime(target, developmentPolicy);
     } catch {
       /* Optional collection never affects the agent. */
     }

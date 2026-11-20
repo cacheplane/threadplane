@@ -1,3 +1,7 @@
+// Registers the development-install collector with the agent layer. A module
+// with a side effect, listed under `sideEffects` in package.json.
+import './lib/agent/development-host';
+
 // Shared types
 export type { MessageTemplateType } from './lib/chat.types';
 

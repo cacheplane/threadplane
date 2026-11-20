@@ -93,7 +93,10 @@
         "{workspaceRoot}/libs/telemetry/install/assemble-package.mjs",
         "{projectRoot}/package.json"
       ],
-      "outputs": ["{projectRoot}/.install-collector"],
+      "outputs": [
+        "{projectRoot}/.install-collector",
+        "{projectRoot}/src/runtime/package-version.ts"
+      ],
       "options": {
         "command": "node libs/telemetry/install/assemble-package.mjs ag-ui",
         "forwardAllArgs": false

@@ -2,7 +2,11 @@ import type { AGUIEvent, BaseEvent } from '@ag-ui/client';
 import { describe, expect, it, vi } from 'vitest';
 import { createSession } from './create-session';
 import { protectedFetch } from './protected-fetch';
-import { PROTECTED_COPY } from './session-instruments';
+import { FakeAgent } from './fake-agent';
+import {
+  PROTECTED_COPY,
+  type SessionDevelopmentInstall,
+} from './session-instruments';
 import { bindingFixture } from './testing/binding-fixture';
 
 type Fixture = ReturnType<typeof bindingFixture>;
@@ -26,6 +30,13 @@ const sse = (events: unknown[]) =>
     }
   );
 const url = 'https://agent.invalid/run';
+
+// The repository's bridge module holds null, as a published package does. An
+// installed package holds the token its install step wrote.
+const installationToken = '22222222-2222-4222-8222-222222222222';
+vi.mock('../../.install-collector/development-install.mjs', () => ({
+  installationToken: '22222222-2222-4222-8222-222222222222',
+}));
 
 describe('onRawEvent', () => {
   it('delivers each applied event in order, after the snapshot shows it', async () => {
@@ -575,5 +586,197 @@ describe('devtools', () => {
     finish(await fixture.started());
     expect(await run).toBe('success');
     await fixture.cleanup();
+  });
+});
+
+describe('development collector', () => {
+  const collector = () => ({
+    touch: vi.fn(),
+    milestone: vi.fn(),
+    dispose: vi.fn(),
+  });
+  const kinds = (runtime: ReturnType<typeof collector>) =>
+    runtime.milestone.mock.calls.map(([kind]) => kind);
+
+  it('is touched for the instance and each request, told of milestones, and disposed', async () => {
+    const developmentRuntime = collector();
+    const fixture = bindingFixture({ developmentRuntime });
+    expect(developmentRuntime.touch).toHaveBeenCalledTimes(1);
+    const paused = fixture.session.submit('Book');
+    const first = await fixture.started();
+    expect(developmentRuntime.touch).toHaveBeenCalledTimes(2);
+    say(first, 'a1', 'Shall I?');
+    first.emit({
+      type: 'RUN_FINISHED',
+      threadId: first.body.threadId,
+      runId: first.body.runId,
+      outcome: {
+        type: 'interrupt',
+        interrupts: [{ id: 'i1', reason: 'approval' }],
+      },
+    });
+    expect(await paused).toBe('paused');
+    // A paused run has not completed: only the connection is reported, once.
+    expect(kinds(developmentRuntime)).toEqual(['transport.connected']);
+    const answered = fixture.session.resume([
+      { interruptId: 'i1', status: 'resolved' },
+    ]);
+    finish(await fixture.started(1));
+    expect(await answered).toBe('success');
+    expect(kinds(developmentRuntime).slice(1)).toEqual([
+      'transport.connected',
+      'runtime.first_stream_completed',
+      'interrupt.handled',
+    ]);
+    expect(
+      developmentRuntime.milestone.mock.calls.find(
+        ([kind]) => kind === 'runtime.first_stream_completed'
+      )?.[1]
+    ).toEqual(expect.any(Number));
+    developmentRuntime.milestone.mockClear();
+    const again = fixture.session.submit('More');
+    finish(await fixture.started(2));
+    expect(await again).toBe('success');
+    expect(kinds(developmentRuntime)).toEqual([
+      'transport.connected',
+      'runtime.first_stream_completed',
+    ]);
+    await fixture.cleanup();
+    expect(developmentRuntime.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports no completion for a failed run, and survives a collector that throws', async () => {
+    const developmentRuntime = {
+      touch: vi.fn(() => {
+        throw new Error('collector failed');
+      }),
+      milestone: vi.fn((_kind: string) => {
+        throw new Error('collector failed');
+      }),
+      dispose: vi.fn(() => {
+        throw new Error('collector failed');
+      }),
+    };
+    const fixture = bindingFixture({ developmentRuntime });
+    const failed = fixture.session.submit('Go');
+    const first = await fixture.started();
+    first.emit({ type: 'RUN_ERROR', message: 'model failed' });
+    expect(await failed).toBe('error');
+    expect(developmentRuntime.milestone.mock.calls.map(([kind]) => kind)).toEqual(
+      ['transport.connected']
+    );
+    await fixture.cleanup();
+    expect(developmentRuntime.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports nothing from a scripted run, which never reached a backend', async () => {
+    const developmentRuntime = collector();
+    const scripts = [
+      {
+        events: [
+          { type: 'RUN_STARTED' },
+          { type: 'TEXT_MESSAGE_START', messageId: 'a1', role: 'assistant' },
+          { type: 'TEXT_MESSAGE_CONTENT', messageId: 'a1', delta: 'Hi' },
+          { type: 'TEXT_MESSAGE_END', messageId: 'a1' },
+          { type: 'RUN_FINISHED' },
+        ],
+      },
+    ];
+    const session = createSession({
+      url,
+      threadId: 't',
+      developmentRuntime,
+      devtools: { takeScriptedRun: () => scripts.shift() },
+      fetch: async () => {
+        throw new Error('the network is not used');
+      },
+    });
+    expect(await session.submit('Go')).toBe('success');
+    expect(kinds(developmentRuntime)).toEqual([]);
+    await session.dispose();
+  });
+
+  it('builds the collector from a factory, with what the package knows of its installation', async () => {
+    const built = collector();
+    const factory = vi.fn((_install: SessionDevelopmentInstall) => built);
+    const fixture = bindingFixture({ developmentRuntime: factory });
+    expect(factory).toHaveBeenCalledTimes(1);
+    const install = factory.mock.calls[0][0];
+    expect(install).toMatchObject({
+      integration: 'ag-ui',
+      packageName: '@threadplane/ag-ui',
+      // Outside an Angular development build the token is never read.
+      installationToken: null,
+    });
+    expect(install.packageVersion).toMatch(/^\d+\.\d+\.\d+/);
+    expect(install.enabled()).toBe(true);
+    expect(built.touch).toHaveBeenCalledTimes(1);
+    await fixture.cleanup();
+    expect(built.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands the factory the installed token only in an Angular development build', async () => {
+    const tokens: (string | null)[] = [];
+    const factory = (install: SessionDevelopmentInstall) => {
+      tokens.push(install.installationToken);
+      return collector();
+    };
+    try {
+      for (const mode of [true, false, undefined]) {
+        (globalThis as { ngDevMode?: unknown }).ngDevMode = mode;
+        await bindingFixture({ developmentRuntime: factory }).cleanup();
+      }
+    } finally {
+      delete (globalThis as { ngDevMode?: unknown }).ngDevMode;
+    }
+    expect(tokens).toEqual([installationToken, null, null]);
+  });
+
+  it('runs without a collector when the factory throws or returns nothing', async () => {
+    for (const developmentRuntime of [
+      () => {
+        throw new Error('host failed');
+      },
+      () => undefined,
+    ]) {
+      const fixture = bindingFixture({ developmentRuntime });
+      const run = fixture.session.submit('Go');
+      finish(await fixture.started());
+      expect(await run).toBe('success');
+      await fixture.cleanup();
+    }
+  });
+
+  it('allows collection unless the app chose its own telemetry destination', async () => {
+    const enabled = async (
+      telemetry?: Parameters<typeof bindingFixture>[0] extends infer O
+        ? O extends { telemetry?: infer T }
+          ? T
+          : never
+        : never
+    ) => {
+      const seen: (() => boolean)[] = [];
+      const fixture = bindingFixture({
+        ...(telemetry !== undefined ? { telemetry } : {}),
+        developmentRuntime: (install) => {
+          seen.push(install.enabled);
+          return collector();
+        },
+      });
+      const answer = fixture.session.isDevelopmentRuntimeEnabled();
+      expect(seen[0]()).toBe(answer);
+      await fixture.cleanup();
+      return answer;
+    };
+    expect(await enabled()).toBe(true);
+    expect(await enabled(() => undefined)).toBe(false);
+    // `false` is the app's choice too, as it was for the Angular adapter.
+    expect(await enabled(false)).toBe(false);
+  });
+
+  it('answers for a session over a handed agent too', async () => {
+    const session = createSession({ agent: new FakeAgent({ tokens: ['Hi'], delayMs: 0 }) });
+    expect(session.isDevelopmentRuntimeEnabled()).toBe(true);
+    await session.dispose();
   });
 });

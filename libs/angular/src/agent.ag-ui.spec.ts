@@ -1,7 +1,14 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createAgentRef, injectAgent, provideAgent } from './public-api';
+import {
+  createAgentRef,
+  injectAgent,
+  provideAgent,
+  ɵsetAgentDevelopmentHost,
+  type AgentDevelopmentInstall,
+} from './public-api';
+import { ɵresetAgentDevelopmentHost } from './development-host';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only this integration spec composes the private native owner; production imports core only.
 import {
   createSession,
@@ -238,5 +245,62 @@ describe('Agent over an AG-UI session', () => {
     expect(agent.threadId()).toBe('minted-2');
     expect(agent.customEvents()).toEqual([]);
     expect(onThreadId).toHaveBeenLastCalledWith('minted-2');
+  });
+});
+
+describe('Agent over an AG-UI session and the development collector', () => {
+  afterEach(() => ɵresetAgentDevelopmentHost());
+
+  it('reports the session to the collector the context carries', async () => {
+    const built: { install: AgentDevelopmentInstall; calls: unknown[][] }[] = [];
+    const policies = new Map<object, () => boolean>();
+    ɵsetAgentDevelopmentHost({
+      createRuntime: (install) => {
+        const calls: unknown[][] = [];
+        built.push({ install, calls });
+        return {
+          touch: () => calls.push(['touch']),
+          milestone: (kind) => calls.push([kind]),
+          dispose: () => calls.push(['dispose']),
+        };
+      },
+      registerPolicy: (agent, policy) => policies.set(agent, policy),
+    });
+    const server = endpoint();
+    TestBed.configureTestingModule({
+      providers: [
+        provideAgent(CHAT, {
+          threadId: 'thread-a',
+          createSession: ({ threadId, ...context }) =>
+            createSession({
+              url: 'https://agent.invalid/run',
+              ...context,
+              threadId: threadId ?? 'minted',
+              fetch: server.fetch,
+            }),
+        }),
+      ],
+    });
+    const view = TestBed.createComponent(Chat);
+    view.detectChanges();
+    const agent = view.componentInstance.agent;
+    expect(built).toHaveLength(1);
+    expect(built[0].install).toMatchObject({
+      integration: 'ag-ui',
+      packageName: '@threadplane/ag-ui',
+    });
+    expect(policies.get(agent)?.()).toBe(true);
+
+    const outcome = agent.submit('Hello');
+    const exchange = await server.exchange(0);
+    exchange.emit({ type: 'RUN_FINISHED' });
+    exchange.end();
+    expect(await outcome).toBe('success');
+    expect(built[0].calls).toEqual([
+      ['touch'],
+      ['touch'],
+      ['transport.connected'],
+      ['runtime.first_stream_completed'],
+    ]);
   });
 });

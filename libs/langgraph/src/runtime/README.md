@@ -699,11 +699,24 @@ contract; all are optional and inert when omitted.
   makes the owned transport report generic errors only. A supplied transport
   ignores it.
 - `developmentRuntime`: a development-install collector with `touch()`,
-  `milestone(kind)` and `dispose()`. The session touches it at creation and for
-  each command, reports `transport.connected` on a run's first event and
-  `thread.persisted` when a history read restores messages, and disposes it
-  with the session. The collector itself, and its policy for which agents
-  collect, stay with the host because they depend on Angular.
+  `milestone(kind, durationMs?)` and `dispose()`, or a factory that builds one.
+  The session touches it at creation and for each command, reports
+  `transport.connected` on a run's first event, `thread.persisted` when a
+  history read restores messages, `runtime.first_stream_completed` (with the
+  run's duration) when a run the backend served ends in `success`, and
+  `interrupt.handled` when that run was a resume. A scripted run reports no
+  completion. It is disposed with the session. A factory is called once with
+  `{ integration, packageName, packageVersion, installationToken, enabled }`:
+  what this package knows of its own installation. `installationToken` is the
+  token the install step wrote and is read only in an Angular development
+  build (`ngDevMode`); everywhere else it is `null`. `enabled()` is the session's
+  `isDevelopmentRuntimeEnabled()`: true unless the session was given a
+  `telemetry` option, `false` included, which is the rule the Angular agent
+  had. The session itself builds no collector and sends nothing: without the
+  option nothing is collected, which is what a React app gets. In Angular,
+  `provideAgent` hands the factory to the session factory as
+  `context.developmentRuntime`, so `createSession({ ...context })` is all an
+  app writes; the collector comes from `@threadplane/chat`.
 - `devtools`: a sink told which published fields each event changed, by name
   and never by value. `begin(type)` and `end()` bracket a stream event,
   `outside(label, run)` brackets a change no event caused (`run:start`,

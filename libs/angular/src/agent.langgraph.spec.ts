@@ -6,7 +6,10 @@ import {
   createAgentRef,
   injectAgent,
   provideAgent,
+  ɵsetAgentDevelopmentHost,
+  type AgentDevelopmentInstall,
 } from './public-api';
+import { ɵresetAgentDevelopmentHost } from './development-host';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only this integration spec composes the private runtime; production imports core only.
 import {
   createSession,
@@ -379,5 +382,81 @@ describe('Agent over a LangGraph session', () => {
     await run.stream.closed;
     await expect(outcome).resolves.not.toBe('success');
     await expect(sessions[0].submit('After')).resolves.toBe('aborted');
+  });
+});
+
+describe('Agent over a LangGraph session and the development collector', () => {
+  afterEach(() => ɵresetAgentDevelopmentHost());
+
+  /** A host standing in for the chat package's registration. */
+  function collectorHost() {
+    const built: { install: AgentDevelopmentInstall; calls: unknown[][] }[] = [];
+    const policies = new Map<object, () => boolean>();
+    ɵsetAgentDevelopmentHost({
+      createRuntime: (install) => {
+        const calls: unknown[][] = [];
+        built.push({ install, calls });
+        return {
+          touch: () => calls.push(['touch']),
+          milestone: (kind) => calls.push([kind]),
+          dispose: () => calls.push(['dispose']),
+        };
+      },
+      registerPolicy: (agent, policy) => policies.set(agent, policy),
+    });
+    return { built, policies };
+  }
+
+  function mountSpreading(extra: { telemetry?: false } = {}) {
+    const server = backend();
+    TestBed.configureTestingModule({
+      providers: [
+        provideAgent(CHAT, {
+          threadId: 'thread-a',
+          // The whole context is handed on, as an app writes it.
+          createSession: (context) =>
+            createSession({
+              assistantId: 'agent',
+              ...context,
+              ...extra,
+              transport: { stream: server.transport.stream },
+            }),
+        }),
+      ],
+    });
+    const view = TestBed.createComponent(Chat);
+    view.detectChanges();
+    return { server, agent: view.componentInstance.agent };
+  }
+
+  it('reports the session to the collector with nothing but the spread context', async () => {
+    const host = collectorHost();
+    const { server, agent } = mountSpreading();
+    expect(host.built).toHaveLength(1);
+    expect(host.built[0].install).toMatchObject({
+      integration: 'langgraph',
+      packageName: '@threadplane/langgraph',
+    });
+    expect(host.built[0].install.enabled()).toBe(true);
+    expect(host.policies.get(agent)?.()).toBe(true);
+    expect(host.built[0].calls).toEqual([['touch']]);
+
+    const outcome = agent.submit('Hello');
+    await server.run(0);
+    server.finish(0, 'Hi');
+    expect(await outcome).toBe('success');
+    expect(host.built[0].calls).toEqual([
+      ['touch'],
+      ['touch'],
+      ['transport.connected'],
+      ['runtime.first_stream_completed'],
+    ]);
+  });
+
+  it('is off for an agent whose session chose its own telemetry', () => {
+    const host = collectorHost();
+    const { agent } = mountSpreading({ telemetry: false });
+    expect(host.built[0].install.enabled()).toBe(false);
+    expect(host.policies.get(agent)?.()).toBe(false);
   });
 });

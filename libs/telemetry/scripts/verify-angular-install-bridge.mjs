@@ -27,7 +27,7 @@ export async function verifyAngularInstallBridge(parseCollectionBatch) {
   const run = (cmd, args, options = {}) =>
     execute(cmd, args, {
       cwd: temporary,
-      timeout: 90000,
+      timeout: Number(process.env.VERIFY_TIMEOUT_MS) || 90000,
       maxBuffer: 4 * 1024 * 1024,
       ...options,
     });
@@ -42,7 +42,16 @@ export async function verifyAngularInstallBridge(parseCollectionBatch) {
       })
     );
     const tarballs = [];
-    for (const name of [...packages, 'telemetry', 'a2ui']) {
+    // The install hook ships in `packages`; the rest are what an Angular app
+    // installs beside them: the binding, the contract and their foundations.
+    for (const name of [
+      ...packages,
+      'telemetry',
+      'a2ui',
+      'angular',
+      'core',
+      'content',
+    ]) {
       const packed = JSON.parse(
         (
           await run('npm', [
@@ -149,14 +158,42 @@ export async function verifyAngularInstallBridge(parseCollectionBatch) {
     await writeFile(
       join(temporary, 'main.ts'),
       `
-import { toAgent, FakeAgent } from '@threadplane/ag-ui';
-import { provideAgent as provideLanggraphAgent } from '@threadplane/langgraph';
+// What an Angular application writes: the one provider from the binding, a
+// session factory from a backend package, and the chat package, whose loading
+// connects agents to the development collector. Nothing names the telemetry
+// package or the installation token.
+import {
+  Injector,
+  provideZonelessChangeDetection,
+  runInInjectionContext,
+  ɵINJECTOR_SCOPE,
+} from '@angular/core';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession, FakeAgent } from '@threadplane/ag-ui';
+import { createSession as createLangGraphSession } from '@threadplane/langgraph';
+import { ChatComponent } from '@threadplane/chat';
 import { RenderElementComponent } from '@threadplane/render';
 const target = globalThis as any;
-target.fixtureExports = { toAgent, provideLanggraphAgent, RenderElementComponent };
+target.fixtureExports = { createLangGraphSession, ChatComponent, RenderElementComponent };
 if (target.exercise) {
-  const agent = toAgent(new FakeAgent({ tokens: ['synthetic'], delayMs: 0 }));
-  target.fixtureDone = agent.submit({ message: 'synthetic package proof' });
+  // A root injector without a platform, so the same code runs with no DOM.
+  const injector = Injector.create({
+    providers: [
+      { provide: ɵINJECTOR_SCOPE, useValue: 'root' },
+      provideZonelessChangeDetection() as any,
+      provideAgent({
+        createSession: (context) =>
+          createSession({
+            ...context,
+            agent: new FakeAgent({ tokens: ['synthetic'], delayMs: 0 }),
+            threadId: context.threadId ?? 'synthetic-thread',
+          }),
+      }),
+    ],
+  });
+  const agent = runInInjectionContext(injector, () => injectAgent());
+  target.fixtureAgent = agent;
+  target.fixtureDone = agent.submit('synthetic package proof');
 }
 `
     );

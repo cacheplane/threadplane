@@ -654,9 +654,24 @@ const session = createSession({
   and then `tplane:stream_ended` or `tplane:stream_errored`, with `durationMs`
   and for an error an `errorClass`. `properties` always has
   `transport: 'ag-ui'` and `surface: 'session'`. A sink may be asynchronous and
-  may throw; neither affects the session. Absent or `false` reports nothing:
-  this runtime has no automatic development collection of its own, so a host
-  that wants one passes its sink.
+  may throw; neither affects the session. Absent or `false` reports nothing
+  to a sink.
+- `developmentRuntime` is a development-install collector with `touch()`,
+  `milestone(kind, durationMs?)` and `dispose()`, or a factory that builds one.
+  The session touches it at creation and for each request, reports
+  `transport.connected` on a request's first protocol event,
+  `runtime.first_stream_completed` (with the duration) when a run ends in
+  `success`, and `interrupt.handled` when that run was a resume; a scripted
+  run reports neither. It is disposed with the session and cannot fail a run.
+  A factory is called once with `{ integration, packageName, packageVersion,
+  installationToken, enabled }`. `installationToken` is the token the install
+  step wrote and is read only in an Angular development build (`ngDevMode`);
+  everywhere else it is `null`. `enabled()` is the session's
+  `isDevelopmentRuntimeEnabled()`: true unless the session was given a
+  `telemetry` option, `false` included. The session builds no collector and
+  sends nothing itself: without the option nothing is collected, which is what
+  a React app gets. In Angular, `provideAgent` supplies the factory as
+  `context.developmentRuntime` and `@threadplane/chat` supplies the collector.
 - `reportOperationFailure(code)` is told `unauthorized` for a 401 or 403 and
   `network_blocked` for a request that got no response. A request the session
   itself cancelled is not reported, and a reporter that throws changes
