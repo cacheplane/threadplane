@@ -5,6 +5,7 @@ import type {
   DeepReadonly,
   PlainValue,
   Message,
+  StreamingToolCall,
   ToolCall,
   ToolContract,
 } from '@threadplane/core';
@@ -66,6 +67,8 @@ export interface LangGraphSubgraph {
   readonly messages: readonly Message[];
   /** The child graph's own tool calls, referenced by `Message.toolCallIds` in `messages`. */
   readonly toolCalls: readonly ToolCall[];
+  /** The child's tool calls whose arguments are still streaming; absent when none are. */
+  readonly streamingToolCalls?: readonly StreamingToolCall[];
   /** A child graph's state. It is never checked against the session's declaration. */
   readonly state: LangGraphState | undefined;
   readonly interrupts: readonly LangGraphWireInterrupt[];
@@ -115,7 +118,10 @@ export type LangGraphSnapshot<
     ToolContract
   >,
   TState = unknown
-> = Omit<AgentSnapshot<TTools, TState>, 'interrupts' | 'subagents'> & {
+> = Omit<
+  AgentSnapshot<TTools, TState>,
+  'interrupts' | 'subagents' | 'checkpoints'
+> & {
   /** Last explicit history page; undefined until loaded. Not a live branch tree. */
   readonly history: readonly LangGraphHistoryEntry[] | undefined;
   /**
@@ -128,7 +134,11 @@ export type LangGraphSnapshot<
    * only while `state` is being withheld at its last valid value.
    */
   readonly stateIssues?: readonly string[];
-  readonly reconnect?: { readonly runId: string };
+  /**
+   * The physical run the session lost its stream to and can still join with
+   * `reconnect()`. Absent when there is none.
+   */
+  readonly retainedRun?: { readonly runId: string };
   readonly interrupts: readonly LangGraphInterrupt[];
   readonly subgraphs: readonly LangGraphSubgraph[];
   /**
@@ -137,9 +147,9 @@ export type LangGraphSnapshot<
    */
   readonly subagents: readonly LangGraphSubagent[];
   /**
-   * The loaded history page with each checkpoint's state, newest first.
-   * Present only on a session created with `historyState: true`, once a page
-   * has been read.
+   * The loaded history page with each checkpoint's state, oldest first, as
+   * the core contract lists a history. Present only on a session created with
+   * `historyState: true`, once a page has been read.
    */
   readonly checkpoints?: readonly LangGraphCheckpoint[];
   /** Assistant message id to the id of the checkpoint that ends with it. With `checkpoints`. */

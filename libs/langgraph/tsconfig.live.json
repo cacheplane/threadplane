@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "../..",
+    "noEmit": true,
+    "emitDeclarationOnly": false,
+    "declarationMap": false,
+    "composite": false,
+    "incremental": false,
+    "strict": true,
+    "skipLibCheck": true,
+    "lib": ["es2022"],
+    "types": ["node"],
+    "paths": {
+      "@threadplane/core": ["libs/core/src/index.ts"],
+      "@threadplane/core/tools": ["libs/core/src/tools/index.ts"],
+      "@threadplane/core/testing": ["libs/core/src/testing/index.ts"]
+    }
+  },
+  "include": ["live/**/*.ts"],
+  "exclude": [],
+  "references": []
+}

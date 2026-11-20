@@ -5,6 +5,7 @@ import { createSession } from './create-session';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { deferred } from './testing/deferred';
 import { answerPending } from './testing/answer-pending';
+import { LOAD_ERROR } from './testing/failed-load';
 
 const original = {
   id: 'shared-call',
@@ -286,10 +287,10 @@ describe('session invocation identity', () => {
       },
     });
     expect(await session.submit('Start')).toBe('interrupted');
-    expect(session.getSnapshot().reconnect).toEqual({ runId: 'run-2' });
+    expect(session.getSnapshot().retainedRun).toEqual({ runId: 'run-2' });
     expect(await session.reconnect()).toBe('interrupted');
     expect(session.getSnapshot().error?.message).toMatch(/identity conflict/);
-    expect(session.getSnapshot().reconnect).toBeUndefined();
+    expect(session.getSnapshot().retainedRun).toBeUndefined();
     expect(weather).toHaveBeenCalledTimes(1);
     expect(freshHandler).not.toHaveBeenCalled();
     expect(stream).toHaveBeenCalledTimes(2);
@@ -411,7 +412,8 @@ describe('session invocation identity', () => {
     cyclic['self'] = cyclic;
     f.history([assistant([{ ...original, args: cyclic }])]);
     await expect(f.session.load?.()).rejects.toThrow();
-    expect(f.session.getSnapshot().error).toBeUndefined();
+    // The failed read is published; no identity conflict is committed.
+    expect(f.session.getSnapshot().error).toEqual(LOAD_ERROR);
     f.history([]);
     expect(await f.session.submit('Still usable')).toBe('success');
     await f.session.dispose();
@@ -431,7 +433,8 @@ describe('session invocation identity', () => {
       },
     ]);
     await expect(f.session.load?.()).rejects.toThrow();
-    expect(f.session.getSnapshot().error).toBeUndefined();
+    // The failed read is published; no identity conflict is committed.
+    expect(f.session.getSnapshot().error).toEqual(LOAD_ERROR);
     f.history([]);
     expect(await f.session.submit('Still usable')).toBe('success');
     await f.session.dispose();

@@ -451,4 +451,77 @@ describe('queued runs', () => {
     expect(await second).toBe('aborted');
     expect(f.cancelRun).not.toHaveBeenCalled();
   });
+
+  // Found against a real backend: LangGraph orders queued runs by creation,
+  // so a run queued before the active run's own creation request had landed
+  // ran ahead of it. A transport asked to report run creation is waited for.
+  describe('behind a run whose creation is reported', () => {
+    const reporting = () =>
+      queueFixture({ getRunStatus: vi.fn(async () => 'success' as const) });
+    const quiet = () => new Promise((done) => setTimeout(done, 20));
+
+    it('creates the queued run only after the active run exists', async () => {
+      const f = reporting();
+      const first = f.session.submit('One');
+      await vi.waitFor(() => expect(f.stream).toHaveBeenCalled());
+      const second = f.session.submit('Two', enqueue);
+      await quiet();
+      expect(f.createQueuedRun).not.toHaveBeenCalled();
+      expect('queue' in f.session.getSnapshot()).toBe(false);
+      f.stream.mock.calls[0][4]?.onRunCreated?.({
+        run_id: 'active',
+        thread_id: 'thread',
+      });
+      await vi.waitFor(() =>
+        expect(f.session.getSnapshot().queue).toHaveLength(1)
+      );
+      expect(f.createQueuedRun).toHaveBeenCalledOnce();
+      f.active.release(answer('a1', 'First'));
+      f.active.finish();
+      expect(await first).toBe('success');
+      f.joined.release(answer('a2', 'Second'));
+      f.joined.finish();
+      expect(await second).toBe('success');
+    });
+
+    it('takes the first stream event as the creation when none is reported', async () => {
+      const f = reporting();
+      void f.session.submit('One');
+      await vi.waitFor(() => expect(f.stream).toHaveBeenCalled());
+      void f.session.submit('Two', enqueue);
+      await quiet();
+      expect(f.createQueuedRun).not.toHaveBeenCalled();
+      f.active.release(answer('a1', 'First'));
+      await vi.waitFor(() => expect(f.createQueuedRun).toHaveBeenCalledOnce());
+    });
+
+    it('does not wait for a run that has ended', async () => {
+      const f = reporting();
+      const first = f.session.submit('One');
+      await vi.waitFor(() => expect(f.stream).toHaveBeenCalled());
+      const second = f.session.submit('Two', enqueue);
+      await quiet();
+      expect(f.createQueuedRun).not.toHaveBeenCalled();
+      // The active run ends without ever reporting: nothing is left to order
+      // behind, so the queued run is created and joined at once.
+      f.active.finish();
+      await first;
+      await vi.waitFor(() => expect(f.joinStream).toHaveBeenCalled());
+      expect(f.createQueuedRun).toHaveBeenCalledOnce();
+      f.joined.release(answer('a2', 'Second'));
+      f.joined.finish();
+      expect(await second).toBe('success');
+    });
+
+    it('creates nothing for a queued submission the session is disposed under', async () => {
+      const f = reporting();
+      void f.session.submit('One');
+      await vi.waitFor(() => expect(f.stream).toHaveBeenCalled());
+      const second = f.session.submit('Two', enqueue);
+      await quiet();
+      await f.session.dispose();
+      expect(await second).toBe('aborted');
+      expect(f.createQueuedRun).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -52,7 +52,7 @@ export function CheckpointApp() {
     ['text', 'Observed transcript', view.transcript],
     ['values', 'Observed values', view.values],
     ['history', 'Last loaded history page', view.history],
-    ['reconnect', 'Reconnect run', snapshot.reconnect?.runId ?? ''],
+    ['reconnect', 'Reconnect run', snapshot.retainedRun?.runId ?? ''],
     ['handlers', 'Tool handler calls', String(handlerCalls)],
   ];
   return (
@@ -122,7 +122,7 @@ export function CheckpointApp() {
             Drop branch
           </button>
           <button
-            disabled={busy || !snapshot.reconnect}
+            disabled={busy || !snapshot.retainedRun}
             onClick={() => void command(() => session.reconnect())}
           >
             Reconnect branch

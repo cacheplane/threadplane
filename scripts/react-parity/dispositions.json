@@ -12358,6 +12358,86 @@
       "note": "Covered by runtime specs. Raw messages and metadata are opt-in through rawMessages; usage and tool progress appear when the backend reports them."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/content-blocks.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of a wire message's content into the core contract's content blocks, of its remaining wire fields into Message.extra, of a tool message's content array into tool result parts, and of submitted blocks into the wire content of a human message.",
+      "note": "Covered by runtime specs and the live suite. Blocks are published when a message holds more than text; extras are opt-in through rawMessages."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/streaming-tool-calls.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private observation of tool call chunks on the message stream, for the root graph and each child graph, published as the core contract's streamingToolCalls until a call is finalized; includes the tolerant reader for partial argument JSON.",
+      "note": "Covered by runtime specs and the live suite. Fragments belong to a live run and are dropped when it settles."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/failed-load.ts",
+      "taskIds": [
+        "T05",
+        "T06"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private runtime test helper asserting what a failed history read publishes; excluded from public exports and production packages.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/live/backend.ts",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Live-backend test harness: starts the model replay and a real langgraph dev process for one cockpit graph and creates sessions on the owned SDK transport. Test only; not part of any package."
+    },
+    {
+      "id": "source:libs/langgraph/vite.live.config.mts",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Vitest configuration of the live-backend suite, run with nx run langgraph:runtime-live. Needs uv, Python 3.12 and the langgraph CLI."
+    },
+    {
+      "id": "asset:libs/langgraph/tsconfig.live.json",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Type-checks the live-backend suite before it runs."
+    },
+    {
+      "id": "asset:libs/langgraph/live/fixtures/time-travel-live.json",
+      "taskIds": [
+        "T05",
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Recorded model replies for the live-backend suite's prompts on the time-travel graph, including one slow reply that keeps a run open while another is queued."
+    },
+    {
+      "id": "asset:libs/langgraph/live/fixtures/c-subagents-live.json",
+      "taskIds": [
+        "T05",
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Recorded model replies for the live-backend suite's failed delegation on the chat subagents graph."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
       "taskIds": [
         "T09",

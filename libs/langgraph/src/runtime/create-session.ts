@@ -1,14 +1,21 @@
 import {
   agentPlanFromState,
   completeDelivery,
+  projectErrorDiagnostic,
   readState,
   type InferState,
   type StateDeclaration,
+  type AgentClientTools,
   type AgentError,
+  type AgentErrorDiagnostic,
+  type AgentInputBlock,
   type AgentInterruptResponse,
   type AgentSession,
   type AgentSessionCustomEvent,
+  type ClientToolResult,
+  type ClientToolSpec,
   type CompleteOutcome,
+  type ContentBlock,
   type PlainValue,
   type ToolCall,
   type ToolContract,
@@ -110,7 +117,13 @@ import {
   projectInterrupts,
   resumeValue,
 } from './interrupt-projection.js';
-import { ownMessage, ownSubgraphs, ownValue } from './ownership.js';
+import { ownMessage, ownSubgraphs, ownValue, sameError } from './ownership.js';
+import {
+  initialStreamingToolCalls,
+  observeStreamingToolCalls,
+  projectStreamingToolCalls,
+} from './streaming-tool-calls.js';
+import { captureInputBlocks } from './content-blocks.js';
 import {
   captureDelegationBinding,
   DEFAULT_SUBAGENT_TOOL_NAMES,
@@ -129,10 +142,14 @@ import {
   type SubgraphObservation,
 } from './subgraph-projection.js';
 import {
+  captureInputState,
   captureSubmitInput,
+  createContinuationPayload,
   createSubmitPayload,
   type LangGraphInputState,
   type LangGraphSubmitInput,
+  type LangGraphSubmitState,
+  type WireContent,
 } from './submit-input.js';
 export type {
   LangGraphInputState,
@@ -321,6 +338,18 @@ export interface SessionOptions {
   readonly scriptedRuns?: LangGraphScriptedRuns;
 }
 
+/**
+ * Options for `resume`: the run options, and what the core contract lets a
+ * caller send in the same request as the answers. `state` is merged before the
+ * paused graph continues, and `message` or `blocks` appends a user message.
+ * They travel in the resume command's `update`, beside `run.command.update`.
+ */
+export type LangGraphResumeOptions<TState = unknown> = LangGraphRunOptions & {
+  readonly message?: string;
+  readonly blocks?: readonly ContentBlock[];
+  readonly state?: LangGraphSubmitState<TState>;
+};
+
 /** Backend-private capability; core sessions and borrowed observers stay minimal. */
 export type LangGraphSession<
   TTools extends { [K in keyof TTools]: ToolContract } = Record<
@@ -328,8 +357,21 @@ export type LangGraphSession<
     ToolContract
   >,
   TState = unknown
-> = Omit<AgentSession<TTools, TState>, 'getSnapshot' | 'submit' | 'resume'> & {
+> = Omit<
+  AgentSession<TTools, TState>,
+  'getSnapshot' | 'submit' | 'resume' | 'runWithoutMessage'
+> & {
   getSnapshot(): LangGraphSnapshot<TTools, TState>;
+  /**
+   * The core contract's command for a run that adds no user message: the
+   * graph continues from the thread's saved state, after merging `state` when
+   * given. Staged client tool results travel with it. `submit(null)` is the
+   * same run without a state.
+   */
+  runWithoutMessage(
+    input?: { readonly state?: LangGraphSubmitState<TState> },
+    options?: LangGraphRunOptions
+  ): Promise<CompleteOutcome>;
   /** The session's thread: the given `threadId`, or the thread it created on
    * the first submit. Undefined until that thread exists. */
   readonly threadId: string | undefined;
@@ -381,7 +423,7 @@ export type LangGraphSession<
    */
   resume(
     responses: readonly AgentInterruptResponse[],
-    options?: LangGraphRunOptions
+    options?: LangGraphResumeOptions<TState>
   ): Promise<CompleteOutcome>;
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
   /**
@@ -412,10 +454,20 @@ interface Preparation extends Omit<HistoryRead, 'result' | 'resolve'> {
   readonly adopt: (saved: ThreadState) => () => Attempt;
 }
 
+/** A user message a command adds: what the transcript shows and what is sent. */
+interface AuthoredMessage {
+  readonly wire: { type: 'human'; id: string; content: WireContent };
+  readonly text: string;
+  readonly blocks?: readonly ContentBlock[];
+}
+
 type AttemptInput =
   | {
       readonly kind: 'submit';
-      readonly messages: { type: 'human'; id: string; content: string }[];
+      readonly messages: { type: 'human'; id: string; content: WireContent }[];
+      /** The submitted message as the transcript shows it. */
+      readonly text: string;
+      readonly blocks?: readonly ContentBlock[];
       readonly state?: LangGraphInputState;
     }
   | {
@@ -425,7 +477,87 @@ type AttemptInput =
       readonly interrupts: readonly LangGraphWireInterrupt[];
       /** A run with no input at all, from `submit(null)`: nothing is answered. */
       readonly bare?: boolean;
+      /**
+       * A partial state: sent as the input of a bare run, and in the command's
+       * `update` of a resume.
+       */
+      readonly state?: LangGraphInputState;
+      /** A user message a resume sends in its command's `update`. */
+      readonly message?: AuthoredMessage;
     };
+
+function authoredMessage(captured: {
+  readonly message: string;
+  readonly blocks?: readonly ContentBlock[];
+  readonly content?: WireContent;
+}): AuthoredMessage {
+  return {
+    wire: {
+      type: 'human',
+      id: crypto.randomUUID(),
+      content: captured.content ?? captured.message,
+    },
+    text: captured.message,
+    ...(captured.blocks ? { blocks: captured.blocks } : {}),
+  };
+}
+
+/** A submission's attempt input from its captured message and state. */
+function submission(captured: {
+  readonly message: string;
+  readonly blocks?: readonly ContentBlock[];
+  readonly content?: WireContent;
+  readonly state?: LangGraphInputState;
+}): AttemptInput & { readonly kind: 'submit' } {
+  const authored = authoredMessage(captured);
+  return {
+    kind: 'submit',
+    state: captured.state,
+    messages: [authored.wire],
+    text: authored.text,
+    ...(authored.blocks ? { blocks: authored.blocks } : {}),
+  };
+}
+
+function plainRecord(value: unknown): value is Record<string, PlainValue> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value))
+    return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+/** Owns a client tool catalog: each spec a name, a description and a schema. */
+function captureCatalog(specs: unknown): readonly ClientToolSpec[] {
+  if (!Array.isArray(specs))
+    throw new TypeError('A client tool catalog is a list of tool specs.');
+  const names = new Set<string>();
+  const catalog: ClientToolSpec[] = [];
+  const length = specs.length;
+  for (let index = 0; index < length; index += 1) {
+    const spec = specs[index] as Partial<ClientToolSpec> | null | undefined;
+    const name = spec?.name;
+    const description = spec?.description;
+    const parameters = spec?.parameters;
+    if (typeof name !== 'string' || !name)
+      throw new TypeError('A client tool needs a name.');
+    if (names.has(name))
+      throw new TypeError(`The client tool "${name}" is declared twice.`);
+    names.add(name);
+    catalog.push({
+      name,
+      description: typeof description === 'string' ? description : '',
+      parameters: (plainRecord(parameters)
+        ? ownValue(parameters)
+        : {}) as ClientToolSpec['parameters'],
+    });
+  }
+  return ownValue(
+    catalog as unknown as PlainValue
+  ) as unknown as readonly ClientToolSpec[];
+}
+
+const noCatalog: readonly ClientToolSpec[] = Object.freeze([]);
+const noTools: readonly ToolCall[] = Object.freeze([]);
 
 interface QueuedRun {
   readonly id: string;
@@ -443,6 +575,8 @@ interface PhysicalRun {
   captureOpen: boolean;
   received: boolean;
   confirmed: boolean;
+  /** The transport was asked to report this run's creation and has not yet. */
+  creating?: boolean;
   checkpoint?: CheckpointCandidate;
   positionConfirmed?: boolean;
 }
@@ -474,6 +608,8 @@ interface Attempt {
   scripted?: boolean;
   /** For telemetry: when the command began. */
   startedAt?: number;
+  /** Queued submissions waiting for this command's run to exist on the backend. */
+  created?: (() => void)[];
   handoffIds: readonly string[];
   iterator?: AsyncIterator<StreamEvent>;
   unlink?: () => void;
@@ -642,11 +778,29 @@ export function createSession(
     messages: readonly unknown[],
     state?: LangGraphInputState
   ): Record<string, unknown> {
-    const payload = createSubmitPayload(messages, catalog, state);
+    const payload = createSubmitPayload(messages, activeCatalog(), state);
     if (a2uiClientCapabilities)
       payload['a2ui_client_capabilities'] = a2uiClientCapabilities;
     return payload;
   }
+  /** The payload of a run that adds no user message; null when it has
+   * neither staged tool results nor a state to carry. */
+  function continuationPayload(
+    messages: readonly unknown[],
+    state?: LangGraphInputState
+  ): Record<string, unknown> | null {
+    const payload = createContinuationPayload(messages, activeCatalog(), state);
+    if (payload && a2uiClientCapabilities)
+      payload['a2ui_client_capabilities'] = a2uiClientCapabilities;
+    return payload;
+  }
+  /** Tools declared after creation, through `clientTools.setCatalog`. A
+   * session created with a fixed handler map sends that map's catalog. */
+  let declaredTools = noCatalog;
+  /** Set by the first `setCatalog`; `pendingClientTools` is published from then on. */
+  let catalogDeclared = false;
+  const activeCatalog = (): readonly unknown[] =>
+    typedTools ? catalog : declaredTools;
   function takeScript() {
     if (!scriptedRuns) return null;
     try {
@@ -813,6 +967,9 @@ export function createSession(
   const historyState = options.historyState === true;
   let checkpointPage:
     | {
+        /** The page as the backend sent it, newest first. */
+        readonly page: readonly LangGraphCheckpoint[];
+        /** The same entries oldest first, as the core contract lists them. */
         readonly checkpoints: readonly LangGraphCheckpoint[];
         readonly messageCheckpoints: Readonly<Record<string, string>>;
         readonly branchTree: LangGraphBranchTree;
@@ -822,16 +979,14 @@ export function createSession(
   function checkpointViews(
     history: readonly ThreadState[]
   ): typeof checkpointPage {
-    const checkpoints = projectCheckpoints(
-      checkpointPage?.checkpoints,
-      history
-    );
-    return checkpoints === checkpointPage?.checkpoints
+    const page = projectCheckpoints(checkpointPage?.page, history);
+    return page === checkpointPage?.page
       ? checkpointPage
       : {
-          checkpoints,
-          messageCheckpoints: projectMessageCheckpoints(checkpoints),
-          branchTree: projectBranchTree(checkpoints),
+          page,
+          checkpoints: Object.freeze([...page].reverse()),
+          messageCheckpoints: projectMessageCheckpoints(page),
+          branchTree: projectBranchTree(page),
         };
   }
   let branchName = '';
@@ -1044,11 +1199,124 @@ export function createSession(
           issues: ['The state schema must produce a plain data record.'],
         });
   }
-  function publish(status: 'idle' | 'running' | 'error', error?: AgentError) {
+  /** The description of what the published error was classified from. */
+  let diagnosed:
+    | { readonly error: AgentError; readonly diagnostic: AgentErrorDiagnostic }
+    | undefined;
+  /** Tool calls still being written in the current run, by namespace. */
+  let streamingCalls = initialStreamingToolCalls();
+  const streamingSubgraphs = new WeakMap<
+    LangGraphSubgraph,
+    {
+      readonly calls: NonNullable<LangGraphSubgraph['streamingToolCalls']>;
+      readonly subgraph: LangGraphSubgraph;
+    }
+  >();
+  /** Each child graph with the calls its model is still writing, if any. */
+  function withStreamingCalls(
+    observed: readonly LangGraphSubgraph[]
+  ): readonly LangGraphSubgraph[] {
+    if (streamingCalls.size === 0) return observed;
+    let changed = false;
+    const result = observed.map((subgraph) => {
+      const calls = projectStreamingToolCalls(
+        streamingCalls,
+        subgraph.namespace,
+        subgraph.toolCalls.map((call) => call.id)
+      );
+      if (!calls.length) return subgraph;
+      const known = streamingSubgraphs.get(subgraph);
+      if (known?.calls === calls) {
+        changed = true;
+        return known.subgraph;
+      }
+      const next = Object.freeze({ ...subgraph, streamingToolCalls: calls });
+      streamingSubgraphs.set(subgraph, { calls, subgraph: next });
+      changed = true;
+      return next;
+    });
+    return changed ? result : observed;
+  }
+  /** Why `submit` would be refused right now, in the session's own words. */
+  function submissionBlock(): AgentInputBlock | undefined {
+    if (hasInvocationConflict(state.invocations))
+      return {
+        reason: 'tool-conflict',
+        message: invocationConflictError().message,
+      };
+    if (branch || preparing) {
+      let ready = !preparing;
+      if (branch && ready) {
+        try {
+          readyCheckpoint(branch.state);
+        } catch {
+          ready = false;
+        }
+      }
+      if (
+        !ready ||
+        owner ||
+        loading ||
+        checkController ||
+        recoveryAttempt ||
+        retained ||
+        pendingToolSettlements ||
+        persistence.pending ||
+        unsettledTools.size ||
+        buffer.snapshot().messages.length
+      )
+        return {
+          reason: 'checkpoint',
+          message:
+            'A checkpoint branch accepts a new message once its current work has settled.',
+        };
+    }
+    if (unsettledTools.size)
+      return {
+        reason: 'unsettled-tools',
+        message:
+          'A tool is still running or its result is unresolved. Wait for it, or load the conversation again.',
+      };
+    if (persistence.pending)
+      return {
+        reason: 'persisting-tools',
+        message: 'Tool results are still being saved.',
+      };
+    return undefined;
+  }
+  /** Calls to declared client tools that wait for a result from the caller.
+   * Actionable only between runs: a run that ends without a result for one
+   * leaves it to the caller. */
+  function pendingClientCalls(running: boolean): readonly ToolCall[] {
+    if (running || !declaredTools.length) return noTools;
+    const names = new Set(declaredTools.map((spec) => spec.name));
+    const pending = state.toolCalls.filter(
+      (call) => call.status === 'pending' && names.has(call.name)
+    );
+    return pending.length ? pending : noTools;
+  }
+  function publish(
+    status: 'idle' | 'running' | 'error',
+    error?: AgentError,
+    cause?: unknown
+  ) {
     if (hasInvocationConflict(state.invocations)) {
       status = 'error';
       error = invocationConflictError();
+      cause = undefined;
     }
+    // A diagnostic describes one published error and goes when it does. A
+    // protected transport keeps failures generic, so it describes nothing.
+    if (!error) diagnosed = undefined;
+    else if (cause !== undefined && !protectedTransport) {
+      try {
+        diagnosed = { error, diagnostic: projectErrorDiagnostic(cause) };
+      } catch {
+        diagnosed = undefined;
+      }
+    } else if (!diagnosed || !sameError(diagnosed.error, error))
+      diagnosed = undefined;
+    const inputBlocked = submissionBlock();
     const plan = agentPlanFromState(values);
     lifecycle.observe({
       error,
@@ -1057,10 +1325,27 @@ export function createSession(
     });
     const reading = readPublishedState();
     const before = devtools && publication.getSnapshot();
+    const streamingToolCalls = projectStreamingToolCalls(
+      streamingCalls,
+      [],
+      state.toolCalls.map((call) => call.id)
+    );
     publication.publish({
       status,
       history: historyPage,
-      ...checkpointPage,
+      ...(checkpointPage
+        ? {
+            checkpoints: checkpointPage.checkpoints,
+            messageCheckpoints: checkpointPage.messageCheckpoints,
+            branchTree: checkpointPage.branchTree,
+          }
+        : {}),
+      ...(streamingToolCalls.length ? { streamingToolCalls } : {}),
+      ...(catalogDeclared
+        ? { pendingClientTools: pendingClientCalls(status === 'running') }
+        : {}),
+      ...(inputBlocked ? { inputBlocked } : {}),
+      ...(diagnosed ? { errorDiagnostic: diagnosed.diagnostic } : {}),
       ...(branchName ? { branch: branchName } : {}),
       ...(autoLoad && loading ? { loading: true as const } : {}),
       ...(toolProgress.size
@@ -1086,14 +1371,16 @@ export function createSession(
       ...(reading.issues ? { stateIssues: reading.issues } : {}),
       ...(plan ? { plan } : {}),
       interrupts: identifyInterrupts(interrupts),
-      subgraphs: relateSubgraphs(
-        timedSubgraphs(subgraphs.subgraphs),
-        state.toolCalls,
-        subagentToolNames,
-        delegationBindings
+      subgraphs: withStreamingCalls(
+        relateSubgraphs(
+          timedSubgraphs(subgraphs.subgraphs),
+          state.toolCalls,
+          subagentToolNames,
+          delegationBindings
+        )
       ),
       ...(retained?.run.evidence.runId
-        ? { reconnect: { runId: retained.run.evidence.runId } }
+        ? { retainedRun: { runId: retained.run.evidence.runId } }
         : {}),
       messages: reasoningTimer.observe(state.messages),
       toolCalls: typedTools
@@ -1193,7 +1480,8 @@ export function createSession(
     attempt: Attempt,
     outcome: CompleteOutcome,
     error?: AgentError,
-    retainRun = false
+    retainRun = false,
+    cause?: unknown
   ) {
     if (!owns(attempt)) return;
     retainRun ||= !!attempt.branch;
@@ -1221,7 +1509,7 @@ export function createSession(
     replayable = error?.recovery === 'retry' ? { attempt, state } : undefined;
     // Usage belongs to a settled run; a stopped one reports none.
     usage = outcome === 'aborted' ? undefined : projectUsage(usageObserved);
-    publish(error ? 'error' : 'idle', error);
+    publish(error ? 'error' : 'idle', error, cause);
     if (outcome !== 'aborted') {
       const durationMs = Date.now() - (attempt.startedAt ?? Date.now());
       if (error)
@@ -1300,6 +1588,10 @@ export function createSession(
     recoveryAttempt = undefined;
     replayable = undefined;
     retained = undefined;
+    // Argument fragments belong to a live stream; a settled run has none.
+    streamingCalls = initialStreamingToolCalls();
+    if (attempt.physical) attempt.physical.creating = false;
+    for (const release of attempt.created?.splice(0) ?? []) release();
     for (const call of attempt.calls.values()) {
       const current = state.toolCalls.find((entry) => entry.id === call.id);
       if (current?.status !== 'running') continue;
@@ -1323,6 +1615,24 @@ export function createSession(
     attempt.subgraphs = subgraphs;
     attempt.resolve(outcome);
     return attempt;
+  }
+
+  /** The backend has this run: its creation was reported or it streamed. */
+  function announceCreated(attempt: Attempt, run: PhysicalRun) {
+    if (!run.creating) return;
+    run.creating = false;
+    if (attempt.physical !== run) return;
+    for (const release of attempt.created?.splice(0) ?? []) release();
+  }
+  /** Resolves once the active command's run exists on the backend, or the
+   * command has ended. LangGraph orders queued runs by their creation, so a
+   * run queued behind the active one must be created after it. */
+  function activeRunCreated(): Promise<void> {
+    const active = owner;
+    if (!active?.physical?.creating) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      (active.created ??= []).push(resolve);
+    });
   }
 
   async function executeTools(attempt: Attempt, groups: number) {
@@ -1493,7 +1803,28 @@ export function createSession(
       attempt.input.value !== undefined
         ? { resume: attempt.input.value }
         : undefined;
-    if (suppliedTransport && !attempt.runOptions && !capture && !answer)
+    // What a resume sends beside its answer: a state and a user message, in
+    // the command's update.
+    const accompanying =
+      choices.resuming &&
+      first &&
+      attempt.input.kind === 'resume' &&
+      !attempt.input.bare &&
+      (attempt.input.state || attempt.input.message)
+        ? {
+            ...attempt.input.state,
+            ...(attempt.input.message
+              ? { messages: [attempt.input.message.wire] }
+              : {}),
+          }
+        : undefined;
+    if (
+      suppliedTransport &&
+      !attempt.runOptions &&
+      !capture &&
+      !answer &&
+      !accompanying
+    )
       return undefined;
     const { run: settings, ...base } = attempt.runOptions ?? {};
     const {
@@ -1514,8 +1845,27 @@ export function createSession(
             ]),
           ]
         : undefined;
+    let update = command?.update;
+    if (accompanying) {
+      // `resume` admitted only a record here, so the two updates merge.
+      const given = (record(update) ?? {}) as Record<string, unknown>;
+      const earlier = given['messages'];
+      update = {
+        ...given,
+        ...accompanying,
+        ...(accompanying.messages && Array.isArray(earlier)
+          ? { messages: [...earlier, ...accompanying.messages] }
+          : {}),
+      };
+    }
     const sent =
-      first && (command || answer) ? { ...command, ...answer } : undefined;
+      first && (command || answer || accompanying)
+        ? {
+            ...command,
+            ...(update !== undefined ? { update } : {}),
+            ...answer,
+          }
+        : undefined;
     const created =
       capture || onRunCreated
         ? (run: { run_id: string; thread_id?: string }) => {
@@ -1722,8 +2072,12 @@ export function createSession(
         attempt.handoffIds =
           groups > 0 ? batch.messages.map((message) => message.id) : [];
         const resuming = groups === 0 && attempt.input.kind === 'resume';
+        // A run that answers a pause sends its command alone. One that adds
+        // no message still hands back staged tool results, and a state.
         const payload = resuming
-          ? null
+          ? attempt.input.kind === 'resume' && attempt.input.bare && !joining
+            ? continuationPayload(batch.messages, attempt.input.state)
+            : null
           : runPayload(
               [...batch.messages, ...input],
               !joining && groups === 0 && attempt.input.kind === 'submit'
@@ -1761,6 +2115,7 @@ export function createSession(
           if (owns(attempt) && attempt.physical === run && run.captureOpen)
             run.evidence =
               run.evidence === previous ? evidence : { unsafe: true };
+          announceCreated(attempt, run);
         };
         const events =
           joining && joinStream && run.evidence.runId
@@ -1788,6 +2143,10 @@ export function createSession(
                   notify: () => owns(attempt),
                 })
               );
+        // With a creation report requested, a queued submission waits for it:
+        // a run queued before this one exists would run ahead of it.
+        run.creating =
+          canReconnect && !joining && !scripted && !run.evidence.runId;
         attempt.iterator = events[Symbol.asyncIterator]();
         if (!owns(attempt)) {
           close(attempt);
@@ -1801,6 +2160,7 @@ export function createSession(
           // attach an identity to already consumed data, including reentrant getters.
           const firstEvent = !run.received;
           run.received = true;
+          if (firstEvent) announceCreated(attempt, run);
           const event = convertEventMessages(
             captureStreamEvent(next.value),
             toMessage
@@ -1821,7 +2181,7 @@ export function createSession(
               true,
               attemptCanCheck()
             );
-            settle(attempt, 'error', error);
+            settle(attempt, 'error', error, false, event['data'] ?? event);
             return;
           }
           const previousEvidence = run.evidence;
@@ -1848,7 +2208,8 @@ export function createSession(
             groups === 0
               ? attempt.generation
               : `${attempt.generation}-step-${groups}`,
-            attempt.projection.messageIdPrefix
+            attempt.projection.messageIdPrefix,
+            rawMessages
           );
           // All projections may invoke transport-owned getters. Commit no
           // candidate if projection failed or a getter changed the owner.
@@ -1868,6 +2229,7 @@ export function createSession(
             event,
             attempt.projection.baselineIds
           );
+          streamingCalls = observeStreamingToolCalls(streamingCalls, event);
           if (rawMessages) {
             wire = observeWireMessages(wire, event);
             const metadata = observeMessageMetadata(messageMetadata, event);
@@ -2082,6 +2444,7 @@ export function createSession(
             attempt.physical = undefined;
             subgraphs = initialSubgraphs(subgraphs.subgraphs);
             attempt.subgraphs = subgraphs;
+            streamingCalls = initialStreamingToolCalls();
             close(attempt, false, false);
             if (!owns(attempt)) return;
             attempt.closed = false;
@@ -2106,6 +2469,7 @@ export function createSession(
                     },
                   }
                 : {}),
+              ...(rawMessages ? { extras: true } : {}),
             };
             input = [];
             continue;
@@ -2192,7 +2556,10 @@ export function createSession(
         attempt,
         error.kind === 'interrupted' ? 'interrupted' : 'error',
         error,
-        true
+        true,
+        // A failure the session could not read is reported in its own words
+        // only; what was thrown may hold anything and stays out.
+        error.kind === 'interrupted' ? undefined : raw
       );
     }
   }
@@ -2224,11 +2591,27 @@ export function createSession(
       input.kind === 'submit' ? undefined : subgraphs.subgraphs
     );
     const generation = crypto.randomUUID();
-    const userId =
+    // A resume normally belongs to the turn it continues. One that sends a
+    // user message starts the transcript's next turn at that message.
+    const resumed =
+      input.kind === 'resume'
+        ? state.messages.filter((message) => message.role === 'user').at(-1)?.id
+        : undefined;
+    const authored =
       input.kind === 'submit'
-        ? input.messages[0].id
-        : state.messages.filter((message) => message.role === 'user').at(-1)
-            ?.id;
+        ? {
+            id: input.messages[0].id,
+            text: input.text,
+            blocks: input.blocks,
+          }
+        : input.message
+        ? {
+            id: input.message.wire.id,
+            text: input.message.text,
+            blocks: input.message.blocks,
+          }
+        : undefined;
+    const userId = authored?.id ?? resumed;
     let resolve!: Attempt['resolve'];
     const result = new Promise<CompleteOutcome>((done) => {
       resolve = done;
@@ -2256,8 +2639,9 @@ export function createSession(
         canonical: [],
         ...(branch ? { baselineCallIds: branch.baselineCallIds } : {}),
         ...(input.kind === 'resume'
-          ? { resume: { turnIds: turnIds(userId) } }
+          ? { resume: { turnIds: turnIds(resumed) } }
           : {}),
+        ...(rawMessages ? { extras: true } : {}),
       },
     };
     owner = created;
@@ -2268,14 +2652,15 @@ export function createSession(
     usageObserved = new Map();
     usage = undefined;
 
-    if (input.kind === 'submit')
+    if (authored)
       state = reduceMessages(state, {
         type: 'message',
         mode: 'snapshot',
         message: {
-          id: input.messages[0].id,
+          id: authored.id,
           role: 'user',
-          content: input.messages[0].content,
+          content: authored.text,
+          ...(authored.blocks ? { blocks: authored.blocks } : {}),
           delivery: completeDelivery(generation, 'success'),
         },
       });
@@ -2418,6 +2803,7 @@ export function createSession(
           ...(typedTools
             ? { registeredTools: new Set(definitions.keys()) }
             : {}),
+          ...(rawMessages ? { extras: true } : {}),
         });
         let invocations = projected.invocations;
         for (const call of source.calls)
@@ -2439,21 +2825,7 @@ export function createSession(
             baselineCallIds: source.calls.map((call) => call.id),
             settledToolIds: new Set(),
           };
-          return beginAttempt(
-            {
-              kind: 'submit',
-              state: captured.state,
-              messages: [
-                {
-                  type: 'human',
-                  id: crypto.randomUUID(),
-                  content: captured.message,
-                },
-              ],
-            },
-            external,
-            runOptions
-          );
+          return beginAttempt(submission(captured), external, runOptions);
         };
       });
     });
@@ -2467,6 +2839,23 @@ export function createSession(
   function submit(
     input: LangGraphSubmitInput | null | undefined,
     options?: LangGraphRunOptions
+  ): Promise<CompleteOutcome> {
+    return startRun(input, options);
+  }
+
+  /** The core contract's run without a message: `submit(null)`, after merging
+   * a partial state when one is given. */
+  function runWithoutMessage(
+    input?: { readonly state?: LangGraphInputState },
+    options?: LangGraphRunOptions
+  ): Promise<CompleteOutcome> {
+    return startRun(null, options, input ?? {});
+  }
+
+  function startRun(
+    input: LangGraphSubmitInput | null | undefined,
+    options?: LangGraphRunOptions,
+    continuation?: { readonly state?: LangGraphInputState }
   ): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
     let queued: Parameters<typeof enqueueRun>[0] | undefined;
@@ -2488,6 +2877,10 @@ export function createSession(
         input === null || input === undefined
           ? undefined
           : captureSubmitInput(input);
+      // State getters are caller effects too; read the field once.
+      const given = continuation?.state;
+      const bareState =
+        given === undefined ? undefined : captureInputState(given);
       if (
         disposed ||
         external?.aborted ||
@@ -2512,18 +2905,14 @@ export function createSession(
           'A checkpoint branch starts its runs from its own checkpoint.'
         );
       const attemptInput: AttemptInput = captured
-        ? {
-            kind: 'submit',
-            state: captured.state,
-            messages: [
-              {
-                type: 'human',
-                id: crypto.randomUUID(),
-                content: captured.message,
-              },
-            ],
-          }
-        : { kind: 'resume', value: undefined, interrupts, bare: true };
+        ? submission(captured)
+        : {
+            kind: 'resume',
+            value: undefined,
+            interrupts,
+            bare: true,
+            ...(bareState ? { state: bareState } : {}),
+          };
       if (settings?.multitaskStrategy === 'enqueue' && owner) {
         if (threadId === undefined)
           throw new Error('A run cannot be queued before its thread exists.');
@@ -2549,6 +2938,7 @@ export function createSession(
           ...(typedTools
             ? { registeredTools: new Set(definitions.keys()) }
             : {}),
+          ...(rawMessages ? { extras: true } : {}),
         });
         if (hasInvocationConflict(projected.invocations))
           throw new Error(invocationConflictError().message);
@@ -2580,13 +2970,15 @@ export function createSession(
     const { input } = request;
     let run: RunEvidence;
     let created: { run_id: string; thread_id?: string };
+    await activeRunCreated();
+    if (disposed) return 'aborted';
     try {
       const entry = await create(
         assistantId,
         threadId,
         input.kind === 'submit'
           ? runPayload(input.messages, input.state)
-          : null,
+          : continuationPayload([], input.state),
         request.external ?? new AbortController().signal,
         {
           ...requestOptions(request, {
@@ -2617,9 +3009,7 @@ export function createSession(
       });
       queue.push({
         id,
-        ...(input.kind === 'submit'
-          ? { message: input.messages[0].content }
-          : {}),
+        ...(input.kind === 'submit' ? { message: input.text } : {}),
         createdAt: Date.now(),
         input,
         runOptions: request.runOptions,
@@ -2749,7 +3139,7 @@ export function createSession(
 
   function resume(
     responses: readonly AgentInterruptResponse[],
-    options?: LangGraphRunOptions
+    options?: LangGraphResumeOptions
   ): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
     let preparation: Preparation | undefined;
@@ -2798,6 +3188,41 @@ export function createSession(
       )
         return;
       const runOptions = captureRunOptions(options);
+      // What the core contract lets a resume carry beside its answers. Each
+      // option getter is a caller effect and is read once.
+      const sentMessage = options?.message;
+      const sentBlocks = options?.blocks;
+      const sentState = options?.state;
+      if (sentMessage !== undefined && typeof sentMessage !== 'string')
+        throw new TypeError('A resume message must be text.');
+      const blocks =
+        sentBlocks === undefined ? undefined : captureInputBlocks(sentBlocks);
+      const accompanyingState =
+        sentState === undefined
+          ? undefined
+          : captureInputState(
+              sentState as Readonly<Record<string, PlainValue>>
+            );
+      const accompanyingMessage =
+        sentMessage !== undefined || blocks
+          ? authoredMessage({
+              message:
+                sentMessage ??
+                (blocks?.blocks ?? [])
+                  .map((block) => (block.type === 'text' ? block.text : ''))
+                  .join(''),
+              ...(blocks
+                ? { blocks: blocks.blocks, content: blocks.content }
+                : {}),
+            })
+          : undefined;
+      if (accompanyingState || accompanyingMessage) {
+        const update = runOptions?.run?.command?.update;
+        if (update !== undefined && update !== null && !plainRecord(update))
+          throw new TypeError(
+            'A resume with a message or a state needs run.command.update to be a record.'
+          );
+      }
       // Response getters are caller effects, not a lock-protected projection.
       if (
         disposed ||
@@ -2807,26 +3232,24 @@ export function createSession(
       )
         return;
       admit();
+      const decision: AttemptInput = {
+        kind: 'resume',
+        value: captured,
+        interrupts,
+        ...(accompanyingState ? { state: accompanyingState } : {}),
+        ...(accompanyingMessage ? { message: accompanyingMessage } : {}),
+      };
       if (branch) {
         if (!getState)
           throw new Error('Branch resume requires an exact checkpoint read.');
         const confirmed = readyCheckpoint(branch.state);
         preparation = prepare(confirmed.position, external, (saved) => {
           assertResumeCheckpoint(confirmed, saved);
-          return () =>
-            beginAttempt(
-              { kind: 'resume', value: captured, interrupts },
-              external,
-              runOptions
-            );
+          return () => beginAttempt(decision, external, runOptions);
         });
         return;
       }
-      attempt = beginAttempt(
-        { kind: 'resume', value: captured, interrupts },
-        external,
-        runOptions
-      );
+      attempt = beginAttempt(decision, external, runOptions);
     });
     return beginning.then(() => {
       if (preparation) {
@@ -2968,6 +3391,7 @@ export function createSession(
           ...(typedTools
             ? { registeredTools: new Set(definitions.keys()) }
             : {}),
+          ...(rawMessages ? { extras: true } : {}),
         });
         const projectedValues = projectHistoryValues(previousValues, history);
         const projectedHistory = projectCheckpointHistory(historyPage, history);
@@ -3022,13 +3446,23 @@ export function createSession(
         if (!ownsLoad(read)) return;
         loading = undefined;
         read.reject(createSafeRequestError());
-        if (autoLoad) {
-          writeLabel = { label: 'history' };
-          republish();
-        }
+        // The caller's promise rejects, and a view that only reads the
+        // snapshot learns of the failure too. The transcript is untouched,
+        // and the failure itself stays out of the snapshot.
+        writeLabel = { label: 'history' };
+        publish('error', loadError());
         closeLoad(read);
       });
     }
+  }
+
+  function loadError(): AgentError {
+    return {
+      kind: 'server',
+      message: 'The conversation could not be loaded.',
+      retryable: false,
+      recovery: 'none',
+    };
   }
 
   /**
@@ -3107,6 +3541,7 @@ export function createSession(
           if (!child || !Array.isArray(child['messages'])) return;
           const projected = projectHistory(initialMessageState(), [saved], {
             interrupts: [],
+            ...(rawMessages ? { extras: true } : {}),
           });
           const state = projectHistoryValues(undefined, [saved]);
           await publication.command(() => {
@@ -3434,6 +3869,72 @@ export function createSession(
       options
     );
   }
+  /** Records one client tool result: the call shows it at once, and its
+   * tool message is staged for the next run or an explicit flush. */
+  function settleClientTool(toolCallId: string, result: ClientToolResult) {
+    if (disposed) throw new Error('The session is disposed.');
+    const pending = () =>
+      pendingClientCalls(!!owner).find((call) => call.id === toolCallId);
+    if (!pending())
+      throw new Error(
+        `No pending client tool call has the id "${String(toolCallId)}".`
+      );
+    // Result getters are caller effects; capture the outcome once, owned.
+    const ok = result?.ok === true;
+    const captured = ok
+      ? { ok: true as const, value: ownValue(result.value) }
+      : {
+          ok: false as const,
+          error: String((result as { error?: unknown } | undefined)?.error),
+        };
+    void publication.command(() => {
+      const call = pending();
+      if (disposed || !call) return;
+      resolvedTools.add(call.id);
+      authoredTools.add(call.id);
+      buffer.stage(call.id, captured);
+      state = reduceMessages(state, {
+        type: 'tool',
+        toolCall: resultCall(call, captured),
+      });
+      republish();
+    });
+  }
+  /** The core capability for tools the caller declares after creation and
+   * runs itself. A session with a fixed handler map runs its own tools. */
+  const clientTools: AgentClientTools | undefined = typedTools
+    ? undefined
+    : {
+        setCatalog(specs) {
+          const captured = captureCatalog(specs);
+          void publication.command(() => {
+            if (disposed) return;
+            declaredTools = captured;
+            catalogDeclared = true;
+            republish();
+          });
+        },
+        settle: settleClientTool,
+        flush() {
+          if (disposed) return Promise.resolve();
+          const written = persistence.flush(
+            new AbortController().signal,
+            branch
+          );
+          const announce = () =>
+            void publication.command(() => {
+              if (!disposed) republish();
+            });
+          announce();
+          return written.finally(announce);
+        },
+        resolve(toolCallId, result) {
+          settleClientTool(toolCallId, result);
+          // The continuation hands the staged results back. A refused or
+          // failed run leaves them staged for the next one.
+          void startRun(null).catch(() => undefined);
+        },
+      };
   const throttles = new Set<{ cancel(): void }>();
   if (developmentRuntime) safely(() => developmentRuntime.touch());
   report('tplane:runtime_instance_created');
@@ -3459,12 +3960,7 @@ export function createSession(
           )
             return;
           writeLabel = { label: 'history' };
-          publish('error', {
-            kind: 'server',
-            message: 'The conversation could not be loaded.',
-            retryable: false,
-            recovery: 'none',
-          });
+          publish('error', loadError());
         })
       );
     });
@@ -3498,6 +3994,8 @@ export function createSession(
         disposed ? () => undefined : lifecycle.source.subscribe(notify),
     },
     submit,
+    runWithoutMessage,
+    ...(clientTools ? { clientTools } : {}),
     cancelQueued,
     clearQueue,
     fork,

@@ -76,7 +76,7 @@ async function setup(paired = true, runEvidence?: 'running' | 'reconnect') {
           ...session.getSnapshot(),
           ...(runEvidence === 'running' ? { status: 'running' as const } : {}),
           ...(runEvidence === 'reconnect'
-            ? { reconnect: { runId: 'retained-remote-run' } }
+            ? { retainedRun: { runId: 'retained-remote-run' } }
             : {}),
         }),
       };

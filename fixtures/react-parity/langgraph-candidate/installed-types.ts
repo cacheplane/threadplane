@@ -66,7 +66,32 @@ export function checkCandidate(signal: AbortSignal) {
     { interruptId: 'approval', status: 'resolved', value: null },
   ]);
   void session.reconnect({ signal });
+  // The core contract's optional members, with the core's own shapes.
+  void session.runWithoutMessage({ state }, options);
+  void session.submit({
+    message: 'Look',
+    blocks: [
+      { type: 'text', text: 'Look' },
+      { type: 'image', url: 'https://example.test/a.png' },
+    ],
+  });
+  void session.resume(
+    [{ interruptId: 'approval', status: 'resolved', value: true }],
+    { message: 'Go ahead', state, signal }
+  );
+  // @ts-expect-error A run without a message takes no message.
+  void session.runWithoutMessage({ message: 'Hello' });
+  // @ts-expect-error A submitted block is one of the core block shapes.
+  void session.submit({ message: '', blocks: [{ type: 'video' }] });
   const snapshot = session.getSnapshot();
+  const retained: string | undefined = snapshot.retainedRun?.runId;
+  // @ts-expect-error The retained run is not named after the reconnect command.
+  void snapshot.reconnect;
+  const blocked: string | undefined = snapshot.inputBlocked?.reason;
+  const diagnosed: string | undefined = snapshot.errorDiagnostic?.message;
+  const streamed: string | undefined =
+    snapshot.streamingToolCalls?.[0].argsText;
+  void [retained, blocked, diagnosed, streamed];
   const values: Readonly<Record<string, PlainValue>> | undefined =
     snapshot.state;
   for (const tool of snapshot.toolCalls) {

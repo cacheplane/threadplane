@@ -69,18 +69,19 @@ describe('history with state', () => {
     const { session } = fixture(true);
     await session.load?.();
     const { checkpoints, messageCheckpoints, history } = session.getSnapshot();
+    // Oldest first, as the core contract lists a history.
     expect(checkpoints?.map(({ id, label }) => [id, label])).toEqual([
-      ['c4', undefined],
-      ['c3', undefined],
-      ['c2', 'agent'],
       ['c1', '__start__'],
+      ['c2', 'agent'],
+      ['c3', undefined],
+      ['c4', undefined],
     ]);
-    expect(checkpoints?.[0].values).toEqual({
+    expect(checkpoints?.[3].values).toEqual({
       topic: 'c4',
       messages: [user, second],
     });
-    expect(checkpoints?.[0].saved.parent_checkpoint?.checkpoint_id).toBe('c2');
-    expect(Object.isFrozen(checkpoints?.[0].values['messages'])).toBe(true);
+    expect(checkpoints?.[3].saved.parent_checkpoint?.checkpoint_id).toBe('c2');
+    expect(Object.isFrozen(checkpoints?.[3].values['messages'])).toBe(true);
     expect(messageCheckpoints).toEqual({ a1: 'c3', a2: 'c4' });
     expect(history).toHaveLength(4);
   });
@@ -119,7 +120,7 @@ describe('history with state', () => {
     // A node is the published checkpoint, not a copy of it.
     const node = tree?.items[0];
     expect(node?.type === 'node' && node.value).toBe(
-      session.getSnapshot().checkpoints?.[3]
+      session.getSnapshot().checkpoints?.[0]
     );
   });
 
@@ -127,9 +128,12 @@ describe('history with state', () => {
     const tree = projectBranchTree(projectCheckpoints(undefined, page()));
     const ids = (branch?: string) =>
       selectBranch(tree, branch).map((checkpoint) => checkpoint.id);
-    expect(ids()).toEqual(['c1', 'c2', 'c3']);
+    // Unnamed, and at a fork the branch does not name, the newest
+    // continuation is followed: c4 was saved after c3.
+    expect(ids()).toEqual(['c1', 'c2', 'c4']);
     expect(ids('c4')).toEqual(['c1', 'c2', 'c4']);
-    expect(ids('missing')).toEqual(['c1', 'c2', 'c3']);
+    expect(ids('c3')).toEqual(['c1', 'c2', 'c3']);
+    expect(ids('missing')).toEqual(['c1', 'c2', 'c4']);
     expect(
       selectBranch(projectBranchTree(projectCheckpoints(undefined, [])))
     ).toEqual([]);
@@ -176,7 +180,7 @@ describe('history with state', () => {
     expect(await session.submit('Go')).toBe('success');
     const transcript = session.getSnapshot().messages;
     await vi.waitFor(() =>
-      expect(session.getSnapshot().checkpoints?.[0].id).toBe('c5')
+      expect(session.getSnapshot().checkpoints?.at(-1)?.id).toBe('c5')
     );
     expect(getHistory).toHaveBeenCalledTimes(2);
     expect(session.getSnapshot().messages).toBe(transcript);
@@ -216,7 +220,7 @@ describe('history with state', () => {
     release([saved('stale', null, [])]);
     await Promise.resolve();
     await Promise.resolve();
-    expect(session.getSnapshot().checkpoints?.[0].id).toBe('c4');
+    expect(session.getSnapshot().checkpoints?.at(-1)?.id).toBe('c4');
   });
 });
 

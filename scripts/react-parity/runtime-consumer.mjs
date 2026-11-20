@@ -233,13 +233,13 @@ export function assertTextTranscript(messages: readonly Message[]) {
   void session.reconnect({ runId: 'unowned' });
   // @ts-expect-error Reconnect never accepts an interrupt response.
   void session.reconnect(false);
-  const offeredRun: string | undefined = snapshot.reconnect?.runId;
+  const offeredRun: string | undefined = snapshot.retainedRun?.runId;
   void offeredRun;
   // @ts-expect-error Availability belongs to the session.
-  snapshot.reconnect = { runId: 'changed' };
-  if (snapshot.reconnect) {
+  snapshot.retainedRun = { runId: 'changed' };
+  if (snapshot.retainedRun) {
     // @ts-expect-error Retained run identity is readonly.
-    snapshot.reconnect.runId = 'changed';
+    snapshot.retainedRun.runId = 'changed';
   }
   void session.resume([{ interruptId: 'final-approval', status: 'resolved', value: false }]);
   void session.resume([{ interruptId: 'final-approval', status: 'resolved', value: null }]);

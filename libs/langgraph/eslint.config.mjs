@@ -13,6 +13,9 @@ export default [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/vite.config.mts',
             '{projectRoot}/vite.runtime.config.mts',
+            // The live-backend suite is test tooling, never packaged.
+            '{projectRoot}/vite.live.config.mts',
+            '{projectRoot}/live/**',
             // Private runtime staging is not exported by the legacy Angular APF
             // package. Its neutral source graph is checked separately; do not
             // add unpublished core peers to the legacy production manifest.

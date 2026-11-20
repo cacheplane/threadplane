@@ -275,7 +275,7 @@ describe('owned native checkpoint stream through the real SDK', () => {
     const requests = server({ reconnect: true });
     const session = native();
     expect(await session.submit('Question')).toBe('interrupted');
-    expect(session.getSnapshot().reconnect).toEqual({ runId: 'r' });
+    expect(session.getSnapshot().retainedRun).toEqual({ runId: 'r' });
     expect(await session.reconnect()).toBe('success');
     expect(session.getSnapshot().status).toBe('idle');
     expect(requests.map((r) => r.method)).toEqual([

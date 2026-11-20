@@ -400,7 +400,7 @@ describe('neutral real SDK transport', () => {
       apiUrl: 'https://runtime.example',
     });
     expect(await session.submit('Question')).toBe('interrupted');
-    expect(session.getSnapshot().reconnect).toEqual({ runId: 'r' });
+    expect(session.getSnapshot().retainedRun).toEqual({ runId: 'r' });
     expect(await session.reconnect()).toBe('success');
     expect(requests.map((request) => request.method)).toEqual([
       'POST',

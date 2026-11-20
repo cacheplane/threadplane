@@ -144,7 +144,7 @@ export function sameToolInvocation(
   return a.name === b.name && sameOwnedValue(a.args, b.args);
 }
 
-function sameError(
+export function sameError(
   a: AgentError | undefined,
   b: AgentError | undefined
 ): boolean {
@@ -180,6 +180,11 @@ export function sameMessage(a: Message, b: Message): boolean {
         a.citations as unknown as PlainValue,
         b.citations as unknown as PlainValue
       ) &&
+      sameOwnedValue(
+        a.blocks as unknown as PlainValue,
+        b.blocks as unknown as PlainValue
+      ) &&
+      sameOwnedValue(a.extra, b.extra) &&
       a.name === b.name &&
       a.toolCallId === b.toolCallId &&
       sameOwnedValue(a.toolCallIds, b.toolCallIds) &&
@@ -196,11 +201,27 @@ export function ownMessage(message: Message, previous?: Message): Message {
     message.citations as unknown as PlainValue,
     previous?.citations as unknown as PlainValue
   ) as unknown as Message['citations'];
-  if (owned.has(message) && citations === message.citations) return message;
+  const blocks = ownValueWithSharing(
+    message.blocks as unknown as PlainValue,
+    previous?.blocks as unknown as PlainValue
+  ) as unknown as Message['blocks'];
+  const extra = ownValueWithSharing(
+    message.extra,
+    previous?.extra
+  ) as Message['extra'];
+  if (
+    owned.has(message) &&
+    citations === message.citations &&
+    blocks === message.blocks &&
+    extra === message.extra
+  )
+    return message;
   return freeze({
     id: message.id,
     role: message.role,
     content: message.content,
+    // Present only when the message held more than text.
+    ...(blocks !== undefined ? { blocks } : {}),
     reasoning: message.reasoning,
     // Present only when measured, so unmeasured messages keep their shape.
     ...(typeof message.reasoningDurationMs === 'number' &&
@@ -222,6 +243,7 @@ export function ownMessage(message: Message, previous?: Message): Message {
       message.toolCallIds === undefined
         ? undefined
         : freeze([...message.toolCallIds]),
+    ...(extra !== undefined ? { extra } : {}),
   });
 }
 
@@ -234,21 +256,40 @@ export function sameToolCall(a: ToolCall, b: ToolCall): boolean {
       sameOwnedValue(a.args, b.args) &&
       (a.status !== 'complete' ||
         (b.status === 'complete' && sameOwnedValue(a.result, b.result))) &&
-      (a.status !== 'error' || (b.status === 'error' && a.error === b.error)))
+      (a.status !== 'error' || (b.status === 'error' && a.error === b.error)) &&
+      sameOwnedValue(partsOf(a), partsOf(b)))
   );
+}
+
+/** The structured result parts of a settled call; absent while it runs. */
+function partsOf(call: ToolCall): readonly PlainValue[] | undefined {
+  return call.status === 'complete' || call.status === 'error'
+    ? call.parts
+    : undefined;
 }
 
 export function ownToolCall(call: ToolCall): ToolCall {
   if (owned.has(call)) return call;
   const base = { id: call.id, name: call.name, args: ownValue(call.args) };
+  const parts = partsOf(call);
+  const structured =
+    parts === undefined
+      ? {}
+      : { parts: ownValue(parts) as readonly PlainValue[] };
   if (call.status === 'complete')
     return freeze({
       ...base,
       status: call.status,
       result: ownValue(call.result),
+      ...structured,
     });
   if (call.status === 'error')
-    return freeze({ ...base, status: call.status, error: call.error });
+    return freeze({
+      ...base,
+      status: call.status,
+      error: call.error,
+      ...structured,
+    });
   return freeze({ ...base, status: call.status });
 }
 
@@ -337,6 +378,10 @@ const plainExtras = [
   'langGraphMessages',
   'messageMetadata',
   'usage',
+  'errorDiagnostic',
+  'streamingToolCalls',
+  'pendingClientTools',
+  'inputBlocked',
 ] as const satisfies readonly (keyof LangGraphSnapshot)[];
 
 /** One backend aggregate, composing the core fields and owned application data. */
@@ -363,10 +408,10 @@ export function ownLangGraphSnapshot(
     input.interrupts as unknown as PlainValue,
     previous?.interrupts as unknown as PlainValue
   ) as unknown as readonly LangGraphInterrupt[];
-  const reconnect = ownValueWithSharing(
-    input.reconnect,
-    previous?.reconnect
-  ) as LangGraphSnapshot['reconnect'];
+  const retainedRun = ownValueWithSharing(
+    input.retainedRun,
+    previous?.retainedRun
+  ) as LangGraphSnapshot['retainedRun'];
   const stateIssues = ownValueWithSharing(
     input.stateIssues,
     previous?.stateIssues
@@ -390,7 +435,7 @@ export function ownLangGraphSnapshot(
     interrupts === previous?.interrupts &&
     subgraphs === previous?.subgraphs &&
     subagents === previous?.subagents &&
-    reconnect === previous?.reconnect
+    retainedRun === previous?.retainedRun
   )
     return previous;
   // core may be the previous backend aggregate when its core fields are equal.
@@ -407,7 +452,7 @@ export function ownLangGraphSnapshot(
     interrupts,
     subgraphs,
     subagents,
-    ...(reconnect ? { reconnect } : {}),
+    ...(retainedRun ? { retainedRun } : {}),
     ...extras,
   });
 }
@@ -448,9 +493,16 @@ export function ownSubgraph(
     input.delegation as PlainValue,
     previous?.delegation as PlainValue
   ) as LangGraphDelegation | undefined;
+  const streamingToolCalls = input.streamingToolCalls?.length
+    ? (ownValueWithSharing(
+        input.streamingToolCalls as unknown as PlainValue,
+        previous?.streamingToolCalls as unknown as PlainValue
+      ) as unknown as LangGraphSubgraph['streamingToolCalls'])
+    : undefined;
   if (
     previous &&
     delegation === previous.delegation &&
+    streamingToolCalls === previous.streamingToolCalls &&
     namespace === previous.namespace &&
     messages === previous.messages &&
     toolCalls === previous.toolCalls &&
@@ -467,6 +519,7 @@ export function ownSubgraph(
     interrupts,
     ...(error ? { error } : {}),
     ...(delegation ? { delegation } : {}),
+    ...(streamingToolCalls ? { streamingToolCalls } : {}),
   });
 }
 
@@ -486,6 +539,7 @@ export function ownSubgraphs(
         a.state === b.state &&
         a.interrupts === b.interrupts &&
         a.delegation === b.delegation &&
+        a.streamingToolCalls === b.streamingToolCalls &&
         sameError(a.error, b.error))
   );
 }

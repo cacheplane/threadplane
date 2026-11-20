@@ -315,7 +315,7 @@ a new published LangGraph entry point.
 
 The private session exposes
 `reconnect(options?: { readonly signal?: AbortSignal }): Promise<CompleteOutcome>`.
-Its readonly snapshot descriptor, `reconnect?: { readonly runId: string }`,
+Its readonly snapshot descriptor, `retainedRun?: { readonly runId: string }`,
 advertises the latest retained disconnected physical run. Reconnect accepts no
 run ID or input. It joins that owned run without replaying its submission or
 resume command, adding a human message, or repeating completed tool handlers.
@@ -341,7 +341,7 @@ stays uncertain; successful status also requires conclusive output or an observe
 current-run pause. An interrupted status confirms pause only with that run's
 observed interrupt. Terminal failures do not offer reconnect or execute tools.
 Known-run uncertainty never falls back to thread history: `checkStatus()` is
-inert, and the error has `recovery: 'none'` with the private reconnect descriptor
+inert, and the error has `recovery: 'none'` with the private `retainedRun` descriptor
 when eligible. Streams without captured identity retain their existing fallback.
 
 Reconnect is explicit after the SDK iterator settles. It rejects active

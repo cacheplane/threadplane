@@ -13,9 +13,10 @@ import {
 } from './message-reducer.js';
 import type { StreamEvent } from './transport.types.js';
 import { ownMessage, ownToolCall } from './ownership.js';
-import { record, roleOf, textContent } from './wire-message.js';
+import { record, roleOf } from './wire-message.js';
 import { projectCitations } from './citation-projection.js';
 import { projectReasoning } from './reasoning-projection.js';
+import { projectExtra, readContent } from './content-blocks.js';
 import {
   observeResponseIdentity,
   responseChunkId,
@@ -50,6 +51,50 @@ export interface StreamProjection {
   readonly canonical: readonly CanonicalMessage[];
   readonly toolAssistantIds?: readonly string[];
   readonly toolCallIds?: readonly string[];
+  /** Publish each full message's wire extras as `Message.extra`. */
+  readonly extras?: boolean;
+  /**
+   * What tool messages said beyond their text, by tool call id: a failure
+   * status, and the structured parts of the result. Kept for the run so a
+   * result that arrives before its call still settles it correctly.
+   */
+  readonly toolEvidence?: Readonly<Record<string, ToolEvidence>>;
+}
+
+/** A tool message's failure status and structured result parts. */
+export interface ToolEvidence {
+  readonly error?: true;
+  readonly parts?: readonly PlainValue[];
+}
+
+/** Reads what a wire tool message says beyond its text. */
+export function toolEvidence(
+  raw: Record<string, unknown>,
+  parts: readonly PlainValue[] | undefined
+): ToolEvidence | undefined {
+  const failed = raw['status'] === 'error';
+  if (!failed && !parts) return undefined;
+  return {
+    ...(failed ? { error: true as const } : {}),
+    ...(parts ? { parts } : {}),
+  };
+}
+
+/** A tool call settled by its tool message: an error when the tool failed. */
+export function settledCall(
+  call: {
+    readonly id: string;
+    readonly name: string;
+    readonly args: PlainValue;
+  },
+  content: string,
+  evidence: ToolEvidence | undefined
+) {
+  const base = { id: call.id, name: call.name, args: call.args };
+  const parts = evidence?.parts ? { parts: evidence.parts } : {};
+  return evidence?.error
+    ? { ...base, status: 'error' as const, error: content, ...parts }
+    : { ...base, status: 'complete' as const, result: content, ...parts };
 }
 
 /** Pure projection of text and finalized tool data from root stream events.
@@ -176,7 +221,23 @@ export function projectStream(
       raw['type'] !== 'AIMessageChunk' &&
       Array.isArray(raw['tool_calls']);
     const position = incoming.indexOf(raw);
-    const content = textContent(raw['content']);
+    const reading = readContent(raw['content'], role === 'tool');
+    const content = reading.text;
+    // Chunks carry fragments; only a full message states its whole content.
+    const full = mode !== 'delta' && raw['type'] !== 'AIMessageChunk';
+    const blocks = full ? reading.blocks : undefined;
+    const extra = full && projection.extras ? projectExtra(raw) : undefined;
+    if (role === 'tool' && typeof raw['tool_call_id'] === 'string') {
+      const evidence = toolEvidence(raw, reading.parts);
+      if (evidence)
+        projection = {
+          ...projection,
+          toolEvidence: {
+            ...projection.toolEvidence,
+            [raw['tool_call_id']]: evidence,
+          },
+        };
+    }
     const executionCandidate =
       (!baseline || projection.resume?.turnIds.includes(id)) &&
       !projection.resume?.excludedIds?.includes(id) &&
@@ -223,6 +284,14 @@ export function projectStream(
       id,
       role,
       content,
+      // An echo of a message from an earlier turn is inert: it keeps what
+      // the transcript already holds, as its delivery does.
+      ...(!current && previous
+        ? {
+            ...(previous.blocks ? { blocks: previous.blocks } : {}),
+            ...(previous.extra ? { extra: previous.extra } : {}),
+          }
+        : { ...(blocks ? { blocks } : {}), ...(extra ? { extra } : {}) }),
       citations: projectCitations(raw),
       reasoning: projectReasoning(raw),
       delivery:
@@ -337,7 +406,11 @@ export function projectStream(
     if (call?.status === 'pending')
       state = reduceMessages(state, {
         type: 'tool',
-        toolCall: { ...call, status: 'complete', result: message.content },
+        toolCall: settledCall(
+          call,
+          message.content,
+          projection.toolEvidence?.[message.toolCallId]
+        ),
       });
   }
   // Settle wire evidence before pruning so ToolMessages later in this same
