@@ -265,8 +265,8 @@ describe('owned terminal saved plan', () => {
         id: call.id,
         name: call.name,
         args: call.args,
-        status: 'complete' as const,
-        result: text,
+        status: 'error' as const,
+        error: text,
       }))
     );
     expect(captureTerminal(input)).toMatchObject({

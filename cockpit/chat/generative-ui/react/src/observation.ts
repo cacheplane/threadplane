@@ -121,7 +121,7 @@ export function createObservation(
       if (
         !t.id ||
         !validToolArgs(t) ||
-        !['pending', 'complete'].includes(t.status)
+        !['pending', 'complete', 'error'].includes(t.status)
       )
         fail();
     // Capture raw result and the empty owning assistant before either wrapped projection arrives.
