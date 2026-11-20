@@ -5,7 +5,7 @@ import type {
   ToolContract,
 } from '@threadplane/core';
 import type { FunctionToolDefinition } from '@threadplane/core/tools';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 import type { SessionSnapshot } from './agent-session.js';
 
 export type ClientToolCall<C extends Record<string, ToolContract>> = {

@@ -1,5 +1,7 @@
-// Final package roles are independent of the packages temporarily retained
-// during migration. Removing a scaffold must not weaken the final-role gate.
+// The package roles of the release. Each package may import only the internal
+// packages listed for it. The backend packages (langgraph, ag-ui) are
+// framework-neutral: core and their own SDK, nothing else. `angular` is the one
+// Angular binding; `chat` is the Angular chat UI built on it.
 export const finalPackageDependencies = {
   core: [],
   langgraph: ['core'],
@@ -10,33 +12,41 @@ export const finalPackageDependencies = {
   angular: ['core', 'content', 'render', 'a2ui'],
   react: ['core', 'content', 'render', 'a2ui'],
   telemetry: ['core'],
+  chat: ['core', 'angular', 'content', 'render', 'a2ui', 'telemetry'],
 };
-export const privateScaffoldProjects = ['core', 'content', 'angular', 'react'];
-export const angularTransitionProjects = ['chat', 'langgraph', 'ag-ui', 'render'];
-export const scanProjects = [...new Set([...privateScaffoldProjects, ...angularTransitionProjects, 'a2ui', 'telemetry'])];
-// Source-only staging boundary; this does not declare a published entry point.
-export const neutralLangGraphRoots = ['src/lib/transport/fetch-stream.transport.ts', 'src/lib/client/create-langgraph-client.ts'];
-// Exact source-sharing exceptions during the Angular transition. Their imports
-// remain guarded; neither file may expose the private session through a bridge.
-export const sharedLangGraphRuntimeSources = ['src/runtime/transport.types.ts', 'src/runtime/operation-errors.ts'];
-export const neutralRuntimeSdkEntries = { langgraph: '@langchain/langgraph-sdk', 'ag-ui': '@ag-ui/client' };
+// The shared foundations every binding is built from.
+export const foundationProjects = ['core', 'content', 'angular', 'react'];
+// Published to npm at one version. `react` is the only foundation not yet released.
+export const publishableProjects = ['core', 'content', 'angular', 'chat', 'langgraph', 'ag-ui', 'render', 'a2ui', 'telemetry'];
+export const privateProjects = ['react'];
+export const backendProjects = ['langgraph', 'ag-ui'];
+// Packages that are Angular by role: Angular imports are theirs to make, and
+// their source entry is an APF `public-api.ts`.
+export const angularProjects = ['angular', 'chat'];
+// The one remaining whole-project exception: the Angular render engine, whose
+// final role is neutral. Its graph is scanned transitively and cannot reach React.
+export const angularTransitionProjects = ['render'];
+export const scanProjects = [...new Set([...foundationProjects, 'chat', ...backendProjects, ...angularTransitionProjects, 'a2ui', 'telemetry'])];
+// The only external packages a backend package may import. RxJS is the AG-UI
+// client's own stream type; the in-process fake agent returns one.
+export const neutralRuntimeSdkEntries = { langgraph: ['@langchain/langgraph-sdk'], 'ag-ui': ['@ag-ui/client', 'rxjs'] };
+// A backend package's source. No Angular source may reach it: a binding takes a
+// session through `provideAgent({ createSession })`, never by importing a backend.
 // TypeScript resolution and filesystem enumeration can use different separators.
 export function backendRuntimeSourceKind(root, path) {
   const directory = `${root.replaceAll('\\', '/').replace(/\/$/, '')}/libs/`;
   const normalized = path.replaceAll('\\', '/');
-  if (normalized.startsWith(`${directory}ag-ui/src/runtime/`)) return 'private';
-  const langGraphDirectory = `${directory}langgraph/`;
-  if (!normalized.startsWith(`${langGraphDirectory}src/runtime/`)) return undefined;
-  return sharedLangGraphRuntimeSources.includes(normalized.slice(langGraphDirectory.length)) ? 'shared' : 'private';
+  return backendProjects.some((project) => normalized.startsWith(`${directory}${project}/src/`)) ? 'private' : undefined;
 }
-const retiredProjects = ['chat', 'langgraph-core', 'ag-ui-core', 'react-render'];
+const retiredProjects = ['langgraph-core', 'ag-ui-core', 'react-render'];
 
 export function packageOf(specifier) {
   return specifier.startsWith('@') ? specifier.split('/').slice(0, 2).join('/') : specifier.split('/')[0];
 }
 
 export function sourceEntry(project, angularTransitions = angularTransitionProjects) {
-  return project === 'angular' || angularTransitions.includes(project) ? 'src/public-api.ts' : 'src/index.ts';
+  // The backend packages keep the entry name their roots always had.
+  return angularProjects.includes(project) || backendProjects.includes(project) || angularTransitions.includes(project) ? 'src/public-api.ts' : 'src/index.ts';
 }
 
 export function forbiddenDependency(project, specifier, { angularTransitions = [], browserTransition = false, neutralRuntime = false } = {}) {
@@ -45,12 +55,12 @@ export function forbiddenDependency(project, specifier, { angularTransitions = [
   if (neutralRuntime) {
     if (internal) return ![project, 'core'].includes(internal);
     if (specifier.startsWith('.')) return false;
-    return specifier !== neutralRuntimeSdkEntries[project];
+    return !neutralRuntimeSdkEntries[project]?.includes(specifier);
   }
   const angular = pkg.startsWith('@angular/');
   const react = ['react', 'react-dom', '@types/react', '@types/react-dom'].includes(pkg) || ['react', 'react-render', 'ui-react', 'workspace-react'].includes(internal);
-  // These are intentionally the only whole-project exceptions. Their current
-  // Angular graphs are scanned transitively and still cannot reach React.
+  // This is intentionally the only whole-project exception. Its current
+  // Angular graph is scanned transitively and still cannot reach React.
   if (angularTransitionProjects.includes(project) && angularTransitions.includes(project)) return react;
   const role = project;
   if (internal) {
@@ -58,7 +68,7 @@ export function forbiddenDependency(project, specifier, { angularTransitions = [
     return !finalPackageDependencies[role]?.includes(internal);
   }
   if (react && role !== 'react') return true;
-  if (angular && role !== 'angular' && !(role === 'telemetry' && browserTransition)) return true;
+  if (angular && !angularProjects.includes(role) && !(role === 'telemetry' && browserTransition)) return true;
   const backend = pkg.startsWith('@langchain/') || pkg.startsWith('@ag-ui/');
   if (backend && !['langgraph', 'ag-ui'].includes(role)) return true;
   const parser = ['@cacheplane/json-stream', '@cacheplane/partial-json', '@cacheplane/partial-markdown', 'marked', 'remark-gfm', 'katex', 'shiki'].includes(pkg);

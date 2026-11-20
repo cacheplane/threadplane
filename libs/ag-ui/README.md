@@ -1,289 +1,123 @@
 # @threadplane/ag-ui
 
-The AG-UI adapter for [Threadplane](https://github.com/cacheplane/threadplane), the open-source thread-plane for agents. Wraps an [AG-UI](https://github.com/ag-ui-protocol/ag-ui) `AbstractAgent` into the runtime-neutral `Agent` contract that `@threadplane/chat` consumes, so any AG-UI-compatible backend drives the same chat surface.
+The AG-UI backend for [Threadplane](https://github.com/cacheplane/threadplane), the open-source thread-plane for agents. `createSession()` runs any AG-UI-compatible backend behind the framework-neutral `AgentSession` contract from `@threadplane/core`: messages, status, tool calls, interrupts, child agents and client tools, published as owned, frozen snapshots.
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@threadplane/ag-ui">
     <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Fag-ui?color=15253E&labelColor=0A0A0A&style=flat-square" />
   </a>
-  <a href="https://angular.dev">
-    <img alt="Angular 20 | 21 | 22" src="https://img.shields.io/badge/Angular-20%20%7C%2021%20%7C%2022-15253E?labelColor=0A0A0A&style=flat-square" />
-  </a>
-  <a href="../../LICENSE">
+  <a href="https://opensource.org/licenses/MIT">
     <img alt="MIT" src="https://img.shields.io/badge/License-MIT-15253E?labelColor=0A0A0A&style=flat-square" />
   </a>
 </p>
 
-Part of [Threadplane](https://github.com/cacheplane/threadplane).
+This package contains no UI framework code. A binding observes the session it creates: `@threadplane/angular` for Angular, `@threadplane/react` for React.
 
-> Talking to LangGraph Platform directly? See [`@threadplane/langgraph`](https://www.npmjs.com/package/@threadplane/langgraph) — same API shape, LangGraph SDK underneath.
-
----
-
-## What it does
-
-- Bridges any AG-UI-compatible backend into the Threadplane chat surface via `toAgent()`.
-- Supports AG-UI-compatible runtimes including LangGraph, CrewAI, Mastra, Microsoft Agent Framework, AG2, Pydantic AI, and AWS Strands.
-- Exposes messages, status, tool calls, and raw AG-UI state as Angular Signals, plus `submit()`/`stop()`/`regenerate()` actions — coverage depends on what the AG-UI backend emits.
-- Ships `FakeAgent` and `provideFakeAgent` test doubles for unit testing without a live backend.
-
----
+> Running on LangGraph Platform? See [`@threadplane/langgraph`](https://www.npmjs.com/package/@threadplane/langgraph): the same session contract with checkpoints, branches and saved threads.
 
 ## Install
 
 ```bash
-npm install @threadplane/chat @threadplane/ag-ui @ag-ui/client @ag-ui/core marked
+npm install @threadplane/ag-ui @threadplane/core @ag-ui/client rxjs
 ```
 
-**Peer dependencies:** `@threadplane/chat: *`, `@angular/core: ^20.0.0 || ^21.0.0 || ^22.0.0`, `@ag-ui/client: ^1.0.1`, `@ag-ui/core: ^1.0.1`, `rxjs: ~7.8.0`
+**Peer dependencies:**
 
-`marked` is the required markdown parser peer used by `@threadplane/chat` when you render assistant messages through `<chat>`.
+```
+@threadplane/core   same version as this package
+@ag-ui/client       ^1.0.1
+rxjs                ~7.8.0
+```
 
----
+RxJS is the stream type of the AG-UI client itself. This package uses it only for `FakeAgent`.
 
 ## Quick start
 
-Register the agent in your `ApplicationConfig`, then inject it into a component and bind it to `<chat>`.
+A session is a plain object with `getSnapshot()`, `subscribe()` and commands. It makes no request until a command is called.
+
+```ts
+import { createSession } from '@threadplane/ag-ui';
+
+const session = createSession({ url: 'https://your-backend.example/agent' });
+
+const release = session.subscribe(() => {
+  console.log(session.getSnapshot().messages);
+});
+await session.submit('Plan a visit');
+release();
+await session.dispose();
+```
+
+Pass `{ agent }` instead of `{ url }` to run over an AG-UI client agent you built, HTTP or not.
+
+In Angular, hand the factory to the one provider and inject the agent. Its snapshot fields are Signals:
 
 ```ts
 // app.config.ts
-import { provideAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideAgent({ url: 'https://your.agent.endpoint' })],
+  providers: [
+    provideAgent({
+      createSession: (context) =>
+        createSession({ url: 'https://your-backend.example/agent', ...context }),
+    }),
+  ],
 };
 ```
 
-```ts
-// app.component.ts
-import { Component } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+In React, create the session and pass it to `useAgent(session)` from `@threadplane/react`.
 
-@Component({
-  imports: [ChatComponent],
-  template: `<chat [agent]="agent" />`,
-})
-export class AppComponent {
-  protected readonly agent = injectAgent();
-}
-```
+## Exports
 
-Both `@threadplane/langgraph` and `@threadplane/ag-ui` expose `provideAgent`/`injectAgent`. Components using the neutral `Agent` contract can share their UI; provider configuration and adapter-specific extensions differ.
+The package root is the whole public surface. Everything is exported from `@threadplane/ag-ui`; the session behaviour behind each name is described in the [session reference](./src/runtime/README.md).
 
----
+**The session**
 
-## Capabilities
+- `createSession(options, tools?)` and its types `SessionOptions`, `SessionCommonOptions`, `HttpSessionSource`, `AgentSessionSource`, `Session`, `ClientToolSession`, `ResumeOptions`.
+- What a submit accepts: `SubmitInput`, `SubmitState`, `ApplicationState`.
 
-`toAgent()` translates AG-UI events into Angular Signals on the runtime-neutral `Agent` contract:
+**The snapshot**
 
-| Signal | Description |
-|---|---|
-| `messages()` | Chat message history |
-| `status()` | `'idle' \| 'running' \| 'error'` |
-| `isLoading()` | True while a run is active |
-| `toolCalls()` | In-progress and completed tool calls |
-| `error()` | Last run error, if any |
-| `state()` | Raw AG-UI state snapshot |
-| `customEvents()` | Non-`on_interrupt` `CUSTOM` events for live a2ui and app-specific side effects |
-| `subagents()` | `ACTIVITY_*` entries with `activityType: 'subagent'`, projected to the neutral subagent contract |
-| `clientTools` | Browser client-tool catalog, pending calls, and result resolution used by `<chat [clientTools]>` |
-| `rawEvents$` | `Observable<BaseEvent>` of every protocol event the adapter reduced, in order, for hosts that fold the full stream themselves. Suppressed events are not emitted; a run's terminal `RUN_ERROR` is emitted once, after `error()` and `status()` settle, redacted exactly as `error()` is when errors are protected; replayed hydration emits every replayed event, while persisted hydration restores a snapshot and emits nothing. Completes on `dispose()` |
+- `SessionSnapshot`, `SessionInterrupt`, `SessionInputBlock`, `InputBlock`, `Observation`, `Transcript`, `SessionLifecycle`, `SessionLifecycleSource`.
+- With client tools: `ClientToolSessionSnapshot`, `ClientToolCall`, `ClientToolBlocker`.
 
-Which capabilities populate depends on the events the AG-UI backend emits. `submit()`, `stop()`, and `regenerate()` are supported.
+**Selectors over a snapshot**
 
-### Restoring a thread
+- `projectMessages`, `projectToolCalls`, `projectStreamingToolCalls` and `Projectable`: core messages and tool calls.
+- `projectTextTranscript` and `TextTranscriptRow`: plain text rows.
+- `bridgeCitationsState(thread, messages)`: attaches `state.citations` to messages held outside a session. A session already does this for the messages it publishes.
 
-Configure `replay` to rebuild a reopened thread from the server's recorded AG-UI events. The adapter folds them through the live reducer, so messages, tool calls, reasoning, subagent cards and pending interrupts come back as the live view showed them. `httpReplay({ url })` reads the common `GET` → `{ events }` shape; a `404`, an empty result or a failure falls back to `persistence`, which restores messages, state and the interrupt session only.
+**Pauses and their answers**
 
-```ts
-provideAgent({
-  url: '/api/agent',
-  threadId,
-  replay: httpReplay({ url: (id) => `/api/threads/${encodeURIComponent(id)}/events` }),
-});
-```
+- `decisionState(snapshot)` and `DecisionState`: the pending decision and its phase.
+- `interruptSession(snapshot)` and `InterruptSession`: the full interrupt batch and how far its answer has got.
+- `Decision`, `DecisionRun`, `NativeDecision`, `NativeResponse`, `InterruptResponse`, `OwnedInterrupt`, `PauseId`, `InterruptMode`, `InterruptTransport`.
 
-### Interrupts (human-in-the-loop)
+**Restoring a thread**
 
-`agent.interrupt()` is a `Signal<AgentInterrupt | undefined>` projected from native `RUN_FINISHED` interrupt outcomes or compatibility `CUSTOM on_interrupt` events. Native batches take display precedence in `auto` and `protocol`; explicit command profiles display the compatibility interrupt. String-serialized compatibility values are JSON-parsed automatically.
+- `httpReplay(options)` with `HttpReplayOptions`, `ReplaySource`, `ReplaySubscribable`: replays a thread from the backend when a session is created.
+- Saved threads: `SessionPersistence`, `ThreadRecord`, `ThreadContent`, `SavedPause`, `ReconcileAnswer`.
 
-Resume with `agent.submit({ resume })`. Select `interruptTransport` in `provideAgent()` to match the backend:
+**Host hooks**
 
-| Profile | Resume transport |
-| --- | --- |
-| `auto` (default) | Prefers a native batch, including mixed native/compatibility delivery; otherwise detects Mastra correlation data or uses the legacy command. |
-| `protocol` | Top-level `resume` entries, one per native interrupt ID. |
-| `legacy-command` | `forwardedProps.command.resume`, as used by the LangGraph AG-UI bridge. |
-| `mastra-command` | `forwardedProps.command.resume` plus `command.interruptEvent` containing the observed tool-call and run IDs. |
+- `SessionTelemetrySink`, `SessionTelemetryEvent`, `SessionTelemetryProperties`, `SessionRequestType`, `SessionDevtools`, `ScriptedRun`.
 
-The current Mastra backend requires explicit `mastra-command`: it emits native and compatibility interrupts but consumes the command transport. Native cancellation uses `{ interruptId, status: 'cancelled' }` without a payload; an application's `{ approved: false }` is a resolved decision with backend-defined meaning.
+**Testing**
 
-Pair with `<chat-approval-card>` from `@threadplane/chat` for Approve and Cancel controls. This single-decision example uses a backend that expects `{ approved: boolean }`:
+- `FakeAgent` and `FakeAgentScript`: an in-process AG-UI agent that streams a canned or scripted reply. Pass it as `createSession({ agent: new FakeAgent() })`; the real session projects its events. Not for production use. For a session with no agent at all, use `createFakeAgentSession` from `@threadplane/core/testing`.
 
-```ts
-import { Component } from '@angular/core';
-import { ChatComponent, ChatApprovalCardComponent } from '@threadplane/chat';
-import type { ChatApprovalAction } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+`@threadplane/ag-ui/development-install` is the one secondary entry. It exports `installationToken`, described under "Installation collection" below.
 
-@Component({
-  imports: [ChatComponent, ChatApprovalCardComponent],
-  template: `
-    <chat [agent]="agent" />
-    <chat-approval-card
-      [agent]="agent"
-      matchKind="refund_approval"
-      (action)="onAction($event)" />
-  `,
-})
-export class App {
-  protected readonly agent = injectAgent();
-  onAction(action: ChatApprovalAction) {
-    if (action === 'edit') return;
-    void this.agent.submit({ resume: { approved: action === 'approve' } });
-  }
-}
-```
+## Removed in this release
 
-See `cockpit/ag-ui/interrupts` for a complete working example, and the [LangGraph interrupts guide](https://threadplane.ai/docs/angular/langgraph/guides/interrupts) for that adapter's behavior. Both share `interrupt()` and `submit({ resume })`; AG-UI's `interruptSession`, `ready`, `reconcileInterrupt()`, `dispose()`, `persistence` configuration, and `interruptGeneration` submit option are adapter extensions. Browser persistence cannot restore a lost server checkpoint or prove backend completion.
-
-### Citations
-
-`bridgeCitationsState(thread, messages)` populates `Message.citations` from AG-UI state. Citations live under the `citations` key of the agent state, keyed by message ID (`state.citations[messageId]`).
-
-Example state shape:
-
-```json
-{
-  "state": {
-    "citations": {
-      "msg-123": [
-        {
-          "id": "src1",
-          "index": 1,
-          "title": "Example Source",
-          "url": "https://example.com",
-          "snippet": "Relevant excerpt from the source..."
-        }
-      ]
-    }
-  }
-}
-```
-
-Each citation supports `id`, `index`, `title`, `url`, `snippet`, and custom `extra` fields. The message ID key matches the corresponding message in the chat history.
-
----
-
-## Testing
-
-```ts
-// Fake backend — streams canned tokens, no server:
-import { provideFakeAgent } from '@threadplane/ag-ui';
-providers: [provideFakeAgent({ tokens: ['Hello', ' world'] })];
-```
-
-For component/unit tests, use the neutral writable-signal mock `mockAgent()`
-from `@threadplane/chat` — the AG-UI agent _is_ the neutral `Agent` contract,
-so there is no adapter-specific mock. See
-[Choosing an adapter → Testing](https://threadplane.ai/docs/choosing-an-adapter#testing).
-
----
-
-## DevTools signals (development only)
-
-In Angular development mode, each agent reports which of its signals every
-event wrote, so the AG-UI DevTools Chrome extension's Signals tab can show
-them beside the wire traffic. After handling an event, the agent dispatches
-
-```ts
-window.dispatchEvent(new CustomEvent('threadplane:devtools', {
-  detail: { v: 1, agent, adapter: 'ag-ui', seq, eventType, wrote, tMs },
-}));
-```
-
-- `agent` is a random id per agent instance and `seq` counts its reports from 1.
-- `eventType` is the protocol event type, or for writes no event caused one of
-  `run:start`, `run:end`, `history`, `reset`, `submit`, `queue`, `branch`.
-- `wrote` lists the signals written, in order, by name only: `messages`, `status`, `isLoading`, `error`, `toolCalls`, `state`, `interrupt`, `customEvents`, `activities`, `interruptSession`.
-- `tMs` is `performance.now()` when the event began.
-
-Signal values are never read or sent: the report carries names and timing,
-nothing from the conversation. Dispatch is fire-and-forget, so the page cannot
-tell whether anything listens, and an event that wrote nothing is not reported.
-Production builds remove the hook entirely (CI verifies the bundle). To turn it
-off in development, set `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true`
-before creating agents.
-
-## Scripted runs (development only)
-
-The AG-UI DevTools run simulator can make the next runs of an agent come
-from a script instead of the network, to exercise an interrupt, a subagent
-handoff or a malformed event without a model call:
-
-```ts
-window.dispatchEvent(new CustomEvent('threadplane:devtools:arm', {
-  detail: {
-    v: 1,
-    armId: 'any-id',
-    adapter: 'ag-ui',
-    runs: [
-      { events: [{ type: 'RUN_STARTED' }, /* … */ { type: 'RUN_FINISHED', outcome: { type: 'interrupt', interrupts: [/* … */] } }] },
-      { events: [{ type: 'RUN_STARTED' }, /* … */ { type: 'RUN_FINISHED', outcome: { type: 'success' } }] },
-    ],
-  },
-}));
-```
-
-- The next run of any agent wrapped by `toAgent()` on the page — `submit()`,
-  `submit({ resume })`, `retry()`, `regenerate()` or a client-tool
-  continuation — takes `runs[0]`; the one after, `runs[1]`.
-- For that one call the source agent's `run(input)` returns the scripted
-  events instead of reaching its backend; `runAgent()`, any middleware, the
-  client's event verification and the adapter's `onEvent` handling all run
-  as usual. `RUN_STARTED` and `RUN_FINISHED` take the run input's `threadId`
-  and `runId`, since the script stands in for this run.
-
-- `runs` holds 1 to 8 runs of at most 5,000 events each, and the whole arm
-  serializes to at most 2 MB. An arm breaking a limit, or of the wrong shape,
-  is ignored and acknowledged `rejected` with a short `reason`.
-- Each adapter has at most one pending arm. A new arm replaces it (the old
-  one is acknowledged `disarmed`), and
-  `window.dispatchEvent(new CustomEvent('threadplane:devtools:disarm', { detail: { v: 1, armId } }))`
-  cancels it. An arm not fully used within 10 minutes is dropped and
-  acknowledged `expired`.
-- Every step is answered with a `threadplane:devtools:ack` `CustomEvent`
-  whose detail is `{ v: 1, armId, state, run?, reason? }`, `state` one of
-  `armed`, `consumed` (with `run`, the 0-based index served), `expired`,
-  `disarmed` or `rejected` (with `reason`). An arm without a usable `armId`
-  (a string of 1 to 128 characters) is ignored without an answer.
-
-The listeners exist only where the signals report does — development mode,
-not opted out, once an agent has been created — and production builds
-contain none of these event names (the same CI bundle check). The extension
-adds its own lock, a per-site Developer mode switch, but the page cannot
-tell who dispatched an arm: any script already running on a development
-page can script your agent's next run, just as it could already drive your
-agent directly. The locks guard against accidents, not against code already
-in the page.
-
----
-
-## Reliability
-
-`@threadplane/ag-ui` shares the same runtime-neutral `Agent` contract as `@threadplane/langgraph`, making it interchangeable at the `<chat [agent]>` binding. The library follows a patch-only `0.0.x` release policy. The CI job "Library — lint / test / build" runs lint, test, and build on every pull request.
-
----
+The Angular adapter this package used to contain is gone: `toAgent`, `provideAgent` and `injectAgent` (now in `@threadplane/angular`, taking `createSession`), `provideFakeAgent`, `AgUiAgent` and its option types, and the legacy interrupt-persistence types. `httpReplay`, `interruptSession`, `bridgeCitationsState` and `FakeAgent` remain, as the session's own versions.
 
 ## Documentation
 
-- [Quickstart](https://threadplane.ai/docs/angular/ag-ui/getting-started/quickstart)
-- [AG-UI adapter guide](https://threadplane.ai/docs/angular/chat/guides/writing-an-adapter)
-- [AG-UI protocol](https://github.com/ag-ui-protocol/ag-ui)
-- [Choosing an adapter (LangGraph vs AG-UI)](https://threadplane.ai/docs/choosing-an-adapter)
-
----
+- [Session reference](./src/runtime/README.md)
+- [Threadplane documentation](https://threadplane.ai/docs)
 
 ## Installation collection
 
@@ -326,31 +160,6 @@ MIT. See [LICENSE](../../LICENSE).
 
 ## Development browser collection
 
-Supported LangGraph/AG-UI runtime use and real JSON-render component mounts automatically
-report development progress to Threadplane. Angular development mode and browser APIs are
-required. Production builds, SSR, imports, and automated browsers reporting
-`navigator.webdriver` are inert. Creating an agent (or a render element) in a
-development-mode browser reports one session start per integration per session; milestones
-are reported only when the runtime is actually used.
-Reports contain package/version, integration, closed milestones, timestamps, a random
-browser-origin ID, and a session with a 30-minute inactivity boundary. They exclude
-prompts, messages, application state, private URLs, thread/run IDs, and credentials.
-The IDs describe an origin/session, not a verified person or repository.
-
-Set adapter `telemetry: false` to disable automatic collection; a custom sink replaces
-the automatic destination while preserving its existing callbacks. Chat carries that
-choice into nested JSON renderers. Standalone render supports
-`provideRender({ telemetry: false })` or `<render-spec [telemetry]="false" ... />`.
-
-For a page-wide control, call `setDevelopmentCollectionEnabled(false)` from
-`@threadplane/telemetry/browser` before creating runtimes. From the browser console,
-run `localStorage.setItem('THREADPLANE_TELEMETRY_DISABLED', '1')` and reload.
-Node environment variables do not configure a compiled browser app.
-
-The credential-free announcement exchange records progress before returning optional
-plain-text console announcements. No click or registration is required. It has bounded
-queues/retries and a three-second request deadline; collection failures do not affect
-application use. A linked eligible install email can receive the generic founder hello;
-runtime evidence alone does not approve a contact. See the
+A session reports nothing by itself. It calls the `telemetry` sink a host passes to `createSession`, and is inert when none is given. See the
 [telemetry controls and collection details](https://github.com/cacheplane/threadplane/tree/main/libs/telemetry#automatic-development-runtime-collection)
 and [Privacy](https://threadplane.ai/privacy).

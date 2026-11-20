@@ -1,6 +1,6 @@
 import type { AGUIEvent, HttpAgentConfig } from '@ag-ui/client';
 import type { CompleteOutcome, PlainValue } from '@threadplane/core';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 import {
   protectedFetch,
   type OperationFailureReporter,

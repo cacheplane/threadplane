@@ -5,9 +5,9 @@ import {dirname,join,resolve} from 'node:path';
 import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {packLocalArtifacts,runConsumer} from './verify-packages.mjs';
-import {fileHashes,sha256} from './langgraph-candidate-package.mjs';
-import {assertInstalledInputs} from './ag-ui-candidate-package.mjs';
-import {checkTypes} from './verify-langgraph-candidate.mjs';
+import {fileHashes,sha256} from './langgraph-package.mjs';
+import {assertInstalledInputs} from './ag-ui-package.mjs';
+import {checkTypes} from './verify-langgraph-package.mjs';
 import {renderStatePresentationSeeds,installPresentationConsumer,presentationConfiguration,readPresentation} from './markdown-presentation-build.mjs';
 import {assertArtifactFiles,assertFrozen,retainMarkdownSources,verifyMarkdownBrowser} from './verify-markdown.mjs';
 

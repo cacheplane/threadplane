@@ -74,7 +74,7 @@
       "{workspaceRoot}/cockpit/chat/debug/python/tests/providers.py",
       "{workspaceRoot}/cockpit/chat/debug/python/pyproject.toml",
       "{workspaceRoot}/cockpit/chat/debug/python/uv.lock",
-      "{workspaceRoot}/fixtures/react-parity/langgraph-candidate/chat-debug-native-session.mjs",
+      "{workspaceRoot}/fixtures/react-parity/langgraph-package/chat-debug-native-session.mjs",
       "{workspaceRoot}/cockpit/chat/debug/python/tests/test_streaming.py",
       "{workspaceRoot}/cockpit/chat/debug/python/prompts/debug.md",
       "{workspaceRoot}/cockpit/chat/debug/python/langgraph.json"

@@ -407,7 +407,7 @@ export async function prepareRuntimeConsumer(root, consumer, kind, options = {})
     const chunks = (Array.isArray(result) ? result : [result]).flatMap((entry) => entry.output);
     const modules = chunks.flatMap((chunk) => Object.keys(chunk.modules ?? {}));
     assert.ok(modules.some((path) => path.includes('/@langchain/langgraph-sdk/')), 'real SDK must be in private fixture bundle');
-    assert.ok(modules.some((path) => path.endsWith('/transport/fetch-stream.transport.ts')), 'production transport must be in private fixture bundle');
+    assert.ok(modules.some((path) => path.endsWith('/runtime/fetch-stream.transport.ts')), 'production transport must be in private fixture bundle');
     assert.ok(!modules.some((path) => /\/libs\/(?:core|react|angular)\//.test(path) || /\/node_modules\/(?:@angular|react|react-dom)\//.test(path)), 'fixture must externalize public core and exclude framework implementations');
     const destination = kind === 'angular' ? join(consumer, 'src') : consumer;
     cpSync(join(temporary, 'bundle/runtime-entry.js'), join(destination, 'runtime-entry.js'));

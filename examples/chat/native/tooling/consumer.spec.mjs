@@ -33,7 +33,7 @@ test('production composition requires installed typing indicator runtime and dec
   const consumer = mkdtempSync(join(tmpdir(), 'native-typing-composition-'));
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
   const modules = [
-    '@threadplane/langgraph/runtime/create-session',
+    '@threadplane/langgraph/src/runtime/create-session',
     '@threadplane/react/src/use-agent',
     '@threadplane/react/src/markdown/markdown',
     ...[
@@ -345,7 +345,7 @@ function fixture(t) {
     'libs/react/src/index.ts',
     'libs/angular/src/index.ts',
     'libs/langgraph/src/runtime/create-session.ts',
-    'libs/langgraph/src/lib/transport/fetch.ts',
+    'libs/langgraph/src/runtime/fetch.ts',
     'libs/design-tokens/src/lib/tokens.css',
     'libs/telemetry/project.json',
     'fixtures/react-parity/traces/langgraph-text-state.sse',
@@ -624,7 +624,7 @@ test('fingerprint includes runtime, transport, tooling, lock, tokens and app sou
   const before = inputFingerprint(root);
   for (const path of [
     'libs/core/src/index.ts',
-    'libs/langgraph/src/lib/transport/fetch.ts',
+    'libs/langgraph/src/runtime/fetch.ts',
     'scripts/react-parity/build.mjs',
     'package-lock.json',
     'libs/design-tokens/src/lib/tokens.css',

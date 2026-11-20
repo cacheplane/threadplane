@@ -2,9 +2,9 @@ import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { angularTransitionProjects, assertFinalRelease, backendRuntimeSourceKind, emittedEntries, forbiddenDependency, manifestViolations, neutralLangGraphRoots, neutralRuntimeSdkEntries, packageOf, privateScaffoldProjects, scanProjects, sourceEntry } from './package-policy.mjs';
+import { angularProjects, angularTransitionProjects, assertFinalRelease, backendProjects, backendRuntimeSourceKind, emittedEntries, forbiddenDependency, foundationProjects, manifestViolations, neutralRuntimeSdkEntries, packageOf, scanProjects, sourceEntry } from './package-policy.mjs';
 
-export const foundationProjects = privateScaffoldProjects;
+export { foundationProjects };
 const optional = /(?:^|\/)(?:testing|zod|math)(?:\/|$)/;
 const reactFeature = /^(?:chat|markdown|a2ui|debug|tools|testing|render)(?:\/|$)/;
 const sourceFile = /\.(?:[cm]?[jt]sx?)$/;
@@ -96,8 +96,9 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
       for (const error of manifestViolations(project, manifest, { angularTransitions, telemetryBrowserTransition })) errors.add(error);
     }
     const allFiles = filesIn(mode === 'source' ? join(directory, 'src') : directory);
-    // Existing Angular secondary entry points live alongside src.
-    if (mode === 'source' && (project === 'angular' || angularTransitions.includes(project))) allFiles.push(...filesIn(directory).filter((path) => !allFiles.includes(path)));
+    // Angular secondary entry points live alongside src.
+    const angularSource = mode === 'source' && (angularProjects.includes(project) || angularTransitions.includes(project));
+    if (angularSource) allFiles.push(...filesIn(directory).filter((path) => !allFiles.includes(path)));
     const manifest = manifestFor(project);
     const roots = mode === 'source' ? [join(directory, sourceEntry(project, angularTransitions))] : emittedEntries(manifest).filter((value) => sourceFile.test(value)).map((value) => join(directory, value));
     const browserEntries = mode === 'built' ? emittedEntries(manifest, './browser').map((value) => join(directory, value)) : [];
@@ -125,7 +126,7 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
           targetProjects.includes('a2ui') ||
           targetPaths.some(value => /\/(?:dist\/)?libs\/(?:content|react|angular)\/(?:src\/)?a2ui\//.test(value.replaceAll('\\', '/')) || /\/threadplane-(?:angular|react)-a2ui\.(?:mjs|d\.ts)$/.test(value))
         )) errors.add(`${project}: A2UI dependency reachable from guarded entry: ${trail}`);
-        if (legacyRuntime && target && runtimeSourceKind(target) === 'private') errors.add(`${project}: private runtime reachable from legacy source: ${trail}`);
+        if (legacyRuntime && target && runtimeSourceKind(target) === 'private') errors.add(`${project}: backend source reachable from Angular source: ${trail}`);
         const policy = { angularTransitions, rootRuntime, neutralRuntime, browserTransition: browserTransition && browserPath(path) };
         const label = neutralRuntime ? 'neutral runtime forbidden dependency' : 'forbidden dependency';
         if (forbiddenDependency(project, specifier, policy) || targetProjects.some((owner) => forbiddenDependency(project, `@threadplane/${owner}`, policy))) errors.add(`${project}: ${label} ${trail}`);
@@ -134,8 +135,7 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
         if (neutralRuntime && target &&
           targetPaths.some((path) => path.replaceAll('\\', '/').includes('/node_modules/'))
         ) {
-          const sdk = neutralRuntimeSdkEntries[project];
-          const entry = specifier === sdk ? ts.resolveModuleName(sdk, path, sdkOptions, ts.sys).resolvedModule?.resolvedFileName : undefined;
+          const entry = neutralRuntimeSdkEntries[project]?.includes(specifier) ? ts.resolveModuleName(specifier, path, sdkOptions, ts.sys).resolvedModule?.resolvedFileName : undefined;
           if (!entry || canonical(entry) !== canonicalTarget) errors.add(`${project}: neutral runtime forbidden dependency ${trail}`);
         }
         const coreEntry = coreEntries.get(specifier);
@@ -168,7 +168,7 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
         else if (!target && (specifier.startsWith('.') || specifier.startsWith('@threadplane/'))) errors.add(`${project}: unresolved dependency ${trail}`);
       }
     }
-    for (const path of allFiles) visit(path, false, [], browserPath(path), false, mode === 'source' && (project === 'angular' || angularTransitions.includes(project)) && runtimeSourceKind(path) === undefined);
+    for (const path of allFiles) visit(path, false, [], browserPath(path), false, angularSource && runtimeSourceKind(path) === undefined);
     if (['content', 'react', 'angular'].includes(project)) {
       const features = mode === 'built'
         ? ['./chat', './markdown'].flatMap(entry => emittedEntries(manifest, entry).map(value => join(directory, value)))
@@ -183,14 +183,13 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
         : [join(directory, 'src/render-state/index.ts')].filter(existsSync);
       for (const path of owners) visit(path, false, [], false, true, false, true);
     }
-    if (mode === 'source' && ['langgraph', 'ag-ui'].includes(project)) {
-      const neutralRoots = [
-        ...filesIn(join(directory, 'src/runtime')).filter((path) => !optional.test(relative(directory, path))),
-        ...(project === 'langgraph' ? neutralLangGraphRoots.map((path) => join(directory, path)).filter(existsSync) : []),
-      ];
-      for (const path of neutralRoots) visit(path, false, [], false, true);
+    // A backend package is neutral as a whole: every packaged source file,
+    // reached from the root or not, imports only itself, core and its SDK.
+    if (mode === 'source' && backendProjects.includes(project)) {
+      for (const path of filesIn(join(directory, 'src')).filter((path) => !optional.test(relative(directory, path)))) visit(path, false, [], false, true);
     }
-    if (!angularTransitions.includes(project)) {
+    // The headless-root rule holds for every package but the Angular UI packages.
+    if (!angularTransitions.includes(project) && project !== 'chat') {
       if (!roots.length) errors.add(`${project}: missing root exports`);
       for (const path of roots) visit(path, true);
     }

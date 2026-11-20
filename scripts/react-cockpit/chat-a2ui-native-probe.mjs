@@ -19,7 +19,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   emitCandidate,
   packCandidate,
-} from '../react-parity/langgraph-candidate-package.mjs';
+} from '../react-parity/langgraph-package.mjs';
 import { packLocalArtifacts } from '../react-parity/verify-packages.mjs';
 import {
   installPresentationConsumer,

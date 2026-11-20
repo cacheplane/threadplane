@@ -1,17 +1,16 @@
-# Private LangGraph session development
+# LangGraph session reference
 
-This directory stages the framework-independent session owner. It is not the
-published LangGraph package entry point. Core and framework bindings do not own
-backend execution positions.
+This directory is the source of `@threadplane/langgraph`. The package root,
+`src/public-api.ts`, exports `createSession` and the rest of the public surface
+listed in the [package README](../../README.md). Nothing here imports a UI
+framework, and core and the framework bindings do not own backend execution
+positions.
 
-The test-only candidate proof emits this real factory and its complete local
-JavaScript/declaration graph, installs a private local tarball, and runs plain
-Node plus both full framework consumer suites. Run
-`node scripts/react-parity/verify-langgraph-candidate.mjs` after the foundation
-builds. Commands, frozen manual review and dependency/type limitations are in
-[`fixtures/react-parity/langgraph-candidate/README.md`](../../../../fixtures/react-parity/langgraph-candidate/README.md).
-This does not change the published package root or narrow the current custom
-transport declaration into a final public contract.
+`node scripts/react-parity/verify-langgraph-package.mjs` packs the built
+package, installs the tarball and runs plain Node plus both framework consumer
+suites against it. Commands, frozen manual review and dependency and type
+limits are in
+[`fixtures/react-parity/langgraph-package/README.md`](../../../../fixtures/react-parity/langgraph-package/README.md).
 
 ## Thread creation
 
@@ -396,10 +395,8 @@ carries `retryable: true` and `recovery: 'retry'`.
 Errors are plain frozen snapshots (`AgentError` from `@threadplane/core`), not
 `Error` instances: `instanceof Error` and `instanceof` the `@threadplane/chat`
 `AgentError` class are both false. Read `kind`, `recovery` and `detail` instead.
-The interruption copy is a bounded duplicate of `AGENT_RECOVERY_MESSAGES` and
-`AGENT_RECOVERY_DETAILS` from `@threadplane/chat`, which this neutral graph cannot
-import; `runtime-recovery-copy.spec.ts` under the Angular test target fails when
-they drift.
+The interruption copy is owned here: this neutral graph imports no UI package,
+and a view shows the `message` and `detail` the snapshot carries.
 
 ## Graph state
 
@@ -791,14 +788,14 @@ Project names live in the LangGraph Store (`project-store.ts`), namespace
 still list and `projects` is absent.
 
 The shared suite in `testing/thread-directory-conformance.ts` runs against this
-directory and the Angular `LangGraphThreadsAdapter.directory`. Limits: one page
+directory. Limits: one page
 of 50 conversations, no paging or search, and no refresh when another tab
 changes a thread; `refreshDirectoryOnRunEnd` refreshes after each run.
 
 ## Verification
 
-Run `langgraph:runtime-quality`, `langgraph:runtime-type-tests` and
-`langgraph:type-tests`. `core-conformance.spec.ts` runs the core contract's
+Run `langgraph:test` and `langgraph:type-tests` (`runtime-quality` and
+`runtime-type-tests` are aliases of the two). `core-conformance.spec.ts` runs the core contract's
 session, history and interrupt conformance suites against this session.
 
 `npx nx run langgraph:runtime-live` runs the live-backend suite in
@@ -814,4 +811,4 @@ coverage lives in the client-tools and interrupts cockpit
 `checkpoint-session.spec.ts` files; adjacent protocol tests
 characterize the locked SDK/backend behavior. Installed Angular/React consumers
 verify shared ownership and lifecycle regressions separately. No replay API,
-branch-tree UI, cross-client lease, public package migration or release is implied.
+branch-tree UI or cross-client lease is implied.

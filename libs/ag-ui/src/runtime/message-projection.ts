@@ -9,7 +9,7 @@ import {
   type StreamingToolCall,
   type ToolCall,
 } from '@threadplane/core';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 import type { Observation } from './session-observation.js';
 
 /**
@@ -295,7 +295,7 @@ const plain = (value: unknown): Record<string, unknown> | undefined =>
     : undefined;
 
 /** One source entry as a core citation. A string is a URL; common aliases are read. */
-function citation(entry: unknown, position: number): Citation {
+export function citation(entry: unknown, position: number): Citation {
   const index = position + 1;
   if (typeof entry === 'string') return { id: `c${index}`, index, url: entry };
   const source = plain(entry);

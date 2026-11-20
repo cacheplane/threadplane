@@ -30,7 +30,7 @@ import type { ThreadState } from '@langchain/langgraph-sdk';
 import {
   FetchStreamTransport,
   normalizeSdkEvent,
-} from '../lib/transport/fetch-stream.transport.js';
+} from './fetch-stream.transport.js';
 import {
   changedSignals,
   convertEventMessages,

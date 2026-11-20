@@ -1,4 +1,3 @@
-import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
 
 export default [
@@ -11,51 +10,18 @@ export default [
         {
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
-            // Private runtime staging is not exported by the legacy Angular APF
-            // package. Its neutral source graph is checked separately; do not
-            // add unpublished core peers to the legacy production manifest.
-            '{projectRoot}/src/runtime/**',
+            '{projectRoot}/vite.runtime.config.mts',
+            // Specs, type tests and their helpers are not packaged.
+            '{projectRoot}/src/**/*.spec.ts',
+            '{projectRoot}/src/**/*.type-test.ts',
+            '{projectRoot}/src/runtime/testing/**',
           ],
-          ignoredDependencies: [
-            'vite',
-            '@nx/vite',
-            'vitest',
-            'fast-json-patch',
-            'rxjs',
-          ],
+          ignoredDependencies: ['vite', '@nx/vite', 'vitest', 'tslib'],
         },
       ],
     },
     languageOptions: {
       parser: await import('jsonc-eslint-parser'),
     },
-  },
-  ...nx.configs['flat/angular'],
-  ...nx.configs['flat/angular-template'],
-  {
-    files: ['**/*.ts'],
-    rules: {
-      '@angular-eslint/directive-selector': [
-        'error',
-        {
-          type: 'attribute',
-          prefix: ['ag-ui'],
-          style: 'camelCase',
-        },
-      ],
-      '@angular-eslint/component-selector': [
-        'error',
-        {
-          type: 'element',
-          prefix: ['ag-ui'],
-          style: 'kebab-case',
-        },
-      ],
-    },
-  },
-  {
-    files: ['**/*.html'],
-    // Override or add rules here
-    rules: {},
   },
 ];

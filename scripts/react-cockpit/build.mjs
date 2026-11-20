@@ -10,7 +10,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { checkTypes } from '../react-parity/verify-langgraph-candidate.mjs';
+import { checkTypes } from '../react-parity/verify-langgraph-package.mjs';
 import { reactCockpitConfiguration } from './configuration.mjs';
 import { copyPreparedConsumer, preparationProfile, prepareFreshConsumer } from './consumer-preparation.mjs';
 
@@ -104,7 +104,7 @@ try {
     assert.ok(emittedModules.some(([path, module]) =>
       path.includes('/node_modules/' + runtimePackage + '/') && module.renderedLength > 0
     ), 'Installed nonzero native runtime required');
-    const agUiEntry = join(consumer, 'node_modules/@threadplane/ag-ui/fixtures/react-parity/ag-ui-candidate/entry.js');
+    const agUiEntry = join(consumer, 'node_modules/@threadplane/ag-ui/src/public-api.js');
     assert.ok(!modules.some(path => /\/(?:testing|fixtures|e2e)\//.test(path) &&
       !(nativeAgUi && path === agUiEntry)
     ), 'No testing implementation in public A2UI assets');
@@ -150,7 +150,7 @@ try {
     assert.ok(
       modules.some((path) =>
         path.includes(
-          '/node_modules/@threadplane/ag-ui/libs/ag-ui/src/runtime/session-publication.js'
+          '/node_modules/@threadplane/ag-ui/src/runtime/session-publication.js'
         )
       ),
       'Installed native AG-UI publication required'
@@ -175,7 +175,7 @@ try {
         (/\/libs\/ag-ui\//.test(path) &&
           !(
             nativeAgUi &&
-            path.includes('/node_modules/@threadplane/ag-ui/libs/ag-ui/')
+            path.includes('/node_modules/@threadplane/ag-ui/src/')
           ))
     ),
     'No Angular or workspace implementation in runtime'

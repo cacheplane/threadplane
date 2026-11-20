@@ -66,7 +66,14 @@ export interface Options {
 const sha = (bytes: string | Buffer) =>
   createHash('sha256').update(bytes).digest('hex');
 const json = (path: string) => JSON.parse(readFileSync(path, 'utf8'));
-function inventory(directory: string, prefix = ''): Record<string, string> {
+// The one hidden path a published Threadplane package carries: its inert
+// development-install bridge. Provider source may contain no hidden path.
+const PACKAGE_BRIDGE = '.install-collector';
+function inventory(
+  directory: string,
+  prefix = '',
+  packageBridge = false
+): Record<string, string> {
   const result: Record<string, string> = {};
   for (const name of readdirSync(join(directory, prefix)).sort()) {
     const local = join(prefix, name),
@@ -78,7 +85,11 @@ function inventory(directory: string, prefix = ''): Record<string, string> {
       'No provider source links: ' + path
     );
     if (name === '__pycache__' || name.endsWith('.pyc')) continue;
-    assert.ok(!name.startsWith('.'), 'No hidden provider source: ' + path);
+    assert.ok(
+      !name.startsWith('.') ||
+        (packageBridge && local === PACKAGE_BRIDGE && stat.isDirectory()),
+      'No hidden provider source: ' + path
+    );
     if (stat.isDirectory()) Object.assign(result, inventory(directory, local));
     else {
       assert.ok(stat.isFile());
@@ -209,7 +220,9 @@ export function collectInstalledProviderPackages(
   const packages = ['core', 'content', 'a2ui', 'react', 'langgraph'];
   for (const name of packages)
     artifacts[name] = inventory(
-      join(consumer, 'node_modules/@threadplane', name)
+      join(consumer, 'node_modules/@threadplane', name),
+      '',
+      true
     );
   const tarballs = Object.fromEntries(
     readdirSync(temporary)
@@ -295,7 +308,7 @@ async function exercise(
     'shared/directory.ts',
     'shared/approval.ts',
     'shared/trip-summary.ts',
-    'node_modules/@threadplane/langgraph/runtime/create-session.d.ts',
+    'node_modules/@threadplane/langgraph/src/runtime/create-session.d.ts',
     'node_modules/@threadplane/core/src/index.d.ts',
     'node_modules/@threadplane/content/src/markdown/index.d.ts',
     'node_modules/@langchain/langgraph-sdk/dist/index.d.ts',

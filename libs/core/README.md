@@ -1,6 +1,6 @@
 # @threadplane/core
 
-Private, unpublished agent contracts for the shared runtime work. The root exports
+The framework-neutral agent contracts every Threadplane backend and binding shares. The root exports
 readonly text messages and citations, delivery outcomes, plain error projections, authored tool
 call types, snapshots and the minimal session interface. This package implements
 delivery constructors and error projection, not an execution owner or public store.

@@ -1,6 +1,6 @@
 import type { AGUIEvent } from '@ag-ui/client';
 import type { ToolContract } from '@threadplane/core';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 import type { ClientToolBlocker, ClientToolCall } from './client-tools.js';
 import { assertTranscriptIdentity } from './session-observation.js';
 import { ownTranscript, type Transcript } from './transcript.js';

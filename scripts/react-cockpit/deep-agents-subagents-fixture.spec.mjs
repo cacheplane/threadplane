@@ -14,7 +14,7 @@ import {
   emitCandidate,
   packCandidate,
   installCandidateConsumer,
-} from '../react-parity/langgraph-candidate-package.mjs';
+} from '../react-parity/langgraph-package.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const { createDeepAgentsSubagentsFixture } = await import(
   './deep-agents-subagents-fixture.mjs'
@@ -68,7 +68,7 @@ function nativeRuntime() {
     );
     const installed = join(
       consumer,
-      'node_modules/@threadplane/langgraph/runtime/create-session.js'
+      'node_modules/@threadplane/langgraph/src/runtime/create-session.js'
     );
     capture('installed-runtime', {
       directory,

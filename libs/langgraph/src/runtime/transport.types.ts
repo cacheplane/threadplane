@@ -7,8 +7,8 @@ import type {
   StreamMode,
   ThreadState,
 } from '@langchain/langgraph-sdk';
-import type { OwnedCheckpointPosition } from '../lib/transport/checkpoint-position.d.ts';
-export type { OwnedCheckpointPosition } from '../lib/transport/checkpoint-position.d.ts';
+import type { OwnedCheckpointPosition } from './checkpoint-position.js';
+export type { OwnedCheckpointPosition } from './checkpoint-position.js';
 
 /** An event emitted by a LangGraph stream. */
 export interface StreamEvent {

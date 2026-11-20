@@ -1,5 +1,5 @@
 import type { PlainValue } from '@threadplane/core';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 import type {
   CommandProps,
   NativeDecision,

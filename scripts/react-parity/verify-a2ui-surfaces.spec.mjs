@@ -181,7 +181,7 @@ test('switch rejects owner reuse and old-owner commands reject notification leak
 });
 test('reused exact artifact verification detects modified installed declarations and runtime bytes', async (t) => {
   const { assertArtifactFiles } = await import('./verify-markdown.mjs');
-  const { fileHashes } = await import('./langgraph-candidate-package.mjs');
+  const { fileHashes } = await import('./langgraph-package.mjs');
   const directory = mkdtempSync(join(tmpdir(), 'a2ui-byte-check-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   mkdirSync(join(directory, 'src'));

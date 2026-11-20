@@ -102,7 +102,7 @@ import {
 
 /** Why `resume` rejects while a run is active or the session cannot answer. */
 const NOT_SETTLED = 'Resume needs a settled session with a pending interrupt.';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 import {
   captureExtras,
   captureSubmit,
