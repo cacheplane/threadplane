@@ -1,16 +1,16 @@
 ---
 title: Introduction
-description: Measured AG-UI runtime support for AWS Strands, Microsoft Agent Framework, and Mastra behind one Angular adapter.
+description: Measured AG-UI runtime support for AWS Strands, Microsoft Agent Framework, and Mastra behind one AG-UI session.
 ---
 
 # Introduction
 
 `@threadplane/ag-ui` is protocol-first: it consumes the [AG-UI](https://github.com/ag-ui-protocol/ag-ui) event vocabulary rather than any one runtime's SDK. That makes "any AG-UI backend plugs in" a claim that can be tested instead of asserted.
 
-This section documents what happened when it was tested. On 2026-08-31 the adapter was run against three runtimes that have nothing to do with LangGraph, in two languages, with no adapter changes for messages, tool calls, or state. Each runtime has a standalone Angular example, a real backend, and a committed transcript of its wire traffic.
+This section documents what happened when it was tested. On 2026-08-31 the package was run against three runtimes that have nothing to do with LangGraph, in two languages, with no package changes for messages, tool calls, or state. Each runtime has a standalone Angular example, a real backend, and a committed transcript of its wire traffic.
 
 <Callout type="info" title="What this section is not">
-These pages document runtimes as *backends measured against the adapter*. They are not a substitute for each vendor's own documentation, and Threadplane does not maintain any of the upstream AG-UI bridges described here.
+These pages document runtimes as *backends measured against `@threadplane/ag-ui`*. They are not a substitute for each vendor's own documentation, and Threadplane does not maintain any of the upstream AG-UI bridges described here.
 </Callout>
 
 ## How it fits
@@ -47,16 +47,20 @@ Every gap in that table is caused by an upstream integration, not by the AG-UI p
 
 ## What is the same everywhere
 
-The Angular side does not change between these three runtimes. Each example binds through the same two calls, `provideAgent()` and `injectAgent()`. In your own application the provider takes the endpoint URL directly:
+The Angular side does not change between these three runtimes. Each example binds through the same calls: `provideAgent()` and `injectAgent()` from `@threadplane/angular`, over `createSession()` from `@threadplane/ag-ui`. In your own application the session takes the endpoint URL directly:
 
 ```ts
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
-import { provideAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideAgent({ url: '/agent' }),
+    provideAgent({
+      createSession: (context) =>
+        createSession({ url: '/agent', threadId: context.threadId ?? undefined }),
+    }),
   ],
 };
 ```
@@ -64,7 +68,7 @@ export const appConfig: ApplicationConfig = {
 ```ts
 import { Component } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   selector: 'app-root',
@@ -76,7 +80,7 @@ export class App {
 }
 ```
 
-The examples in this repository wrap that same `provideAgent()` call in a factory, because they resolve their endpoint at runtime rather than hard-coding it, and each one renders a shared-state panel and an approval card around `<chat>`. The Mastra example also selects `interruptTransport: 'mastra-command'` so its decisions use the backend's command format even when native outcomes are present.
+The examples in this repository wrap that same `provideAgent()` config in a factory, because they resolve their endpoint at runtime rather than hard-coding it, and each one renders a shared-state panel and an approval card around `<chat>`. The Mastra example also passes `interruptTransport: 'mastra-command'` to `createSession()` so its decisions use the backend's command format even when native outcomes are present.
 
 What changes is the backend, its hosting lane, and the wire conventions it happens to use. The **How It Connects** page for each runtime records those conventions as they were measured.
 
@@ -84,16 +88,16 @@ What changes is the backend, its hosting lane, and the wire conventions it happe
 
 Three differences turned up repeatedly, and each runtime page returns to them.
 
-**Interrupts arrive by two different conventions.** AWS Strands and Microsoft Agent Framework signal an interrupt only through the protocol-standard `RUN_FINISHED` outcome. The LangGraph bridge signals it only through a `CUSTOM` event named `on_interrupt`. Mastra emits both. The adapter retains both conventions in one session; native batches take precedence in `auto` mode regardless of arrival order.
+**Interrupts arrive by two different conventions.** AWS Strands and Microsoft Agent Framework signal an interrupt only through the protocol-standard `RUN_FINISHED` outcome. The LangGraph bridge signals it only through a `CUSTOM` event named `on_interrupt`. Mastra emits both. A session answers the protocol-standard outcome by default, and answers an `on_interrupt` notice only when `interruptTransport` selects a profile for it; in `auto` mode the outcome takes precedence over a notice in the same run.
 
-**Resume payloads are not portable.** The adapter uses the observed batch and configured transport profile to shape `submit({ resume })`. Mastra requires `mastra-command`; native batches require a decision for every pending ID. The backend defines the decision payload.
+**Resume payloads are not portable.** The session uses the observed batch and configured transport profile to shape the request `resume(responses)` sends. Mastra requires `mastra-command`; native batches require a response for every pending ID. The backend defines the decision payload.
 
 **Subagents now stream on every runtime measured here** — AWS Strands, Microsoft Agent Framework, and Mastra. Each backend ships a small emitter that translates its native delegation signals into the protocol's `SUBAGENT_*` events, which `@threadplane/ag-ui` consumes directly. The per-runtime pages describe the emitter and link the wire capture behind each cell.
 
 ## Further reading
 
 - [Choosing an adapter](/docs/choosing-an-adapter) — the full measured matrix, cause-by-cause.
-- [AG-UI adapter introduction](/docs/angular/ag-ui/getting-started/introduction) — the adapter these runtimes bind through.
+- [AG-UI introduction](/docs/angular/ag-ui/getting-started/introduction) — the package these runtimes bind through.
 - [What changes when the runtime changes](/blog/what-changes-when-the-runtime-changes) — the argument for measuring portability.
 - [We measured the runtime swap](/blog/we-measured-the-runtime-swap) — the results write-up.
 - [`libs/ag-ui/fixtures/runtime-transcripts/`](https://github.com/cacheplane/threadplane/tree/main/libs/ag-ui/fixtures/runtime-transcripts) — the captured Server-Sent Events, verbatim from the wire, plus one synthetic subagent transcript built to the shape those captures record.

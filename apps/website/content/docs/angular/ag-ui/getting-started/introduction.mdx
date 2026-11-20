@@ -6,7 +6,7 @@ description: What @threadplane/ag-ui does, which parts of the AG-UI protocol it 
 
 > **Picking an adapter?** This guide covers `@threadplane/ag-ui` — the AG-UI protocol adapter. If you are talking to LangGraph Platform directly via the LangGraph SDK, use [`@threadplane/langgraph`](/langgraph) instead. See [Choosing an adapter](/docs/choosing-an-adapter) for a side-by-side comparison.
 
-`@threadplane/ag-ui` is the runtime adapter that wraps an [AG-UI](https://github.com/ag-ui-protocol/ag-ui) `AbstractAgent` into the runtime-neutral `Agent` contract from `@threadplane/chat`. The chat UI primitives consume the Agent contract, and the AG-UI adapter translates between the contract and the AG-UI event protocol.
+`@threadplane/ag-ui` runs an [AG-UI](https://github.com/ag-ui-protocol/ag-ui) backend behind the framework-neutral `AgentSession` contract from `@threadplane/core`. Its `createSession()` turns the AG-UI event protocol into a session, `provideAgent()` from `@threadplane/angular` hands that session to Angular as an injected `Agent` whose fields are Signals, and the chat UI primitives read that `Agent`.
 
 <Callout type="info" title="What is AG-UI?">
 AG-UI is an open agent-to-UI protocol. It standardizes how agent runtimes stream events (messages, tool calls, state updates) to a frontend. It is used by **CrewAI**, **Mastra**, **Microsoft Agent Framework**, **AG2**, **Pydantic AI**, and **AWS Strands**. One adapter unlocks all of them.
@@ -25,34 +25,35 @@ The AG-UI demo runs this exact chat surface against an AG-UI backend — streami
 
 <StackDiagram
   highlight="ag-ui"
-  caption="Backend speaks AG-UI over SSE → the adapter exposes the signal-shaped Agent contract → the chat UI renders."
+  caption="Backend speaks AG-UI over SSE → the session projects the events → the injected Agent exposes them as Signals → the chat UI renders."
 />
 
 ## What you get
 
-- **`toAgent(source: AbstractAgent): AgUiAgent`** - wraps any `AbstractAgent` subclass (custom transports, mocks) into the runtime-neutral `Agent` contract.
-- **`provideAgent({ url })`** - DI convenience that instantiates `HttpAgent` under the hood for the common SSE/HTTP case.
+- **`createSession({ url })`** - creates a session that posts each run to an AG-UI HTTP endpoint and reads the Server-Sent Events it answers with.
+- **`createSession({ agent })`** - creates the same session over any AG-UI `AbstractAgent` you built (custom transports, mocks).
+- **`provideAgent({ createSession })` and `injectAgent()`** - from `@threadplane/angular`. The one Angular provider builds an `Agent` from the session factory you pass it.
 - **`FakeAgent`** - in-process `AbstractAgent` subclass that emits canned streaming events for offline demos and tests.
 
 ## What's covered
 
-This is what the adapter handles today:
+This is what the session handles today:
 - `messages` (streaming token deltas via `TEXT_MESSAGE_*` events)
-- `status` / `isLoading` / `error` (lifecycle via `RUN_STARTED/FINISHED/ERROR`)
+- `status` / `error` (lifecycle via `RUN_STARTED/FINISHED/ERROR`)
 - `toolCalls` (streaming tool calls via `TOOL_CALL_*` events)
 - `state` (snapshots and JSON-Patch deltas)
-- `events$` (custom events; discriminates `state_update`)
-- Interrupts (from `CUSTOM` events named `on_interrupt`, or a `RUN_FINISHED` carrying an interrupt outcome)
-- Subagent progress (from `SUBAGENT_*` events, or `ACTIVITY_*` with `activityType: 'subagent'`)
+- `customEvents` and `onCustomEvent` (custom events)
+- `interrupts` (from a `RUN_FINISHED` carrying an interrupt outcome, or from `CUSTOM` events named `on_interrupt` when `interruptTransport` selects a profile that answers them)
+- `subagents` (from `SUBAGENT_*` events, or `ACTIVITY_*` with `activityType: 'subagent'`)
 
 Out of scope for now (use `@threadplane/langgraph` if you need LangGraph Platform-specific APIs):
-- History / time-travel
+- Checkpoints and time-travel
 
 ## Next steps
 
 - [Quick Start](/docs/angular/ag-ui/getting-started/quickstart) - bind `<chat>` to an AG-UI backend in 5 minutes.
-- [Installation](/docs/angular/ag-ui/getting-started/installation) - npm install + provider setup.
-- [Architecture](/docs/angular/ag-ui/concepts/architecture) - understand the adapter boundary and provider choices.
+- [Installation](/docs/angular/ag-ui/getting-started/installation) - npm install and provider setup.
+- [Architecture](/docs/angular/ag-ui/concepts/architecture) - understand the session boundary and provider choices.
 - [Event Mapping](/docs/angular/ag-ui/reference/event-mapping) - see how AG-UI events update `Agent` fields.
 - [Fake Agent](/docs/angular/ag-ui/guides/fake-agent) - build UI without a backend.
 - [Citations](/docs/angular/ag-ui/guides/citations) - attach sources through `state.citations`.
