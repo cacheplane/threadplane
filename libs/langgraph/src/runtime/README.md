@@ -298,7 +298,7 @@ where the field is absent. The other two are absent until a page has been read:
 success or a pause. That read updates only these views and `history`; the
 transcript stays the stream's, and a read a newer command overtakes is dropped.
 Everything is owned frozen data and keeps its reference while a page is equal
-to the last one. The option is off by default because a page's states can be
+to the last one. The option is off unless set because a page's states can be
 large.
 
 `session.setBranch(branch)` records which branch a view shows and publishes it

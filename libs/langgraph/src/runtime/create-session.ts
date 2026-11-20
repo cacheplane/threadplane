@@ -280,8 +280,8 @@ export interface SessionOptions {
    * `snapshot.messageCheckpoints` and `snapshot.branchTree` are then published
    * from every history page, and the page is read again after each run that
    * ends in success or a pause. `snapshot.checkpoints` is an empty list until
-   * the first page is read. Off by default: a page's states can be large,
-   * and a session otherwise keeps only checkpoint metadata in
+   * the first page is read. Omitted, the states are not kept: a page's states
+   * can be large, and a session otherwise keeps only checkpoint metadata in
    * `snapshot.history`.
    */
   readonly historyState?: boolean;
@@ -329,21 +329,21 @@ export interface SessionOptions {
    * Read the thread's history as soon as the session is created, when it has a
    * `threadId` and the transport can read history. `snapshot.loading` is then
    * published while any history read is in flight, and a failed automatic
-   * read is published as an error. Off by default: creating a session
-   * otherwise makes no request.
+   * read is published as an error. Omitted, creating a session makes no
+   * request.
    */
   readonly autoLoad?: boolean;
   /**
    * Rebuild the tool-started child agents from the saved thread when history
    * is loaded: their relation and status from the root's history, and their
-   * transcripts through `transport.getChildState`. Off by default: a history
-   * load then publishes no child, as no child event replays.
+   * transcripts through `transport.getChildState`. Omitted, a history load
+   * publishes no child, as no child event replays.
    */
   readonly restoreSubagents?: boolean;
   /**
    * Keep each message as LangGraph sent it. `snapshot.langGraphMessages` and
-   * `snapshot.messageMetadata` are then published. Off by default: the
-   * records are large and most views need only the transcript.
+   * `snapshot.messageMetadata` are then published. Omitted, they are not
+   * kept: the records are large and most views need only the transcript.
    */
   readonly rawMessages?: boolean;
   /**
