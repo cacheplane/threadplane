@@ -215,16 +215,19 @@ export async function startMastra() {
  * and keeps the events the backend produced, by thread, which is what a
  * session's `replay` and `persistence.reconcile` ask a server for.
  *
- * It can also stand in for two things that happen to a deployed server:
+ * It can also stand in for three things that happen to a deployed server:
  * `refuseNext()` makes it turn the next request away before any run starts,
- * and `dropTerminalNext()` makes the connection drop before the client reads
- * the next run's `RUN_FINISHED`, which the backend still produced.
+ * `closeNext()` makes it end the next response before any event, without
+ * asking the backend, and `dropTerminalNext()` makes the connection drop
+ * before the client reads the next run's `RUN_FINISHED`, which the backend
+ * still produced.
  */
 export async function startRecordingServer({ target, headers = {} }) {
   /** @type {Map<string, object[]>} */
   const logs = new Map();
   const requests = [];
   let refuse = false;
+  let close = false;
   let dropTerminal = false;
   const server = http.createServer(async (request, response) => {
     // What `httpReplay` reads: the thread's events, or 404 for none.
@@ -256,6 +259,11 @@ export async function startRecordingServer({ target, headers = {} }) {
           code: 'unavailable',
         })}\n\n`
       );
+      return;
+    }
+    if (close) {
+      close = false;
+      response.end();
       return;
     }
     const drop = dropTerminal;
@@ -321,6 +329,9 @@ export async function startRecordingServer({ target, headers = {} }) {
       )}`,
     refuseNext() {
       refuse = true;
+    },
+    closeNext() {
+      close = true;
     },
     dropTerminalNext() {
       dropTerminal = true;

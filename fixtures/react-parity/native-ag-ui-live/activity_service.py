@@ -13,11 +13,10 @@ This service is that earlier server: the unchanged graph behind the real
 records. Run it from the subagents project directory, so ``src`` is the
 graph's package.
 
-One identifier differs from the capture. There the record's ``messageId`` was
-the delegation's tool call id, and the tool result had an id of its own.
-Today's graph gives the tool result the tool call id, and a session keeps one
-record per identifier, so the activity record is named ``<tool call id>:activity``
-and relates to its call through ``content.toolCallId``, as before.
+The record's ``messageId`` is the delegation's tool call id, as in the capture.
+Today's graph also gives the tool result the tool call id, so an activity
+record and a tool result share an identifier here. A session keeps one record
+of each.
 """
 
 from __future__ import annotations
@@ -35,10 +34,6 @@ from fastapi import FastAPI
 
 from src.graph import graph
 from src.streaming.subagent_emitting_agent import _declare_version, _payload
-
-
-def _record_id(tool_call_id: str) -> str:
-    return f"{tool_call_id}:activity"
 
 
 class ActivityEmittingAgent(LangGraphAgent):
@@ -60,7 +55,7 @@ class ActivityEmittingAgent(LangGraphAgent):
                 text[tid] = ""
                 yield ActivitySnapshotEvent(
                     type=EventType.ACTIVITY_SNAPSHOT,
-                    message_id=_record_id(tid),
+                    message_id=tid,
                     activity_type="subagent",
                     content={
                         "toolCallId": tid,
@@ -77,7 +72,7 @@ class ActivityEmittingAgent(LangGraphAgent):
                 text[tid] = text.get(tid, "") + delta
                 yield ActivityDeltaEvent(
                     type=EventType.ACTIVITY_DELTA,
-                    message_id=_record_id(tid),
+                    message_id=tid,
                     activity_type="subagent",
                     patch=[{"op": "replace", "path": "/text", "value": text[tid]}],
                 )
@@ -99,7 +94,7 @@ class ActivityEmittingAgent(LangGraphAgent):
                     )
                 yield ActivityDeltaEvent(
                     type=EventType.ACTIVITY_DELTA,
-                    message_id=_record_id(tid),
+                    message_id=tid,
                     activity_type="subagent",
                     patch=patch,
                 )

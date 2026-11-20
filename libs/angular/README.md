@@ -1,7 +1,12 @@
 # @threadplane/angular
 
-Private, unpublished Angular binding for app-owned sessions. The root exports
-`observeAgent(session)`, which accepts `getSnapshot()` and `subscribe(notify)`
+The Angular binding for agent sessions, published to npm. It provides the one
+Angular provider, `provideAgent({ createSession })`, the injected `Agent` (a
+signal view of a session), the thread directory view, and the session
+observers. A backend package such as `@threadplane/langgraph` or
+`@threadplane/ag-ui` supplies `createSession`; this package imports neither.
+
+The root also exports `observeAgent(session)`, which accepts `getSnapshot()` and `subscribe(notify)`
 methods and returns a read-only `Signal<TSnapshot>`. The observer contract is
 structural:
 
@@ -59,24 +64,28 @@ release function. The owner is responsible for immutable snapshots; a readonly
 Signal prevents replacing its value through the binding but does not freeze data
 or add deep readonly types to caller-authored mutable fields.
 
-Keep the concrete session type when observing backend-specific fields. The private
-LangGraph fixture exposes a broad readonly `values` map on its snapshot: `undefined`
+Keep the concrete session type when observing backend-specific fields. The
+LangGraph session exposes a broad readonly `values` map on its snapshot: `undefined`
 means no current application-values map is observed, while `{}` is an observed
 empty map. The binding preserves that field without inferring an application
 schema, validating values, or issuing extra reads. Values and messages arrive in
-the same immutable snapshot. This does not make the private backend factory public
-or add state-writing, SSR, or hydration support.
+the same immutable snapshot. Observing adds no state-writing, SSR, or hydration
+support.
 
-The private AG-UI session is also observed directly: its native snapshot contains
+The AG-UI session is also observed directly: its native snapshot contains
 `transcript`, `state`, `subagents` and root `run` evidence. Partial tool arguments
 remain raw protocol strings; observing them does not authorize tool execution or
-invent core pending-tool states. Integration tests borrow the actual private
-owner through a browser-safe Fetch API fixture. This is not a public AG-UI factory
-or a claim that shared display components accept every native snapshot.
+invent core pending-tool states. Integration tests run the actual session
+through a browser-safe Fetch API fixture. This is not a claim that shared
+display components accept every native snapshot. The AG-UI `createSession`
+takes the whole session context, `createSession({ url, ...context })`: it
+names a new conversation's thread itself and reports it through the context's
+`onThreadId`, so `agent.threadId()` and `agent.switchThread()` work with no
+application code reporting an id.
 
-No backend constructor is exported here; the current real LangGraph runtime is
-still a private development composition seam. This API is under development and
-does not claim full SSR, hydration, or feature parity. The Angular peer range
+No backend constructor is exported here: sessions come from the backend
+packages' `createSession`. This package does not claim full SSR or hydration
+support. The Angular peer range
 follows existing workspace policy; it is not a compatibility-matrix claim.
 
 Build with `npx nx build angular` (ng-packagr and partial Angular compilation).
@@ -119,7 +128,7 @@ or execute tools. Updating text preserves its mounted section and arguments DOM;
 remounting creates new DOM.
 
 The root remains headless. These text views do not provide Markdown, execution
-controls, citations, reasoning, full chat parity, SSR or hydration. The private AG-UI
+controls, citations, reasoning, full chat parity, SSR or hydration. The AG-UI
 review uses O(N) pure root-text selection with optional previous-output row reuse
 bounded to current rows. Framework memoization follows immutable transcript
 references and is disposable; it is not another owner or execution controller.
@@ -177,8 +186,9 @@ providers: [
   provideAgent({
     threadId: currentThreadId, // a string, null, or a signal the agent follows
     onThreadId: (id) => router.navigate(['chat', id]),
-    createSession: ({ threadId, onThreadId }) =>
-      createSession({ assistantId: 'chat', apiUrl, threadId, onThreadId }),
+    // createSession from @threadplane/langgraph. Spread the context last.
+    createSession: (context) =>
+      createSession({ assistantId: 'chat', apiUrl, ...context }),
   }),
 ];
 
@@ -232,8 +242,15 @@ factory's `onThreadId`; the agent adopts it without switching, so the run that
 created the thread continues.
 
 `createSession` runs in the agent's injection context each time, so it may call
-`inject()`. It also receives `clientOptions` from `AGENT_CLIENT_OPTIONS` (set
-with `provideAgentClientOptions`) and the host's operation failure reporter.
+`inject()`. Its context has five fields: `threadId` (a string, or `null` for a
+new thread), `onThreadId`, `clientOptions` from `AGENT_CLIENT_OPTIONS` (set with
+`provideAgentClientOptions`, otherwise `undefined`), `reportOperationFailure`
+(the host's operation failure reporter, otherwise `undefined`) and
+`developmentRuntime`. Each is an option of the LangGraph `createSession` under
+the same name, so `createSession({ assistantId, apiUrl, ...context })` passes
+all of them on with no cast. A factory that picks fields instead drops the ones
+it does not name. `clientOptions` is typed `object | undefined` because its
+shape belongs to the backend; the backend reads the fields it knows.
 
 ### Typed refs and several agents
 
@@ -276,13 +293,71 @@ in an effect to redo what belongs to one session, such as handing the new
 session a client tool catalog. It does not move when a session reports the
 thread it created.
 
-A host can have each agent registered for development-install collection by
-providing a registrar, a function with the signature of the telemetry
-package's `registerDevelopmentRuntimePolicy`, under
-`ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR`. The agent is registered once; its
-policy asks the current session's `isDevelopmentRuntimeEnabled()` each time and
-is false for a session without that member. This package does not import the
-telemetry package.
+#### Development-install collection
+
+This package does not import the telemetry package and collects nothing. It is
+the seam between a session and the collector:
+
+- Each session factory call receives `context.developmentRuntime`, a factory
+  for the session's collector. The first-party sessions take it as their
+  `developmentRuntime` option, so `createSession({ ...context, ... })` passes
+  it on. A factory that picks fields from the context instead must pass
+  `developmentRuntime: context.developmentRuntime` to keep collection.
+- The collector comes from a host that registers one with
+  `ɵsetAgentDevelopmentHost`. `@threadplane/chat` does so when it is loaded, so
+  an app that provides an agent and uses the chat package needs no setup. An
+  app that never loads the chat package has no collector and reports nothing.
+  A host loaded later (a lazy route) is connected to the agents that already
+  exist.
+- Each agent is registered once with the host's policy registry (or with a
+  registrar provided under `ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR`, which wins).
+  Its policy asks the current session's `isDevelopmentRuntimeEnabled()` each
+  time and is false for a session without that member. The first-party
+  sessions answer true unless they were created with a `telemetry` option.
+
+Collection happens only in an Angular development build running in a browser,
+and never after the opt-outs the telemetry package documents.
+
+### Replacing or wrapping a member
+
+To hand a part of the app an agent whose `submit` is guarded, or whose commands
+add something to every call, derive one with `withAgentOverrides`. Do not copy
+the agent with an object spread.
+
+```ts
+import { injectAgent, withAgentOverrides } from '@threadplane/angular';
+
+export class ReviewPanel {
+  private readonly locked = signal(false);
+
+  protected readonly agent = withAgentOverrides(injectAgent(), (agent) => ({
+    submit: (input, options) =>
+      this.locked()
+        ? Promise.resolve('aborted')
+        : agent.submit(input, options),
+  }));
+}
+```
+
+The result is the same `Agent` type, so it goes wherever the agent goes, such as
+a chat component's `agent` input. It serves the overrides and forwards every
+other read to the original at the time of the read. The members it does not
+override are the same references as the original's; a thread switch on either
+one is seen through both; and a field that was not set when the agent was
+derived, such as `error`, is a signal of `undefined` that carries the value once
+it is published.
+
+A spread cannot do this. An agent serves an optional field that is not set yet
+only when it is asked for by name, and the names a backend may publish are not a
+closed list, so `{ ...agent, submit }` copies the members that exist at that
+moment and `copy.error()` then throws in a template.
+
+The second argument is an object of replacements, or a function that is called
+once with the original agent and returns one. Each replacement has the type of
+the member it replaces. `undefined` for an optional command, such as
+`regenerate`, makes the derived agent read as not having it. The original agent
+is not changed: code that holds it, including a chat component given the
+original, does not see the overrides. A derived agent can be derived from again.
 
 ### Without a backend
 
@@ -300,15 +375,84 @@ named on its first submit, and a thread comes back with its messages when the
 agent returns to it. `injectFakeAgentSession()` returns a signal of the current
 fake session's controls for a test to drive.
 
+Pass a ref first to provide the fake under it. The ref may be declared with a
+backend's session type, so a component that injects that ref runs unchanged:
+
+```ts
+export const TRIP = createAgentRef<LangGraphSession<Tools, Board>>('trip');
+
+providers: [provideFakeAgent(TRIP, { session: { state: { todos: [] } } })];
+// in the test
+const fake = injectFakeAgentSession(TRIP);
+fake().setState({ todos: ['Book a hotel'] });
+```
+
+The fake's `state` is typed by the ref's state and its tool calls by the
+ref's tool names. The fake is the core session and nothing more. The injected
+agent is still typed as the backend's, so a snapshot field that only the
+backend publishes, such as `subgraphs` or `history` on a LangGraph session,
+reads as `undefined`, and a command that only the backend has is not there.
+To test code that depends on those, build the real session on the backend's
+test transport instead: `createSession({ transport: new MockAgentTransport() })`
+from `@threadplane/langgraph`. A spec drives each run of that transport with
+`emit()` and `close()`, any number in sequence, and `fail()` scripts a failed
+run for `agent.retry()`.
+
+### Providing an agent a test already has
+
+`provideAgentValue(agent)`, also in `@threadplane/angular/testing`, makes
+`injectAgent()` return the object it is given. Use it when the component under
+test injects its agent and the test wants a mock in its place, such as
+`mockAgent()` from `@threadplane/chat`, or an agent it built by hand:
+
+```ts
+import { provideAgentValue } from '@threadplane/angular/testing';
+import { mockAgent } from '@threadplane/chat';
+
+const agent = mockAgent({ status: 'running' });
+TestBed.configureTestingModule({ providers: [provideAgentValue(agent)] });
+const view = TestBed.createComponent(AssistantPage); // calls injectAgent()
+agent.messages.set([{ id: 'a1', role: 'assistant', content: 'Hi' }]);
+```
+
+`provideAgentValue(ref, agent)` also answers `injectAgent(ref)`. The ref-less
+`injectAgent()` at that injector level returns the same agent, and a provider
+given later in the same `providers` array wins, as with `provideAgent`. Under a
+ref declared with a backend's session type the agent may be a core-shaped mock;
+a member only the backend has is then `undefined` on it. To replace an agent a
+component provides for itself, put the provider in
+`TestBed.overrideComponent(Component, { set: { providers: [...] } })`.
+
+`AGENT_LIFECYCLE` resolves to the given agent's own `lifecycle` object, so a
+mock's writable marks reach whatever reads the token. An agent with no
+`lifecycle` gets one whose milestones all stay null. The test owns the agent:
+the injector does not stop or dispose it, does not list it in
+`AgentLifecycleRegistry`, and does not register it for development-install
+collection.
+
+Choose `provideFakeAgent` for the real agent over an in-memory session, with
+thread switching and the session's own command behaviour, and
+`provideAgentValue` for an exact object whose fields the test sets directly.
+
 ### How member names are resolved
 
 The agent reads each name from the session first, then from the snapshot. A
 name found in neither is an optional snapshot field that is not set yet, so it
-reads as a signal of `undefined`. The exceptions read as `undefined`: the
-optional commands of the core contract and the first-party backends, any name in
-`AgentConfig.optionalCommands`, and names that tools probe on arbitrary objects,
-such as `then` and `toJSON`. A backend that adds an optional command lists it in
-`optionalCommands`.
+reads as a signal of `undefined`. The exceptions read as `undefined`:
+
+- The members a session type declares optional, which a caller asks for before
+  using: `onCustomEvent`, `runWithoutMessage`, `regenerate`, `resume`,
+  `clientTools`, `checkStatus` and `retry` from the core contract, `load` from
+  both first-party backends, and `onRawEvent`, `reconcileInterrupt`, `ready`,
+  `agentId` and `stateType` from the AG-UI session.
+- The commands one first-party backend always has: `isDevelopmentRuntimeEnabled`
+  on both, and `fork`, `reconnect`, `joinStream`, `setBranch`, `cancelQueued`
+  and `clearQueue` on a LangGraph session. They are typed as present on that
+  backend's agent and need no `?.` there. They read as `undefined` only on a
+  session of another kind, such as the fake provided under a backend's ref.
+- Any name in `AgentConfig.optionalCommands`. A backend that adds an optional
+  command lists it there.
+- Names that tools probe on arbitrary objects, such as `then` and `toJSON`.
 
 ## The injected thread directory
 
@@ -323,17 +467,25 @@ import {
   provideThreadDirectory,
   refreshOnRunEnd,
 } from '@threadplane/angular';
+import {
+  createLangGraphThreadDirectory,
+  type LangGraphThreadDirectory,
+} from '@threadplane/langgraph';
 
 // app.config.ts
 providers: [
   provideThreadDirectory({
-    createDirectory: ({ clientOptions }) =>
-      createLangGraphThreadDirectory({ apiUrl, clientOptions }),
+    createDirectory: ({ clientOptions, reportOperationFailure }) =>
+      createLangGraphThreadDirectory({
+        apiUrl,
+        clientOptions,
+        reportOperationFailure,
+      }),
   }),
 ];
 
 // component
-readonly threads = injectThreadDirectory();
+readonly threads = injectThreadDirectory<LangGraphThreadDirectory>();
 constructor() {
   void this.threads.refresh();
   refreshOnRunEnd(injectAgent(), this.threads);
@@ -356,14 +508,18 @@ constructor() {
 | `createProject`, `renameProject`, `removeProject` | Project commands. |
 
 Nothing is loaded until `refresh()` is called. A command the directory does not
-offer is `undefined`, so a view offers no control for it. Naming the directory
-type, `injectThreadDirectory<MyDirectory>()`, types the commands that type
-guarantees as present. A row or project command shows at once, rolls back when
+offer is `undefined`, so a view offers no control for it. Plain
+`injectThreadDirectory()` is typed by the core contract, where every command is
+optional and is called as `threads.create?.()`. Naming the directory type, as
+`injectThreadDirectory<LangGraphThreadDirectory>()` does above, types the
+commands that type guarantees as present, so they are called as
+`threads.create()`. A row or project command shows at once, rolls back when
 it fails and rejects with the directory's error. The view owns the directory
 and disposes it with its injector.
 
 The row commands carry the names a thread list uses for its actions, and each
-list item is the directory's entry plus `status`, so the view binds to the chat
+list item is the directory's entry plus `status` (and `pinnedOrder`, the saved
+rank among pinned threads, when the directory keeps one), so the view binds to the chat
 library's thread views directly:
 
 ```html
@@ -383,11 +539,12 @@ host's operation failure reporter. A config may also be a
 ### Reading one thread
 
 `getThread(id)` answers from `ThreadDirectoryConfig.getThread` when the config
-has one, else from the directory's own `get(id)`. It resolves with the thread,
-or with `null` when the backend says there is no such thread, and rejects when
-the backend could not be asked.
+has one, else from the directory's `get(id)`. It resolves with the thread, or
+with `null` when the backend says there is no such thread, and rejects when the
+backend could not be asked. The LangGraph directory has `get`, so no reader
+needs configuring for it: a missing or malformed id answers `null`.
 
-The core contract has no command that reads one thread. With neither source the
+`get` is optional in the core contract. With neither source the
 view can answer only for a thread the directory lists: it reads the list once
 if the thread is not in it, and rejects for a thread that is still not listed,
 because a list is not proof that a thread does not exist.

@@ -67,7 +67,7 @@
     "type-tests": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-tests.json && node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-conformance.json"
+        "command": "node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-tests.json && node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-conformance.json && node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.nonstrict.json"
       }
     },
     "runtime-quality": {
@@ -93,7 +93,10 @@
         "{workspaceRoot}/libs/telemetry/install/assemble-package.mjs",
         "{projectRoot}/package.json"
       ],
-      "outputs": ["{projectRoot}/.install-collector"],
+      "outputs": [
+        "{projectRoot}/.install-collector",
+        "{projectRoot}/src/runtime/package-version.ts"
+      ],
       "options": {
         "command": "node libs/telemetry/install/assemble-package.mjs ag-ui",
         "forwardAllArgs": false

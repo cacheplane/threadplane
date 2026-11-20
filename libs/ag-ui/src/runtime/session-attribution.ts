@@ -15,8 +15,14 @@ export function assertAttribution(
     case 'REASONING_MESSAGE_START':
     case 'REASONING_MESSAGE_CONTENT':
     case 'REASONING_MESSAGE_END':
-    case 'TOOL_CALL_RESULT':
       selected = previous.find((message) => message.id === event.messageId);
+      break;
+    case 'TOOL_CALL_RESULT':
+      // An activity record with the result's identifier is a different record.
+      selected = previous.find(
+        (message) =>
+          message.id === event.messageId && message.role !== 'activity'
+      );
       break;
     case 'ACTIVITY_DELTA':
       selected = previous.find(

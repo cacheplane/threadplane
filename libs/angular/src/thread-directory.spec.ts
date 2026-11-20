@@ -399,6 +399,37 @@ describe('ThreadDirectoryView getThread', () => {
     expect(own).not.toHaveBeenCalled();
   });
 
+  it("puts the directory's pin rank on an item, and no field when it has none", async () => {
+    const ranked = entry('a', { pinned: true });
+    const calls: unknown[] = [];
+    const { view } = minimal({
+      label: 'own',
+      get: async (id: string) => (id === 'a' ? ranked : entry(id)),
+      pinnedOrderOf(this: { label: string }, asked: ThreadEntry) {
+        calls.push([this.label, asked.id]);
+        return asked === ranked ? 4 : undefined;
+      },
+    });
+    const first = await view.getThread('a');
+    expect(first).toEqual({
+      id: 'a',
+      title: 'Thread a',
+      status: 'active',
+      pinned: true,
+      pinnedOrder: 4,
+      archived: false,
+      projectId: null,
+    });
+    const other = await view.getThread('b');
+    expect(other && 'pinnedOrder' in other).toBe(false);
+    // The rank is asked once per entry, on the directory.
+    await expect(view.getThread('a')).resolves.toBe(first);
+    expect(calls).toEqual([
+      ['own', 'a'],
+      ['own', 'b'],
+    ]);
+  });
+
   it('answers for a listed thread without a request, from either list', async () => {
     const { view, control } = scripted({
       threads: [entry('a')],

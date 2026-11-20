@@ -22,7 +22,10 @@ import {
   type ThreadListItem,
 } from './public-api.js';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Type-only proof against the actual LangGraph directory; no production dependency.
-import type { createLangGraphThreadDirectory } from '../../langgraph/src/runtime/thread-directory';
+import type {
+  createLangGraphThreadDirectory,
+  LangGraphThreadDirectory,
+} from '../../langgraph/src/runtime/thread-directory';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Type-only proof against the actual LangGraph session.
 import type { LangGraphSession } from '../../langgraph/src/runtime/create-session';
 
@@ -221,15 +224,87 @@ export function langGraphDirectory(
   create: typeof createLangGraphThreadDirectory
 ) {
   provideThreadDirectory({
-    createDirectory: ({ clientOptions }) =>
-      create({ apiUrl: '/api', clientOptions }),
+    createDirectory: ({ clientOptions, reportOperationFailure }) =>
+      create({ apiUrl: '/api', clientOptions, reportOperationFailure }),
   });
+  // The view is typed by what the factory returns: the precise directory.
   const view = createThreadDirectoryView({
     createDirectory: () => create({ apiUrl: '/api' }),
   });
-  type View = Expect<Same<typeof view, ThreadDirectoryView<ThreadDirectory>>>;
-  void view;
-  return {} as View;
+  type View = Expect<
+    Same<typeof view, ThreadDirectoryView<LangGraphThreadDirectory>>
+  >;
+  void view.rename('a', 'Title');
+
+  // Naming the directory type carries it through the injector function, so
+  // no command needs an optional call.
+  const named = injectThreadDirectory<LangGraphThreadDirectory>();
+  type Named = Expect<
+    Same<typeof named, ThreadDirectoryView<LangGraphThreadDirectory>>
+  >;
+  type Directory = Expect<
+    Same<typeof named.directory, LangGraphThreadDirectory>
+  >;
+  type Create = Expect<
+    Same<
+      typeof named.create,
+      (metadata?: { readonly [key: string]: PlainValue }) => Promise<
+        string | null
+      >
+    >
+  >;
+  type Rename = Expect<
+    Same<
+      typeof named.rename,
+      (threadId: string, newTitle: string) => Promise<void>
+    >
+  >;
+  type CreateProject = Expect<
+    Same<
+      typeof named.createProject,
+      (name: string) => Promise<{ readonly id: string }>
+    >
+  >;
+  void named.create();
+  void named.rename('a', 'Title');
+  void named.delete('a');
+  void named.archive('a');
+  void named.unarchive('a');
+  void named.pin('a');
+  void named.unpin('a');
+  void named.moveToProject('a', null);
+  void named.reorderPinned('a', null);
+  void named.createProject('P');
+  void named.renameProject('p', 'Q');
+  void named.removeProject('p');
+  void named.getThread('a');
+  // The directory's own commands are present too.
+  void named.directory.get('a');
+  void named.directory.setPinned('a', true);
+  const rank: number | undefined = named.threads()[0].pinnedOrder;
+  // @ts-expect-error A title is still required to rename.
+  void named.rename('a');
+  // A typed view is still a view of the core contract.
+  const core: ThreadDirectoryView = named;
+
+  // Built with `projects: false`: thread commands present, project ones not.
+  const plain = injectThreadDirectory<LangGraphThreadDirectory<false>>();
+  void plain.rename('a', 'Title');
+  void plain.moveToProject('a', null);
+  // @ts-expect-error The view does not offer a project command to call.
+  void plain.createProject('P');
+  type NoProjects = Expect<
+    Same<typeof plain.directory.createProject, undefined>
+  >;
+
+  // Project commands that may or may not exist stay optional.
+  const either = injectThreadDirectory<LangGraphThreadDirectory<boolean>>();
+  void either.rename('a', 'Title');
+  // @ts-expect-error The project commands may be absent.
+  void either.createProject('P');
+  void either.createProject?.('P');
+  void [view, rank, core];
+  return {} as [View, Named, Directory, Create, Rename, CreateProject, NoProjects];
 }
 
 // What the chat library's thread views take, restated here because this

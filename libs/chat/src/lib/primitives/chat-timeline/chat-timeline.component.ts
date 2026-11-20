@@ -5,7 +5,7 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import type { Agent, AgentCheckpoint } from '../../agent';
 
-/** Projects the agent's saved history (`agent.checkpoints()`) through a supplied template and emits selections dispatched through selectCheckpoint(). */
+/** Projects the agent's saved history (`agent.checkpoints()`), newest first, through a supplied template and emits selections dispatched through selectCheckpoint(). */
 @Component({
   selector: 'chat-timeline',
   standalone: true,
@@ -29,7 +29,11 @@ export class ChatTimelineComponent {
 
   readonly templateRef = contentChild(TemplateRef);
 
-  readonly history = computed<readonly AgentCheckpoint[]>(() => this.agent().checkpoints() ?? []);
+  /**
+   * The checkpoints as rendered: newest first, so template index 0 is the
+   * latest one. `agent.checkpoints()` itself is oldest first.
+   */
+  readonly history = computed<readonly AgentCheckpoint[]>(() => [...(this.agent().checkpoints() ?? [])].reverse());
 
   selectCheckpoint(cp: AgentCheckpoint): void {
     this.checkpointSelected.emit(cp);

@@ -17,8 +17,14 @@ import {
   AGENT_CLIENT_OPTIONS,
   ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR,
   ɵAGENT_OPERATION_FAILURE_REPORTER,
+  type AgentDevelopmentRuntimeRegistrar,
   type AgentOperationFailureReporter,
 } from './agent-tokens';
+import {
+  ɵrelayDevelopmentRuntime,
+  ɵwhenAgentDevelopmentHost,
+  type AgentDevelopmentRuntimeFactory,
+} from './development-host';
 
 /** The least a session must offer for an {@link Agent} to stand in front of it. */
 export interface AgentSessionLike {
@@ -45,7 +51,7 @@ export type AgentFieldSignals<TSnapshot> = {
 };
 
 /** Session members the agent owns and therefore does not pass through. */
-type SessionPlumbing = 'getSnapshot' | 'subscribe' | 'dispose';
+export type AgentSessionPlumbing = 'getSnapshot' | 'subscribe' | 'dispose';
 
 /**
  * What an agent adds because it outlives any one session: the thread it is on,
@@ -108,7 +114,7 @@ export interface AgentControls {
  */
 export type Agent<TSession extends AgentSessionLike = AgentSession> =
   AgentControls &
-    Omit<TSession, SessionPlumbing | keyof AgentControls> &
+    Omit<TSession, AgentSessionPlumbing | keyof AgentControls> &
     Omit<
       AgentFieldSignals<AgentSnapshotOf<TSession>>,
       keyof TSession | keyof AgentControls
@@ -124,10 +130,26 @@ export interface AgentSessionContext {
    * A report from a session the agent has already replaced is ignored.
    */
   readonly onThreadId: (threadId: string) => void;
-  /** The app-wide `AGENT_CLIENT_OPTIONS`, when provided. */
+  /**
+   * The app-wide `AGENT_CLIENT_OPTIONS`, when provided. Typed `object` because
+   * the shape belongs to the backend, which this package does not import. A
+   * first-party `createSession` takes it as its `clientOptions` with no cast.
+   */
   readonly clientOptions: object | undefined;
-  /** The host's operation failure reporter, when provided. */
+  /**
+   * The host's operation failure reporter, when provided. The first-party
+   * sessions take it as their `reportOperationFailure` option, so spreading
+   * the context passes it on.
+   */
   readonly reportOperationFailure: AgentOperationFailureReporter | undefined;
+  /**
+   * Builds the session's development-install collector. A first-party session
+   * takes it as its `developmentRuntime` option and calls it with what its
+   * package knows of its own installation. It is inert unless a host with the
+   * collector is loaded (the chat package registers one), and outside a
+   * development build in a browser.
+   */
+  readonly developmentRuntime: AgentDevelopmentRuntimeFactory;
 }
 
 /** Configuration for one injected agent. */
@@ -156,21 +178,48 @@ export interface AgentConfig<TSession extends AgentSessionLike = AgentSession> {
 }
 
 /**
- * Optional session members of the core contract and of the first-party
- * backends: commands, and the client-tools capability.
+ * The session members that the core contract or a first-party backend's
+ * session type declares optional (`name?`): a session may leave each one out,
+ * so a caller asks before using it. Kept equal to those types; the agent type
+ * tests prove each name optional on at least one of them.
  */
-const OPTIONAL_COMMANDS: readonly string[] = [
+const OPTIONAL_MEMBERS: readonly string[] = [
+  // The core contract. The LangGraph session always has `onCustomEvent`,
+  // `resume` and `runWithoutMessage`; the AG-UI session always has `resume`.
   'onCustomEvent',
+  'runWithoutMessage',
   'regenerate',
   'resume',
+  'clientTools',
   'checkStatus',
   'retry',
-  'runWithoutMessage',
-  'clientTools',
+  // Both first-party backends.
   'load',
+  // The AG-UI session only.
+  'onRawEvent',
+  'reconcileInterrupt',
+  'ready',
+  'agentId',
+  'stateType',
+];
+
+/**
+ * Commands one first-party backend's session always has, so they are not
+ * optional on that backend's agent and need no `?.` there. A session of
+ * another kind lacks them: the in-memory fake provided under a backend's ref,
+ * a hand-written session, the other backend. There each reads as `undefined`,
+ * as a missing command does, and never as a snapshot field.
+ */
+const BACKEND_COMMANDS: readonly string[] = [
+  // Both first-party backends.
+  'isDevelopmentRuntimeEnabled',
+  // The LangGraph session.
   'fork',
   'reconnect',
-  'isDevelopmentRuntimeEnabled',
+  'joinStream',
+  'setBranch',
+  'cancelQueued',
+  'clearQueue',
 ];
 
 /**
@@ -214,6 +263,24 @@ const configs = new WeakMap<object, object>();
 /** @internal The config an agent was created from. */
 export function ɵagentConfig(agent: object): object | undefined {
   return configs.get(agent);
+}
+
+/** Per agent: registers another object for the agent's development policy. */
+const policyRegistrations = new WeakMap<object, (target: object) => void>();
+
+/**
+ * @internal Makes `derived` stand for `source` wherever an agent is looked up
+ * by identity: it resolves to the same config, and is registered for
+ * development-install collection with the same registrar and policy. Does
+ * nothing for a `source` that `createAgent` did not build.
+ */
+export function ɵadoptDerivedAgent(derived: object, source: object): void {
+  const config = configs.get(source);
+  if (config) configs.set(derived, config);
+  const register = policyRegistrations.get(source);
+  if (!register) return;
+  policyRegistrations.set(derived, register);
+  register(derived);
 }
 interface LifecycleSource {
   getSnapshot(): Members;
@@ -264,10 +331,11 @@ function lifecycleSource(
  * is read automatically and `isThreadLoading` is true meanwhile. A failed read
  * leaves the thread empty.
  *
- * When the host provides a development-runtime registrar, the agent is
- * registered with it once. Its policy asks the current session's
+ * The agent is registered once for development-install collection: with the
+ * registrar the host provides, or else with the page's collector host when
+ * one is loaded. Its policy asks the current session's
  * `isDevelopmentRuntimeEnabled()` each time, and is false for a session
- * without that member.
+ * without that member. Each session is handed `context.developmentRuntime`.
  */
 export function createAgent<TSession extends AgentSessionLike>(
   config: AgentConfig<TSession>
@@ -279,11 +347,17 @@ export function createAgent<TSession extends AgentSessionLike>(
     inject(AGENT_CLIENT_OPTIONS, { optional: true }) ?? undefined;
   const reportOperationFailure =
     inject(ɵAGENT_OPERATION_FAILURE_REPORTER, { optional: true }) ?? undefined;
-  const registerDevelopmentRuntime =
+  // A registrar given through DI wins. Otherwise the agent is registered with
+  // the page's collector host, now or when one is loaded.
+  const registerDevelopmentRuntime: AgentDevelopmentRuntimeRegistrar =
     inject(ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR, { optional: true }) ??
-    undefined;
+    ((agent, policy) =>
+      destroyRef.onDestroy(
+        ɵwhenAgentDevelopmentHost((host) => host.registerPolicy(agent, policy))
+      ));
   const optionalCommands = new Set([
-    ...OPTIONAL_COMMANDS,
+    ...OPTIONAL_MEMBERS,
+    ...BACKEND_COMMANDS,
     ...(config.optionalCommands ?? []),
   ]);
   const configured = config.threadId;
@@ -351,6 +425,7 @@ export function createAgent<TSession extends AgentSessionLike>(
           },
           clientOptions,
           reportOperationFailure,
+          developmentRuntime: ɵrelayDevelopmentRuntime,
         })
       )
     );
@@ -594,15 +669,20 @@ export function createAgent<TSession extends AgentSessionLike>(
     deleteProperty: () => false,
   }) as unknown as Agent<TSession>;
   configs.set(agent, config);
-  if (registerDevelopmentRuntime)
+  const developmentPolicy = () => {
+    const current = session();
+    const enabled = current['isDevelopmentRuntimeEnabled'];
+    return typeof enabled === 'function' && enabled.call(current) === true;
+  };
+  // Also used for an agent derived from this one, which is another object.
+  const registerPolicy = (target: object) => {
     try {
-      registerDevelopmentRuntime(agent, () => {
-        const current = session();
-        const enabled = current['isDevelopmentRuntimeEnabled'];
-        return typeof enabled === 'function' && enabled.call(current) === true;
-      });
+      registerDevelopmentRuntime(target, developmentPolicy);
     } catch {
       /* Optional collection never affects the agent. */
     }
+  };
+  policyRegistrations.set(agent, registerPolicy);
+  registerPolicy(agent);
   return agent;
 }

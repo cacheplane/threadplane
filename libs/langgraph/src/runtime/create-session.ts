@@ -40,6 +40,7 @@ import {
   throttleListener,
   type A2uiClientCapabilities,
   type LangGraphDevelopmentRuntime,
+  type LangGraphDevelopmentRuntimeFactory,
   type LangGraphDevtoolsSink,
   type LangGraphScriptedRuns,
   type LangGraphTelemetryEvent,
@@ -47,7 +48,9 @@ import {
 } from './session-hooks.js';
 export type {
   A2uiClientCapabilities,
+  LangGraphDevelopmentInstall,
   LangGraphDevelopmentRuntime,
+  LangGraphDevelopmentRuntimeFactory,
   LangGraphDevtoolsSignal,
   LangGraphDevtoolsSink,
   LangGraphScriptedRun,
@@ -167,6 +170,7 @@ export type {
 } from './run-options.js';
 export {
   createLangGraphThreadDirectory,
+  type LangGraphThreadDirectory,
   type LangGraphThreadDirectoryOptions,
   type LangGraphThreadsClient,
 } from './thread-directory.js';
@@ -183,7 +187,12 @@ import {
   type RunEvidence,
 } from './run-recovery.js';
 import type { LangGraphSubmitOptions } from './transport.types.js';
-import { createSafeRequestError } from './operation-errors.js';
+import {
+  createSafeRequestError,
+  isUnansweredRunCreation,
+  type RuntimeOperationFailureReporter,
+} from './operation-errors.js';
+import { buildDevelopmentRuntime } from './development-install.js';
 import { createToolPersistence } from './tool-persistence.js';
 import { hasInvocationConflict } from './tool-invocations.js';
 import { observeInvocation } from './tool-invocations.js';
@@ -209,6 +218,7 @@ import {
   failureProjection,
   finalizeProjection,
   interruptionError,
+  unansweredError,
   isTranscriptEvent,
   projectStream,
   record,
@@ -227,7 +237,9 @@ import {
   resultCall,
 } from './function-tools.js';
 
+/** What `createSession` takes: the assistant, the thread and how to reach the backend. */
 export interface SessionOptions {
+  /** The assistant, or graph name, each run is created for. */
   readonly assistantId: string;
   /** The thread this session belongs to. Omit it, or pass null, to start an
    * empty session that creates its thread on the first submit. That requires
@@ -236,13 +248,16 @@ export interface SessionOptions {
   /** Called once with the id of the thread this session created. Never called
    * when `threadId` is given. A throwing callback does not affect the run. */
   readonly onThreadId?: (threadId: string) => void;
+  /** A transport to use in place of the SDK transport the session would own. */
   readonly transport?: AgentTransport;
+  /** The LangGraph API base the owned SDK transport calls. A supplied transport ignores it. */
   readonly apiUrl?: string;
   /** The owned SDK transport defaults maxRetries to 0: an ambiguous failed
    * run-creation POST must not silently create another run. A supplied numeric
    * maxRetries explicitly opts into SDK request retries. Custom transports own
    * their retry policy; joining a known run is separate from replaying submit. */
   readonly clientOptions?: LangGraphClientOptions;
+  /** Where client-tool executions are recorded, for a session created with tools. */
   readonly executionStore?: ToolExecutionStore;
   /**
    * The graph state's type: `type<T>()` to declare it, or a Standard Schema,
@@ -269,8 +284,9 @@ export interface SessionOptions {
    * Keep each loaded checkpoint's state. `snapshot.checkpoints`,
    * `snapshot.messageCheckpoints` and `snapshot.branchTree` are then published
    * from every history page, and the page is read again after each run that
-   * ends in success or a pause. Off by default: a page's states can be large,
-   * and a session otherwise keeps only checkpoint metadata in
+   * ends in success or a pause. `snapshot.checkpoints` is an empty list until
+   * the first page is read. Omitted, the states are not kept: a page's states
+   * can be large, and a session otherwise keeps only checkpoint metadata in
    * `snapshot.history`.
    */
   readonly historyState?: boolean;
@@ -305,33 +321,44 @@ export interface SessionOptions {
    * Told when a request of the owned SDK transport was refused as
    * unauthorized or blocked by the network. Supplying it also makes the owned
    * transport report generic errors only. A supplied transport ignores it.
+   * It has the name a framework binding's session context uses, so spreading
+   * that context into the options passes the host's reporter on.
    */
-  readonly onOperationFailure?: (
-    code: 'unauthorized' | 'network_blocked'
-  ) => void;
+  readonly reportOperationFailure?: RuntimeOperationFailureReporter;
+  /**
+   * @deprecated Use `reportOperationFailure`. Read only when
+   * `reportOperationFailure` is not a function.
+   */
+  readonly onOperationFailure?: RuntimeOperationFailureReporter;
   /**
    * Read the thread's history as soon as the session is created, when it has a
    * `threadId` and the transport can read history. `snapshot.loading` is then
    * published while any history read is in flight, and a failed automatic
-   * read is published as an error. Off by default: creating a session
-   * otherwise makes no request.
+   * read is published as an error. Omitted, creating a session makes no
+   * request.
    */
   readonly autoLoad?: boolean;
   /**
    * Rebuild the tool-started child agents from the saved thread when history
    * is loaded: their relation and status from the root's history, and their
-   * transcripts through `transport.getChildState`. Off by default: a history
-   * load then publishes no child, as no child event replays.
+   * transcripts through `transport.getChildState`. Omitted, a history load
+   * publishes no child, as no child event replays.
    */
   readonly restoreSubagents?: boolean;
   /**
    * Keep each message as LangGraph sent it. `snapshot.langGraphMessages` and
-   * `snapshot.messageMetadata` are then published. Off by default: the
-   * records are large and most views need only the transcript.
+   * `snapshot.messageMetadata` are then published. Omitted, they are not
+   * kept: the records are large and most views need only the transcript.
    */
   readonly rawMessages?: boolean;
-  /** A development-install collector to keep informed. The host creates it. */
-  readonly developmentRuntime?: LangGraphDevelopmentRuntime;
+  /**
+   * A development-install collector to keep informed, or a factory that builds
+   * one from what this package knows of its own installation. The host owns
+   * the collector; the session only calls it.
+   */
+  readonly developmentRuntime?:
+    | LangGraphDevelopmentRuntime
+    | LangGraphDevelopmentRuntimeFactory;
   /** A development tool told which published fields each event changed. */
   readonly devtools?: LangGraphDevtoolsSink;
   /** Development only: a source of scripted runs that stand in for the network. */
@@ -359,9 +386,22 @@ export type LangGraphSession<
   TState = unknown
 > = Omit<
   AgentSession<TTools, TState>,
-  'getSnapshot' | 'submit' | 'resume' | 'runWithoutMessage'
+  'getSnapshot' | 'submit' | 'resume' | 'runWithoutMessage' | 'regenerate'
 > & {
   getSnapshot(): LangGraphSnapshot<TTools, TState>;
+  /**
+   * The core contract's optional regenerate command: answers the prompt before
+   * an assistant message again, from the checkpoint saved before that prompt.
+   * It takes the same run options as `submit`, so `options.run`, `config`,
+   * `context` and `metadata` are sent with the regenerated run. The run always
+   * starts from that checkpoint: `run.checkpoint` and `run.checkpointId` are
+   * not used. Absent when the transport cannot read an exact checkpoint or an
+   * exact run's status.
+   */
+  regenerate?(
+    messageId: string,
+    options?: LangGraphRunOptions
+  ): Promise<CompleteOutcome>;
   /**
    * The core contract's command for a run that adds no user message: the
    * graph continues from the thread's saved state, after merging `state` when
@@ -391,6 +431,12 @@ export type LangGraphSession<
    * transport cannot cancel, or the request failed.
    */
   cancelQueued(runId: string): Promise<boolean>;
+  /**
+   * Whether a host may run development-install collection for this session:
+   * true unless the session was created with a `telemetry` option, `false`
+   * included. The session itself collects nothing.
+   */
+  isDevelopmentRuntimeEnabled(): boolean;
   /** Removes every queued run and asks the backend to cancel each. */
   clearQueue(): Promise<void>;
   fork(
@@ -606,8 +652,15 @@ interface Attempt {
   travel?: boolean;
   /** A development tool scripted this run; the backend never saw it. */
   scripted?: boolean;
+  /** This command's creation request got no response from anything. */
+  unanswered?: boolean;
+  /** A retry of an unanswered command: the thread is read for this turn's
+   * message before anything is sent again. */
+  verifyUnsent?: boolean;
   /** For telemetry: when the command began. */
   startedAt?: number;
+  /** For the development collector: what created the request. */
+  requestType?: string;
   /** Queued submissions waiting for this command's run to exist on the backend. */
   created?: (() => void)[];
   handoffIds: readonly string[];
@@ -726,7 +779,10 @@ export function createSession(
         ...ownedClientOptions,
         maxRetries: ownedRetries,
       },
-      typeof options.onOperationFailure === 'function'
+      // The current name wins; the deprecated one is read only without it.
+      typeof options.reportOperationFailure === 'function'
+        ? options.reportOperationFailure
+        : typeof options.onOperationFailure === 'function'
         ? options.onOperationFailure
         : undefined
     );
@@ -734,7 +790,13 @@ export function createSession(
     typeof options.toMessage === 'function' ? options.toMessage : undefined;
   const telemetry =
     typeof options.telemetry === 'function' ? options.telemetry : undefined;
-  const developmentRuntime = options.developmentRuntime;
+  // The legacy rule: collection is on unless the app chose a destination of
+  // its own, and `telemetry: false` is such a choice.
+  const developmentEnabled = () => options.telemetry === undefined;
+  const developmentRuntime: LangGraphDevelopmentRuntime | undefined =
+    typeof options.developmentRuntime === 'function'
+      ? buildDevelopmentRuntime(options.developmentRuntime, developmentEnabled)
+      : options.developmentRuntime;
   const devtools = options.devtools;
   const scriptedRuns = options.scriptedRuns;
   const a2uiClientCapabilities = options.a2uiClientCapabilities
@@ -768,6 +830,7 @@ export function createSession(
   /** Reports one command to telemetry and the development collector. */
   function reportRequest(attempt: Attempt, requestType: string) {
     attempt.startedAt = Date.now();
+    attempt.requestType = requestType;
     if (developmentRuntime) safely(() => developmentRuntime.touch());
     report('tplane:runtime_request_created', { requestType });
     report('tplane:stream_started');
@@ -962,9 +1025,16 @@ export function createSession(
     interrupts: [],
     subgraphs: [],
     history: undefined,
+    ...(options.historyState === true ? { checkpoints: [] } : {}),
   });
   let historyPage: LangGraphSnapshot['history'];
   const historyState = options.historyState === true;
+  /**
+   * What `snapshot.checkpoints` holds before a page is read: the session keeps
+   * checkpoint state, and has none yet. A view tells that apart from a session
+   * that keeps none, where the field is absent.
+   */
+  const noCheckpoints = publication.getSnapshot().checkpoints;
   let checkpointPage:
     | {
         /** The page as the backend sent it, newest first. */
@@ -1176,7 +1246,8 @@ export function createSession(
     if (values === undefined || stateType === undefined)
       return (published = { source: values, state: values });
     const reading = readState(stateType, values);
-    if (!reading.valid)
+    // Compared with `false` so the reading narrows without strict null checks.
+    if (reading.valid === false)
       return (published = {
         source: values,
         state: published.state,
@@ -1339,6 +1410,8 @@ export function createSession(
             messageCheckpoints: checkpointPage.messageCheckpoints,
             branchTree: checkpointPage.branchTree,
           }
+        : noCheckpoints
+        ? { checkpoints: noCheckpoints }
         : {}),
       ...(streamingToolCalls.length ? { streamingToolCalls } : {}),
       ...(catalogDeclared
@@ -1518,6 +1591,22 @@ export function createSession(
           errorClass: errorClass(error),
         });
       else report('tplane:stream_ended', { durationMs });
+      // A run the backend completed, with nothing left to answer. A scripted
+      // run never reached a backend, so it proves nothing.
+      if (
+        developmentRuntime &&
+        outcome === 'success' &&
+        !error &&
+        !attempt.scripted
+      )
+        safely(() => {
+          developmentRuntime.milestone(
+            'runtime.first_stream_completed',
+            durationMs
+          );
+          if (attempt.requestType === 'resume')
+            developmentRuntime.milestone('interrupt.handled');
+        });
     }
     if (
       historyState &&
@@ -1583,7 +1672,7 @@ export function createSession(
   }
   function detach(outcome: CompleteOutcome): Attempt | undefined {
     const attempt = owner;
-    if (!attempt) return;
+    if (!attempt) return undefined;
     owner = undefined;
     recoveryAttempt = undefined;
     replayable = undefined;
@@ -1897,6 +1986,20 @@ export function createSession(
     };
   }
 
+  /** Whether any saved checkpoint in the page holds this turn's own user
+   * message: proof the backend received the request that carried it. */
+  function holdsTurn(attempt: Attempt, history: ThreadState[]) {
+    const userId = attempt.projection.userId;
+    if (userId === undefined) return false;
+    return history.some((saved) => {
+      const messages = record(saved?.values)?.['messages'];
+      return (
+        Array.isArray(messages) &&
+        messages.some((message) => record(message)?.['id'] === userId)
+      );
+    });
+  }
+
   function reconcile(attempt: Attempt, history: ThreadState[]) {
     const previousState = state;
     const previousValues = values;
@@ -2049,6 +2152,44 @@ export function createSession(
         return;
       }
       if (!owns(attempt)) return;
+    }
+    if (attempt.verifyUnsent) {
+      // A retry of a command whose creation request got no response. `fetch`
+      // rejects the same way when a response is lost on its way back, so the
+      // thread is asked first: a turn it already holds is adopted or left to
+      // a status check, and only a turn it does not hold is sent again.
+      attempt.verifyUnsent = false;
+      if (getHistory && !script) {
+        let history: ThreadState[] | undefined;
+        try {
+          history = await getHistory(thread(), attempt.controller.signal);
+        } catch {
+          /* The thread cannot be read; the unanswered request is all that is known. */
+        }
+        if (!owns(attempt)) return;
+        if (history) {
+          let recovered: ReturnType<typeof reconcile>;
+          let held: boolean;
+          try {
+            recovered = reconcile(attempt, history);
+            held = holdsTurn(attempt, history);
+          } catch {
+            held = true;
+          }
+          if (!owns(attempt)) return;
+          if (recovered) {
+            state = recovered.state;
+            values = recovered.values;
+            interrupts = recovered.interrupts;
+            settle(attempt, recovered.outcome);
+            return;
+          }
+          if (held) {
+            settle(attempt, 'interrupted', interruptionError(attemptCanCheck()));
+            return;
+          }
+        }
+      }
     }
     try {
       let groups = attempt.groups;
@@ -2502,18 +2643,28 @@ export function createSession(
     } catch (raw) {
       if (!owns(attempt)) return;
       if (attempt.physical) attempt.physical.captureOpen = false;
-      const error = failureProjection(
-        raw,
-        protectedTransport,
-        false,
-        attemptCanCheck()
-      );
+      // The default transport's fetch seam saw this plain submission's
+      // creation request rejected with no response from anything. Nothing
+      // answered, so there is no run to ask about, and `retry()` can send the
+      // same command again once the thread shows no trace of it.
+      let unanswered =
+        !!getRunStatus &&
+        attempt.input.kind === 'submit' &&
+        attempt.groups === 0 &&
+        !attempt.branch &&
+        !attempt.physical?.received &&
+        !attempt.physical?.evidence.runId &&
+        !attempt.physical?.evidence.unsafe &&
+        isUnansweredRunCreation(raw);
+      let error = unanswered
+        ? unansweredError()
+        : failureProjection(raw, protectedTransport, false, attemptCanCheck());
       // A thrown stream gets the same single read-only reconciliation a closed
       // one gets, unless the exact run is known to be still in flight. A
       // conclusive answer settles the attempt itself; nothing is retried.
       if (
-        error.kind === 'interrupted' &&
-        error.recovery === 'check' &&
+        (unanswered ||
+          (error.kind === 'interrupted' && error.recovery === 'check')) &&
         getHistory
       ) {
         const run = attempt.physical;
@@ -2547,11 +2698,18 @@ export function createSession(
               settle(attempt, recovered.outcome);
               return;
             }
+            // The thread holds this turn's message after all: the request
+            // did arrive, so its outcome is checked and it is not sent again.
+            if (unanswered && holdsTurn(attempt, history)) {
+              unanswered = false;
+              error = interruptionError(attemptCanCheck());
+            }
           } catch {
             if (!owns(attempt)) return;
           }
         }
       }
+      attempt.unanswered = unanswered;
       settle(
         attempt,
         error.kind === 'interrupted' ? 'interrupted' : 'error',
@@ -2770,6 +2928,18 @@ export function createSession(
     input: LangGraphSubmitInput,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome> {
+    return forkFrom(checkpoint, input, options, false);
+  }
+
+  /** `fork`, optionally from the checkpoint a run saved when it accepted its
+   * input. Only `regenerate` asks for that: the new input replaces the one
+   * still waiting there. */
+  function forkFrom(
+    checkpoint: CheckpointReference,
+    input: LangGraphSubmitInput,
+    options: LangGraphRunOptions | undefined,
+    pendingInput: boolean
+  ): Promise<CompleteOutcome> {
     let preparation: Preparation | undefined;
     const beginning = publication.command(() => {
       if (disposed) return;
@@ -2797,7 +2967,7 @@ export function createSession(
       if (!current()) return;
       admitBranchCommand();
       preparation = prepare(position, external, (raw) => {
-        const source = captureCompletedCheckpoint(raw, position);
+        const source = captureCompletedCheckpoint(raw, position, pendingInput);
         let projected = projectHistory(state, [source.state], {
           interrupts: [],
           ...(typedTools
@@ -3651,7 +3821,7 @@ export function createSession(
       withdrawn?.abort();
     });
     return beginning.then(() => {
-      if (!read) return;
+      if (!read) return undefined;
       void readHistory(read);
       return read.result;
     });
@@ -3662,7 +3832,8 @@ export function createSession(
    * message id, so the snapshot gains no second copy and an `add_messages`
    * thread replaces rather than appends it; a resume sends the same response.
    * Resolves with the re-run's outcome, or `aborted` when nothing ran. It
-   * never replays an uncertain outcome. */
+   * never replays an uncertain outcome. A command whose creation request got
+   * no response is sent again only after the thread shows no trace of it. */
   function retry(): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
     const beginning = publication.command(() => {
@@ -3685,6 +3856,7 @@ export function createSession(
         previous.runOptions,
         'retry'
       );
+      if (previous.unanswered) attempt.verifyUnsent = true;
     });
     // No attempt means nothing ran: `aborted`, as for an ignored submit.
     return dispatch(beginning, () => attempt);
@@ -3863,10 +4035,13 @@ export function createSession(
       throw new Error(
         'The checkpoint before that prompt is not in the loaded history.'
       );
-    return fork(
+    // On a real backend that checkpoint is the one the prompt's own run saved
+    // when it accepted its input: its only remaining work is that input.
+    return forkFrom(
       source.checkpoint as CheckpointReference,
       prompt.content,
-      options
+      options,
+      true
     );
   }
   /** Records one client tool result: the call shows it at once, and its
@@ -4021,6 +4196,7 @@ export function createSession(
     // Only the exact run's status can settle a failure, so without it nothing
     // could ever be retried and the command is left out.
     ...(getRunStatus ? { retry } : {}),
+    isDevelopmentRuntimeEnabled: developmentEnabled,
     dispose: () =>
       publication.command(() => {
         if (disposed) return;

@@ -121,11 +121,14 @@ export function projectStream(
   const incoming = Array.isArray(messages)
     ? messages.map(record).filter((m): m is Record<string, unknown> => !!m)
     : [];
+  // The graph task a streamed message came from scopes response identity.
+  const task = record(event.messageMetadata)?.['langgraph_checkpoint_ns'];
   const identity = observeResponseIdentity(
     projection.responseIdentity,
     incoming,
     terminal,
-    projection.baselineIds
+    projection.baselineIds,
+    messageEvent && typeof task === 'string' ? task : undefined
   );
   const canonicalId = (id: string) => responseChunkId(identity.evidence, id);
   const projectedId = (raw: Record<string, unknown>, id: string) =>
@@ -205,8 +208,9 @@ export function projectStream(
     if (!role) continue;
     const wireId =
       typeof raw['id'] === 'string' ? raw['id'] : `${messageIdPrefix}-${role}`;
-    // Only a proven provider item binding can replace a wire ID. Equal text,
-    // node/task metadata and adjacent chunks never establish identity.
+    // Only proven provider evidence can replace a wire ID: a matching set of
+    // output items, or a model run's placeholder id bound to the response
+    // that run opened. Equal text, node names and adjacency never do.
     const id = projectedId(raw, wireId);
     const previous = state.messages.find((m) => m.id === id);
     const baseline = projection.baselineIds.includes(id);
@@ -485,8 +489,9 @@ export function finalizeProjection(
 /** The shared interruption vocabulary, keyed by recovery value. The neutral
  * runtime cannot import `@threadplane/chat`, so this is a copy of that
  * package's `AGENT_RECOVERY_MESSAGES` / `AGENT_RECOVERY_DETAILS`; a parity
- * spec under the Angular test target fails when the two drift. The runtime
- * never emits `retry`: it cannot prove a request was undispatched. */
+ * spec under the Angular test target fails when the two drift. An interruption
+ * is never published with `retry`: a creation request that got no response at
+ * all is a `connection` error instead, see `unansweredError`. */
 export const RECOVERY_COPY = Object.freeze({
   messages: Object.freeze({
     retry: 'The response was interrupted before it started. Try again.',
@@ -515,17 +520,33 @@ export function interruptionError(canCheck: boolean): AgentError {
   };
 }
 
+/** Shown when the run-creation request got no response from anything. */
+export const CONNECTION_COPY =
+  "Can't reach the server. Check your connection and try again.";
+
+/** The default transport's creation request was rejected by `fetch` before
+ * any response: nothing answered, so no run id exists and the same command can
+ * be sent again. `retry()` first reads the thread for this turn's message. */
+export function unansweredError(): AgentError {
+  return {
+    kind: 'connection',
+    message: CONNECTION_COPY,
+    retryable: true,
+    recovery: 'retry',
+  };
+}
+
 /** Classifies a raw stream failure into the plain display projection.
  *
- * A failure before any response (an offline `fetch`, DNS, a refused or reset
- * connection) is deliberately an `interrupted` error, never a retryable
- * `connection` one. The legacy Angular bridge and the AG-UI adapter report
- * `connection` there because their transports observe the connect phase; this
- * runtime only sees a thrown iterator. A browser `TypeError: fetch failed`
- * carries no cause, and a reset after the server accepted the request looks
- * identical to one that never left, so dispatch cannot be ruled out and Retry
- * could replay a run. Protected SDK errors (including raw SSE error payloads)
- * stay generic. */
+ * What a thrown value says about itself never makes a failure retryable. A
+ * `TypeError: fetch failed` from a custom transport, or a stream that dropped
+ * after its response began, is an `interrupted` error: a reset after the
+ * server accepted the request looks identical to one that never left, so
+ * dispatch cannot be ruled out and Retry could replay a run. Only the default
+ * transport's own fetch seam can say that a creation request got no response,
+ * and the session publishes that case with `unansweredError` instead of
+ * calling this. Protected SDK errors (including raw SSE error payloads) stay
+ * generic. */
 export function failureProjection(
   raw: unknown,
   protectedTransport: boolean,

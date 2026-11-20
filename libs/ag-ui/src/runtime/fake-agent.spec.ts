@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { toArray, lastValueFrom } from 'rxjs';
 import { EventType, type RunAgentInput, type BaseEvent } from '@ag-ui/client';
 import { FakeAgent } from './fake-agent';
+import { createSession } from './create-session';
 
 const minimalInput: RunAgentInput = {
   threadId: 't1',
@@ -79,6 +80,57 @@ describe('FakeAgent — reasoningTokens', () => {
     const contentEvents = events.filter((e: any) => e.type === 'REASONING_MESSAGE_CONTENT');
     expect(contentEvents.length).toBe(3);
     expect(contentEvents.map((e: any) => e.delta)).toEqual(['I ', 'thought ', 'about it.']);
+  });
+
+  it('gives the reasoning record its own id and the reasoning role', async () => {
+    const agent = new FakeAgent({
+      tokens: ['hello'],
+      reasoningTokens: ['thinking'],
+      delayMs: 0,
+    });
+    const events = (await lastValueFrom(
+      agent.run(minimalInput).pipe(toArray()),
+    )) as (BaseEvent & { messageId?: string; role?: string })[];
+    const of = (prefix: string) =>
+      events.filter((event) => event.type.startsWith(prefix));
+    const reasoning = of('REASONING_MESSAGE_');
+    const text = of('TEXT_MESSAGE_');
+    expect(reasoning[0].role).toBe('reasoning');
+    expect(new Set(reasoning.map((event) => event.messageId)).size).toBe(1);
+    expect(new Set(text.map((event) => event.messageId)).size).toBe(1);
+    expect(reasoning[0].messageId).not.toBe(text[0].messageId);
+  });
+
+  it('runs through a real session to success, with the reasoning on the message', async () => {
+    const session = createSession({
+      agent: new FakeAgent({
+        tokens: ['The ', 'answer.'],
+        reasoningTokens: ['I ', 'thought ', 'about it.'],
+        delayMs: 0,
+      }),
+    });
+    try {
+      await expect(session.submit('Why?')).resolves.toBe('success');
+      const snapshot = session.getSnapshot();
+      expect(snapshot.status).toBe('idle');
+      expect(snapshot.error).toBeUndefined();
+      expect(
+        snapshot.messages.map(({ role, content, reasoning }) => ({
+          role,
+          content,
+          reasoning,
+        })),
+      ).toEqual([
+        { role: 'user', content: 'Why?', reasoning: undefined },
+        {
+          role: 'assistant',
+          content: 'The answer.',
+          reasoning: 'I thought about it.',
+        },
+      ]);
+    } finally {
+      await session.dispose();
+    }
   });
 
   it('does not emit reasoning events when reasoningTokens is omitted', async () => {

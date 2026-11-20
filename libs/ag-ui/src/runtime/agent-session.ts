@@ -23,7 +23,6 @@ import {
 import { failedWithRunError, type Observation } from './session-observation.js';
 import { PROTECTED_COPY } from './session-instruments.js';
 
-type Tools = Record<string, ToolContract>;
 /**
  * What an AG-UI session publishes: the core snapshot, with the protocol
  * evidence behind it. `state` is the typed state; the literal document a
@@ -33,7 +32,10 @@ export type SessionSnapshot<TState = unknown> = Omit<
   Observation,
   'state' | 'subagents' | 'clientToolCatalog'
 > &
-  Omit<AgentSnapshot<Tools, TState>, 'interrupts' | 'subagents'> & {
+  Omit<
+    AgentSnapshot<Record<string, ToolContract>, TState>,
+    'interrupts' | 'subagents'
+  > & {
     /**
      * What a paused run waits on, each with the protocol's own fields. Listed
      * from the pause until an answer is sent, and absent otherwise; a pause
@@ -149,7 +151,8 @@ function stateReader(declaration: StateDeclaration | undefined) {
   return (source: PlainValue): StateView => {
     if (source === view.source) return view;
     const reading = readState(declaration, source);
-    if (!reading.valid)
+    // Compared with `false` so the reading narrows without strict null checks.
+    if (reading.valid === false)
       return (view = {
         source,
         state: view.state,
@@ -177,7 +180,37 @@ export const INTERRUPTED_COPY = Object.freeze({
     'The connection dropped. We could not confirm whether the request completed.',
   detail: 'Trying again could repeat it.',
 });
+/**
+ * Shown for a stream that closed before it produced any event, when the
+ * request is one `retry` can send again. The LangGraph runtime keeps the same
+ * wording for its `retry` recovery; a runtime spec fails when the two drift.
+ */
+export const UNANSWERED_COPY =
+  'The response was interrupted before it started. Try again.';
 const FAILED = 'The agent request failed.';
+/** Shown when a request got no response, such as an unreachable host. */
+export const CONNECTION_COPY =
+  "Can't reach the server. Check your connection and try again.";
+/** What each failed run was classified from; see `noteFailure`. */
+const diagnostics = new WeakMap<object, AgentErrorDiagnostic>();
+/**
+ * How a `fetch` that got no response names its failure: the browsers' own
+ * wording, and the codes Node puts on the failure's cause.
+ */
+const NO_RESPONSE =
+  /failed to fetch|networkerror|econnrefused|enotfound|network request failed|load failed/i;
+
+/** True when what a run failed with says its request got no response. */
+function gotNoResponse(diagnostic: AgentErrorDiagnostic | undefined): boolean {
+  for (
+    let at = diagnostic, depth = 0;
+    at && depth < 4;
+    at = at.cause, depth++
+  )
+    if (NO_RESPONSE.test(`${at.name ?? ''} ${at.message} ${at.code ?? ''}`))
+      return true;
+  return false;
+}
 /** Shown when the saved thread could not be read or written. */
 export const STORAGE_COPY =
   'The saved conversation could not be read or written.';
@@ -195,8 +228,9 @@ export const AUTH_COPY = 'Authentication failed. Check your credentials.';
  * The native snapshot keeps the run's outcome, its terminal event and the HTTP
  * status of a response that was not OK. So a failure is the backend's own
  * `RUN_ERROR` text, a stream that ended without a terminal, a rejected
- * credential (401 or 403), another HTTP status, or a request that failed for a
- * reason this view cannot name, such as a host that could not be reached.
+ * credential (401 or 403), another HTTP status, a request that got no response
+ * (read from what the run failed with, which a protected session does not
+ * keep), or a request that failed for a reason this view cannot name.
  */
 function failure(
   native: Observation,
@@ -218,18 +252,40 @@ function failure(
     reported === undefined ? native.run?.failure?.status : undefined;
   // A protected session shows one message for whatever a server described.
   const auth = !protect && (status === 401 || status === 403);
-  const kind = interrupted ? 'interrupted' : auth ? 'auth' : 'server';
-  const message = interrupted
+  const unreachable =
+    !protect &&
+    !interrupted &&
+    reported === undefined &&
+    status === undefined &&
+    native.run !== undefined &&
+    gotNoResponse(diagnostics.get(native.run));
+  const kind = interrupted
+    ? 'interrupted'
+    : auth
+    ? 'auth'
+    : unreachable
+    ? 'connection'
+    : 'server';
+  // An interruption is retryable in one case: the stream closed before any
+  // event, for a request the owner can send again.
+  const unanswered = interrupted && retryable;
+  const message = unanswered
+    ? UNANSWERED_COPY
+    : interrupted
     ? INTERRUPTED_COPY.message
     : auth
     ? AUTH_COPY
     : protect
     ? PROTECTED_COPY
+    : unreachable
+    ? CONNECTION_COPY
     : reported || FAILED;
-  const detail = interrupted ? INTERRUPTED_COPY.detail : undefined;
+  const detail =
+    interrupted && !unanswered ? INTERRUPTED_COPY.detail : undefined;
   // `retryable` is the owner's word: the backend's own RUN_ERROR settled what
-  // happened, or the request provably never left. Any other failure leaves
-  // open whether the request did its work, so sending it again could repeat it.
+  // happened, the request provably never left, or its stream closed before
+  // any event. Any other failure leaves open whether the request did its
+  // work, so sending it again could repeat it.
   // An answer that was sent and not proven taken can be asked about, when the
   // application configured a reconciler to ask.
   const recovery = retryable
@@ -303,8 +359,6 @@ function usage(native: Observation): AgentUsage | undefined {
   usageViews.set(reported, projected);
   return projected ?? undefined;
 }
-
-const diagnostics = new WeakMap<object, AgentErrorDiagnostic>();
 
 /**
  * Records what a failed run was classified from, for the `errorDiagnostic` a

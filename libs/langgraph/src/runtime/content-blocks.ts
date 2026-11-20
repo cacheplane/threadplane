@@ -201,7 +201,9 @@ export function captureInputBlocks(input: unknown): {
       blocks.push({
         type: 'image',
         url,
-        ...(alt !== undefined ? { alt } : {}),
+        // Checked above: text or absent. Asked as `typeof` so the field is
+        // typed without strict null checks too.
+        ...(typeof alt === 'string' ? { alt } : {}),
       });
       content.push({ type: 'image_url', image_url: { url } });
     } else

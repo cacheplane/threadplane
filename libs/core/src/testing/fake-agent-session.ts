@@ -342,6 +342,29 @@ function own<T>(value: T, ancestors = new Set<object>()): T {
   return Object.freeze(copy) as T;
 }
 
+// The two helpers below are written as type predicates because an application
+// may compile this source without strict null checks, where neither a truthy
+// `ok` nor `??` narrows the value.
+
+/** True for the result that carries a value: the one whose `ok` is truthy. */
+function succeeded(
+  result: ClientToolResult
+): result is Extract<ClientToolResult, { readonly ok: true }> {
+  return Boolean(result.ok);
+}
+
+function isOutcome(value: CompleteOutcome | void): value is CompleteOutcome {
+  return value !== undefined && value !== null;
+}
+
+/** `value ?? fallback` for what a handler returned. */
+function outcomeOr(
+  value: CompleteOutcome | void,
+  fallback: CompleteOutcome
+): CompleteOutcome {
+  return isOutcome(value) ? value : fallback;
+}
+
 /**
  * Creates an in-memory {@link AgentSession} for tests and stories. There is no
  * transport: the test publishes snapshots through the returned controls, and
@@ -414,7 +437,7 @@ export function createFakeAgentSession<
   };
   const checkState = (value: unknown): DeepReadonly<TState> => {
     const reading = readState(init.stateType as StateDeclaration, value);
-    if (!reading.valid)
+    if (reading.valid === false)
       throw new TypeError(
         `The fake state does not match its schema: ${reading.issues.join('; ')}`
       );
@@ -564,7 +587,7 @@ export function createFakeAgentSession<
     const settled = (call: ToolCall<TTools>) =>
       (call.id !== toolCallId
         ? call
-        : result.ok
+        : succeeded(result)
         ? {
             id: call.id,
             name: call.name,
@@ -616,7 +639,7 @@ export function createFakeAgentSession<
         ...merged(update as object | undefined),
       });
       return attempt(
-        async () => (await handler?.(input, fake, options)) ?? 'success'
+        async () => outcomeOr(await handler?.(input, fake, options), 'success')
       );
     },
     ...(has('runWithoutMessage', init.onRunWithoutMessage) && {
@@ -633,7 +656,8 @@ export function createFakeAgentSession<
         alive();
         if (input?.state !== undefined) publish(merged(input.state as object));
         return attempt(
-          async () => (await init.onRunWithoutMessage?.(fake)) ?? 'success'
+          async () =>
+            outcomeOr(await init.onRunWithoutMessage?.(fake), 'success')
         );
       },
     }),
@@ -657,7 +681,7 @@ export function createFakeAgentSession<
           );
         publish({ messages: snapshot.messages.slice(0, index) });
         return attempt(
-          async () => (await init.onRegenerate?.(fake)) ?? 'success'
+          async () => outcomeOr(await init.onRegenerate?.(fake), 'success')
         );
       },
     }),
@@ -677,7 +701,7 @@ export function createFakeAgentSession<
         const operation = failed;
         return attempt(
           init.onRetry
-            ? async () => (await init.onRetry?.(fake)) ?? 'success'
+            ? async () => outcomeOr(await init.onRetry?.(fake), 'success')
             : operation ?? (async () => 'success')
         );
       },
@@ -762,8 +786,10 @@ export function createFakeAgentSession<
         });
       return attempt(
         async () =>
-          (await resumeHandler?.(answers, fake, options)) ??
-          (remaining.length > 0 ? 'paused' : 'success')
+          outcomeOr(
+            await resumeHandler?.(answers, fake, options),
+            remaining.length > 0 ? 'paused' : 'success'
+          )
       );
     },
     async stop() {

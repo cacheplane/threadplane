@@ -8,7 +8,11 @@ import {
   refreshOnRunEnd,
 } from './public-api';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Only this integration spec composes the private runtime; production imports core only.
-import { createLangGraphThreadDirectory } from '../../langgraph/src/runtime/thread-directory';
+import {
+  createLangGraphThreadDirectory,
+  type LangGraphThreadDirectory,
+} from '../../langgraph/src/runtime/thread-directory';
+import { ɵAGENT_OPERATION_FAILURE_REPORTER } from './agent-tokens';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Test-only threads API from the private runtime.
 import {
   createFakeThreadsClient,
@@ -34,9 +38,9 @@ function setup(seed: readonly FakeThread[] = [], projects = false) {
             client,
             ...(projects ? {} : { projects: false as const }),
           }),
-        // What an app writes today to read one thread: the directory has no
-        // such command. Missing and malformed ids answer null; anything else
-        // rejects.
+        // An app's own reader, which the view prefers to the directory's `get`
+        // (covered below, without a reader). Missing and malformed ids answer
+        // null; anything else rejects.
         getThread: async (threadId) => {
           const found = client
             .stored()
@@ -261,5 +265,161 @@ describe('ThreadDirectoryView over the LangGraph thread directory', () => {
     TestBed.tick();
     await vi.waitFor(() => expect(ids(threads.threads())).toEqual(['a']));
     expect(client.calls).toEqual(['threads.search']);
+  });
+});
+
+describe('ThreadDirectoryView over the LangGraph thread directory, with no configured reader', () => {
+  /** Typed by the directory, so every command is called without `?.`. */
+  function setupTyped(seed: readonly FakeThread[] = []) {
+    const client = createFakeThreadsClient(seed);
+    TestBed.configureTestingModule({
+      providers: [
+        provideThreadDirectory({
+          createDirectory: () => createLangGraphThreadDirectory({ client }),
+        }),
+      ],
+    });
+    return {
+      client,
+      threads: inContext(() =>
+        injectThreadDirectory<LangGraphThreadDirectory>()
+      ),
+    };
+  }
+
+  it('reads one thread the list does not hold through the directory', async () => {
+    const { client, threads } = setupTyped([
+      { thread_id: 'a', metadata: { title: 'Trip', archived: true } },
+    ]);
+
+    await expect(threads.getThread('a')).resolves.toEqual({
+      id: 'a',
+      title: 'Trip',
+      updatedAt: undefined,
+      status: 'archived',
+      pinned: false,
+      archived: true,
+      projectId: null,
+    });
+    // One request for one thread: the list is not read.
+    expect(client.calls).toEqual(['threads.get']);
+    expect(threads.threads()).toEqual([]);
+  });
+
+  it('answers null for a missing or malformed id, and rejects when it cannot tell', async () => {
+    const { client, threads } = setupTyped([{ thread_id: 'a' }]);
+
+    await expect(threads.getThread('missing')).resolves.toBeNull();
+    client.failNext('threads.get', 422);
+    await expect(threads.getThread('not-a-uuid')).resolves.toBeNull();
+    client.failNext('threads.get', 500);
+    await expect(threads.getThread('a')).rejects.toThrow(
+      'The LangGraph request failed.'
+    );
+    expect(client.calls).toEqual(['threads.get', 'threads.get', 'threads.get']);
+  });
+
+  it('answers a listed, unchanged thread with the item the list shows', async () => {
+    const { threads } = setupTyped([{ thread_id: 'a' }]);
+    await threads.refresh();
+
+    await expect(threads.getThread('a')).resolves.toBe(threads.threads()[0]);
+  });
+
+  it('carries the saved pin rank on list items and on a thread read alone', async () => {
+    const { threads } = setupTyped([
+      { thread_id: 'a', metadata: { pinned: true, pinnedOrder: 1 } },
+      { thread_id: 'b', metadata: { pinned: true, pinnedOrder: 0 } },
+      { thread_id: 'c', metadata: { pinned: true } },
+      { thread_id: 'd' },
+    ]);
+    await expect(threads.getThread('a')).resolves.toMatchObject({
+      id: 'a',
+      pinnedOrder: 1,
+    });
+    await threads.refresh();
+
+    expect(
+      threads.threads().map((thread) => [thread.id, thread.pinnedOrder])
+    ).toEqual([
+      ['b', 0],
+      ['a', 1],
+      ['c', undefined],
+      ['d', undefined],
+    ]);
+    expect('pinnedOrder' in threads.threads()[3]).toBe(false);
+
+    await threads.reorderPinned('a', 'b');
+    expect(
+      threads.threads().map((thread) => [thread.id, thread.pinnedOrder])
+    ).toEqual([
+      ['a', 0],
+      ['b', 1],
+      ['c', 2],
+      ['d', undefined],
+    ]);
+  });
+
+  it('calls every command the directory has without an optional call', async () => {
+    const { threads } = setupTyped([{ thread_id: 'a' }]);
+    await threads.refresh();
+
+    const created = await threads.create({ source: 'test' });
+    await threads.rename('a', 'Trip');
+    await threads.pin('a');
+    await threads.unpin('a');
+    await threads.archive('a');
+    await threads.unarchive('a');
+    const project = await threads.createProject('Trips');
+    await threads.moveToProject('a', project.id);
+    await threads.renameProject(project.id, 'Journeys');
+
+    expect(threads.threads().find((t) => t.id === 'a')).toMatchObject({
+      title: 'Trip',
+      projectId: project.id,
+    });
+    expect(threads.projects()).toEqual([{ id: project.id, name: 'Journeys' }]);
+    await threads.removeProject(project.id);
+    await threads.delete('a');
+    expect(ids(threads.threads())).toEqual([created]);
+    expect(threads.directory.pinnedOrderOf(threads.threads()[0])).toBeUndefined();
+  });
+});
+
+describe('ThreadDirectoryView over a LangGraph directory that owns its client', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('passes the host reporter through, so a rejected credential is reported once', async () => {
+    const requests: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        requests.push(String(input instanceof Request ? input.url : input));
+        return new Response(null, { status: 401 });
+      })
+    );
+    const report = vi.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: ɵAGENT_OPERATION_FAILURE_REPORTER, useValue: report },
+        provideThreadDirectory({
+          createDirectory: ({ clientOptions, reportOperationFailure }) =>
+            createLangGraphThreadDirectory({
+              apiUrl: 'https://app.test/api',
+              clientOptions,
+              reportOperationFailure,
+            }),
+        }),
+      ],
+    });
+    const threads = inContext(() => injectThreadDirectory());
+
+    await threads.refresh();
+
+    expect(threads.status()).toBe('error');
+    expect(report.mock.calls).toEqual([['unauthorized']]);
+    expect(requests).toHaveLength(1);
   });
 });

@@ -79,13 +79,52 @@ const overAgent = createSession({ agent: new MyWebSocketAgent(config) });
   `HttpAgent` does, gets a new one before each run, as `runAgent` gives it.
 - `threadId` is optional. The session uses the option, else the handed agent's
   own `threadId`, else a new identifier, and publishes it as
-  `session.threadId`. An empty string throws. `persistence` needs a thread the
-  application chose (the option, or the agent's), and `replay` is skipped
-  without one.
+  `session.threadId`. `null` reads as absent. An empty string throws.
+  `persistence` needs a thread the application chose (the option, or the
+  agent's), and `replay` is skipped without one.
+- `onThreadId(id)` is called once, while the session is created, with the id
+  of a thread the caller did not name: the generated one, or the handed
+  agent's. It is never called for a `threadId` given as an option, nor when
+  creation throws, and a throwing callback affects nothing. A binding passes
+  its own callback here, which is how the Angular agent's `threadId()` shows
+  the id of a new conversation.
+- `clientOptions` is accepted and ignored. With `threadId: null` and
+  `onThreadId` this lets a binding's whole session context be spread into the
+  options: `createSession({ url, ...context })`.
 - `agentId` names the agent when an endpoint serves more than one. It is passed
   to the HTTP agent the session sends with and published as `session.agentId`;
   a handed agent's own `agentId` is used when the option is absent. The
   protocol does not put it on the wire.
+
+### Leaving a response at the terminal event
+
+A run's result is settled by its terminal event (`RUN_FINISHED`, `RUN_ERROR`,
+or the legacy interrupt notice), not by the end of the HTTP response. The
+snapshot, the returned promise and the next command never wait for the
+response to end.
+
+After that event the session keeps reading the response until the server ends
+it, as the Angular adapter did through `HttpAgent.runAgent()`. The browser then
+records a request that completed, and the server is not cut off while it
+finishes. Nothing read after the terminal event is delivered or changes
+anything.
+
+- The response has `LEAVE_MS` (250 ms) to end by itself. One still open then
+  is closed: the session unsubscribes, which cancels the response reader, and
+  aborts that request's own `AbortController`. A server that holds the stream
+  open therefore cannot hold the connection, and never holds the session.
+- `stop()` and `dispose()` close such a response at once and cancel its timer.
+  A new command does not: each HTTP request has its own agent and controller,
+  so the earlier response ends or reaches its bound beside the new run.
+- A run that is still going is aborted at once by `stop()`, `dispose()`, a
+  superseding command and the caller's signal, as before.
+- A handed agent is treated the same way: the session stays subscribed until
+  its stream completes or the bound passes, and never calls `abortRun()` for a
+  run that reached its terminal event.
+- The timer does not keep a Node process alive.
+
+When a server holds the response open past the bound, the browser records that
+request as cancelled (`net::ERR_ABORTED`), although the run succeeded.
 
 ## Core messages and reasoning time
 
@@ -242,15 +281,29 @@ const session = createSession({ threadId, url });
   is `interrupted`. A response that was not OK carries its HTTP status: 401 and
   403 are an `auth` error, any other status a generic `server` error. The
   response body is never shown. A request that got no response, such as an
-  unreachable host, is a generic `server` error without a status.
+  unreachable host, is a `connection` error without a status, with the message
+  "Can't reach the server. Check your connection and try again.", as the
+  Angular adapter reported it. It is read from what the request failed with:
+  the wording browsers give a `fetch` that got no response, and the
+  `ECONNREFUSED` and `ENOTFOUND` codes Node puts on that failure's cause. Any
+  other failure without a status is a generic `server` error, and so is every
+  failure of a protected session, which keeps no description of the failure.
 - The snapshot records that status as `run.failure.status` when a
   response that was not OK is why the run failed, and clears it with the next
   run.
 - A backend `RUN_ERROR` for a submission is `retryable: true` with
-  `recovery: 'retry'`. Every other error has
+  `recovery: 'retry'`. So is a submission whose stream closed before it
+  produced any event, as the Angular adapter treated it: nothing of that run
+  was shown, and `retry` rebuilds the request from what it sent. Its error is
+  `interrupted` with the message "The response was interrupted before it
+  started. Try again." and no detail. A regenerate and a retry count as a
+  submission here; an answer to a pause and a continuation that carried local
+  tool results never do. Every other error has
   `retryable: false` and `recovery: 'none'`: a stream that ended without a
-  terminal, a response that was not OK and a request that got no response leave
-  open whether the backend did the work.
+  terminal after any event, a response that was not OK, a request that got no
+  response and a stream that failed instead of closing leave
+  open whether the backend did the work. What a failure says about itself never
+  makes it retryable.
 - An answer is retryable in one case: its request provably reached no run. It
   was never made, or the backend refused it with its own `RUN_ERROR` before
   any `RUN_STARTED`. The pause is then pending again, the error is
@@ -393,7 +446,8 @@ await session.submit({ message: 'Go on', state: { topic: 'refunds' } });
 ### Retry
 
 Every session has `retry()`. Without a client-tool catalog it sends the
-last submission again after its run failed with a backend `RUN_ERROR`,
+last submission again after its run failed with a backend `RUN_ERROR`, or
+after its stream closed before it produced any event,
 rebuilding the request from exactly the history and state that submission sent.
 No second user message is added, and the failed run's output and state changes
 are dropped. It resolves `aborted` without sending while a run is active, when
@@ -417,6 +471,13 @@ failure leaves the backend outcome open.
   an unsupported call, the group limit) is not a retryable failure.
 - A `RUN_ERROR` settles that the run failed, not that it did nothing. Work the
   backend did before failing can be repeated.
+- A stream that closed before any event does not prove the request did
+  nothing either: a server that took the request and lost its stream before
+  the first byte looks the same. The retry is offered because the request is
+  rebuilt from what was sent and adds no second user message. With a
+  client-tool catalog it applies to a command's first request only, and lifts
+  the same `uncertain` blocker. A continuation that closed that way is not
+  retried.
 
 ### Regenerate
 
@@ -654,9 +715,24 @@ const session = createSession({
   and then `tplane:stream_ended` or `tplane:stream_errored`, with `durationMs`
   and for an error an `errorClass`. `properties` always has
   `transport: 'ag-ui'` and `surface: 'session'`. A sink may be asynchronous and
-  may throw; neither affects the session. Absent or `false` reports nothing:
-  this runtime has no automatic development collection of its own, so a host
-  that wants one passes its sink.
+  may throw; neither affects the session. Absent or `false` reports nothing
+  to a sink.
+- `developmentRuntime` is a development-install collector with `touch()`,
+  `milestone(kind, durationMs?)` and `dispose()`, or a factory that builds one.
+  The session touches it at creation and for each request, reports
+  `transport.connected` on a request's first protocol event,
+  `runtime.first_stream_completed` (with the duration) when a run ends in
+  `success`, and `interrupt.handled` when that run was a resume; a scripted
+  run reports neither. It is disposed with the session and cannot fail a run.
+  A factory is called once with `{ integration, packageName, packageVersion,
+  installationToken, enabled }`. `installationToken` is the token the install
+  step wrote and is read only in an Angular development build (`ngDevMode`);
+  everywhere else it is `null`. `enabled()` is the session's
+  `isDevelopmentRuntimeEnabled()`: true unless the session was given a
+  `telemetry` option, `false` included. The session builds no collector and
+  sends nothing itself: without the option nothing is collected, which is what
+  a React app gets. In Angular, `provideAgent` supplies the factory as
+  `context.developmentRuntime` and `@threadplane/chat` supplies the collector.
 - `reportOperationFailure(code)` is told `unauthorized` for a 401 or 403 and
   `network_blocked` for a request that got no response. A request the session
   itself cancelled is not reported, and a reporter that throws changes
@@ -695,8 +771,21 @@ the response. This option provides observation only; answering a notice is
 Neither mode parses JSON strings, executes response schemas or guesses providers.
 `RUN_FINISHED.outcome` maps `success` (or no outcome) to `success`, a native
 `interrupt` batch to `paused` and `cancelled` to `aborted`, matching the public
-adapter. An unrecognised outcome type is stripped by the 1.0 client and
-therefore reads as success.
+adapter. Any other outcome is handled in two places, as it was for the Angular
+adapter:
+
+- An object outcome whose `type` the 1.0 client does not recognise is stripped
+  by the client, with a console warning, before the session sees the event.
+  The run then has no outcome and settles `success`.
+- An outcome the client cannot strip or accept settles the run as `error`: one
+  that is not an object (a string, a number, an array), or an `interrupt`
+  without a valid `interrupts` batch. The session's own check does the same
+  for any unknown outcome that reaches it.
+
+A run over a handed `agent` goes through the same client pipeline as an HTTP
+response and settles alike. So does a replayed run, except that an outcome
+that would fail a live run fails the replay instead: nothing of it is shown,
+as for any replay that could not be read.
 
 Server evidence and local outcomes are distinct. A terminal callback can stop the
 owner, selecting local `aborted` while retaining the accepted native terminal.
@@ -910,15 +999,21 @@ answer the server refused; `checkStatus` from the server's record;
 the `clientTools` capability with `pendingClientTools` and
 `streamingToolCalls`; `retry` and `regenerate` with a handler map;
 `runWithoutMessage`; submitted blocks; `errorDiagnostic`; children from
-activity records; a session over a client agent that is not HTTP; and the core
+activity records, each named like its delegation's tool result; `retry` of a
+response that ended before any event; the `connection` error for a host that
+cannot be reached; a session over a client agent that is not HTTP; and the core
 session conformance checks.
 
 What these backends showed:
 
-- The bridge answers a model failure by closing the connection, with no
-  `RUN_ERROR`. That is a failed transport to the session, so it is not
-  retryable, and a session with a handler map is then blocked
-  (`inputBlocked.reason: 'client-tools'`).
+- The bridge answers a model failure by dropping the connection, with no
+  `RUN_ERROR`, after it has sent `RUN_STARTED` and `STEP_STARTED`. The session
+  reads a stream that failed after events arrived (`TypeError: terminated` in
+  Node), so it is a `server` error and not retryable, and a session with a
+  handler map is then blocked (`inputBlocked.reason: 'client-tools'`). It is
+  not the retryable case of a stream that closed before any event. The Angular
+  adapter offered a retry here: it treated every failure it could not name as
+  retryable.
 - The bridge does not take a shorter history as a request to answer again. It
   keeps the thread itself, so after `regenerate` its closing snapshot lists the
   earlier answer beside the new one.
@@ -926,9 +1021,31 @@ What these backends showed:
   does not list it.
 - Mastra needs the `interruptEvent` of `mastra-command`. Answered with
   `legacy-command`, it pauses again.
-- An activity record and a tool result cannot share an identifier: the session
-  keeps one record for each. The Angular adapter kept activities apart from
-  messages and accepted that.
+- The activity convention names a delegation's activity record with its tool
+  call id, and today's graph gives the tool result that id too. The session
+  keeps one record of each (see "Activity records and tool results").
+
+## Activity records and tool results
+
+Record identifiers are unique in a transcript, with one exception: an activity
+record and a tool result may share one. A backend in the activity convention
+names a delegation's activity record with its tool call id, and may name the
+tool result the same way. The Angular adapter kept activities in a store apart
+from messages, so the two never met. The session keeps both in one transcript
+as two records.
+
+- A `TOOL_CALL_RESULT` whose `messageId` an activity record has adds or updates
+  the tool result and leaves the activity record alone. An `ACTIVITY_SNAPSHOT`
+  or `ACTIVITY_DELTA` whose `messageId` a tool result has does the same the
+  other way round. Either may arrive first.
+- A `MESSAGES_SNAPSHOT` matches each of the two with its own kind: a tool
+  result in the snapshot replaces the tool result and leaves the activity
+  record under the rule below.
+- A restored or saved thread may hold the pair. Requests still send the tool
+  result and never the activity record.
+- Any other two records with one identifier are still one record or an error,
+  as before: two tool results, two activity records, or either with a user,
+  assistant or reasoning record.
 
 ## Messages snapshots
 

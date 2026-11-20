@@ -121,12 +121,28 @@ export interface SessionCommonOptions
    * The thread this session owns. Absent, the handed agent's `threadId` is
    * used, or else a new one is generated; read it from `session.threadId`.
    * `persistence` needs one the application chose, and `replay` is skipped
-   * without one: a new conversation has nothing to replay.
+   * without one: a new conversation has nothing to replay. `null` reads as
+   * absent, so a binding's "no thread selected" can be passed as it is.
    */
-  readonly threadId?: string;
+  readonly threadId?: string | null;
+  /**
+   * Called once, while the session is created, with the id of a thread the
+   * caller did not name: one the session generated, or the handed agent's own.
+   * Never called for a `threadId` given as an option. A throwing callback
+   * affects nothing.
+   */
+  readonly onThreadId?: ((threadId: string) => void) | undefined;
+  /**
+   * Accepted and ignored, so a binding's whole session context can be spread
+   * into these options. An AG-UI session has no client to configure: `url`,
+   * `headers` and `fetch` are its transport options.
+   */
+  readonly clientOptions?: object | undefined;
   /** Names the agent, when an endpoint serves more than one. Published as `session.agentId`. */
   readonly agentId?: string;
+  /** The conversation the session begins with, before any restore. */
   readonly messages?: readonly Message[] | Transcript;
+  /** The state document the session begins with, before any restore. */
   readonly state?: unknown;
   /**
    * The type of the state document: `type<T>()` to declare it, or a Standard
@@ -136,6 +152,10 @@ export interface SessionCommonOptions
   readonly stateType?: StateDeclaration;
   /** Child evidence saved with this thread, published as `earlierSubagents`. Their attributed messages belong in `messages`. */
   readonly subagents?: Subagents;
+  /**
+   * How a root `CUSTOM on_interrupt` notice is read; `'native'` when omitted.
+   * See `InterruptMode`.
+   */
   readonly interruptMode?: InterruptMode;
   /**
    * How a pause is answered. Absent, a session answers the protocol's own
@@ -148,6 +168,13 @@ export interface SessionCommonOptions
 /** A session that posts each run to an HTTP endpoint. */
 export interface HttpSessionSource
   extends Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'> {
+  /** The endpoint each run is posted to. */
+  url: HttpAgentConfig['url'];
+  /** Headers sent with every request. */
+  headers?: HttpAgentConfig['headers'];
+  /** The `fetch` to send requests with, in place of the global one. */
+  fetch?: HttpAgentConfig['fetch'];
+  /** Never set on an HTTP session: `agent` selects `AgentSessionSource`. */
   readonly agent?: undefined;
 }
 /**
@@ -157,23 +184,40 @@ export interface HttpSessionSource
  * and neither reads nor changes the agent's own messages and state.
  */
 export interface AgentSessionSource {
+  /** The agent whose `run` the session calls for each request. */
   readonly agent: SessionAgent;
+  /** Never set with `agent`: the agent owns its transport. */
   readonly url?: undefined;
+  /** Never set with `agent`: the agent owns its transport. */
   readonly headers?: undefined;
+  /** Never set with `agent`: the agent owns its transport. */
   readonly fetch?: undefined;
 }
+/**
+ * What `createSession` takes: the common options, and either an HTTP endpoint
+ * (`url`, `headers`, `fetch`) or an `agent` the application built.
+ */
 export type SessionOptions = SessionCommonOptions &
   (HttpSessionSource | AgentSessionSource);
 /** Options as the factory captured them: one read of each, thread resolved. */
 interface CapturedOptions
-  extends Omit<SessionCommonOptions, 'threadId'>,
+  extends Omit<
+      SessionCommonOptions,
+      'threadId' | 'onThreadId' | 'clientOptions'
+    >,
     RequestSource {
   readonly threadId: string;
   /** The session named the thread itself; its first request creates it. */
   readonly ownThread: boolean;
 }
-/** The session's options with its state declaration as the type parameter. */
-type DeclaredOptions<D> = Omit<SessionCommonOptions, 'stateType'> & {
+/**
+ * `SessionOptions` with the state declaration as the type parameter, so
+ * `createSession` can infer the snapshot's state type from `stateType`.
+ */
+export type DeclaredSessionOptions<D> = Omit<
+  SessionCommonOptions,
+  'stateType'
+> & {
   readonly stateType?: D;
 } & (HttpSessionSource | AgentSessionSource);
 /**
@@ -220,6 +264,10 @@ function assertCurrentPause(decision: NativeDecision, pause: unknown): void {
       'Stale pause: read the pending decision again before answering.'
     );
 }
+/**
+ * What `createSession` returns: the core `AgentSession` contract over an AG-UI
+ * backend, with the snapshot, the commands and the protocol's own evidence.
+ */
 export interface Session<TState = unknown> {
   /** The thread this session owns. The factory always supplies it. */
   readonly threadId?: string;
@@ -284,6 +332,12 @@ export interface Session<TState = unknown> {
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
   stop(): Promise<void>;
   dispose(): Promise<void>;
+  /**
+   * Whether a host may run development-install collection for this session:
+   * true unless the session was created with a `telemetry` option, `false`
+   * included. The session itself collects nothing.
+   */
+  isDevelopmentRuntimeEnabled(): boolean;
   /**
    * Sends the last submission again after its run failed with a backend
    * `RUN_ERROR`. The request carries the history and state that submission
@@ -493,6 +547,24 @@ function answerUnsent(
   );
 }
 
+/**
+ * True when the failed run of `observation` is `runId` and its stream closed
+ * before it produced any event. The owner passes the run of a saved request
+ * it marked so, and `undefined` otherwise.
+ */
+function closedUnanswered(
+  observation: Observation,
+  runId: string | undefined
+): boolean {
+  return (
+    runId !== undefined &&
+    observation.status === 'error' &&
+    observation.run?.id === runId &&
+    observation.run.outcome === 'interrupted' &&
+    !observation.decision
+  );
+}
+
 /** Tells the lifecycle recorder about each publication. */
 function followLifecycle(
   publication: {
@@ -522,6 +594,11 @@ function startingObservation(
     ? Object.freeze({ ...initial, hold: 'hydrating' as const })
     : initial;
 }
+/**
+ * The session `createSession(options, tools)` returns when it is given a
+ * handler map: it runs those tools itself and publishes their calls in the
+ * snapshot's `clientTools`.
+ */
 export type ClientToolSession<
   C extends Record<string, ToolContract>,
   TState = unknown
@@ -609,6 +686,8 @@ interface Attempt {
   starting: boolean;
   /** The backend reported `RUN_STARTED` for this request. */
   started: boolean;
+  /** An event of this request reached the session. */
+  observed: boolean;
   finished: boolean;
 }
 
@@ -620,12 +699,12 @@ export function createSession<
   T extends Record<string, FunctionToolDefinition>,
   D extends StateDeclaration | undefined = undefined
 >(
-  options: DeclaredOptions<D>,
+  options: DeclaredSessionOptions<D>,
   tools: T & CheckedTools<T>
 ): ClientToolSession<ToolContracts<T>, InferState<D>>;
 export function createSession<
   D extends StateDeclaration | undefined = undefined
->(options: DeclaredOptions<D>): Session<InferState<D>>;
+>(options: DeclaredSessionOptions<D>): Session<InferState<D>>;
 export function createSession(
   options: SessionOptions,
   tools?: Record<string, FunctionToolDefinition>
@@ -643,9 +722,13 @@ export function createSession(
     interruptTransport,
     persistence,
   } = options;
-  const given = options.threadId;
+  // `null` is a binding's "no thread selected": the same as absent.
+  const given = options.threadId ?? undefined;
   if (given !== undefined && !given)
     throw new TypeError('A nonempty threadId is required');
+  const onThreadId = options.onThreadId;
+  if (onThreadId !== undefined && typeof onThreadId !== 'function')
+    throw new TypeError('onThreadId must be a function.');
   if (agent !== undefined && url !== undefined)
     throw new TypeError('A session takes a url or an agent, not both');
   // The thread the application chose, on the option or on its own agent.
@@ -657,8 +740,18 @@ export function createSession(
   // A new conversation has nothing to replay.
   const replay = stable === undefined ? undefined : options.replay;
   const catalog = tools === undefined ? undefined : captureClientTools(tools);
-  if (catalog !== undefined)
-    return createToolsOwner(
+  /** Reports a thread the caller did not name, once the session exists. */
+  const created = <S extends Session>(session: S): S => {
+    if (given === undefined && onThreadId)
+      try {
+        onThreadId(threadId);
+      } catch {
+        /* The caller's callback cannot change the session it was told of. */
+      }
+    return session;
+  };
+  if (catalog !== undefined) {
+    const owner = createToolsOwner(
       {
         threadId,
         ownThread: stable === undefined,
@@ -682,6 +775,8 @@ export function createSession(
       },
       catalog
     );
+    return created(owner);
+  }
   const instruments = createInstruments(options);
   const factory = createRun({
     url,
@@ -708,6 +803,8 @@ export function createSession(
         readonly runId: string;
         readonly transcript: Transcript;
         readonly state: PlainValue;
+        /** Its stream closed before any event, so it can be sent again. */
+        readonly unanswered?: true;
       }
     | undefined;
   /** The latest answer sent, kept until another command replaces it. */
@@ -720,7 +817,12 @@ export function createSession(
     createPresenter(
       stateType,
       (observation) =>
-        failedWithRunError(observation) || answerUnsent(observation, answered),
+        failedWithRunError(observation) ||
+        closedUnanswered(
+          observation,
+          saved?.unanswered ? saved.runId : undefined
+        ) ||
+        answerUnsent(observation, answered),
       persistence?.reconcile !== undefined,
       instruments.protect
     )
@@ -794,6 +896,17 @@ export function createSession(
       if (outcome === 'success' && pausedByNotice(decision, attempt.id))
         outcome = 'paused';
       attempt.ended?.(outcome);
+      // A submission whose stream closed before any event is sent again by
+      // `retry`: nothing it produced can be repeated on screen, and the
+      // request is rebuilt from what it sent. An answer never qualifies.
+      if (
+        saved &&
+        saved.runId === attempt.id &&
+        outcome === 'interrupted' &&
+        !attempt.observed &&
+        !decision
+      )
+        saved = { ...saved, unanswered: true };
       instruments.cause('run:end');
       const run = Object.freeze({
         ...previous.run,
@@ -869,11 +982,13 @@ export function createSession(
       input,
       (delivered) => {
         if (!current(attempt)) return;
+        attempt.observed = true;
         if (delivered.type === 'RUN_STARTED') attempt.started = true;
         lifecycle.mark('streamStartedAt');
         // createRun delivers the SDK's normalized/verified union through its
         // BaseEvent callback. No second schema parse or sequence verifier.
         const event = instruments.redact(delivered as AGUIEvent);
+        instruments.received(event);
         const previous = publication.getObservation();
         let next = reasoningClock.observe(
           event as AGUIEvent,
@@ -958,6 +1073,7 @@ export function createSession(
       cleanup: () => undefined,
       starting: false,
       started: false,
+      observed: false,
       finished: false,
     };
     void done.then(resolve);
@@ -992,6 +1108,8 @@ export function createSession(
     revision++;
     return new Promise((resolve) => {
       publication.command(() => {
+        // A response left open after its run ended is closed with the session.
+        factory.release();
         if (permanent) {
           disposed = true;
           durability?.dispose();
@@ -1366,12 +1484,15 @@ export function createSession(
             resolve('aborted');
             return;
           }
-          if (!failedWithRunError(previous)) {
+          if (
+            !failedWithRunError(previous) &&
+            !closedUnanswered(previous, last.unanswered && last.runId)
+          ) {
             resolve('error');
             return;
           }
           const id = crypto.randomUUID();
-          saved = { ...last, runId: id };
+          saved = { runId: id, transcript: last.transcript, state: last.state };
           // The failed run's output and state changes are dropped: the request
           // is rebuilt from exactly what the failed submission sent.
           admit(
@@ -1435,8 +1556,11 @@ export function createSession(
       }),
     stop: () => close(false),
     dispose: () => close(true),
+    isDevelopmentRuntimeEnabled: instruments.developmentEnabled,
   };
-  return durableSession(session, durability, persistence !== undefined);
+  return created(
+    durableSession(session, durability, persistence !== undefined)
+  );
 }
 
 /** A command can own several physical runs, but never lends execution authority
@@ -1482,6 +1606,8 @@ function createToolsOwner(
         readonly runId: string;
         readonly transcript: Transcript;
         readonly state: PlainValue;
+        /** Its stream closed before any event, so it can be sent again. */
+        readonly unanswered?: true;
       }
     | undefined;
   /**
@@ -1494,7 +1620,8 @@ function createToolsOwner(
     ).clientTools?.blocker;
     const runId = saved?.runId;
     return (
-      failedWithRunError(observation) &&
+      (failedWithRunError(observation) ||
+        closedUnanswered(observation, saved?.unanswered && runId)) &&
       runId !== undefined &&
       runId === observation.run?.id &&
       (!blocker ||
@@ -1515,6 +1642,8 @@ function createToolsOwner(
     starting: boolean;
     /** The backend reported `RUN_STARTED` for this request. */
     started: boolean;
+    /** An event of this request reached the session. */
+    observed: boolean;
     settled: boolean;
     fetchInvoked: boolean;
   }
@@ -1840,6 +1969,18 @@ function createToolsOwner(
         terminal.outcome?.type === 'interrupt')
     )
       pausedPhysical = physical;
+    // A command's first request whose stream closed before any event is sent
+    // again by `retry`. An answer and a continuation that carried local tool
+    // results never qualify: the backend may have taken them.
+    if (
+      saved &&
+      saved.runId === physical.id &&
+      outcome === 'interrupted' &&
+      !physical.observed &&
+      physical.kind !== 'client-tool-continuation' &&
+      !decision
+    )
+      saved = { ...saved, unanswered: true };
     const nativeSuccess =
       !noticed &&
       terminal?.type === 'RUN_FINISHED' &&
@@ -1999,6 +2140,7 @@ function createToolsOwner(
     physical.handle = runner.start(
       input,
       (delivered) => {
+        physical.observed = true;
         publication.command(() => {
           if (
             !owns(command, physical) ||
@@ -2009,6 +2151,7 @@ function createToolsOwner(
           if (delivered.type === 'RUN_STARTED') physical.started = true;
           lifecycle.mark('streamStartedAt');
           const event = instruments.redact(delivered as AGUIEvent);
+          instruments.received(event);
           const previous = publication.getObservation();
           let next = reasoningClock.observe(
             event as AGUIEvent,
@@ -2143,6 +2286,7 @@ function createToolsOwner(
       }),
       starting: false,
       started: false,
+      observed: false,
       settled: false,
       fetchInvoked: false,
     };
@@ -2197,6 +2341,7 @@ function createToolsOwner(
       }),
       starting: false,
       started: false,
+      observed: false,
       settled: false,
       fetchInvoked: false,
     };
@@ -2220,6 +2365,8 @@ function createToolsOwner(
     revision++;
     return new Promise<void>((resolve) =>
       publication.command(() => {
+        // A response left open after its run ended is closed with the session.
+        factory.release();
         if (permanent) {
           disposed = true;
           durability?.dispose();
@@ -2336,6 +2483,7 @@ function createToolsOwner(
       disposed ? () => undefined : instruments.onRawEvent(listener),
     stop: () => close(false),
     dispose: () => close(true),
+    isDevelopmentRuntimeEnabled: instruments.developmentEnabled,
     submit: (input, options) =>
       begin(() => {
         const captured = captureSubmit(input);

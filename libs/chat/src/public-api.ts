@@ -1,3 +1,7 @@
+// Registers the development-install collector with the agent layer. A module
+// with a side effect, listed under `sideEffects` in package.json.
+import './lib/agent/development-host';
+
 // Shared types
 export type { MessageTemplateType } from './lib/chat.types';
 
@@ -317,7 +321,11 @@ export type {
 export { toClientToolSpecs } from './lib/client-tools/client-tools-coordinator';
 export type { ClientToolsCoordinator } from './lib/client-tools/client-tools-coordinator';
 
-// Test utilities (no vitest dep — safe to ship in the main runtime bundle)
+// `mockAgent` stays in the main entry on purpose: the documented way to render
+// `<chat>` before a backend exists is `mockAgent()` from `@threadplane/chat`.
+// It needs the in-memory session of `@threadplane/core/testing`, which has no
+// test-runner dependency. Everything that needs one is in
+// `@threadplane/chat/testing`.
 export { mockAgent } from './lib/testing/mock-agent';
 export type { MockAgent, MockAgentField, MockAgentLifecycle, MockAgentOptions } from './lib/testing/mock-agent';
 

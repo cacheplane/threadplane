@@ -13,7 +13,8 @@ export interface ThreadRoutingConfig {
   /** Extract the thread id from a URL (null = bare). Default: last non-empty path segment. */
   threadIdFromUrl?: (url: string) => string | null;
   /** Optional async validity check; on `false` the helper redirects to the bare path
-   *  (`replaceUrl: true`). LangGraph apps pass `id => threads.getThread(id).then(Boolean)`. */
+   *  (`replaceUrl: true`). With an injected thread directory, pass
+   *  `id => threads.getThread(id).then(Boolean)`. */
   validate?: (id: string) => Promise<boolean>;
   /** Extras merged into every navigate (default `{ queryParamsHandling: 'preserve' }`). */
   navigationExtras?: NavigationExtras;
@@ -33,9 +34,23 @@ const defaultToCommands = (id: string | null): unknown[] => (id ? ['/', id] : ['
  * @example
  * ```ts
  * export const ACTIVE_THREAD = signal<string | null>(null);
- * // providers: provideAgent({ threadId: ACTIVE_THREAD, onThreadId: id => ACTIVE_THREAD.set(id) })
- * const threads = inject(LangGraphThreadsAdapter);
- * injectThreadRouting({ threadId: ACTIVE_THREAD, validate: id => threads.getThread(id).then(Boolean) });
+ * // app.config.ts, with a LangGraph backend:
+ * // provideAgent({
+ * //   threadId: ACTIVE_THREAD,
+ * //   onThreadId: (id) => ACTIVE_THREAD.set(id),
+ * //   createSession: (context) => createSession({ assistantId, apiUrl, ...context }),
+ * // }),
+ * // provideThreadDirectory({
+ * //   createDirectory: (context) => createLangGraphThreadDirectory({ apiUrl, ...context }),
+ * // }),
+ *
+ * // In a component, with `injectThreadDirectory` from `@threadplane/angular`:
+ * const threads = injectThreadDirectory();
+ * injectThreadRouting({
+ *   threadId: ACTIVE_THREAD,
+ *   // `getThread` resolves null for a thread that does not exist.
+ *   validate: (id) => threads.getThread(id).then(Boolean),
+ * });
  * ```
  */
 export function injectThreadRouting(config: ThreadRoutingConfig): void {

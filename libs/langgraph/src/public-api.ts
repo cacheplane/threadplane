@@ -5,7 +5,9 @@
 export { createSession } from './runtime/create-session.js';
 export type {
   A2uiClientCapabilities,
+  LangGraphDevelopmentInstall,
   LangGraphDevelopmentRuntime,
+  LangGraphDevelopmentRuntimeFactory,
   LangGraphDevtoolsSignal,
   LangGraphDevtoolsSink,
   LangGraphResumeOptions,
@@ -25,6 +27,7 @@ export type {
   LangGraphSubmitState,
 } from './runtime/submit-input.js';
 export type {
+  LangGraphRunConfigurable,
   LangGraphRunOptions,
   LangGraphRunSettings,
 } from './runtime/run-options.js';
@@ -65,6 +68,9 @@ export { extractCitations } from './runtime/citation-projection.js';
 // Saved conversations and project names.
 export { createLangGraphThreadDirectory } from './runtime/thread-directory.js';
 export type {
+  LangGraphProjectCommand,
+  LangGraphThreadCommand,
+  LangGraphThreadDirectory,
   LangGraphThreadDirectoryOptions,
   LangGraphThreadsClient,
 } from './runtime/thread-directory.js';
@@ -97,5 +103,6 @@ export type { RuntimeOperationFailureReporter } from './runtime/operation-errors
 
 // Transports for tests and offline demos. Not for production use.
 export { MockAgentTransport } from './runtime/mock-stream.transport.js';
+export type { MockAgentRun } from './runtime/mock-stream.transport.js';
 export { FakeStreamTransport } from './runtime/fake-stream.transport.js';
 export type { FakeStreamTransportConfig } from './runtime/fake-stream.transport.js';

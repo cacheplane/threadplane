@@ -1,6 +1,7 @@
 import type { ContentBlock, PlainValue } from '@threadplane/core';
 import { ownState } from './state.js';
 
+/** A state document as plain data: a frozen record of plain values. */
 export type ApplicationState = Readonly<Record<string, PlainValue>>;
 /**
  * The patch a submission merges into the state document. A session with a
@@ -9,6 +10,10 @@ export type ApplicationState = Readonly<Record<string, PlainValue>>;
 export type SubmitState<TState = unknown> = unknown extends TState
   ? ApplicationState
   : Partial<TState>;
+/**
+ * What `submit` accepts: the user's message as text, or an object carrying the
+ * message, optional structured content and an optional state patch.
+ */
 export type SubmitInput<TState = unknown> =
   | string
   | {
@@ -122,9 +127,12 @@ export function captureExtras(
     | undefined
 ): CapturedExtras {
   if (options === undefined || options === null) return NO_EXTRAS;
-  const message = options.message;
-  if (message !== undefined && typeof message !== 'string')
+  const given = options.message;
+  if (given !== undefined && typeof given !== 'string')
     throw new TypeError('A message must be a string');
+  // Text or absent by now. Asked as `typeof` so it is typed without strict
+  // null checks too.
+  const message = typeof given === 'string' ? given : undefined;
   const content = captureBlocks(options.blocks) ?? message;
   const state = captureState(options.state);
   if (content === undefined && state === undefined) return NO_EXTRAS;

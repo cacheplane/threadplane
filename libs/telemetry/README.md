@@ -42,8 +42,14 @@ retains its own inert install and explicit helper behavior.
 
 ## Automatic development runtime collection
 
-LangGraph and AG-UI adapters and the supported JSON renderer use this package's lazy
-development collector when they are constructed and used. Angular's `isDevMode()` must
+LangGraph and AG-UI sessions of an Angular app and the supported JSON renderer use this
+package's lazy development collector when they are constructed and used. The backend
+packages are framework-neutral and do not import this package: `@threadplane/chat`
+registers the collector with `@threadplane/angular`, whose `provideAgent` hands each
+session a handle, so an Angular app that provides an agent and loads the chat package
+is connected with no setup. A session created with a `telemetry` option, `false`
+included, is not collected. A session created outside Angular (for example in a React
+app) is given no collector and reports nothing. Angular's `isDevMode()` must
 be true and browser APIs must be available before identity/storage/network work.
 Production builds, SSR, imports, and automated browsers reporting `navigator.webdriver`
 are inert. Creating an agent (or a render element) in a development-mode browser reports

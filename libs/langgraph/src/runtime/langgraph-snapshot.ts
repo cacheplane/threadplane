@@ -149,7 +149,7 @@ export type LangGraphSnapshot<
   /**
    * The loaded history page with each checkpoint's state, oldest first, as
    * the core contract lists a history. Present only on a session created with
-   * `historyState: true`, once a page has been read.
+   * `historyState: true`: an empty list until a page has been read.
    */
   readonly checkpoints?: readonly LangGraphCheckpoint[];
   /** Assistant message id to the id of the checkpoint that ends with it. With `checkpoints`. */

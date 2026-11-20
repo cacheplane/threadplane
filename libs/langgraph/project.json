@@ -67,7 +67,7 @@
     "type-tests": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node ./node_modules/typescript/bin/tsc --project libs/langgraph/tsconfig.runtime-tests.json"
+        "command": "node ./node_modules/typescript/bin/tsc --project libs/langgraph/tsconfig.runtime-tests.json && node ./node_modules/typescript/bin/tsc --project libs/langgraph/tsconfig.nonstrict.json"
       }
     },
     "runtime-quality": {
@@ -97,7 +97,10 @@
         "{workspaceRoot}/libs/telemetry/install/assemble-package.mjs",
         "{projectRoot}/package.json"
       ],
-      "outputs": ["{projectRoot}/.install-collector"],
+      "outputs": [
+        "{projectRoot}/.install-collector",
+        "{projectRoot}/src/runtime/package-version.ts"
+      ],
       "options": {
         "command": "node libs/telemetry/install/assemble-package.mjs langgraph",
         "forwardAllArgs": false

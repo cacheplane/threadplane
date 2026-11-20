@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ThreadState } from '@langchain/langgraph-sdk';
-import { createSession, type SessionOptions } from './create-session';
+import {
+  createSession,
+  type LangGraphDevelopmentInstall,
+  type SessionOptions,
+} from './create-session';
 import {
   changedSignals,
   convertEventMessages,
@@ -8,6 +12,13 @@ import {
 } from './session-hooks';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { controlledTransport } from './testing/controlled-transport';
+
+// The repository's bridge module holds null, as a published package does. An
+// installed package holds the token its install step wrote.
+const installationToken = '11111111-1111-4111-8111-111111111111';
+vi.mock('../../.install-collector/development-install.mjs', () => ({
+  installationToken: '11111111-1111-4111-8111-111111111111',
+}));
 
 const sessions: { dispose(): Promise<void> }[] = [];
 afterEach(async () => {
@@ -346,6 +357,166 @@ describe('development collector', () => {
     await session.dispose();
     expect(developmentRuntime.dispose).toHaveBeenCalledTimes(1);
   });
+
+  const collector = () => ({
+    touch: vi.fn(),
+    milestone: vi.fn(),
+    dispose: vi.fn(),
+  });
+  const kinds = (runtime: ReturnType<typeof collector>) =>
+    runtime.milestone.mock.calls.map(([kind]) => kind);
+
+  it('reports a completed run with its duration, and a handled interrupt only after a resume', async () => {
+    const developmentRuntime = collector();
+    const question = { type: 'ai', id: 'q', content: 'May I?' };
+    const scripts: StreamEvent[][] = [
+      [
+        { type: 'values', data: { messages: [question] } },
+        {
+          type: 'updates',
+          data: { __interrupt__: [{ id: 'approve', value: 'Proceed?' }] },
+        },
+      ],
+      [{ type: 'values', data: { messages: [question, answer().data] } }],
+      [answer('later')],
+    ];
+    let call = 0;
+    const session = createSession({
+      assistantId: 'agent',
+      threadId: 'thread',
+      developmentRuntime,
+      transport: {
+        stream: async function* () {
+          yield* scripts[call++];
+        },
+      },
+    });
+    sessions.push(session);
+    expect(await session.submit('Start')).toBe('paused');
+    // A paused run has not completed: nothing but the connection is reported.
+    expect(kinds(developmentRuntime)).toEqual(['transport.connected']);
+    expect(
+      await session.resume([
+        { interruptId: 'approve', status: 'resolved', value: true },
+      ])
+    ).toBe('success');
+    expect(kinds(developmentRuntime).slice(1)).toEqual([
+      'transport.connected',
+      'runtime.first_stream_completed',
+      'interrupt.handled',
+    ]);
+    expect(
+      developmentRuntime.milestone.mock.calls.find(
+        ([kind]) => kind === 'runtime.first_stream_completed'
+      )?.[1]
+    ).toEqual(expect.any(Number));
+    developmentRuntime.milestone.mockClear();
+    expect(await session.submit('Again')).toBe('success');
+    expect(kinds(developmentRuntime)).toEqual([
+      'transport.connected',
+      'runtime.first_stream_completed',
+    ]);
+  });
+
+  it('reports no completion for a failed run or a stopped one', async () => {
+    const failed = collector();
+    const failing = createSession({
+      assistantId: 'agent',
+      threadId: 'thread',
+      developmentRuntime: failed,
+      transport: {
+        // eslint-disable-next-line require-yield
+        stream: async function* () {
+          throw new Error('offline');
+        },
+      },
+    });
+    sessions.push(failing);
+    expect(await failing.submit('Go')).not.toBe('success');
+    expect(kinds(failed)).toEqual([]);
+
+    const stopped = collector();
+    const held = controlledTransport<StreamEvent>();
+    const { session } = fixture(
+      { developmentRuntime: stopped },
+      { stream: () => held.stream }
+    );
+    const run = session.submit('Go');
+    await vi.waitFor(() =>
+      expect(session.getSnapshot().status).toBe('running')
+    );
+    await session.stop();
+    expect(await run).toBe('aborted');
+    expect(kinds(stopped)).not.toContain('runtime.first_stream_completed');
+  });
+
+  it('builds the collector from a factory, with what the package knows of its installation', async () => {
+    const built = collector();
+    const factory = vi.fn((_install: LangGraphDevelopmentInstall) => built);
+    const { session } = fixture({ developmentRuntime: factory });
+    expect(factory).toHaveBeenCalledTimes(1);
+    const install = factory.mock.calls[0][0];
+    expect(install).toMatchObject({
+      integration: 'langgraph',
+      packageName: '@threadplane/langgraph',
+      // Outside an Angular development build the token is never read.
+      installationToken: null,
+    });
+    expect(install.packageVersion).toMatch(/^\d+\.\d+\.\d+/);
+    expect(install.enabled()).toBe(true);
+    expect(built.touch).toHaveBeenCalledTimes(1);
+    await session.submit('Go');
+    expect(kinds(built)).toContain('runtime.first_stream_completed');
+    await session.dispose();
+    expect(built.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands the factory the installed token only in an Angular development build', () => {
+    const tokens: (string | null)[] = [];
+    const factory = (install: { installationToken: string | null }) => {
+      tokens.push(install.installationToken);
+      return collector();
+    };
+    try {
+      for (const mode of [true, false, undefined]) {
+        (globalThis as { ngDevMode?: unknown }).ngDevMode = mode;
+        fixture({ developmentRuntime: factory });
+      }
+    } finally {
+      delete (globalThis as { ngDevMode?: unknown }).ngDevMode;
+    }
+    expect(tokens).toEqual([installationToken, null, null]);
+  });
+
+  it('runs without a collector when the factory throws or returns nothing', async () => {
+    const throwing = fixture({
+      developmentRuntime: () => {
+        throw new Error('host failed');
+      },
+    });
+    expect(await throwing.session.submit('Go')).toBe('success');
+    const empty = fixture({ developmentRuntime: () => undefined });
+    expect(await empty.session.submit('Go')).toBe('success');
+  });
+
+  it('allows collection unless the app chose its own telemetry destination', () => {
+    const enabled = (telemetry?: SessionOptions['telemetry']) => {
+      const seen: (() => boolean)[] = [];
+      const { session } = fixture({
+        ...(telemetry !== undefined ? { telemetry } : {}),
+        developmentRuntime: (install) => {
+          seen.push(install.enabled);
+          return collector();
+        },
+      });
+      expect(seen[0]()).toBe(session.isDevelopmentRuntimeEnabled());
+      return session.isDevelopmentRuntimeEnabled();
+    };
+    expect(enabled()).toBe(true);
+    expect(enabled(() => undefined)).toBe(false);
+    // `false` is the app's choice too, as it was for the Angular adapter.
+    expect(enabled(false)).toBe(false);
+  });
 });
 
 describe('devtools', () => {
@@ -492,6 +663,47 @@ describe('operation failure reporter', () => {
     expect(owned.getSnapshot().status).toBe('idle');
     const { session } = fixture({ onOperationFailure });
     expect(await session.submit('Go')).toBe('success');
+    expect(onOperationFailure).not.toHaveBeenCalled();
+  });
+
+  /** An owned-transport session whose every request the network refuses. */
+  async function refusedSubmit(options: Partial<SessionOptions>) {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
+    try {
+      const session = createSession({
+        assistantId: 'agent',
+        threadId: 'thread',
+        apiUrl: 'http://127.0.0.1:1',
+        ...options,
+      });
+      sessions.push(session);
+      expect(await session.submit('Go')).toBe('error');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  }
+
+  it('reports through reportOperationFailure, the name a host context uses', async () => {
+    const reportOperationFailure = vi.fn();
+    await refusedSubmit({ reportOperationFailure });
+    expect(reportOperationFailure).toHaveBeenCalledWith('network_blocked');
+  });
+
+  it('still reports through the deprecated onOperationFailure', async () => {
+    const onOperationFailure = vi.fn();
+    // A host context with no reporter spreads `undefined` under the new name.
+    await refusedSubmit({
+      onOperationFailure,
+      reportOperationFailure: undefined,
+    });
+    expect(onOperationFailure).toHaveBeenCalledWith('network_blocked');
+  });
+
+  it('prefers reportOperationFailure when both names are given', async () => {
+    const reportOperationFailure = vi.fn();
+    const onOperationFailure = vi.fn();
+    await refusedSubmit({ reportOperationFailure, onOperationFailure });
+    expect(reportOperationFailure).toHaveBeenCalledWith('network_blocked');
     expect(onOperationFailure).not.toHaveBeenCalled();
   });
 });

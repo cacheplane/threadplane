@@ -84,8 +84,9 @@ describe('install collector package assembly', () => {
     }
   );
   // The backend packages are framework-neutral libraries compiled by tsc. They
-  // ship the same hook and bridge through the build target's own assets, read
-  // no embedded version, and import the bridge by its package subpath only.
+  // ship the same hook and bridge through the build target's own assets, embed
+  // their release version under `src/runtime` for the development collector's
+  // host, and import the bridge by its package subpath only.
   it.each(['langgraph', 'ag-ui'])(
     'explicitly ships the shared hook in the neutral %s package and includes it in build inputs',
     async (name) => {
@@ -129,8 +130,18 @@ describe('install collector package assembly', () => {
         '{workspaceRoot}/libs/telemetry/install/*'
       );
       expect(project.implicitDependencies).toContain('telemetry');
+      const prepared = await readFile(
+        resolve(`libs/${name}/src/runtime/package-version.ts`),
+        'utf8'
+      ).catch(() => '');
+      expect(prepared).toContain(
+        `export const THREADPLANE_PACKAGE_VERSION = ${JSON.stringify(
+          pkg.version
+        )};`
+      );
       expect(project.targets['prepare-install'].outputs).toEqual([
         '{projectRoot}/.install-collector',
+        '{projectRoot}/src/runtime/package-version.ts',
       ]);
     }
   );

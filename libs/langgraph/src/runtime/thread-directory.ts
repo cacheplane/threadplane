@@ -12,6 +12,7 @@ import {
   createLangGraphRuntimeFetch,
   createSafeRequestError,
   projectLangGraphOperationFailure,
+  type RuntimeOperationFailureReporter,
 } from './operation-errors.js';
 import {
   createLangGraphProjectStore,
@@ -28,6 +29,7 @@ import type { LangGraphClientOptions } from './transport.types.js';
 /** The SDK client surface a thread directory reads and writes. */
 export type LangGraphThreadsClient = Pick<Client, 'threads' | 'store'>;
 
+/** What `createLangGraphThreadDirectory` takes: how to reach the deployment, and where project names are kept. */
 export interface LangGraphThreadDirectoryOptions {
   /** LangGraph API base. Ignored when `client` is supplied. */
   readonly apiUrl?: string;
@@ -46,7 +48,52 @@ export interface LangGraphThreadDirectoryOptions {
    * commands reject.
    */
   readonly projects?: ProjectStore | false;
+  /**
+   * Receives `'unauthorized'` when a request is answered 401 or 403 and
+   * `'network_blocked'` when a request never reached the server. Used only by
+   * the client built from `apiUrl`; a supplied `client` reports nothing. A
+   * reporter that throws does not affect the request.
+   */
+  readonly reportOperationFailure?: RuntimeOperationFailureReporter;
 }
+
+/** The thread commands a `LangGraphThreadDirectory` always has. */
+export type LangGraphThreadCommand =
+  | 'get'
+  | 'pinnedOrderOf'
+  | 'create'
+  | 'rename'
+  | 'remove'
+  | 'setArchived'
+  | 'setPinned'
+  | 'reorderPinned'
+  | 'setProject';
+/** The project commands a `LangGraphThreadDirectory` has when projects are on. */
+export type LangGraphProjectCommand =
+  | 'createProject'
+  | 'renameProject'
+  | 'removeProject';
+
+/**
+ * The directory `createLangGraphThreadDirectory` returns: the core
+ * `ThreadDirectory` with the commands it always has typed as present, so no
+ * call needs `?.`.
+ *
+ * `TProjects` says whether the project commands exist: `true` (the default,
+ * and what the default options build) types them as present, `false` (built
+ * with `projects: false`) as absent, and `boolean` as optional.
+ */
+export type LangGraphThreadDirectory<TProjects extends boolean = true> =
+  ThreadDirectory &
+    Required<Pick<ThreadDirectory, LangGraphThreadCommand>> &
+    ([TProjects] extends [true]
+      ? Required<Pick<ThreadDirectory, LangGraphProjectCommand>>
+      : [TProjects] extends [false]
+        ? { readonly [K in LangGraphProjectCommand]?: undefined }
+        : unknown);
+
+/** The saved pin rank of each entry a directory produced. */
+const pinnedOrders = new WeakMap<ThreadEntry, number>();
 
 type Fields = Partial<
   Pick<ProjectedThread, 'title' | 'archived' | 'pinned' | 'projectId'> & {
@@ -62,15 +109,27 @@ interface Patch {
   settledAt?: number;
 }
 
-
 /**
  * A framework-neutral `ThreadDirectory` over the LangGraph threads API.
  * Mutations show at once and roll back on failure; a refresh never undoes a
  * mutation that is still pending.
  */
 export function createLangGraphThreadDirectory(
+  options: LangGraphThreadDirectoryOptions & { readonly projects: false }
+): LangGraphThreadDirectory<false>;
+export function createLangGraphThreadDirectory(
+  options: LangGraphThreadDirectoryOptions & { readonly projects?: ProjectStore }
+): LangGraphThreadDirectory;
+export function createLangGraphThreadDirectory(
   options: LangGraphThreadDirectoryOptions
-): ThreadDirectory {
+): LangGraphThreadDirectory<boolean>;
+export function createLangGraphThreadDirectory(
+  options: LangGraphThreadDirectoryOptions
+): LangGraphThreadDirectory<boolean> {
+  // Only the client built here goes through the reporting fetch.
+  const report = options.client ? undefined : options.reportOperationFailure;
+  const requestError = (failure: unknown, signal: AbortSignal): Error =>
+    projectRequestError(failure, signal, report);
   const client = options.client ?? ownedClient(options);
   const titleFallback = options.titleFallback ?? 'New chat';
   const projectStore: ProjectStore | undefined =
@@ -166,31 +225,31 @@ export function createLangGraphThreadDirectory(
     for (const notify of [...listeners]) notify();
   }
 
-  async function refresh(refreshOptions?: {
-    readonly signal?: AbortSignal;
-  }): Promise<void> {
+  /**
+   * Reads the thread list and publishes it, then reads project names and
+   * publishes again. A thread mutation confirms on the thread list alone
+   * (`waitForProjects: false`), so a slow Store API never holds it.
+   */
+  async function load(
+    waitForProjects: boolean,
+    caller?: AbortSignal
+  ): Promise<void> {
     if (disposed()) return;
     const sequence = ++started;
-    const link = linkSignal(lifetime.signal, refreshOptions?.signal);
+    const link = linkSignal(lifetime.signal, caller);
     const signal = link.signal;
     inFlight++;
     publish();
-    let outcome: { list: unknown } | { failed: unknown };
-    let projectOutcome: { list: unknown } | { failed: unknown } | undefined;
-    try {
-      [outcome, projectOutcome] = await Promise.all([
-        settle(() => client.threads.search({ limit: 50, offset: 0, signal })),
-        projectStore ? settle(() => projectStore.list(signal)) : undefined,
-      ]);
-    } finally {
-      link.release();
-    }
+    const outcome = await settle(() =>
+      client.threads.search({ limit: 50, offset: 0, signal })
+    );
     inFlight--;
-    if (disposed()) return;
-    if (signal.aborted) {
+    if (disposed() || signal.aborted) {
+      link.release();
       publish();
       return;
     }
+    const listed = 'list' in outcome && Array.isArray(outcome.list);
     if (sequence > applied) {
       applied = sequence;
       if ('list' in outcome && Array.isArray(outcome.list)) {
@@ -206,23 +265,46 @@ export function createLangGraphThreadDirectory(
         );
       }
     }
-    if (projectOutcome && sequence === applied) {
-      if ('list' in projectOutcome && Array.isArray(projectOutcome.list)) {
-        const list = projectOutcome.list as readonly ProjectEntry[];
-        projectsUnavailable = false;
-        if (!sameProjects(serverProjects, list))
-          serverProjects = Object.freeze([...list]);
-      } else {
-        // A missing or failing Store API never fails the thread list.
-        projectsUnavailable = true;
-      }
+    publish();
+    // Projects are read only after the thread list succeeds, so a failed load
+    // makes one request and reports one operation failure.
+    if (!listed || !projectStore) {
+      link.release();
+      return;
+    }
+    const projects = loadProjects(projectStore, sequence, signal).finally(
+      link.release
+    );
+    if (waitForProjects) await projects;
+  }
+
+  /** Never rejects: a missing or failing Store API never fails the list. */
+  async function loadProjects(
+    store: ProjectStore,
+    sequence: number,
+    signal: AbortSignal
+  ): Promise<void> {
+    const outcome = await settle(() => store.list(signal));
+    if (disposed() || signal.aborted || sequence !== applied) return;
+    if ('list' in outcome && Array.isArray(outcome.list)) {
+      const list = outcome.list as readonly ProjectEntry[];
+      projectsUnavailable = false;
+      if (!sameProjects(serverProjects, list))
+        serverProjects = Object.freeze([...list]);
+    } else {
+      projectsUnavailable = true;
     }
     publish();
   }
 
+  const refresh = (refreshOptions?: {
+    readonly signal?: AbortSignal;
+  }): Promise<void> => load(true, refreshOptions?.signal);
+
   async function mutate(
     patches: readonly { readonly id: string; readonly fields: Fields }[],
-    work: (signal: AbortSignal) => Promise<unknown>
+    work: (signal: AbortSignal) => Promise<unknown>,
+    waitForProjects = false
   ): Promise<void> {
     if (disposed()) throw createSafeRequestError();
     const records: Patch[] = patches.map((patch) => ({ ...patch }));
@@ -236,7 +318,7 @@ export function createLangGraphThreadDirectory(
       throw requestError(failure, lifetime.signal);
     }
     for (const record of records) record.settledAt = started;
-    await refresh();
+    await load(waitForProjects);
   }
 
   async function mutateProjects<T>(
@@ -253,10 +335,11 @@ export function createLangGraphThreadDirectory(
         throw requestError(failure, lifetime.signal);
       }
     };
-    if (patches.length > 0) await mutate(patches, wrapped);
+    // Project commands wait for the project list, so callers see the change.
+    if (patches.length > 0) await mutate(patches, wrapped, true);
     else {
       await wrapped();
-      await refresh();
+      await load(true);
     }
     return result as T;
   }
@@ -274,6 +357,32 @@ export function createLangGraphThreadDirectory(
       };
     },
     refresh,
+    async get(id: string, getOptions?: { readonly signal?: AbortSignal }) {
+      if (disposed()) throw createSafeRequestError();
+      const link = linkSignal(lifetime.signal, getOptions?.signal);
+      try {
+        const source = projectThread(
+          await client.threads.get(encodeURIComponent(id), {
+            signal: link.signal,
+          }),
+          titleFallback
+        );
+        // A thread the list already shows unchanged keeps its entry.
+        const kept = published.get(source.id);
+        return kept && sameEntry(kept.source, source)
+          ? kept.entry
+          : stripOrder(source);
+      } catch (failure) {
+        // 404 says there is no such thread and 422 that the id is not one a
+        // thread could have; both are "missing". Anything else is unknown.
+        const status = link.signal.aborted ? null : failureStatus(failure);
+        if (status === 404 || status === 422) return null;
+        throw requestError(failure, link.signal);
+      } finally {
+        link.release();
+      }
+    },
+    pinnedOrderOf: (entry: ThreadEntry) => pinnedOrders.get(entry),
     async create(createOptions?: {
       readonly metadata?: { readonly [key: string]: PlainValue };
       readonly signal?: AbortSignal;
@@ -292,7 +401,7 @@ export function createLangGraphThreadDirectory(
       } finally {
         link.release();
       }
-      await refresh();
+      await load(false);
       return Object.freeze({ id });
     },
     // A blank title shows the fallback at once, as the server list would.
@@ -390,15 +499,19 @@ async function settle(
   }
 }
 
-function stripOrder(entry: ProjectedThread): ThreadEntry {
-  return Object.freeze({
-    id: entry.id,
-    title: entry.title,
-    ...(entry.updatedAt === undefined ? {} : { updatedAt: entry.updatedAt }),
-    pinned: entry.pinned,
-    archived: entry.archived,
-    projectId: entry.projectId,
+/** The published entry: no rank on it; `pinnedOrderOf` answers for it. */
+function stripOrder(source: ProjectedThread): ThreadEntry {
+  const entry: ThreadEntry = Object.freeze({
+    id: source.id,
+    title: source.title,
+    ...(source.updatedAt === undefined ? {} : { updatedAt: source.updatedAt }),
+    pinned: source.pinned,
+    archived: source.archived,
+    projectId: source.projectId,
   });
+  if (source.pinnedOrder !== undefined)
+    pinnedOrders.set(entry, source.pinnedOrder);
+  return entry;
 }
 
 function sameProjects(
@@ -424,7 +537,7 @@ function ownedClient(
   return ɵcreateProtectedLangGraphClient(
     apiUrl,
     { ...options.clientOptions, maxRetries: 0 },
-    createLangGraphRuntimeFetch(undefined)
+    createLangGraphRuntimeFetch(options.reportOperationFailure)
   );
 }
 
@@ -448,12 +561,42 @@ function assertSameOrigin(apiUrl: string, browserOrigin: string): void {
     throw new Error('Directory requires an absolute same-origin API base');
 }
 
-function requestError(failure: unknown, signal: AbortSignal): Error {
+function projectRequestError(
+  failure: unknown,
+  signal: AbortSignal,
+  report: RuntimeOperationFailureReporter | undefined
+): Error {
   try {
-    projectLangGraphOperationFailure(failure, signal, undefined);
+    projectLangGraphOperationFailure(failure, signal, report);
   } catch (projected) {
     return projected as Error;
   }
+}
+
+/**
+ * The HTTP status the SDK put on a failure, on the error or on its
+ * `response`; null when there is none. Reads own data properties only, so a
+ * hostile error object cannot run code or throw here.
+ */
+function failureStatus(failure: unknown): number | null {
+  try {
+    const own = dataProperty(failure, 'status');
+    if (typeof own === 'number') return own;
+    const nested = dataProperty(dataProperty(failure, 'response'), 'status');
+    return typeof nested === 'number' ? nested : null;
+  } catch {
+    return null;
+  }
+}
+
+function dataProperty(target: unknown, key: string): unknown {
+  if (
+    (typeof target !== 'object' || target === null) &&
+    typeof target !== 'function'
+  )
+    return undefined;
+  const descriptor = Object.getOwnPropertyDescriptor(target, key);
+  return descriptor && 'value' in descriptor ? descriptor.value : undefined;
 }
 
 /** Load failures are opaque by design: no status or body is inspected. */

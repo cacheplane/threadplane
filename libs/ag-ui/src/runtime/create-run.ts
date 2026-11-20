@@ -38,8 +38,10 @@ export interface RunHandle {
 }
 
 /**
- * What a `RUN_FINISHED` outcome settles a run as. An outcome this runtime does
- * not know settles `error`.
+ * What a `RUN_FINISHED` outcome settles a run as. An outcome that reaches this
+ * runtime and is not one it knows settles `error`. The 1.0 client strips an
+ * object outcome of an unrecognised `type` before that, so such a run arrives
+ * here with no outcome and settles `success`.
  */
 export function finishedOutcome(outcome: unknown): CompleteOutcome {
   return finishedResult(outcome).outcome;
@@ -73,7 +75,23 @@ export function createRun(
 ) {
   const interruptMode = config.interruptMode ?? 'native';
   const request = createHttpRequest(config);
+  /** Responses left to end by themselves after their run's terminal event. */
+  const left = new Set<HttpRequestHandle>();
   return {
+    /**
+     * Closes at once every response still open after its run ended. A session
+     * calls it when it stops and when it is disposed.
+     */
+    release(): void {
+      for (const response of [...left]) {
+        left.delete(response);
+        try {
+          response.abort();
+        } catch {
+          // One response's teardown cannot keep the others open.
+        }
+      }
+    },
     start(
       input: RunAgentInput,
       onEvent: (event: BaseEvent) => void,
@@ -88,11 +106,28 @@ export function createRun(
       let fetchInvoked = false;
       let admitted = false;
       let physical: HttpRequestHandle | undefined;
-      /** `ended`: the run's own terminal event arrived, so nothing is cancelled. */
+      /**
+       * `ended`: the run's own terminal event arrived, so nothing is cancelled
+       * and the response is left to end by itself, within its bound (see
+       * `HttpRequestHandle.close`).
+       */
       const cleanup = (ended = false) => {
+        const response = physical;
+        if (!response) return;
         try {
-          if (ended) physical?.close();
-          else physical?.abort();
+          if (ended) {
+            response.close();
+            if (!left.has(response)) {
+              left.add(response);
+              void response.done.then(
+                () => left.delete(response),
+                () => left.delete(response)
+              );
+            }
+          } else {
+            left.delete(response);
+            response.abort();
+          }
         } catch {
           // Teardown cannot replace the first result or leave done pending.
         }
@@ -106,7 +141,11 @@ export function createRun(
         cleanup(ended);
         resolve({ ...result, fetchInvoked });
       };
-      const abort = () => settle({ outcome: 'aborted' });
+      const abort = () => {
+        // A response left to end by itself is closed when its owner aborts.
+        if (closed && endedByTerminal) cleanup();
+        settle({ outcome: 'aborted' });
+      };
       if (signal?.aborted) abort();
       if (closed) return { abort, done };
       // Own cancellation synchronously, including abort inside a terminal

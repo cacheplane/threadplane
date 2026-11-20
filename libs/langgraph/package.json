@@ -32,6 +32,7 @@
     "src/**/*.d.ts.map",
     ".install-collector/development-install.mjs",
     ".install-collector/development-install.d.ts",
+    ".install-collector/development-install.d.mts",
     "install/*.cjs",
     "LICENSE.md",
     "README.md"

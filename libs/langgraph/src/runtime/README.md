@@ -17,8 +17,7 @@ limits are in
 `threadId` is optional. A session created without one (or with `null`) starts
 empty and sends no request until its first submit, which calls
 `transport.createThread(signal)` once, before the run. The owned SDK transport
-implements it with `client.threads.create()`, the call the Angular transport
-makes, under the owned `maxRetries` policy (0 unless a number is supplied). A
+implements it with `client.threads.create()`, under the owned `maxRetries` policy (0 unless a number is supplied). A
 supplied transport without `createThread` makes construction throw. The created id
 is reported once through `onThreadId` and is read from `session.threadId`; a
 throwing callback does not affect the run. The id is not part of the snapshot.
@@ -35,6 +34,64 @@ throwing callback does not affect the run. The id is not part of the snapshot.
   request, `fork()` and `regenerate()` reject, and `reconnect()` and `resume()`
   reject as they do with nothing to join or answer.
 - There is no thread switch: a session still belongs to one thread once it has one.
+- The public test doubles implement `createThread` too: `MockAgentTransport`
+  names threads `mock-thread-1`, `mock-thread-2` and so on and records them in
+  `createdThreads`; `FakeStreamTransport` names them `fake-thread-1` and so on.
+
+### Test transports
+
+`MockAgentTransport` and `FakeStreamTransport` are for specs and offline demos.
+A session over either is the real session, so what it offers follows from what
+the transport implements:
+
+| | `MockAgentTransport` | `FakeStreamTransport` |
+| --- | --- | --- |
+| Runs | Driven by the spec: `emit(events)`, then `close()`, `fail()` or `emitError(error)`. Any number in sequence; each is listed in `runs` and `streams`. | Streams its configured tokens by itself and ends each run with the thread's saved messages. |
+| `load`, `checkStatus` | Present. `history` holds what `load()` reads. | Present. History is always empty. |
+| `retry` | Present: `getRunStatus` answers from `runs`. | Absent. |
+| `regenerate` | Absent: there is no `getState`. | Absent. |
+
+A session reads the graph state from a `values` event's `data`, so a scripted
+run ends with `{ type: 'values', data: { messages: [...] } }`: the thread's
+messages, and any other state keys beside them. A run that closes without that
+event settles `interrupted`. A mock run ended with `close()` reports `success`
+to `getRunStatus`; `fail()` closes the stream and reports `error`, so the turn
+settles `error` with `recovery: 'retry'`; `emitError()` throws from the stream,
+which settles `interrupted` with `recovery: 'check'` until `checkStatus()`
+reads the run's `error`. Assign `transport.runs[n].status` to script any other
+answer. What a stopped run left unread is dropped, so the next run starts clean.
+
+## One message for one model response
+
+A message is identified by its wire id. Chunks merge by id and are never
+matched by text, by node name or by being next to each other. One provider
+breaks that rule on the wire: a streamed OpenAI Responses answer opens with a
+chunk under the provider's response id (`resp_…`, also in
+`response_metadata.id`) and continues under the placeholder id LangChain gives
+chunks that carry none (`lc_run-…`, the id of the model run). The saved state
+holds one message, under the response id. The session publishes that one
+message at every step, by two proofs:
+
+- **The run that opened the response.** A response's opening chunk is the first
+  chunk of its model run. So when a placeholder id is seen for the first time
+  in a graph task (`messageMetadata.langgraph_checkpoint_ns`) that holds exactly
+  one opened response without a run, the chunks under that placeholder belong to
+  that response and are published under its id from the first one. Nothing is
+  bound when the task has two unbound responses open at once (and no later
+  response of that task is bound either), when the placeholder was streaming
+  before the response opened, when the events name no task, when the id is not
+  a run placeholder, when either id is a message from before the run, or for
+  another provider. If final state later lists the placeholder id as a message
+  of its own, the binding is dropped.
+- **The output items.** Without the first proof, the chunks stay under the
+  placeholder id until final state arrives. They are then merged into the saved
+  message when the provider item ids the chunks carried (text, reasoning and
+  function-call items, with the call id for a function call) are exactly the
+  saved message's items and no other message claims any of them. A chunk whose
+  content is a non-empty string, or a block of another kind, carries text no
+  item owns, so that placeholder is left as its own message.
+
+The evidence lives for one physical run and is kept across a reconnect.
 
 ## Visible text
 
@@ -54,8 +111,9 @@ execution authority; actual ToolMessage roles and IDs still determine settlement
 
 This closes text-alias loss shared by the native bindings. It does not retain rich
 media/block order for rendering, add multimodal input, or establish provider,
-SSR or performance parity. The legacy Angular extractor remains a bounded
-duplicate until the separate backend cutover.
+SSR or performance parity. The session's projection is the only reader of
+visible text: the removed Angular adapter had an extractor of its own, and
+nothing else in the package duplicates this rule now.
 
 ## Transcript node names
 
@@ -79,9 +137,9 @@ cannot undo committed canonical metadata. Equal metadata shares owned references
 including when only text changes. Terminal candidates and queued publications
 capture metadata before callers can mutate it.
 
-The private normalizer stages the existing Angular extractor's aliases without an
-Angular dependency. Consolidate this bounded duplication at the backend cutover.
-The adapters do not promise identical arbitrary-extra semantics: neutral snapshots
+The private normalizer reads the field aliases the removed Angular adapter's
+extractor read, with no Angular dependency; `extractCitations` exposes the same
+reading for one message. Arbitrary extras are not kept as sent: neutral snapshots
 accept plain provider records and string/finite-number timestamps, omit unsupported
 optional fields, and reject instances/cycles in extras at the ownership boundary.
 Exact checkpoint ingress remains stricter: it captures the complete plain state
@@ -109,9 +167,9 @@ same physical run retains captured reasoning while rebasing its delivery generat
 Equal histories preserve identity, and reasoning-only changes publish through the existing queue.
 Captured terminal candidates and published strings cannot change with wire mutation.
 
-This bounded normalization duplicates part of the legacy Angular extractor until
-backend cutover. It uses explicit event modes, not that adapter's prefix heuristics
-or clock map. No rich-block, renderer, event-only retention, provider-version
+This bounded normalization is the session's only reasoning reader. It uses
+explicit event modes, where the removed Angular adapter used prefix heuristics
+and a clock map. No rich-block, renderer, event-only retention, provider-version
 conformance or complete T09/T15 parity is claimed. Strict checkpoint capture still
 rejects non-plain/cyclic data before display normalization. Reasoning never changes
 tool admission, checkpoint authority, transport requests or lifecycle scheduling.
@@ -182,14 +240,34 @@ newest saved checkpoint that does not hold that prompt yet, submitting the
 prompt's text there. The earlier answer stays on its old branch in the thread;
 the snapshot shows the new one.
 
+- On a LangGraph server that checkpoint is the one the prompt's own run saved
+  when it accepted its input: its state is the conversation before the prompt,
+  and its only remaining work is the graph's entry (`next: ['__start__']`), which
+  has not yet written the prompt. A thread's first prompt has no other checkpoint
+  before it. `regenerate` accepts exactly that shape, one `__start__` task with
+  no error and no interrupt, because the server replaces the waiting input with
+  the new one. Any other remaining work is refused, and `fork` itself still
+  requires a completed checkpoint.
 - The command exists only when the transport has `getHistory`, `getState`,
   `getRunStatus` and `joinStream`, the same capabilities `fork` needs.
+- With the owned SDK transport it also requires `clientOptions.maxRetries` to be
+  0, which is the default. A session created with a non-zero `maxRetries` has no
+  `regenerate` command, so a chat view shows no Regenerate action: the SDK would
+  repeat a creation request whose outcome it could not see, and at a checkpoint
+  each repeat that arrived starts another branch. Leave `maxRetries` unset to
+  keep regenerate; a creation request that got no response is still offered a
+  retry (see "A creation request that got no response").
 - It rejects for an id that is not an assistant message, when no prompt
   precedes it, while a response is running, when the conversation changes
   while history is read, and when no such checkpoint is in the history page the
   transport returned. A prompt older than that page cannot be regenerated.
 - Only the prompt's text is sent again. Input state and anything else the
   original submission carried are not.
+- `options` is the `LangGraphRunOptions` a submit takes: `signal`, `config`,
+  `context`, `metadata` and `run`. They are sent with the regenerated run (see
+  "Run settings"), and the session type says so. The run always starts from the
+  checkpoint before the prompt, so `run.checkpoint` and `run.checkpointId` are
+  not used.
 - After the read, every rule of `fork` applies, including its refusal to
   replace active or unsettled work.
 
@@ -197,7 +275,10 @@ the snapshot shows the new one.
 
 `snapshot.history` holds only checkpoint metadata. A session created with
 `historyState: true` also keeps each loaded checkpoint's state and publishes
-three views of the page, all absent until a page has been read:
+three views of the page. `snapshot.checkpoints` is an empty list from the
+moment the session is created until a page has been read, so a view can tell a
+session that keeps checkpoint state and has none yet from one that keeps none,
+where the field is absent. The other two are absent until a page has been read:
 
 - `snapshot.checkpoints`: the page, oldest first, as the core contract lists a
   history. Each entry is the core `AgentCheckpoint`, with the checkpoint `id`,
@@ -217,7 +298,7 @@ three views of the page, all absent until a page has been read:
 success or a pause. That read updates only these views and `history`; the
 transcript stays the stream's, and a read a newer command overtakes is dropped.
 Everything is owned frozen data and keeps its reference while a page is equal
-to the last one. The option is off by default because a page's states can be
+to the last one. The option is off unless set because a page's states can be
 large.
 
 `session.setBranch(branch)` records which branch a view shows and publishes it
@@ -326,10 +407,47 @@ the session can prove is safe. A failure that leaves the backend outcome open is
 never `recovery: 'retry'`: a thrown iterator cannot show that a request was
 undispatched (a browser `TypeError: fetch failed` carries no cause, and a reset
 after the server accepted the request looks identical to one that never left), so
-a pre-response failure is an `interrupted` error too, not a retryable
-`connection` one. The only `retry` the runtime emits is for a run the backend
-itself reports as failed (see "Retry" below), and for a first submit whose thread
-could not be created, which started no run (see "Thread creation" above).
+what a thrown value says about itself never makes a failure retryable. The
+`retry` the runtime emits is for a run the backend itself reports as failed
+(see "Retry" below), for a first submit whose thread could not be created, which
+started no run (see "Thread creation" above), and for a creation request that
+got no response at all (next section).
+
+### A creation request that got no response
+
+The owned SDK transport observes its own `fetch` calls. When the request that
+creates a run is rejected by `fetch` with no response of any status, as it is
+offline, for a refused connection or an unresolved host, and the caller did not
+abort it, the submit settles as `error` with
+
+```ts
+{ kind: 'connection', retryable: true, recovery: 'retry',
+  message: "Can't reach the server. Check your connection and try again." }
+```
+
+and `session.retry()` sends the same command again. This is the failure a chat
+view offers Retry for.
+
+- The evidence is the fetch call itself, recorded where the transport makes it,
+  never an error's name, message or status. With `clientOptions.maxRetries` set,
+  every one of the SDK's attempts must have been rejected without a response; one
+  answered attempt, of any status, makes the failure a checked one.
+- A request that anything answered keeps the rules above: an HTTP error status
+  is a `server` error and a response that began and then dropped is
+  `interrupted`, both with `recovery: 'check'` and no retry.
+- A rejected `fetch` is not proof on its own: a response can be lost on its way
+  back, and a browser reports a blocked cross-origin response the same way. So
+  the thread is read before anything is sent again. When the failure is first
+  seen, and again when `retry()` is called, the session reads the thread's
+  history and looks for this turn's own user message id. A turn the thread
+  already answered is adopted without a request; a prompt saved without an
+  answer becomes `interrupted` with `recovery: 'check'`; only a turn the thread
+  does not hold is sent again, under the same message id. A history read that
+  fails leaves the rejected request as the only evidence, and the command is
+  sent.
+- It applies to a plain submit's first request. A resume, a tool follow-up, a
+  fork and a queued run keep `recovery: 'check'` or `none`, and so does every
+  custom transport: only the owned transport can make this observation.
 
 `recovery: 'check'` is offered exactly when `transport.getHistory` exists for an
 ordinary submit, with or without a captured run id, and `checkStatus()` is exposed
@@ -373,8 +491,9 @@ run so the two surfaces cannot disagree.
 when the transport has `getRunStatus`, because only the exact run's status can
 settle a failure. It sends a command again when, and only when, the backend
 reported that command's run as `error` or `timeout`, at close or through
-`checkStatus()`, or when the command's thread could not be created. That error
-carries `retryable: true` and `recovery: 'retry'`.
+`checkStatus()`, when the command's thread could not be created, or when its
+creation request got no response at all (see above; that retry reads the thread
+first). That error carries `retryable: true` and `recovery: 'retry'`.
 
 - The transcript and values return to what they were before the command, and the
   command's captured input is sent again. A submission keeps its user message id,
@@ -431,9 +550,8 @@ only; child graph state stays a broad record.
 ## Custom events
 
 `session.onCustomEvent(listener)` delivers each `custom` stream frame, from the
-root or any subgraph namespace, as `{ name, data }`. The frame is read the way the
-Angular adapter reads it: a `{ name, data }` payload unwraps, and any other payload
-is the data with an empty name. Events are not state: no snapshot holds them, and
+root or any subgraph namespace, as `{ name, data }`. A `{ name, data }` payload
+unwraps, and any other payload is the data with an empty name. Events are not state: no snapshot holds them, and
 a listener added later does not receive earlier events. `data` is owned frozen
 plain data; a payload that is not plain data is dropped. The middleware's
 subagent binding frame is protocol and is not delivered. A throwing listener
@@ -461,9 +579,10 @@ until its milestone happens.
 | `toolCallStartedAt`   | The first time the session held a tool call.            |
 | `toolCallCompletedAt` | The first time a tool call was complete or failed.      |
 
-A session serves one thread, so nothing is reset: where the Angular adapter
-clears its `AgentLifecycle` on `switchThread()`, a session for another thread
-starts again from null. `threadCreatedAt` stays null for a session that was
+A session serves one thread, so nothing is reset. The `Agent` that
+`@threadplane/angular` injects returns its `AgentLifecycle` to null on
+`switchThread()` because it replaces the session: the session for the other
+thread starts again from null. `threadCreatedAt` stays null for a session that was
 given a `threadId`. Interrupts and tool calls restored from saved history are
 stamped when they are read, not when they first happened. The same failure
 published again keeps its time; a different one, or one that returns after
@@ -576,6 +695,21 @@ The session produces the optional members of the core contract
   settles its call as `error`, with the message text as `error`, live and from
   history; a failed delegation therefore makes its child `error`. A tool
   message whose content is an array gives the call `parts`, that array.
+- **Tool call status.** A tool the graph runs itself (a server tool) is
+  `pending` from the moment its finalized call enters `toolCalls` until its
+  tool message arrives, and then `complete` or `error`. It is never `running`:
+  the core contract's `pending` means finalized arguments awaiting a result,
+  and the session sees a server tool's call and its result, not its start. The
+  removed Angular adapter published the same two steps. `running` is published
+  only for a function tool the session executes itself (a `tools` handler),
+  between the start of the handler and its result. While the run is in flight
+  a `pending` call is work in progress: the chat views list it under "Waiting
+  to run tools", which says the call has no result yet, and show "Running
+  tools…" for a `running` call. To show that a server tool has started, read
+  `snapshot.toolProgress` (add `run: { streamMode: ['tools'] }`), whose entry
+  for the call's `toolCallId` moves through `starting`, `running`,
+  `completed` and `error`. It is reported beside the call and does not change
+  the call's `status`.
 - **Error diagnostics.** `snapshot.errorDiagnostic` describes what the
   published error was classified from, when the session read it: an error
   event the backend sent, a failure with an HTTP status, or a malformed
@@ -595,7 +729,7 @@ The session produces the optional members of the core contract
   does not block input here: a new message replaces the pause.
 - **History.** `checkpoints` and `messageCheckpoints` are the core fields, on
   a session created with `historyState: true`: see "History with state".
-  `messageCheckpoints` keeps the Angular agent's rule, the newest checkpoint
+  `messageCheckpoints` names, for each assistant message, the newest checkpoint
   whose assistant messages end with the message, which for a message followed
   by another turn is the checkpoint that already holds the next prompt.
 - **Running without a message.** `runWithoutMessage`: see "A run with no
@@ -668,7 +802,7 @@ stays null for a session that was given a `threadId`.
 ## Host options
 
 These `createSession` options let a host (a framework binding, a development
-tool) supply what the Angular agent used to build in. None changes the
+tool) supply what the removed Angular adapter built in. None changes the
 contract; all are optional and inert when omitted.
 
 - `initialValues`: the state `snapshot.state` holds until the backend reports
@@ -682,7 +816,8 @@ contract; all are optional and inert when omitted.
   `subscribe` listener while a run streams. `getSnapshot()` is never delayed,
   the last change is always delivered, and a change that ends the run is
   delivered at once. Each listener is paced separately. Off when omitted,
-  `false` or `0`; the Angular agent's default was 16.
+  `false` or `0`. The removed Angular adapter throttled at 16 by default; a
+  session does not throttle unless asked.
 - `a2uiClientCapabilities`: `{ supportedCatalogIds, inlineCatalogs? }`, sent
   with every run that has input under the `a2ui_client_capabilities` state
   key, where the middleware reads it. A run with no input carries nothing.
@@ -694,21 +829,40 @@ contract; all are optional and inert when omitted.
   `tplane:stream_errored` (with `durationMs`, and the error kind as
   `errorClass`). A stopped or replaced run reports no ending. The sink may be
   asynchronous and a failure in it is ignored. `false` turns it off.
-- `onOperationFailure(code)`: told when the owned SDK transport's request was
-  refused as `unauthorized` or failed as `network_blocked`. Supplying it also
-  makes the owned transport report generic errors only. A supplied transport
-  ignores it.
+- `reportOperationFailure(code)`: told when the owned SDK transport's request
+  was refused as `unauthorized` or failed as `network_blocked`. Supplying it
+  also makes the owned transport report generic errors only. A supplied
+  transport ignores it. The name is the one `@threadplane/angular`'s session
+  context and `createLangGraphThreadDirectory` use, so
+  `createSession({ ...context })` passes the host's reporter on. The earlier
+  name, `onOperationFailure`, is deprecated and still read: when both are
+  functions only `reportOperationFailure` is called.
+- `clientOptions`, `threadId` and `onThreadId` accept what that context holds
+  when a field is unset: `undefined` for `clientOptions`, `null` for
+  `threadId`.
 - `developmentRuntime`: a development-install collector with `touch()`,
-  `milestone(kind)` and `dispose()`. The session touches it at creation and for
-  each command, reports `transport.connected` on a run's first event and
-  `thread.persisted` when a history read restores messages, and disposes it
-  with the session. The collector itself, and its policy for which agents
-  collect, stay with the host because they depend on Angular.
+  `milestone(kind, durationMs?)` and `dispose()`, or a factory that builds one.
+  The session touches it at creation and for each command, reports
+  `transport.connected` on a run's first event, `thread.persisted` when a
+  history read restores messages, `runtime.first_stream_completed` (with the
+  run's duration) when a run the backend served ends in `success`, and
+  `interrupt.handled` when that run was a resume. A scripted run reports no
+  completion. It is disposed with the session. A factory is called once with
+  `{ integration, packageName, packageVersion, installationToken, enabled }`:
+  what this package knows of its own installation. `installationToken` is the
+  token the install step wrote and is read only in an Angular development
+  build (`ngDevMode`); everywhere else it is `null`. `enabled()` is the session's
+  `isDevelopmentRuntimeEnabled()`: true unless the session was given a
+  `telemetry` option, `false` included. The session itself builds no collector and sends nothing: without the
+  option nothing is collected, which is what a React app gets. In Angular,
+  `provideAgent` hands the factory to the session factory as
+  `context.developmentRuntime`, so `createSession({ ...context })` is all an
+  app writes; the collector comes from `@threadplane/chat`.
 - `devtools`: a sink told which published fields each event changed, by name
   and never by value. `begin(type)` and `end()` bracket a stream event,
   `outside(label, run)` brackets a change no event caused (`run:start`,
   `run:end`, `history`, `queue`, `branch`), and `wrote(name)` is called inside
-  the bracket with the Angular devtools vocabulary: `status`, `values`,
+  the bracket with one of these names: `status`, `values`,
   `messages`, `error`, `interrupt`, `interrupts`, `branch`, `history`,
   `isThreadLoading`, `toolProgress`, `toolCalls`, `messageMetadata`,
   `subagents`, `queue` and `custom`.
@@ -769,23 +923,70 @@ it observes a session. Pass `apiUrl` (with optional `clientOptions`) to have it
 build its own protected SDK client with `maxRetries: 0`, or `client` to reuse an
 existing one. With `browserOrigin`, a cross-origin `apiUrl` is rejected.
 
+It returns a `LangGraphThreadDirectory`: the core contract with the commands
+this directory always has (`get`, `pinnedOrderOf`, `create`, `rename`, `remove`,
+`setArchived`, `setPinned`, `reorderPinned`, `setProject`) typed as present, so
+they are called without `?.`. The project commands are typed as present with the
+default options or a supplied `ProjectStore`, as absent with `projects: false`
+(`LangGraphThreadDirectory<false>`), and as optional when `projects` is not
+known until run time (`LangGraphThreadDirectory<boolean>`). A binding names the
+type to carry it through, for example
+`injectThreadDirectory<LangGraphThreadDirectory>()` in Angular.
+
 An entry is read from thread metadata: `title` (trimmed, else `titleFallback`,
 default "New chat"), `archived`, `pinned`, `pinnedOrder` and `projectId`.
 `threads` holds the active conversations, pinned ones first in their saved
-order; `archived` holds the rest. Nothing is read until `refresh()` is called.
-A failed read never rejects: it is published as `status: 'error'` and the lists
-keep the last successful result. `status` is `'loading'` only until the first
-successful read or while recovering from an error.
+order; `archived` holds the rest. An entry does not carry `pinnedOrder`:
+`pinnedOrderOf(entry)` answers the saved rank of an entry this package
+produced, or `undefined` when the thread has none. Nothing is read until
+`refresh()` is called. A failed read never rejects: it is published as
+`status: 'error'` and the lists keep the last successful result. `status` is
+`'loading'` only until the first successful read or while recovering from an
+error.
+
+`refresh()` reads the thread list and publishes it, then reads the project
+names and publishes again, and resolves after both. A failed thread read makes
+that one request and no project read.
+
+`get(id, { signal }?)` reads one thread, listed or not, without changing the
+snapshot. It resolves with the entry, or with `null` when the server answers
+404 (no such thread) or 422 (the id is not one a thread could have). Any other
+failure rejects with the safe error, so a caller can tell "missing" from "could
+not ask". A listed thread that has not changed resolves with the listed entry
+itself.
 
 Mutations (`create`, `rename`, `remove`, `setArchived`, `setPinned`,
 `reorderPinned`, `setProject`) apply optimistically, roll back and reject with a
-safe error on failure, and confirm with a later read. A read that started before
-a mutation settled never undoes it, and error bodies are never read.
+safe error on failure, and confirm with a later read of the thread list; they
+do not wait for the project names. A project command does. A read that started
+before a mutation settled never undoes it, and error bodies are never read.
 
 Project names live in the LangGraph Store (`project-store.ts`), namespace
 `['threadplane', 'projects']`, one item per project with value `{ name }`. Pass
 `projects: false` to turn them off. When the Store API is unavailable, threads
 still list and `projects` is absent.
+
+`reportOperationFailure` receives `'unauthorized'` when a request is answered
+401 or 403 and `'network_blocked'` when a request never reached the server. It
+applies to the client built from `apiUrl` only; with a supplied `client` nothing
+is reported. The Angular `provideThreadDirectory` factory receives the host's
+reporter as `reportOperationFailure`; pass it on.
+
+### Differences from the removed `LangGraphThreadsAdapter`
+
+| | Removed adapter | This directory |
+| --- | --- | --- |
+| Title of a thread with none | `'Untitled'` | `'New chat'`. Pass `titleFallback: 'Untitled'` to keep the old text. |
+| Retries | The SDK default (4), or `clientOptions.maxRetries` | Never, for the client built from `apiUrl`: `maxRetries` is forced to 0 so a failure shows at once. A supplied `client` keeps its own setting. |
+| Failures | Passed through as thrown unless default headers or a reporter were configured | Always the safe `LangGraphRequestError`; status and body are never exposed. |
+| `create` failing | Resolved `null` and logged | Rejects. The Angular view's `create` still resolves `null` and logs. |
+| `pinnedOrder` | A field of each row | `pinnedOrderOf(entry)`; the Angular view puts it on each list item. |
+| Thread ids in request paths | Sent as given | URL-encoded. |
+| Console output | `console.debug` on each refresh, `console.error` on a failed one | None. A failed read is published as `status: 'error'`. |
+| Cancellation | Not abortable | `refresh`, `get` and `create` take a `signal`; `dispose()` aborts what is in flight. |
+
+Single-thread reads, the order of thread and project reads, operation failure
+reporting and optimistic mutations behave as they did.
 
 The shared suite in `testing/thread-directory-conformance.ts` runs against this
 directory. Limits: one page

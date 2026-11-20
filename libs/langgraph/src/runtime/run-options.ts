@@ -3,7 +3,11 @@ import type { DeepReadonly, PlainValue } from '@threadplane/core';
 import { ownValue } from './ownership.js';
 import type { LangGraphSubmitOptions } from './transport.types.js';
 
-type Configurable = Readonly<Record<string, PlainValue>> & {
+/**
+ * The `configurable` record of a run's `config`: plain data. The thread and
+ * checkpoint routing keys are the session's own and cannot be given here.
+ */
+export type LangGraphRunConfigurable = Readonly<Record<string, PlainValue>> & {
   readonly thread_id?: never;
   readonly checkpoint_id?: never;
   readonly checkpoint_ns?: never;
@@ -66,7 +70,7 @@ export interface LangGraphRunOptions {
   readonly signal?: AbortSignal;
   readonly run?: LangGraphRunSettings;
   readonly config?: Omit<DeepReadonly<Config>, 'configurable'> & {
-    readonly configurable?: Configurable;
+    readonly configurable?: LangGraphRunConfigurable;
   };
   readonly context?: PlainValue;
   readonly metadata?: Readonly<Record<string, PlainValue>>;

@@ -686,6 +686,81 @@ live(
 );
 
 live(
+  'a response that ended before any event is sent again by retry',
+  async (t) => {
+    const server = await serverFor(t, clientTools);
+    for (const tools of [false, true]) {
+      const owner = tools
+        ? session(
+            t,
+            { url: server.url + 'agent' },
+            {
+              get_weather: {
+                description: weatherSpec.description,
+                parameters: weatherSpec.parameters,
+                handler: ({ location }) => ({
+                  location,
+                  temperatureF: 68,
+                  conditions: 'Sunny',
+                }),
+              },
+            }
+          )
+        : session(t, { url: server.url + 'agent' });
+      const from = server.requests.length;
+      // The server ends the response with nothing in it; no run was started.
+      server.closeNext();
+      assert.equal(await owner.submit(WEATHER), 'interrupted');
+      const failed = owner.getSnapshot();
+      assert.equal(failed.run.terminal, undefined);
+      assert.deepEqual(failed.error, {
+        kind: 'interrupted',
+        message: 'The response was interrupted before it started. Try again.',
+        retryable: true,
+        recovery: 'retry',
+      });
+      assert.equal(failed.inputBlocked?.reason, tools ? 'client-tools' : undefined);
+
+      // The retry reaches the backend with the same request, and is answered.
+      assert.equal(await owner.retry(), 'success');
+      const [first, second] = server.requests.slice(from);
+      assert.deepEqual(second.messages, first.messages);
+      assert.notEqual(second.runId, first.runId);
+      const answered = owner.getSnapshot();
+      assert.equal(answered.error, undefined);
+      assert.equal(answered.inputBlocked, undefined);
+      assert.deepEqual(
+        texts(answered).filter(([role]) => role === 'user'),
+        [['user', WEATHER]]
+      );
+      if (tools) assert.equal(answered.messages.at(-1).content, WEATHER_ANSWER);
+    }
+  }
+);
+
+live('a host that cannot be reached is a connection error', async (t) => {
+  // A port nothing listens on: the server that was there has stopped.
+  const gone = await startRecordingServer({ target: 'http://127.0.0.1:1/' });
+  await gone.stop();
+  const owner = session(t, { url: gone.url + 'agent' });
+  assert.equal(await owner.submit(WEATHER), 'error');
+  const failed = owner.getSnapshot();
+  assert.deepEqual(failed.error, {
+    kind: 'connection',
+    message: "Can't reach the server. Check your connection and try again.",
+    retryable: false,
+    recovery: 'none',
+  });
+  // What the AG-UI example's error-handling e2e looks for.
+  assert.match(
+    failed.error.message,
+    /can't reach|connection|server|interrupted|try again/i
+  );
+  assert.equal(failed.run.failure, undefined);
+  await assert.rejects(owner.retry(), /cannot be retried/);
+});
+
+live(
   'runWithoutMessage and structured content reach the backend',
   async (t) => {
     const server = await serverFor(t, clientTools);
@@ -769,12 +844,26 @@ live('activity records become child agents as they stream', async (t) => {
       toolCallId,
     })),
     ['research', 'booking', 'itinerary'].map((name) => ({
-      id: `call_${name}_001:activity`,
+      id: `call_${name}_001`,
       name,
       status: 'complete',
       toolCallId: `call_${name}_001`,
     }))
   );
+  // This backend names the activity record and the delegation's tool result
+  // alike. The session keeps one record of each, and the run does not fail.
+  for (const child of settled.subagents) {
+    assert.deepEqual(
+      settled.transcript
+        .filter((record) => record.id === child.id)
+        .map((record) => record.role)
+        .sort(),
+      ['activity', 'tool']
+    );
+    const call = settled.toolCalls.find((call) => call.id === child.id);
+    assert.equal(call.status, 'complete');
+    assert.ok(String(call.result).length > 0);
+  }
   for (const child of settled.subagents) {
     assert.equal(child.messages.length, 1);
     assert.ok(child.messages[0].content.length > 20);
@@ -788,12 +877,34 @@ live('activity records become child agents as they stream', async (t) => {
     assert.ok(settled.toolCalls.some((call) => call.id === child.toolCallId));
   }
   // The records are children, not messages.
+  // The only message with a child's id is the tool result that shares it.
   assert.ok(
-    !settled.messages.some((message) => message.id.endsWith(':activity'))
+    !settled.messages.some(
+      (message) =>
+        message.role !== 'tool' &&
+        settled.subagents.some((child) => child.id === message.id)
+    )
   );
+  assert.ok(!settled.messages.some((message) => message.role === 'activity'));
   assert.equal(
     settled.transcript.filter((record) => record.role === 'activity').length,
     3
   );
   assert.ok(settled.messages.at(-1).content.length > 0);
+
+  // The pair is ordinary history: the session admits the next submission and
+  // its request sends the tool results, never the activity records. The
+  // recorded model has no answer for this prompt, so only the request is read.
+  const sent = server.requests.length;
+  await owner.submit('Thanks');
+  assert.equal(server.requests.length, sent + 1);
+  const next = server.requests.at(-1);
+  assert.equal(next.messages.at(-1).content, 'Thanks');
+  assert.ok(!next.messages.some((message) => message.role === 'activity'));
+  for (const child of settled.subagents)
+    assert.ok(
+      next.messages.some(
+        (message) => message.role === 'tool' && message.id === child.id
+      )
+    );
 });

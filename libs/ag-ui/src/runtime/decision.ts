@@ -10,6 +10,10 @@ import { copyData } from './copy-data.js';
 import { answersNotice, type InterruptTransport } from './interrupt-mode.js';
 
 declare const pauseId: unique symbol;
+/**
+ * The identifier of one pause. Pass it as `resume`'s `pause` option so an
+ * answer reaches only the pause its control was rendered for.
+ */
 export type PauseId = string & { readonly [pauseId]: true };
 /**
  * One answer for `resume`: the core response, which names a pending interrupt
@@ -35,6 +39,7 @@ export type NativeResponse =
       readonly payload?: never;
       readonly metadata?: Readonly<Record<string, PlainValue>>;
     };
+/** One interrupt of a pause, as the protocol sent it and frozen. */
 export type OwnedInterrupt = DeepReadonly<Interrupt> & {
   /** What a `CUSTOM on_interrupt` notice carried, read as JSON when it is. */
   readonly value?: PlainValue;
@@ -49,6 +54,10 @@ export type CommandProps = {
     };
   };
 };
+/**
+ * A pause this session can answer: its interrupts, how the answer is sent and
+ * the attempt to answer it, once one was made.
+ */
 export type NativeDecision = {
   readonly kind: 'native';
   readonly id: PauseId;
@@ -72,12 +81,20 @@ export type NativeDecision = {
     readonly acknowledged?: true;
   };
 };
+/**
+ * The pause a run ended in: one the session can answer, or `unsupported` for
+ * a pause it only observed.
+ */
 export type Decision =
   | NativeDecision
   | { readonly kind: 'unsupported'; readonly sourceRunId: string };
+/** The run a decision is read against: its identifier, outcome and last event. */
 export interface DecisionRun {
+  /** The run's identifier. */
   readonly id: string;
+  /** How the run ended, once it has. */
   readonly outcome?: CompleteOutcome;
+  /** The event that ended the run. */
   readonly terminal?: OwnedRootTerminal;
 }
 

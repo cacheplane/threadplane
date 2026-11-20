@@ -6,7 +6,7 @@ import {
 import type { Agent, AgentCheckpoint } from '../../agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 
-/** Lists agent checkpoints and emits replay or fork requests for their identifiers. */
+/** Lists agent checkpoints, newest first, and emits replay or fork requests for their identifiers. */
 @Component({
   selector: 'chat-timeline-slider',
   standalone: true,
@@ -150,7 +150,12 @@ export class ChatTimelineSliderComponent {
 
   readonly selectedIndex = signal<number>(-1);
 
-  readonly history = computed<readonly AgentCheckpoint[]>(() => this.agent().checkpoints() ?? []);
+  /**
+   * The checkpoints as listed: newest first, numbered from 1 at the latest. A
+   * checkpoint without a label is named `Step n` by that number.
+   * `agent.checkpoints()` itself is oldest first.
+   */
+  readonly history = computed<readonly AgentCheckpoint[]>(() => [...(this.agent().checkpoints() ?? [])].reverse());
 
   readonly replayRequested = output<string>();
   readonly forkRequested = output<string>();

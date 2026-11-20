@@ -14,7 +14,10 @@ import {
 import { AGENT_LIFECYCLE } from './agent-lifecycle';
 import type { AgentRef } from './agent-ref';
 
-/** @internal The agent the ref-less `injectAgent()` resolves. */
+/**
+ * @internal The agent the ref-less `injectAgent()` resolves. Exported for the
+ * testing entry's `provideAgentValue`; tests provide an agent through that.
+ */
 export const ɵAGENT = new InjectionToken<Agent<AgentSessionLike>>('AGENT');
 
 /** @internal The resolved config of the agent behind `ɵAGENT`. */
@@ -73,8 +76,8 @@ function refDebugName(ref: AgentRef<never>): string {
  * providers: [
  *   provideAgent({
  *     threadId: currentThreadId,
- *     createSession: ({ threadId, onThreadId }) =>
- *       createSession({ assistantId: 'chat', apiUrl, threadId, onThreadId }),
+ *     createSession: (context) =>
+ *       createSession({ assistantId: 'chat', apiUrl, ...context }),
  *   }),
  * ];
  * ```

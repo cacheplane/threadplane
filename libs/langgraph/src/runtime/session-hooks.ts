@@ -12,8 +12,11 @@ export type LangGraphTelemetryEvent =
   | 'tplane:stream_ended'
   | 'tplane:stream_errored';
 
+/** What a telemetry sink receives: the lifecycle moment and its properties. No content is included. */
 export interface LangGraphTelemetryPayload {
+  /** The lifecycle moment. */
   readonly event: LangGraphTelemetryEvent;
+  /** What is known of the moment: the request's kind, its duration, the error's kind. */
   readonly properties: {
     readonly transport: 'langgraph';
     readonly surface: 'agent';
@@ -34,9 +37,38 @@ export type LangGraphTelemetrySink = (
 /** A development-install collector the host supplies; the session only calls it. */
 export interface LangGraphDevelopmentRuntime {
   touch(): void;
-  milestone(kind: 'transport.connected' | 'thread.persisted'): void;
+  milestone(
+    kind:
+      | 'transport.connected'
+      | 'thread.persisted'
+      | 'runtime.first_stream_completed'
+      | 'interrupt.handled',
+    durationMs?: number
+  ): void;
   dispose(): void;
 }
+
+/**
+ * What this package tells a host that builds the collector for it: which
+ * package is installed, and whether this session may collect.
+ */
+export interface LangGraphDevelopmentInstall {
+  readonly integration: 'langgraph';
+  readonly packageName: '@threadplane/langgraph';
+  readonly packageVersion: string;
+  /**
+   * The package-local token the install step wrote, in an Angular development
+   * build. Null everywhere else, and in a package installed without scripts.
+   */
+  readonly installationToken: string | null;
+  /** False once the app supplied its own `telemetry` option, `false` included. */
+  readonly enabled: () => boolean;
+}
+
+/** Builds the collector for one session from what the package knows of itself. */
+export type LangGraphDevelopmentRuntimeFactory = (
+  install: LangGraphDevelopmentInstall
+) => LangGraphDevelopmentRuntime | undefined;
 
 /**
  * A development tool's view of what each event changed. `begin` and `end`
@@ -52,6 +84,7 @@ export interface LangGraphDevtoolsSink {
   outside<R>(label: string, run: () => R): R;
 }
 
+/** The name of a published field a development tool is told has changed. */
 export type LangGraphDevtoolsSignal =
   | 'status'
   | 'values'
@@ -76,6 +109,7 @@ export interface LangGraphScriptedRun {
     readonly data: unknown;
   }[];
 }
+/** A development tool's source of scripted runs, asked before each request. */
 export interface LangGraphScriptedRuns {
   /** The armed run, taken once, or null when none is armed. */
   take(): LangGraphScriptedRun | null;

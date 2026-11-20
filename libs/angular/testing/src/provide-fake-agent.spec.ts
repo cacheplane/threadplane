@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import type { AgentSession } from '@threadplane/core';
+import type { AgentSession, ToolContract } from '@threadplane/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAgentRef, injectAgent, provideAgent } from '@threadplane/angular';
 import { scriptedSession } from '../../src/testing/scripted-session';
 import { injectFakeAgentSession, provideFakeAgent } from './public-api';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- Type-only proof against the actual LangGraph session; no production dependency.
+import type { LangGraphSession } from '../../../langgraph/src/runtime/create-session';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -181,6 +183,30 @@ describe('provideFakeAgent', () => {
     const session = fake();
     view.destroy();
     expect(session.disposed).toBe(true);
+  });
+
+  it('stands in under a ref declared with a backend session type', async () => {
+    const TRIP = createAgentRef<
+      LangGraphSession<Record<string, ToolContract>, { todos: string[] }>
+    >('trip');
+    TestBed.configureTestingModule({
+      providers: [
+        provideFakeAgent(TRIP, {
+          delayMs: 0,
+          session: { state: { todos: ['a'] } },
+        }),
+      ],
+    });
+    const agent = inContext(() => injectAgent(TRIP));
+    const fake = inContext(() => injectFakeAgentSession(TRIP));
+    await expect(agent.submit('Hello')).resolves.toBe('success');
+    expect(contents(agent)).toEqual(['Hello', 'Hello from the fake agent.']);
+    expect(agent.state()).toEqual({ todos: ['a'] });
+    fake().setState({ todos: ['a', 'b'] });
+    expect(agent.state()).toEqual({ todos: ['a', 'b'] });
+    // The fake is the core session: what only the backend publishes is unset.
+    expect(agent.subgraphs()).toBeUndefined();
+    expect(agent.history()).toBeUndefined();
   });
 
   it('refuses to hand out controls for an agent that is not fake', () => {

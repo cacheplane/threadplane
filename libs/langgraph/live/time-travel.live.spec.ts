@@ -1,3 +1,9 @@
+import {
+  connect,
+  createServer,
+  type AddressInfo,
+  type Socket,
+} from 'node:net';
 import { runAgentSessionConformance } from '@threadplane/core/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { selectBranch } from '../src/runtime/create-session';
@@ -63,7 +69,9 @@ describe('history with state and branches', () => {
       })
     );
     expect(session.threadId).toBeUndefined();
-    expect(session.getSnapshot().checkpoints).toBeUndefined();
+    // A session with `historyState` can report checkpoints, so it publishes an
+    // empty list until the first page is read.
+    expect(session.getSnapshot().checkpoints).toEqual([]);
 
     expect(await session.submit('Hello')).toBe('success');
     expect(createdThreads).toEqual([session.threadId]);
@@ -230,6 +238,80 @@ describe('history with state and branches', () => {
     await new Promise((done) => setTimeout(done, 300));
     expect(inert.getSnapshot().messages).toEqual([]);
     expect('loading' in inert.getSnapshot()).toBe(false);
+  });
+});
+
+describe('regenerate', () => {
+  it('answers a prompt again on the real server, for the first turn and a later one', async () => {
+    const session = track(liveSession(backend));
+    expect(typeof session.regenerate).toBe('function');
+    expect(await session.submit('Hello')).toBe('success');
+    const [prompt, answer] = session.getSnapshot().messages;
+
+    // The only checkpoint before the first prompt is the one its run saved
+    // when it accepted the input, with the graph's entry still to run.
+    const before = await backend.client.threads.getHistory(
+      session.threadId as string
+    );
+    expect(before.at(-1)?.next).toEqual(['__start__']);
+    expect(messagesOf(before.at(-1)?.values as Record<string, unknown>)).toEqual(
+      []
+    );
+
+    expect(await session.regenerate?.(answer.id)).toBe('success');
+    const again = session.getSnapshot();
+    expect(again.status).toBe('idle');
+    expect(texts(again.messages)).toEqual([
+      ['user', 'Hello'],
+      ['assistant', HI],
+    ]);
+    // A new answer to a newly sent prompt: neither keeps its old id.
+    expect(again.messages[1].id).not.toBe(answer.id);
+    expect(again.messages[0].id).not.toBe(prompt.id);
+    // The server's newest state is the regenerated turn, asked once.
+    const saved = await backend.saved(session.threadId as string);
+    expect(
+      messagesOf(saved.values as Record<string, unknown>).map(
+        (message) => message.id
+      )
+    ).toEqual(again.messages.map((message) => message.id));
+    // The earlier answer is still in the thread, on its own branch.
+    const history = await backend.client.threads.getHistory(
+      session.threadId as string
+    );
+    expect(
+      history.some((state) =>
+        messagesOf(state.values as Record<string, unknown>).some(
+          (message) => message.id === answer.id
+        )
+      )
+    ).toBe(true);
+
+    // A later turn, on the regenerated branch, regenerates the same way.
+    expect(await session.submit('Continue the original path.')).toBe('success');
+    const second = session.getSnapshot().messages;
+    expect(second.at(-1)?.content).toBe(ORIGINAL);
+    expect(await session.regenerate?.(second.at(-1)?.id as string)).toBe(
+      'success'
+    );
+    const third = session.getSnapshot().messages;
+    expect(texts(third)).toEqual([
+      ['user', 'Hello'],
+      ['assistant', HI],
+      ['user', 'Continue the original path.'],
+      ['assistant', ORIGINAL],
+    ]);
+    expect(third.at(-1)?.id).not.toBe(second.at(-1)?.id);
+    // The first turn is untouched by regenerating the second.
+    expect(third.slice(0, 2).map((message) => message.id)).toEqual(
+      again.messages.map((message) => message.id)
+    );
+    const tip = await backend.saved(session.threadId as string);
+    expect(
+      messagesOf(tip.values as Record<string, unknown>).map(
+        (message) => message.id
+      )
+    ).toEqual(third.map((message) => message.id));
   });
 });
 
@@ -503,6 +585,65 @@ describe('failures', () => {
     expect(Object.isFrozen(snapshot.errorDiagnostic)).toBe(true);
     // The user message stays, marked as a failed delivery.
     expect(texts(snapshot.messages)).toEqual([['user', 'Hello']]);
+  });
+
+  it('offers a retry when nothing answered the creation request, and sends the turn once', async () => {
+    // A port nothing listens on, then a relay to the real server on it: the
+    // same address is first unreachable and later reachable.
+    const reserve = createServer();
+    await new Promise<void>((done) => reserve.listen(0, '127.0.0.1', done));
+    const port = (reserve.address() as AddressInfo).port;
+    await new Promise<void>((done) => reserve.close(() => done()));
+    const target = new URL(backend.url);
+    const sockets = new Set<Socket>();
+    const relay = createServer((socket) => {
+      const upstream = connect(Number(target.port), target.hostname);
+      sockets.add(socket).add(upstream);
+      socket.on('error', () => upstream.destroy());
+      upstream.on('error', () => socket.destroy());
+      socket.pipe(upstream).pipe(socket);
+    });
+    const threadId = await backend.thread();
+    const session = track(
+      liveSession({ ...backend, url: `http://127.0.0.1:${port}` }, { threadId })
+    );
+    try {
+      expect(await session.submit('Hello')).toBe('error');
+      const failed = session.getSnapshot();
+      expect(failed.error).toEqual({
+        kind: 'connection',
+        message: "Can't reach the server. Check your connection and try again.",
+        retryable: true,
+        recovery: 'retry',
+      });
+      expect(texts(failed.messages)).toEqual([['user', 'Hello']]);
+      // Nothing reached the server.
+      expect(await backend.client.runs.list(threadId)).toHaveLength(0);
+
+      await new Promise<void>((done) => relay.listen(port, '127.0.0.1', done));
+      expect(await session.retry?.()).toBe('success');
+      const snapshot = session.getSnapshot();
+      expect(snapshot.status).toBe('idle');
+      expect(snapshot.error).toBeUndefined();
+      expect(texts(snapshot.messages)).toEqual([
+        ['user', 'Hello'],
+        ['assistant', HI],
+      ]);
+      // One run, and the prompt saved once under the id it was first sent with.
+      expect(await backend.client.runs.list(threadId)).toHaveLength(1);
+      const saved = await backend.saved(threadId);
+      expect(
+        messagesOf(saved.values as Record<string, unknown>).map(
+          (message) => message.id
+        )
+      ).toEqual(snapshot.messages.map((message) => message.id));
+      expect(snapshot.messages[0].id).toBe(failed.messages[0].id);
+    } finally {
+      await session.dispose();
+      for (const socket of sockets) socket.destroy();
+      if (relay.listening)
+        await new Promise<void>((done) => relay.close(() => done()));
+    }
   });
 
   it('keeps a protected transport generic: no diagnostic is published', async () => {

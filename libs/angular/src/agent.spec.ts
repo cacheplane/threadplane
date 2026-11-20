@@ -207,12 +207,59 @@ describe('Agent signal view', () => {
     expect(withCommand.current.calls).toEqual([['regenerate', 'm1']]);
   });
 
+  it('reads every optional member and backend command as undefined on a session without it', () => {
+    const injector = context();
+    // The least a session can be: none of the optional members.
+    const session = {
+      getSnapshot: () => ({ status: 'idle' as const }),
+      subscribe: () => () => undefined,
+      dispose: async () => undefined,
+    };
+    const agent = loose(
+      runInInjectionContext(injector, () =>
+        createAgent({ createSession: () => session })
+      )
+    );
+    // Declared optional by the core contract or a first-party session type.
+    const optional = [
+      'onCustomEvent',
+      'runWithoutMessage',
+      'regenerate',
+      'resume',
+      'clientTools',
+      'checkStatus',
+      'retry',
+      'load',
+      'onRawEvent',
+      'reconcileInterrupt',
+      'ready',
+      'agentId',
+      'stateType',
+    ];
+    // Always present on a first-party backend, absent from any other session.
+    const backendOnly = [
+      'isDevelopmentRuntimeEnabled',
+      'fork',
+      'reconnect',
+      'joinStream',
+      'setBranch',
+      'cancelQueued',
+      'clearQueue',
+    ];
+    for (const name of [...optional, ...backendOnly]) {
+      expect(agent[name], name).toBeUndefined();
+      expect(name in agent, name).toBe(false);
+    }
+    // A snapshot field the session has not published yet is still a signal.
+    expect(isSignal(agent['usage'])).toBe(true);
+  });
+
   it('treats a configured optional command name as a command, not a field', () => {
     const plain = scripted();
     // An unknown name reads as an optional field the snapshot does not hold yet.
-    expect(isSignal(loose(plain.agent)['joinStream'])).toBe(true);
-    const declared = scripted({ optionalCommands: ['joinStream'] });
-    expect(loose(declared.agent)['joinStream']).toBeUndefined();
+    expect(isSignal(loose(plain.agent)['summarize'])).toBe(true);
+    const declared = scripted({ optionalCommands: ['summarize'] });
+    expect(loose(declared.agent)['summarize']).toBeUndefined();
   });
 
   it('passes plain session members through and keeps session plumbing private', () => {

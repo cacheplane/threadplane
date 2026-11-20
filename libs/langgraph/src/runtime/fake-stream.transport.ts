@@ -21,9 +21,16 @@ const DEFAULT_TOKENS = ['Hello', ' from', ' the', ' fake', ' LangGraph', ' agent
 /**
  * In-process AgentTransport that auto-streams a canned assistant reply.
  *
- * Backs `provideFakeAgent()`. Unlike `MockAgentTransport` (passive, driven
- * manually from specs), this transport emits its tokens automatically on
- * `stream()`, then completes — suitable for offline demos and integration tests.
+ * Pass it to `createSession({ transport })` for an offline demo or an
+ * integration test of the real LangGraph session. Unlike `MockAgentTransport`
+ * (passive, driven by hand from a spec), it streams its tokens by itself on
+ * every `stream()` call and ends the run with the thread's saved messages, so
+ * each submit settles `success` and a thread keeps its earlier turns.
+ *
+ * It creates threads, and reports an empty history. It has no run status, so a
+ * session over it has no `retry` or `regenerate`. It is not what
+ * `provideFakeAgent()` from `@threadplane/angular/testing` uses: that provider
+ * runs the in-memory session of `@threadplane/core/testing`, with no transport.
  *
  * NOT for production use.
  */
@@ -35,19 +42,40 @@ export class FakeStreamTransport implements AgentTransport {
   constructor(config: FakeStreamTransportConfig = {}) {
     this.tokens = config.tokens ?? DEFAULT_TOKENS;
     this.reasoningTokens = config.reasoningTokens ?? [];
-    // Default 60ms matches @threadplane/ag-ui's FakeAgent so both adapters'
-    // provideFakeAgent() stream at the same cadence for the same config.
+    // 60ms is also the default cadence of `provideFakeAgent()`, so a demo
+    // streams alike whichever double it uses.
     this.delayMs = config.delayMs ?? 60;
   }
 
+  private threads = 0;
+
+  /**
+   * Names a new thread, as a backend does, so a session created without a
+   * `threadId` works: `fake-thread-1`, `fake-thread-2`, and so on.
+   */
+  async createThread(): Promise<string> {
+    return `fake-thread-${++this.threads}`;
+  }
+
+  private replies = 0;
+  /** What each thread holds, as the wire messages a backend would save. */
+  private readonly saved = new Map<string, readonly unknown[]>();
+
   async *stream(
     _assistantId: string,
-    _threadId: string | null,
-    _payload: unknown,
+    threadId: string | null,
+    payload: unknown,
     signal: AbortSignal,
     _options?: LangGraphSubmitOptions,
   ): AsyncIterable<StreamEvent> {
-    const id = 'fake-ai-1';
+    // Each reply is a message of its own: `fake-ai-1`, `fake-ai-2`, ...
+    const id = `fake-ai-${++this.replies}`;
+    const thread = threadId ?? '';
+    const input = (payload as { messages?: unknown } | null | undefined)?.messages;
+    const history = [
+      ...(this.saved.get(thread) ?? []),
+      ...(Array.isArray(input) ? input : []),
+    ];
 
     let reasoning = '';
     for (const chunk of this.reasoningTokens) {
@@ -72,6 +100,20 @@ export class FakeStreamTransport implements AgentTransport {
       } as unknown as StreamEvent;
       if (this.delayMs > 0) await delay(this.delayMs);
     }
+    if (signal.aborted) return;
+    // A run ends with the thread's saved state, as a backend's does. Without
+    // it a session cannot tell a finished reply from a dropped connection.
+    const messages = [
+      ...history,
+      {
+        id,
+        type: 'ai',
+        content,
+        ...(reasoning ? { additional_kwargs: { reasoning_content: reasoning } } : {}),
+      },
+    ];
+    this.saved.set(thread, messages);
+    yield { type: 'values', messages, data: { messages } } as unknown as StreamEvent;
   }
 
   async createQueuedRun(

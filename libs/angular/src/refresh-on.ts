@@ -1,11 +1,11 @@
 import { effect, untracked, type Signal } from '@angular/core';
 
 /** What a run-end helper calls: a function, or anything with `refresh()`. */
-type Refresh =
+export type RefreshTarget =
   | (() => void | Promise<void>)
   | { refresh(): void | Promise<void> };
 
-function run(target: Refresh): void {
+function run(target: RefreshTarget): void {
   const result =
     typeof target === 'function' ? target() : target.refresh.call(target);
   // A failed refresh shows where it is published; it never escapes as an
@@ -32,7 +32,7 @@ function run(target: Refresh): void {
  */
 export function refreshOnRunEnd(
   agent: { readonly status: Signal<string> },
-  fn: Refresh
+  fn: RefreshTarget
 ): void {
   refreshOnTransition(agent.status, (status) => status === 'running', fn);
 }
@@ -47,7 +47,7 @@ export function refreshOnRunEnd(
 export function refreshOnTransition<T>(
   watch: Signal<T>,
   isActive: (value: T) => boolean,
-  fn: Refresh
+  fn: RefreshTarget
 ): void {
   let lastActive = isActive(watch());
   effect(() => {

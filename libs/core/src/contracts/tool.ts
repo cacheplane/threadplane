@@ -8,8 +8,29 @@ export type PlainValue =
   | readonly PlainValue[]
   | { readonly [key: string]: PlainValue };
 
-/** Recursively projects readonly data, mapping unknown to PlainValue, void to undefined, and functions to never. */
-export type DeepReadonly<T> = unknown extends T
+/**
+ * True for `unknown` and `any` only. `unknown extends T` alone is not that
+ * test in a program compiled without strict null checks: there it also holds
+ * for `{}`, for a record of `any` and for an object type whose fields are all
+ * optional, which would then lose their fields. None of those is `any`, and
+ * all of them are object types, which `unknown` is not.
+ */
+type IsUntyped<T> = 0 extends 1 & T
+  ? true
+  : unknown extends T
+  ? [T] extends [object]
+    ? false
+    : true
+  : false;
+
+/**
+ * Recursively projects readonly data, mapping unknown to PlainValue, void to undefined, and functions to never.
+ * PlainValue itself is kept as it is: it is readonly already, and it refers to
+ * itself, so walking it would never end.
+ */
+export type DeepReadonly<T> = IsUntyped<T> extends true
+  ? PlainValue
+  : [T, PlainValue] extends [PlainValue, T]
   ? PlainValue
   : T extends void
   ? undefined

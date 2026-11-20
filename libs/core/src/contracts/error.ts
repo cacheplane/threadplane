@@ -44,7 +44,10 @@ export interface AgentError {
 const MAX_DEPTH = 6;
 
 function plain(value: unknown, depth: number, seen: Set<object>): PlainValue {
-  if (value === null || value === undefined) return value;
+  // One return per value: without strict null checks the comparison does not
+  // narrow `unknown`, and applications may compile this source that way.
+  if (value === null) return null;
+  if (value === undefined) return undefined;
   if (
     typeof value === 'string' ||
     typeof value === 'boolean' ||

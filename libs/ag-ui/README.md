@@ -54,6 +54,7 @@ In Angular, hand the factory to the one provider and inject the agent. Its snaps
 
 ```ts
 // app.config.ts
+import type { ApplicationConfig } from '@angular/core';
 import { provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/ag-ui';
 
@@ -67,6 +68,8 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
+Spreading `context` is all the wiring there is. It carries the selected thread (`threadId`, or `null` for a new conversation) and the agent's `onThreadId`. An AG-UI thread is named on the client: for a new conversation the session generates the id and reports it, so `agent.threadId()` is filled automatically as soon as the session exists, and `agent.switchThread(id)` or `agent.switchThread(null)` creates the next session the same way. No application code calls `context.onThreadId`.
+
 In React, create the session and pass it to `useAgent(session)` from `@threadplane/react`.
 
 ## Exports
@@ -75,12 +78,15 @@ The package root is the whole public surface. Everything is exported from `@thre
 
 **The session**
 
-- `createSession(options, tools?)` and its types `SessionOptions`, `SessionCommonOptions`, `HttpSessionSource`, `AgentSessionSource`, `Session`, `ClientToolSession`, `ResumeOptions`.
+- `createSession(options, tools?)` and its types `SessionOptions`, `DeclaredSessionOptions`, `SessionCommonOptions`, `HttpSessionSource`, `AgentSessionSource`, `Session`, `ClientToolSession`, `ResumeOptions`.
+- The option groups `SessionCommonOptions` is composed from: `DurabilityOptions` (`persistence`, `replay`) and `InstrumentOptions` (`telemetry`, `devtools`, `developmentRuntime`, `reportOperationFailure`, `a2uiClientCapabilities`), with `SessionAgent`, `OperationFailureReporter` and `OperationFailureCode`.
 - What a submit accepts: `SubmitInput`, `SubmitState`, `ApplicationState`.
 
 **The snapshot**
 
 - `SessionSnapshot`, `SessionInterrupt`, `SessionInputBlock`, `InputBlock`, `Observation`, `Transcript`, `SessionLifecycle`, `SessionLifecycleSource`.
+- Child agents and the evidence behind them: `SessionSubagent`, `Subagents`, `SubagentObservation`, `ChildStart`, `ChildFinish`, `ChildError`.
+- The last run's evidence: `OwnedRootTerminal`, `OwnedLegacyInterrupt`.
 - With client tools: `ClientToolSessionSnapshot`, `ClientToolCall`, `ClientToolBlocker`.
 
 **Selectors over a snapshot**
@@ -93,7 +99,7 @@ The package root is the whole public surface. Everything is exported from `@thre
 
 - `decisionState(snapshot)` and `DecisionState`: the pending decision and its phase.
 - `interruptSession(snapshot)` and `InterruptSession`: the full interrupt batch and how far its answer has got.
-- `Decision`, `DecisionRun`, `NativeDecision`, `NativeResponse`, `InterruptResponse`, `OwnedInterrupt`, `PauseId`, `InterruptMode`, `InterruptTransport`.
+- `Decision`, `DecisionRun`, `NativeDecision`, `NativeResponse`, `InterruptResponse`, `OwnedInterrupt`, `PauseId`, `CommandProps`, `InterruptMode`, `InterruptTransport`.
 
 **Restoring a thread**
 

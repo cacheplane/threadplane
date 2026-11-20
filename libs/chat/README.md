@@ -26,8 +26,10 @@ The chat surface of [Threadplane](https://github.com/cacheplane/threadplane), th
 ## Install
 
 ```bash
-npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
 ```
+
+`@threadplane/angular` supplies `provideAgent` and `injectAgent`, and `@threadplane/core` the contract types. `@threadplane/langgraph` and its two `@langchain` peers are the LangGraph backend; with another backend, install that package in their place.
 
 **Peer dependencies:**
 
@@ -36,10 +38,12 @@ npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/
 @angular/common            ^20.0.0 || ^21.0.0 || ^22.0.0
 @angular/platform-browser  ^20.0.0 || ^21.0.0 || ^22.0.0
 @angular/router            ^20.0.0 || ^21.0.0 || ^22.0.0
-@threadplane/render        *
-@threadplane/a2ui          *
+@threadplane/angular       same version as @threadplane/chat
+@threadplane/core          same version as @threadplane/chat
+@threadplane/render        same version as @threadplane/chat
+@threadplane/a2ui          same version as @threadplane/chat
+@threadplane/telemetry     ^0.3.7
 @json-render/core          ^0.16.0
-@langchain/core            ^1.1.33
 rxjs                       ~7.8.0
 marked                     ^15.0.0 || ^16.0.0
 zod                        ^3.25.0 || ^4.0.0
@@ -98,7 +102,7 @@ Ready-to-use full-feature layouts:
 | `ChatPopupComponent`          | `<chat-popup>`           | Floating popup with a launcher button           |
 | `ChatSidebarComponent`        | `<chat-sidebar>`         | Sidebar-docked layout                           |
 | `ChatSidenavComponent`        | `<chat-sidenav>`         | Sidenav host with project/thread list panel     |
-| `ChatTimelineSliderComponent` | `<chat-timeline-slider>` | Time-travel slider for agent checkpoint history |
+| `ChatTimelineSliderComponent` | `<chat-timeline-slider>` | Time-travel slider for agent checkpoint history, listed newest first |
 | `ChatInterruptPanelComponent` | `<chat-interrupt-panel>` | Full interrupt-handling composition             |
 | `ChatApprovalCardComponent`   | `<chat-approval-card>`   | Approval/rejection dialog for HITL flows        |
 | `ChatToolCallCardComponent`   | `<chat-tool-call-card>`  | Rich card for a single tool call                |
@@ -133,12 +137,14 @@ async onAction(action: InterruptAction): Promise<void> {
   if (action === 'accept') {
     await this.agent.resume([{ interruptId: interrupt.id, status: 'resolved', value: 'confirm' }]);
   } else if (action === 'ignore') {
-    await this.agent.resume([{ interruptId: interrupt.id, status: 'cancelled' }]);
+    await this.agent.resume([{ interruptId: interrupt.id, status: 'resolved', value: 'cancel' }]);
   }
 }
 ```
 
 This handler implements only Accept and Ignore; the panel still renders all four buttons. Use a custom template for a two-button UI. The strings above match the flight demo's backend contract. Other tools may expect `{ approved: boolean }`; a button label does not define a universal resume payload.
+
+A LangGraph session accepts only `status: 'resolved'`. LangGraph has no cancelled response, so a refusal is a value the graph reads, as `'cancel'` is above, and `resume` rejects a response with `status: 'cancelled'` without sending it. Whether another backend takes a cancelled response is that backend's rule; see its session reference.
 
 ### Tool calls and subagents
 
@@ -326,7 +332,15 @@ Chat compositions take the `Agent` that `injectAgent()` from `@threadplane/angul
 
 A custom backend implements the `AgentSession` contract and is provided the same way.
 
-For tests and stories, `mockAgent()` builds an `Agent` with writable fields and recorded commands, and `@threadplane/chat/testing` adds `provideFakeAgent()` and the session conformance suites.
+For tests and stories, `mockAgent()` builds an `Agent` with writable fields and recorded commands. `@threadplane/chat/testing` adds `provideAgentValue(agent)`, which makes `injectAgent()` return that mock in a component under test, `provideFakeAgent()`, which provides the real agent over an in-memory session, and the session conformance suites.
+
+```typescript
+import { mockAgent } from '@threadplane/chat';
+import { provideAgentValue } from '@threadplane/chat/testing';
+
+const agent = mockAgent({ messages: [{ id: 'a1', role: 'assistant', content: 'Hi' }] });
+TestBed.configureTestingModule({ providers: [provideAgentValue(agent)] });
+```
 
 Threadplane does not host agents, conversations, models, or storage. Thread, history, branching, and reload
 surfaces use the connected backend's session; durable storage, checkpointing, retention, authorization, and

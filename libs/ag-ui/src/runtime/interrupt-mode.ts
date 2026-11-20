@@ -1,5 +1,10 @@
 import { EventType, type BaseEvent } from '@ag-ui/client';
 
+/**
+ * How a root `CUSTOM on_interrupt` notice is read. `native` treats it as an
+ * ordinary event; `legacy-observation` treats it as the end of the run, a
+ * pause the session observes.
+ */
 export type InterruptMode = 'native' | 'legacy-observation';
 
 /**
