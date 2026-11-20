@@ -37,7 +37,7 @@ import {
   initialObservation,
   type Observation,
 } from './session-observation.js';
-import { earlierSubagents, type Subagents } from './subagents.js';
+import { nextInvocation, type Subagents } from './subagents.js';
 import { createRun, httpFailure, type RunHandle } from './create-run.js';
 import { createPublication } from './session-publication.js';
 import {
@@ -82,16 +82,20 @@ export interface SessionOptions
   readonly subagents?: Subagents;
   readonly interruptMode?: InterruptMode;
 }
-/** A new root invocation observes no children yet; settled ones become history. */
-function nextInvocationSubagents(previous: Observation) {
-  const earlier = earlierSubagents(
-    previous.earlierSubagents,
-    previous.subagents
+/**
+ * A new root invocation observes no children yet; settled ones become history.
+ * `transcript` is the history the new invocation begins with, when it is not
+ * the previous one.
+ */
+function nextInvocationSubagents(
+  previous: Observation,
+  transcript: Transcript = previous.transcript
+) {
+  return nextInvocation(
+    previous,
+    previous.transcript.length,
+    transcript.length
   );
-  return {
-    subagents: Object.freeze([]) as Subagents,
-    ...(earlier && { earlierSubagents: earlier }),
-  };
 }
 export interface Session<TState = unknown> {
   /** The state declaration this session was created with, when it has one. */
@@ -673,7 +677,7 @@ export function createSession(
               status: 'running',
               transcript: last.transcript,
               state: last.state,
-              ...nextInvocationSubagents(previous),
+              ...nextInvocationSubagents(previous, last.transcript),
               run: Object.freeze({ id }),
             }),
             undefined,
@@ -703,7 +707,9 @@ export function createSession(
                 root(index)
             );
             if (at < 0)
-              throw new Error('Regenerate needs the id of an assistant message.');
+              throw new Error(
+                'Regenerate needs the id of an assistant message.'
+              );
             for (let index = at - 1; index >= 0 && prompt < 0; index--)
               if (transcript[index].role === 'user' && root(index))
                 prompt = index;
@@ -728,7 +734,7 @@ export function createSession(
               ...previous,
               status: 'running',
               transcript,
-              ...nextInvocationSubagents(previous),
+              ...nextInvocationSubagents(previous, transcript),
               run: Object.freeze({ id }),
             }),
             signal,
@@ -1492,8 +1498,7 @@ function createToolsOwner(
             resolve('aborted');
             return;
           }
-          if (interruptMode !== 'native')
-            throw new TypeError(NOT_SETTLED);
+          if (interruptMode !== 'native') throw new TypeError(NOT_SETTLED);
           const previous = publication.getObservation();
           captured = captureResponses(responses);
           claimDecision(

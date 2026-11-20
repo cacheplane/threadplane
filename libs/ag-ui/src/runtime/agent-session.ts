@@ -33,9 +33,10 @@ export type SessionSnapshot<TState = unknown> = Omit<
      */
     readonly interrupts?: readonly SessionInterrupt[];
     /**
-     * The current root run's children, each with its own messages and tool
-     * calls and the protocol evidence it was read from. Children of earlier
-     * runs are in `earlierSubagents`.
+     * Every child agent the session knows, each with its own messages and
+     * tool calls and the protocol evidence it was read from: children of
+     * earlier root runs first, marked `earlier`, then the current run's.
+     * `earlierSubagents` still holds the earlier children's bare evidence.
      */
     readonly subagents: readonly SessionSubagent[];
     /**

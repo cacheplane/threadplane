@@ -319,8 +319,18 @@ describe('composed private session over held HTTP', () => {
           [...exchange.body.messages, ...next.body.messages].map((m) => m.id)
         ).size
       ).toBe(next.body.messages.length);
-      // The resumed invocation observes no children yet; the finished one is history.
-      expect(owner.getSnapshot().subagents).toEqual([]);
+      // The resumed invocation observes no children yet; the finished one is
+      // history, and still listed as a child agent with its own records.
+      const carried = owner.getSnapshot().subagents;
+      expect(carried).toHaveLength(1);
+      expect(carried[0]).toMatchObject({
+        id: 'child',
+        status: 'complete',
+        earlier: true,
+      });
+      expect(carried[0].messages).toEqual(settled.subagents[0].messages);
+      expect(carried[0].started).toBe(settled.subagents[0].started);
+      expect(settled.subagents[0]).not.toHaveProperty('earlier');
       expect(settled).not.toHaveProperty('earlierSubagents');
       expect(settled.subagents[0].terminal?.type).toBe('SUBAGENT_FINISHED');
       // History keeps the child's protocol evidence, by reference, without
@@ -361,17 +371,35 @@ describe('composed private session over held HTTP', () => {
         },
         terminal: { type: 'SUBAGENT_FINISHED', subagentRunId: 'child' },
       };
-      // This turn asserts the child's identity and evidence, not its own
-      // messages and tool calls.
+      // The new child replaces the earlier one with its ID, and starts with
+      // none of that child's records.
       expect(latest).toHaveLength(1);
-      expect(latest).toMatchObject([
-        { id: 'child', name: 'again', status: 'complete', ...reused },
+      expect(latest).toStrictEqual([
+        {
+          id: 'child',
+          name: 'again',
+          status: 'complete',
+          messages: [],
+          toolCalls: [],
+          ...reused,
+        },
       ]);
+      expect(carried[0].messages).not.toEqual([]);
       expect(latest[0].started).toStrictEqual(reused.started);
       expect(latest[0].terminal).toStrictEqual(reused.terminal);
       const fourth = owner.submit('once more');
       const last = await server.next(3);
-      expect(owner.getSnapshot().subagents).toEqual([]);
+      expect(owner.getSnapshot().subagents).toStrictEqual([
+        {
+          id: 'child',
+          name: 'again',
+          status: 'complete',
+          messages: [],
+          toolCalls: [],
+          ...reused,
+          earlier: true,
+        },
+      ]);
       expect(owner.getSnapshot().earlierSubagents).toStrictEqual([reused]);
       expect(owner.getSnapshot().earlierSubagents?.[0].started).toBe(
         latest[0].started
