@@ -185,6 +185,29 @@ export const INTERRUPTED_COPY = Object.freeze({
 export const UNANSWERED_COPY =
   'The response was interrupted before it started. Try again.';
 const FAILED = 'The agent request failed.';
+/** Shown when a request got no response, such as an unreachable host. */
+export const CONNECTION_COPY =
+  "Can't reach the server. Check your connection and try again.";
+/** What each failed run was classified from; see `noteFailure`. */
+const diagnostics = new WeakMap<object, AgentErrorDiagnostic>();
+/**
+ * How a `fetch` that got no response names its failure: the browsers' own
+ * wording, and the codes Node puts on the failure's cause.
+ */
+const NO_RESPONSE =
+  /failed to fetch|networkerror|econnrefused|enotfound|network request failed|load failed/i;
+
+/** True when what a run failed with says its request got no response. */
+function gotNoResponse(diagnostic: AgentErrorDiagnostic | undefined): boolean {
+  for (
+    let at = diagnostic, depth = 0;
+    at && depth < 4;
+    at = at.cause, depth++
+  )
+    if (NO_RESPONSE.test(`${at.name ?? ''} ${at.message} ${at.code ?? ''}`))
+      return true;
+  return false;
+}
 /** Shown when the saved thread could not be read or written. */
 export const STORAGE_COPY =
   'The saved conversation could not be read or written.';
@@ -202,8 +225,9 @@ export const AUTH_COPY = 'Authentication failed. Check your credentials.';
  * The native snapshot keeps the run's outcome, its terminal event and the HTTP
  * status of a response that was not OK. So a failure is the backend's own
  * `RUN_ERROR` text, a stream that ended without a terminal, a rejected
- * credential (401 or 403), another HTTP status, or a request that failed for a
- * reason this view cannot name, such as a host that could not be reached.
+ * credential (401 or 403), another HTTP status, a request that got no response
+ * (read from what the run failed with, which a protected session does not
+ * keep), or a request that failed for a reason this view cannot name.
  */
 function failure(
   native: Observation,
@@ -225,13 +249,33 @@ function failure(
     reported === undefined ? native.run?.failure?.status : undefined;
   // A protected session shows one message for whatever a server described.
   const auth = !protect && (status === 401 || status === 403);
-  const kind = interrupted ? 'interrupted' : auth ? 'auth' : 'server';
-  const message = interrupted
+  const unreachable =
+    !protect &&
+    !interrupted &&
+    reported === undefined &&
+    status === undefined &&
+    native.run !== undefined &&
+    gotNoResponse(diagnostics.get(native.run));
+  const kind = interrupted
+    ? 'interrupted'
+    : auth
+    ? 'auth'
+    : unreachable
+    ? 'connection'
+    : 'server';
+  // An interruption is retryable in one case: the stream closed before any
+  // event, for a request the owner can send again.
+  const unanswered = interrupted && retryable;
+  const message = unanswered
+    ? UNANSWERED_COPY
+    : interrupted
     ? INTERRUPTED_COPY.message
     : auth
     ? AUTH_COPY
     : protect
     ? PROTECTED_COPY
+    : unreachable
+    ? CONNECTION_COPY
     : reported || FAILED;
   const detail =
     interrupted && !unanswered ? INTERRUPTED_COPY.detail : undefined;

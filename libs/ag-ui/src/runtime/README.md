@@ -242,7 +242,13 @@ const session = createSession({ threadId, url });
   is `interrupted`. A response that was not OK carries its HTTP status: 401 and
   403 are an `auth` error, any other status a generic `server` error. The
   response body is never shown. A request that got no response, such as an
-  unreachable host, is a generic `server` error without a status.
+  unreachable host, is a `connection` error without a status, with the message
+  "Can't reach the server. Check your connection and try again.", as the
+  Angular adapter reported it. It is read from what the request failed with:
+  the wording browsers give a `fetch` that got no response, and the
+  `ECONNREFUSED` and `ENOTFOUND` codes Node puts on that failure's cause. Any
+  other failure without a status is a generic `server` error, and so is every
+  failure of a protected session, which keeps no description of the failure.
 - The snapshot records that status as `run.failure.status` when a
   response that was not OK is why the run failed, and clears it with the next
   run.
@@ -941,15 +947,21 @@ answer the server refused; `checkStatus` from the server's record;
 the `clientTools` capability with `pendingClientTools` and
 `streamingToolCalls`; `retry` and `regenerate` with a handler map;
 `runWithoutMessage`; submitted blocks; `errorDiagnostic`; children from
-activity records; a session over a client agent that is not HTTP; and the core
+activity records, each named like its delegation's tool result; `retry` of a
+response that ended before any event; the `connection` error for a host that
+cannot be reached; a session over a client agent that is not HTTP; and the core
 session conformance checks.
 
 What these backends showed:
 
-- The bridge answers a model failure by closing the connection, with no
-  `RUN_ERROR`. That is a failed transport to the session, so it is not
-  retryable, and a session with a handler map is then blocked
-  (`inputBlocked.reason: 'client-tools'`).
+- The bridge answers a model failure by dropping the connection, with no
+  `RUN_ERROR`, after it has sent `RUN_STARTED` and `STEP_STARTED`. The session
+  reads a stream that failed after events arrived (`TypeError: terminated` in
+  Node), so it is a `server` error and not retryable, and a session with a
+  handler map is then blocked (`inputBlocked.reason: 'client-tools'`). It is
+  not the retryable case of a stream that closed before any event. The Angular
+  adapter offered a retry here: it treated every failure it could not name as
+  retryable.
 - The bridge does not take a shorter history as a request to answer again. It
   keeps the thread itself, so after `regenerate` its closing snapshot lists the
   earlier answer beside the new one.
