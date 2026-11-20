@@ -195,8 +195,14 @@ const session = createSession({ threadId, url });
   labels and finite counts copied. It is absent while a run is going and after a
   run that reported none, so it never carries over from an earlier run. The
   event's own `usage` stays on `run.terminal`.
-- While a decision is waiting, `submit` resolves `error` without sending, and
-  nothing in the core fields says why. Show the decision instead, as below.
+- While a decision is waiting, `submit` resolves `error` without sending.
+  `snapshot.inputBlocked` says why, so a view can disable its input as the
+  Angular adapter's `isInputBlocked` did. It is `'decision'` from a pause until
+  its answer succeeds (including a decision this session cannot answer and one
+  left uncertain), `'client-tools'` while the client-tool ledger has a blocker,
+  and `'hydrating'`, `'checking'` or `'storage'` while the session itself
+  cannot take a command (see "Durability"). It is absent when a submission
+  would be admitted. A run in progress is not a reason: read `status`.
 
 ### State
 

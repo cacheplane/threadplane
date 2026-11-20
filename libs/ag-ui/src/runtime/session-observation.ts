@@ -65,6 +65,11 @@ export interface Observation {
   readonly earlierSubagents?: Subagents;
   readonly decision?: Decision;
   /**
+   * Set while the owner cannot take a command for a reason of its own: the
+   * saved thread is loading, a status check is running, or storage failed.
+   */
+  readonly hold?: 'hydrating' | 'checking' | 'storage';
+  /**
    * Measured arrival time of root reasoning messages, in milliseconds, by
    * message ID. Present once a reasoning message has both started and ended in
    * this session; restored reasoning has none.

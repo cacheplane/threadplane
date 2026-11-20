@@ -45,7 +45,29 @@ export type SessionSnapshot<TState = unknown> = Omit<
      * document passes, and always absent without a schema.
      */
     readonly stateIssues?: readonly string[];
+    /**
+     * Why `submit` is refused right now, for a view that disables its input.
+     * Absent when a submission would be admitted. A run in progress is not a
+     * reason here: read `status` for that.
+     */
+    readonly inputBlocked?: InputBlock;
   };
+
+/**
+ * Why a session refuses `submit`:
+ *
+ * - `hydrating`: the saved thread is still loading; commands wait for it.
+ * - `checking`: a status check is asking the backend what became of a run.
+ * - `storage`: the thread could not be loaded or saved; reconcile first.
+ * - `decision`: a decision is waiting, being answered, or left uncertain.
+ * - `client-tools`: the client-tool ledger has a blocker installed.
+ */
+export type InputBlock =
+  | 'hydrating'
+  | 'checking'
+  | 'storage'
+  | 'decision'
+  | 'client-tools';
 
 /** A pending interrupt: the core interrupt, with the protocol's own fields. */
 export type SessionInterrupt = AgentInterrupt & OwnedInterrupt;
@@ -216,11 +238,19 @@ function project(
     decision?.kind === 'native' && !decision.attempt
       ? decision.interrupts
       : undefined;
+  const blocked: InputBlock | undefined =
+    native.hold ??
+    (decision
+      ? 'decision'
+      : (native as { clientTools?: { blocker?: unknown } }).clientTools?.blocker
+      ? 'client-tools'
+      : undefined);
   return Object.freeze({
     ...evidence,
     messages,
     toolCalls,
     subagents: projectSubagents(native, previous?.subagents),
+    ...(blocked && { inputBlocked: blocked }),
     ...(interrupts && { interrupts }),
     ...(error && { error }),
     ...(used && { usage: used }),

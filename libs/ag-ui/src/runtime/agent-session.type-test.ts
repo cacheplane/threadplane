@@ -35,6 +35,18 @@ void evidence.messages;
 void evidence.decision;
 // @ts-expect-error A core observer sees the core snapshot only.
 void anySession.getSnapshot().transcript;
+// Why submit is refused, for a view that disables its input.
+const blocked:
+  | 'hydrating'
+  | 'checking'
+  | 'storage'
+  | 'decision'
+  | 'client-tools'
+  | undefined = evidence.inputBlocked;
+void blocked;
+// @ts-expect-error A run in progress is read from status, not from this field.
+const running: 'running' | undefined = evidence.inputBlocked;
+void running;
 
 // type<T>() declares the state.
 const typed = createSession({ ...options, stateType: type<Draft>() });
