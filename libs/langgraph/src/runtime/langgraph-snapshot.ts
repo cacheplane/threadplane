@@ -37,6 +37,25 @@ export type LangGraphSnapshotState<TState = unknown> = unknown extends TState
   ? LangGraphState
   : DeepReadonly<TState>;
 
+/**
+ * The root tool call that started a child graph. The middleware's binding
+ * event states the relation; without one the session infers it from the task
+ * text and from which calls are outstanding.
+ */
+export interface LangGraphDelegation {
+  readonly toolCallId: string;
+  /** The `subagent_type` the root agent asked for. */
+  readonly name: string;
+  /** The task the root agent gave the child, from the call's `description`. */
+  readonly description?: string;
+  /**
+   * What the call itself says about the child: `complete` or `error` once the
+   * call has a result, and `running` for a child restored from history whose
+   * task is outstanding. Absent while only the child graph can tell.
+   */
+  readonly status?: 'running' | 'complete' | 'error';
+}
+
 /** Full-path child observations, with no execution or command authority. */
 export interface LangGraphSubgraph {
   readonly namespace: readonly string[];
@@ -47,6 +66,8 @@ export interface LangGraphSubgraph {
   readonly state: LangGraphState | undefined;
   readonly interrupts: readonly LangGraphWireInterrupt[];
   readonly error?: AgentError;
+  /** Present once the child is related to the root tool call that started it. */
+  readonly delegation?: LangGraphDelegation;
 }
 
 /** What a publication supplies: the session derives `subagents` from `subgraphs`. */

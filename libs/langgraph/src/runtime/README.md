@@ -395,8 +395,33 @@ written for core sessions can show them:
   `error`, and `running` while the root run is going. After the run, a child
   whose last message succeeded is `complete`, one a pause stopped is still
   `running` because a resume continues it, and any other child is `unknown`.
-- LangGraph does not relate a child graph to a tool call, so `toolCallId` and
-  `description` are never set.
+- A child the session related to the root tool call that started it carries
+  that call's id as `toolCallId`, its task as `description`, and the requested
+  subagent type as `name`. Once that call has a result the child is `complete`
+  (or `error`), even while the root run continues.
+
+### Relating a child to its tool call
+
+`createSession({ subagentToolNames })` names the root tools that start a child
+agent; the default is `['task']`, and an empty list relates nothing. A call
+counts when its arguments carry a `subagent_type` (3 to 50 letters, digits,
+`_` or `-`, starting with a letter). A child graph counts when the last segment
+of its namespace is the only `tools:<task id>` segment in it. Plain subgraph
+nodes and nested delegations are never related.
+
+LangGraph does not put the tool call id on a child's namespace, so the relation
+is established in this order and never changes once made:
+
+1. the middleware's `threadplane.subagent_binding` custom event, which states
+   it (`{ namespace: 'tools:<task id>', tool_call_id }`);
+2. the child's first message is the `description` of one unrelated call, or
+   contains or is contained in it;
+3. exactly one unrelated call is still pending or running.
+
+With several calls outstanding and nothing to tell them apart, a child stays
+unrelated. `snapshot.subgraphs[].delegation` holds the relation
+(`toolCallId`, `name`, `description`, `status`) and `snapshot.subagents`
+publishes it. The tool call's own entry stays in `snapshot.toolCalls`.
 
 A child agent keeps its reference while its child graph and status are
 unchanged. Child agents give no command authority: answering a pause is the

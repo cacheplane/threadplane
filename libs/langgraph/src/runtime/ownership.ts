@@ -9,6 +9,7 @@ import {
   type ToolCall,
 } from '@threadplane/core';
 import type {
+  LangGraphDelegation,
   LangGraphInterrupt,
   LangGraphPublication,
   LangGraphWireInterrupt,
@@ -417,8 +418,13 @@ export function ownSubgraph(
   const error = sameError(input.error, previous?.error)
     ? previous?.error
     : input.error && ownError(input.error);
+  const delegation = ownValueWithSharing(
+    input.delegation as PlainValue,
+    previous?.delegation as PlainValue
+  ) as LangGraphDelegation | undefined;
   if (
     previous &&
+    delegation === previous.delegation &&
     namespace === previous.namespace &&
     messages === previous.messages &&
     toolCalls === previous.toolCalls &&
@@ -434,6 +440,7 @@ export function ownSubgraph(
     state,
     interrupts,
     ...(error ? { error } : {}),
+    ...(delegation ? { delegation } : {}),
   });
 }
 
@@ -452,6 +459,7 @@ export function ownSubgraphs(
         a.toolCalls === b.toolCalls &&
         a.state === b.state &&
         a.interrupts === b.interrupts &&
+        a.delegation === b.delegation &&
         sameError(a.error, b.error))
   );
 }

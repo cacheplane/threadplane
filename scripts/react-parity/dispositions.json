@@ -12776,7 +12776,18 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private projection of the session's child graphs into the core contract's child agents: an id, the starting node's name, a status and the child's own messages and tool calls.",
-      "note": "Covered by runtime specs. LangGraph does not relate a child graph to a tool call, so toolCallId and description are never set."
+      "note": "Covered by runtime specs. A child the session related to a root tool call carries that call's toolCallId, description and subagent type."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/delegation-projection.ts",
+      "taskIds": [
+        "T09",
+        "T10"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private relation of a tool-started child graph to the root tool call that started it, from the middleware's binding event, the task text or the single outstanding call, and the mapping of saved tasks to tool calls used to restore children from history.",
+      "note": "Covered by runtime specs. Plain subgraph nodes and nested delegations are never related."
     },
     {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",

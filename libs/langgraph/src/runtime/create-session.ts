@@ -52,6 +52,11 @@ import {
 } from './interrupt-projection.js';
 import { ownMessage, ownValue } from './ownership.js';
 import {
+  captureDelegationBinding,
+  DEFAULT_SUBAGENT_TOOL_NAMES,
+  relateSubgraphs,
+} from './delegation-projection.js';
+import {
   captureStreamEvent,
   initialSubgraphs,
   projectSubgraphs,
@@ -168,6 +173,13 @@ export interface SessionOptions {
    * graphs are never affected: their messages belong to `subgraphs`.
    */
   readonly transcriptNodeNames?: readonly string[];
+  /**
+   * Names of the root tools that start a child agent; `['task']` when omitted.
+   * A child graph started by such a call, whose arguments carry a
+   * `subagent_type`, is related to it: see `LangGraphSubgraph.delegation`.
+   * Pass an empty list to relate nothing.
+   */
+  readonly subagentToolNames?: readonly string[];
 }
 
 /** Backend-private capability; core sessions and borrowed observers stay minimal. */
@@ -512,6 +524,13 @@ export function createSession(
       if (!present.has(key)) subgraphTimers.delete(key);
     return changed ? timed : observed;
   }
+  const subagentToolNames: ReadonlySet<string> = new Set(
+    (options.subagentToolNames ?? DEFAULT_SUBAGENT_TOOL_NAMES).filter(
+      (name) => typeof name === 'string'
+    )
+  );
+  /** `tools:<task id>` namespace segment to the tool call that started it. */
+  const delegationBindings = new Map<string, string>();
   const lifecycle = createLifecycleRecorder();
   let values: LangGraphState | undefined;
   let interrupts: readonly LangGraphWireInterrupt[] =
@@ -704,7 +723,12 @@ export function createSession(
       ...(reading.issues ? { stateIssues: reading.issues } : {}),
       ...(plan ? { plan } : {}),
       interrupts: identifyInterrupts(interrupts),
-      subgraphs: timedSubgraphs(subgraphs.subgraphs),
+      subgraphs: relateSubgraphs(
+        timedSubgraphs(subgraphs.subgraphs),
+        state.toolCalls,
+        subagentToolNames,
+        delegationBindings
+      ),
       ...(retained?.run.evidence.runId
         ? { reconnect: { runId: retained.run.evidence.runId } }
         : {}),
@@ -1232,6 +1256,7 @@ export function createSession(
           const event = captureStreamEvent(next.value);
           if (!owns(attempt)) return;
           const custom = captureCustomEvent(event);
+          const binding = captureDelegationBinding(event);
           const previousState = state;
           const previousValues = values;
           const previousInterrupts = interrupts;
@@ -1280,6 +1305,9 @@ export function createSession(
               ? cursor.evidence
               : { unsafe: true };
           if (checkpoint) run.checkpoint = checkpoint;
+          // The backend's statement outranks inference but never rewrites it.
+          if (binding && !delegationBindings.has(binding.segment))
+            delegationBindings.set(binding.segment, binding.toolCallId);
           state = projected.state;
           values = projectedValues;
           interrupts = projectedInterrupts;
