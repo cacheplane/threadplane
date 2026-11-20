@@ -2,14 +2,9 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { AgentSession } from '@threadplane/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  createAgentRef,
-  injectAgent,
-  injectFakeAgentSession,
-  provideAgent,
-  provideFakeAgent,
-} from './public-api';
-import { scriptedSession } from './testing/scripted-session';
+import { createAgentRef, injectAgent, provideAgent } from '@threadplane/angular';
+import { scriptedSession } from '../../src/testing/scripted-session';
+import { injectFakeAgentSession, provideFakeAgent } from './public-api';
 
 afterEach(() => {
   vi.useRealTimers();

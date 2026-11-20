@@ -36,3 +36,24 @@ export const ɵAGENT_OPERATION_FAILURE_REPORTER =
   new InjectionToken<AgentOperationFailureReporter>(
     'ɵAGENT_OPERATION_FAILURE_REPORTER'
   );
+
+/**
+ * Records, for an agent, the policy that says whether development-install
+ * collection is on for it. It has the signature of
+ * `registerDevelopmentRuntimePolicy` from the telemetry package, which this
+ * package may not import.
+ */
+export type AgentDevelopmentRuntimeRegistrar = (
+  agent: object,
+  policy: () => boolean
+) => unknown;
+
+/**
+ * @internal Host-only. When provided, each agent is registered with it once,
+ * when it is built. The policy asks the agent's current session's
+ * `isDevelopmentRuntimeEnabled()`, so it follows thread switches.
+ */
+export const ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR =
+  new InjectionToken<AgentDevelopmentRuntimeRegistrar>(
+    'ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR'
+  );

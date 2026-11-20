@@ -23,9 +23,7 @@ import {
   createAgent,
   createAgentRef,
   injectAgent,
-  injectFakeAgentSession,
   provideAgent,
-  provideFakeAgent,
   type Agent,
   type AgentLifecycle,
   type AgentRef,
@@ -161,6 +159,16 @@ export function coreAgent(agent: Agent) {
     >
   >;
   type Lifecycle = Expect<Same<typeof agent.lifecycle, AgentLifecycle>>;
+  type Epoch = Expect<Same<typeof agent.sessionEpoch, Signal<number>>>;
+  type OnStop = Expect<
+    Same<typeof agent.onStop, (listener: () => void) => () => void>
+  >;
+  const releaseStop: () => void = agent.onStop(() => undefined);
+  // @ts-expect-error The epoch is read-only.
+  agent.sessionEpoch.set(1);
+  // @ts-expect-error A stop listener is a function.
+  agent.onStop('stop');
+  void [releaseStop, {} as Epoch, {} as OnStop];
   // @ts-expect-error The agent owns its sessions; it offers no dispose.
   void agent.dispose;
   // @ts-expect-error Observation is through signals, not getSnapshot.
@@ -402,16 +410,6 @@ export function typedRefs() {
   provideAgent({});
   // @ts-expect-error A session must be disposable to be owned.
   provideAgent({ createSession: () => ({ getSnapshot: () => ({}), subscribe: () => () => undefined }) });
-
-  const FAKE = createAgentRef<AgentSession<Tools, Board>>('fake');
-  provideFakeAgent(FAKE, { session: { state: { todos: [] } } });
-  // @ts-expect-error The fake's initial state follows the ref's declaration.
-  provideFakeAgent(FAKE, { session: { state: { todos: [1] } } });
-  provideFakeAgent({ tokens: ['Hi'], delayMs: 0 });
-  const fake = injectFakeAgentSession(FAKE);
-  fake().setState({ todos: ['a'] });
-  // @ts-expect-error The fake's controls are typed by the ref.
-  fake().setState({ todos: [1] });
   void [byRef, plain, named, built];
   return {} as [Ref, ByRef, Plain, Named, Built];
 }

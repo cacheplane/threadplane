@@ -10,9 +10,14 @@ import {
   type FakeAgentSession,
   type FakeAgentSessionInit,
 } from '@threadplane/core/testing';
-import { ɵagentConfig, type AgentConfig } from './agent';
-import type { AgentRef } from './agent-ref';
-import { injectAgent, provideAgent, ɵisAgentRef } from './provide-agent';
+import {
+  injectAgent,
+  provideAgent,
+  ɵagentConfig,
+  ɵisAgentRef,
+  type AgentConfig,
+  type AgentRef,
+} from '@threadplane/angular';
 
 /** Configuration for {@link provideFakeAgent}. */
 export interface FakeAgentConfig<

@@ -19846,18 +19846,6 @@
       "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
     },
     {
-      "id": "export:libs/angular/src/public-api.ts#FakeAgentConfig",
-      "taskIds": [
-        "T06",
-        "T22",
-        "T23"
-      ],
-      "treatment": "angular-only",
-      "status": "in-progress",
-      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
-      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
-    },
-    {
       "id": "export:libs/angular/src/public-api.ts#createAgent",
       "taskIds": [
         "T06",
@@ -19894,18 +19882,6 @@
       "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
     },
     {
-      "id": "export:libs/angular/src/public-api.ts#injectFakeAgentSession",
-      "taskIds": [
-        "T06",
-        "T22",
-        "T23"
-      ],
-      "treatment": "angular-only",
-      "status": "in-progress",
-      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
-      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
-    },
-    {
       "id": "export:libs/angular/src/public-api.ts#provideAgent",
       "taskIds": [
         "T06",
@@ -19919,18 +19895,6 @@
     },
     {
       "id": "export:libs/angular/src/public-api.ts#provideAgentClientOptions",
-      "taskIds": [
-        "T06",
-        "T22",
-        "T23"
-      ],
-      "treatment": "angular-only",
-      "status": "in-progress",
-      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
-      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
-    },
-    {
-      "id": "export:libs/angular/src/public-api.ts#provideFakeAgent",
       "taskIds": [
         "T06",
         "T22",
@@ -20014,7 +19978,7 @@
       "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
     },
     {
-      "id": "source:libs/angular/src/provide-fake-agent.ts",
+      "id": "source:libs/angular/testing/src/provide-fake-agent.ts",
       "taskIds": [
         "T06",
         "T22",
@@ -20502,6 +20466,234 @@
       "treatment": "shared",
       "status": "in-progress",
       "note": "The core session conformance suites bound to Vitest under the names Angular test authors used (runAgentConformance, runAgentWithHistoryConformance, runInterruptConformance). The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "asset:libs/angular/testing/ng-package.json",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "The fake agent provider lives in the @threadplane/angular/testing entry so the root entry imports no testing code; React tests use the core fake session directly.",
+      "note": "provideFakeAgent and injectFakeAgentSession are verified with a source spec and a type test in the testing entry. Importers outside libs/angular still name the root entry and are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/testing/src/public-api.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "The fake agent provider lives in the @threadplane/angular/testing entry so the root entry imports no testing code; React tests use the core fake session directly.",
+      "note": "provideFakeAgent and injectFakeAgentSession are verified with a source spec and a type test in the testing entry. Importers outside libs/angular still name the root entry and are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵagentConfig",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "The fake agent provider lives in the @threadplane/angular/testing entry so the root entry imports no testing code; React tests use the core fake session directly.",
+      "note": "provideFakeAgent and injectFakeAgentSession are verified with a source spec and a type test in the testing entry. Importers outside libs/angular still name the root entry and are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵisAgentRef",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "The fake agent provider lives in the @threadplane/angular/testing entry so the root entry imports no testing code; React tests use the core fake session directly.",
+      "note": "provideFakeAgent and injectFakeAgentSession are verified with a source spec and a type test in the testing entry. Importers outside libs/angular still name the root entry and are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentDevelopmentRuntimeRegistrar",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: hooks that let a library observe a stop and a replaced session, and let a host register the agent for development collection, exist only in Angular; React consumes the session directly.",
+      "note": "The stop listeners, the session epoch and the development-runtime registrar are verified with source specs and type tests. The chat library and the runtimes do not use them yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: hooks that let a library observe a stop and a replaced session, and let a host register the agent for development collection, exist only in Angular; React consumes the session directly.",
+      "note": "The stop listeners, the session epoch and the development-runtime registrar are verified with source specs and type tests. The chat library and the runtimes do not use them yet."
+    },
+    {
+      "id": "source:libs/angular/src/thread-directory.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/refresh-on.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/testing/scripted-directory.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Test-only scripted thread directory used by the Angular thread directory specs; it is not exported and ships in no package.",
+      "note": "Drives publications, refresh results and command failures by hand so the view's signals and commands are deterministic."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ThreadDirectoryConfig",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ThreadDirectoryConfigInput",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ThreadDirectoryContext",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ThreadDirectoryView",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ThreadListItem",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#createThreadDirectoryView",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#injectThreadDirectory",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#provideThreadDirectory",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#refreshOnRunEnd",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#refreshOnTransition",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
     }
   ]
 }

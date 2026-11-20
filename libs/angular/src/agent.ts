@@ -15,6 +15,7 @@ import type { AgentSession, AgentSessionCustomEvent } from '@threadplane/core';
 import { AgentLifecycleRegistry, type AgentLifecycle } from './agent-lifecycle';
 import {
   AGENT_CLIENT_OPTIONS,
+  ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR,
   ɵAGENT_OPERATION_FAILURE_REPORTER,
   type AgentOperationFailureReporter,
 } from './agent-tokens';
@@ -66,6 +67,22 @@ export interface AgentControls {
    * thread. Calling it with the current id reloads that thread.
    */
   switchThread(threadId: string | null): void;
+  /**
+   * How many times the session underneath has been replaced: 0 for the session
+   * the agent was built with, one more after each thread switch. Read it in an
+   * effect to redo what belongs to one session, such as handing it a client
+   * tool catalog.
+   */
+  readonly sessionEpoch: Signal<number>;
+  /**
+   * Registers a listener that is called each time `stop()` is called on the
+   * agent, before the session is told to stop. A library uses it to cancel
+   * work of its own that a session cannot reach, such as a client tool handler
+   * running in the browser. The registration outlives thread switches and ends
+   * with the returned release or with the agent. A thread switch and the
+   * agent's destruction stop the old session without calling the listeners.
+   */
+  onStop(listener: () => void): () => void;
   /**
    * The custom events the current run has emitted, oldest first. Empty again
    * when the next run starts and when the agent switches threads. Stays empty
@@ -153,6 +170,7 @@ const OPTIONAL_COMMANDS: readonly string[] = [
   'load',
   'fork',
   'reconnect',
+  'isDevelopmentRuntimeEnabled',
 ];
 
 /**
@@ -245,6 +263,11 @@ function lifecycleSource(
  * When a thread is selected and the session offers `load`, its saved history
  * is read automatically and `isThreadLoading` is true meanwhile. A failed read
  * leaves the thread empty.
+ *
+ * When the host provides a development-runtime registrar, the agent is
+ * registered with it once. Its policy asks the current session's
+ * `isDevelopmentRuntimeEnabled()` each time, and is false for a session
+ * without that member.
  */
 export function createAgent<TSession extends AgentSessionLike>(
   config: AgentConfig<TSession>
@@ -256,6 +279,9 @@ export function createAgent<TSession extends AgentSessionLike>(
     inject(AGENT_CLIENT_OPTIONS, { optional: true }) ?? undefined;
   const reportOperationFailure =
     inject(ɵAGENT_OPERATION_FAILURE_REPORTER, { optional: true }) ?? undefined;
+  const registerDevelopmentRuntime =
+    inject(ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR, { optional: true }) ??
+    undefined;
   const optionalCommands = new Set([
     ...OPTIONAL_COMMANDS,
     ...(config.optionalCommands ?? []),
@@ -269,6 +295,8 @@ export function createAgent<TSession extends AgentSessionLike>(
   let source!: WritableSignal<object>;
   const threadId = signal<string | null>(initialThreadId);
   const isThreadLoading = signal(false);
+  const sessionEpoch = signal(0);
+  const stopListeners = new Set<() => void>();
   const customEvents = signal<readonly AgentSessionCustomEvent[]>([]);
   const customListeners = new Set<(event: AgentSessionCustomEvent) => void>();
   const marks = Object.fromEntries(
@@ -344,6 +372,7 @@ export function createAgent<TSession extends AgentSessionLike>(
     if (source) source.set(snapshot);
     else source = signal(snapshot);
     threadId.set(next);
+    if (previous) sessionEpoch.update((epoch) => epoch + 1);
     customEvents.set([]);
     createdAt = null;
 
@@ -430,6 +459,7 @@ export function createAgent<TSession extends AgentSessionLike>(
     const last = active;
     active = undefined;
     customListeners.clear();
+    stopListeners.clear();
     if (!last) return;
     release(last);
     settle(() => (last.session as AgentSessionLike).dispose());
@@ -450,6 +480,15 @@ export function createAgent<TSession extends AgentSessionLike>(
     threadId: threadId.asReadonly(),
     isThreadLoading: isThreadLoading.asReadonly(),
     switchThread,
+    sessionEpoch: sessionEpoch.asReadonly(),
+    onStop(listener: () => void): () => void {
+      if (destroyed) return () => undefined;
+      const entry = () => listener();
+      stopListeners.add(entry);
+      return () => {
+        stopListeners.delete(entry);
+      };
+    },
     customEvents: customEvents.asReadonly(),
     lifecycle,
   };
@@ -473,6 +512,16 @@ export function createAgent<TSession extends AgentSessionLike>(
     if (!wrapper) {
       // Bound late: the same function serves whichever session is current.
       wrapper = (...args) => {
+        if (key === 'stop')
+          for (const listener of [...stopListeners]) {
+            if (!stopListeners.has(listener)) continue;
+            try {
+              // Untracked: stop may be called from inside a caller's effect.
+              untracked(listener);
+            } catch {
+              /* A listener that throws cannot keep the session running. */
+            }
+          }
         const current = session();
         return (current[key] as (...args: unknown[]) => unknown).apply(
           current,
@@ -545,5 +594,15 @@ export function createAgent<TSession extends AgentSessionLike>(
     deleteProperty: () => false,
   }) as unknown as Agent<TSession>;
   configs.set(agent, config);
+  if (registerDevelopmentRuntime)
+    try {
+      registerDevelopmentRuntime(agent, () => {
+        const current = session();
+        const enabled = current['isDevelopmentRuntimeEnabled'];
+        return typeof enabled === 'function' && enabled.call(current) === true;
+      });
+    } catch {
+      /* Optional collection never affects the agent. */
+    }
   return agent;
 }
