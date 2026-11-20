@@ -1,222 +1,206 @@
 ---
-description: Implement the runtime-neutral Agent contract for a custom backend — the required fields, a working in-process example, and the conformance suite.
+description: Implement the framework-neutral AgentSession contract for a custom backend — the required members, a working in-process example, and the conformance suites.
 ---
 
 # Writing an Adapter
 
-Learn how to implement a custom `Agent` adapter so `@threadplane/chat` components work with any backend — a custom RPC service, an in-process mock, or an exotic streaming protocol.
+Learn how to implement a custom `AgentSession` so `@threadplane/chat` components work with any backend — a custom RPC service, an in-process mock, or an exotic streaming protocol.
 
 ## When to Write Your Own Adapter
 
-`@threadplane/langgraph` covers LangGraph backends and `@threadplane/ag-ui` covers any [AG-UI-compatible](https://docs.ag-ui.com) backend. Everything else needs a hand-rolled adapter. Common scenarios:
+`@threadplane/langgraph` covers LangGraph backends and `@threadplane/ag-ui` covers any [AG-UI-compatible](https://docs.ag-ui.com) backend. Everything else needs a session of your own. Common scenarios:
 
 - **Custom RPC or HTTP API** — your backend speaks neither LangGraph Server nor the AG-UI protocol.
 - **In-process logic** — you want the chat UI without any network call (demos, playgrounds, offline-first apps).
-- **Testing** — a deterministic in-process adapter is faster and more reliable than hitting a real agent in unit tests.
+- **Testing** — a deterministic in-process session is faster and more reliable than hitting a real agent in unit tests. Check `createFakeAgentSession` from `@threadplane/core/testing` before writing one for this purpose.
 - **Exotic transports** — WebSockets, gRPC-Web, or any other streaming mechanism.
 
 ## The Contract
 
-Every `@threadplane/chat` primitive and composition accepts an `Agent` object. The type lives in `@threadplane/chat` and is intentionally runtime-neutral — it says nothing about HTTP, LangGraph, or any specific backend.
+The extension point is `AgentSession` from `@threadplane/core`. It is a plain object with no framework in it: no Angular signals, no RxJS, no dependency injection.
 
 ```typescript
-import type { Agent } from '@threadplane/chat';
+import type { AgentSession } from '@threadplane/core';
 ```
 
-An `Agent` is a set of Angular **signals** (reactive state) plus an RxJS **observable** of events, a `submit` method to send a message or resume an interrupted run, a `stop` method to abort the in-flight run, and `retry` / `regenerate` methods to re-run a turn.
+A session publishes one immutable **snapshot** through `getSnapshot()`, tells listeners when it changed through `subscribe()`, and takes **commands**: `submit` to send a message, `stop` to abort the run in flight, and `dispose` to release everything. `provideAgent({ createSession })` from `@threadplane/angular` turns any session into the `Agent` the chat components read: each snapshot field becomes a signal (`agent.messages()`, `agent.status()`) and each command passes through with its own signature.
 
-## Field-by-Field Reference
+## Member-by-Member Reference
+
+Required members:
+
+| Member | Type | What you supply |
+|---|---|---|
+| `getSnapshot` | `() => AgentSnapshot` | The current aggregate. Return the same object until something changes |
+| `subscribe` | `(notify: () => void) => () => void` | Register a listener for changes only, and return an idempotent release. Do not notify for the initial state |
+| `submit` | `(input, options?) => Promise<CompleteOutcome>` | Send a message. `input` is the text, or `{ message, blocks?, state? }`. Resolve with `'success'`, `'error'`, `'aborted'`, `'interrupted'` or `'paused'` |
+| `stop` | `() => Promise<void>` | Abort the run in flight |
+| `dispose` | `() => Promise<void>` | Release timers, connections and listeners. Nothing is published afterwards |
+
+Required snapshot fields:
 
 | Field | Type | What you supply |
 |---|---|---|
-| `messages` | `Signal<Message[]>` | A signal of the conversation messages so far |
-| `status` | `Signal<AgentStatus>` | `'idle' \| 'running' \| 'error'` |
-| `isLoading` | `Signal<boolean>` | `true` while a run is in flight |
-| `error` | `Signal<AgentError \| undefined>` | Last classified error, or `undefined` when the agent is healthy |
-| `toolCalls` | `Signal<ToolCall[]>` | Tool invocations and their results |
-| `state` | `Signal<TState>` | Backend-defined state snapshot. `Agent<TState = unknown>`, so an untyped adapter returns `Signal<unknown>` |
-| `events$` | `Observable<AgentEvent>` | Discriminated `state_update` / `custom` events |
-| `submit` | `(input, opts?) => Promise<void>` | Send a message or resume |
-| `stop` | `() => Promise<void>` | Abort the in-flight run |
-| `retry` | `() => Promise<void>` | Re-run the last submitted input after a failure, clearing `error`. No-op when a run is in flight or there is nothing to retry |
-| `regenerate` | `(assistantMessageIndex: number) => Promise<void>` | Discard the assistant message at the index and everything after it, then re-run against the trimmed tail |
-| `interrupt?` | `Signal<AgentInterrupt \| undefined>` | (optional) Current pause-for-input |
-| `subagents?` | `Signal<Map<string, Subagent>>` | (optional) Spawned subagents |
-| `clientTools?` | `ClientToolsCapability` | (optional) Client-declared, client-executed tools — see [Client Tools](#client-tools-optional) below |
-| `checkStatus?` | `() => Promise<void>` | (optional) Read-only reconciliation of an uncertain run outcome — see [Interruption Recovery](#interruption-recovery-optional) below |
+| `status` | `AgentStatus` | `'idle' \| 'running' \| 'error'` |
+| `messages` | `readonly Message[]` | The conversation so far. Each message has an `id`, a `role`, text `content` and a `delivery` |
+| `toolCalls` | `readonly ToolCall[]` | Tool invocations with finalized arguments, and their results |
 
-<Callout type="info" title="Optional fields">
-`interrupt`, `subagents`, `clientTools`, and `checkStatus` are optional. Runtimes that do not support these concepts can leave them undefined. Components that need them gracefully fall back when they are absent.
+Optional snapshot fields, each absent on a session that has nothing to report: `error` (an `AgentError`, only while `status` is `'error'`), `errorDiagnostic`, `state`, `interrupts`, `subagents`, `plan`, `usage`, `streamingToolCalls`, `pendingClientTools`, `checkpoints`, `messageCheckpoints` and `inputBlocked`.
+
+Optional commands:
+
+| Member | Type | What you supply |
+|---|---|---|
+| `resume?` | `(responses, options?) => Promise<CompleteOutcome>` | Answer the interrupts the snapshot lists and continue the paused work |
+| `retry?` | `() => Promise<CompleteOutcome>` | Send the last failed submission again, appending no second user message |
+| `regenerate?` | `(messageId, options?) => Promise<CompleteOutcome>` | Answer the prompt behind one assistant message again. Takes the message `id` |
+| `runWithoutMessage?` | `(input?, options?) => Promise<CompleteOutcome>` | Run the agent on the conversation as it stands, appending no user message |
+| `checkStatus?` | `() => Promise<void>` | Read-only reconciliation of an uncertain run outcome — see [Interruption Recovery](#interruption-recovery-optional) below |
+| `onCustomEvent?` | `(listener) => () => void` | Deliver application events while runs stream, and return an idempotent release |
+| `clientTools?` | `AgentClientTools` | Client-declared, client-executed tools — see [Client Tools](#client-tools-optional) below |
+
+<Callout type="info" title="Optional members">
+A session that cannot do something leaves the command undefined. On the injected `Agent` that command reads as `undefined` too, and the chat components offer no control for it: no regenerate button without `regenerate`, no retry without `retry`.
 </Callout>
 
-<Callout type="tip" title="events$ and signals">
-The design invariant is: **state lives on signals; `events$` carries only things that are not derivable from signals.** If your runtime produces no custom events, set `events$` to `EMPTY` from RxJS — the type system requires the field to be present, but nothing forces you to emit.
+<Callout type="tip" title="Snapshots and events">
+The design invariant is: **state lives in the snapshot; `onCustomEvent` carries only things that are not derivable from it.** Events are not replayed to a listener added later. Publish owned, frozen plain data: no `Error` instances, SDK objects or functions in a snapshot.
 </Callout>
 
-## Worked Example: An In-Process Echo Adapter
+## Worked Example: An In-Process Echo Session
 
-Below is a complete `EchoAgent` factory that satisfies the full `Agent` contract without any network call. It shows the signal pattern clearly and is a solid starting point for your own adapter.
+Below is a complete `createEchoSession` factory that satisfies the required contract without any network call. It shows the snapshot pattern clearly and is a solid starting point for your own session.
 
 On `submit`, the factory appends a complete user message and starts an assistant delivery generation. After a short delay it completes that same generation with a successful echo; stopping early completes it as aborted. There are no tool calls, custom events, or interrupts.
 
 ```typescript
-import { signal, type Signal } from '@angular/core';
-import { EMPTY, type Observable } from 'rxjs';
-import type {
-  Agent, AgentError, Message, AgentStatus, ToolCall,
-  AgentEvent, AgentSubmitInput, AgentSubmitOptions,
-} from '@threadplane/chat';
 import {
   completeDelivery,
   staticDelivery,
   streamingDelivery,
-} from '@threadplane/chat';
+  type AgentSession,
+  type AgentSnapshot,
+  type AgentSubmitInput,
+  type CompleteOutcome,
+  type Message,
+} from '@threadplane/core';
 
-export interface EchoAgentOptions {
+export interface EchoSessionOptions {
   /** Delay before the echoed reply appears, in ms. Defaults to 400. */
   delayMs?: number;
 }
 
-export function createEchoAgent(opts: EchoAgentOptions = {}): Agent {
-  const messages = signal<Message[]>([]);
-  const status = signal<AgentStatus>('idle');
-  const isLoading = signal(false);
-  const error = signal<AgentError | undefined>(undefined);
-  const toolCalls = signal<ToolCall[]>([]);
-  const state = signal<Record<string, unknown>>({});
-  let pending: ReturnType<typeof setTimeout> | undefined;
-  let activeReply: { id: string; generation: string } | undefined;
-  let lastInput: AgentSubmitInput | undefined;
+export function createEchoSession(options: EchoSessionOptions = {}): AgentSession {
+  // The snapshot is replaced, never mutated, and every published value is frozen.
+  let snapshot: AgentSnapshot = Object.freeze({
+    status: 'idle',
+    messages: Object.freeze([]),
+    toolCalls: Object.freeze([]),
+  });
+  const listeners = new Set<() => void>();
+  let active: { finish(outcome: CompleteOutcome): void } | undefined;
+  let disposed = false;
+  let sequence = 0;
+  const nextId = (prefix: string) => `${prefix}-${++sequence}`;
 
-  const submit = async (input: AgentSubmitInput, _opts?: AgentSubmitOptions) => {
-    if (input.message === undefined) return;
-    lastInput = input;
+  function publish(messages: readonly Message[], status: AgentSnapshot['status']) {
+    snapshot = Object.freeze({
+      ...snapshot,
+      status,
+      messages: Object.freeze(messages.map((message) => Object.freeze(message))),
+    });
+    for (const notify of [...listeners]) notify();
+  }
 
-    const text = typeof input.message === 'string'
-      ? input.message
-      : input.message.map((b) => b.type === 'text' ? b.text : '').join('');
+  function submit(input: AgentSubmitInput): Promise<CompleteOutcome> {
+    if (disposed) return Promise.resolve('aborted');
+    // A new submission replaces the reply that is still on its way.
+    active?.finish('aborted');
 
-    const userId = cryptoRandomId();
-    const assistantId = cryptoRandomId();
-    const generation = cryptoRandomId();
+    const text = typeof input === 'string' ? input : input.message;
+    const userId = nextId('user');
+    const assistantId = nextId('assistant');
+    const generation = nextId('generation');
 
     // Static user input is already complete. The assistant owns a new
-    // generation that remains stable until this attempt reaches an outcome.
-    messages.update((prev) => [
-      ...prev,
-      {
-        id: userId,
-        role: 'user',
-        content: text,
-        delivery: staticDelivery(userId),
-      },
-      {
-        id: assistantId,
-        role: 'assistant',
-        content: '',
-        delivery: streamingDelivery(generation),
-      },
-    ]);
-    activeReply = { id: assistantId, generation };
+    // generation that stays the same until this attempt reaches an outcome.
+    publish(
+      [
+        ...snapshot.messages,
+        { id: userId, role: 'user', content: text, delivery: staticDelivery(userId) },
+        { id: assistantId, role: 'assistant', content: '', delivery: streamingDelivery(generation) },
+      ],
+      'running',
+    );
 
-    status.set('running');
-    isLoading.set(true);
-    error.set(undefined);
-
-    pending = setTimeout(() => {
-      messages.update((prev) => prev.map((message) =>
-        message.id === assistantId
-          ? {
-              ...message,
-              content: `You said: ${text}`,
-              delivery: completeDelivery(generation, 'success'),
-            }
-          : message
-      ));
-      status.set('idle');
-      isLoading.set(false);
-      pending = undefined;
-      activeReply = undefined;
-    }, opts.delayMs ?? 400);
-  };
-
-  const stop = async () => {
-    if (pending !== undefined) clearTimeout(pending);
-    if (activeReply) {
-      const { id, generation } = activeReply;
-      messages.update((prev) => prev.map((message) =>
-        message.id === id
-          ? { ...message, delivery: completeDelivery(generation, 'aborted') }
-          : message
-      ));
-    }
-    pending = undefined;
-    activeReply = undefined;
-    status.set('idle');
-    isLoading.set(false);
-  };
-
-  const retry = async () => {
-    // No-op while a run is in flight or when nothing has been submitted yet.
-    if (isLoading() || lastInput === undefined) return;
-    error.set(undefined);
-    await submit(lastInput);
-  };
-
-  const regenerate = async (assistantMessageIndex: number) => {
-    // Discard the assistant message at the index AND everything after it,
-    // keeping the preceding user message, then re-run against the trimmed tail.
-    const prior = messages()[assistantMessageIndex - 1];
-    messages.update((prev) => prev.slice(0, assistantMessageIndex - 1));
-    if (prior?.role === 'user') {
-      await submit({ message: prior.content });
-    }
-  };
+    return new Promise<CompleteOutcome>((resolve) => {
+      const settle = (outcome: CompleteOutcome, content: string) => {
+        clearTimeout(timer);
+        active = undefined;
+        publish(
+          snapshot.messages.map((message) =>
+            message.id === assistantId
+              ? { ...message, content, delivery: completeDelivery(generation, outcome) }
+              : message,
+          ),
+          'idle',
+        );
+        resolve(outcome);
+      };
+      const timer = setTimeout(
+        () => settle('success', `You said: ${text}`),
+        options.delayMs ?? 400,
+      );
+      active = { finish: (outcome) => settle(outcome, '') };
+    });
+  }
 
   return {
-    messages,
-    status,
-    isLoading,
-    error,
-    toolCalls,
-    state,
-    events$: EMPTY satisfies Observable<AgentEvent>,
+    getSnapshot: () => snapshot,
+    // Changes only: a new listener is not called for the current snapshot.
+    subscribe(notify) {
+      listeners.add(notify);
+      return () => {
+        listeners.delete(notify);
+      };
+    },
     submit,
-    stop,
-    retry,
-    regenerate,
+    async stop() {
+      active?.finish('aborted');
+    },
+    async dispose() {
+      active?.finish('aborted');
+      disposed = true;
+      listeners.clear();
+    },
   };
-}
-
-function cryptoRandomId(): string {
-  return Math.random().toString(36).slice(2);
 }
 ```
 
 ## Wiring It Into a Component
 
-The cleanest approach is to register your factory behind an Angular injection token and inject it into your component. It is a little more boilerplate than a bare `new`, but it keeps the wiring testable and swappable.
+Hand the factory to `provideAgent()` from `@threadplane/angular`. It is the same provider the LangGraph and AG-UI sessions use, so the component code does not change when you swap backends.
 
 ```typescript
 // app.config.ts
-import { ApplicationConfig, InjectionToken } from '@angular/core';
-import type { Agent } from '@threadplane/chat';
-import { createEchoAgent } from './echo-agent';
-
-export const ECHO_AGENT = new InjectionToken<Agent>('ECHO_AGENT');
+import { ApplicationConfig } from '@angular/core';
+import { provideAgent } from '@threadplane/angular';
+import { createEchoSession } from './echo-session';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    { provide: ECHO_AGENT, useFactory: () => createEchoAgent({ delayMs: 250 }) },
+    provideAgent({
+      createSession: () => createEchoSession({ delayMs: 250 }),
+    }),
   ],
 };
 ```
 
 ```typescript
 // app.ts
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { ECHO_AGENT } from './app.config';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   selector: 'app-root',
@@ -225,79 +209,81 @@ import { ECHO_AGENT } from './app.config';
   template: `<chat [agent]="agent" />`,
 })
 export class App {
-  protected readonly agent = inject(ECHO_AGENT);
+  protected readonly agent = injectAgent();
 }
 ```
 
-<Callout type="tip" title="Using provideAgent() from @threadplane/langgraph is not required">
-`provideAgent()` and `injectAgent()` from `@threadplane/langgraph` are LangGraph-specific. When you bring your own adapter, skip them entirely — inject your token directly.
+`createSession` receives a context: `threadId` (the thread to open, or `null` for a new conversation), `onThreadId` (call it with the id of a thread your session created), `clientOptions` and `reportOperationFailure`. The echo session ignores it because it has no threads. The agent owns every session the factory returns and disposes it.
+
+<Callout type="tip" title="Typed access to your own members">
+`injectAgent()` is typed by the core contract. To reach fields and commands your session adds, create a ref with `createAgentRef<MySession>('my-agent')`, pass it to `provideAgent(ref, config)` and inject with `injectAgent(ref)`. If your session adds an optional command of its own, list its name in the config's `optionalCommands` so the agent reads it as `undefined` while the session lacks it.
 </Callout>
 
 ## Validating with the Conformance Suite
 
-`@threadplane/chat` ships a conformance helper that checks every contract field and a handful of semantic invariants (for example, `isLoading()` must only be `true` when `status() === 'running'`). Run it against your factory in a Vitest spec:
+`@threadplane/core/testing` ships conformance suites that check the required members and a handful of semantic invariants (for example, `getSnapshot()` must return the same object until something changes). `@threadplane/chat/testing` binds them to Vitest, so a spec is one call:
 
 ```typescript
-// echo-agent.conformance.spec.ts
+// echo-session.conformance.spec.ts
 import { runAgentConformance } from '@threadplane/chat/testing';
-import { createEchoAgent } from './echo-agent';
+import { createEchoSession } from './echo-session';
 
-runAgentConformance('createEchoAgent', () => createEchoAgent());
+runAgentConformance('createEchoSession', () => createEchoSession());
 ```
 
 The conformance suite verifies:
 
-- Every required signal is present and returns the correct type.
-- `isLoading()` is `false` when `status()` is `'idle'`.
-- `events$` is a valid RxJS `Observable`.
-- `submit` and `stop` return a `Promise`.
+- `getSnapshot`, `subscribe`, `submit`, `stop` and `dispose` are present, and every optional command is either undefined or a function.
+- The snapshot has a valid `status`, and `messages` and `toolCalls` arrays whose entries have the required shape; an `error` is held only with the `'error'` status.
+- The snapshot, `messages` and `toolCalls` are frozen, and the snapshot keeps its reference between changes.
+- `subscribe` does not notify for the initial state and its release is idempotent.
+- `submit`, `stop` and `dispose` return promises, a settled `submit` resolves with a valid outcome, and a disposed session notifies nobody.
 
-There is no separate package to install — the testing entry point ships as part of `@threadplane/chat`.
+With another test runner, import `runAgentSessionConformance(label, factory, { describe, it })` from `@threadplane/core/testing` and pass that runner's `describe` and `it`. Each suite also has a `...Scenarios` form that returns the checks as a map of named functions.
 
-## AgentWithHistory (Optional)
+## History (Optional)
 
-If your backend supports checkpointing or thread history, extend the basic contract with `AgentWithHistory`:
+If your backend supports checkpointing or thread history, publish it in the snapshot:
 
 ```typescript
-import type { AgentWithHistory } from '@threadplane/chat';
+import type { AgentCheckpoint } from '@threadplane/core';
 ```
 
-`AgentWithHistory` adds a `history: Signal<AgentCheckpoint[]>` field. The implementation pattern is identical — add the signal to your factory return value.
+`snapshot.checkpoints` lists the saved history the session last loaded, oldest first. Each `AgentCheckpoint` has the backend's `id`, a display `label`, and the state `values` at that point. `snapshot.messageCheckpoints` maps an assistant message `id` to the `id` of the checkpoint that first held it. The timeline components and the debug panel read both.
 
-Use `runAgentWithHistoryConformance` from `@threadplane/chat/testing` in your spec instead of `runAgentConformance` to cover the additional field.
+Use `runAgentWithHistoryConformance` from `@threadplane/chat/testing` in your spec instead of `runAgentConformance` to cover the additional fields. Its factory receives a `seed` with the checkpoints the session must publish.
 
 ### Hydrating from a server-stored thread
 
-`AgentWithHistory` is a structural choice — exposing the checkpoint list. There is a parallel behavioral choice an adapter has to make:
+A session belongs to one thread. The injected `Agent` outlives it: `agent.switchThread(id)`, or a change of the configured `threadId` signal, asks `createSession` for a new session with that id in `context.threadId`, then stops and disposes the old one. So a session never has to handle a thread id that changes. It has to answer a narrower question:
 
-**When `threadId` changes to a non-null id the consumer did not just create, should `messages` and `values` re-populate from the server's record of that thread?**
+**When it is created for a thread it did not just create, should `messages` and `state` re-populate from the server's record of that thread?**
 
-The chat UI assumes "yes" implicitly — clicking a thread in a sidebar list, or rehydrating a saved id on reload, both rely on the adapter pulling the prior conversation back into view. If the adapter only clears local state on a thread switch, the UI shows an empty welcome surface and the user loses their conversation.
+The chat UI assumes "yes" implicitly — clicking a thread in a sidebar list, or rehydrating a saved id on reload, both rely on the session pulling the prior conversation back into view. If the session starts empty, the UI shows an empty welcome surface and the user loses their conversation.
 
-How adapters in this repo answer the question:
+How the sessions in this repo answer the question:
 
-- **`@threadplane/langgraph`** answers *yes*. On every `threadId` change the bridge calls `transport.getHistory(id)` (LangGraph SDK `client.threads.getHistory`), takes the latest checkpoint, and seeds `messages$` and `values$` before any new user turn. Subagent cards and reasoning are rebuilt from what that history carries, which is less than the live view saw; the persistence guide lists what a reloaded thread does and does not show. The LangGraph protocol exposes a checkpoint endpoint per thread, so this is straightforward. See the [LangGraph persistence guide](/docs/angular/langgraph/guides/persistence) for the consumer-side shape.
-- **`@threadplane/ag-ui`** restores a conversation at construction when the host supplies `replay` or `persistence`. With a configured `threadId`, `provideAgent()` can load server-retained events through `replay` and rebuild the view. An empty or failed replay falls back to the configured persistence store. The protocol does not define a standard history endpoint, so the application supplies that source. The adapter remains bound to its initial thread ID: switching threads means disposing it and constructing another adapter for the selected ID. See [Restoring a thread from the server](/docs/angular/ag-ui/guides/deployment#restoring-a-thread-from-the-server).
+- **`@threadplane/langgraph`** exposes an optional `load()` command that reads the thread's history and publishes the newest checkpoint's messages and state. The Angular agent calls `load()` whenever it opens a session for a non-null thread, and `agent.isThreadLoading()` is true meanwhile. Child agents are rebuilt from history only on a session created with `restoreSubagents: true`, and a reloaded thread carries less than the live view saw; the persistence guide lists what it does and does not show. See the [LangGraph persistence guide](/docs/angular/langgraph/guides/persistence) for the consumer-side shape.
+- **`@threadplane/ag-ui`** restores a conversation at creation when the host supplies `replay` or `persistence`. With a `threadId`, `createSession()` can load server-retained events through `replay` and rebuild the view. The protocol does not define a standard history endpoint, so the application supplies that source. See [Restoring a thread from the server](/docs/angular/ag-ui/guides/deployment#restoring-a-thread-from-the-server).
 
-Make restoration and thread switching separate parts of your adapter contract. A mutable thread ID can trigger a history fetch, as in LangGraph; a construction-bound adapter can hydrate before accepting commands, as in AG-UI. State who supplies the history source and expose when hydration is complete so the UI can show progress and avoid sending against an incomplete conversation.
+For your own session, either offer a `load()` method, which the agent calls for you and tracks through `isThreadLoading()`, or hydrate inside the factory before accepting commands. State who supplies the history source, and publish `inputBlocked` while the conversation is incomplete so the UI does not send against it.
 
 ## Client Tools (Optional)
 
 If your runtime lets the browser declare tools the model can call, implement the optional `clientTools` capability. Consumers then get [client tools](/docs/angular/chat/guides/client-tools) with no further work.
 
 ```typescript
-import type { ClientToolsCapability } from '@threadplane/chat';
+import type { AgentClientTools } from '@threadplane/core';
 ```
 
 | Member | Required | What you supply |
 |---|---|---|
 | `setCatalog(specs)` | yes | Store the catalog; ship it with every outbound run |
-| `pending` | yes | `Signal<ToolCall[]>` — calls awaiting a browser result |
 | `resolve(id, result)` | yes | Record the result **and continue the run** |
 | `settle?(id, result)` | no | Record the result **without** continuing |
 | `flush?()` | no | Make everything recorded via `settle` durable, still without continuing |
 
-Use `selectPendingClientToolCalls` from `@threadplane/chat` for `pending` rather than hand-rolling the predicate — a call is pending when the run is **not** in flight, its name is in the catalog, it has no backend result, and it has not already been settled locally.
+The calls awaiting a browser result are not on the capability: publish them as `snapshot.pendingClientTools`. A call is pending when the run is **not** in flight, its name is in the catalog, it has no backend result, and it has not already been settled locally. Each pending call is also listed in `toolCalls`.
 
 ### The invariant
 
@@ -308,7 +294,7 @@ Violate it and the thread carries an assistant message with `tool_calls` and no 
 `resolve()` alone cannot uphold this, because some groups never continue — every tool in them is terminal (`followUp: false`), the user pressed stop, or a continuation limit tripped. That is what `settle` + `flush` are for.
 
 <Callout type="warning" title="flush() is where durability actually happens">
-  If your `settle()` only records locally, you **must** implement `flush()` to write those results to the server. `@threadplane/ag-ui` retains each stable result in its source-owned, in-memory outgoing list across adapter retries — not across a browser page reload — so `flush()` is a no-op. `@threadplane/langgraph` keeps results in an in-memory staging buffer, creates a snapshot for each handoff, and writes terminal groups in one `threads.updateState` call. Omitting `flush()` when your `settle()` is not already durable silently drops results.
+  If your `settle()` only records locally, you **must** implement `flush()` to write those results to the server. `@threadplane/langgraph` stages each settled result as a tool message and writes the staged messages in one `updateState` call on `flush()`, keeping them staged when the write fails. Omitting `flush()` when your `settle()` is not already durable silently drops results.
 </Callout>
 
 ### Implementation rules
@@ -318,50 +304,68 @@ Four rules keep settlement, persistence, and recovery aligned:
 1. **Give every result message a stable ID derived from its tool-call ID.** Replay and overlap are idempotent only when the receiving store uses ID-aware upsert or merge semantics. LangGraph's `add_messages` reducer does; a stable ID alone does not deduplicate an append-only sink.
 2. **Snapshot without forgetting, and acknowledge only after that exact handoff reports success.** Failure, interruption, abort, pause, or supersession leaves the result staged for retry or an ordinary later submit. Overlapping operations may carry the same stable ID only when the receiving path provides the ID-aware merge described above.
 3. **Chain concurrent flushes instead of short-circuiting them.** Results settled after one snapshot need their own write; returning only the older in-flight promise can report success without persisting the newer batch.
-4. **Discard staged results and retry associations on a thread switch.** Advance the staging generation as part of the reset so acknowledgments from old in-flight work become no-ops on the new thread.
+4. **Keep staged results inside the session.** A thread switch disposes the session, so results staged for one thread can never reach another. Make acknowledgments from work that outlives `dispose()` no-ops.
 
-Adapters without a durable write path can fall back to attaching staged results to the next outbound run. The results stay buffered and an ordinary next message can still carry them, but a browser page reload first loses that in-memory fallback and leaves the server thread with an unanswered tool call.
+Sessions without a durable write path can fall back to attaching staged results to the next outbound run. The results stay buffered and an ordinary next message can still carry them, but a browser page reload first loses that in-memory fallback and leaves the server thread with an unanswered tool call.
 
 ## Interruption Recovery (Optional)
 
-A stream that closes without terminal evidence is an interruption, not a completed turn. Settle it as an `interrupted` `AgentError`, keep whatever content and approval state arrived, and say on `recovery` which action you can justify.
+A stream that closes without terminal evidence is an interruption, not a completed turn. Publish it as an `AgentError` with `kind: 'interrupted'`, resolve the command with the `'interrupted'` outcome, keep whatever content and approval state arrived, and say on `recovery` which action you can justify.
 
 | `recovery` | Set it when | `retryable` | `detail` |
 |---|---|---|---|
 | `retry` | You can prove the request was never dispatched, so replaying it cannot duplicate server-side work | `true` | omit |
-| `check` | The outcome is uncertain and your backend can be asked, read-only, what happened | `false` | required |
-| `none` | The outcome is uncertain and nothing can verify it | `false` | required |
+| `check` | The outcome is uncertain and your backend can be asked, read-only, what happened | `false` | supply |
+| `none` | The outcome is uncertain and nothing can verify it | `false` | supply |
 
-`retry` is the narrow case. Anything the server may already have begun answering is not retryable, because a replay could duplicate a tool call or a booking. `AGENT_RECOVERY_MESSAGES` and `AGENT_RECOVERY_DETAILS` hold the copy for all three, so every transport says the same thing.
+`retry` is the narrow case. Anything the server may already have begun answering is not retryable, because a replay could duplicate a tool call or a booking. The error's `message` and `detail` are display text you write; keep the wording the same for the same recovery across your transports.
 
-Implement `checkStatus` on exactly the condition under which you report `recovery: 'check'`, so the control and the recovery it is offered for can never disagree. It must not resubmit the operation and must not append a message; a dropped stream is not proof that the server did nothing. Report the answer on the signals — clear `error` and return `status` to idle for a run the backend reports as finished, and leave the error in place when the outcome stays unknown, so the caller can ask again. Reject while a request is in flight, and discard a result that resolves after a newer request has started.
+Implement `retry` so it sends the last failed submission again without a second user message, resolves `'aborted'` without sending while a request runs or when nothing failed, and rejects for an error whose `recovery` is not `'retry'`.
+
+Implement `checkStatus` on exactly the condition under which you report `recovery: 'check'`, so the control and the recovery it is offered for can never disagree. It must not resubmit the operation and must not append a message; a dropped stream is not proof that the server did nothing. Report the answer in the snapshot — clear `error` and return `status` to idle for a run the backend reports as finished, and leave the error in place when the outcome stays unknown, so the caller can ask again. Reject while a request is in flight, and discard a result that resolves after a newer request has started.
+
+## Interrupts (Optional)
+
+A run that pauses for a person resolves with the `'paused'` outcome and lists what it waits on in `snapshot.interrupts`. Each `AgentInterrupt` has an `id` and may carry the backend's `value`, a `reason`, a display `message` and the `toolCallId` it is about. `resume(responses)` answers them: each response names one pending interrupt and is `resolved`, optionally with a `value`, or `cancelled`. Reject a response that names an interrupt that is not pending, names one twice, or uses a status your backend cannot express.
+
+`runInterruptConformance` from `@threadplane/chat/testing` checks this behaviour through a small harness that drives the pause and a failed request through your real session.
 
 ## Publishing Your Adapter
 
-Want to distribute your adapter as an npm package? Keep the following in mind.
+Want to distribute your session as an npm package? Keep the following in mind.
 
 **Peer dependencies** to declare in your `package.json`:
 
 ```json
 {
   "peerDependencies": {
-    "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0",
-    "@threadplane/chat": ">=0.3.0 <0.4.0",
-    "rxjs": "^7.0.0"
+    "@threadplane/core": ">=0.3.0 <0.4.0"
   },
   "devDependencies": {
-    "@threadplane/chat": "0.3.7"
+    "@threadplane/core": "0.3.7"
   }
 }
 ```
 
-The `@threadplane/chat/testing` entry point is part of the same package as the main entry point, so there is nothing extra to install for the conformance tests.
+A session imports only `@threadplane/core`, so the package needs no Angular peer and the same build serves any framework binding. If the package also ships Angular code, such as a typed `AgentRef`, a provider helper or components, declare the full supported Angular range beside it:
 
-While `@threadplane/chat` is pre-1.0, every minor release can carry a breaking change. Use an explicit range that stops before the next minor, and widen it as you verify newer releases. The adapters in this repository pin the exact version they were built against.
+```json
+{
+  "peerDependencies": {
+    "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@threadplane/angular": ">=0.3.0 <0.4.0",
+    "@threadplane/core": ">=0.3.0 <0.4.0"
+  }
+}
+```
 
-**Naming convention:** `@your-org/your-backend-agent` works well (e.g., `@acme/supabase-realtime-agent`). The `-agent` suffix signals that the package satisfies the `Agent` contract.
+The conformance suites live in `@threadplane/core/testing`, part of the same package, so there is nothing extra to install for them; add `@threadplane/chat` as a development dependency only if you want its Vitest-bound runners.
 
-**Angular library setup:** Use Nx (`nx g @nx/angular:library`) or the Angular CLI (`ng g library`) to scaffold an Angular library with ng-packagr. Point your `package.json` exports at the compiled output. See the [Nx Angular library guide](https://nx.dev/recipes/angular/create-an-angular-library) for the full setup.
+While `@threadplane/core` is pre-1.0, every minor release can carry a breaking change. Use an explicit range that stops before the next minor, and widen it as you verify newer releases. The backend packages in this repository pin the exact version they were built against.
+
+**Naming convention:** `@your-org/your-backend-session` works well (e.g., `@acme/supabase-realtime-session`). Export a `createSession(options)` factory, as `@threadplane/langgraph` and `@threadplane/ag-ui` do, so an application writes the same `provideAgent({ createSession })` for every backend.
+
+**Library setup:** A session is plain TypeScript. Build it with `tsc` or any bundler and point your `package.json` exports at the compiled output; ng-packagr is only needed if the package also ships Angular components.
 
 ## What's Next
 
@@ -379,9 +383,9 @@ While `@threadplane/chat` is pre-1.0, every minor release can carry a breaking c
     Deep dive into the ChatComponent API and inputs.
   </Card>
   <Card
-    title="AG-UI Adapter"
+    title="AG-UI"
     href="/docs/angular/ag-ui/getting-started/introduction"
   >
-    The built-in AG-UI adapter for compatible backends.
+    The built-in AG-UI session for compatible backends.
   </Card>
 </CardGroup>

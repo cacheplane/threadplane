@@ -52,38 +52,47 @@ The last line calls `compile()` with no checkpointer. The checkpoints the Timeli
 
 ### The agent provider
 
-`provideAgent()` registers the agent once for the whole application, and it is the only provider the chat compositions require. The example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them.
+`provideAgent()` from `@threadplane/angular` provides the agent once for the whole application, and it is the only provider the chat compositions require. Its `createSession` factory returns a LangGraph session created with `historyState: true`, the option that makes the session keep each checkpoint's saved state and publish it as `checkpoints()`. The example resolves its connection details at runtime from the host that serves the demo, which is why the config is itself a factory that reads them rather than hard-coding them.
 
 <ExampleCode file="app.config.ts" />
 
-Your own application passes the two values directly instead:
+Your own application passes the values directly instead:
 
 ```typescript
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
+
 provideAgent({
-  apiUrl: 'https://your-deployment.langgraph.app',
-  assistantId: 'debug',
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'debug',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+      historyState: true,
+    }),
 }),
 ```
 
 ### Mounting the panel
 
-The component projects `<chat>` and `<chat-debug>` into `<example-chat-layout>` and binds one field on each. `injectAgent()` returns the agent registered above, and it is handed straight to both `[agent]` inputs. Nothing else is bound, so the panel runs on its defaults: docked right, closed on first load, with the floating launcher visible.
+The component projects `<chat>` and `<chat-debug>` into `<example-chat-layout>` and binds one field on each. `injectAgent()` returns the agent provided above, and it is handed straight to both `[agent]` inputs. Nothing else is bound, so the panel runs on its defaults: docked right, closed on first load, with the floating launcher visible.
 
 <ExampleCode file="debug.component.ts" />
 
-The agent returned by `injectAgent()` exposes a `history()` signal as well as `state()`, which is what makes the Timeline tab appear; an agent without `history()` gets the State tab alone.
+The agent returned by `injectAgent()` exposes a `checkpoints()` signal as well as `state()`. The Timeline tab appears once that signal holds a loaded history; while it is `undefined`, as it stays on a LangGraph session created without `historyState: true` and on a backend that keeps no history, the panel shows the State tab alone.
 
 ## Inputs
 
 | Input | Type | Default | Description |
 | --- | --- | --- | --- |
-| `agent` | `DebugAgent \| DebugAgentWithHistory \| null` | `null` | Agent to inspect. The panel renders nothing while this is `null`; the floating launcher still appears, but opening it shows no content. An agent that also exposes `history()` enables the Timeline tab. |
+| `agent` | `DebugAgent \| DebugAgentWithHistory \| null` | `null` | Agent to inspect. The panel renders nothing while this is `null`; the floating launcher still appears, but opening it shows no content. An agent whose `checkpoints()` holds a loaded history enables the Timeline tab. |
 | `dock` | `'right' \| 'bottom' \| 'left'` | `'right'` | Initial dock position, used when no persisted position exists. When a sibling `<chat-sidebar>` is on the page and the user has not clicked a dock button this session, an auto-dock effect forces `bottom` on open. |
 | `defaultOpen` | `boolean` | `false` | Initial open state, used when no persisted state exists. |
 | `launcher` | `'floating' \| 'none'` | `'floating'` | Shows the built-in floating launcher, or hides it when another surface opens the panel. |
 | `storageKey` | `string` | `'chat-debug'` | Local storage key prefix for the persisted open, dock and tab state. |
 
-`DebugAgent` is a structural type: signals for `messages`, `status`, `isLoading`, `error`, `toolCalls` and `state`. `DebugAgentWithHistory` adds `history`. The agents returned by `injectAgent()` satisfy the second.
+`DebugAgent` is a structural type: signals for `messages`, `status`, `error`, `toolCalls` and `state`, and an optional `checkpoints`. `DebugAgentWithHistory` makes `checkpoints` required. The agent returned by `injectAgent()` satisfies both.
 
 ## Outputs
 
@@ -124,7 +133,7 @@ Keep debug controls of your own outside the panel. The panel intentionally expos
 
 <CardGroup cols={2}>
   <Card title="Time travel" href="/docs/angular/langgraph/guides/time-travel">
-    What the replay and fork checkpoint hooks plug into, and how to wire them against the agent's history.
+    What the replay and fork checkpoint hooks plug into, and how to wire them against the agent's checkpoints.
   </Card>
   <Card title="Persistence" href="/docs/angular/langgraph/guides/persistence">
     Where the checkpoints come from, and why this graph compiles without a checkpointer.

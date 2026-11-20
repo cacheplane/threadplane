@@ -1,10 +1,10 @@
 ---
-description: How the subagents example dispatches task calls to real subgraphs, and the Subagent contract the card reads to render each dispatch inline
+description: How the subagents example dispatches task calls to real subgraphs, and the AgentSubagent data the card reads to render each dispatch inline
 ---
 
 # ChatSubagentCardComponent
 
-`ChatSubagentCardComponent` renders one delegated subagent as an expandable card: its name, the tool call that spawned it, a status pill, a message count, and — once expanded — the subagent's own transcript. The running example is a trip planner whose orchestrator delegates research, booking, and itinerary work to a child graph, and this page walks the files that make each dispatch show up as a card.
+`ChatSubagentCardComponent` renders one delegated subagent as an expandable card: its name, a status pill, a message count, and — once expanded — the subagent's own transcript. The running example is a trip planner whose orchestrator delegates research, booking, and itinerary work to a child graph, and this page walks the files that make each dispatch show up as a card.
 
 **Selector:** `chat-subagent-card`
 
@@ -22,7 +22,7 @@ Send it and the orchestrator calls one `task` tool three times, in that order. E
 
 ## How it is built
 
-A child graph the orchestrator can invoke, a `task` tool that invokes it, one line of adapter configuration that says `task` means delegation, a helper that binds the child stream to its tool call, the orchestrator's own tool-calling loop, and a component that renders the standard `<chat>` composition carry the feature together. Open the Code tab to read them in place.
+A child graph the orchestrator can invoke, a `task` tool that invokes it, one session option that says `task` means delegation, a helper that binds the child stream to its tool call, the orchestrator's own tool-calling loop, and a component that renders the standard `<chat>` composition carry the feature together. Open the Code tab to read them in place.
 
 ### The subagent subgraph
 
@@ -46,10 +46,10 @@ Nothing on the wire links the child's `tools:<uuid>` namespace to the parent's `
 
 <ExampleCode file="graph.py" region="announce" title="graph.py — announcing the binding" />
 
-`@threadplane/langgraph` consumes that event as protocol chatter rather than forwarding it as application data, and replays any chunks that streamed before the binding arrived.
+The LangGraph session reads that `threadplane.subagent_binding` event to relate the child graph to the tool call that started it.
 
 <Callout type="info" title="The binding is authoritative, the fallback is a heuristic">
-Without the announcement the adapter falls back to attributing the first unmapped pending or running child, which is correct only while one dispatch is outstanding at a time; with no `description` argument to match on, the ladder lands on its positional rung. Announcing the binding is what makes parallel fan-out safe. The canonical helper is `threadplane.middleware.langgraph.announce_subagent`; the example inlines it because each example stands alone.
+Without the announcement the session falls back in order: it matches the child's first message against the `description` of one unrelated call, and failing that relates the child only when exactly one unrelated call is still pending or running. With several calls outstanding and nothing to tell them apart, a child stays unrelated. Announcing the binding is what makes parallel fan-out safe. The canonical helper is `threadplane.middleware.langgraph.announce_subagent`; the example inlines it because each example stands alone.
 </Callout>
 
 ### The orchestrator
@@ -60,23 +60,23 @@ The parent is a plain tool-calling loop: a model bound to the single `task` tool
 
 The system prompt tells the orchestrator to dispatch research, then booking, then itinerary, which is why the demo produces three cards in a stable order.
 
-### Telling the adapter that task means delegation
+### Telling the session that task means delegation
 
-`provideAgent()` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. The one subagent-specific line is `subagentToolNames`. The default is already `['task']`, so this example states explicitly what it would otherwise inherit.
+`provideAgent()` from `@threadplane/angular` provides the agent once for the whole application, and it is the only provider the `<chat>` composition requires. The one subagent-specific line is the `subagentToolNames` option of `createSession()`. The default is already `['task']`, so this example states explicitly what it would otherwise inherit.
 
-The example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them; your own application passes `apiUrl` and `assistantId` directly.
+The example resolves its connection details at runtime from the host that serves the demo, which is why the config is itself a factory that reads them rather than hard-coding them; your own application passes `apiUrl` and `assistantId` to `createSession()` directly.
 
 <ExampleCode file="app.config.ts" />
 
-A tool call is registered as a subagent only when its name is in `subagentToolNames` and its arguments carry a plausible `subagent_type`; that argument then becomes `Subagent.name`.
+A tool call counts as a delegation only when its name is in `subagentToolNames` and its arguments carry a plausible `subagent_type`; that argument then becomes the child's `name`, and the call's task becomes its `description`.
 
 ### Where the card appears
 
-The component is small on purpose. It renders `<chat>`, a welcome suggestion, and a static sidebar note — and nothing about subagents at all. Subagent cards appear because `<chat-tool-calls>`, inside the `<chat>` composition, cross-references each tool call against `agent.subagents()`: a call that spawned a subagent renders as a standalone `<chat-subagent-card>` instead of a tool-call card, and never groups with adjacent calls.
+The component is small on purpose. It renders `<chat>`, a welcome suggestion, and a static sidebar note — and nothing about subagents at all. Subagent cards appear because `<chat-tool-calls>`, inside the `<chat>` composition, cross-references each tool call against `agent.subagents()` by `toolCallId`: a call that started a child agent renders as a standalone `<chat-subagent-card>` instead of a tool-call card, and never groups with adjacent calls.
 
 <ExampleCode file="subagents.component.ts" region="template" title="subagents.component.ts — the template" />
 
-That cross-reference works because the agent the demo provides exposes `subagents()` for `<chat-tool-calls>` to read.
+That cross-reference works because the agent the demo injects publishes the session's `subagents()` for `<chat-tool-calls>` to read.
 
 <ExampleCode file="subagents.component.ts" region="agent" title="subagents.component.ts — the agent" />
 
@@ -94,29 +94,34 @@ Rendering a card directly needs only the subagent:
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
-| `subagent` | `Subagent` | **Required** | The subagent to display |
+| `subagent` | `AgentSubagent` | **Required** | The child agent to display |
 | `toolLabel` | `(name: string) => string \| undefined` | `undefined` | Readable labels for the subagent's own tool calls. `<chat>` and `<chat-tool-calls>` pass their `toolLabel` through. A labelled call shows its technical name inside the opened call |
 | `toolOutcome` | `(activity: ToolActivityInfo) => ToolActivityOutcome \| undefined` | `undefined` | Outcomes for the subagent's own completed calls. `<chat>` and `<chat-tool-calls>` pass their `toolOutcome` through. Sources an outcome declares are listed in the Sources panel of the message that started the subagent |
 
 The component exposes no outputs.
 
-## Subagent
+## AgentSubagent
 
-The `Subagent` type comes from `@threadplane/chat` and is what every adapter maps its own subagent state onto:
+The `AgentSubagent` type is defined by `@threadplane/core` and re-exported by `@threadplane/chat`. It is plain, frozen data, not a set of signals: `agent.subagents()` publishes a new list when a child changes.
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `toolCallId` | `string` | The tool call that spawned this subagent |
+| `id` | `string` | Stable for the life of the session |
 | `name` | `string \| undefined` | Optional human-readable name. The card falls back to the literal `Subagent` when it is absent |
-| `status` | `Signal<'pending' \| 'running' \| 'complete' \| 'error'>` | Current execution status |
-| `messages` | `Signal<Message[]>` | Messages produced by the subagent |
-| `toolCalls` | `Signal<ToolCall[]> \| undefined` | The subagent's own tool calls, referenced by each message's `toolCallIds`. Optional — adapters that do not surface subagent tool calls omit it, and the card defaults to `[]` |
-| `state` | `Signal<Record<string, unknown>>` | Arbitrary subagent state exposed by the runtime |
+| `description` | `string \| undefined` | The task the child was given, in the root agent's words |
+| `toolCallId` | `string \| undefined` | The root tool call that started this child, when the backend relates the two |
+| `parentId` | `string \| undefined` | The `id` of the child that started this one; absent for a child of the root agent |
+| `status` | `'pending' \| 'running' \| 'complete' \| 'error' \| 'unknown'` | Where the child stands |
+| `messages` | `readonly Message[]` | Messages produced by the child. They are not repeated in the root transcript |
+| `toolCalls` | `readonly ToolCall[]` | The child's own tool calls, referenced by each message's `toolCallIds` |
+| `streamingToolCalls` | `readonly StreamingToolCall[] \| undefined` | The child's tool calls whose arguments are still streaming, when the session shows them |
+| `state` | `Readonly<Record<string, PlainValue>> \| undefined` | The child's own state, when the backend reports one |
+| `error` | `string \| undefined` | Display text for the failure when `status` is `'error'` |
 
-In the running example `name` is the `subagent_type` argument (`research`, `booking`, `itinerary`), `state` carries the child's state values plus the tool result once it lands, and `toolCalls` is absent, because the LangGraph adapter does not surface a child's own tool calls.
+In the running example `name` is the `subagent_type` argument (`research`, `booking`, `itinerary`), `description` is the task the orchestrator wrote, and `state` is the child graph's state.
 
 <Callout type="info" title="A dispatch becomes visible when its child stream starts">
-The adapter registers a subagent as `pending` the moment the orchestrator's tool call arrives, and hides `pending` entries from `agent.subagents()`. The entry turns `running` when its child stream is bound, and `complete` (or `error`) when the tool result message lands.
+The LangGraph session never reports `pending`: LangGraph names a child by a namespace that exists only once the child runs. A child appears as `running` when its stream starts, and turns `complete` (or `error`) when the tool call that started it has a result. `unknown` means the child started, no ending was seen, and no run is active that could still report one.
 </Callout>
 
 ## What the card renders
@@ -135,11 +140,11 @@ When expanded, the card renders the subagent's entire message list, not just the
 
 - Any `reasoning` text, as a muted italic line
 - The message content, rendered through `<chat-streaming-md>` so it streams as markdown
-- A [`<chat-tool-call-card>`](/docs/angular/chat/components/chat-tool-call-card) for each tool call the message references and the `toolCalls` signal resolves
+- A [`<chat-tool-call-card>`](/docs/angular/chat/components/chat-tool-call-card) for each tool call the message references and the child's `toolCalls` list holds
 
 ### Status pill colors
 
-The pill reads **Pending**, **Running**, **Complete** or **Failed**. It is styled through a `data-status` attribute that keeps the raw status value, and CSS selectors. The exported `statusColor()` helper returns the equivalent inline style string and is retained for existing consumers.
+The pill reads **Pending**, **Running**, **Complete**, **Failed** or **Status unavailable**. It is styled through a `data-status` attribute that keeps the raw status value, and CSS selectors. The exported `statusColor()` helper returns the equivalent inline style string and is retained for existing consumers.
 
 | Status | Background | Text color |
 |--------|-----------|------------|
@@ -147,10 +152,11 @@ The pill reads **Pending**, **Running**, **Complete** or **Failed**. It is style
 | `running` | `--tplane-chat-warning-bg` | `--tplane-chat-warning-text` |
 | `complete` | (none) | `--tplane-chat-success-text` |
 | `error` | `--tplane-chat-error-bg` | `--tplane-chat-error-text` |
+| `unknown` | `--tplane-chat-surface-alt` | `--tplane-chat-text-muted` |
 
 ## Cards outside the transcript
 
-The example needs no explicit markup because the `<chat>` composition places each card inline. To render cards somewhere else — a sidebar tray, for instance — use the `ChatSubagentsComponent` primitive, which iterates the agent's subagents and drops the ones that already reached `complete` or `error`:
+The example needs no explicit markup because the `<chat>` composition places each card inline. To render cards somewhere else — a sidebar tray, for instance — use the `ChatSubagentsComponent` primitive, which iterates `agent.subagents()` and drops the ones that already reached `complete` or `error`:
 
 ```html
 <chat-subagents [agent]="agent">

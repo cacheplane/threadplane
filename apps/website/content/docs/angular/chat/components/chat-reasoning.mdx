@@ -4,7 +4,7 @@ description: The ChatReasoningComponent pill that expands to reveal an assistant
 
 # ChatReasoningComponent
 
-`ChatReasoningComponent` renders an assistant's reasoning content as a compact pill that expands to reveal the underlying text. The `<chat>` composition automatically renders this primitive above the assistant response when `Message.reasoning` is populated by the adapter — most consumers do not need to use it directly.
+`ChatReasoningComponent` renders an assistant's reasoning content as a compact pill that expands to reveal the underlying text. The `<chat>` composition automatically renders this primitive above the assistant response when `Message.reasoning` is populated by the session — most consumers do not need to use it directly.
 
 **Selector:** `chat-reasoning`
 
@@ -33,7 +33,7 @@ import {
 | Input | Type | Default | Description |
 |---|---|---|---|
 | `[content]` | `string` | `''` | The reasoning text to render |
-| `[delivery]` | `MessageDelivery` | Required | Authoritative generation, phase, and terminal outcome from the adapter |
+| `[delivery]` | `MessageDelivery` | Required | Authoritative generation, phase, and terminal outcome from the session |
 | `[durationMs]` | `number \| undefined` | `undefined` | Wall-clock duration of the reasoning phase |
 | `[label]` | `string \| undefined` | `undefined` | Override the auto-derived label |
 | `[defaultExpanded]` | `boolean` | `false` | Open the panel by default when idle |

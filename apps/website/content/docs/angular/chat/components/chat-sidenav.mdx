@@ -18,7 +18,7 @@ import { ChatSidenavComponent } from '@threadplane/chat';
 
 Use `<chat-sidenav>` when users need more than one conversation — history they can return to, rename, archive, or organize into projects.
 
-It expects a backend that can actually enumerate and restore threads. `@threadplane/langgraph` provides that through [`LangGraphThreadsAdapter`](/docs/angular/langgraph/guides/persistence). AG-UI is event-stream-only and defines no thread-lookup endpoint, so on that adapter the thread list is app-owned state you maintain yourself.
+It expects a backend that can actually enumerate and restore threads. `provideThreadDirectory()` from `@threadplane/angular` provides that over [`createLangGraphThreadDirectory()`](/docs/angular/langgraph/guides/persistence) from `@threadplane/langgraph`. AG-UI is event-stream-only and defines no thread-lookup endpoint, so with that backend the thread list is app-owned state you maintain yourself.
 
 <Callout type="warning" title="It renders the sidebar, not a layout wrapper">
   Every `<ng-content>` slot on this component is **named**, and each one targets
@@ -34,9 +34,9 @@ It expects a backend that can actually enumerate and restore threads. `@threadpl
 ## Basic Usage
 
 ```typescript
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { ChatComponent, ChatSidenavComponent, type ThreadActionAdapter } from '@threadplane/chat';
-import { injectAgent, LangGraphThreadsAdapter, refreshOnRunEnd } from '@threadplane/langgraph';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChatComponent, ChatSidenavComponent } from '@threadplane/chat';
+import { injectAgent, injectThreadDirectory, refreshOnRunEnd } from '@threadplane/angular';
 
 @Component({
   selector: 'app-shell',
@@ -48,7 +48,7 @@ import { injectAgent, LangGraphThreadsAdapter, refreshOnRunEnd } from '@threadpl
       [threads]="threads.threads()"
       [archivedThreads]="threads.archivedThreads()"
       [activeThreadId]="activeThreadId()"
-      [actions]="threadActions"
+      [actions]="threads"
       [agent]="agent"
       (newChat)="activeThreadId.set(null)"
       (threadSelected)="activeThreadId.set($event)"
@@ -64,28 +64,19 @@ import { injectAgent, LangGraphThreadsAdapter, refreshOnRunEnd } from '@threadpl
 })
 export class AppShellComponent {
   protected readonly agent = injectAgent();
-  protected readonly threads = inject(LangGraphThreadsAdapter);
+  protected readonly threads = injectThreadDirectory();
   protected readonly activeThreadId = ACTIVE_THREAD; // module-scope signal
 
-  protected readonly threadActions: ThreadActionAdapter = {
-    rename: async (id, title) => {
-      await this.threads.rename(id, title);
-      await this.threads.refresh();
-    },
-    delete: async (id) => {
-      await this.threads.delete(id);
-      await this.threads.refresh();
-    },
-  };
-
   constructor() {
-    refreshOnRunEnd(this.agent, () => this.threads.refresh());
+    refreshOnRunEnd(this.agent, this.threads);
     void this.threads.refresh();
   }
 }
 ```
 
-Selecting a conversation is a signal write. When `provideAgent({ threadId: ACTIVE_THREAD })` is wired to the same signal, the adapter watches it and switches conversations — the sidebar never talks to the agent directly. See [Thread Routing](/docs/angular/chat/guides/thread-routing) for keeping that signal in sync with the URL.
+The injected thread directory view carries its row commands under the names `ThreadActionAdapter` uses (`rename`, `delete`, `archive`, `unarchive`, `pin`, `unpin`, `moveToProject` and `reorderPinned`), so the view itself is bound as `[actions]`. Each command shows at once and rolls back when it fails. The app config provides the directory with `provideThreadDirectory({ createDirectory: () => createLangGraphThreadDirectory({ apiUrl }) })`.
+
+Selecting a conversation is a signal write. When `provideAgent({ threadId: ACTIVE_THREAD, createSession })` is wired to the same signal, the agent follows it and switches conversations — the sidebar never talks to the agent directly. See [Thread Routing](/docs/angular/chat/guides/thread-routing) for keeping that signal in sync with the URL.
 
 ## Inputs
 
@@ -100,7 +91,7 @@ Selecting a conversation is a signal write. When `provideAgent({ threadId: ACTIV
 | `projects` | `Project[] \| null` | `null` | Optional project grouping. |
 | `selectedProjectId` | `string \| null` | `null` | Currently selected project. |
 | `projectActions` | `ProjectActionAdapter \| null` | `null` | Project menu handlers. |
-| `agent` | `Agent \| AgentWithHistory \| null` | `null` | Powers the devtools panel and history search. |
+| `agent` | `Agent \| null` | `null` | Powers the devtools panel and history search. |
 | `debug` | `boolean` | `true` | Shows the devtools launcher in the footer. |
 
 ## Outputs
@@ -134,7 +125,7 @@ Two of these fields are **documentation of intent, not behavior** — the compon
 - **`status` is not auto-filtered.** Pre-filter your list and pass archived rows through the separate `archivedThreads` input.
 - **`pinned` is not auto-sorted.** The pin icon renders, but you sort pinned threads to the top yourself.
 
-`LangGraphThreadsAdapter` already does both, which is why the example above passes `threads()` and `archivedThreads()` straight through.
+The injected thread directory view already does both, which is why the example above passes `threads()` and `archivedThreads()` straight through.
 
 ## Row actions
 
@@ -154,7 +145,7 @@ export interface ThreadActionAdapter {
 The framework handles the confirmation dialog for `delete`, the inline editor for `rename`, and optimistic UI with rollback on rejection.
 
 <Callout type="warning" title="Refresh your thread list after every successful action">
-  Optimistic overrides are cleared in a `finally` block. If an adapter method
+  Optimistic overrides are cleared in a `finally` block. If an action
   resolves but the `threads` input still holds the old data, the row snaps back
   to its previous state — which reads as "the rename did not work."
 </Callout>
@@ -175,6 +166,6 @@ On narrow viewports, switch `mode` to `'drawer'` and pair the sidenav with `<cha
     Bind the active-thread signal to the URL so links and reloads land correctly.
   </Card>
   <Card title="LangGraph Persistence" href="/docs/angular/langgraph/guides/persistence">
-    The server-side thread store behind `LangGraphThreadsAdapter`.
+    The server-side thread store behind `createLangGraphThreadDirectory()`.
   </Card>
 </CardGroup>

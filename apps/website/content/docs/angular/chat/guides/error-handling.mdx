@@ -4,7 +4,7 @@ description: The structured AgentError on the agent error signal — its failure
 
 # Error Handling
 
-When a run fails, `@threadplane/chat` surfaces a structured `AgentError` on the agent's `error` signal instead of a bare `Error`. It carries a machine-readable failure `kind`, a `retryable` flag, an optional HTTP `status`, and the original `cause` — so you can render cause-specific copy, decide whether to offer a retry, and keep the raw error for telemetry. An `interrupted` error carries two more fields, `recovery` and `detail`, which say which action the adapter can justify offering.
+When a run fails, the agent's `error` signal holds a structured `AgentError` instead of a bare `Error`. It carries a machine-readable failure `kind`, a display `message`, a `retryable` flag, and an optional HTTP `status` — so you can render cause-specific copy and decide whether to offer a retry. A description of what was thrown is published beside it, on `errorDiagnostic`, for logs and telemetry. An `interrupted` error carries two more fields, `recovery` and `detail`, which say which action the session can justify offering.
 
 <Callout type="info" title="Zero-config by default">
   `<chat>` already renders the built-in `<chat-error>` primitive, which shows legible per-kind copy and the one action the error supports — a **Retry response** button, a **Check status** button, or neither. You only need this guide when you want custom error UI.
@@ -12,20 +12,22 @@ When a run fails, `@threadplane/chat` surfaces a structured `AgentError` on the 
 
 ## The `AgentError` shape
 
-`agent.error()` returns an `AgentError | undefined`. `AgentError extends Error`, so existing `.message` / `instanceof Error` reads keep working:
+`agent.error()` returns an `AgentError | undefined`. `AgentError` is a plain, frozen object from `@threadplane/core`, re-exported by `@threadplane/chat`. It is not an `Error` instance, so read `.message` and do not test it with `instanceof Error`:
 
 ```typescript
-import { AgentError, type AgentErrorKind, type AgentRecovery } from '@threadplane/chat';
+import type { AgentError, AgentErrorKind, AgentRecovery } from '@threadplane/chat';
 
-class AgentError extends Error {
+interface AgentError {
   readonly kind: AgentErrorKind;   // 'connection' | 'auth' | 'server' | 'interrupted' | 'aborted'
+  readonly message: string;        // display text
   readonly retryable: boolean;     // could retrying the same request plausibly succeed?
   readonly status?: number;        // HTTP status, when the failure came from a response
-  readonly cause: unknown;         // the original raw error, preserved for debugging and diagnostics
-  readonly recovery?: AgentRecovery; // 'retry' | 'check' | 'none' — set on 'interrupted' only
-  readonly detail?: string;        // the sentence to show when recovery is 'check' or 'none'
+  readonly recovery?: AgentRecovery; // 'retry' | 'check' | 'none'
+  readonly detail?: string;        // a second sentence to show under the message
 }
 ```
+
+`agent.status()` is `'error'` exactly while `agent.error()` holds a value. The thrown value itself is never kept in the snapshot. `agent.errorDiagnostic()` describes it as plain data (`name`, `message`, `stack`, `code`, `status`, further `data`, and a nested `cause`) when the session read one; it is for logs and debug views, never for display.
 
 ### Failure kinds
 
@@ -35,23 +37,23 @@ class AgentError extends Error {
 | `auth` | `401` / `403` — credentials or API key are wrong | `false` |
 | `server` | `5xx` (retryable) or a non-auth `4xx` like `400`/`404`/`429` (not retryable) | varies |
 | `interrupted` | The stream closed mid-response after a run had started | only when `recovery` is `retry` |
-| `aborted` | The user pressed stop — treated as a graceful idle, **not** surfaced as an error | `false` |
+| `aborted` | A request the caller cancelled. Pressing stop settles the run with the `'aborted'` outcome and leaves `error()` empty | `false` |
 
 The `retryable` flag is the value to branch on for UI: `connection` and `server` (5xx) are retryable; `auth`, `aborted`, and non-auth `4xx` are not. An `interrupted` error is retryable only when its `recovery` is `retry`, because replaying a request the server may already have received could duplicate a tool call or a booking.
 
 ## Recovering from an interruption
 
-A stream that closes without terminal evidence settles as `interrupted` rather than as a completed turn. Partial content and approval state are preserved in every case; what differs is the action the adapter can prove is safe, which it reports on `recovery`.
+A stream that closes without terminal evidence settles as `interrupted` rather than as a completed turn. Partial content and approval state are preserved in every case; what differs is the action the session can prove is safe, which it reports on `recovery`.
 
-| `recovery` | The adapter knows | `retryable` | What to render |
+| `recovery` | The session knows | `retryable` | What to render |
 |---|---|---|---|
-| `retry` | The request was never dispatched, so re-running it cannot duplicate server-side work | `true` | A **Retry response** button calling `agent.retry()` |
+| `retry` | The request was never dispatched, so re-running it cannot duplicate server-side work | `true` | A **Retry response** button calling `agent.retry?.()` |
 | `check` | The outcome is uncertain, and the backend supports a read-only status check | `false` | A **Check status** button calling `agent.checkStatus?.()` |
 | `none` | The outcome is uncertain and nothing can verify it | `false` | The `detail` sentence, and no action |
 
 `detail` is set whenever `recovery` is `check` or `none`, and reads as a continuation of `message`. Show both: it is the only thing left to say when the outcome cannot be confirmed, or when the agent exposes no `checkStatus` to offer.
 
-`checkStatus()` is the optional read-only reconciliation on the `Agent` contract. It asks the backend what happened; it never resubmits the request and never appends a message. Its answer arrives on the signals rather than in the return value — a run the backend reports as finished clears `error` and returns `status` to idle, and any messages it committed appear on `messages`. An outcome that stays unknown leaves the error in place, so the control can be offered again. Adapters expose the member only when their transport can answer, so feature-detect it before rendering the button.
+`checkStatus()` is the optional read-only reconciliation command of a session. It asks the backend what happened; it never resubmits the request and never appends a message. Its answer arrives on the signals rather than in the return value — a run the backend reports as finished clears `error` and returns `status` to idle, and any messages it committed appear on `messages`. An outcome that stays unknown leaves the error in place, so the control can be offered again. A session has the command only when its transport can answer, and `agent.checkStatus` is `undefined` otherwise, so feature-detect it before rendering the button.
 
 Connections that stay open but stop producing events are a different problem. They need timeout rules of your own; nothing here classifies them.
 
@@ -63,11 +65,11 @@ if (err) {
   console.warn(err.message);        // legible, per-kind copy
   if (err.kind === 'auth') showApiKeyHelp();
   if (err.recovery === 'check' && agent.checkStatus) showCheckStatusButton();
-  else if (err.retryable) showRetryButton();   // → agent.retry()
+  else if (err.retryable && agent.retry) showRetryButton();   // → agent.retry()
 }
 ```
 
-`agent.retry()` re-runs the last request and clears `error`. It is a no-op when a run is in flight or there is nothing to retry.
+`agent.retry()` sends the last failed submission again without appending a second user message, and resolves with the re-run's outcome. It resolves `'aborted'` without sending while a request runs or when nothing failed, and it rejects for an error whose `recovery` is not `'retry'`. `retry` is an optional command: `agent.retry` is `undefined` on a session that cannot retry.
 
 ## The built-in error UI
 
@@ -78,19 +80,18 @@ if (err) {
 <chat-error [agent]="chatRef" />
 ```
 
-It renders a **Check status** button when `recovery` is `check` and the bound agent exposes `checkStatus`, a **Retry response** button when the error is retryable, and otherwise the message alone. Both buttons call the bound Agent's method for you, and `detail` is rendered under the message whenever it is set. For non-retryable failures (e.g. `auth`), no button is shown — retrying the same bad credential would just fail again.
+It renders a **Check status** button when `recovery` is `check` and the bound agent exposes `checkStatus`, a **Retry response** button when the error is retryable and the agent exposes `retry`, and otherwise the message alone. Both buttons call the bound agent's command for you, and `detail` is rendered under the message whenever it is set. Set `[retryHidden]="true"` to hide the generic Retry when you offer a narrower retry elsewhere. For non-retryable failures (e.g. `auth`), no button is shown — retrying the same bad credential would just fail again.
 
 ## Custom error UI
 
-Read `agent.error()` directly to render your own surface. Override the default copy by mapping `error.kind` to your own strings — `AGENT_ERROR_MESSAGES` holds the built-in defaults:
+Read `agent.error()` directly to render your own surface. The session has already written `err.message` for the failure; override it by mapping `error.kind` to your own strings where you want different copy:
 
 ```typescript
 import { Component } from '@angular/core';
-import { injectAgent } from '@threadplane/langgraph';
-import { AGENT_ERROR_MESSAGES, type AgentErrorKind } from '@threadplane/chat';
+import { injectAgent } from '@threadplane/angular';
+import type { AgentErrorKind } from '@threadplane/chat';
 
-const COPY: Record<AgentErrorKind, string> = {
-  ...AGENT_ERROR_MESSAGES,
+const COPY: Partial<Record<AgentErrorKind, string>> = {
   auth: 'Your API key looks wrong — update it in Settings.',
 };
 
@@ -99,13 +100,13 @@ const COPY: Record<AgentErrorKind, string> = {
   template: `
     @if (agent.error(); as err) {
       <div role="alert" class="my-error">
-        <span>{{ err.kind === 'interrupted' ? err.message : COPY[err.kind] }}</span>
+        <span>{{ COPY[err.kind] ?? err.message }}</span>
         @if (err.detail) {
           <span>{{ err.detail }}</span>
         }
         @if (err.recovery === 'check' && agent.checkStatus) {
-          <button (click)="agent.checkStatus!()">Check status</button>
-        } @else if (err.retryable) {
+          <button (click)="agent.checkStatus()">Check status</button>
+        } @else if (err.retryable && agent.retry) {
           <button (click)="agent.retry()">Try again</button>
         }
       </div>
@@ -118,55 +119,58 @@ export class AppChatComponent {
 }
 ```
 
-The `interrupted` entry in `AGENT_ERROR_MESSAGES` is only the fallback for an error built without a recovery value, so the example above prefers `err.message` for that kind: the adapter has already set it to the copy that matches the recovery it chose. `AGENT_RECOVERY_MESSAGES` and `AGENT_RECOVERY_DETAILS` hold those two tables if you would rather read them by recovery yourself.
+Leave `interrupted` out of your own table: the session has already set `err.message` and `err.detail` to the copy that matches the recovery it chose, and replacing them can promise an action the error does not support.
 
 `extractErrorMessage(value)` is also exported for coercing any unknown error value into a readable string when you render an error outside `<chat-error>`.
 
 ## Classifying errors in a custom backend
 
-Runtime adapters normalize raw failures through `toAgentError()` before setting `agent.error()`. If you write a [custom adapter](/docs/angular/chat/guides/writing-an-adapter), call it too — or throw an `AgentError` directly:
+The LangGraph and AG-UI sessions classify raw failures themselves before they publish `error`. If you write a [custom session](/docs/angular/chat/guides/writing-an-adapter), classification is yours: decide the `kind`, the display `message` and whether a retry is safe, then publish the plain object in your snapshot with `status: 'error'`. `@threadplane/core` supplies two helpers for the rest:
 
 ```typescript
-import { toAgentError } from '@threadplane/chat';
+import { projectAgentError, projectErrorDiagnostic } from '@threadplane/core';
 
 try {
   await runMyBackend();
 } catch (raw) {
-  // Classifies by structured status → connection markers → HTTP-shaped message → server fallback.
-  // Idempotent: an existing AgentError passes through unchanged. User aborts settle to 'aborted'.
-  this.setError(toAgentError(raw));
+  publish({
+    status: 'error',
+    // Copies the display fields into a frozen object with no prototype or cause.
+    error: projectAgentError({
+      kind: 'server',
+      message: 'The agent could not answer.',
+      retryable: false,
+    }),
+    // Describes any thrown value as plain data for logs and debug views.
+    errorDiagnostic: projectErrorDiagnostic(raw),
+  });
 }
 ```
 
-`isAbortError(raw)` is the shared predicate both adapters and `toAgentError()` use to recognize a user-requested stop (`AbortError`) so it settles to idle rather than surfacing as an error.
+`projectAgentError()` does not classify: it copies fields you have already chosen. A user-requested stop is not an error. Resolve the command with the `'aborted'` outcome and return `status` to idle rather than publishing one.
 
 ## API reference
 
 ```typescript
 import {
-  AgentError,
+  type AgentError,
+  type AgentErrorDiagnostic,
   type AgentErrorKind,
   type AgentRecovery,
-  AGENT_ERROR_MESSAGES,
-  AGENT_RECOVERY_MESSAGES,
-  AGENT_RECOVERY_DETAILS,
-  toAgentError,
-  isAbortError,
   ChatErrorComponent,
   extractErrorMessage,
 } from '@threadplane/chat';
+import { projectAgentError, projectErrorDiagnostic } from '@threadplane/core';
 ```
 
 | Export | Purpose |
 |---|---|
-| `AgentError` | Structured error class on `agent.error()` (`kind`, `retryable`, `status?`, `cause`, `recovery?`, `detail?`) |
+| `AgentError` | Structured error object on `agent.error()` (`kind`, `message`, `retryable`, `status?`, `recovery?`, `detail?`) |
+| `AgentErrorDiagnostic` | Plain description of what was thrown, on `agent.errorDiagnostic()` |
 | `AgentErrorKind` | Union of the five failure classes |
 | `AgentRecovery` | Union of the three recovery actions: `retry`, `check`, `none` |
-| `AGENT_ERROR_MESSAGES` | Default human-facing copy per kind |
-| `AGENT_RECOVERY_MESSAGES` | Human-facing copy per recovery action, for `interrupted` errors |
-| `AGENT_RECOVERY_DETAILS` | The second line of the `interrupted` banner, per recovery action |
-| `toAgentError(raw)` | Classify any raw value into an `AgentError` (idempotent) |
-| `isAbortError(raw)` | Predicate: is this a user-requested stop? |
+| `projectAgentError(error)` | Copy an already classified failure into a frozen `AgentError` |
+| `projectErrorDiagnostic(raw)` | Describe any thrown value as an `AgentErrorDiagnostic` |
 | `ChatErrorComponent` | The `<chat-error>` primitive (message, optional detail, and at most one action) |
 | `extractErrorMessage(value)` | Coerce any error value into a readable string |
 
@@ -177,7 +181,7 @@ import {
     title="Writing an Adapter"
     href="/docs/angular/chat/guides/writing-an-adapter"
   >
-    Normalize backend failures with `toAgentError()` in a custom adapter.
+    Publish classified failures from a custom session.
   </Card>
   <Card
     title="Lifecycle Signals"

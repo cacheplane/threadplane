@@ -6,7 +6,7 @@ description: Declare tools in the browser, ship the catalog to a LangGraph graph
 
 <DocsDemoVideo demo="tools" frontend="angular" />
 
-Client tools are tools you declare in the browser that the model calls and the browser executes, with no server-side implementation. The Angular app declares them, the `@threadplane/langgraph` adapter attaches the catalog to every run it starts under the `client_tools` key, and the graph binds those declarations onto the model and ends the current run when one is called. The browser then produces the result and hands it back, either as a new run or as a direct write to the thread. This guide walks the running example, from the graph to the components the model fills.
+Client tools are tools you declare in the browser that the model calls and the browser executes, with no server-side implementation. The Angular app declares them, the `@threadplane/langgraph` session attaches the catalog to every run it starts under the `client_tools` key, and the graph binds those declarations onto the model and ends the current run when one is called. The browser then produces the result and hands it back, either as a new run or as a direct write to the thread. This guide walks the running example, from the graph to the components the model fills.
 
 | Helper | Kind | What it does |
 |---|---|---|
@@ -14,8 +14,8 @@ Client tools are tools you declare in the browser that the model calls and the b
 | `view()` | render-only component | The model fills the component's inputs from the schema; the card renders inline and the call is acknowledged once it mounts. |
 | `ask()` | interactive component | The model fills the component's inputs; the value the component emits back becomes the tool result. |
 
-<Callout type="info" title="Adapter-neutral declarations">
-`tools`, `action`, `view`, and `ask` come from `@threadplane/chat`, so the same registry works on `@threadplane/langgraph` and `@threadplane/ag-ui`. Only the `provideAgent`/`injectAgent` imports and the backend wiring change. The [AG-UI twin of this guide](/docs/angular/ag-ui/guides/client-tools) walks the same three declarations over the AG-UI transport.
+<Callout type="info" title="Backend-neutral declarations">
+`tools`, `action`, `view`, and `ask` come from `@threadplane/chat`, so the same registry works on `@threadplane/langgraph` and `@threadplane/ag-ui`. Only the `createSession` import and the backend wiring change. The [AG-UI twin of this guide](/docs/angular/ag-ui/guides/client-tools) walks the same three declarations over the AG-UI transport.
 </Callout>
 
 ## Give the model a capability, then return its result
@@ -40,25 +40,25 @@ Seven files carry the feature: a graph that binds the browser's declarations and
 
 ### The graph binds client stubs and ends the turn
 
-The graph has one node. Its `State` declares a `client_tools` channel alongside `messages`, because that is the key the LangGraph adapter writes the catalog to, and `bind_client_tools` reads it there to bind the declarations onto the model for this invocation. There are no server tools, so `route` returns `END` unconditionally. This graph compiles without a checkpointer, because it runs under the LangGraph server, which provides one.
+The graph has one node. Its `State` declares a `client_tools` channel alongside `messages`, because that is the key the LangGraph session writes the catalog to, and `bind_client_tools` reads it there to bind the declarations onto the model for this invocation. There are no server tools, so `route` returns `END` unconditionally. This graph compiles without a checkpointer, because it runs under the LangGraph server, which provides one.
 
 <ExampleCode file="graph.py" />
 
 `bind_client_tools(llm, [], state)` converts each catalog entry into an OpenAI function-tool dictionary and calls `llm.bind_tools` with it; the empty list is where your own server tools would go.
 
 <Callout type="info" title="Why the turn ends on a tool call">
-The browser, not the graph, produces the result. Ending the run is the signal the adapter waits for: a client tool call counts as pending only once the run is no longer loading. A graph that looped back to a tools node would leave the browser nothing to do.
+The browser, not the graph, produces the result. Ending the run is the signal the session waits for: a client tool call is listed in `agent.pendingClientTools()` only between runs. A graph that looped back to a tools node would leave the browser nothing to do.
 </Callout>
 
-<Callout type="warning" title="Read the catalog from the key your adapter writes">
-`bind_client_tools` reads `state["tools"]` first and falls back to `state["client_tools"]`, so one graph serves both adapters. The LangGraph adapter writes `client_tools`; declare that channel or the merged value is dropped, the model is bound with nothing, and the demo goes quiet with no error.
+<Callout type="warning" title="Read the catalog from the key your session writes">
+`bind_client_tools` reads `state["tools"]` first and falls back to `state["client_tools"]`, so one graph serves both backends. The LangGraph session writes `client_tools`; declare that channel or the merged value is dropped, the model is bound with nothing, and the demo goes quiet with no error.
 </Callout>
 
 The AG-UI twin's sibling graph is a separate file that compiles with `MemorySaver()`, because `ag-ui-langgraph` reads the thread's state through a checkpointer.
 
 ### Providing the agent
 
-`provideAgent()` from `@threadplane/langgraph` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. The example resolves its `apiUrl` and `assistantId` at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them; your own application passes them directly. The `CLIENT_TOOLS_AGENT_REF` argument is a typed reference, covered under [typed agent state](#typed-agent-state) below.
+`provideAgent()` from `@threadplane/angular` provides the agent at the application root, and it is the only provider the `<chat>` composition requires. Its `createSession` factory calls `createSession()` from `@threadplane/langgraph` with no fixed `tools` map, which is what makes the session offer the `clientTools` capability that `<chat [clientTools]>` drives. The example resolves its `apiUrl` and `assistantId` at runtime from the host that serves the demo, which is why the config is itself a factory that reads them rather than hard-coding them; your own application passes them directly. The `CLIENT_TOOLS_AGENT_REF` argument is a typed reference, covered under [typed agent state](#typed-agent-state) below.
 
 <ExampleCode file="app.config.ts" />
 
@@ -98,7 +98,7 @@ The registry reaches the UI through one input. `<chat [clientTools]="clientTools
 
 <ExampleCode file="client-tools.component.ts" region="chat-wiring" title="client-tools.component.ts — the chat wiring" />
 
-The `messageCount` computed is there to prove the typed dependency-injection path compiles: `agent.value()` is a `ClientToolsState`, so a field that does not exist on that shape is a build error.
+The `todoCount` computed is there to prove the typed dependency-injection path compiles: `agent.state()` is a read-only `ClientToolsState`, or `undefined` until the graph reports a state, so a field that does not exist on that shape is a build error.
 
 ### The view component the model fills
 
@@ -126,19 +126,19 @@ A function handler receives a context object as its second argument, carrying an
 
 <ExampleCode file="client-tools.component.ts" region="abortable-delay" title="client-tools.component.ts — the abortable delay" />
 
-The executor wraps the agent's `stop`, so pressing stop aborts every in-flight handler, and a cancelled call is recorded without starting a new run.
+The executor listens for the agent's `stop`, so pressing stop aborts every in-flight handler, and a cancelled call is recorded without starting a new run.
 
 ## The round trip in one pass
 
 <Steps>
 <Step title="The catalog ships with the run">
-The coordinator converts the registry into specs, each with a name, a description, and a JSON Schema, and the adapter attaches them to every run it starts as `client_tools`.
+The coordinator converts the registry into specs, each with a name, a description, and a JSON Schema, and hands them to the session with `agent.clientTools.setCatalog(specs)`. The session attaches them to every run it starts as `client_tools`.
 </Step>
 <Step title="The model calls a tool and the graph ends the run">
 Because the tool has no server implementation, the run finishes with a tool call that carries no result.
 </Step>
 <Step title="The browser sees the call as pending">
-Pending calls are those whose name is in the catalog, whose result is undefined, and which this client has not resolved yet, and only while the agent is not loading.
+`agent.pendingClientTools()` lists the calls whose name is in the catalog and which have no result yet, and only between runs.
 </Step>
 <Step title="The browser produces the result">
 A function handler runs, a view is acknowledged on mount, and an ask waits for the user's value.
@@ -150,22 +150,22 @@ The result is written onto the local tool call and staged as a tool message addr
 
 ## Settle, flush, and resolve on LangGraph
 
-The adapter implements three operations for a produced result, and the coordinator picks between them.
+The session's `clientTools` capability has three operations for a produced result, and the coordinator picks between them.
 
-`settle(id, result)` records the result: the value is written onto the local tool call so the transcript card freezes, and a tool message with the deterministic id `client-tool-result-<callId>` is staged in memory. `resolve(id, result)` settles and then issues a new run on the same thread with `{ messages: [<the staged tool messages>], client_tools: <the catalog> }`, which is the normal path. `flush()` makes staged results durable without continuing: on `@threadplane/langgraph` it writes them into the thread with one `threads.updateState` call, so no run is started and the graph's resume point is untouched.
+`settle(id, result)` records the result: the value is written onto the local tool call so the transcript card freezes, and a tool message with the deterministic id `client-tool-result-<callId>` is staged in memory. `resolve(id, result)` settles and then issues a new run on the same thread with `{ messages: [<the staged tool messages>], client_tools: <the catalog> }`, which is the normal path. `flush()` makes staged results durable without continuing: on `@threadplane/langgraph` it writes them into the thread through the transport's `updateState`, so no run is started and the graph's resume point is untouched.
 
-That is the sharpest difference from the AG-UI adapter, where `flush()` is a deliberate no-op because `settle` has already placed the tool message in the message list the next run carries.
+That is the sharpest difference from the AG-UI session, where `settle` has already placed the tool message in the message list the next run carries.
 
 The choice matters at the edges. A tool declared with `followUp: false`, like `weather_snapshot` in this example, is settled and flushed instead of resolved, so the rendered card is the final answer and no summary follows. A cancelled call takes the same path, because continuing the run is exactly what the user asked not to happen.
 
 Follow-up is decided per tool-call group, not per tool. If the model calls three tools in one turn and any one of them wants a follow-up, the whole group continues in a single run once every result has settled. Only when every tool in the group is terminal does the group flush instead.
 
 <Callout type="warning" title="A custom transport needs updateState">
-`flush()` writes through the transport's `updateState`. The default transport implements it. If you supply your own and it does not, the adapter never installs a persist function, a non-empty `flush()` rejects with that reason, and the results stay staged. They still ride along on the next ordinary submit, which prepends them to that run's message list, but a page reload first loses them and leaves the server thread holding an unanswered tool call.
+`flush()` writes through the transport's `updateState`. The default transport implements it. If you supply your own and it does not, `flush()` rejects and the results stay staged. They still ride along on the next run, but a page reload first loses them and leaves the server thread holding an unanswered tool call.
 </Callout>
 
 <Callout type="info" title="Staged results belong to their thread">
-Each staged result is stamped with the thread it settled on. Switching threads discards the staging buffer, and a result settled for a thread you have left is dropped with a warning rather than written to the thread you moved to.
+A session belongs to one thread, and staged results live inside it. `agent.switchThread()` replaces the session, so a result staged for a thread you have left is discarded with that session and can never be written to the thread you moved to. `<chat>` hands the new session the catalog again.
 </Callout>
 
 ## Stopping and continuation limits
@@ -261,7 +261,7 @@ const move = action('Move a stop to another day.', moveSchema, moveStop);
 
 ## Reading client-tool results on the server
 
-A client-tool result reaches your graph as a tool message keyed by tool-call id, with no tool name on it. The two adapters do not set identical fields, but the point holds regardless of whatever else the adapter sets: there is no `name` to filter on. Here is the LangGraph adapter's shape:
+A client-tool result reaches your graph as a tool message keyed by tool-call id, with no tool name on it. The two backends do not set identical fields, but the point holds regardless of whatever else the session sets: there is no `name` to filter on. Here is the LangGraph session's shape:
 
 ```json
 { "id": "client-tool-result-call_abc", "role": "tool", "type": "tool", "tool_call_id": "call_abc", "content": "{\"saved\":1}" }
@@ -291,28 +291,36 @@ def results_for(messages: list, tool_name: str) -> list:
 ```
 
 <Callout type="info" title="Why not just send the name?">
-For AG-UI this is fixed by the protocol: `ToolMessageSchema` in `@ag-ui/core` defines exactly `id`, `role`, `content`, `toolCallId`, and optional `error` and `encryptedValue`, and parses in strip mode, so an extra `name` would be dropped on the wire. Matching on the call id is the portable approach across both adapters.
+For AG-UI this is fixed by the protocol: `ToolMessageSchema` in `@ag-ui/core` defines exactly `id`, `role`, `content`, `toolCallId`, and optional `error` and `encryptedValue`, and parses in strip mode, so an extra `name` would be dropped on the wire. Matching on the call id is the portable approach across both backends.
 </Callout>
 
 ## Typed agent state
 
-Tool handlers and components often read agent state. Pair the registry with a typed `AgentRef` so `agent.state()` and `agent.value()` carry your state shape instead of `Record<string, unknown>`. The example declares one that mirrors the graph's `State`, passes it to `provideAgent` in `app.config.ts`, and reads it back through `injectAgent`:
+Tool handlers and components often read agent state. Pair the registry with a typed `AgentRef` so `agent.state()` carries your state shape instead of plain data. The ref carries the session type, and the session's `stateType` option declares the state. The example declares a state interface that mirrors the graph's `State`, passes the ref to `provideAgent` in `app.config.ts`, and reads the agent back through `injectAgent`:
 
 ```typescript
-import { createAgentRef } from '@threadplane/chat';
-import type { BaseMessage } from '@langchain/core/messages';
+import { createAgentRef } from '@threadplane/angular';
+import type { ToolContract } from '@threadplane/core';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
 export interface ClientToolsState {
-  messages: BaseMessage[];
-  client_tools: unknown[];
+  client_tools?: { name: string; description?: string }[];
+  todos?: { content: string; status: 'pending' | 'in_progress' | 'completed' }[];
 }
 
-export const CLIENT_TOOLS_AGENT_REF = createAgentRef<ClientToolsState>('client-tools');
+export type ClientToolsSession = LangGraphSession<
+  Record<string, ToolContract>,
+  ClientToolsState
+>;
 
-// component: injectAgent(CLIENT_TOOLS_AGENT_REF) is a LangGraphAgent<ClientToolsState>
+export const CLIENT_TOOLS_AGENT_REF =
+  createAgentRef<ClientToolsSession>('client-tools');
+
+// app.config.ts: createSession({ ..., stateType: type<ClientToolsState>() })
+// component: injectAgent(CLIENT_TOOLS_AGENT_REF) is an Agent<ClientToolsSession>
 ```
 
-[Typed state via AgentRef](/docs/angular/langgraph/getting-started/quickstart#typed-state-via-agentref) covers the rest of the pattern.
+`type` comes from `@threadplane/core`. The graph's `messages` channel is not part of the state type: the transcript is `agent.messages()`. The [LangGraph quickstart](/docs/angular/langgraph/getting-started/quickstart) covers the rest of the pattern.
 
 ## Mixing server tools and client tools
 
@@ -367,7 +375,7 @@ Component inputs on `<chat>`:
 | `[clientToolContinuationPolicy]` | Cap runaway continuation loops (default ten groups per turn) |
 | `[clientToolExecutionGuard]` | Durable claim-before-execute for non-idempotent tools |
 
-<Callout type="info" title="Writing your own adapter?">
+<Callout type="info" title="Writing your own session?">
 The `settle` / `flush` / `resolve` contract behind these features is documented in [Writing an Adapter › Client Tools](/docs/angular/chat/guides/writing-an-adapter#client-tools-optional).
 </Callout>
 
@@ -380,8 +388,8 @@ The `settle` / `flush` / `resolve` contract behind these features is documented 
   <Card title="Generative UI" href="/docs/angular/chat/guides/generative-ui">
     Render agent-emitted UI specs with `[views]`, distinct from model-called tools.
   </Card>
-  <Card title="provideAgent()" href="/docs/api/langgraph/provideAgent">
-    Typed agent state via `AgentRef` and the rest of the adapter options.
+  <Card title="Writing an Adapter" href="/docs/angular/chat/guides/writing-an-adapter#client-tools-optional">
+    The `clientTools` capability a session implements to support these declarations.
   </Card>
   <Card title="Error Handling" href="/docs/angular/chat/guides/error-handling">
     Classified errors and Retry when a tool call or a run fails.

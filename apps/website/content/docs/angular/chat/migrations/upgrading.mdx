@@ -1,27 +1,243 @@
 ---
-description: Upgrade Angular integrations deliberately, distinguish private React source builds, and review AG-UI, A2UI, and persisted client-tool changes.
+description: Upgrade Angular integrations deliberately, move to provideAgent({ createSession }), and review AG-UI, A2UI, and persisted client-tool changes.
 ---
 
 # Upgrade an integration
 
-Upgrade the parts that exchange data together: the frontend packages, their protocol peers, the backend producer, and any persisted schema they share. Start by identifying the API your application actually uses, then follow the relevant migration below. This page does not announce a package release or require adopting unreleased source APIs.
+Upgrade the parts that exchange data together: the frontend packages, their protocol peers, the backend producer, and any persisted schema they share. Start by identifying the API your application actually uses, then follow the relevant migration below. This page does not announce a package release. The move to the session provider and the client-tool ownership protocol below describe source changes that are not in a published release yet.
 
 ## Identify the integration first
 
 | Application | Contract to check |
 |---|---|
-| Published Angular chat | `@threadplane/chat` components plus the chosen Angular adapter and its declared peers. |
-| LangGraph backend | Graph state, checkpoint storage, and the SDK protocol consumed by the adapter. |
+| Angular chat | `@threadplane/chat` components, `@threadplane/angular`, `@threadplane/core`, and the chosen backend package with its declared peers. |
+| LangGraph backend | Graph state, checkpoint storage, and the SDK protocol consumed by the session. |
 | AG-UI backend | Event shapes, protocol peers, and that runtime's interrupt/replay conventions. |
-| Native React source build | Private `@threadplane/core`, `@threadplane/content`, `@threadplane/react`, and the matching native runtime build. |
+| React source build | The private `@threadplane/react` binding over the same `@threadplane/core` sessions. |
 
-The Angular `Agent` and native `AgentSession` are different contracts. Replacing `injectAgent` with `useAgent` is not a migration: the React hook observes an already-owned session, and its application owns creation, commands, and disposal. Follow the [conversation guide](/docs/angular/langgraph/concepts/conversation-turns) and the selected React example when evaluating that source-build path. The native packages remain unpublished.
+The Angular `Agent` is a signal view of an `AgentSession`: the same session contract serves both frameworks, and the bindings differ in ownership. `injectAgent()` returns an agent that creates and disposes its sessions; the React `useAgent` hook observes a session its application owns. Replacing one with the other is not a migration. Follow the [conversation guide](/docs/angular/langgraph/concepts/conversation-turns) when evaluating either path.
+
+## Move to the session provider
+
+The Angular agent now runs on the framework-neutral `AgentSession` contract from `@threadplane/core`. `@threadplane/langgraph` and `@threadplane/ag-ui` no longer contain Angular code: each exports a `createSession()` factory, and one provider in `@threadplane/angular` turns any session into the injected `Agent`. There is no compatibility layer, so an application moves in one step. `<chat>` and the other components keep their selectors; what changes is where the agent comes from and the names of its members.
+
+Work through the checklist in order. Each step compiles on its own once the imports in step 2 are in place.
+
+### 1. Install the new packages
+
+Your application now imports from `@threadplane/angular` and `@threadplane/core` directly, so add both. `@threadplane/ag-ui` no longer has `@ag-ui/core` as a peer.
+
+```bash
+# LangGraph
+npm install @threadplane/angular @threadplane/core
+
+# AG-UI
+npm install @threadplane/angular @threadplane/core
+npm uninstall @ag-ui/core   # only if your own code does not import it
+```
+
+Keep every `@threadplane/*` package on the same version.
+
+### 2. Replace the provider
+
+`provideAgent` and `injectAgent` come from `@threadplane/angular`. The backend options move into a `createSession` factory, which the agent calls once when it is built and again for each thread it opens.
+
+Before, LangGraph:
+
+```ts
+import { provideAgent } from '@threadplane/langgraph';
+
+provideAgent({
+  apiUrl: 'http://localhost:2024',
+  assistantId: 'chat',
+  threadId: activeThreadId,
+  onThreadId: (id) => activeThreadId.set(id),
+});
+```
+
+After:
+
+```ts
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
+
+provideAgent({
+  // Agent options: the thread to follow, and the callback for a created thread.
+  threadId: activeThreadId,
+  onThreadId: (id) => activeThreadId.set(id),
+  // Session options: everything about the backend.
+  createSession: (context) =>
+    createSession({
+      apiUrl: 'http://localhost:2024',
+      assistantId: 'chat',
+      threadId: context.threadId,
+      onThreadId: context.onThreadId,
+    }),
+});
+```
+
+Before, AG-UI:
+
+```ts
+import { provideAgent } from '@threadplane/ag-ui';
+
+provideAgent({ url: 'http://localhost:8000/agent' });
+```
+
+After:
+
+```ts
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
+
+provideAgent({
+  createSession: (context) =>
+    createSession({
+      url: 'http://localhost:8000/agent',
+      threadId: context.threadId ?? undefined,
+    }),
+});
+```
+
+- [ ] Change every `injectAgent` import to `@threadplane/angular`.
+- [ ] Pass `context.threadId` and, for LangGraph, `context.onThreadId` to the session. Without them a thread switch opens the wrong conversation.
+- [ ] A config that needs injected values becomes a factory: `provideAgent(() => ({ createSession: ... }))`. It runs once, in an injection context, and `createSession` itself may call `inject()` too.
+- [ ] Replace `toAgent(source)` with `createSession({ agent: source })` inside the factory.
+- [ ] Replace `LANGGRAPH_CLIENT_OPTIONS` with `provideAgentClientOptions(options)` from `@threadplane/angular`, and read it in the factory as `context.clientOptions`.
+- [ ] Replace the `LangGraphAgent` and `AgUiAgent` types with `Agent<LangGraphSession>` and `Agent<Session>` (`Agent` from `@threadplane/angular`, the session types from the backend packages). For typed injection, use `createAgentRef<LangGraphSession>('name')`, `provideAgent(ref, config)` and `injectAgent(ref)`, or name the type at the call site: `injectAgent<LangGraphSession>()`.
+
+### 3. Rename the agent members
+
+The injected `Agent` is exactly the session's snapshot fields as signals plus the session's commands. The legacy names are gone.
+
+| Before | After |
+|---|---|
+| `agent.isLoading()` | `agent.status() === 'running'` |
+| `agent.interrupt()` | `agent.interrupts()?.[0]` |
+| `agent.submit({ message: 'Hi' })` | `agent.submit('Hi')`, or `agent.submit({ message: 'Hi', state })` to merge state first |
+| `agent.submit({ resume: value })` | `agent.resume([{ interruptId, status: 'resolved', value }])` |
+| `agent.regenerate(index)` | `agent.regenerate(agent.messages()[index].id)` |
+| `agent.reload()` | `agent.retry()` |
+| `agent.history()` | `agent.checkpoints()` |
+| `agent.subagents()` as a `Map` | `agent.subagents()` as a list, or `undefined` when the session reports none |
+| `agent.events$` | `agent.onCustomEvent(listener)`, or the retained `agent.customEvents()` |
+| `agent.isInputBlocked()` | `agent.inputBlocked()`, an object with a `reason` while input is refused |
+| `agent.clientTools.pending()` | `agent.pendingClientTools()` |
+
+```ts
+// Before
+if (agent.isLoading()) return;
+const pending = agent.interrupt();
+if (pending) await agent.submit({ resume: { approved: true } });
+
+// After
+if (agent.status() === 'running') return;
+const pending = agent.interrupts()?.[0];
+if (pending && agent.resume) {
+  await agent.resume([
+    { interruptId: pending.id, status: 'resolved', value: { approved: true } },
+  ]);
+}
+```
+
+- [ ] `submit`, `resume`, `retry` and `regenerate` now resolve with the run's outcome (`'success'`, `'error'`, `'aborted'`, `'interrupted'` or `'paused'`) instead of `void`.
+- [ ] `resume`, `retry`, `regenerate`, `runWithoutMessage`, `checkStatus` and `onCustomEvent` are optional. A command the session does not offer is `undefined`; check before you call it, and offer no control for it.
+- [ ] `interrupts()`, `subagents()`, `plan()`, `checkpoints()`, `inputBlocked()` and `pendingClientTools()` are `undefined` on a session that reports none.
+- [ ] `threadId()`, `isThreadLoading()`, `switchThread(id)`, `customEvents()` and `lifecycle` keep their names.
+- [ ] LangGraph per-run settings (`command`, `multitaskStrategy`, `interruptBefore`, `streamMode`, `checkpointId` and the rest) move under `options.run`: `agent.submit(text, { run: { multitaskStrategy: 'enqueue' } })`. A setting at the root of the options is not read.
+
+### 4. Replace the thread adapter
+
+`LangGraphThreadsAdapter`, `LANGGRAPH_THREADS_CONFIG` and `LANGGRAPH_CLIENT` are removed. Provide a thread directory instead.
+
+Before:
+
+```ts
+import { LANGGRAPH_THREADS_CONFIG, LangGraphThreadsAdapter } from '@threadplane/langgraph';
+
+providers: [
+  { provide: LANGGRAPH_THREADS_CONFIG, useValue: { apiUrl: 'http://localhost:2024' } },
+];
+
+readonly threads = inject(LangGraphThreadsAdapter);
+```
+
+After:
+
+```ts
+import { injectThreadDirectory, provideThreadDirectory } from '@threadplane/angular';
+import { createLangGraphThreadDirectory } from '@threadplane/langgraph';
+
+providers: [
+  provideThreadDirectory({
+    createDirectory: () =>
+      createLangGraphThreadDirectory({ apiUrl: 'http://localhost:2024' }),
+  }),
+];
+
+readonly threads = injectThreadDirectory();
+```
+
+- [ ] The view keeps `threads()`, `archivedThreads()`, `projects()`, `status()`, `error()`, `refresh()`, `create()`, `getThread()` and the row commands, and adds `isLoading()`. `threads.directory` is still what `<chat-thread-sidebar [directory]>` takes.
+- [ ] Nothing is loaded until `refresh()` is called. `<chat-thread-sidebar>` calls it when it mounts.
+- [ ] `refreshOnRunEnd` and `refreshOnTransition` move to `@threadplane/angular`.
+- [ ] `getThread(id)` answers only for a listed thread unless the config supplies `getThread`. If you pass it to `injectThreadRouting({ validate })`, add one; see [Thread Routing](/docs/angular/chat/guides/thread-routing#routing-a-url-to-a-thread).
+- [ ] Projects are configured on the directory: `createLangGraphThreadDirectory({ projects: false })` turns them off.
+
+### 5. Update the testing imports
+
+| Before | After |
+|---|---|
+| `provideFakeAgent` from `@threadplane/langgraph` or `@threadplane/ag-ui` | `provideFakeAgent` from `@threadplane/angular/testing`, also re-exported by `@threadplane/chat/testing` |
+| `mockLangGraphAgent()` | `mockAgent()` from `@threadplane/chat` |
+| `runAgentConformance(label, () => agent)` | `runAgentConformance(label, () => session)`: the factory returns an `AgentSession` |
+| A hand-written fake `Agent` | `createFakeAgentSession()` from `@threadplane/core/testing`, or `mockAgent()` |
+
+- [ ] `mockAgent()` fields are written with `set`: `agent.status.set('running')` replaces a separate `isLoading` signal, and `agent.interrupts.set([{ id: 'i1', value }])` replaces `interrupt.set(...)`.
+- [ ] To script backend events through the real projection, pass `MockAgentTransport` as `createSession({ transport })` for LangGraph, or `new FakeAgent()` as `createSession({ agent })` for AG-UI.
+- [ ] `injectFakeAgentSession()` from `@threadplane/angular/testing` gives a spec the controls of the fake session behind `provideFakeAgent()`.
+
+### 6. Opt back in to what used to be default
+
+A LangGraph session makes no request and keeps no large data until asked. Add the option to `createSession()` for each behaviour your application relied on.
+
+| Option | What it restores |
+|---|---|
+| `throttle: 16` | Paces change notifications while a run streams. The legacy agent used 16 milliseconds; a session notifies on every change unless told otherwise. |
+| `historyState: true` | Keeps each checkpoint's state, so `checkpoints()`, `messageCheckpoints()` and `branchTree()` are published. Needed by the timeline, the timeline slider and the debug panel. |
+| `restoreSubagents: true` | Rebuilds child agents from the saved thread when history is loaded, so subagent cards come back after a reload. |
+| `rawMessages: true` | Publishes `langGraphMessages()`, `messageMetadata()` and `Message.extra`. |
+| `transcriptNodeNames` | Limits which root nodes' streamed messages enter the transcript. |
+| `subagentToolNames` | Names the tools that start a child agent; `['task']` when omitted. |
+| `autoLoad: true` | Reads history as soon as a session is created and publishes `loading()`. The Angular agent already calls `load()` for each thread it opens and reports it as `isThreadLoading()`, so most applications do not need this. |
+
+- [ ] `clientOptions.maxRetries` defaults to `0` on the session's own transport, and a non-zero value is an explicit choice to let the SDK retry requests.
+
+### 7. Set the AG-UI interrupt transport
+
+`interruptTransport` now defaults to `'protocol'`: a session answers only the protocol's own interrupt outcome. The legacy default was `'auto'`, which also answered a `CUSTOM on_interrupt` notice through `forwardedProps.command`.
+
+- [ ] If your backend pauses with a `CUSTOM on_interrupt` event, pass `interruptTransport: 'auto'` (or `'legacy-command'` or `'mastra-command'`) to `createSession()`. Without it the notice is shown and cannot be answered.
+
+```ts
+createSession({
+  url: 'http://localhost:8000/agent',
+  threadId: context.threadId ?? undefined,
+  interruptTransport: 'auto',
+});
+```
+
+### 8. Check the result
+
+- [ ] Search the application for `@threadplane/langgraph` and `@threadplane/ag-ui` imports. Only `createSession`, session types, thread-directory factories, transports and testing fakes should remain.
+- [ ] Search for `isLoading()`, `interrupt()`, `history()`, `events$`, `submit({` and `regenerate(` on an agent.
+- [ ] Run the journey under [Verify the user journey after upgrading](#verify-the-user-journey-after-upgrading), including a thread switch and a reload of a saved thread.
 
 ## Keep package peers aligned
 
 Read the installed package manifests and the [changelog](/docs/angular/chat/getting-started/changelog) before updating. The current Angular packages declare support for Angular 20, 21, and 22; select a supported major and compatible Node version for your application.
 
-The AG-UI adapter's move from the 0.0.x protocol packages to the 1.x line requires compatible `@ag-ui/client` and `@ag-ui/core` peers. The current package manifests require `^1.0.1`; the adapter imports validators from `@ag-ui/core/schemas`, which the older 0.0.x line does not provide. Review [installation](/docs/angular/ag-ui/getting-started/installation) and [event mapping](/docs/angular/ag-ui/reference/event-mapping), then exercise an actual message, tool result, and approval if your backend supports them.
+The AG-UI package's move from the 0.0.x protocol packages to the 1.x line requires a compatible `@ag-ui/client` peer. The current package manifest requires `^1.0.1`. Review [installation](/docs/angular/ag-ui/getting-started/installation) and [event mapping](/docs/angular/ag-ui/reference/event-mapping), then exercise an actual message, tool result, and approval if your backend supports them.
 
 ## Regenerate older A2UI surfaces
 

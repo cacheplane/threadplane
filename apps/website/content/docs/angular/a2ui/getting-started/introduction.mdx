@@ -88,9 +88,9 @@ The server is the standard `ag-ui-langgraph` mount: wrap the compiled graph in a
 
 Nothing in this file is specific to A2UI; the surfaces travel as assistant message content over the same event stream as any other reply.
 
-### Registering the AG-UI agent
+### Providing the AG-UI agent
 
-`provideAgent()` from `@threadplane/ag-ui` needs the URL of that endpoint. The example passes a factory because it resolves the URL at runtime from the host that serves the demo; an application of your own passes `url` directly.
+`provideAgent()` from `@threadplane/angular` takes a `createSession` factory, and `createSession()` from `@threadplane/ag-ui` needs the URL of that endpoint. The example wraps the config in a factory because it resolves the URL at runtime from the host that serves the demo; an application of your own passes `url` directly.
 
 <ExampleCode file="app.config.ts" title="app.config.ts" />
 

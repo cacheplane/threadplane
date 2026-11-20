@@ -18,7 +18,7 @@ import { ChatTraceComponent } from '@threadplane/chat';
 
 The Run tab shows a conversation on the left and a Timeline sidebar on the right. The agent is an aviation assistant whose mock dataset covers ten United States airports — LAX, JFK, SFO, ORD, BOS, ATL, DFW, SEA, MIA and DEN — and four airlines. There are no welcome suggestions, so type the first message yourself: ask which airlines fly out of BOS, then follow up with a different origin airport. The prompt keeps every answer to two or three sentences, so each turn is a clean unit of history.
 
-Once a turn finishes, the sidebar lists the checkpoints the adapter loaded for the current thread and counts them as "N checkpoint(s)". Each entry shows the node the run would take next, or the literal `Step N` when there is none, the checkpoint identifier underneath it, and a Replay and a Fork button.
+Once a turn finishes, the sidebar lists the checkpoints the session loaded for the current thread and counts them as "N checkpoint(s)". Each entry shows the node the run would take next, or the literal `Step N` when there is none, the checkpoint identifier underneath it, and a Replay and a Fork button.
 
 The graph behind this demo binds no tools, so its transcript is plain messages and no trace row appears in it. The section on where trace rows appear says which components put one there.
 
@@ -36,11 +36,11 @@ The compiled graph is exported as `graph`, which is the symbol `langgraph.json` 
 
 ### The agent and the chat configuration
 
-`provideAgent()` registers the agent for the whole application, and it is the only provider the chat compositions require. This example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them.
+`provideAgent()` from `@threadplane/angular` provides the agent for the whole application, and it is the only provider the chat compositions require. Its `createSession` factory returns a LangGraph session created with `historyState: true`, which makes the session keep each checkpoint's saved state and publish the list as `checkpoints()`. This example resolves its connection details at runtime from the host that serves the demo, which is why the config is itself a factory that reads them rather than hard-coding them.
 
 <ExampleCode file="app.config.ts" />
 
-Your own application does not need the factory: pass `apiUrl` and `assistantId` directly, where `assistantId` is the graph name declared in `langgraph.json`.
+Your own application does not need the outer factory: pass `apiUrl` and `assistantId` to `createSession()` directly, where `assistantId` is the graph name declared in `langgraph.json`.
 
 ### The chat surface
 
@@ -52,11 +52,11 @@ Every trace row a run produces is rendered inside this element.
 
 ### The timeline sidebar
 
-The sidebar is `<chat-timeline-slider>` under a heading, with a static note beneath it. Its Replay and Fork buttons emit `replayRequested` and `forkRequested` with the checkpoint identifier; this example binds neither, so Fork only marks the entry it was pressed on, and dispatching either back to the runtime is the host application's job.
+The sidebar is `<chat-timeline-slider>` under a heading, with a static note beneath it. Its Replay and Fork buttons emit `replayRequested` and `forkRequested` with the checkpoint identifier; this example binds neither, so Fork only marks the entry it was pressed on, and dispatching either back to the backend is the host application's job.
 
 <ExampleCode file="timeline.component.ts" region="timeline-panel" title="timeline.component.ts — the timeline sidebar" />
 
-The slider requires an `AgentWithHistory`, the sub-contract that adds a `history` signal of `AgentCheckpoint` values to `Agent`.
+The slider takes any `Agent` and reads its `checkpoints()` signal, a list of `AgentCheckpoint` values that is `undefined` until a history is loaded. Without `historyState: true` on the LangGraph session it stays `undefined` and the slider lists nothing.
 
 ### One agent, two components
 

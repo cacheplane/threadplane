@@ -8,7 +8,7 @@ An agent can return an interface rather than describe it. In this example, the m
 
 Angular is the default Framework. Its render surface can update progressively as message content and state events arrive. Select **React** for the experimental native preview, which publishes confirmed layouts and data together only after verifying the exact saved checkpoint and tool evidence. Graph-state publication does not guarantee that browser painting happens atomically.
 
-The detection and rendering are adapter-neutral. This page uses `@threadplane/langgraph`; the same registry and store work over the [AG-UI adapter](/docs/angular/ag-ui/guides/json-render), where the backend delivers data differently.
+The detection and rendering are backend-neutral. This page uses `@threadplane/langgraph`; the same registry and store work over [AG-UI](/docs/angular/ag-ui/guides/json-render), where the backend delivers data differently.
 
 ## Turn data into an application view
 
@@ -70,9 +70,9 @@ Action responses are derived from the executed receipt: an applied operation rep
 
 A malformed decision with no executable calls can be saved as an honest no-op and the conversation can continue. A real failed or malformed tool batch does not become a confirmed native turn merely because the backend retained its prior state or recorded an outcome. The React preview fails closed, keeps its prior confirmed board, and requires **New** before further submissions when saved evidence cannot be confirmed.
 
-### Registering the agent
+### Providing the agent
 
-`provideAgent()` from `@threadplane/langgraph` needs the API URL and the assistant id. The example passes a factory because it resolves both at runtime from the host that serves the demo; an application of your own passes the values directly.
+`provideAgent()` from `@threadplane/angular` takes a `createSession` factory, and `createSession()` from `@threadplane/langgraph` needs the API URL and the assistant id. The example wraps the config in a factory because it resolves both at runtime from the host that serves the demo; an application of your own passes the values directly.
 
 <ExampleCode file="app.config.ts" title="app.config.ts" />
 
@@ -97,10 +97,10 @@ The content classifier in `@threadplane/chat` inspects each assistant message as
 
 For general streaming specifications, the content goes through `@cacheplane/partial-json`, and a `ParseTreeStore` materializes a best-effort `Spec` from the parse tree on every chunk, so a signal holds a usable specification long before the JSON closes. The composition mounts that specification as `<chat-generative-ui>`, which renders it through `<render-spec>` from `@threadplane/render` using the registry you passed. The surface also receives a `loading` input, true while the agent is still streaming, which a view component can read to draw a placeholder.
 
-The data takes the other path. The LangGraph adapter surfaces a custom event named `state_update` on the agent's event stream, and the composition writes its payload straight into the render store, keys included. Because `emit_state` already emits JSON Pointer keys, a binding of `{ "$state": "/on_time/value" }` resolves the moment the event lands.
+The data takes the other path. The LangGraph session delivers a custom event named `state_update` through the agent's `onCustomEvent`, and the composition writes its payload straight into the render store, keys included. Because `emit_state` already emits JSON Pointer keys, a binding of `{ "$state": "/on_time/value" }` resolves the moment the event lands.
 
 <Callout type="info" title="Pointers, not top-level keys">
-This is the one place the LangGraph path differs from AG-UI. An AG-UI agent puts its data in graph state, and the composition maps each top-level key `k` of any adapter's `state()` to the pointer `/k`. Here the graph names the pointers itself in its custom `state_update` event. A nested value such as `/on_time/value` updates the Angular store directly, while the graph also persists that data in its owned `dashboard` field for saved-state confirmation.
+This is the one place the LangGraph path differs from AG-UI. An AG-UI agent puts its data in graph state, and the composition maps each top-level key `k` of any agent's `state()` to the pointer `/k`. Here the graph names the pointers itself in its custom `state_update` event. A nested value such as `/on_time/value` updates the Angular store directly, while the graph also persists that data in its owned `dashboard` field for saved-state confirmation.
 </Callout>
 
 ## Writing a view component

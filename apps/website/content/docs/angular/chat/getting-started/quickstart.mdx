@@ -1,5 +1,5 @@
 ---
-description: Install @threadplane/chat, register a LangGraph agent provider, and render a streaming chat surface — with a no-backend variant using mockAgent().
+description: Install @threadplane/chat, provide an agent over a LangGraph session, and render a streaming chat surface — with a no-backend variant using mockAgent().
 ---
 
 # Quick Start
@@ -22,29 +22,36 @@ Yes. Every Threadplane package is MIT-licensed for commercial and noncommercial 
 <Step title="Install the package">
 
 ```bash
-npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
 ```
 
-`@threadplane/langgraph` provides the adapter used by the provider snippet below. The LangChain packages are required peers for that adapter, and `marked` is the markdown renderer used for assistant messages.
+`@threadplane/angular` provides `provideAgent()` and `injectAgent()`, and `@threadplane/langgraph` provides the `createSession()` factory the provider snippet below hands to it. `@threadplane/core` is the session contract both share. The LangChain packages are required peers of `@threadplane/langgraph`, and `marked` is the markdown renderer used for assistant messages.
 
 </Step>
 <Step title="Configure providers">
 
 ```ts
 // app.config.ts
-import { ApplicationConfig, signal } from '@angular/core';
-import { provideAgent } from '@threadplane/langgraph';
+import { ApplicationConfig } from '@angular/core';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      assistantId: 'chat',
-      apiUrl: 'http://localhost:2024',
-      threadId: signal(null),
+      createSession: (context) =>
+        createSession({
+          assistantId: 'chat',
+          apiUrl: 'http://localhost:2024',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
     }),
   ],
 };
 ```
+
+`provideAgent()` asks `createSession` for one session per thread: once when the agent is built, and again whenever the agent switches threads. `context.threadId` is the thread to open (`null` for a new conversation) and `context.onThreadId` reports the thread the session creates on its first submit.
 
 `provideAgent()` is the only provider `<chat>` requires. There is no separate chat provider: everything `<chat>` renders is driven by its inputs.
 
@@ -54,7 +61,7 @@ export const appConfig: ApplicationConfig = {
 ```ts
 // chat-page.component.ts
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 import { ChatComponent } from '@threadplane/chat';
 
 @Component({
@@ -69,7 +76,7 @@ export class ChatPageComponent {
 }
 ```
 
-`injectAgent()` returns the singleton wired up in Step 2 — no extra provider needed here. To host several `<chat>` surfaces that share a backend URL but target different graphs, re-provide `provideAgent({...})` in a component's `providers: []` array; Angular's hierarchical DI scopes that override to the subtree.
+`injectAgent()` returns the singleton wired up in Step 2 — no extra provider needed here. To host several `<chat>` surfaces that share a backend URL but target different graphs, re-provide `provideAgent({ createSession })` in a component's `providers: []` array; Angular's hierarchical DI scopes that override to the subtree.
 
 </Step>
 </Steps>
@@ -78,13 +85,13 @@ That is it — no Tailwind setup, no PostCSS config, no global stylesheet import
 
 ## What happens when you send
 
-Ask “Plan a weekend in Portland.” The composition submits the message through the injected agent, renders the messages signal as the answer arrives, and reflects loading or failure in the controls. The composer draft remains UI state; the accepted message becomes conversation state.
+Ask “Plan a weekend in Portland.” The composition submits the message through the injected agent, renders the `messages()` signal as the answer arrives, and reflects `status()` and `error()` in the controls. The composer draft remains UI state; the accepted message becomes conversation state.
 
 No model runs because the component renders. A new run starts when you submit an intention. [Follow a conversation](/docs/angular/langgraph/concepts/conversation-turns) traces the same path through tools, generated UI, and saved history.
 
 ## Run with no backend
 
-No LangGraph server yet? Bind `<chat>` to `mockAgent()` from `@threadplane/chat`. It implements the same `Agent` contract with canned messages, so the UI renders exactly as it will against a real agent — only the responses are static.
+No LangGraph server yet? Bind `<chat>` to `mockAgent()` from `@threadplane/chat`. It builds the same `Agent` over an in-memory session with canned messages, so the UI renders exactly as it will against a real agent — only the responses are static.
 
 ```ts
 // chat-page.component.ts
@@ -117,7 +124,7 @@ export class ChatPageComponent {
 }
 ```
 
-With `mockAgent()` you can drop the `provideAgent()` call — the agent is constructed directly in the component, no DI wiring or `apiUrl` required. Swap it for `injectAgent()` once your backend is up.
+With `mockAgent()` you can drop the `provideAgent()` call — the agent is constructed directly in the component, no DI wiring or `apiUrl` required. A submit appends the user message and nothing answers it; for a reply that streams, use `provideFakeAgent()` as shown in [Try without a backend](/docs/angular/chat/getting-started/try-without-a-backend). Swap either for `injectAgent()` once your backend is up.
 
 ## What's Next
 
@@ -132,6 +139,6 @@ With `mockAgent()` you can drop the `provideAgent()` call — the agent is const
     Full primitive and composition reference.
   </Card>
   <Card title="Going to production" href="/docs/angular/chat/getting-started/installation">
-    Swap the mock for a real adapter, review the production checklist, and deploy your backend — see [Installation](/docs/angular/chat/getting-started/installation) and [Agent deployment](/docs/angular/langgraph/guides/deployment).
+    Swap the mock for a real session, review the production checklist, and deploy your backend — see [Installation](/docs/angular/chat/getting-started/installation) and [Agent deployment](/docs/angular/langgraph/guides/deployment).
   </Card>
 </CardGroup>

@@ -20,7 +20,7 @@ import { ChatRunActivityTemplateDirective, type ChatRunActivityTemplateContext }
 
 The current run is every message after the last user message, or every message when there is none. The template renders while both hold:
 
-- `agent.isLoading()` is `true`.
+- `agent.status()` is `'running'`.
 - The current run has no assistant message.
 
 It stops rendering when the first assistant message of the run arrives, at which point the per-message activity slot takes over, and when the run ends. A resumed run that continues an existing assistant message never shows it, because the current run already has an assistant message.
@@ -30,9 +30,9 @@ It stops rendering when the first assistant message of the run arrives, at which
 | Variable | Type | Description |
 |---|---|---|
 | `let-agent` (`$implicit`) | `Agent` | The agent bound to `<chat>`. |
-| `let-running="running"` | `boolean` | Whether a run is in flight. Always `true` while the template renders. |
+| `let-running="running"` | `boolean` | Whether a run is in flight (`agent.status() === 'running'`). Always `true` while the template renders. |
 | `let-hasAssistantMessage="hasAssistantMessage"` | `boolean` | Whether the current run has an assistant message. Always `false` while the template renders. |
-| `let-messages="messages"` | `Message[]` | The current run's messages, which hold no assistant message while the template renders. |
+| `let-messages="messages"` | `readonly Message[]` | The current run's messages, which hold no assistant message while the template renders. |
 
 The context object is reused while the agent and the run's messages are unchanged.
 
