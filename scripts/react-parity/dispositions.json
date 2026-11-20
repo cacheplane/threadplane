@@ -19158,6 +19158,30 @@
       "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
     },
     {
+      "id": "export:libs/angular/src/public-api.ts#withAgentOverrides",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Derives an agent with some members replaced, forwarding every other read to the original at the time of the read, because a spread of the injected Agent copies only the members present at that moment. React has no such proxy to copy: a component wraps the session's commands in its own functions. Verified with source specs and type tests."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentOverrides",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "The typed set of members withAgentOverrides accepts: each replacement has the type of the agent member it replaces. Verified with type tests."
+    },
+    {
       "id": "export:libs/angular/src/public-api.ts#injectAgent",
       "taskIds": [
         "T06",
@@ -19216,6 +19240,18 @@
       "status": "in-progress",
       "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
       "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/agent-overrides.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "withAgentOverrides: a forwarding view over the injected Agent with some members replaced, which resolves to the original's config and development-install policy. Verified with source specs and type tests."
     },
     {
       "id": "source:libs/angular/src/agent-ref.ts",

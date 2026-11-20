@@ -229,6 +229,24 @@ const configs = new WeakMap<object, object>();
 export function ɵagentConfig(agent: object): object | undefined {
   return configs.get(agent);
 }
+
+/** Per agent: registers another object for the agent's development policy. */
+const policyRegistrations = new WeakMap<object, (target: object) => void>();
+
+/**
+ * @internal Makes `derived` stand for `source` wherever an agent is looked up
+ * by identity: it resolves to the same config, and is registered for
+ * development-install collection with the same registrar and policy. Does
+ * nothing for a `source` that `createAgent` did not build.
+ */
+export function ɵadoptDerivedAgent(derived: object, source: object): void {
+  const config = configs.get(source);
+  if (config) configs.set(derived, config);
+  const register = policyRegistrations.get(source);
+  if (!register) return;
+  policyRegistrations.set(derived, register);
+  register(derived);
+}
 interface LifecycleSource {
   getSnapshot(): Members;
   subscribe(notify: () => void): () => void;
@@ -298,7 +316,10 @@ export function createAgent<TSession extends AgentSessionLike>(
   // the page's collector host, now or when one is loaded.
   const registerDevelopmentRuntime: AgentDevelopmentRuntimeRegistrar =
     inject(ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR, { optional: true }) ??
-    undefined;
+    ((agent, policy) =>
+      destroyRef.onDestroy(
+        ɵwhenAgentDevelopmentHost((host) => host.registerPolicy(agent, policy))
+      ));
   const optionalCommands = new Set([
     ...OPTIONAL_COMMANDS,
     ...(config.optionalCommands ?? []),
@@ -612,11 +633,20 @@ export function createAgent<TSession extends AgentSessionLike>(
     deleteProperty: () => false,
   }) as unknown as Agent<TSession>;
   configs.set(agent, config);
-  if (registerDevelopmentRuntime)
+  const developmentPolicy = () => {
+    const current = session();
+    const enabled = current['isDevelopmentRuntimeEnabled'];
+    return typeof enabled === 'function' && enabled.call(current) === true;
+  };
+  // Also used for an agent derived from this one, which is another object.
+  const registerPolicy = (target: object) => {
     try {
       registerDevelopmentRuntime(target, developmentPolicy);
     } catch {
       /* Optional collection never affects the agent. */
     }
+  };
+  policyRegistrations.set(agent, registerPolicy);
+  registerPolicy(agent);
   return agent;
 }

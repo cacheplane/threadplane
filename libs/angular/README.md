@@ -281,13 +281,71 @@ in an effect to redo what belongs to one session, such as handing the new
 session a client tool catalog. It does not move when a session reports the
 thread it created.
 
-A host can have each agent registered for development-install collection by
-providing a registrar, a function with the signature of the telemetry
-package's `registerDevelopmentRuntimePolicy`, under
-`ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR`. The agent is registered once; its
-policy asks the current session's `isDevelopmentRuntimeEnabled()` each time and
-is false for a session without that member. This package does not import the
-telemetry package.
+#### Development-install collection
+
+This package does not import the telemetry package and collects nothing. It is
+the seam between a session and the collector:
+
+- Each session factory call receives `context.developmentRuntime`, a factory
+  for the session's collector. The first-party sessions take it as their
+  `developmentRuntime` option, so `createSession({ ...context, ... })` passes
+  it on. A factory that picks fields from the context instead must pass
+  `developmentRuntime: context.developmentRuntime` to keep collection.
+- The collector comes from a host that registers one with
+  `ɵsetAgentDevelopmentHost`. `@threadplane/chat` does so when it is loaded, so
+  an app that provides an agent and uses the chat package needs no setup. An
+  app that never loads the chat package has no collector and reports nothing.
+  A host loaded later (a lazy route) is connected to the agents that already
+  exist.
+- Each agent is registered once with the host's policy registry (or with a
+  registrar provided under `ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR`, which wins).
+  Its policy asks the current session's `isDevelopmentRuntimeEnabled()` each
+  time and is false for a session without that member. The first-party
+  sessions answer true unless they were created with a `telemetry` option.
+
+Collection happens only in an Angular development build running in a browser,
+and never after the opt-outs the telemetry package documents.
+
+### Replacing or wrapping a member
+
+To hand a part of the app an agent whose `submit` is guarded, or whose commands
+add something to every call, derive one with `withAgentOverrides`. Do not copy
+the agent with an object spread.
+
+```ts
+import { injectAgent, withAgentOverrides } from '@threadplane/angular';
+
+export class ReviewPanel {
+  private readonly locked = signal(false);
+
+  protected readonly agent = withAgentOverrides(injectAgent(), (agent) => ({
+    submit: (input, options) =>
+      this.locked()
+        ? Promise.resolve('aborted')
+        : agent.submit(input, options),
+  }));
+}
+```
+
+The result is the same `Agent` type, so it goes wherever the agent goes, such as
+a chat component's `agent` input. It serves the overrides and forwards every
+other read to the original at the time of the read. The members it does not
+override are the same references as the original's; a thread switch on either
+one is seen through both; and a field that was not set when the agent was
+derived, such as `error`, is a signal of `undefined` that carries the value once
+it is published.
+
+A spread cannot do this. An agent serves an optional field that is not set yet
+only when it is asked for by name, and the names a backend may publish are not a
+closed list, so `{ ...agent, submit }` copies the members that exist at that
+moment and `copy.error()` then throws in a template.
+
+The second argument is an object of replacements, or a function that is called
+once with the original agent and returns one. Each replacement has the type of
+the member it replaces. `undefined` for an optional command, such as
+`regenerate`, makes the derived agent read as not having it. The original agent
+is not changed: code that holds it, including a chat component given the
+original, does not see the overrides. A derived agent can be derived from again.
 
 ### Without a backend
 

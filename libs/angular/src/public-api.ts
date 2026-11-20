@@ -10,6 +10,8 @@ export type {
   AgentSessionLike,
   AgentSnapshotOf,
 } from './agent';
+export { withAgentOverrides } from './agent-overrides';
+export type { AgentOverrides } from './agent-overrides';
 export { createAgentRef } from './agent-ref';
 export type { AgentRef } from './agent-ref';
 export { injectAgent, provideAgent, ɵisAgentRef } from './provide-agent';
