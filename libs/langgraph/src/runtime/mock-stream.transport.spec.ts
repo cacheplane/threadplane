@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { createSession } from './create-session';
 import { MockAgentTransport } from './mock-stream.transport';
 
 describe('MockAgentTransport', () => {
@@ -122,6 +123,29 @@ describe('MockAgentTransport', () => {
       await expect(t.emit([{ type: 'values', values: { foo: 1 } }])).resolves.toBeUndefined();
       await expect(t.flush()).resolves.toBeUndefined();
     });
+  });
+
+  it('backs a session created without a thread id', async () => {
+    const t = new MockAgentTransport();
+    const session = createSession({ assistantId: 'agent', transport: t });
+    expect(session.threadId).toBeUndefined();
+    const submitted = session.submit('Hello');
+    await t.flush();
+    expect(t.createdThreads).toEqual(['mock-thread-1']);
+    expect(t.streams.map((stream) => stream.threadId)).toEqual(['mock-thread-1']);
+    await t.emit([
+      { type: 'values', messages: [{ id: 'ai-1', type: 'ai', content: 'Hi' }] },
+    ]);
+    await t.close();
+    await expect(submitted).resolves.toBe('success');
+    expect(session.threadId).toBe('mock-thread-1');
+    expect(
+      session.getSnapshot().messages.map((message) => [message.role, message.content]),
+    ).toEqual([
+      ['user', 'Hello'],
+      ['assistant', 'Hi'],
+    ]);
+    await session.dispose();
   });
 
   it('emitError() causes stream to throw', async () => {

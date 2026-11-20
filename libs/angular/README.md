@@ -363,6 +363,27 @@ named on its first submit, and a thread comes back with its messages when the
 agent returns to it. `injectFakeAgentSession()` returns a signal of the current
 fake session's controls for a test to drive.
 
+Pass a ref first to provide the fake under it. The ref may be declared with a
+backend's session type, so a component that injects that ref runs unchanged:
+
+```ts
+export const TRIP = createAgentRef<LangGraphSession<Tools, Board>>('trip');
+
+providers: [provideFakeAgent(TRIP, { session: { state: { todos: [] } } })];
+// in the test
+const fake = injectFakeAgentSession(TRIP);
+fake().setState({ todos: ['Book a hotel'] });
+```
+
+The fake's `state` is typed by the ref's state and its tool calls by the
+ref's tool names. The fake is the core session and nothing more. The injected
+agent is still typed as the backend's, so a snapshot field that only the
+backend publishes, such as `subgraphs` or `history` on a LangGraph session,
+reads as `undefined`, and a command that only the backend has is not there.
+To test code that depends on those, build the real session on the backend's
+test transport instead: `createSession({ transport: new MockAgentTransport() })`
+from `@threadplane/langgraph`.
+
 ### How member names are resolved
 
 The agent reads each name from the session first, then from the snapshot. A

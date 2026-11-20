@@ -40,14 +40,35 @@ export class FakeStreamTransport implements AgentTransport {
     this.delayMs = config.delayMs ?? 60;
   }
 
+  private threads = 0;
+
+  /**
+   * Names a new thread, as a backend does, so a session created without a
+   * `threadId` works: `fake-thread-1`, `fake-thread-2`, and so on.
+   */
+  async createThread(): Promise<string> {
+    return `fake-thread-${++this.threads}`;
+  }
+
+  private replies = 0;
+  /** What each thread holds, as the wire messages a backend would save. */
+  private readonly saved = new Map<string, readonly unknown[]>();
+
   async *stream(
     _assistantId: string,
-    _threadId: string | null,
-    _payload: unknown,
+    threadId: string | null,
+    payload: unknown,
     signal: AbortSignal,
     _options?: LangGraphSubmitOptions,
   ): AsyncIterable<StreamEvent> {
-    const id = 'fake-ai-1';
+    // Each reply is a message of its own: `fake-ai-1`, `fake-ai-2`, ...
+    const id = `fake-ai-${++this.replies}`;
+    const thread = threadId ?? '';
+    const input = (payload as { messages?: unknown } | null | undefined)?.messages;
+    const history = [
+      ...(this.saved.get(thread) ?? []),
+      ...(Array.isArray(input) ? input : []),
+    ];
 
     let reasoning = '';
     for (const chunk of this.reasoningTokens) {
@@ -72,6 +93,20 @@ export class FakeStreamTransport implements AgentTransport {
       } as unknown as StreamEvent;
       if (this.delayMs > 0) await delay(this.delayMs);
     }
+    if (signal.aborted) return;
+    // A run ends with the thread's saved state, as a backend's does. Without
+    // it a session cannot tell a finished reply from a dropped connection.
+    const messages = [
+      ...history,
+      {
+        id,
+        type: 'ai',
+        content,
+        ...(reasoning ? { additional_kwargs: { reasoning_content: reasoning } } : {}),
+      },
+    ];
+    this.saved.set(thread, messages);
+    yield { type: 'values', messages, data: { messages } } as unknown as StreamEvent;
   }
 
   async createQueuedRun(

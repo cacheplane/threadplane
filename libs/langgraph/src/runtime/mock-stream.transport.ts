@@ -29,6 +29,8 @@ export class MockAgentTransport implements AgentTransport {
   readonly childStateCalls: Array<{ threadId: string; checkpointNs: string }> = [];
   readonly historyCalls: string[] = [];
   readonly streams: Array<{ threadId: string | null; payload: unknown; options?: LangGraphSubmitOptions }> = [];
+  /** The thread ids `createThread` handed out, oldest first. */
+  readonly createdThreads: string[] = [];
   readonly createdQueuedRuns: AgentQueueEntry[] = [];
   readonly cancelledRuns: Array<{ threadId: string; runId: string }> = [];
   readonly joinedRuns: Array<{ threadId: string; runId: string }> = [];
@@ -145,6 +147,18 @@ export class MockAgentTransport implements AgentTransport {
       // every awaiter rather than leaving a spec hanging.
       this.settleConsumers();
     }
+  }
+
+  /**
+   * Names a new thread, as a backend does, so a session created without a
+   * `threadId` works. The ids (`mock-thread-1`, `mock-thread-2`, ...) are
+   * recorded in `createdThreads`.
+   */
+  async createThread(signal?: AbortSignal): Promise<string> {
+    void signal;
+    const id = `mock-thread-${this.createdThreads.length + 1}`;
+    this.createdThreads.push(id);
+    return id;
   }
 
   async createQueuedRun(

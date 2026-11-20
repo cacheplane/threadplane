@@ -106,7 +106,7 @@ The package root is the whole public surface. Everything is exported from `@thre
 **Testing**
 
 - `MockAgentTransport`: a scripted transport. A spec emits event batches and the real session projects them.
-- `FakeStreamTransport` and `FakeStreamTransportConfig`: a transport that streams a canned reply, for offline demos.
+- `FakeStreamTransport` and `FakeStreamTransportConfig`: a transport that streams a canned reply, for offline demos. Each run ends with the thread's saved messages, so a submit settles `success`.
 
 Pass either as `createSession({ transport })`, with or without a `threadId`: both name a new thread on the first submit. Neither is for production use. For a session with no transport at all, use `createFakeAgentSession` from `@threadplane/core/testing`.
 
