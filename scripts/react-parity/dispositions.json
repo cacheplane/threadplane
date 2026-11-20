@@ -1297,6 +1297,15 @@
       "note": "Contributor guidance for private checkpoint authority, transport obligations and consumed-task limits; no public package migration or release claim."
     },
     {
+      "id": "asset:libs/langgraph/src/runtime/testing/responses-replay.json",
+      "taskIds": [
+        "T09"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Test-only recording of one OpenAI Responses run, read by the response identity regression spec; excluded from production imports and the package."
+    },
+    {
       "id": "asset:libs/langgraph/tsconfig.json",
       "taskIds": [
         "T02",

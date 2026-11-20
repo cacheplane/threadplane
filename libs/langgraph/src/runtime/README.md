@@ -35,6 +35,41 @@ throwing callback does not affect the run. The id is not part of the snapshot.
   request, `fork()` and `regenerate()` reject, and `reconnect()` and `resume()`
   reject as they do with nothing to join or answer.
 - There is no thread switch: a session still belongs to one thread once it has one.
+- The public test doubles implement `createThread` too: `MockAgentTransport`
+  names threads `mock-thread-1`, `mock-thread-2` and so on and records them in
+  `createdThreads`; `FakeStreamTransport` names them `fake-thread-1` and so on.
+
+## One message for one model response
+
+A message is identified by its wire id. Chunks merge by id and are never
+matched by text, by node name or by being next to each other. One provider
+breaks that rule on the wire: a streamed OpenAI Responses answer opens with a
+chunk under the provider's response id (`resp_…`, also in
+`response_metadata.id`) and continues under the placeholder id LangChain gives
+chunks that carry none (`lc_run-…`, the id of the model run). The saved state
+holds one message, under the response id. The session publishes that one
+message at every step, by two proofs:
+
+- **The run that opened the response.** A response's opening chunk is the first
+  chunk of its model run. So when a placeholder id is seen for the first time
+  in a graph task (`messageMetadata.langgraph_checkpoint_ns`) that holds exactly
+  one opened response without a run, the chunks under that placeholder belong to
+  that response and are published under its id from the first one. Nothing is
+  bound when the task has two unbound responses open at once (and no later
+  response of that task is bound either), when the placeholder was streaming
+  before the response opened, when the events name no task, when the id is not
+  a run placeholder, when either id is a message from before the run, or for
+  another provider. If final state later lists the placeholder id as a message
+  of its own, the binding is dropped.
+- **The output items.** Without the first proof, the chunks stay under the
+  placeholder id until final state arrives. They are then merged into the saved
+  message when the provider item ids the chunks carried (text, reasoning and
+  function-call items, with the call id for a function call) are exactly the
+  saved message's items and no other message claims any of them. A chunk whose
+  content is a non-empty string, or a block of another kind, carries text no
+  item owns, so that placeholder is left as its own message.
+
+The evidence lives for one physical run and is kept across a reconnect.
 
 ## Visible text
 

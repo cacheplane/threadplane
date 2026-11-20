@@ -1,7 +1,7 @@
 import { record } from './wire-message.js';
 
 type Item = {
-  readonly type: 'text' | 'function_call';
+  readonly type: 'text' | 'function_call' | 'reasoning';
   readonly id: string;
   readonly callId?: string;
 };
@@ -23,6 +23,18 @@ type Claim = {
   readonly items: readonly Item[];
   readonly references: readonly Reference[];
 };
+/** A model response the provider opened in one graph task. `run` is the
+ * placeholder id its following chunks arrived under, once that is proven. */
+type Opening = {
+  readonly id: string;
+  readonly scope: string;
+  readonly run?: string;
+  /** No placeholder id can be bound any more: the task held two unbound
+   * responses at once, so which response a new run continues is unknown. */
+  readonly closed?: true;
+  /** Final state named the placeholder id as a message of its own. */
+  readonly retired?: true;
+};
 /** Private to a physical stream projection (and its independently routed namespace).
  * Only primitive copies survive an event. Reconnection preserves this evidence;
  * a new physical projection starts without it. */
@@ -30,7 +42,13 @@ export interface ResponseIdentity {
   readonly chunks: readonly Observation[];
   readonly claims: readonly Claim[];
   readonly aliases: readonly { readonly from: string; readonly to: string }[];
+  readonly openings?: readonly Opening[];
 }
+/** LangChain gives a chunk that carries no provider id the id of the model
+ * run that produced it, under this prefix. It names a run, not a message. */
+const RUN_PLACEHOLDER = 'lc_run-';
+const itemType = (type: unknown): type is Item['type'] =>
+  type === 'text' || type === 'function_call' || type === 'reasoning';
 const nonempty = (value: unknown): value is string =>
   typeof value === 'string' && value.length > 0;
 const key = (item: Item) => JSON.stringify([item.type, item.id, item.callId]);
@@ -93,14 +111,20 @@ function observe(
     )
       observed.push(reference);
   let tainted = previous?.tainted ?? false;
+  // An empty string states nothing; any other string is text no item owns.
   if (!Array.isArray(content))
-    return { id, slots, references: observed, tainted: true };
+    return {
+      id,
+      slots,
+      references: observed,
+      tainted: tainted || content !== '',
+    };
   for (const value of content) {
     const block = record(value);
     const type = block?.['type'];
     const index = block?.['index'];
     if (
-      (type !== 'text' && type !== 'function_call') ||
+      !itemType(type) ||
       typeof index !== 'number' ||
       !Number.isInteger(index) ||
       index < 0
@@ -164,7 +188,7 @@ function canonicalItems(raw: Record<string, unknown>) {
     const type = block?.['type'];
     const id = block?.['id'];
     const callId = block?.['call_id'];
-    if ((type !== 'text' && type !== 'function_call') || !nonempty(id)) {
+    if (!itemType(type) || !nonempty(id)) {
       eligible = false;
       continue;
     }
@@ -186,22 +210,96 @@ function canonicalItems(raw: Record<string, unknown>) {
   }
   return { items, eligible };
 }
+/**
+ * Binds a model run's placeholder id to the response that run opened.
+ *
+ * A streamed OpenAI response opens with a chunk under the provider's response
+ * id (`response_metadata.id` equals the chunk id). The provider gives the
+ * chunks that follow no id, so they arrive under the placeholder id of the
+ * same model run. The opening chunk is always the first of its run, so when a
+ * placeholder id is seen for the first time in a graph task that holds exactly
+ * one response without a run, that run is the one that opened it.
+ *
+ * Nothing is bound when the task holds two unbound responses at once, when
+ * the placeholder id was seen before the response opened, or outside a named
+ * graph task. Text, adjacency and node names are never consulted.
+ */
+function observeOpening(
+  openings: readonly Opening[],
+  scope: string,
+  id: string,
+  declared: boolean,
+  known: boolean,
+  baselineIds: readonly string[]
+): readonly Opening[] {
+  if (openings.some((entry) => entry.id === id || entry.run === id))
+    return openings;
+  const unbound = openings.filter(
+    (entry) => entry.scope === scope && entry.run === undefined
+  );
+  if (declared) {
+    if (id.startsWith(RUN_PLACEHOLDER) || baselineIds.includes(id))
+      return openings;
+    if (!unbound.length) return [...openings, { id, scope }];
+    return [
+      ...openings.map((entry) =>
+        unbound.includes(entry) ? { ...entry, closed: true as const } : entry
+      ),
+      { id, scope, closed: true },
+    ];
+  }
+  if (
+    !id.startsWith(RUN_PLACEHOLDER) ||
+    known ||
+    baselineIds.includes(id) ||
+    unbound.length !== 1 ||
+    unbound[0].closed
+  )
+    return openings;
+  return openings.map((entry) =>
+    entry === unbound[0] ? { ...entry, run: id } : entry
+  );
+}
 export function observeResponseIdentity(
   previous: ResponseIdentity | undefined,
   incoming: readonly Record<string, unknown>[],
   terminal: boolean,
-  baselineIds: readonly string[]
+  baselineIds: readonly string[],
+  /** The graph task the event's messages were streamed from, when it names
+   * one (`messageMetadata.langgraph_checkpoint_ns`). */
+  scope?: string
 ) {
   const chunks = [...(previous?.chunks ?? [])];
   const claims = [...(previous?.claims ?? [])];
   const aliases = [...(previous?.aliases ?? [])];
+  let openings = previous?.openings ?? [];
   const canonical: (Claim & { eligible: boolean })[] = [];
   for (const raw of incoming) {
     const id = raw['id'];
     const metadata = record(raw['response_metadata']);
+    // A full message under a placeholder id is a message of its own, whatever
+    // produced it: the run it names was never part of another response.
+    if (
+      terminal &&
+      nonempty(id) &&
+      (raw['type'] === 'ai' || raw['type'] === 'AIMessage') &&
+      openings.some((entry) => entry.run === id && !entry.retired)
+    )
+      openings = openings.map((entry) =>
+        entry.run === id ? { ...entry, retired: true as const } : entry
+      );
     if (!nonempty(id) || metadata?.['model_provider'] !== 'openai') continue;
     if (raw['type'] === 'AIMessageChunk') {
       const index = chunks.findIndex((entry) => entry.id === id);
+      if (nonempty(scope))
+        openings = observeOpening(
+          openings,
+          scope,
+          id,
+          metadata['id'] === id,
+          index >= 0,
+          baselineIds
+        );
       const observation = observe(chunks[index], id, raw['content']);
       if (index < 0) chunks.push(observation);
       else chunks[index] = observation;
@@ -270,6 +368,7 @@ export function observeResponseIdentity(
     const owner = owners[0];
     const items = complete(owner.slots);
     if (
+      openings.some((entry) => entry.run === owner.id && !entry.retired) ||
       owner.tainted ||
       baselineIds.includes(owner.id) ||
       !items ||
@@ -283,7 +382,12 @@ export function observeResponseIdentity(
     merges.push(binding);
   }
   return {
-    evidence: { chunks, claims, aliases } satisfies ResponseIdentity,
+    evidence: {
+      chunks,
+      claims,
+      aliases,
+      ...(openings.length ? { openings } : {}),
+    } satisfies ResponseIdentity,
     merges,
   };
 }
@@ -294,6 +398,10 @@ export function responseChunkId(
   evidence: ResponseIdentity,
   id: string
 ): string {
+  const opening = evidence.openings?.find(
+    (entry) => entry.run === id && !entry.retired
+  );
+  if (opening) return opening.id;
   const alias = evidence.aliases.find((entry) => entry.from === id);
   if (!alias || evidence.claims.some((claim) => claim.id === id)) return id;
   const owner = evidence.chunks.find((entry) => entry.id === id);

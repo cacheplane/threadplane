@@ -121,11 +121,14 @@ export function projectStream(
   const incoming = Array.isArray(messages)
     ? messages.map(record).filter((m): m is Record<string, unknown> => !!m)
     : [];
+  // The graph task a streamed message came from scopes response identity.
+  const task = record(event.messageMetadata)?.['langgraph_checkpoint_ns'];
   const identity = observeResponseIdentity(
     projection.responseIdentity,
     incoming,
     terminal,
-    projection.baselineIds
+    projection.baselineIds,
+    messageEvent && typeof task === 'string' ? task : undefined
   );
   const canonicalId = (id: string) => responseChunkId(identity.evidence, id);
   const projectedId = (raw: Record<string, unknown>, id: string) =>
@@ -205,8 +208,9 @@ export function projectStream(
     if (!role) continue;
     const wireId =
       typeof raw['id'] === 'string' ? raw['id'] : `${messageIdPrefix}-${role}`;
-    // Only a proven provider item binding can replace a wire ID. Equal text,
-    // node/task metadata and adjacent chunks never establish identity.
+    // Only proven provider evidence can replace a wire ID: a matching set of
+    // output items, or a model run's placeholder id bound to the response
+    // that run opened. Equal text, node names and adjacency never do.
     const id = projectedId(raw, wireId);
     const previous = state.messages.find((m) => m.id === id);
     const baseline = projection.baselineIds.includes(id);
