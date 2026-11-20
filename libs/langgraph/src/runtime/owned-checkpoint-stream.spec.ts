@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
+import { FetchStreamTransport } from './fetch-stream.transport';
 import { createSession } from './create-session';
 import type { AgentTransport } from './transport.types';
 import { answerPending } from './testing/answer-pending';

@@ -1,14 +1,28 @@
 {
   "name": "@threadplane/angular",
-  "version": "0.0.0",
-  "private": true,
-  "description": "Private Angular binding for agent sessions: the injected Agent and observers for app-owned sessions.",
+  "version": "0.3.7",
+  "description": "Angular binding for Threadplane agent sessions: provideAgent(), injectAgent() and an Agent whose state is Angular Signals.",
+  "keywords": [
+    "angular",
+    "agent",
+    "signals",
+    "threadplane"
+  ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cacheplane/threadplane.git",
+    "directory": "libs/angular"
+  },
+  "homepage": "https://github.com/cacheplane/threadplane#readme",
+  "bugs": {
+    "url": "https://github.com/cacheplane/threadplane/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "peerDependencies": {
-    "@threadplane/content": "0.0.0",
-    "@threadplane/core": "0.0.0",
+    "@threadplane/content": "0.3.7",
+    "@threadplane/core": "0.3.7",
     "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0"
   },
   "files": [

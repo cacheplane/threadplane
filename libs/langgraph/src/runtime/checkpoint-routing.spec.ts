@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
+import { FetchStreamTransport } from './fetch-stream.transport';
 import type { LangGraphSubmitOptions } from './transport.types';
 
 afterEach(() => vi.unstubAllGlobals());

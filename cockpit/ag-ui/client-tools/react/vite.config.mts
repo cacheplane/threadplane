@@ -7,7 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@threadplane/ag-ui': fileURLToPath(new URL(
-        '../../../../fixtures/react-parity/ag-ui-candidate/entry.ts', import.meta.url,
+        '../../../../libs/ag-ui/src/public-api.ts', import.meta.url,
       )),
     },
   },

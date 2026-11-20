@@ -1,12 +1,15 @@
-# Private native AG-UI session commands
+# AG-UI session reference
 
-The test-only [candidate package proof](../../../../fixtures/react-parity/ag-ui-candidate/README.md)
-emits this actual owner, its text selector, its core message and tool-call
-selectors and its core session with complete declarations, then runs
-the existing browser and local-provider oracles against installed tarballs. It
-does not change this private API's status or the current published Angular root.
+This directory is the source of `@threadplane/ag-ui`. The package root,
+`src/public-api.ts`, exports `createSession` and the rest of the public surface
+listed in the [package README](../../README.md). Nothing here imports a UI
+framework.
 
-The private `createSession` owner accepts a literal string or
+The [package proof](../../../../fixtures/react-parity/ag-ui-package/README.md)
+packs the built package, installs the tarball and runs the browser and
+local-provider oracles against it.
+
+`createSession` accepts a literal string or
 `{ message, state? }`. `message` is required and is not trimmed. `state` is an
 optional shallow patch whose values use core `PlainValue`:
 
@@ -47,8 +50,7 @@ snapshot replaces it entirely and can remove submitted fields or change the
 document kind. After admission, stop, replacement, error and EOF retain the latest
 local state and history. There is no rollback or assertion of remote persistence.
 
-This module is private source, not a public backend export or a core
-`AgentSession` implementation. Core submission stays string-only. Framework
+Core submission stays string-only. Framework
 observers and transcript components continue to consume the same native owner;
 no second store or forwarding bag is introduced.
 
@@ -88,7 +90,7 @@ const overAgent = createSession({ agent: new MyWebSocketAgent(config) });
 ## Core messages and reasoning time
 
 `projectMessages(snapshot, previous?)` and `projectToolCalls(snapshot,
-previous?)` are private, display-only selectors from the native snapshot to core
+previous?)` are display-only selectors from the native snapshot to core
 `Message` and `ToolCall` values, so views written for core snapshots can render
 an AG-UI conversation:
 
@@ -166,9 +168,7 @@ Tool calls follow these rules:
 - Calls owned by a child-attributed record, media parts of a tool result and the
   session's own client-tool statuses are not projected.
 
-The test-only candidate package entry exports both selectors next to
-`createSession`. They are still private source: the published package root does
-not export them.
+The package root exports both selectors next to `createSession`.
 
 ## Core session
 
@@ -487,7 +487,7 @@ const pending = decisionState(useAgent(session));
 - What the buttons mean, and which value answers which interrupt, stay with
   the app. Response schemas are not interpreted.
 
-The candidate package entry exports it. The published package root does not.
+The package root exports it.
 
 ## Durability
 

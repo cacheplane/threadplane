@@ -6,7 +6,7 @@ import type {
   PlainValue,
 } from '@threadplane/core';
 import type { OwnedRootTerminal } from './session-observation.js';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 import { answersNotice, type InterruptTransport } from './interrupt-mode.js';
 
 declare const pauseId: unique symbol;

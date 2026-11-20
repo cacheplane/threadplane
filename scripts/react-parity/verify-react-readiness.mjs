@@ -17,9 +17,9 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { packLocalArtifacts } from './verify-packages.mjs';
-import { fileHashes, sha256 } from './langgraph-candidate-package.mjs';
-import { assertInstalledInputs } from './ag-ui-candidate-package.mjs';
-import { checkTypes } from './verify-langgraph-candidate.mjs';
+import { fileHashes, sha256 } from './langgraph-package.mjs';
+import { assertInstalledInputs } from './ag-ui-package.mjs';
+import { checkTypes } from './verify-langgraph-package.mjs';
 import {
   reactRenderPresentationSeeds,
   installPresentationConsumer,

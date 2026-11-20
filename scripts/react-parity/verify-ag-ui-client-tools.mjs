@@ -19,13 +19,13 @@ import {
   assertInstalledInputs,
   rootRangeOverrides,
   reviewedSources,
-} from './ag-ui-candidate-package.mjs';
+} from './ag-ui-package.mjs';
 import {
   localArtifactRecords,
   sha256,
-} from './langgraph-candidate-package.mjs';
+} from './langgraph-package.mjs';
 import { packLocalArtifacts } from './verify-packages.mjs';
-import { checkTypes } from './verify-langgraph-candidate.mjs';
+import { checkTypes } from './verify-langgraph-package.mjs';
 import { createClientToolsServer } from '../../fixtures/react-parity/native-ag-ui-client-tools/server.mjs';
 
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -103,18 +103,18 @@ export async function verifyInstalledClientTools({
   );
   const sourcePaths = [
     '.github/workflows/ci.yml',
-    'fixtures/react-parity/ag-ui-candidate/README.md',
+    'fixtures/react-parity/ag-ui-package/README.md',
     fixture + '/compiled_worker.py',
     fixture + '/server.mjs',
     fixture + '/server.spec.mjs',
     fixture + '/installed-probe.mjs',
     'scripts/react-parity/verify-ag-ui-client-tools.mjs',
-    'scripts/react-parity/verify-ag-ui-candidate.mjs',
-    'scripts/react-parity/ag-ui-candidate-package.mjs',
-    'scripts/react-parity/ag-ui-candidate-package.spec.mjs',
-    'fixtures/react-parity/ag-ui-candidate/installed-types.ts',
-    'fixtures/react-parity/ag-ui-candidate/entry.ts',
-    'fixtures/react-parity/ag-ui-candidate/backend-binding.ts',
+    'scripts/react-parity/verify-ag-ui-package.mjs',
+    'scripts/react-parity/ag-ui-package.mjs',
+    'scripts/react-parity/ag-ui-package.spec.mjs',
+    'fixtures/react-parity/ag-ui-package/installed-types.ts',
+    'libs/ag-ui/src/public-api.ts',
+    'fixtures/react-parity/ag-ui-package/backend-binding.ts',
   ];
   const sources = sourcePaths.map((path) => ({
     path: join(root, path),
@@ -279,7 +279,7 @@ export async function verifyClientTools({ root = defaultRoot } = {}) {
       'package.json',
       'package-lock.json',
       'libs/ag-ui/package.json',
-      'libs/ag-ui/src/index.ts',
+      'libs/ag-ui/src/public-api.ts',
       'libs/core/src',
       'libs/langgraph/src/runtime',
       'cockpit/ag-ui/client-tools/python',
@@ -318,7 +318,7 @@ export async function verifyClientTools({ root = defaultRoot } = {}) {
       rootRangeOverrides(root)
     );
     cpSync(
-      join(root, 'fixtures/react-parity/ag-ui-candidate/installed-types.ts'),
+      join(root, 'fixtures/react-parity/ag-ui-package/installed-types.ts'),
       join(consumer, 'installed-types.ts')
     );
     const types = {};

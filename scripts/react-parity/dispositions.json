@@ -645,16 +645,6 @@
       "status": "planned"
     },
     {
-      "id": "asset:libs/ag-ui/ng-package.json",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
       "id": "asset:libs/ag-ui/package.json",
       "taskIds": [
         "T02",
@@ -695,16 +685,6 @@
       "status": "planned"
     },
     {
-      "id": "asset:libs/ag-ui/tsconfig.lib.prod.json",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
       "id": "asset:libs/ag-ui/tsconfig.runtime-tests.json",
       "taskIds": [
         "T36"
@@ -721,16 +701,6 @@
       "treatment": "infrastructure",
       "status": "in-progress",
       "note": "Type-checks the one runtime spec that registers the core conformance suites, with the platform timer declarations core documents; every other runtime file stays checked without them by tsconfig.runtime-tests.json."
-    },
-    {
-      "id": "asset:libs/ag-ui/tsconfig.type-tests.json",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
     },
     {
       "id": "asset:libs/chat/CHANGELOG.md",
@@ -1295,16 +1265,6 @@
       "status": "planned"
     },
     {
-      "id": "asset:libs/langgraph/ng-package.json",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
       "id": "asset:libs/langgraph/package.json",
       "taskIds": [
         "T02",
@@ -1337,23 +1297,6 @@
       "note": "Contributor guidance for private checkpoint authority, transport obligations and consumed-task limits; no public package migration or release claim."
     },
     {
-      "id": "asset:libs/langgraph/test/fixtures/reloaded-subagent-thread.json",
-      "taskIds": [
-        "T10"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "asset:libs/langgraph/test/fixtures/streaming-reasoning-puzzle.json",
-      "taskIds": [
-        "T05",
-        "T36"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
       "id": "asset:libs/langgraph/tsconfig.json",
       "taskIds": [
         "T02",
@@ -1375,17 +1318,6 @@
       "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
     },
     {
-      "id": "asset:libs/langgraph/tsconfig.lib.prod.json",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "in-progress",
-      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
-    },
-    {
       "id": "asset:libs/langgraph/tsconfig.runtime-tests.json",
       "taskIds": [
         "T36"
@@ -1393,16 +1325,6 @@
       "treatment": "infrastructure",
       "status": "in-progress",
       "note": "Isolated Node runtime verification only; the wider CI/release migration remains open."
-    },
-    {
-      "id": "asset:libs/langgraph/tsconfig.type-tests.json",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
     },
     {
       "id": "asset:libs/middleware/CHANGELOG.md",
@@ -4631,55 +4553,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiAgent",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiFakeAgentConfig",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiInterruptPersistence",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiSubmitOptions",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiThreadRecord",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiReplaySource",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/ag-ui/src/public-api.ts#HttpReplayOptions",
       "taskIds": [
         "T13"
@@ -4691,23 +4564,6 @@
       "id": "export:libs/ag-ui/src/public-api.ts#httpReplay",
       "taskIds": [
         "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgentConfig",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#CustomStreamEvent",
-      "taskIds": [
-        "T12"
       ],
       "treatment": "shared",
       "status": "planned"
@@ -4729,49 +4585,9 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/ag-ui/src/public-api.ts#InterruptSessionPhase",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#InterruptSessionSnapshot",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/ag-ui/src/public-api.ts#InterruptTransport",
       "taskIds": [
         "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#ResumeAttempt",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#ThreadSnapshot",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#ToAgentOptions",
-      "taskIds": [
-        "T14"
       ],
       "treatment": "shared",
       "status": "planned"
@@ -4783,59 +4599,6 @@
       ],
       "treatment": "shared",
       "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#injectAgent",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#provideAgent",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#provideFakeAgent",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#toAgent",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#\u0275AG_UI_RUNTIME_OPERATION_REPORTER",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Existing \u0275-prefixed implementation seam; retain required behavior without promising a new public React API."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#\u0275AgUiRuntimeOperationFailureReporter",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Existing \u0275-prefixed implementation seam; retain required behavior without promising a new public React API."
     },
     {
       "id": "export:libs/chat/debug/public-api.ts#ChatDebugComponent",
@@ -7568,70 +7331,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/langgraph/src/public-api.ts#AGENT_LIFECYCLE",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentBranchTree",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentBranchTreeFork",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentBranchTreeNode",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentConfig",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentLifecycle",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentLifecycleRegistry",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentOptions",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/langgraph/src/public-api.ts#AgentQueue",
       "taskIds": [
         "T08"
@@ -7659,23 +7358,6 @@
       "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
-      "id": "export:libs/langgraph/src/public-api.ts#BagTemplate",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#CustomStreamEvent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/langgraph/src/public-api.ts#FakeStreamTransport",
       "taskIds": [
         "T08"
@@ -7691,56 +7373,6 @@
       "treatment": "shared",
       "status": "planned",
       "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#InferBag",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#Interrupt",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#LANGGRAPH_CLIENT",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#LANGGRAPH_CLIENT_OPTIONS",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#LANGGRAPH_THREADS_CONFIG",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#LangGraphAgent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#LangGraphClientOptions",
@@ -7770,22 +7402,6 @@
       "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
-      "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadsAdapter",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadsConfig",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/langgraph/src/public-api.ts#MockAgentTransport",
       "taskIds": [
         "T08"
@@ -7794,48 +7410,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/langgraph/src/public-api.ts#MockLangGraphAgent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#ResourceStatus",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/langgraph/src/public-api.ts#StreamEvent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#SubagentStreamRef",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#SubmitOptions",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#ThreadState",
       "taskIds": [
         "T08"
       ],
@@ -7860,81 +7435,12 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/langgraph/src/public-api.ts#injectAgent",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#mockLangGraphAgent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#provideAgent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#provideFakeAgent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#refreshOnRunEnd",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#refreshOnTransition",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/langgraph/src/public-api.ts#toAbsoluteApiUrl",
       "taskIds": [
         "T08"
       ],
       "treatment": "shared",
       "status": "planned",
-      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#\u0275LANGGRAPH_RUNTIME_OPERATION_REPORTER",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Existing \u0275-prefixed implementation seam; retain required behavior without promising a new public React API."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#\u0275LangGraphRuntimeOperationFailureReporter",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Existing \u0275-prefixed implementation seam; retain required behavior without promising a new public React API.",
       "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
@@ -9060,7 +8566,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/ag-ui/src/lib/bridge-citations-state.ts",
+      "id": "source:libs/ag-ui/src/runtime/bridge-citations-state.ts",
       "taskIds": [
         "T12"
       ],
@@ -9068,15 +8574,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/ag-ui/src/lib/client-tools.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/internal/apply-patch.ts",
+      "id": "source:libs/ag-ui/src/runtime/apply-patch.ts",
       "taskIds": [
         "T12"
       ],
@@ -9085,7 +8583,7 @@
       "note": "Shared six-operation path-copy helper preserves portable payload and ancestor shape, own array keys and atomic failure. Private state ownership composes it without exposing a public state or session API."
     },
     {
-      "id": "source:libs/ag-ui/src/lib/internal/copy-data.ts",
+      "id": "source:libs/ag-ui/src/runtime/copy-data.ts",
       "taskIds": [
         "T12",
         "T13"
@@ -9096,126 +8594,12 @@
       "note": "Extracted unchanged capture algorithm from transcript ownership. Preserves own enumerable plain data, undefined, sparse arrays and null prototypes, and rejects nonportable values or cycles."
     },
     {
-      "id": "source:libs/ag-ui/src/lib/internal/devtools.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Development-only devtools seam: signal instrumentation (names only) and the scripted-run substitution of source.run."
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/internal/content-parts.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Adapter-private normalization of AG-UI 1.0 tool-result content parts into neutral ToolCall fields for the legacy reducer; no public export."
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/replay.ts",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/interrupt-session.ts",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/interrupt-session.types.ts",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/package-version.ts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/provide-agent.ts",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/reducer.ts",
+      "id": "source:libs/ag-ui/src/runtime/fake-agent.ts",
       "taskIds": [
         "T12"
       ],
       "treatment": "shared",
       "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/run-state-transaction.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/runtime-operation-reporter.ts",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/testing/fake-agent.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/to-agent.ts",
-      "taskIds": [
-        "T12",
-        "T13",
-        "T14",
-        "T38"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "reason": "Preserve v0.2.0 terminal/abort/read-error distinctions and safe interrupted-run reconciliation before extraction."
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
@@ -9411,34 +8795,6 @@
       "status": "in-progress",
       "reason": "Private immutable AG-UI transcript ownership and explicit mutable request projection; excluded from public exports and legacy Angular reachability.",
       "note": "Preserves complete observed portable protocol data using the shared internal copier; selects request messages by own array indices without consulting payload methods or constructor. Excludes activity and null top-level child attribution only at request egress. Session integration, provider normalization and public parity remain separate migration work."
-    },
-    {
-      "id": "source:libs/ag-ui/src/test-setup.ts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/testing/type-assert.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/vite.config.mts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
     },
     {
       "id": "source:libs/ag-ui/vite.runtime.config.mts",
@@ -11859,31 +11215,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/langgraph/src/lib/agent-lifecycle-registry.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/agent.fn.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/agent.provider.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/agent.types.ts",
+      "id": "source:libs/langgraph/src/runtime/create-langgraph-client.ts",
       "taskIds": [
         "T08"
       ],
@@ -11892,7 +11224,7 @@
       "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
     },
     {
-      "id": "source:libs/langgraph/src/lib/client-tools.ts",
+      "id": "source:libs/langgraph/src/runtime/fake-stream.transport.ts",
       "taskIds": [
         "T08"
       ],
@@ -11900,155 +11232,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/langgraph/src/lib/client/client-options.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/client/create-langgraph-client.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/inject-agent.ts",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/branch-tree.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/devtools.ts",
-      "taskIds": [
-        "T09"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Development-only subject instrumentation for the devtools emitter; carries names only."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/extract-citations.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "note": "Private runtime citation projection now stages the aliases with owned plain metadata. Consolidation/removal at backend cutover remains planned; legacy arbitrary-extra and Date semantics are not claimed equivalent."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
-      "taskIds": [
-        "T09",
-        "T10",
-        "T11",
-        "T38"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "reason": "Carry forward terminal-event versus unexpected-close handling, dispatch uncertainty, status checks, and stale-completion suppression from v0.2.0."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/history-restore.ts",
-      "taskIds": [
-        "T10"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/subagent-tracker.ts",
-      "taskIds": [
-        "T10"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/lifecycle.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/package-version.ts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/runtime-operation-reporter.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/testing/fake-stream.transport.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/testing/provide-fake-agent.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/threads/refresh-on.ts",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/threads/threads-adapter.ts",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/transport/checkpoint-position.ts",
+      "id": "source:libs/langgraph/src/runtime/checkpoint-position.ts",
       "taskIds": [
         "T08"
       ],
@@ -12057,7 +11241,7 @@
       "note": "Shared SDK routing capture owns root checkpoint identity and string map entries without importing private session or core implementation."
     },
     {
-      "id": "source:libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+      "id": "source:libs/langgraph/src/runtime/fetch-stream.transport.ts",
       "taskIds": [
         "T08"
       ],
@@ -12066,21 +11250,12 @@
       "note": "SDK event normalization protects protocol type and namespace. Exact checkpoint reads, routed writes with returned positions, and checkpoint delivery on join retain legacy transport ownership; broader T08 migration remains open."
     },
     {
-      "id": "source:libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+      "id": "source:libs/langgraph/src/runtime/mock-stream.transport.ts",
       "taskIds": [
         "T08"
       ],
       "treatment": "shared",
       "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/transport/transport.interface.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
     },
     {
       "id": "source:libs/langgraph/src/public-api.ts",
@@ -12587,43 +11762,6 @@
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
       "note": "Private wire role/text decoding remains shared; pause extraction now belongs to the dedicated interrupt projector. Broader T09/T10 capabilities remain open."
-    },
-    {
-      "id": "source:libs/langgraph/src/test-setup.ts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/testing/type-assert.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/test/fixtures/capture-streaming-reasoning-puzzle.mjs",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/vite.config.mts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "in-progress",
-      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
     },
     {
       "id": "source:libs/langgraph/vite.runtime.config.mts",
@@ -19357,24 +18495,6 @@
       "reason": "Private test fixture: in-memory LangGraph threads/store client and the shared ThreadDirectory conformance suite run against both the runtime directory and the Angular adapter."
     },
     {
-      "id": "source:libs/langgraph/src/lib/threads/thread-entries.ts",
-      "taskIds": [
-        "T29"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Phase 1 Angular-side copy of the runtime thread metadata projection and publication helpers behind LangGraphThreadsAdapter.directory; deleted when the adapter is rebuilt on the shared directory in phase 2."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/threads/thread-projects.ts",
-      "taskIds": [
-        "T29"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Phase 1 Angular-side copy of the runtime LangGraph Store project store behind LangGraphThreadsAdapter.directory; deleted when the adapter is rebuilt on the shared directory in phase 2."
-    },
-    {
       "id": "source:libs/react/src/chat/thread-sidebar.tsx",
       "taskIds": [
         "T30"
@@ -20694,6 +19814,536 @@
       "status": "in-progress",
       "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
       "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#AgentSessionSource",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ApplicationState",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ClientToolBlocker",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ClientToolCall",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ClientToolSession",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ClientToolSessionSnapshot",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#Decision",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#DecisionRun",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#DecisionState",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#HttpSessionSource",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#InputBlock",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#InterruptMode",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#InterruptResponse",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#InterruptSession",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#NativeDecision",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#NativeResponse",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#Observation",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#OwnedInterrupt",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#PauseId",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#Projectable",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ReconcileAnswer",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ReplaySource",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ReplaySubscribable",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ResumeOptions",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SavedPause",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ScriptedRun",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#Session",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionCommonOptions",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionDevtools",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionInputBlock",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionInterrupt",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionLifecycle",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionLifecycleSource",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionOptions",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionPersistence",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionRequestType",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionSnapshot",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionTelemetryEvent",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionTelemetryProperties",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionTelemetrySink",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SubmitInput",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SubmitState",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#TextTranscriptRow",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ThreadContent",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ThreadRecord",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#Transcript",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#createSession",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#decisionState",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#interruptSession",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#projectMessages",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#projectStreamingToolCalls",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#projectTextTranscript",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#projectToolCalls",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#A2uiClientCapabilities",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#CheckpointReference",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#FakeStreamTransportConfig",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphBranchFork",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphBranchNode",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphBranchTree",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphCheckpoint",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDelegation",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDevelopmentRuntime",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDevtoolsSignal",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDevtoolsSink",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDurability",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphHistoryEntry",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphInputState",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphInterrupt",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphLifecycle",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphLifecycleSource",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphMessageMetadata",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphOnCompletion",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphOnDisconnect",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphQueuedRun",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphResumeOptions",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphRunOptions",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphRunSettings",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphScriptedRun",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphScriptedRuns",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSession",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSnapshot",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSnapshotState",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphState",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSubagent",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSubgraph",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSubmitInput",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSubmitState",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphTelemetryEvent",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphTelemetryPayload",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphTelemetrySink",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadDirectoryOptions",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadsClient",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphToolCallWithResult",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphToolProgress",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphWireInterrupt",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphWireMessage",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#OwnedCheckpointPosition",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#ProjectStore",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#RuntimeOperationFailureReporter",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#SessionOptions",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#createLangGraphProjectStore",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#createLangGraphThreadDirectory",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#createSession",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#getToolCalls",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#langGraphToolCalls",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#selectBranch",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
     }
   ]
 }

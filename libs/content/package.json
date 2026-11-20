@@ -1,9 +1,17 @@
 {
   "name": "@threadplane/content",
-  "version": "0.0.0",
-  "private": true,
-  "description": "Private content preparation with owned Markdown and JSON documents and A2UI surface accumulation.",
+  "version": "0.3.7",
+  "description": "Framework-neutral content preparation for Threadplane: incremental Markdown and JSON documents and A2UI surface accumulation.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cacheplane/threadplane.git",
+    "directory": "libs/content"
+  },
+  "homepage": "https://github.com/cacheplane/threadplane#readme",
+  "bugs": {
+    "url": "https://github.com/cacheplane/threadplane/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "dependencies": {
@@ -11,8 +19,8 @@
     "@cacheplane/partial-markdown": "0.6.1"
   },
   "peerDependencies": {
-    "@threadplane/a2ui": "^0.3.2",
-    "@threadplane/core": "0.0.0"
+    "@threadplane/a2ui": "^0.3.7",
+    "@threadplane/core": "0.3.7"
   },
   "peerDependenciesMeta": {
     "@threadplane/a2ui": { "optional": true }

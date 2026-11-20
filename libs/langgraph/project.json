@@ -2,7 +2,6 @@
   "name": "langgraph",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/langgraph/src",
-  "prefix": "lib",
   "projectType": "library",
   "tags": [
     "scope:angular-compatibility",
@@ -13,29 +12,41 @@
     "scope:examples-chat",
     "scope:library",
     "scope:website",
-    "scope:website-e2e"
+    "scope:website-e2e",
+    "layer:backend"
   ],
   "targets": {
     "build": {
-      "executor": "@nx/angular:package",
-      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "executor": "@nx/js:tsc",
+      "cache": true,
+      "outputs": ["{workspaceRoot}/dist/libs/langgraph"],
       "options": {
-        "project": "libs/langgraph/ng-package.json",
-        "tsConfig": "libs/langgraph/tsconfig.lib.json"
+        "outputPath": "dist/libs/langgraph",
+        "main": "libs/langgraph/src/public-api.ts",
+        "tsConfig": "libs/langgraph/tsconfig.lib.json",
+        "generatePackageJson": false,
+        "assets": [
+          "libs/langgraph/package.json",
+          "libs/langgraph/LICENSE.md",
+          "libs/langgraph/README.md",
+          {
+            "input": "libs/langgraph/.install-collector",
+            "glob": "development-install.*",
+            "output": ".install-collector"
+          },
+          {
+            "input": "libs/langgraph/.install-collector",
+            "glob": "*.cjs",
+            "output": "install",
+            "includeIgnoredFiles": true
+          }
+        ]
       },
-      "configurations": {
-        "production": {
-          "tsConfig": "libs/langgraph/tsconfig.lib.prod.json"
-        },
-        "development": {}
-      },
-      "defaultConfiguration": "production",
       "inputs": [
         "production",
         "^production",
         "!{projectRoot}/.install-collector/**",
-        "{workspaceRoot}/libs/telemetry/install/*",
-        "!{projectRoot}/src/lib/package-version.ts"
+        "{workspaceRoot}/libs/telemetry/install/*"
       ],
       "dependsOn": ["^build", "prepare-install"]
     },
@@ -50,27 +61,22 @@
     "test": {
       "executor": "@nx/vitest:test",
       "options": {
-        "configFile": "libs/langgraph/vite.config.mts"
-      },
-      "dependsOn": ["prepare-install"]
+        "configFile": "libs/langgraph/vite.runtime.config.mts"
+      }
     },
     "type-tests": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node ./node_modules/typescript/bin/tsc --noEmit -p libs/langgraph/tsconfig.type-tests.json"
+        "command": "node ./node_modules/typescript/bin/tsc --project libs/langgraph/tsconfig.runtime-tests.json"
       }
     },
     "runtime-quality": {
-      "executor": "@nx/vitest:test",
-      "options": {
-        "configFile": "libs/langgraph/vite.runtime.config.mts"
-      }
+      "executor": "nx:noop",
+      "dependsOn": ["test"]
     },
     "runtime-type-tests": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ./node_modules/typescript/bin/tsc --project libs/langgraph/tsconfig.runtime-tests.json"
-      }
+      "executor": "nx:noop",
+      "dependsOn": ["type-tests"]
     },
     "runtime-live": {
       "executor": "nx:run-commands",
@@ -91,10 +97,7 @@
         "{workspaceRoot}/libs/telemetry/install/assemble-package.mjs",
         "{projectRoot}/package.json"
       ],
-      "outputs": [
-        "{projectRoot}/.install-collector",
-        "{projectRoot}/src/lib/package-version.ts"
-      ],
+      "outputs": ["{projectRoot}/.install-collector"],
       "options": {
         "command": "node libs/telemetry/install/assemble-package.mjs langgraph",
         "forwardAllArgs": false

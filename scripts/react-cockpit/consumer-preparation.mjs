@@ -18,12 +18,12 @@ import { isAbsolute, join, relative } from 'node:path';
 import {
   emitCandidate,
   packCandidate,
-} from '../react-parity/langgraph-candidate-package.mjs';
+} from '../react-parity/langgraph-package.mjs';
 import {
   emitCandidate as emitAgUiCandidate,
   packCandidate as packAgUiCandidate,
   rootRangeOverrides,
-} from '../react-parity/ag-ui-candidate-package.mjs';
+} from '../react-parity/ag-ui-package.mjs';
 import { packLocalArtifacts } from '../react-parity/verify-packages.mjs';
 import {
   assertPresentationInstallation,

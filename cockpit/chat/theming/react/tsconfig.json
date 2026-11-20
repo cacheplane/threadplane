@@ -12,7 +12,7 @@
     "skipLibCheck": false,
     "paths": {
       "@threadplane/langgraph": [
-        "libs/langgraph/src/runtime/create-session.ts"
+        "libs/langgraph/src/public-api.ts"
       ],
       "@threadplane/core": ["libs/core/src/index.ts"],
       "@threadplane/core/tools": ["libs/core/src/tools/index.ts"],

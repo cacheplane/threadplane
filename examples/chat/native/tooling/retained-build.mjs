@@ -9,7 +9,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { assertInstalledArtifacts } from '../../../../scripts/react-parity/langgraph-candidate-package.mjs';
+import { assertInstalledArtifacts } from '../../../../scripts/react-parity/langgraph-package.mjs';
 import { assertTemplateDiagnostic } from '../../../../scripts/react-parity/markdown-presentation-build.mjs';
 import { mirrorDestination } from './source-policy.mjs';
 import { startProxy } from './proxy.mjs';

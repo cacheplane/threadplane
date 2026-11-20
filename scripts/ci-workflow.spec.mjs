@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { delimiter, join } from 'node:path';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
+import { foundationProjects } from './react-parity/package-policy.mjs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { deriveCockpitCaps } from './cockpit-matrix.mjs';
@@ -1026,14 +1026,17 @@ describe('CI workflow', () => {
     assert.ok(review > build && review > chromium);
     assert.doesNotMatch(readNamedStep(job, 'Verify native same-document session bindings'), /continue-on-error/);
   });
-  it('requires the real LangGraph candidate after builds and Chromium while preserving framework-only package gates', async () => {
+  it('requires the installed LangGraph package proof after the library build and Chromium while preserving framework-only package gates', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
-    const candidate = job.indexOf('node scripts/react-parity/verify-langgraph-candidate.mjs');
+    const candidate = job.indexOf('node scripts/react-parity/verify-langgraph-package.mjs');
     assert.ok(candidate > job.indexOf('Build and validate private React foundations'));
     assert.ok(candidate > job.indexOf(CHROMIUM_INSTALL));
-    const step = readNamedStep(job, 'Verify real LangGraph candidate package');
+    // The proof packs dist/libs/langgraph, so the production library build comes first.
+    assert.ok(candidate > job.indexOf('run-many -t build --projects=$LIBS --configuration=production'));
+    assert.ok(job.match(/LIBS: ([^\n]+)/)?.[1].split(',').includes('langgraph'));
+    const step = readNamedStep(job, 'Verify the installed LangGraph package');
     assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|if:/);
-    assert.match(step, /run: node scripts\/react-parity\/verify-langgraph-candidate\.mjs\s*$/);
+    assert.match(step, /run: node scripts\/react-parity\/verify-langgraph-package\.mjs\s*$/);
     assert.match(job, /node scripts\/react-parity\/verify-packages\.mjs/);
     assert.match(job, /node scripts\/react-parity\/verify-angular-package\.mjs/);
     assert.ok(job.indexOf('node --test scripts/react-parity/*.spec.mjs') < candidate);
@@ -1046,17 +1049,20 @@ describe('CI workflow', () => {
     assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|if:/);
     assert.ok(job.indexOf('Build and validate private React foundations') < job.indexOf('Verify installed owned Markdown'));
     assert.ok(job.indexOf('Install Chromium for packed runtime consumers') < job.indexOf('Verify installed owned Markdown'));
-    for (const command of ['verify-ag-ui-candidate.mjs', 'verify-langgraph-candidate.mjs', 'review-native-ag-ui.mjs --verify', 'verify-packages.mjs', 'verify-angular-package.mjs']) assert.ok(job.includes(command));
+    for (const command of ['verify-ag-ui-package.mjs', 'verify-langgraph-package.mjs', 'review-native-ag-ui.mjs --verify', 'verify-packages.mjs', 'verify-angular-package.mjs']) assert.ok(job.includes(command));
   });
 
-  it('requires the real AG-UI candidate after build, Chromium and service setup without replacing source proofs', async () => {
+  it('requires the installed AG-UI package proof after the library build, Chromium and service setup without replacing source proofs', async () => {
     const job = readJobBlock(await readFile('.github/workflows/ci.yml', 'utf8'), 'library');
-    const candidate = job.indexOf('node scripts/react-parity/verify-ag-ui-candidate.mjs');
+    const candidate = job.indexOf('node scripts/react-parity/verify-ag-ui-package.mjs');
     for (const prerequisite of ['Build and validate private React foundations', CHROMIUM_INSTALL, 'npm ci --prefix deployments/ag-ui-mastra', 'npm test --prefix deployments/ag-ui-mastra']) assert.ok(candidate > job.indexOf(prerequisite));
-    const step = readNamedStep(job, 'Verify real AG-UI candidate package');
+    // The proof packs dist/libs/ag-ui, so the production library build comes first.
+    assert.ok(candidate > job.indexOf('run-many -t build --projects=$LIBS --configuration=production'));
+    assert.ok(job.match(/LIBS: ([^\n]+)/)?.[1].split(',').includes('ag-ui'));
+    const step = readNamedStep(job, 'Verify the installed AG-UI package');
     assert.doesNotMatch(withoutLibraryLaneGuard(step), /continue-on-error|\|\|\s*true|if:/);
-    assert.match(step, /run: node scripts\/react-parity\/verify-ag-ui-candidate\.mjs\s*$/);
-    for (const command of ['review-native-ag-ui.mjs --verify', 'verify-native-mastra.ts', 'verify-langgraph-candidate.mjs', 'verify-packages.mjs', 'verify-angular-package.mjs']) assert.ok(job.includes(command));
+    assert.match(step, /run: node scripts\/react-parity\/verify-ag-ui-package\.mjs\s*$/);
+    for (const command of ['review-native-ag-ui.mjs --verify', 'verify-native-mastra.ts', 'verify-langgraph-package.mjs', 'verify-packages.mjs', 'verify-angular-package.mjs']) assert.ok(job.includes(command));
     assert.ok(job.indexOf('node --test scripts/react-parity/*.spec.mjs') < candidate);
   });
   it('requires middleware lint, tests, build, and standalone package verification in the library job', async () => {
@@ -1119,7 +1125,7 @@ describe('CI workflow', () => {
     assert.match(source, /inventory\.mjs --check/);
     assert.match(source, /node scripts\/react-parity\/verify-boundaries\.mjs/);
     const build = readNamedStep(job, 'Build and validate private React foundations');
-    assert.ok(job.includes(`FOUNDATIONS: ${privateScaffoldProjects.join(',')}`));
+    assert.ok(job.includes(`FOUNDATIONS: ${foundationProjects.join(',')}`));
     assert.match(job, /LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry/);
     assert.match(build, /run-many -t lint test type-tests build --projects=\$FOUNDATIONS/);
     const packages = readNamedStep(job, 'Verify emitted boundaries and isolated packages');
@@ -1267,7 +1273,7 @@ describe('CI workflow', () => {
     ['scripts/assemble-ag-ui-demo.spec.ts', false],
     ['library/ag-ui/src/index.ts', false],
     ['libs-extra/ag-ui/src/index.ts', false],
-    ['nested/libs/ag-ui/src/index.ts', false],
+    ['nested/libs/ag-ui/src/public-api.ts', false],
     ['examples/ag-ui-extra/angular/src/app.ts', false],
     ['nested/examples/ag-ui/angular/src/app.ts', false],
     ['scripts/demo-routes.ts.bak', false],

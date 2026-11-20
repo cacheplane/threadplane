@@ -2,7 +2,7 @@ import { canonicalInvocation } from './tool-provenance';
 import { readFileSync } from 'node:fs';
 import { ReadableStream, ReadableStreamDefaultReader } from 'node:stream/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
+import { FetchStreamTransport } from './fetch-stream.transport';
 import type { StreamEvent } from './transport.types';
 import { createSession, type SessionOptions } from './create-session';
 import type { ToolExecutionStore } from '@threadplane/core/tools';

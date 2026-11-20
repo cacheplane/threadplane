@@ -2,7 +2,6 @@
   "name": "ag-ui",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/ag-ui/src",
-  "prefix": "lib",
   "projectType": "library",
   "tags": [
     "scope:angular-compatibility",
@@ -13,29 +12,41 @@
     "scope:examples-chat",
     "scope:library",
     "scope:website",
-    "scope:website-e2e"
+    "scope:website-e2e",
+    "layer:backend"
   ],
   "targets": {
     "build": {
-      "executor": "@nx/angular:package",
-      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "executor": "@nx/js:tsc",
+      "cache": true,
+      "outputs": ["{workspaceRoot}/dist/libs/ag-ui"],
       "options": {
-        "project": "libs/ag-ui/ng-package.json",
-        "tsConfig": "libs/ag-ui/tsconfig.lib.json"
+        "outputPath": "dist/libs/ag-ui",
+        "main": "libs/ag-ui/src/public-api.ts",
+        "tsConfig": "libs/ag-ui/tsconfig.lib.json",
+        "generatePackageJson": false,
+        "assets": [
+          "libs/ag-ui/package.json",
+          "libs/ag-ui/LICENSE.md",
+          "libs/ag-ui/README.md",
+          {
+            "input": "libs/ag-ui/.install-collector",
+            "glob": "development-install.*",
+            "output": ".install-collector"
+          },
+          {
+            "input": "libs/ag-ui/.install-collector",
+            "glob": "*.cjs",
+            "output": "install",
+            "includeIgnoredFiles": true
+          }
+        ]
       },
-      "configurations": {
-        "production": {
-          "tsConfig": "libs/ag-ui/tsconfig.lib.prod.json"
-        },
-        "development": {}
-      },
-      "defaultConfiguration": "production",
       "inputs": [
         "production",
         "^production",
         "!{projectRoot}/.install-collector/**",
-        "{workspaceRoot}/libs/telemetry/install/*",
-        "!{projectRoot}/src/lib/package-version.ts"
+        "{workspaceRoot}/libs/telemetry/install/*"
       ],
       "dependsOn": ["^build", "prepare-install"]
     },
@@ -50,27 +61,22 @@
     "test": {
       "executor": "@nx/vitest:test",
       "options": {
-        "configFile": "libs/ag-ui/vite.config.mts"
-      },
-      "dependsOn": ["prepare-install"]
+        "configFile": "libs/ag-ui/vite.runtime.config.mts"
+      }
     },
     "type-tests": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node ./node_modules/typescript/bin/tsc --noEmit -p libs/ag-ui/tsconfig.type-tests.json"
+        "command": "node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-tests.json && node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-conformance.json"
       }
     },
     "runtime-quality": {
-      "executor": "@nx/vitest:test",
-      "options": {
-        "configFile": "libs/ag-ui/vite.runtime.config.mts"
-      }
+      "executor": "nx:noop",
+      "dependsOn": ["test"]
     },
     "runtime-type-tests": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-tests.json && node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-conformance.json"
-      }
+      "executor": "nx:noop",
+      "dependsOn": ["type-tests"]
     },
     "runtime-live": {
       "executor": "nx:run-commands",
@@ -87,10 +93,7 @@
         "{workspaceRoot}/libs/telemetry/install/assemble-package.mjs",
         "{projectRoot}/package.json"
       ],
-      "outputs": [
-        "{projectRoot}/.install-collector",
-        "{projectRoot}/src/lib/package-version.ts"
-      ],
+      "outputs": ["{projectRoot}/.install-collector"],
       "options": {
         "command": "node libs/telemetry/install/assemble-package.mjs ag-ui",
         "forwardAllArgs": false

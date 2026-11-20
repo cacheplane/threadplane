@@ -371,7 +371,7 @@ export async function runInstalledApplicationProof(options) {
       '../react-parity/verify-packages.mjs'
     );
     const { emitCandidate, packCandidate } = await import(
-      '../react-parity/ag-ui-candidate-package.mjs'
+      '../react-parity/ag-ui-package.mjs'
     );
     const {
       derivePresentationConsumer,
@@ -419,10 +419,10 @@ export async function runInstalledApplicationProof(options) {
       appPath + '/fixtures/installed-application.mjs',
       appPath + '/index.html',
       'scripts/react-parity/verify-packages.mjs',
-      'scripts/react-parity/ag-ui-candidate-package.mjs',
-      'scripts/react-parity/langgraph-candidate-package.mjs',
+      'scripts/react-parity/ag-ui-package.mjs',
+      'scripts/react-parity/langgraph-package.mjs',
       'scripts/react-parity/markdown-presentation-build.mjs',
-      'scripts/react-parity/verify-langgraph-candidate.mjs',
+      'scripts/react-parity/verify-langgraph-package.mjs',
       'fixtures/react-parity/native-ag-ui-a2ui/server.mjs',
       'fixtures/react-parity/native-ag-ui-a2ui/compiled_worker.py',
       'fixtures/react-parity/native-ag-ui-a2ui/model.py',
@@ -600,7 +600,7 @@ export async function runInstalledApplicationProof(options) {
       '/node_modules/@threadplane/a2ui/src/lib/parser.js',
       '/node_modules/@threadplane/content/src/a2ui/create-surfaces.js',
       '/node_modules/@threadplane/content/src/render-state/create-render-state.js',
-      '/node_modules/@threadplane/ag-ui/libs/ag-ui/src/runtime/session-publication.js',
+      '/node_modules/@threadplane/ag-ui/src/runtime/session-publication.js',
     ])
       assert.ok(
         modules.some(
@@ -611,7 +611,7 @@ export async function runInstalledApplicationProof(options) {
       );
     const candidateEntry = join(
       consumer,
-      'node_modules/@threadplane/ag-ui/fixtures/react-parity/ag-ui-candidate/entry.js'
+      'node_modules/@threadplane/ag-ui/src/public-api.js'
     );
     assert.ok(
       modules.some(

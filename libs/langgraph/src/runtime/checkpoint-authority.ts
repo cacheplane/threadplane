@@ -8,12 +8,12 @@ import type { StreamEvent } from './transport.types.js';
 import {
   captureCheckpoint,
   type OwnedCheckpointPosition,
-} from '../lib/transport/checkpoint-position.js';
+} from './checkpoint-position.js';
 export {
   captureCheckpoint,
   type OwnedCheckpointPosition,
   type CheckpointReference,
-} from '../lib/transport/checkpoint-position.js';
+} from './checkpoint-position.js';
 
 const unavailable = () =>
   new Error('Checkpoint execution authority is unavailable.');

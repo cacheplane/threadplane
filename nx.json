@@ -51,6 +51,9 @@
     "groups": {
       "publishable": {
         "projects": [
+          "core",
+          "content",
+          "angular",
           "chat",
           "langgraph",
           "ag-ui",
@@ -62,7 +65,7 @@
       }
     },
     "version": {
-      "preVersionCommand": "npx nx run-many -t build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry",
+      "preVersionCommand": "npx nx run-many -t build --projects=core,content,angular,chat,langgraph,ag-ui,render,a2ui,telemetry",
       "updateDependents": "auto",
       "preserveLocalDependencyProtocols": true,
       "preserveMatchingDependencyRanges": false,

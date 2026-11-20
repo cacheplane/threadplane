@@ -367,18 +367,18 @@ jobs:
       - name: Verify native same-document session bindings
         if: matrix.lane == 'packages'
         run: node scripts/react-parity/review-native-ag-ui.mjs --verify
-      - name: Verify real LangGraph candidate package
+      - name: Verify the installed LangGraph package
         if: matrix.lane == 'packages'
-        run: node scripts/react-parity/verify-langgraph-candidate.mjs
+        run: node scripts/react-parity/verify-langgraph-package.mjs
       - name: Prepare canonical AG-UI client-tools fixture
         if: matrix.lane == 'packages'
         run: UV_PYTHON=3.12 UV_PROJECT_ENVIRONMENT="$THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT" uv sync --frozen --no-install-project --project cockpit/ag-ui/client-tools/python
       - name: Verify canonical AG-UI client-tools fixtures
         if: matrix.lane == 'packages'
-        run: node --test scripts/react-parity/ag-ui-candidate-package.spec.mjs fixtures/react-parity/native-ag-ui-client-tools/server.spec.mjs
-      - name: Verify real AG-UI candidate package
+        run: node --test scripts/react-parity/ag-ui-package.spec.mjs fixtures/react-parity/native-ag-ui-client-tools/server.spec.mjs
+      - name: Verify the installed AG-UI package
         if: matrix.lane == 'packages'
-        run: node scripts/react-parity/verify-ag-ui-candidate.mjs
+        run: node scripts/react-parity/verify-ag-ui-package.mjs
       - name: Verify installed native AG-UI A2UI
         if: matrix.lane == 'packages'
         timeout-minutes: 15

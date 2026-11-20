@@ -29,7 +29,7 @@ if (existsSync(environment) && !existsSync(join(environment, 'pyvenv.cfg')))
     env: uv,
   });
 
-// The command ci.yml and fixtures/react-parity/ag-ui-candidate/README.md use.
+// The command ci.yml and fixtures/react-parity/ag-ui-package/README.md use.
 run(
   'uv',
   ['sync', '--frozen', '--no-install-project', '--project', pythonProject],

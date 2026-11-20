@@ -54,7 +54,7 @@ function fixture(t, framework) {
     app,
     'shared/application.ts',
     'shared/message-content.ts',
-    'node_modules/@threadplane/langgraph/runtime/create-session.js',
+    'node_modules/@threadplane/langgraph/src/runtime/create-session.js',
     'node_modules/@threadplane/content/src/markdown/create-markdown.js',
     'node_modules/@threadplane/content/src/messages/create-message-content.js',
     ...(angular
@@ -98,7 +98,7 @@ function fixture(t, framework) {
         ]
       : []),
     ...runtime.filter((p) => !p.endsWith('.js') && !p.endsWith('.mjs')),
-    'node_modules/@threadplane/langgraph/runtime/create-session.d.ts',
+    'node_modules/@threadplane/langgraph/src/runtime/create-session.d.ts',
     'node_modules/@threadplane/content/src/markdown/create-markdown.d.ts',
     'node_modules/@threadplane/content/src/messages/create-message-content.d.ts',
     ...(angular

@@ -18,7 +18,7 @@ import { buildSync } from 'esbuild';
 import {
   fileHashes,
   sha256,
-} from './langgraph-candidate-package.mjs';
+} from './langgraph-package.mjs';
 import {
   installPresentationConsumer,
   buildPresentation,
@@ -28,8 +28,8 @@ import {
   verifyPresentationBrowser,
   presentationSequence,
 } from './markdown-presentation-browser.mjs';
-import { assertInstalledInputs } from './ag-ui-candidate-package.mjs';
-import { checkTypes } from './verify-langgraph-candidate.mjs';
+import { assertInstalledInputs } from './ag-ui-package.mjs';
+import { checkTypes } from './verify-langgraph-package.mjs';
 import {
   packLocalArtifacts,
   runConsumer,
@@ -638,9 +638,9 @@ try {
         'scripts/react-parity/markdown-presentation-build.spec.mjs',
         'scripts/react-parity/markdown-presentation-browser.mjs',
         'scripts/react-parity/markdown-presentation-browser.spec.mjs',
-        'scripts/react-parity/langgraph-candidate-package.mjs',
-        'scripts/react-parity/ag-ui-candidate-package.mjs',
-        'scripts/react-parity/verify-langgraph-candidate.mjs',
+        'scripts/react-parity/langgraph-package.mjs',
+        'scripts/react-parity/ag-ui-package.mjs',
+        'scripts/react-parity/verify-langgraph-package.mjs',
         'scripts/react-parity/verify-packages.mjs',
         'scripts/react-parity/verify-boundaries.mjs',
       ],

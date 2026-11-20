@@ -7,7 +7,7 @@ import type {
   ThreadEntry,
 } from '@threadplane/core';
 import type { Client } from '@langchain/langgraph-sdk';
-import { ɵcreateProtectedLangGraphClient } from '../lib/client/create-langgraph-client.js';
+import { ɵcreateProtectedLangGraphClient } from './create-langgraph-client.js';
 import {
   createLangGraphRuntimeFetch,
   createSafeRequestError,

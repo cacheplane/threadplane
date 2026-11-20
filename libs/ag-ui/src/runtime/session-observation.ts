@@ -23,7 +23,7 @@ import { applyTextMessage } from './text-messages.js';
 import { applyToolMessage } from './tool-messages.js';
 import { applyActivityMessage } from './activity-messages.js';
 import { applyEncryptedValue } from './encrypted-messages.js';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 import { assertAttribution } from './session-attribution.js';
 import type { Decision } from './decision.js';
 import {

@@ -47,9 +47,9 @@ export async function verifyA2ui(options) {
     assertInstalledInputs,
     rootRangeOverrides,
     reviewedSources,
-  } = await import('./ag-ui-candidate-package.mjs');
+  } = await import('./ag-ui-package.mjs');
   const { localArtifactRecords, sha256 } = await import(
-    './langgraph-candidate-package.mjs'
+    './langgraph-package.mjs'
   );
   const { packLocalArtifacts } = await import('./verify-packages.mjs');
   const { buildSync } = await import('esbuild');
@@ -63,8 +63,8 @@ export async function verifyA2ui(options) {
       'package-lock.json',
       'nx.json',
       'libs/core/project.json',
-      'scripts/react-parity/ag-ui-candidate-package.mjs',
-      'scripts/react-parity/langgraph-candidate-package.mjs',
+      'scripts/react-parity/ag-ui-package.mjs',
+      'scripts/react-parity/langgraph-package.mjs',
       'scripts/react-parity/verify-packages.mjs',
       'scripts/react-parity/verify-ag-ui-a2ui.mjs',
       'scripts/react-parity/verify-ag-ui-a2ui.spec.mjs',

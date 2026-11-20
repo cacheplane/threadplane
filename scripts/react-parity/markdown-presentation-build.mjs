@@ -19,10 +19,10 @@ import {
   lockedVendorGraph,
   sha256,
   fileHashes,
-} from './langgraph-candidate-package.mjs';
+} from './langgraph-package.mjs';
 import { runConsumer } from './verify-packages.mjs';
-import { assertInstalledInputs } from './ag-ui-candidate-package.mjs';
-import { checkTypes } from './verify-langgraph-candidate.mjs';
+import { assertInstalledInputs } from './ag-ui-package.mjs';
+import { checkTypes } from './verify-langgraph-package.mjs';
 
 export function presentationConfiguration() {
   return {
