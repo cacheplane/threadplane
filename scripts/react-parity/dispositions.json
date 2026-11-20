@@ -15154,6 +15154,66 @@
       "reason": "Documents private per-submit application state ownership and local retention; no public backend, resume or persistence capability is claimed."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/thread-store.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private application-owned thread storage for the session: record shape, validation, compare-and-swap writes and reconciliation. Excluded from public exports and legacy Angular reachability."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/replay.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private replay sources and the fold that rebuilds a session thread from stored protocol events through the live pipeline. Excluded from public exports and legacy Angular reachability."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/durability.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private hydration, saving and status-check controller shared by both session owners. The owners keep every run decision; excluded from public exports and legacy Angular reachability."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/testing/memory-store.ts",
+      "taskIds": [
+        "T05",
+        "T06"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private in-memory compare-and-swap store for runtime specs. No public export or production dependency."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/session-instruments.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private observation and protection hooks of the session: raw event listeners, advertised A2UI capabilities, a telemetry sink, failure redaction and devtools reports. Excluded from public exports and legacy Angular reachability."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/protected-fetch.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private fetch boundary of a session with an operation-failure reporter; reports credential and network failures and drops failed response bodies. Excluded from public exports and legacy Angular reachability."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/submit-input.ts",
       "taskIds": [
         "T12",

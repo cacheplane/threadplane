@@ -52,6 +52,39 @@ This module is private source, not a public backend export or a core
 observers and transcript components continue to consume the same native owner;
 no second store or forwarding bag is introduced.
 
+## Where requests go
+
+`createSession` takes either an HTTP endpoint or an AG-UI client agent the
+application built:
+
+```ts
+const overHttp = createSession({ url, headers, fetch, threadId, agentId });
+const overAgent = createSession({ agent: new MyWebSocketAgent(config) });
+```
+
+- `agent` is any `AbstractAgent`, HTTP or not, as the Angular adapter's
+  `toAgent(source)` took. `url`, `headers` and `fetch` belong to the HTTP form;
+  passing both forms throws.
+- The session calls the agent's `run(input)` with each request's full input and
+  puts its events through the same pipeline an HTTP response goes through. It
+  does not call `runAgent`, and neither reads nor changes the agent's own
+  `messages` and `state`: the session's snapshot is the one authority.
+- Calling `run` is what counts as the request having been sent, so an answer
+  cancelled before `run` is released as one cancelled before fetch is.
+- Stopping, a superseding submission and a failure unsubscribe from the stream
+  and call the agent's `abortRun()`. A run that reached its own terminal event
+  is left without calling it. An agent that has an `abortController`, as
+  `HttpAgent` does, gets a new one before each run, as `runAgent` gives it.
+- `threadId` is optional. The session uses the option, else the handed agent's
+  own `threadId`, else a new identifier, and publishes it as
+  `session.threadId`. An empty string throws. `persistence` needs a thread the
+  application chose (the option, or the agent's), and `replay` is skipped
+  without one.
+- `agentId` names the agent when an endpoint serves more than one. It is passed
+  to the HTTP agent the session sends with and published as `session.agentId`;
+  a handed agent's own `agentId` is used when the option is absent. The
+  protocol does not put it on the wire.
+
 ## Core messages and reasoning time
 
 `projectMessages(snapshot, previous?)` and `projectToolCalls(snapshot,
@@ -166,6 +199,20 @@ const session = createSession({ threadId, url });
     the records from before the pause. Any other child that reuses a run id
     replaces the earlier one and starts with none of its records.
   - A child keeps its reference until its evidence, status or records change.
+  - A backend that reports children as `ACTIVITY` records with
+    `activityType: 'subagent'`, as the Angular adapter supported, gets the same
+    children. Each root record of that type is one child, read from its
+    content: `name`, `description`, `toolCallId`, `status`, `messages` (or one
+    `text`), `toolCalls` and, for a failure, `state.error`. Listed messages are
+    shown as the child's own output with role `assistant`, with `toolCallIds`
+    and `reasoning` kept. A `status` of `complete` or `error` settles the
+    child; any other is `running` in its own run and `unknown` after it. The
+    record's content stays on the child as `activity`; `started` is derived
+    from it and there is no `terminal`. These children follow the ones with
+    event evidence, in transcript order, and one from an earlier root run is
+    marked `earlier`. A child with `SUBAGENT_*` evidence under the same
+    identifier is read from that evidence. The record itself stays out of the
+    root `messages`.
 - Every publication notifies subscribers, including one that changes only
   protocol evidence such as a decision or a child.
 - `submit` takes text, or `{ message, state? }` with a state patch.
@@ -182,21 +229,29 @@ const session = createSession({ threadId, url });
   response that was not OK is why the run failed, and clears it with the next
   run.
 - A backend `RUN_ERROR` for a submission is `retryable: true` with
-  `recovery: 'retry'` when the session has `retry`. Every other error has
+  `recovery: 'retry'`. Every other error has
   `retryable: false` and `recovery: 'none'`: a stream that ended without a
   terminal, a response that was not OK and a request that got no response leave
   open whether the backend did the work.
-- The session has no `checkStatus`. AG-UI defines no read-only way to ask a backend
-  what became of a run: `HttpAgent` only posts new runs, and it does not
-  implement the client's optional `connect` hook. Reconciling an uncertain run
-  would therefore mean sending a request, which a status check must never do.
+- The session has `checkStatus` when the application configures
+  `persistence.reconcile` (see "Durability"). AG-UI itself defines no read-only
+  way to ask a backend what became of a run: `HttpAgent` only posts new runs,
+  and it does not implement the client's optional `connect` hook. So the
+  question goes to the application's own reconciler, and a session without one
+  has no `checkStatus` and never reports `recovery: 'check'`.
 - `usage` is the token usage the settled run's `RUN_FINISHED` or `RUN_ERROR`
   reported, one entry per provider and model, with only the provider and model
   labels and finite counts copied. It is absent while a run is going and after a
   run that reported none, so it never carries over from an earlier run. The
   event's own `usage` stays on `run.terminal`.
-- While a decision is waiting, `submit` resolves `error` without sending, and
-  nothing in the core fields says why. Show the decision instead, as below.
+- While a decision is waiting, `submit` resolves `error` without sending.
+  `snapshot.inputBlocked` says why, so a view can disable its input as the
+  Angular adapter's `isInputBlocked` did. It is `'decision'` from a pause until
+  its answer succeeds (including a decision this session cannot answer and one
+  left uncertain), `'client-tools'` while the client-tool ledger has a blocker,
+  and `'hydrating'`, `'checking'` or `'storage'` while the session itself
+  cannot take a command (see "Durability"). It is absent when a submission
+  would be admitted. A run in progress is not a reason: read `status`.
 
 ### State
 
@@ -234,7 +289,7 @@ await session.submit({ message: 'Go on', state: { topic: 'refunds' } });
 
 ### Retry
 
-The session created without a client-tool catalog has `retry()`. It sends the
+Every session has `retry()`. Without a client-tool catalog it sends the
 last submission again after its run failed with a backend `RUN_ERROR`,
 rebuilding the request from exactly the history and state that submission sent.
 No second user message is added, and the failed run's output and state changes
@@ -245,14 +300,20 @@ failure leaves the backend outcome open.
 
 - A failed resume is not retried. Its decision stays `uncertain`, as described
   under "Correlated native resume".
-- The client-tool owner has no `retry`: it treats every failure after a request
-  was sent as uncertain and blocks further commands, so nothing could be retried.
+- With a client-tool catalog, `retry()` sends the failed request again,
+  whichever request of the command that was: the submission itself, or the
+  continuation that carried local tool results. The request is rebuilt from what
+  the failed one sent, so results the handlers already produced travel again and
+  no handler runs a second time. The session still installs its `uncertain`
+  blocker for the failure, so an ordinary `submit` cannot bypass it; `retry`
+  lifts exactly that blocker. Any other blocker (a conflict, a cancelled call,
+  an unsupported call, the group limit) is not a retryable failure.
 - A `RUN_ERROR` settles that the run failed, not that it did nothing. Work the
   backend did before failing can be repeated.
 
 ### Regenerate
 
-A session without a client-tool catalog has `regenerate(messageId, options?)`,
+Every session has `regenerate(messageId, options?)`,
 with the same semantics as the Angular adapter's `regenerate`. It takes the `id`
 of a root assistant record, or of the reasoning record a reasoning-only answer is
 shown under, which is the `id` the snapshot's `messages` give that message. It keeps the history
@@ -267,8 +328,13 @@ added again. Regenerating an earlier answer drops every later turn.
   `retry`, from the same trimmed history.
 - It is the core session's `regenerate`, so React `Chat` offers Regenerate on
   assistant messages.
-- The client-tool session has no `regenerate`: its ledger owns the history of the
-  calls it ran, and trimming that history is not supported.
+- With a client-tool catalog, `regenerate` also forgets the client-tool calls
+  that belonged to the dropped records, with their results, so
+  `clientTools.calls` lists only the calls of the history that remains. A new
+  answer that calls a tool runs its handler again, as a new call, even when the
+  backend reuses a dropped call's identifier. It rejects while a blocker is
+  installed, except the blocker a backend `RUN_ERROR` left, which it lifts as
+  `retry` does.
 
 ### Approvals
 
@@ -316,6 +382,108 @@ const pending = decisionState(useAgent(session));
 
 The candidate package entry exports it. The published package root does not.
 
+## Durability
+
+A session can restore its thread when it is created and keep it saved as it
+changes, as the Angular adapter did with `persistence`, `replay` and `ready`:
+
+```ts
+const session = createSession({
+  threadId,
+  url,
+  replay: httpReplay({ url: (id) => `/api/threads/${id}/events` }),
+  persistence: { namespace: 'my-app', store, reconcile },
+});
+await session.ready;
+```
+
+- `ready` resolves once the thread is restored, and at once for a session with
+  neither option. Until then `snapshot.inputBlocked` is `'hydrating'`, and
+  `submit`, `resume`, `retry` and `regenerate` wait for it before they run. It
+  rejects only when the stored thread could not be read; a failed replay does
+  not reject it.
+- `replay` is `(threadId, signal) => events`: a promise of an array, or
+  anything with an observable's `subscribe`. Replay wins whenever it returns at
+  least one event, and `persistence` is then not read. An empty result, a
+  failure, or events that cannot be folded fall back to `persistence`, or to
+  the thread the session was created with. `signal` aborts on `dispose`.
+  `httpReplay({ url, fetch?, headers? })` covers `GET url(threadId)` answering
+  `{ events }`, with a `404` read as no events.
+- Each replayed run goes through the pipeline a live response goes through, so
+  retired shapes and chunk events are read as they are live, and is applied the
+  way a live event is. A run stops at its terminal event. A run with no
+  terminal is settled `interrupted` and the thread is left idle. A run after a
+  paused one is that pause's answer. User messages a `RUN_STARTED.input`
+  carries are added. Reasoning durations come from the events' `timestamp`s and
+  are absent without them. A paused last run restores as a pending interrupt
+  that `resume` answers.
+- `persistence` is `{ namespace, store, reconcile? }`. The store has
+  `load(key)` and `compareAndSwap(key, expectedRevision, next)`. A record is
+  plain JSON: `{ version: 1, namespace, threadId, revision, messages, state?,
+subagents?, pause? }`, where `pause` holds the pending interrupts, the
+  command profile when one applies, and the `attempt` when an answer was sent.
+  A pause this session cannot answer is not saved.
+- The thread is saved after every command settles, before an answer is sent,
+  and when the answering run reports `RUN_STARTED`. The save before sending is
+  awaited: an answer that could not be saved is not sent, and its claim is
+  released.
+- Writes use the revision. A write that loses its compare-and-swap is not
+  retried: another writer owns the thread. That, and a store that fails, put
+  the session in `inputBlocked: 'storage'` with an error whose message is the
+  storage copy. `submit` then resolves `error` and the other commands reject
+  until `reconcileInterrupt` succeeds.
+- A pause restored without an answer is `ready`. A pause restored with its
+  answer is `uncertain`, because the record cannot say how that run ended:
+  `resume` rejects and `submit` is refused. Only reconciliation continues.
+- The format is this runtime's own. Records the Angular adapter wrote are not
+  read.
+
+### Reconciliation
+
+`persistence.reconcile(record)` asks the application's backend what became of
+the saved thread and answers `{ status: 'unknown' }` or a status with the
+thread as it now stands:
+
+- `pending`: the pause still waits and no answer arrived. `pause` has no
+  `attempt`.
+- `acknowledged`: the answer arrived and its run started; how it ended is not
+  known. `pause` keeps its `attempt`.
+- `completed`: the answer's run ended. `pause` is absent, or is a new pause
+  from another run.
+
+An answer that does not fit its status is rejected and nothing is written.
+
+- `session.reconcileInterrupt()` is present with `persistence`. It adopts
+  whatever the reconciler reports, including `acknowledged`, clears a storage
+  hold, and rejects after disposal, while a run or another check is going,
+  without a reconciler, and when the backend does not know.
+- `session.checkStatus()` is present with a reconciler, and is the core
+  contract's command. An answer that was sent and not proven taken publishes
+  `error.recovery: 'check'`, and the session asks once on its own. It settles
+  only on `completed` or `pending`; `acknowledged`, `unknown` and a reconciler
+  that throws leave the error in place so the check can be offered again. It
+  never sends the answer again. An ordinary failed submission is never checked.
+- While a check runs `inputBlocked` is `'checking'`, `submit` resolves `error`
+  and the other commands reject.
+
+### Interrupt session
+
+`interruptSession(snapshot)` reads the full interrupt batch and its request
+ownership, as the Angular adapter's `interruptSession` did:
+`{ phase, id?, interrupts, runId?, command?, attempt? }`.
+
+- `phase` is `none`, `collecting` (the pausing run has not settled), `pending`,
+  `resuming`, `acknowledged`, `uncertain`, `recovery-required` or
+  `unsupported`. Claiming and sending are one step in a session, so there is no
+  `claimed`.
+- `acknowledged` and `recovery-required` need a durable session: only it
+  records that the answering run reported `RUN_STARTED`. Elsewhere that event
+  is not taken as proof of anything, and a sent answer that fails is
+  `uncertain`.
+- `id` changes with every new pause, as the legacy `generation` did. `attempt`
+  is the answer that was claimed: its run, responses and command.
+- The same decision in the same phase returns the same reference.
+
 ## Custom events
 
 `session.onCustomEvent(listener)` delivers each `CUSTOM` event except the
@@ -332,6 +500,78 @@ that disposes the session does not stop the rest of that one delivery.
 The method is optional on the `Session` type so hand-written sessions need not
 supply it; the factory always does.
 
+## Raw events
+
+`session.onRawEvent(listener)` delivers every AG-UI protocol event the session
+applied to its snapshot, in arrival order, for a host that folds the full
+stream into a view of its own. It is the Angular adapter's `rawEvents$` as a
+listener, so the runtime needs no observable library:
+
+```ts
+const release = session.onRawEvent((event) => myView.apply(event));
+```
+
+- Each event is delivered after the snapshot shows it, and is the event the
+  pipeline produced: retired shapes translated and chunk events expanded.
+- Events the session ignores are not delivered: those of a superseded or
+  stopped run, and anything a response sends after its run's terminal event.
+- A thread restored from `replay` delivers every replayed event, in order, once
+  the snapshot shows the whole replay; register before awaiting `ready` to see
+  them. A thread restored from `persistence` restores a saved snapshot, so
+  nothing is delivered for it.
+- Nothing is retained for a later listener. A throwing listener affects neither
+  the run nor other listeners. Disposal releases every listener, and a later
+  registration is inert. The returned release is idempotent.
+
+## Capabilities, telemetry, protection and devtools
+
+```ts
+const session = createSession({
+  url,
+  a2uiClientCapabilities: { supportedCatalogIds: ['basic'] },
+  telemetry: (payload) => collector.capture(payload),
+  reportOperationFailure: (code) => cockpit.failed(code),
+  devtools: { report, takeScriptedRun },
+});
+```
+
+- `a2uiClientCapabilities` advertises A2UI catalog support to the agent. Every
+  request's state carries it under `a2ui_client_capabilities`, including after
+  a server state snapshot replaced the state. It is not part of the session's
+  own state: `snapshot.state` and a state schema never see it. A state that is
+  not a record is sent as it is, without the key.
+- `telemetry` receives `{ event, properties }` for
+  `tplane:runtime_instance_created` once, and for each request sent
+  `tplane:runtime_request_created` (with `requestType`: `submit`, `resume`,
+  `retry`, `regenerate` or `client-tool-continuation`), `tplane:stream_started`
+  and then `tplane:stream_ended` or `tplane:stream_errored`, with `durationMs`
+  and for an error an `errorClass`. `properties` always has
+  `transport: 'ag-ui'` and `surface: 'session'`. A sink may be asynchronous and
+  may throw; neither affects the session. Absent or `false` reports nothing:
+  this runtime has no automatic development collection of its own, so a host
+  that wants one passes its sink.
+- `reportOperationFailure(code)` is told `unauthorized` for a 401 or 403 and
+  `network_blocked` for a request that got no response. A request the session
+  itself cancelled is not reported, and a reporter that throws changes
+  nothing. A session with a reporter also protects what a failure shows: a
+  backend `RUN_ERROR` keeps its type and loses its text, code and payload, a
+  failed response's body is dropped and its status is not published, and
+  `snapshot.error` is a `server` error with one fixed message. That holds for
+  `snapshot.run.terminal`, for `onRawEvent` and for a replayed thread.
+  `retryable` and `recovery` are unchanged, so a backend `RUN_ERROR` can still
+  be retried.
+- `devtools.report(cause, changed)` is called after each publication that
+  changed a listed snapshot field (`messages`, `status`, `error`, `toolCalls`,
+  `state`, `interrupts`, `subagents`, `plan`, `usage`, `decision`,
+  `inputBlocked`, `clientTools`) with the names of those fields and never
+  their values. `cause` is the protocol event's type, or `run:start`,
+  `run:end`, `history` (a restored or reconciled thread) or `reset`.
+- `devtools.takeScriptedRun()` is asked before each request. A run it returns,
+  `{ events }`, is served in place of the network through the same pipeline;
+  its `RUN_STARTED` and `RUN_FINISHED` take the request's own thread and run
+  identifiers. Returning nothing sends the request as usual.
+- Hooks that throw are ignored.
+
 ## Interruption evidence
 
 Both `createSession` and standalone `createRun` default to
@@ -343,7 +583,8 @@ custom notices and unrelated custom events do not become root notices.
 
 An explicit `interruptMode: 'legacy-observation'` preserves the legacy convention:
 the root custom notice occupies both evidence fields, selects `paused` and closes
-the response. This option provides observation only, not legacy resume support.
+the response. This option provides observation only; answering a notice is
+`interruptTransport`'s job (see "Interrupt resume profiles").
 Neither mode parses JSON strings, executes response schemas or guesses providers.
 `RUN_FINISHED.outcome` maps `success` (or no outcome) to `success`, a native
 `interrupt` batch to `paused` and `cancelled` to `aborted`, matching the public
@@ -355,6 +596,60 @@ owner, selecting local `aborted` while retaining the accepted native terminal.
 A native notice followed only by EOF selects `interrupted`; stopping at the
 notice selects `aborted`, with no invented native terminal. New runs reset these
 run-local fields while retaining history and shared state.
+
+## Interrupt resume profiles
+
+`interruptTransport` selects how a session answers a pause, with the values the
+Angular adapter's option had:
+
+```ts
+const session = createSession({ threadId, url, interruptTransport: 'auto' });
+```
+
+- Absent or `'protocol'`: only the protocol's own interrupt outcome is answered,
+  with top-level `resume` entries. A `CUSTOM on_interrupt` notice installs a
+  decision this session cannot answer, as described below.
+- `'auto'`: the protocol's outcome is answered natively and wins over a notice
+  in the same run. A notice with no such outcome is answered through
+  `forwardedProps.command`: in the Mastra shape when the notice's value names a
+  `toolCallId`, and as `{ command: { resume } }` otherwise.
+- `'legacy-command'`: every pause, a notice or the protocol's outcome, is
+  answered as `forwardedProps: { command: { resume } }`.
+- `'mastra-command'`: every pause is answered as
+  `forwardedProps: { command: { resume, interruptEvent: { toolCallId, runId } } }`.
+  `toolCallId` comes from the notice, and `runId` from the notice or else the
+  run that paused. `resume` rejects when the notice names no `toolCallId`.
+
+A notice the session can answer is one entry in `snapshot.interrupts`:
+`{ id, reason: 'on_interrupt', value, toolCallId? }`. `value` is what the notice
+carried, with JSON text read as its data, and `toolCallId` is set when the value
+names one. The pause is answered with the same `resume` command, and the
+response's `value` becomes the command's `resume`:
+
+```ts
+const [interrupt] = session.getSnapshot().interrupts ?? [];
+await session.resume([
+  { interruptId: interrupt.id, status: 'resolved', value: { approved: true } },
+]);
+```
+
+- The request carries the command in `forwardedProps` and no top-level `resume`.
+- A command answers exactly one interrupt with a resolved response that has a
+  value. `resume` rejects, sending nothing, for a cancelled response, a missing
+  value, and a protocol batch of several interrupts under a command profile.
+- A run that sends a notice and then finishes in the ordinary way settles
+  `paused`, and the pause stays until its answer's run succeeds. Without a
+  profile that answers notices the same finish settles `success` and clears
+  the notice, as before.
+- A repeated notice in one run updates the same pause. A notice in the
+  answering run starts a new pause with a new `id`.
+- With `interruptMode: 'legacy-observation'` the notice still closes the
+  response; a profile that answers notices makes that pause answerable too.
+- Sending, failure and uncertainty follow "Correlated native resume": a claim
+  cancelled before fetch is released, and a sent answer whose run ends without
+  proof stays `uncertain`.
+- With a client-tool catalog the answer travels with the unresolved calls
+  observed at the pause, as for a native pause.
 
 ## Correlated native resume
 
@@ -401,6 +696,13 @@ captured once before queueing; nested data is copied and frozen without freezing
 the caller. Extra runtime getters are ignored. Response schemas are opaque; this
 owner neither validates business answers nor guesses defaults or aliases.
 
+`resume(responses, { pause })` also takes the `id` of the pause a control was
+rendered for, from `decisionState(snapshot)` or `interruptSession(snapshot)`.
+It then rejects, sending nothing, unless that pause is the one pending, so a
+control left over from an earlier pause cannot answer a later one whose
+interrupts reuse the same identifiers. This is the Angular adapter's
+`interruptGeneration` guard. Without `pause` the pending pause is answered.
+
 Eligibility is checked at invocation and admission. The pending decision must be
 the current unclaimed native generation, the current run must be locally settled,
 and every supplied expiry must parse to a time strictly in the future. An
@@ -429,7 +731,8 @@ session reconstruction or persistence/recovery guarantee is provided.
 Native success clears the decision at local settlement, even if a terminal
 listener selected local `aborted`. A new native pause is a fresh generation even
 when backend interrupt IDs repeat; old finalizers cannot clear that generation.
-Legacy observation has no resume support. Captured Strands replay establishes
+Legacy observation has no resume support unless `interruptTransport` selects a
+profile that answers notices. Captured Strands replay establishes
 native response wire shape with synthetic completion only. Captured Mastra and
 translated Microsoft evidence do not establish provider resume interoperability.
 

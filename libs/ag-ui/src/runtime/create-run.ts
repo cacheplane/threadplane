@@ -1,9 +1,4 @@
-import {
-  EventType,
-  type BaseEvent,
-  type HttpAgentConfig,
-  type RunAgentInput,
-} from '@ag-ui/client';
+import { EventType, type BaseEvent, type RunAgentInput } from '@ag-ui/client';
 import type { CompleteOutcome } from '@threadplane/core';
 import {
   isLegacyInterruptTerminal,
@@ -12,6 +7,7 @@ import {
 import {
   createHttpRequest,
   type HttpRequestHandle,
+  type RequestSource,
 } from './create-http-request.js';
 
 type RunOutcome =
@@ -41,6 +37,14 @@ export interface RunHandle {
   done: Promise<RunResult>;
 }
 
+/**
+ * What a `RUN_FINISHED` outcome settles a run as. An outcome this runtime does
+ * not know settles `error`.
+ */
+export function finishedOutcome(outcome: unknown): CompleteOutcome {
+  return finishedResult(outcome).outcome;
+}
+
 function finishedResult(outcome: unknown): RunOutcome {
   if (outcome == null) return { outcome: 'success' };
   if (typeof outcome === 'object' && 'type' in outcome) {
@@ -63,7 +67,7 @@ function finishedResult(outcome: unknown): RunOutcome {
 
 /** Owns one domain result; physical HTTP completion alone is not success. */
 export function createRun(
-  config: Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'> & {
+  config: RequestSource & {
     readonly interruptMode?: InterruptMode;
   }
 ) {
@@ -84,18 +88,22 @@ export function createRun(
       let fetchInvoked = false;
       let admitted = false;
       let physical: HttpRequestHandle | undefined;
-      const cleanup = () => {
+      /** `ended`: the run's own terminal event arrived, so nothing is cancelled. */
+      const cleanup = (ended = false) => {
         try {
-          physical?.abort();
+          if (ended) physical?.close();
+          else physical?.abort();
         } catch {
           // Teardown cannot replace the first result or leave done pending.
         }
       };
-      const settle = (result: RunOutcome) => {
+      let endedByTerminal = false;
+      const settle = (result: RunOutcome, ended = false) => {
         if (closed) return;
         closed = true;
+        endedByTerminal = ended;
         signal?.removeEventListener('abort', abort);
-        cleanup();
+        cleanup(ended);
         resolve({ ...result, fetchInvoked });
       };
       const abort = () => settle({ outcome: 'aborted' });
@@ -154,7 +162,7 @@ export function createRun(
               return;
             }
             // Evidence is captured before projection; reentrant abort still wins.
-            if (candidate) settle(candidate);
+            if (candidate) settle(candidate, true);
           },
           undefined,
           () => {
@@ -169,7 +177,7 @@ export function createRun(
           }
         );
         // Synchronous SDK delivery may have settled before start returned.
-        if (closed) cleanup();
+        if (closed) cleanup(endedByTerminal);
         void physical.done
           .then((result) => {
             if (result.status === 'failed')

@@ -14,6 +14,7 @@ import type { OwnedInterrupt } from './decision.js';
 import { NO_STATE, ownState } from './state.js';
 import { projectMessages, projectToolCalls } from './message-projection.js';
 import { failedWithRunError, type Observation } from './session-observation.js';
+import { PROTECTED_COPY } from './session-instruments.js';
 
 type Tools = Record<string, ToolContract>;
 /**
@@ -45,7 +46,29 @@ export type SessionSnapshot<TState = unknown> = Omit<
      * document passes, and always absent without a schema.
      */
     readonly stateIssues?: readonly string[];
+    /**
+     * Why `submit` is refused right now, for a view that disables its input.
+     * Absent when a submission would be admitted. A run in progress is not a
+     * reason here: read `status` for that.
+     */
+    readonly inputBlocked?: InputBlock;
   };
+
+/**
+ * Why a session refuses `submit`:
+ *
+ * - `hydrating`: the saved thread is still loading; commands wait for it.
+ * - `checking`: a status check is asking the backend what became of a run.
+ * - `storage`: the thread could not be loaded or saved; reconcile first.
+ * - `decision`: a decision is waiting, being answered, or left uncertain.
+ * - `client-tools`: the client-tool ledger has a blocker installed.
+ */
+export type InputBlock =
+  | 'hydrating'
+  | 'checking'
+  | 'storage'
+  | 'decision'
+  | 'client-tools';
 
 /** A pending interrupt: the core interrupt, with the protocol's own fields. */
 export type SessionInterrupt = AgentInterrupt & OwnedInterrupt;
@@ -98,6 +121,16 @@ export const INTERRUPTED_COPY = Object.freeze({
   detail: 'Trying again could repeat it.',
 });
 const FAILED = 'The agent request failed.';
+/** Shown when the saved thread could not be read or written. */
+export const STORAGE_COPY =
+  'The saved conversation could not be read or written.';
+const STORAGE_ERROR: AgentError = Object.freeze({
+  kind: 'server',
+  message: STORAGE_COPY,
+  retryable: false,
+  recovery: 'none',
+  detail: 'Reconcile the thread before sending another request.',
+});
 /** The same wording the LangGraph runtime uses for a rejected credential. */
 export const AUTH_COPY = 'Authentication failed. Check your credentials.';
 
@@ -111,8 +144,12 @@ export const AUTH_COPY = 'Authentication failed. Check your credentials.';
 function failure(
   native: Observation,
   canRetry: boolean,
+  canCheck: boolean,
+  protect: boolean,
   previous?: AgentError
 ): AgentError {
+  if (native.hold === 'storage')
+    return previous?.message === STORAGE_COPY ? previous : STORAGE_ERROR;
   const terminal = native.run?.terminal;
   const reported =
     terminal?.type === 'RUN_ERROR' && 'message' in terminal
@@ -122,25 +159,39 @@ function failure(
     reported === undefined && native.run?.outcome === 'interrupted';
   const status =
     reported === undefined ? native.run?.failure?.status : undefined;
-  const auth = status === 401 || status === 403;
+  // A protected session shows one message for whatever a server described.
+  const auth = !protect && (status === 401 || status === 403);
   const kind = interrupted ? 'interrupted' : auth ? 'auth' : 'server';
   const message = interrupted
     ? INTERRUPTED_COPY.message
     : auth
     ? AUTH_COPY
+    : protect
+    ? PROTECTED_COPY
     : reported || FAILED;
   const detail = interrupted ? INTERRUPTED_COPY.detail : undefined;
   // Only the backend's own RUN_ERROR settles what happened. Any other failure
   // leaves open whether the request did its work, so sending it again could
-  // repeat it, and the native owner has no status check to find out.
+  // repeat it.
   const retryable = canRetry && failedWithRunError(native);
+  // An answer that was sent and not proven taken can be asked about, when the
+  // application configured a reconciler to ask.
+  const recovery = retryable
+    ? 'retry'
+    : canCheck &&
+      native.decision?.kind === 'native' &&
+      native.decision.attempt &&
+      native.run?.outcome !== undefined
+    ? 'check'
+    : 'none';
   if (
     previous &&
     previous.kind === kind &&
     previous.message === message &&
     previous.detail === detail &&
     previous.status === status &&
-    previous.retryable === retryable
+    previous.retryable === retryable &&
+    previous.recovery === recovery
   )
     return previous;
   return Object.freeze({
@@ -148,7 +199,7 @@ function failure(
     message,
     ...(status !== undefined && { status }),
     retryable,
-    recovery: retryable ? 'retry' : 'none',
+    recovery,
     ...(detail !== undefined && { detail }),
   });
 }
@@ -200,6 +251,8 @@ function usage(native: Observation): AgentUsage | undefined {
 function project(
   native: Observation,
   canRetry: boolean,
+  canCheck: boolean,
+  protect: boolean,
   view: StateView,
   previous?: SessionSnapshot
 ): SessionSnapshot {
@@ -207,7 +260,7 @@ function project(
   const toolCalls = projectToolCalls(native, previous?.toolCalls);
   const error =
     native.status === 'error'
-      ? failure(native, canRetry, previous?.error)
+      ? failure(native, canRetry, canCheck, protect, previous?.error)
       : undefined;
   const used = usage(native);
   const { state: _document, subagents: _children, ...evidence } = native;
@@ -216,11 +269,19 @@ function project(
     decision?.kind === 'native' && !decision.attempt
       ? decision.interrupts
       : undefined;
+  const blocked: InputBlock | undefined =
+    native.hold ??
+    (decision
+      ? 'decision'
+      : (native as { clientTools?: { blocker?: unknown } }).clientTools?.blocker
+      ? 'client-tools'
+      : undefined);
   return Object.freeze({
     ...evidence,
     messages,
     toolCalls,
     subagents: projectSubagents(native, previous?.subagents),
+    ...(blocked && { inputBlocked: blocked }),
     ...(interrupts && { interrupts }),
     ...(error && { error }),
     ...(used && { usage: used }),
@@ -242,7 +303,9 @@ function project(
  */
 export function createPresenter(
   declaration: StateDeclaration | undefined,
-  canRetry: boolean
+  canRetry: boolean | ((observation: Observation) => boolean),
+  canCheck = false,
+  protect = false
 ): (observation: Observation) => SessionSnapshot {
   const readView = stateReader(declaration);
   let seen: Observation | undefined;
@@ -251,7 +314,9 @@ export function createPresenter(
     if (observation !== seen || !current) {
       current = project(
         observation,
-        canRetry,
+        typeof canRetry === 'function' ? canRetry(observation) : canRetry,
+        canCheck,
+        protect,
         readView(observation.state),
         current
       );

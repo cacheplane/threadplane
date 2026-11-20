@@ -7,6 +7,7 @@ import type {
 } from '@threadplane/core';
 import type { OwnedRootTerminal } from './session-observation.js';
 import { copyData } from '../lib/internal/copy-data.js';
+import { answersNotice, type InterruptTransport } from './interrupt-mode.js';
 
 declare const pauseId: unique symbol;
 export type PauseId = string & { readonly [pauseId]: true };
@@ -34,15 +35,41 @@ export type NativeResponse =
       readonly payload?: never;
       readonly metadata?: Readonly<Record<string, PlainValue>>;
     };
-export type OwnedInterrupt = DeepReadonly<Interrupt>;
+export type OwnedInterrupt = DeepReadonly<Interrupt> & {
+  /** What a `CUSTOM on_interrupt` notice carried, read as JSON when it is. */
+  readonly value?: PlainValue;
+};
+/** What a request's `forwardedProps` carries for a command answer. */
+export type CommandProps = {
+  readonly command: {
+    readonly resume: PlainValue;
+    readonly interruptEvent?: {
+      readonly toolCallId: string;
+      readonly runId?: string;
+    };
+  };
+};
 export type NativeDecision = {
   readonly kind: 'native';
   readonly id: PauseId;
   readonly sourceRunId: string;
   readonly interrupts: readonly OwnedInterrupt[];
+  /**
+   * Set on a pause that is answered through `forwardedProps.command` and not
+   * through the protocol's `resume`: the profile that decided so, and the
+   * notice's value when a `CUSTOM on_interrupt` notice announced the pause.
+   */
+  readonly command?: {
+    readonly transport: Exclude<InterruptTransport, 'protocol'>;
+    readonly notice?: PlainValue;
+  };
   readonly attempt?: {
     readonly runId: string;
     readonly responses: readonly NativeResponse[];
+    /** The command a command answer sends in place of `resume`. */
+    readonly forwardedProps?: CommandProps;
+    /** The answering run reported `RUN_STARTED`: the backend has the answer. */
+    readonly acknowledged?: true;
   };
 };
 export type Decision =
@@ -97,15 +124,103 @@ export function captureResponses(
   return Object.freeze(selected);
 }
 
-/** Evidence is already selected and owned. IDs are allocated by the owner. */
+/** A fresh pause generation for evidence that can begin an answerable pause. */
+export function pauseFor(
+  evidence: OwnedRootTerminal,
+  transport: InterruptTransport | undefined
+): PauseId | undefined {
+  return (evidence.type === 'RUN_FINISHED' &&
+    evidence.outcome?.type === 'interrupt') ||
+    (evidence.type === 'CUSTOM' && answersNotice(transport))
+    ? (crypto.randomUUID() as PauseId)
+    : undefined;
+}
+
+/**
+ * Records that the run answering `decision` has started on the backend.
+ * Returns the same decision for any other run, and once it is recorded.
+ */
+export function acknowledgeDecision(
+  decision: Decision | undefined,
+  runId: string
+): Decision | undefined {
+  if (
+    decision?.kind !== 'native' ||
+    decision.attempt?.runId !== runId ||
+    decision.attempt.acknowledged
+  )
+    return decision;
+  return Object.freeze({
+    ...decision,
+    attempt: Object.freeze({
+      ...decision.attempt,
+      acknowledged: true as const,
+    }),
+  });
+}
+
+/** A notice's value as the Angular adapter read it: JSON text becomes its data. */
+function noticeValue(value: unknown): PlainValue | undefined {
+  let parsed = value;
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      /* Keep text that is not JSON. */
+    }
+  }
+  return parsed === undefined
+    ? undefined
+    : (copyData(parsed, true) as PlainValue);
+}
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Evidence is already selected and owned. IDs are allocated by the owner.
+ * `transport` is the session's resume profile; without one, or with
+ * `protocol`, a notice is a pause this owner cannot answer.
+ */
 export function observeDecision(
   previous: Decision | undefined,
   sourceRunId: string,
   evidence: OwnedRootTerminal,
-  id?: PauseId
+  id?: PauseId,
+  transport?: InterruptTransport
 ): Decision | undefined {
-  if (evidence.type === 'CUSTOM')
-    return previous ?? Object.freeze({ kind: 'unsupported', sourceRunId });
+  if (evidence.type === 'CUSTOM') {
+    if (!answersNotice(transport))
+      return previous ?? Object.freeze({ kind: 'unsupported', sourceRunId });
+    const answering =
+      previous?.kind === 'native' && previous.attempt?.runId === sourceRunId;
+    // A pause from another run that nothing answered still owns the session.
+    if (previous && !answering && previous.sourceRunId !== sourceRunId)
+      return previous;
+    if (previous?.kind === 'unsupported') return previous;
+    // A repeated notice in one run updates the same pause.
+    const pause = previous?.kind === 'native' && !answering ? previous.id : id;
+    if (pause === undefined)
+      throw new TypeError('A fresh pause generation is required');
+    const value = noticeValue(evidence.value);
+    const toolCallId = isRecord(value) ? value['toolCallId'] : undefined;
+    return Object.freeze({
+      kind: 'native',
+      id: pause,
+      sourceRunId,
+      interrupts: Object.freeze([
+        Object.freeze({
+          id: pause,
+          reason: 'on_interrupt',
+          ...(value !== undefined && { value }),
+          ...(typeof toolCallId === 'string' && { toolCallId }),
+        }),
+      ]),
+      command: Object.freeze({
+        transport: transport as Exclude<InterruptTransport, 'protocol'>,
+        ...(value !== undefined && { notice: value }),
+      }),
+    });
+  }
   if (
     evidence.type !== 'RUN_FINISHED' ||
     evidence.runId !== sourceRunId ||
@@ -119,9 +234,73 @@ export function observeDecision(
       interrupts.length
   )
     return Object.freeze({ kind: 'unsupported', sourceRunId });
+  if (transport === 'legacy-command' || transport === 'mastra-command') {
+    // The notice this run already sent is what a command profile answers.
+    if (
+      previous?.kind === 'native' &&
+      previous.command &&
+      !previous.attempt &&
+      previous.sourceRunId === sourceRunId
+    )
+      return previous;
+    if (id === undefined)
+      throw new TypeError('A fresh pause generation is required');
+    return Object.freeze({
+      kind: 'native',
+      id,
+      sourceRunId,
+      interrupts,
+      command: Object.freeze({ transport }),
+    });
+  }
   if (id === undefined)
     throw new TypeError('A fresh pause generation is required');
   return Object.freeze({ kind: 'native', id, sourceRunId, interrupts });
+}
+
+/**
+ * The command that answers a command pause. One interrupt takes one resolved
+ * response with a value: a command has no way to cancel, and none to address
+ * several interrupts.
+ */
+function commandProps(
+  decision: NativeDecision,
+  responses: readonly NativeResponse[]
+): CommandProps | undefined {
+  const command = decision.command;
+  if (!command) return undefined;
+  const [response] = responses;
+  if (responses.length !== 1 || response.status !== 'resolved')
+    throw new TypeError(
+      'A command resume answers one interrupt, and cannot cancel it.'
+    );
+  if (response.payload === undefined)
+    throw new TypeError('A command resume needs a value.');
+  const notice = command.notice;
+  const named = isRecord(notice) && typeof notice['toolCallId'] === 'string';
+  if (
+    command.transport === 'mastra-command' ||
+    (command.transport === 'auto' && named)
+  ) {
+    if (!named) throw new TypeError('Mastra interrupt requires a toolCallId');
+    const runId =
+      typeof notice['runId'] === 'string'
+        ? notice['runId']
+        : decision.sourceRunId;
+    return copyData(
+      {
+        command: {
+          resume: response.payload,
+          interruptEvent: { toolCallId: notice['toolCallId'], runId },
+        },
+      },
+      true
+    ) as CommandProps;
+  }
+  return copyData(
+    { command: { resume: response.payload } },
+    true
+  ) as CommandProps;
 }
 
 export function assertResumeEligible(
@@ -162,9 +341,14 @@ export function claimDecision(
     if (!expected.delete(response.interruptId))
       throw new TypeError('Unknown or duplicate interrupt response');
   if (expected.size) throw new TypeError('Missing interrupt response');
+  const forwardedProps = commandProps(decision, responses);
   return Object.freeze({
     ...decision,
-    attempt: Object.freeze({ runId, responses }),
+    attempt: Object.freeze({
+      runId,
+      responses,
+      ...(forwardedProps && { forwardedProps }),
+    }),
   });
 }
 
@@ -178,6 +362,14 @@ export function settleDecision(
   if (decision.sourceRunId !== run.id && attempt?.runId !== run.id)
     return decision;
   const terminal = run.terminal;
+  // A command pause outlives the ordinary finish of the run that announced it:
+  // only the success of the run that answers it clears it.
+  if (
+    decision.kind === 'native' &&
+    decision.command &&
+    attempt?.runId !== run.id
+  )
+    return decision;
   if (
     terminal?.type === 'RUN_FINISHED' &&
     terminal.runId === run.id &&
@@ -194,9 +386,26 @@ export function settleDecision(
       id: decision.id,
       sourceRunId: decision.sourceRunId,
       interrupts: decision.interrupts,
+      ...(decision.command && { command: decision.command }),
     });
   }
   return decision;
+}
+
+/**
+ * True when `runId` announced a command pause that nothing has answered. Its
+ * ordinary `RUN_FINISHED` is then a pause, as the notice said, not a success.
+ */
+export function pausedByNotice(
+  decision: Decision | undefined,
+  runId: string
+): boolean {
+  return (
+    decision?.kind === 'native' &&
+    decision.command !== undefined &&
+    !decision.attempt &&
+    decision.sourceRunId === runId
+  );
 }
 
 /**
@@ -259,4 +468,96 @@ export function decisionState(snapshot: {
     known.set(phase, state);
   }
   return state;
+}
+
+/**
+ * The pending pause with its request ownership, as the Angular adapter's
+ * `interruptSession` reported it.
+ *
+ * - `none`: nothing is waiting.
+ * - `collecting`: the pausing run has not settled locally yet.
+ * - `pending`: the pause can be answered.
+ * - `resuming`: an answer was claimed and its run is going. Claiming and
+ *   sending are one step here, so there is no separate `claimed`.
+ * - `acknowledged`: the answering run reported `RUN_STARTED` and is going.
+ * - `uncertain`: the answering run ended with no proof the backend took the
+ *   answer, before it reported `RUN_STARTED`.
+ * - `recovery-required`: the answering run ended after it had started on the
+ *   backend. Only reconciliation can say how.
+ * - `unsupported`: a pause this session cannot answer.
+ */
+export interface InterruptSession {
+  readonly phase:
+    | 'none'
+    | 'collecting'
+    | 'pending'
+    | 'resuming'
+    | 'acknowledged'
+    | 'uncertain'
+    | 'recovery-required'
+    | 'unsupported';
+  /** Changes with every new pause, as the legacy `generation` did. */
+  readonly id?: PauseId;
+  readonly interrupts: readonly OwnedInterrupt[];
+  /** The run that paused. */
+  readonly runId?: string;
+  /** Present when the pause is answered through `forwardedProps.command`. */
+  readonly command?: NativeDecision['command'];
+  /** The answer that was claimed: its run, responses and command. */
+  readonly attempt?: NativeDecision['attempt'];
+}
+
+const noInterrupts: readonly OwnedInterrupt[] = Object.freeze([]);
+const noSession: InterruptSession = Object.freeze({
+  phase: 'none',
+  interrupts: noInterrupts,
+});
+const sessions = new WeakMap<Decision, Map<string, InterruptSession>>();
+
+/**
+ * Display only: reads the full interrupt batch and how far its answer has got
+ * from a session snapshot. The same decision in the same phase returns the
+ * same reference.
+ */
+export function interruptSession(snapshot: {
+  readonly decision?: Decision;
+  readonly run?: DecisionRun;
+}): InterruptSession {
+  const { decision, run } = snapshot;
+  if (!decision) return noSession;
+  const settled = run?.outcome !== undefined;
+  const attempt = decision.kind === 'native' ? decision.attempt : undefined;
+  const phase: InterruptSession['phase'] =
+    decision.kind !== 'native'
+      ? 'unsupported'
+      : !attempt
+      ? settled
+        ? 'pending'
+        : 'collecting'
+      : attempt.acknowledged
+      ? settled
+        ? 'recovery-required'
+        : 'acknowledged'
+      : settled
+      ? 'uncertain'
+      : 'resuming';
+  let known = sessions.get(decision);
+  if (!known) sessions.set(decision, (known = new Map()));
+  let session = known.get(phase);
+  if (!session) {
+    session = Object.freeze(
+      decision.kind === 'native'
+        ? {
+            phase,
+            id: decision.id,
+            interrupts: decision.interrupts,
+            runId: decision.sourceRunId,
+            ...(decision.command && { command: decision.command }),
+            ...(attempt && { attempt }),
+          }
+        : { phase, interrupts: noInterrupts, runId: decision.sourceRunId }
+    );
+    known.set(phase, session);
+  }
+  return session;
 }

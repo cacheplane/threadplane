@@ -22,6 +22,7 @@ import type {
 import {
   captureClientTools,
   requestClientTools,
+  type ClientToolBlocker,
   type ClientToolSessionSnapshot,
 } from './client-tools.js';
 import { createClientToolLedger } from './client-tool-ledger.js';
@@ -39,6 +40,7 @@ import {
 } from './session-observation.js';
 import { nextInvocation, type Subagents } from './subagents.js';
 import { createRun, httpFailure, type RunHandle } from './create-run.js';
+import type { RequestSource, SessionAgent } from './create-http-request.js';
 import { createPublication } from './session-publication.js';
 import {
   createPresenter,
@@ -46,17 +48,38 @@ import {
   type SessionSnapshot,
 } from './agent-session.js';
 import { createReasoningClock } from './reasoning-clock.js';
-import type { InterruptMode } from './interrupt-mode.js';
+import {
+  answersNotice,
+  type InterruptMode,
+  type InterruptTransport,
+} from './interrupt-mode.js';
 import {
   assertResumeEligible,
   captureResponses,
+  acknowledgeDecision,
   claimDecision,
   observeDecision,
+  pauseFor,
+  type Decision,
+  pausedByNotice,
   settleDecision,
   type InterruptResponse,
+  type NativeDecision,
   type NativeResponse,
-  type PauseId,
 } from './decision.js';
+
+import {
+  createInstruments,
+  type InstrumentOptions,
+  type SessionRequestType,
+} from './session-instruments.js';
+import {
+  createDurability,
+  gated,
+  isDurable,
+  type Durability,
+  type DurabilityOptions,
+} from './durability.js';
 
 /** Why `resume` rejects while a run is active or the session cannot answer. */
 const NOT_SETTLED = 'Resume needs a settled session with a pending interrupt.';
@@ -67,9 +90,19 @@ import {
   type SubmitInput,
 } from './submit-input.js';
 
-export interface SessionOptions
-  extends Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'> {
-  readonly threadId: string;
+/** The options every session takes, whatever it sends its requests with. */
+export interface SessionCommonOptions
+  extends DurabilityOptions,
+    InstrumentOptions {
+  /**
+   * The thread this session owns. Absent, the handed agent's `threadId` is
+   * used, or else a new one is generated; read it from `session.threadId`.
+   * `persistence` needs one the application chose, and `replay` is skipped
+   * without one: a new conversation has nothing to replay.
+   */
+  readonly threadId?: string;
+  /** Names the agent, when an endpoint serves more than one. Published as `session.agentId`. */
+  readonly agentId?: string;
   readonly messages?: readonly Message[] | Transcript;
   readonly state?: unknown;
   /**
@@ -81,7 +114,43 @@ export interface SessionOptions
   /** Child evidence saved with this thread, published as `earlierSubagents`. Their attributed messages belong in `messages`. */
   readonly subagents?: Subagents;
   readonly interruptMode?: InterruptMode;
+  /**
+   * How a pause is answered. Absent, a session answers the protocol's own
+   * interrupt outcome only, as with `'protocol'`. `'auto'`,
+   * `'legacy-command'` and `'mastra-command'` also answer a
+   * `CUSTOM on_interrupt` notice, through `forwardedProps.command`.
+   */
+  readonly interruptTransport?: InterruptTransport;
 }
+/** A session that posts each run to an HTTP endpoint. */
+export interface HttpSessionSource
+  extends Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'> {
+  readonly agent?: undefined;
+}
+/**
+ * A session over an AG-UI client agent the application built, HTTP or not, as
+ * the Angular adapter's `toAgent(source)` allowed. The session calls the
+ * agent's `run` with each request's full input; it does not use `runAgent`,
+ * and neither reads nor changes the agent's own messages and state.
+ */
+export interface AgentSessionSource {
+  readonly agent: SessionAgent;
+  readonly url?: undefined;
+  readonly headers?: undefined;
+  readonly fetch?: undefined;
+}
+export type SessionOptions = SessionCommonOptions &
+  (HttpSessionSource | AgentSessionSource);
+/** Options as the factory captured them: one read of each, thread resolved. */
+interface CapturedOptions
+  extends Omit<SessionCommonOptions, 'threadId'>,
+    RequestSource {
+  readonly threadId: string;
+}
+/** The session's options with its state declaration as the type parameter. */
+type DeclaredOptions<D> = Omit<SessionCommonOptions, 'stateType'> & {
+  readonly stateType?: D;
+} & (HttpSessionSource | AgentSessionSource);
 /**
  * A new root invocation observes no children yet; settled ones become history.
  * `transcript` is the history the new invocation begins with, when it is not
@@ -97,7 +166,30 @@ function nextInvocationSubagents(
     transcript.length
   );
 }
+/** What `resume` takes beside the responses. */
+export interface ResumeOptions {
+  readonly signal?: AbortSignal;
+  /**
+   * The `id` of the pause a control was rendered for, from
+   * `decisionState(snapshot)` or `interruptSession(snapshot)`. When given,
+   * `resume` rejects without sending unless that pause is the one pending, so
+   * a control left over from an earlier pause cannot answer a later one whose
+   * interrupts reuse the same identifiers.
+   */
+  readonly pause?: string;
+}
+/** Rejects an answer aimed at a pause that is no longer the pending one. */
+function assertCurrentPause(decision: NativeDecision, pause: unknown): void {
+  if (pause !== undefined && pause !== decision.id)
+    throw new TypeError(
+      'Stale pause: read the pending decision again before answering.'
+    );
+}
 export interface Session<TState = unknown> {
+  /** The thread this session owns. The factory always supplies it. */
+  readonly threadId?: string;
+  /** The agent's name, when the session was given one. */
+  readonly agentId?: string;
   /** The state declaration this session was created with, when it has one. */
   readonly stateType?: StateDeclaration<TState>;
   getSnapshot(): SessionSnapshot<TState>;
@@ -118,7 +210,7 @@ export interface Session<TState = unknown> {
    */
   resume(
     responses: readonly InterruptResponse[],
-    options?: { readonly signal?: AbortSignal }
+    options?: ResumeOptions
   ): Promise<CompleteOutcome>;
   stop(): Promise<void>;
   dispose(): Promise<void>;
@@ -129,8 +221,9 @@ export interface Session<TState = unknown> {
    * dropped. Resolves `aborted` without sending while a run is active, when
    * nothing failed or when the last run was not a failed submission. Rejects
    * without sending when the error's `recovery` is not `'retry'`: the failure
-   * leaves the backend outcome open. Absent on the client-tool owner, which
-   * blocks every dispatched failure as uncertain.
+   * leaves the backend outcome open. With a client-tool catalog it sends the
+   * failed request again, whichever request of the command that was, and runs
+   * no handler a second time.
    */
   retry?(): Promise<CompleteOutcome>;
   /**
@@ -142,7 +235,8 @@ export interface Session<TState = unknown> {
    * Rejects without sending while a run is active, while a decision is
    * waiting, after disposal, for an id that is not an assistant record, and
    * when no user message precedes it. `retry` can send a failed regenerate
-   * again. Absent on the client-tool owner, whose ledger owns its history.
+   * again. With a client-tool catalog it also forgets the client-tool calls
+   * of the dropped records, and rejects while a blocker is installed.
    */
   regenerate?(
     messageId: string,
@@ -158,6 +252,88 @@ export interface Session<TState = unknown> {
   onCustomEvent?(
     listener: (event: AgentSessionCustomEvent) => void
   ): () => void;
+  /**
+   * Listens for every AG-UI protocol event the session applied to its
+   * snapshot, in arrival order, for a host that folds the full stream into a
+   * view of its own. The factory always supplies it. Each event is delivered
+   * after the snapshot shows it. Events the session ignores are not
+   * delivered: those of a superseded or stopped run, and those after a run's
+   * terminal event. A thread restored from `replay` delivers every replayed
+   * event, in order, once the snapshot shows the whole replay; a thread
+   * restored from `persistence` delivers none. With a
+   * `reportOperationFailure` a `RUN_ERROR` carries only the fixed message.
+   * Nothing is retained for a later listener, a throwing listener cannot fail
+   * the run, and nothing is delivered after disposal. Returns an idempotent
+   * release.
+   */
+  onRawEvent?(listener: (event: AGUIEvent) => void): () => void;
+  /**
+   * Resolves once the thread is restored from `replay` or `persistence`, and
+   * at once for a session with neither. Commands issued before then wait for
+   * it. Rejects when the stored thread could not be read; a failed replay
+   * does not reject it. The factory always supplies it.
+   */
+  readonly ready?: Promise<void>;
+  /**
+   * Present with `persistence`. Asks the configured reconciler what became of
+   * the saved thread and adopts whatever it reports, including an answer that
+   * only proves a resume started. Rejects after disposal, while a run or
+   * another check is going, without a reconciler, and when the backend does
+   * not know. Prefer `checkStatus` for the control a person is offered.
+   */
+  reconcileInterrupt?(): Promise<void>;
+  /**
+   * Present with a `persistence.reconcile`. The control to offer when
+   * `error.recovery` is `'check'`: asks the reconciler what became of an
+   * answer that was sent and not proven taken, and settles the session only
+   * on a conclusive report (the answer's run ended, or the pause still
+   * waits). Anything less, and any failure to ask, leaves the error in place
+   * so the check can be offered again. Never sends the answer again. Rejects
+   * after disposal and while a run is going.
+   */
+  checkStatus?(): Promise<void>;
+}
+const READY = Promise.resolve();
+/**
+ * Completes a session with its durability: `ready`, the recovery commands, and
+ * commands that wait for the thread to be restored.
+ */
+function durableSession<S extends Session>(
+  session: S,
+  durability: Durability | undefined,
+  persisted: boolean
+): S {
+  if (!durability) return { ...session, ready: READY };
+  const reject = (reason: string) =>
+    Promise.reject<CompleteOutcome>(new Error(reason));
+  return {
+    ...session,
+    ready: durability.ready,
+    submit: gated(durability, session.submit, () => Promise.resolve('error')),
+    resume: gated(durability, session.resume, reject),
+    ...(session.retry && { retry: gated(durability, session.retry, reject) }),
+    ...(session.regenerate && {
+      regenerate: gated(durability, session.regenerate, reject),
+    }),
+    ...(persisted && { reconcileInterrupt: durability.reconcileInterrupt }),
+    ...(durability.checkStatus && { checkStatus: durability.checkStatus }),
+  };
+}
+/** The thread a session starts with, held while a durable one is restored. */
+function startingObservation(
+  options: Pick<
+    SessionCommonOptions,
+    'messages' | 'state' | 'subagents' | 'persistence' | 'replay'
+  >
+): Observation {
+  const initial = initialObservation(
+    options.messages,
+    options.state,
+    options.subagents
+  );
+  return isDurable(options)
+    ? Object.freeze({ ...initial, hold: 'hydrating' as const })
+    : initial;
 }
 export type ClientToolSession<
   C extends Record<string, ToolContract>,
@@ -172,7 +348,8 @@ export type ClientToolSession<
 function captureCustomEvent(
   event: AGUIEvent
 ): AgentSessionCustomEvent | undefined {
-  if (event.type !== 'CUSTOM' || event.name === 'on_interrupt') return undefined;
+  if (event.type !== 'CUSTOM' || event.name === 'on_interrupt')
+    return undefined;
   let value: unknown = event.value;
   if (typeof value === 'string') {
     try {
@@ -190,8 +367,53 @@ function captureCustomEvent(
     return undefined;
   }
 }
+/**
+ * Where the history ends for a regenerate of `messageId`: the index of the
+ * root user message before that root assistant (or reasoning) record. Throws
+ * the reason when there is no such record or no prompt before it.
+ */
+function regeneratePrompt(transcript: Transcript, messageId: string): number {
+  const root = (index: number) =>
+    typeof transcript[index].subagentRunId !== 'string';
+  const at = transcript.findIndex(
+    (record, index) =>
+      record.id === messageId &&
+      (record.role === 'assistant' || record.role === 'reasoning') &&
+      root(index)
+  );
+  if (at < 0)
+    throw new Error('Regenerate needs the id of an assistant message.');
+  for (let index = at - 1; index >= 0; index--)
+    if (transcript[index].role === 'user' && root(index)) return index;
+  throw new Error('No prompt precedes that message.');
+}
+/**
+ * What a request carries for the answer it sends, when `runId` is the run
+ * answering `decision`: the protocol's `resume` entries, or the command of a
+ * command profile in `forwardedProps`. Each request owns its copies.
+ */
+function answerFields(
+  decision: Decision | undefined,
+  runId: string
+): Pick<RunAgentInput, 'forwardedProps' | 'resume'> {
+  const attempt =
+    decision?.kind === 'native' && decision.attempt?.runId === runId
+      ? decision.attempt
+      : undefined;
+  if (attempt?.forwardedProps)
+    return { forwardedProps: copyData(attempt.forwardedProps, false) };
+  return {
+    forwardedProps: {},
+    ...(attempt && {
+      resume: copyData(attempt.responses, false) as ResumeEntry[],
+    }),
+  };
+}
 interface Attempt {
   readonly id: string;
+  readonly kind: SessionRequestType;
+  /** Reports the request's end to telemetry, once it was sent. */
+  ended?: (outcome: CompleteOutcome) => void;
   readonly controller: AbortController;
   readonly done: Promise<CompleteOutcome>;
   readonly resolve: (outcome: CompleteOutcome) => void;
@@ -209,30 +431,42 @@ export function createSession<
   T extends Record<string, FunctionToolDefinition>,
   D extends StateDeclaration | undefined = undefined
 >(
-  options: Omit<SessionOptions, 'stateType'> & { readonly stateType?: D },
+  options: DeclaredOptions<D>,
   tools: T & CheckedTools<T>
 ): ClientToolSession<ToolContracts<T>, InferState<D>>;
 export function createSession<
   D extends StateDeclaration | undefined = undefined
->(
-  options: Omit<SessionOptions, 'stateType'> & { readonly stateType?: D }
-): Session<InferState<D>>;
+>(options: DeclaredOptions<D>): Session<InferState<D>>;
 export function createSession(
   options: SessionOptions,
   tools?: Record<string, FunctionToolDefinition>
 ): Session {
   const {
-    threadId,
     url,
     headers,
     fetch,
+    agent,
     messages,
     state,
     stateType,
     subagents,
     interruptMode = 'native',
+    interruptTransport,
+    persistence,
   } = options;
-  if (!threadId) throw new TypeError('A nonempty threadId is required');
+  const given = options.threadId;
+  if (given !== undefined && !given)
+    throw new TypeError('A nonempty threadId is required');
+  if (agent !== undefined && url !== undefined)
+    throw new TypeError('A session takes a url or an agent, not both');
+  // The thread the application chose, on the option or on its own agent.
+  const stable = given ?? (agent?.threadId || undefined);
+  if (persistence && stable === undefined)
+    throw new TypeError('Persistence requires a stable threadId');
+  const threadId = stable ?? crypto.randomUUID();
+  const agentId = options.agentId ?? agent?.agentId;
+  // A new conversation has nothing to replay.
+  const replay = stable === undefined ? undefined : options.replay;
   const catalog = tools === undefined ? undefined : captureClientTools(tools);
   if (catalog !== undefined)
     return createToolsOwner(
@@ -241,17 +475,43 @@ export function createSession(
         url,
         headers,
         fetch,
+        agent,
+        agentId,
         messages,
         state,
         stateType,
         subagents,
         interruptMode,
+        interruptTransport,
+        persistence,
+        replay,
+        a2uiClientCapabilities: options.a2uiClientCapabilities,
+        telemetry: options.telemetry,
+        reportOperationFailure: options.reportOperationFailure,
+        devtools: options.devtools,
       },
       catalog
     );
-  const factory = createRun({ url, headers, fetch, interruptMode });
+  const instruments = createInstruments(options);
+  const factory = createRun({
+    url,
+    headers,
+    fetch: instruments.fetch(fetch),
+    agent,
+    agentId,
+    interruptMode,
+  });
+  // Legacy observation answers nothing unless a profile answers its notice.
+  const answerable =
+    interruptMode === 'native' || answersNotice(interruptTransport);
   const reasoningClock = createReasoningClock();
-  const initial = initialObservation(messages, state, subagents);
+  const initial = startingObservation({
+    messages,
+    state,
+    subagents,
+    persistence,
+    replay,
+  });
   const publication = createPublication(
     catalog === undefined
       ? initial
@@ -259,11 +519,40 @@ export function createSession(
           ...initial,
           clientTools: Object.freeze({ calls: Object.freeze([]) }),
         }),
-    createPresenter(stateType, true)
+    createPresenter(
+      stateType,
+      true,
+      persistence?.reconcile !== undefined,
+      instruments.protect
+    )
   );
+  instruments.follow(publication);
   let active: Attempt | undefined;
   let disposed = false;
   let revision = 0;
+  const durability = isDurable({ persistence, replay })
+    ? createDurability(
+        {
+          threadId,
+          persistence,
+          replay,
+          interruptMode,
+          interruptTransport,
+          redact: instruments.redact,
+        },
+        {
+          publication,
+          active: () => active !== undefined,
+          disposed: () => disposed,
+          adopt: (observation) => {
+            saved = undefined;
+            instruments.cause('history');
+            publication.publish(observation);
+          },
+          replayed: (events) => events.forEach(instruments.raw),
+        }
+      )
+    : undefined;
   /** What the latest admitted submission sent; a resume or newer submission replaces it. */
   let saved:
     | {
@@ -289,24 +578,33 @@ export function createSession(
     if (active === attempt) {
       active = undefined;
       const previous = publication.getObservation();
+      const decision = settleDecision(
+        previous.decision,
+        { id: attempt.id, outcome, terminal: previous.run?.terminal },
+        fetchInvoked
+      );
+      // The run announced a pause and then finished in the ordinary way.
+      if (outcome === 'success' && pausedByNotice(decision, attempt.id))
+        outcome = 'paused';
+      attempt.ended?.(outcome);
+      instruments.cause('run:end');
       publication.publish(
         Object.freeze({
           ...previous,
-          decision: settleDecision(
-            previous.decision,
-            { id: attempt.id, outcome, terminal: previous.run?.terminal },
-            fetchInvoked
-          ),
+          decision,
           status:
             outcome === 'error' || outcome === 'interrupted' ? 'error' : 'idle',
           run: Object.freeze({
             ...previous.run,
             id: attempt.id,
             outcome,
-            ...(failure && outcome === 'error' && { failure }),
+            ...(failure &&
+              outcome === 'error' &&
+              !instruments.protect && { failure }),
           }),
         })
       );
+      durability?.settled();
       if (disposed) publication.clear();
     }
     attempt.resolve(outcome);
@@ -329,17 +627,10 @@ export function createSession(
         runId: attempt.id,
         protocolVersion: PROTOCOL_VERSION,
         messages: requestMessages(value.transcript),
-        state: requestState(value.state),
+        state: instruments.requestState(requestState(value.state)),
         tools: catalog === undefined ? [] : requestClientTools(catalog),
         context: [],
-        forwardedProps: {},
-        ...(decision?.kind === 'native' &&
-          decision.attempt?.runId === attempt.id && {
-            resume: copyData(
-              decision.attempt.responses,
-              false
-            ) as ResumeEntry[],
-          }),
+        ...answerFields(decision, attempt.id),
       };
     } catch {
       publication.command(() =>
@@ -353,13 +644,20 @@ export function createSession(
     }
     if (!current(attempt)) return;
     attempt.starting = true;
+    attempt.ended = instruments.request(attempt.kind);
+    // A run a host scripted is served in place of the network, once.
+    const scripted = instruments.scriptedFetch();
+    const runner = scripted
+      ? createRun({ url: 'scripted:', fetch: scripted, interruptMode })
+      : factory;
     // createRun owns all first-result and invocation facts once start is called.
-    attempt.handle = factory.start(
+    attempt.handle = runner.start(
       input,
-      (event) => {
+      (delivered) => {
         if (!current(attempt)) return;
         // createRun delivers the SDK's normalized/verified union through its
         // BaseEvent callback. No second schema parse or sequence verifier.
+        const event = instruments.redact(delivered as AGUIEvent);
         const previous = publication.getObservation();
         let next = reasoningClock.observe(
           event as AGUIEvent,
@@ -374,23 +672,32 @@ export function createSession(
             : notice !== previous.run?.legacyInterrupt
             ? notice
             : undefined;
-        if (evidence) {
-          const pause =
-            evidence.type === 'RUN_FINISHED' &&
-            evidence.outcome?.type === 'interrupt'
-              ? (crypto.randomUUID() as PauseId)
-              : undefined;
+        if (evidence)
           next = Object.freeze({
             ...next,
             decision: observeDecision(
               previous.decision,
               attempt.id,
               evidence,
-              pause
+              pauseFor(evidence, interruptTransport),
+              interruptTransport
             ),
           });
+        // Only a durable session records that the answering run started: the
+        // saved thread then says the backend has the answer.
+        const acknowledged = durability
+          ? acknowledgeDecision(next.decision, attempt.id)
+          : next.decision;
+        const started =
+          event.type === 'RUN_STARTED' && acknowledged !== next.decision;
+        if (started) next = Object.freeze({ ...next, decision: acknowledged });
+        if (current(attempt)) {
+          instruments.cause(event.type);
+          publication.publish(next);
+          if (started) void durability?.save().catch(() => undefined);
         }
-        if (current(attempt)) publication.publish(next);
+        // The stream shows what the snapshot saw, after the snapshot shows it.
+        if (current(attempt)) instruments.raw(event);
         const custom = captureCustomEvent(event as AGUIEvent);
         if (custom && current(attempt)) publication.emitCustomEvent(custom);
       },
@@ -400,7 +707,12 @@ export function createSession(
     if (!current(attempt)) attempt.handle.abort();
     void attempt.handle.done.then((result) =>
       publication.command(() =>
-        finish(attempt, result.outcome, result.fetchInvoked, httpFailure(result))
+        finish(
+          attempt,
+          result.outcome,
+          result.fetchInvoked,
+          httpFailure(result)
+        )
       )
     );
   };
@@ -408,7 +720,8 @@ export function createSession(
     id: string,
     next: Observation,
     signal: AbortSignal | undefined,
-    resolve: (outcome: CompleteOutcome) => void
+    resolve: (outcome: CompleteOutcome) => void,
+    kind: SessionRequestType = 'submit'
   ) => {
     revision++;
     let settle!: (outcome: CompleteOutcome) => void;
@@ -417,6 +730,7 @@ export function createSession(
     });
     const attempt: Attempt = {
       id,
+      kind,
       controller: new AbortController(),
       done,
       resolve: settle,
@@ -437,9 +751,18 @@ export function createSession(
       });
     signal?.addEventListener('abort', abort, { once: true });
     attempt.cleanup = () => signal?.removeEventListener('abort', abort);
+    instruments.cause('run:start');
     publication.publish(next);
+    if (!current(attempt)) return;
+    // An answer is saved before it is sent, so a reload in between knows one
+    // may have left. A failed save sends nothing and releases the claim.
+    if (durability && next.decision?.kind === 'native' && next.decision.attempt)
+      void durability.save().then(
+        () => dispatch(attempt),
+        () => publication.command(() => finish(attempt, 'error', false))
+      );
     // Dispatch only after commands queued by this publication have drained.
-    if (current(attempt)) queueMicrotask(() => dispatch(attempt));
+    else queueMicrotask(() => dispatch(attempt));
   };
   const close = (permanent: boolean): Promise<void> => {
     // Track command intent even while notification defers its mutation. A
@@ -449,8 +772,10 @@ export function createSession(
       publication.command(() => {
         if (permanent) {
           disposed = true;
+          durability?.dispose();
           // Events are not settlement: stop delivering them right away.
           publication.clearCustomEventListeners();
+          instruments.clear();
         }
         const attempt = active;
         if (attempt) {
@@ -463,19 +788,25 @@ export function createSession(
       });
     });
   };
-  return {
+  const session: Session = {
+    threadId,
+    ...(agentId !== undefined && { agentId }),
     ...(stateType !== undefined && { stateType }),
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
     onCustomEvent: (listener) =>
       disposed ? () => undefined : publication.onCustomEvent(listener),
+    onRawEvent: (listener) =>
+      disposed ? () => undefined : instruments.onRawEvent(listener),
     resume: (responses, options) =>
       new Promise<CompleteOutcome>((resolve, reject) => {
         const beforeSignal = revision;
         let signal: AbortSignal | undefined;
+        let pause: unknown;
         try {
           signal = options?.signal;
+          pause = options?.pause;
         } catch {
           resolve(disposed || revision !== beforeSignal ? 'aborted' : 'error');
           return;
@@ -488,14 +819,15 @@ export function createSession(
         let captured: readonly NativeResponse[];
         try {
           const previous = publication.getObservation();
-          if (interruptMode !== 'native' || active)
-            throw new TypeError(NOT_SETTLED);
+          if (!answerable || active) throw new TypeError(NOT_SETTLED);
           captured = captureResponses(responses);
-          claimDecision(
-            assertResumeEligible(previous.decision, previous.run, Date.now()),
-            captured,
-            ''
+          const eligible = assertResumeEligible(
+            previous.decision,
+            previous.run,
+            Date.now()
           );
+          assertCurrentPause(eligible, pause);
+          claimDecision(eligible, captured, '');
         } catch (error) {
           if (disposed || signal?.aborted || revision !== beforeInput)
             resolve('aborted');
@@ -516,13 +848,13 @@ export function createSession(
           let id: string;
           try {
             const previous = publication.getObservation();
-            if (active || interruptMode !== 'native')
-              throw new TypeError(NOT_SETTLED);
+            if (active || !answerable) throw new TypeError(NOT_SETTLED);
             const decision = assertResumeEligible(
               previous.decision,
               previous.run,
               Date.now()
             );
+            assertCurrentPause(decision, pause);
             id = crypto.randomUUID();
             next = Object.freeze({
               ...previous,
@@ -542,7 +874,7 @@ export function createSession(
             return;
           }
           saved = undefined;
-          admit(id, next, signal, resolve);
+          admit(id, next, signal, resolve, 'resume');
         });
       }),
     submit: (input, options) =>
@@ -681,7 +1013,8 @@ export function createSession(
               run: Object.freeze({ id }),
             }),
             undefined,
-            resolve
+            resolve,
+            'retry'
           );
         });
       }),
@@ -697,23 +1030,7 @@ export function createSession(
               throw new Error('Cannot regenerate while a response is running.');
             if (previous.decision)
               throw new Error('Cannot regenerate while a decision is waiting.');
-            const { transcript } = previous;
-            const root = (index: number) =>
-              typeof transcript[index].subagentRunId !== 'string';
-            const at = transcript.findIndex(
-              (record, index) =>
-                record.id === messageId &&
-                (record.role === 'assistant' || record.role === 'reasoning') &&
-                root(index)
-            );
-            if (at < 0)
-              throw new Error(
-                'Regenerate needs the id of an assistant message.'
-              );
-            for (let index = at - 1; index >= 0 && prompt < 0; index--)
-              if (transcript[index].role === 'user' && root(index))
-                prompt = index;
-            if (prompt < 0) throw new Error('No prompt precedes that message.');
+            prompt = regeneratePrompt(previous.transcript, messageId);
           } catch (error) {
             reject(error);
             return;
@@ -738,30 +1055,34 @@ export function createSession(
               run: Object.freeze({ id }),
             }),
             signal,
-            resolve
+            resolve,
+            'regenerate'
           );
         });
       }),
     stop: () => close(false),
     dispose: () => close(true),
   };
+  return durableSession(session, durability, persistence !== undefined);
 }
 
 /** A command can own several physical runs, but never lends execution authority
  * to a superseding submit. The legacy no-catalog owner above remains separate. */
 function createToolsOwner(
-  options: SessionOptions,
+  options: CapturedOptions,
   catalog: ReturnType<typeof captureClientTools>
 ): Session {
-  const { threadId, interruptMode = 'native' } = options;
-  const factory = createRun(options);
+  const { threadId, interruptMode = 'native', interruptTransport } = options;
+  const instruments = createInstruments(options);
+  const factory = createRun({
+    ...options,
+    fetch: instruments.fetch(options.fetch),
+  });
+  const answerable =
+    interruptMode === 'native' || answersNotice(interruptTransport);
   const reasoningClock = createReasoningClock();
-  const initial = initialObservation(
-    options.messages,
-    options.state,
-    options.subagents
-  );
-  const ledger = createClientToolLedger<Record<string, ToolContract>>(
+  const initial = startingObservation(options);
+  let ledger = createClientToolLedger<Record<string, ToolContract>>(
     [...catalog.keys()],
     initial.transcript
   );
@@ -770,12 +1091,48 @@ function createToolsOwner(
       ...initial,
       clientTools: ledger.snapshot(),
     }),
-    // This owner has no retry, so no failure is offered as retryable.
-    createPresenter(options.stateType, false)
+    // Only the failed request this owner can rebuild is offered as retryable.
+    createPresenter(
+      options.stateType,
+      (observation) => retryable(observation),
+      options.persistence?.reconcile !== undefined,
+      instruments.protect
+    )
   );
+  /** The last request sent that was not an answer to a decision. */
+  let saved:
+    | {
+        readonly runId: string;
+        readonly transcript: Transcript;
+        readonly state: PlainValue;
+      }
+    | undefined;
+  /**
+   * A backend `RUN_ERROR` for the saved request, with nothing in the ledger in
+   * doubt beyond the blocker that failure itself installed.
+   */
+  const retryable = (observation: Observation): boolean => {
+    const blocker = (
+      observation as { clientTools?: { blocker?: ClientToolBlocker } }
+    ).clientTools?.blocker;
+    const runId = saved?.runId;
+    return (
+      failedWithRunError(observation) &&
+      runId !== undefined &&
+      runId === observation.run?.id &&
+      (!blocker ||
+        (blocker.reason === 'uncertain' &&
+          blocker.sourceRunId === runId &&
+          !blocker.callIds.length))
+    );
+  };
+  // Reading a snapshot asks `retryable`, so this follows its definition.
+  instruments.follow(publication);
   interface Physical {
     readonly id: string;
     readonly token: object;
+    readonly kind: SessionRequestType;
+    ended?: (outcome: CompleteOutcome) => void;
     handle?: RunHandle;
     starting: boolean;
     settled: boolean;
@@ -796,6 +1153,42 @@ function createToolsOwner(
   let pausedPhysical:
     | { readonly id: string; readonly token: object }
     | undefined;
+  const durability = isDurable(options)
+    ? createDurability(
+        { ...options, redact: instruments.redact },
+        {
+          publication,
+          replayed: (events) => events.forEach(instruments.raw),
+          active: () => active !== undefined,
+          disposed: () => disposed,
+          adopt: (observation) => {
+            const decision = observation.decision;
+            // A restored pause keeps the calls that were unresolved when it
+            // paused; they travel with its answer.
+            ledger = createClientToolLedger<Record<string, ToolContract>>(
+              [...catalog.keys()],
+              observation.transcript,
+              decision?.kind === 'native'
+            );
+            saved = undefined;
+            pausedPhysical = undefined;
+            if (decision?.kind === 'native') {
+              const token = ledger.startPhysical({
+                runId: decision.sourceRunId,
+                threadId,
+                transcript: observation.transcript,
+              });
+              ledger.markPaused(token);
+              pausedPhysical = { id: decision.sourceRunId, token };
+            }
+            instruments.cause('history');
+            publication.publish(
+              Object.freeze({ ...observation, clientTools: ledger.snapshot() })
+            );
+          },
+        }
+      )
+    : undefined;
   const owns = (command: Command, physical?: Physical) =>
     active === command &&
     !command.finished &&
@@ -871,6 +1264,7 @@ function createToolsOwner(
     // Keep admission busy through final notification; reentrant submit cannot
     // append a new human while this command's result is being published.
     const previous = publication.getObservation();
+    instruments.cause('run:end');
     publication.publish(
       Object.freeze({
         ...previous,
@@ -884,6 +1278,7 @@ function createToolsOwner(
       })
     );
     active = undefined;
+    durability?.settled();
     if (disposed) publication.clear();
     command.resolve(outcome);
   };
@@ -1033,31 +1428,46 @@ function createToolsOwner(
     if (physical.settled) return;
     physical.settled = true;
     physical.fetchInvoked = fetchInvoked;
+    physical.ended?.(outcome);
     if (!owns(command, physical)) return;
     const previous = publication.getObservation();
     const terminal = previous.run?.terminal;
+    const decision = settleDecision(
+      previous.decision,
+      { id: physical.id, outcome, terminal },
+      fetchInvoked
+    );
+    // The run announced a pause and then finished in the ordinary way.
+    const noticed =
+      (outcome === 'success' || outcome === 'paused') &&
+      pausedByNotice(decision, physical.id);
+    if (noticed) {
+      outcome = 'paused';
+      ledger.markPaused(physical.token);
+    }
     if (
-      previous.decision?.kind === 'native' &&
-      terminal?.type === 'RUN_FINISHED' &&
-      terminal.outcome?.type === 'interrupt'
+      noticed ||
+      (previous.decision?.kind === 'native' &&
+        terminal?.type === 'RUN_FINISHED' &&
+        terminal.outcome?.type === 'interrupt')
     )
       pausedPhysical = physical;
     const nativeSuccess =
+      !noticed &&
       terminal?.type === 'RUN_FINISHED' &&
       (terminal.outcome == null || terminal.outcome.type === 'success');
     publication.publish(
       Object.freeze({
         ...previous,
-        decision: settleDecision(
-          previous.decision,
-          { id: physical.id, outcome, terminal },
-          fetchInvoked
-        ),
+        decision,
         run: Object.freeze({
           ...previous.run,
           id: physical.id,
           outcome: nativeSuccess ? 'success' : outcome,
-          ...(failure && !nativeSuccess && outcome === 'error' && { failure }),
+          ...(failure &&
+            !nativeSuccess &&
+            outcome === 'error' &&
+            !instruments.protect && { failure }),
         }),
         clientTools: ledger.snapshot(),
       })
@@ -1151,22 +1561,22 @@ function createToolsOwner(
               pausedPhysical.token
             )
           : ledger.captureRequest(snapshot.transcript);
+      saved = resuming
+        ? undefined
+        : {
+            runId: physical.id,
+            transcript: capture.transcript,
+            state: snapshot.state,
+          };
       input = {
         threadId,
         runId: physical.id,
         protocolVersion: PROTOCOL_VERSION,
         messages: requestMessages(capture.transcript),
-        state: requestState(snapshot.state),
+        state: instruments.requestState(requestState(snapshot.state)),
         tools: requestClientTools(catalog),
         context: [],
-        forwardedProps: {},
-        ...(snapshot.decision?.kind === 'native' &&
-          snapshot.decision.attempt?.runId === physical.id && {
-            resume: copyData(
-              snapshot.decision.attempt.responses,
-              false
-            ) as ResumeEntry[],
-          }),
+        ...answerFields(snapshot.decision, physical.id),
       };
     } catch {
       publication.command(() =>
@@ -1186,9 +1596,14 @@ function createToolsOwner(
     )
       return;
     physical.starting = true;
-    physical.handle = factory.start(
+    physical.ended = instruments.request(physical.kind);
+    const scripted = instruments.scriptedFetch();
+    const runner = scripted
+      ? createRun({ url: 'scripted:', fetch: scripted, interruptMode })
+      : factory;
+    physical.handle = runner.start(
       input,
-      (event) => {
+      (delivered) => {
         publication.command(() => {
           if (
             !owns(command, physical) ||
@@ -1196,6 +1611,7 @@ function createToolsOwner(
             disposed
           )
             return;
+          const event = instruments.redact(delivered as AGUIEvent);
           const previous = publication.getObservation();
           let next = reasoningClock.observe(
             event as AGUIEvent,
@@ -1216,17 +1632,23 @@ function createToolsOwner(
                 previous.decision,
                 physical.id,
                 evidence,
-                evidence.type === 'RUN_FINISHED' &&
-                  evidence.outcome?.type === 'interrupt'
-                  ? (crypto.randomUUID() as PauseId)
-                  : undefined
+                pauseFor(evidence, interruptTransport),
+                interruptTransport
               ),
             });
+          const acknowledged = durability
+            ? acknowledgeDecision(next.decision, physical.id)
+            : next.decision;
+          const started =
+            event.type === 'RUN_STARTED' && acknowledged !== next.decision;
+          if (started)
+            next = Object.freeze({ ...next, decision: acknowledged });
           if (
             owns(command, physical) &&
             !command.controller.signal.aborted &&
             !disposed
-          )
+          ) {
+            instruments.cause(event.type);
             publication.publish(
               Object.freeze({
                 ...next,
@@ -1234,6 +1656,14 @@ function createToolsOwner(
                 clientTools: ledger.snapshot(),
               })
             );
+            if (started) void durability?.save().catch(() => undefined);
+          }
+          if (
+            owns(command, physical) &&
+            !command.controller.signal.aborted &&
+            !disposed
+          )
+            instruments.raw(event);
           const custom = captureCustomEvent(event as AGUIEvent);
           if (
             custom &&
@@ -1302,6 +1732,7 @@ function createToolsOwner(
     const previous = publication.getObservation();
     const physical: Physical = {
       id,
+      kind: 'client-tool-continuation',
       token: ledger.startPhysical({
         runId: id,
         threadId,
@@ -1312,6 +1743,7 @@ function createToolsOwner(
       fetchInvoked: false,
     };
     command.physical = physical;
+    instruments.cause('run:start');
     publication.publish(
       Object.freeze({
         ...previous,
@@ -1327,7 +1759,8 @@ function createToolsOwner(
     next: Observation,
     id: string,
     signal: AbortSignal | undefined,
-    resolve: (outcome: CompleteOutcome) => void
+    resolve: (outcome: CompleteOutcome) => void,
+    kind: SessionRequestType = 'submit'
   ) => {
     let settle!: (outcome: CompleteOutcome) => void;
     const done = new Promise<CompleteOutcome>((yes) => {
@@ -1352,6 +1785,7 @@ function createToolsOwner(
     command.cleanup = () => signal?.removeEventListener('abort', abort);
     const physical: Physical = {
       id,
+      kind,
       token: ledger.startPhysical({
         runId: id,
         threadId,
@@ -1362,10 +1796,20 @@ function createToolsOwner(
       fetchInvoked: false,
     };
     command.physical = physical;
+    instruments.cause('run:start');
     publication.publish(
       Object.freeze({ ...next, clientTools: ledger.snapshot() })
     );
-    queueMicrotask(() => dispatch(command, physical));
+    // An answer is saved before it is sent; see the owner without tools.
+    if (durability && next.decision?.kind === 'native' && next.decision.attempt)
+      void durability.save().then(
+        () => dispatch(command, physical),
+        () =>
+          publication.command(() =>
+            settlePhysical(command, physical, 'error', false)
+          )
+      );
+    else queueMicrotask(() => dispatch(command, physical));
   };
   const close = (permanent: boolean) => {
     revision++;
@@ -1373,8 +1817,10 @@ function createToolsOwner(
       publication.command(() => {
         if (permanent) {
           disposed = true;
+          durability?.dispose();
           // Events are not settlement: stop delivering them right away.
           publication.clearCustomEventListeners();
+          instruments.clear();
         }
         const command = active;
         if (command) {
@@ -1387,13 +1833,17 @@ function createToolsOwner(
       })
     );
   };
-  return {
+  const session: Session = {
+    threadId,
+    ...(options.agentId !== undefined && { agentId: options.agentId }),
     ...(options.stateType !== undefined && { stateType: options.stateType }),
     getSnapshot: publication.getSnapshot,
     subscribe: (notify) =>
       disposed ? () => undefined : publication.subscribe(notify),
     onCustomEvent: (listener) =>
       disposed ? () => undefined : publication.onCustomEvent(listener),
+    onRawEvent: (listener) =>
+      disposed ? () => undefined : instruments.onRawEvent(listener),
     stop: () => close(false),
     dispose: () => close(true),
     submit: (input, options) =>
@@ -1491,21 +1941,25 @@ function createToolsOwner(
         }
         const before = revision;
         let signal: AbortSignal | undefined;
+        let pause: unknown;
         let captured: readonly NativeResponse[];
         try {
           signal = options?.signal;
+          pause = options?.pause;
           if (disposed || signal?.aborted || revision !== before) {
             resolve('aborted');
             return;
           }
-          if (interruptMode !== 'native') throw new TypeError(NOT_SETTLED);
+          if (!answerable) throw new TypeError(NOT_SETTLED);
           const previous = publication.getObservation();
           captured = captureResponses(responses);
-          claimDecision(
-            assertResumeEligible(previous.decision, previous.run, Date.now()),
-            captured,
-            ''
+          const eligible = assertResumeEligible(
+            previous.decision,
+            previous.run,
+            Date.now()
           );
+          assertCurrentPause(eligible, pause);
+          claimDecision(eligible, captured, '');
         } catch (error) {
           if (disposed || signal?.aborted || revision !== before)
             resolve('aborted');
@@ -1528,6 +1982,7 @@ function createToolsOwner(
               previous.run,
               Date.now()
             );
+            assertCurrentPause(decision, pause);
             const id = crypto.randomUUID();
             admit(
               Object.freeze({
@@ -1539,12 +1994,115 @@ function createToolsOwner(
               }),
               id,
               signal,
-              resolve
+              resolve,
+              'resume'
             );
           } catch (error) {
             reject(error);
           }
         });
       }),
+    retry: () =>
+      new Promise<CompleteOutcome>((resolve, reject) => {
+        if (disposed) {
+          resolve('aborted');
+          return;
+        }
+        const published = publication.getSnapshot();
+        if (published.status !== 'error') {
+          resolve('aborted');
+          return;
+        }
+        if (published.error?.recovery !== 'retry') {
+          reject(new Error(UNSAFE_RETRY));
+          return;
+        }
+        publication.command(() => {
+          const previous = publication.getObservation();
+          const last = saved;
+          if (
+            disposed ||
+            active ||
+            !last ||
+            previous.status !== 'error' ||
+            previous.run?.id !== last.runId
+          ) {
+            resolve('aborted');
+            return;
+          }
+          if (!retryable(previous) || !ledger.releaseUncertain(last.runId)) {
+            resolve('error');
+            return;
+          }
+          const id = crypto.randomUUID();
+          // The failed run's output and state changes are dropped: the request
+          // is rebuilt from what the failed request sent, local tool results
+          // included. No handler runs again for them.
+          admit(
+            Object.freeze({
+              ...previous,
+              status: 'running',
+              transcript: last.transcript,
+              state: last.state,
+              ...nextInvocationSubagents(previous, last.transcript),
+              run: Object.freeze({ id }),
+            }),
+            id,
+            undefined,
+            resolve,
+            'retry'
+          );
+        });
+      }),
+    regenerate: (messageId, options) =>
+      new Promise<CompleteOutcome>((resolve, reject) => {
+        const signal = options?.signal;
+        publication.command(() => {
+          const previous = publication.getObservation();
+          let prompt: number;
+          try {
+            if (disposed) throw new Error('The session is disposed.');
+            if (active)
+              throw new Error('Cannot regenerate while a response is running.');
+            if (previous.decision)
+              throw new Error('Cannot regenerate while a decision is waiting.');
+            if (ledger.snapshot().blocker && !retryable(previous))
+              throw new Error(
+                'Cannot regenerate while client tool calls are unresolved.'
+              );
+            prompt = regeneratePrompt(previous.transcript, messageId);
+          } catch (error) {
+            reject(error);
+            return;
+          }
+          if (signal?.aborted) {
+            resolve('aborted');
+            return;
+          }
+          if (saved) ledger.releaseUncertain(saved.runId);
+          // Keep the prompt: it ends the history and is the next run's input.
+          const transcript = Object.freeze(
+            previous.transcript.slice(0, prompt + 1)
+          );
+          // The calls of the dropped records are dropped with them. A new
+          // answer that calls a tool runs its handler again.
+          ledger.forgetDropped(transcript);
+          const id = crypto.randomUUID();
+          admit(
+            Object.freeze({
+              ...previous,
+              status: 'running',
+              transcript,
+              ...nextInvocationSubagents(previous, transcript),
+              run: Object.freeze({ id }),
+            }),
+            id,
+            signal,
+            resolve,
+            'regenerate'
+          );
+        });
+      }),
   };
+  return durableSession(session, durability, options.persistence !== undefined);
 }
