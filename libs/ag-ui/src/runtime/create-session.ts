@@ -68,6 +68,11 @@ import {
 } from './decision.js';
 
 import {
+  createInstruments,
+  type InstrumentOptions,
+  type SessionRequestType,
+} from './session-instruments.js';
+import {
   createDurability,
   gated,
   isDurable,
@@ -85,7 +90,9 @@ import {
 } from './submit-input.js';
 
 /** The options every session takes, whatever it sends its requests with. */
-export interface SessionCommonOptions extends DurabilityOptions {
+export interface SessionCommonOptions
+  extends DurabilityOptions,
+    InstrumentOptions {
   /**
    * The thread this session owns. Absent, the handed agent's `threadId` is
    * used, or else a new one is generated; read it from `session.threadId`.
@@ -225,6 +232,21 @@ export interface Session<TState = unknown> {
   onCustomEvent?(
     listener: (event: AgentSessionCustomEvent) => void
   ): () => void;
+  /**
+   * Listens for every AG-UI protocol event the session applied to its
+   * snapshot, in arrival order, for a host that folds the full stream into a
+   * view of its own. The factory always supplies it. Each event is delivered
+   * after the snapshot shows it. Events the session ignores are not
+   * delivered: those of a superseded or stopped run, and those after a run's
+   * terminal event. A thread restored from `replay` delivers every replayed
+   * event, in order, once the snapshot shows the whole replay; a thread
+   * restored from `persistence` delivers none. With a
+   * `reportOperationFailure` a `RUN_ERROR` carries only the fixed message.
+   * Nothing is retained for a later listener, a throwing listener cannot fail
+   * the run, and nothing is delivered after disposal. Returns an idempotent
+   * release.
+   */
+  onRawEvent?(listener: (event: AGUIEvent) => void): () => void;
   /**
    * Resolves once the thread is restored from `replay` or `persistence`, and
    * at once for a session with neither. Commands issued before then wait for
@@ -367,6 +389,9 @@ function answerFields(
 }
 interface Attempt {
   readonly id: string;
+  readonly kind: SessionRequestType;
+  /** Reports the request's end to telemetry, once it was sent. */
+  ended?: (outcome: CompleteOutcome) => void;
   readonly controller: AbortController;
   readonly done: Promise<CompleteOutcome>;
   readonly resolve: (outcome: CompleteOutcome) => void;
@@ -441,13 +466,18 @@ export function createSession(
         interruptTransport,
         persistence,
         replay,
+        a2uiClientCapabilities: options.a2uiClientCapabilities,
+        telemetry: options.telemetry,
+        reportOperationFailure: options.reportOperationFailure,
+        devtools: options.devtools,
       },
       catalog
     );
+  const instruments = createInstruments(options);
   const factory = createRun({
     url,
     headers,
-    fetch,
+    fetch: instruments.fetch(fetch),
     agent,
     agentId,
     interruptMode,
@@ -470,22 +500,37 @@ export function createSession(
           ...initial,
           clientTools: Object.freeze({ calls: Object.freeze([]) }),
         }),
-    createPresenter(stateType, true, persistence?.reconcile !== undefined)
+    createPresenter(
+      stateType,
+      true,
+      persistence?.reconcile !== undefined,
+      instruments.protect
+    )
   );
+  instruments.follow(publication);
   let active: Attempt | undefined;
   let disposed = false;
   let revision = 0;
   const durability = isDurable({ persistence, replay })
     ? createDurability(
-        { threadId, persistence, replay, interruptMode, interruptTransport },
+        {
+          threadId,
+          persistence,
+          replay,
+          interruptMode,
+          interruptTransport,
+          redact: instruments.redact,
+        },
         {
           publication,
           active: () => active !== undefined,
           disposed: () => disposed,
           adopt: (observation) => {
             saved = undefined;
+            instruments.cause('history');
             publication.publish(observation);
           },
+          replayed: (events) => events.forEach(instruments.raw),
         }
       )
     : undefined;
@@ -522,6 +567,8 @@ export function createSession(
       // The run announced a pause and then finished in the ordinary way.
       if (outcome === 'success' && pausedByNotice(decision, attempt.id))
         outcome = 'paused';
+      attempt.ended?.(outcome);
+      instruments.cause('run:end');
       publication.publish(
         Object.freeze({
           ...previous,
@@ -532,7 +579,9 @@ export function createSession(
             ...previous.run,
             id: attempt.id,
             outcome,
-            ...(failure && outcome === 'error' && { failure }),
+            ...(failure &&
+              outcome === 'error' &&
+              !instruments.protect && { failure }),
           }),
         })
       );
@@ -559,7 +608,7 @@ export function createSession(
         runId: attempt.id,
         protocolVersion: PROTOCOL_VERSION,
         messages: requestMessages(value.transcript),
-        state: requestState(value.state),
+        state: instruments.requestState(requestState(value.state)),
         tools: catalog === undefined ? [] : requestClientTools(catalog),
         context: [],
         ...answerFields(decision, attempt.id),
@@ -576,13 +625,20 @@ export function createSession(
     }
     if (!current(attempt)) return;
     attempt.starting = true;
+    attempt.ended = instruments.request(attempt.kind);
+    // A run a host scripted is served in place of the network, once.
+    const scripted = instruments.scriptedFetch();
+    const runner = scripted
+      ? createRun({ url: 'scripted:', fetch: scripted, interruptMode })
+      : factory;
     // createRun owns all first-result and invocation facts once start is called.
-    attempt.handle = factory.start(
+    attempt.handle = runner.start(
       input,
-      (event) => {
+      (delivered) => {
         if (!current(attempt)) return;
         // createRun delivers the SDK's normalized/verified union through its
         // BaseEvent callback. No second schema parse or sequence verifier.
+        const event = instruments.redact(delivered as AGUIEvent);
         const previous = publication.getObservation();
         let next = reasoningClock.observe(
           event as AGUIEvent,
@@ -617,9 +673,12 @@ export function createSession(
           event.type === 'RUN_STARTED' && acknowledged !== next.decision;
         if (started) next = Object.freeze({ ...next, decision: acknowledged });
         if (current(attempt)) {
+          instruments.cause(event.type);
           publication.publish(next);
           if (started) void durability?.save().catch(() => undefined);
         }
+        // The stream shows what the snapshot saw, after the snapshot shows it.
+        if (current(attempt)) instruments.raw(event);
         const custom = captureCustomEvent(event as AGUIEvent);
         if (custom && current(attempt)) publication.emitCustomEvent(custom);
       },
@@ -637,7 +696,8 @@ export function createSession(
     id: string,
     next: Observation,
     signal: AbortSignal | undefined,
-    resolve: (outcome: CompleteOutcome) => void
+    resolve: (outcome: CompleteOutcome) => void,
+    kind: SessionRequestType = 'submit'
   ) => {
     revision++;
     let settle!: (outcome: CompleteOutcome) => void;
@@ -646,6 +706,7 @@ export function createSession(
     });
     const attempt: Attempt = {
       id,
+      kind,
       controller: new AbortController(),
       done,
       resolve: settle,
@@ -666,6 +727,7 @@ export function createSession(
       });
     signal?.addEventListener('abort', abort, { once: true });
     attempt.cleanup = () => signal?.removeEventListener('abort', abort);
+    instruments.cause('run:start');
     publication.publish(next);
     if (!current(attempt)) return;
     // An answer is saved before it is sent, so a reload in between knows one
@@ -689,6 +751,7 @@ export function createSession(
           durability?.dispose();
           // Events are not settlement: stop delivering them right away.
           publication.clearCustomEventListeners();
+          instruments.clear();
         }
         const attempt = active;
         if (attempt) {
@@ -710,6 +773,8 @@ export function createSession(
       disposed ? () => undefined : publication.subscribe(notify),
     onCustomEvent: (listener) =>
       disposed ? () => undefined : publication.onCustomEvent(listener),
+    onRawEvent: (listener) =>
+      disposed ? () => undefined : instruments.onRawEvent(listener),
     resume: (responses, options) =>
       new Promise<CompleteOutcome>((resolve, reject) => {
         const beforeSignal = revision;
@@ -782,7 +847,7 @@ export function createSession(
             return;
           }
           saved = undefined;
-          admit(id, next, signal, resolve);
+          admit(id, next, signal, resolve, 'resume');
         });
       }),
     submit: (input, options) =>
@@ -921,7 +986,8 @@ export function createSession(
               run: Object.freeze({ id }),
             }),
             undefined,
-            resolve
+            resolve,
+            'retry'
           );
         });
       }),
@@ -962,7 +1028,8 @@ export function createSession(
               run: Object.freeze({ id }),
             }),
             signal,
-            resolve
+            resolve,
+            'regenerate'
           );
         });
       }),
@@ -979,7 +1046,11 @@ function createToolsOwner(
   catalog: ReturnType<typeof captureClientTools>
 ): Session {
   const { threadId, interruptMode = 'native', interruptTransport } = options;
-  const factory = createRun(options);
+  const instruments = createInstruments(options);
+  const factory = createRun({
+    ...options,
+    fetch: instruments.fetch(options.fetch),
+  });
   const answerable =
     interruptMode === 'native' || answersNotice(interruptTransport);
   const reasoningClock = createReasoningClock();
@@ -997,9 +1068,11 @@ function createToolsOwner(
     createPresenter(
       options.stateType,
       (observation) => retryable(observation),
-      options.persistence?.reconcile !== undefined
+      options.persistence?.reconcile !== undefined,
+      instruments.protect
     )
   );
+  instruments.follow(publication);
   /** The last request sent that was not an answer to a decision. */
   let saved:
     | {
@@ -1030,6 +1103,8 @@ function createToolsOwner(
   interface Physical {
     readonly id: string;
     readonly token: object;
+    readonly kind: SessionRequestType;
+    ended?: (outcome: CompleteOutcome) => void;
     handle?: RunHandle;
     starting: boolean;
     settled: boolean;
@@ -1051,8 +1126,11 @@ function createToolsOwner(
     | { readonly id: string; readonly token: object }
     | undefined;
   const durability = isDurable(options)
-    ? createDurability(options, {
+    ? createDurability(
+        { ...options, redact: instruments.redact },
+        {
         publication,
+        replayed: (events) => events.forEach(instruments.raw),
         active: () => active !== undefined,
         disposed: () => disposed,
         adopt: (observation) => {
@@ -1075,11 +1153,13 @@ function createToolsOwner(
             ledger.markPaused(token);
             pausedPhysical = { id: decision.sourceRunId, token };
           }
+          instruments.cause('history');
           publication.publish(
             Object.freeze({ ...observation, clientTools: ledger.snapshot() })
           );
         },
-      })
+        }
+      )
     : undefined;
   const owns = (command: Command, physical?: Physical) =>
     active === command &&
@@ -1156,6 +1236,7 @@ function createToolsOwner(
     // Keep admission busy through final notification; reentrant submit cannot
     // append a new human while this command's result is being published.
     const previous = publication.getObservation();
+    instruments.cause('run:end');
     publication.publish(
       Object.freeze({
         ...previous,
@@ -1319,6 +1400,7 @@ function createToolsOwner(
     if (physical.settled) return;
     physical.settled = true;
     physical.fetchInvoked = fetchInvoked;
+    physical.ended?.(outcome);
     if (!owns(command, physical)) return;
     const previous = publication.getObservation();
     const terminal = previous.run?.terminal;
@@ -1354,7 +1436,10 @@ function createToolsOwner(
           ...previous.run,
           id: physical.id,
           outcome: nativeSuccess ? 'success' : outcome,
-          ...(failure && !nativeSuccess && outcome === 'error' && { failure }),
+          ...(failure &&
+            !nativeSuccess &&
+            outcome === 'error' &&
+            !instruments.protect && { failure }),
         }),
         clientTools: ledger.snapshot(),
       })
@@ -1460,7 +1545,7 @@ function createToolsOwner(
         runId: physical.id,
         protocolVersion: PROTOCOL_VERSION,
         messages: requestMessages(capture.transcript),
-        state: requestState(snapshot.state),
+        state: instruments.requestState(requestState(snapshot.state)),
         tools: requestClientTools(catalog),
         context: [],
         ...answerFields(snapshot.decision, physical.id),
@@ -1483,9 +1568,14 @@ function createToolsOwner(
     )
       return;
     physical.starting = true;
-    physical.handle = factory.start(
+    physical.ended = instruments.request(physical.kind);
+    const scripted = instruments.scriptedFetch();
+    const runner = scripted
+      ? createRun({ url: 'scripted:', fetch: scripted, interruptMode })
+      : factory;
+    physical.handle = runner.start(
       input,
-      (event) => {
+      (delivered) => {
         publication.command(() => {
           if (
             !owns(command, physical) ||
@@ -1493,6 +1583,7 @@ function createToolsOwner(
             disposed
           )
             return;
+          const event = instruments.redact(delivered as AGUIEvent);
           const previous = publication.getObservation();
           let next = reasoningClock.observe(
             event as AGUIEvent,
@@ -1529,6 +1620,7 @@ function createToolsOwner(
             !command.controller.signal.aborted &&
             !disposed
           ) {
+            instruments.cause(event.type);
             publication.publish(
               Object.freeze({
                 ...next,
@@ -1538,6 +1630,12 @@ function createToolsOwner(
             );
             if (started) void durability?.save().catch(() => undefined);
           }
+          if (
+            owns(command, physical) &&
+            !command.controller.signal.aborted &&
+            !disposed
+          )
+            instruments.raw(event);
           const custom = captureCustomEvent(event as AGUIEvent);
           if (
             custom &&
@@ -1606,6 +1704,7 @@ function createToolsOwner(
     const previous = publication.getObservation();
     const physical: Physical = {
       id,
+      kind: 'client-tool-continuation',
       token: ledger.startPhysical({
         runId: id,
         threadId,
@@ -1616,6 +1715,7 @@ function createToolsOwner(
       fetchInvoked: false,
     };
     command.physical = physical;
+    instruments.cause('run:start');
     publication.publish(
       Object.freeze({
         ...previous,
@@ -1631,7 +1731,8 @@ function createToolsOwner(
     next: Observation,
     id: string,
     signal: AbortSignal | undefined,
-    resolve: (outcome: CompleteOutcome) => void
+    resolve: (outcome: CompleteOutcome) => void,
+    kind: SessionRequestType = 'submit'
   ) => {
     let settle!: (outcome: CompleteOutcome) => void;
     const done = new Promise<CompleteOutcome>((yes) => {
@@ -1656,6 +1757,7 @@ function createToolsOwner(
     command.cleanup = () => signal?.removeEventListener('abort', abort);
     const physical: Physical = {
       id,
+      kind,
       token: ledger.startPhysical({
         runId: id,
         threadId,
@@ -1666,6 +1768,7 @@ function createToolsOwner(
       fetchInvoked: false,
     };
     command.physical = physical;
+    instruments.cause('run:start');
     publication.publish(
       Object.freeze({ ...next, clientTools: ledger.snapshot() })
     );
@@ -1689,6 +1792,7 @@ function createToolsOwner(
           durability?.dispose();
           // Events are not settlement: stop delivering them right away.
           publication.clearCustomEventListeners();
+          instruments.clear();
         }
         const command = active;
         if (command) {
@@ -1710,6 +1814,8 @@ function createToolsOwner(
       disposed ? () => undefined : publication.subscribe(notify),
     onCustomEvent: (listener) =>
       disposed ? () => undefined : publication.onCustomEvent(listener),
+    onRawEvent: (listener) =>
+      disposed ? () => undefined : instruments.onRawEvent(listener),
     stop: () => close(false),
     dispose: () => close(true),
     submit: (input, options) =>
@@ -1855,7 +1961,8 @@ function createToolsOwner(
               }),
               id,
               signal,
-              resolve
+              resolve,
+              'resume'
             );
           } catch (error) {
             reject(error);
@@ -1909,7 +2016,8 @@ function createToolsOwner(
             }),
             id,
             undefined,
-            resolve
+            resolve,
+            'retry'
           );
         });
       }),
@@ -1957,7 +2065,8 @@ function createToolsOwner(
             }),
             id,
             signal,
-            resolve
+            resolve,
+            'regenerate'
           );
         });
       }),

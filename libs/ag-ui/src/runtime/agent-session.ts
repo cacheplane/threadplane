@@ -14,6 +14,7 @@ import type { OwnedInterrupt } from './decision.js';
 import { NO_STATE, ownState } from './state.js';
 import { projectMessages, projectToolCalls } from './message-projection.js';
 import { failedWithRunError, type Observation } from './session-observation.js';
+import { PROTECTED_COPY } from './session-instruments.js';
 
 type Tools = Record<string, ToolContract>;
 /**
@@ -144,6 +145,7 @@ function failure(
   native: Observation,
   canRetry: boolean,
   canCheck: boolean,
+  protect: boolean,
   previous?: AgentError
 ): AgentError {
   if (native.hold === 'storage')
@@ -157,12 +159,15 @@ function failure(
     reported === undefined && native.run?.outcome === 'interrupted';
   const status =
     reported === undefined ? native.run?.failure?.status : undefined;
-  const auth = status === 401 || status === 403;
+  // A protected session shows one message for whatever a server described.
+  const auth = !protect && (status === 401 || status === 403);
   const kind = interrupted ? 'interrupted' : auth ? 'auth' : 'server';
   const message = interrupted
     ? INTERRUPTED_COPY.message
     : auth
     ? AUTH_COPY
+    : protect
+    ? PROTECTED_COPY
     : reported || FAILED;
   const detail = interrupted ? INTERRUPTED_COPY.detail : undefined;
   // Only the backend's own RUN_ERROR settles what happened. Any other failure
@@ -247,6 +252,7 @@ function project(
   native: Observation,
   canRetry: boolean,
   canCheck: boolean,
+  protect: boolean,
   view: StateView,
   previous?: SessionSnapshot
 ): SessionSnapshot {
@@ -254,7 +260,7 @@ function project(
   const toolCalls = projectToolCalls(native, previous?.toolCalls);
   const error =
     native.status === 'error'
-      ? failure(native, canRetry, canCheck, previous?.error)
+      ? failure(native, canRetry, canCheck, protect, previous?.error)
       : undefined;
   const used = usage(native);
   const { state: _document, subagents: _children, ...evidence } = native;
@@ -298,7 +304,8 @@ function project(
 export function createPresenter(
   declaration: StateDeclaration | undefined,
   canRetry: boolean | ((observation: Observation) => boolean),
-  canCheck = false
+  canCheck = false,
+  protect = false
 ): (observation: Observation) => SessionSnapshot {
   const readView = stateReader(declaration);
   let seen: Observation | undefined;
@@ -309,6 +316,7 @@ export function createPresenter(
         observation,
         typeof canRetry === 'function' ? canRetry(observation) : canRetry,
         canCheck,
+        protect,
         readView(observation.state),
         current
       );

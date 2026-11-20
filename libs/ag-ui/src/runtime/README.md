@@ -500,6 +500,78 @@ that disposes the session does not stop the rest of that one delivery.
 The method is optional on the `Session` type so hand-written sessions need not
 supply it; the factory always does.
 
+## Raw events
+
+`session.onRawEvent(listener)` delivers every AG-UI protocol event the session
+applied to its snapshot, in arrival order, for a host that folds the full
+stream into a view of its own. It is the Angular adapter's `rawEvents$` as a
+listener, so the runtime needs no observable library:
+
+```ts
+const release = session.onRawEvent((event) => myView.apply(event));
+```
+
+- Each event is delivered after the snapshot shows it, and is the event the
+  pipeline produced: retired shapes translated and chunk events expanded.
+- Events the session ignores are not delivered: those of a superseded or
+  stopped run, and anything a response sends after its run's terminal event.
+- A thread restored from `replay` delivers every replayed event, in order, once
+  the snapshot shows the whole replay; register before awaiting `ready` to see
+  them. A thread restored from `persistence` restores a saved snapshot, so
+  nothing is delivered for it.
+- Nothing is retained for a later listener. A throwing listener affects neither
+  the run nor other listeners. Disposal releases every listener, and a later
+  registration is inert. The returned release is idempotent.
+
+## Capabilities, telemetry, protection and devtools
+
+```ts
+const session = createSession({
+  url,
+  a2uiClientCapabilities: { supportedCatalogIds: ['basic'] },
+  telemetry: (payload) => collector.capture(payload),
+  reportOperationFailure: (code) => cockpit.failed(code),
+  devtools: { report, takeScriptedRun },
+});
+```
+
+- `a2uiClientCapabilities` advertises A2UI catalog support to the agent. Every
+  request's state carries it under `a2ui_client_capabilities`, including after
+  a server state snapshot replaced the state. It is not part of the session's
+  own state: `snapshot.state` and a state schema never see it. A state that is
+  not a record is sent as it is, without the key.
+- `telemetry` receives `{ event, properties }` for
+  `tplane:runtime_instance_created` once, and for each request sent
+  `tplane:runtime_request_created` (with `requestType`: `submit`, `resume`,
+  `retry`, `regenerate` or `client-tool-continuation`), `tplane:stream_started`
+  and then `tplane:stream_ended` or `tplane:stream_errored`, with `durationMs`
+  and for an error an `errorClass`. `properties` always has
+  `transport: 'ag-ui'` and `surface: 'session'`. A sink may be asynchronous and
+  may throw; neither affects the session. Absent or `false` reports nothing:
+  this runtime has no automatic development collection of its own, so a host
+  that wants one passes its sink.
+- `reportOperationFailure(code)` is told `unauthorized` for a 401 or 403 and
+  `network_blocked` for a request that got no response. A request the session
+  itself cancelled is not reported, and a reporter that throws changes
+  nothing. A session with a reporter also protects what a failure shows: a
+  backend `RUN_ERROR` keeps its type and loses its text, code and payload, a
+  failed response's body is dropped and its status is not published, and
+  `snapshot.error` is a `server` error with one fixed message. That holds for
+  `snapshot.run.terminal`, for `onRawEvent` and for a replayed thread.
+  `retryable` and `recovery` are unchanged, so a backend `RUN_ERROR` can still
+  be retried.
+- `devtools.report(cause, changed)` is called after each publication that
+  changed a listed snapshot field (`messages`, `status`, `error`, `toolCalls`,
+  `state`, `interrupts`, `subagents`, `plan`, `usage`, `decision`,
+  `inputBlocked`, `clientTools`) with the names of those fields and never
+  their values. `cause` is the protocol event's type, or `run:start`,
+  `run:end`, `history` (a restored or reconciled thread) or `reset`.
+- `devtools.takeScriptedRun()` is asked before each request. A run it returns,
+  `{ events }`, is served in place of the network through the same pipeline;
+  its `RUN_STARTED` and `RUN_FINISHED` take the request's own thread and run
+  identifiers. Returning nothing sends the request as usual.
+- Hooks that throw are ignored.
+
 ## Interruption evidence
 
 Both `createSession` and standalone `createRun` default to

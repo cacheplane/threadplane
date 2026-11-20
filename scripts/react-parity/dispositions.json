@@ -15150,6 +15150,26 @@
       "reason": "Private in-memory compare-and-swap store for runtime specs. No public export or production dependency."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/session-instruments.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private observation and protection hooks of the session: raw event listeners, advertised A2UI capabilities, a telemetry sink, failure redaction and devtools reports. Excluded from public exports and legacy Angular reachability."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/protected-fetch.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private fetch boundary of a session with an operation-failure reporter; reports credential and network failures and drops failed response bodies. Excluded from public exports and legacy Angular reachability."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/submit-input.ts",
       "taskIds": [
         "T12",
