@@ -43,11 +43,14 @@ export interface DurabilityHost {
   adopt(observation: Observation): void;
   /** Reports the events a replay was folded from, after the thread shows them. */
   replayed?(events: readonly AGUIEvent[]): void;
+  /** A load restored a saved thread, from replay or from storage. */
+  restored?(): void;
 }
 
 const CHECKING = 'A status check is in progress.';
 const STORAGE = 'Thread storage needs reconciliation before another request.';
 const DISPOSED = 'The session is disposed.';
+const LOADING = 'The thread is loading.';
 
 /** True when a session with these options restores its thread before it runs. */
 export function isDurable(options: DurabilityOptions): boolean {
@@ -99,6 +102,8 @@ export function createDurability(
   const replayAbort = new AbortController();
   let hydrated = false;
   let checking = false;
+  /** A `load()` the application asked for, while it is going. */
+  let loading: Promise<void> | undefined;
   /** Storage failed; held back while a run is going, shown when it settles. */
   let faulted = false;
   const setHold = (hold: Observation['hold'], status?: Observation['status']) =>
@@ -118,8 +123,10 @@ export function createDurability(
   const adopt = (record: ThreadRecord | null) =>
     publication.command(() => {
       faulted = false;
-      if (record) host.adopt(observationOf(record));
-      else {
+      if (record) {
+        host.adopt(observationOf(record));
+        host.restored?.();
+      } else {
         const current = publication.getObservation();
         publication.publish(
           withHold(
@@ -144,6 +151,7 @@ export function createDurability(
           if (host.disposed()) return;
           publication.command(() => {
             host.adopt(result.observation);
+            host.restored?.();
             host.replayed?.(result.events);
           });
           return;
@@ -227,15 +235,39 @@ export function createDurability(
     adopt(record);
   };
 
+  /**
+   * Reads the thread again, from replay and then from storage, exactly as the
+   * session did when it was created. The session holds `hydrating` meanwhile.
+   */
+  const load = (options?: { readonly signal?: AbortSignal }): Promise<void> => {
+    if (host.disposed()) return Promise.reject(new Error(DISPOSED));
+    if (options?.signal?.aborted) return Promise.resolve();
+    // The first load is still going: that is the load.
+    if (!hydrated) return ready;
+    if (loading) return loading;
+    if (checking) return Promise.reject(new Error(CHECKING));
+    if (host.active())
+      return Promise.reject(
+        new Error('Stop the active request before loading the thread.')
+      );
+    setHold('hydrating');
+    const current = hydrate().finally(() => {
+      if (loading === current) loading = undefined;
+    });
+    loading = current;
+    return current;
+  };
+
   return {
     /** Resolves once the thread is restored. Rejects when storage could not be read. */
     ready,
+    load,
     hydrated: () => hydrated,
     /** A reconciler is configured, so an uncertain answer can be checked. */
     canCheck: store?.canReconcile === true,
     /** Why no command can run now, apart from hydration, which commands wait for. */
     refusal: (): string | undefined =>
-      checking ? CHECKING : faulted ? STORAGE : undefined,
+      checking ? CHECKING : loading ? LOADING : faulted ? STORAGE : undefined,
     /** Saves the thread as it is now. Rejects when the write failed. */
     save,
     /** The owner settled a command: save, show a held fault, check if offered. */

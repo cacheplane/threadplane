@@ -6,13 +6,20 @@ import {
   type RunAgentInput,
   type ResumeEntry,
 } from '@ag-ui/client';
-import type {
-  AgentSessionCustomEvent,
-  CompleteOutcome,
-  InferState,
-  PlainValue,
-  StateDeclaration,
-  ToolContract,
+import { EventType, type ToolCallResultEvent, type Tool } from '@ag-ui/client';
+import {
+  projectErrorDiagnostic,
+  type AgentClientTools,
+  type AgentErrorDiagnostic,
+  type AgentSessionCustomEvent,
+  type ClientToolResult,
+  type ClientToolSpec,
+  type CompleteOutcome,
+  type ContentBlock,
+  type InferState,
+  type PlainValue,
+  type StateDeclaration,
+  type ToolContract,
 } from '@threadplane/core';
 import type {
   CheckedTools,
@@ -39,14 +46,26 @@ import {
   type Observation,
 } from './session-observation.js';
 import { nextInvocation, type Subagents } from './subagents.js';
-import { createRun, httpFailure, type RunHandle } from './create-run.js';
+import {
+  createRun,
+  httpFailure,
+  type RunHandle,
+  type RunResult,
+} from './create-run.js';
 import type { RequestSource, SessionAgent } from './create-http-request.js';
 import { createPublication } from './session-publication.js';
 import {
   createPresenter,
+  noteFailure,
   UNSAFE_RETRY,
   type SessionSnapshot,
 } from './agent-session.js';
+import { applyToolMessage } from './tool-messages.js';
+import {
+  createLifecycleRecorder,
+  type LifecycleRecorder,
+  type SessionLifecycleSource,
+} from './lifecycle.js';
 import { createReasoningClock } from './reasoning-clock.js';
 import {
   answersNotice,
@@ -85,9 +104,13 @@ import {
 const NOT_SETTLED = 'Resume needs a settled session with a pending interrupt.';
 import { copyData } from '../lib/internal/copy-data.js';
 import {
+  captureExtras,
   captureSubmit,
   mergeSubmitState,
+  type CapturedExtras,
   type SubmitInput,
+  type SubmitState,
+  type UserContent,
 } from './submit-input.js';
 
 /** The options every session takes, whatever it sends its requests with. */
@@ -146,6 +169,8 @@ interface CapturedOptions
   extends Omit<SessionCommonOptions, 'threadId'>,
     RequestSource {
   readonly threadId: string;
+  /** The session named the thread itself; its first request creates it. */
+  readonly ownThread: boolean;
 }
 /** The session's options with its state declaration as the type parameter. */
 type DeclaredOptions<D> = Omit<SessionCommonOptions, 'stateType'> & {
@@ -167,8 +192,18 @@ function nextInvocationSubagents(
   );
 }
 /** What `resume` takes beside the responses. */
-export interface ResumeOptions {
+export interface ResumeOptions<TState = unknown> {
   readonly signal?: AbortSignal;
+  /**
+   * A user message sent in the same request as the answers, as the core
+   * contract's resume options and the Angular adapter's
+   * `submit({ resume, message })`. It is appended to the conversation.
+   */
+  readonly message?: string;
+  /** That message as structured content; see `submit`. */
+  readonly blocks?: readonly ContentBlock[];
+  /** A patch merged into the state document before the answering request. */
+  readonly state?: SubmitState<TState>;
   /**
    * The `id` of the pause a control was rendered for, from
    * `decisionState(snapshot)` or `interruptSession(snapshot)`. When given,
@@ -210,8 +245,43 @@ export interface Session<TState = unknown> {
    */
   resume(
     responses: readonly InterruptResponse[],
-    options?: ResumeOptions
+    options?: ResumeOptions<TState>
   ): Promise<CompleteOutcome>;
+  /**
+   * Runs the agent on the conversation as it stands, appending no user
+   * message, after merging `input.state` when given: the core contract's
+   * `runWithoutMessage`. Refused, like `submit`, while a decision is waiting.
+   * The factory always supplies it.
+   */
+  runWithoutMessage?(
+    input?: { readonly state?: SubmitState<TState> },
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome>;
+  /**
+   * The core client-tool capability, on a session created without a handler
+   * map: `setCatalog` declares the tools each later request sends, the calls
+   * that wait are in the snapshot's `pendingClientTools` once a catalog was
+   * set, `settle` records a result as a tool record without running, `flush`
+   * saves the thread when the session has `persistence`, and `resolve`
+   * records a result and continues the run. A session created with a handler
+   * map runs its tools itself and leaves this undefined.
+   */
+  readonly clientTools?: AgentClientTools;
+  /**
+   * When the session first saw each milestone, in the shape the LangGraph
+   * session's `lifecycle` has. The factory always supplies it.
+   */
+  readonly lifecycle?: SessionLifecycleSource;
+  /**
+   * Present with `replay` or `persistence`. Reads the thread again, as the
+   * session did when it was created: replay first, then storage. The
+   * snapshot's `inputBlocked.reason` is `hydrating` meanwhile, which is what
+   * a thread-loading indicator reads, and commands are refused until it
+   * settles. Rejects after disposal, while a run or a status check is going,
+   * and when storage could not be read; a failed replay does not reject it.
+   * The first load starts by itself at creation: `ready` resolves with it.
+   */
+  load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
   stop(): Promise<void>;
   dispose(): Promise<void>;
   /**
@@ -224,6 +294,13 @@ export interface Session<TState = unknown> {
    * leaves the backend outcome open. With a client-tool catalog it sends the
    * failed request again, whichever request of the command that was, and runs
    * no handler a second time.
+   *
+   * It also sends a failed `resume` again, unchanged, when that request
+   * provably reached no run: it was never made, or the backend refused it
+   * with its own `RUN_ERROR` before any `RUN_STARTED`. The pause is then
+   * pending again and the error's `recovery` is `'retry'`. An answer that
+   * may have arrived is never sent twice, and a transport's own claim that
+   * a request did not leave is not taken as proof.
    */
   retry?(): Promise<CompleteOutcome>;
   /**
@@ -315,9 +392,119 @@ function durableSession<S extends Session>(
     ...(session.regenerate && {
       regenerate: gated(durability, session.regenerate, reject),
     }),
+    ...(session.runWithoutMessage && {
+      runWithoutMessage: gated(durability, session.runWithoutMessage, () =>
+        Promise.resolve('error')
+      ),
+    }),
+    load: durability.load,
     ...(persisted && { reconcileInterrupt: durability.reconcileInterrupt }),
     ...(durability.checkStatus && { checkStatus: durability.checkStatus }),
   };
+}
+
+/** A user record for `content`, with an identifier no record in `history` has. */
+function userRecord(history: Transcript, content: UserContent) {
+  const id = crypto.randomUUID();
+  if (history.some((message) => message.id === id))
+    throw new TypeError('Generated message ID collides with history');
+  return ownTranscript([
+    { id, role: 'user', content } as Parameters<
+      typeof ownTranscript
+    >[0][number],
+  ])[0];
+}
+
+/** The history and state a request sends once a command's extras are applied. */
+function withExtras(previous: Observation, extras: CapturedExtras) {
+  const state = mergeSubmitState(previous.state, extras.state);
+  const transcript =
+    extras.content === undefined
+      ? previous.transcript
+      : Object.freeze([
+          ...previous.transcript,
+          userRecord(previous.transcript, extras.content),
+        ]);
+  return { state, transcript };
+}
+
+/**
+ * What a failed run was classified from: the backend's own `RUN_ERROR`, or
+ * the value the transport failed with.
+ */
+function failureDiagnostic(
+  terminal: NonNullable<Observation['run']>['terminal'],
+  cause: unknown
+): AgentErrorDiagnostic | undefined {
+  if (terminal?.type === 'RUN_ERROR')
+    return Object.freeze({
+      name: 'RunError',
+      message: String(terminal.message),
+      ...(terminal.code !== undefined && { code: terminal.code }),
+    });
+  return cause === undefined ? undefined : projectErrorDiagnostic(cause);
+}
+
+const NO_EXTRAS: CapturedExtras = Object.freeze({});
+
+/**
+ * False when an answering request provably reached no run: it was never
+ * made, or the backend refused it with its own `RUN_ERROR` before any
+ * `RUN_STARTED`. A transport's claim about its own failure is not proof.
+ */
+function answerTaken(
+  result: RunResult,
+  started: boolean,
+  terminal: NonNullable<Observation['run']>['terminal']
+): boolean {
+  return (
+    result.fetchInvoked &&
+    !(result.outcome === 'error' && !started && terminal?.type === 'RUN_ERROR')
+  );
+}
+
+/** The failed answer `retry` may send again, held by the owner that sent it. */
+interface FailedAnswer {
+  readonly runId: string;
+  readonly pause: string;
+  readonly responses: readonly NativeResponse[];
+  readonly transcript: Transcript;
+  readonly state: PlainValue;
+}
+
+/**
+ * True when `answer` is a resume whose request provably never left: its run
+ * failed, and the pause it answered is pending again with no answer claimed.
+ */
+function answerUnsent(
+  observation: Observation,
+  answer: FailedAnswer | undefined
+): answer is FailedAnswer {
+  const decision = observation.decision;
+  return (
+    answer !== undefined &&
+    observation.status === 'error' &&
+    observation.hold === undefined &&
+    observation.run?.id === answer.runId &&
+    observation.run.outcome === 'error' &&
+    decision?.kind === 'native' &&
+    !decision.attempt &&
+    decision.id === answer.pause
+  );
+}
+
+/** Tells the lifecycle recorder about each publication. */
+function followLifecycle(
+  publication: {
+    getSnapshot(): SessionSnapshot;
+    subscribe(notify: () => void): () => void;
+  },
+  lifecycle: LifecycleRecorder
+): void {
+  publication.subscribe(() => {
+    lifecycle.observe(publication.getSnapshot());
+    lifecycle.flush();
+  });
 }
 /** The thread a session starts with, held while a durable one is restored. */
 function startingObservation(
@@ -338,7 +525,7 @@ function startingObservation(
 export type ClientToolSession<
   C extends Record<string, ToolContract>,
   TState = unknown
-> = Omit<Session<TState>, 'getSnapshot'> & {
+> = Omit<Session<TState>, 'getSnapshot' | 'clientTools'> & {
   getSnapshot(): ClientToolSessionSnapshot<C, TState>;
 };
 /** A `CUSTOM` event as an application event, read the way the Angular adapter
@@ -420,6 +607,8 @@ interface Attempt {
   cleanup: () => void;
   handle?: RunHandle;
   starting: boolean;
+  /** The backend reported `RUN_STARTED` for this request. */
+  started: boolean;
   finished: boolean;
 }
 
@@ -472,6 +661,7 @@ export function createSession(
     return createToolsOwner(
       {
         threadId,
+        ownThread: stable === undefined,
         url,
         headers,
         fetch,
@@ -512,24 +702,42 @@ export function createSession(
     persistence,
     replay,
   });
+  /** What the latest admitted submission sent; a resume or newer submission replaces it. */
+  let saved:
+    | {
+        readonly runId: string;
+        readonly transcript: Transcript;
+        readonly state: PlainValue;
+      }
+    | undefined;
+  /** The latest answer sent, kept until another command replaces it. */
+  let answered: FailedAnswer | undefined;
+  /** The tools declared through `clientTools.setCatalog`, as requests send them. */
+  let declared: readonly Tool[] = [];
+  const lifecycle = createLifecycleRecorder();
   const publication = createPublication(
-    catalog === undefined
-      ? initial
-      : Object.freeze({
-          ...initial,
-          clientTools: Object.freeze({ calls: Object.freeze([]) }),
-        }),
+    initial,
     createPresenter(
       stateType,
-      true,
+      (observation) =>
+        failedWithRunError(observation) || answerUnsent(observation, answered),
       persistence?.reconcile !== undefined,
       instruments.protect
     )
   );
+  // Reading a snapshot asks about `answered`, so these follow its definition.
   instruments.follow(publication);
+  followLifecycle(publication, lifecycle);
   let active: Attempt | undefined;
   let disposed = false;
   let revision = 0;
+  /** A restored thread keeps the catalog the application declared. */
+  const withCatalog = (observation: Observation): Observation => {
+    const catalog = publication.getObservation().clientToolCatalog;
+    return catalog
+      ? Object.freeze({ ...observation, clientToolCatalog: catalog })
+      : observation;
+  };
   const durability = isDurable({ persistence, replay })
     ? createDurability(
         {
@@ -546,31 +754,30 @@ export function createSession(
           disposed: () => disposed,
           adopt: (observation) => {
             saved = undefined;
+            answered = undefined;
             instruments.cause('history');
-            publication.publish(observation);
+            publication.publish(withCatalog(observation));
           },
           replayed: (events) => events.forEach(instruments.raw),
+          restored: () => {
+            lifecycle.mark('threadPersistedAt');
+            lifecycle.flush();
+          },
         }
       )
     : undefined;
-  /** What the latest admitted submission sent; a resume or newer submission replaces it. */
-  let saved:
-    | {
-        readonly runId: string;
-        readonly transcript: Transcript;
-        readonly state: PlainValue;
-      }
-    | undefined;
   const current = (attempt: Attempt) =>
     active === attempt &&
     !disposed &&
     !attempt.controller.signal.aborted &&
     !attempt.finished;
+  /** `taken`: the request may have reached a run; see `answerTaken`. */
   const finish = (
     attempt: Attempt,
     outcome: CompleteOutcome,
-    fetchInvoked: boolean,
-    failure?: { readonly status: number }
+    taken: boolean,
+    failure?: { readonly status: number },
+    cause?: unknown
   ) => {
     if (attempt.finished) return;
     attempt.finished = true;
@@ -581,27 +788,33 @@ export function createSession(
       const decision = settleDecision(
         previous.decision,
         { id: attempt.id, outcome, terminal: previous.run?.terminal },
-        fetchInvoked
+        taken
       );
       // The run announced a pause and then finished in the ordinary way.
       if (outcome === 'success' && pausedByNotice(decision, attempt.id))
         outcome = 'paused';
       attempt.ended?.(outcome);
       instruments.cause('run:end');
+      const run = Object.freeze({
+        ...previous.run,
+        id: attempt.id,
+        outcome,
+        ...(failure &&
+          outcome === 'error' &&
+          !instruments.protect && { failure }),
+      });
+      const diagnostic =
+        outcome === 'error' && !instruments.protect
+          ? failureDiagnostic(previous.run?.terminal, cause)
+          : undefined;
+      if (diagnostic) noteFailure(run, diagnostic);
       publication.publish(
         Object.freeze({
           ...previous,
           decision,
           status:
             outcome === 'error' || outcome === 'interrupted' ? 'error' : 'idle',
-          run: Object.freeze({
-            ...previous.run,
-            id: attempt.id,
-            outcome,
-            ...(failure &&
-              outcome === 'error' &&
-              !instruments.protect && { failure }),
-          }),
+          run,
         })
       );
       durability?.settled();
@@ -628,7 +841,7 @@ export function createSession(
         protocolVersion: PROTOCOL_VERSION,
         messages: requestMessages(value.transcript),
         state: instruments.requestState(requestState(value.state)),
-        tools: catalog === undefined ? [] : requestClientTools(catalog),
+        tools: copyData(declared, false) as Tool[],
         context: [],
         ...answerFields(decision, attempt.id),
       };
@@ -644,6 +857,7 @@ export function createSession(
     }
     if (!current(attempt)) return;
     attempt.starting = true;
+    if (stable === undefined) lifecycle.mark('threadCreatedAt');
     attempt.ended = instruments.request(attempt.kind);
     // A run a host scripted is served in place of the network, once.
     const scripted = instruments.scriptedFetch();
@@ -655,6 +869,8 @@ export function createSession(
       input,
       (delivered) => {
         if (!current(attempt)) return;
+        if (delivered.type === 'RUN_STARTED') attempt.started = true;
+        lifecycle.mark('streamStartedAt');
         // createRun delivers the SDK's normalized/verified union through its
         // BaseEvent callback. No second schema parse or sequence verifier.
         const event = instruments.redact(delivered as AGUIEvent);
@@ -710,8 +926,13 @@ export function createSession(
         finish(
           attempt,
           result.outcome,
-          result.fetchInvoked,
-          httpFailure(result)
+          answerTaken(
+            result,
+            attempt.started,
+            publication.getObservation().run?.terminal
+          ),
+          httpFailure(result),
+          result.outcome === 'error' ? result.error : undefined
         )
       )
     );
@@ -736,6 +957,7 @@ export function createSession(
       resolve: settle,
       cleanup: () => undefined,
       starting: false,
+      started: false,
       finished: false,
     };
     void done.then(resolve);
@@ -776,6 +998,7 @@ export function createSession(
           // Events are not settlement: stop delivering them right away.
           publication.clearCustomEventListeners();
           instruments.clear();
+          lifecycle.clearListeners();
         }
         const attempt = active;
         if (attempt) {
@@ -787,6 +1010,178 @@ export function createSession(
         }
       });
     });
+  };
+  /**
+   * Starts a run for `submit` and `runWithoutMessage`: the captured content,
+   * when there is any, is appended as the user message.
+   */
+  const begin = (
+    capture: () => CapturedExtras,
+    options: { readonly signal?: AbortSignal } | undefined,
+    kind: SessionRequestType = 'submit'
+  ) =>
+    new Promise<CompleteOutcome>((resolve) => {
+      const capturedRevision = revision;
+      let signal: AbortSignal | undefined;
+      try {
+        signal = options?.signal;
+      } catch {
+        resolve(
+          disposed || revision !== capturedRevision ? 'aborted' : 'error'
+        );
+        return;
+      }
+      if (disposed || signal?.aborted || revision !== capturedRevision) {
+        resolve('aborted');
+        return;
+      }
+      if (publication.getObservation().decision) {
+        resolve('error');
+        return;
+      }
+      const beforeInput = ++revision;
+      let captured: CapturedExtras;
+      try {
+        captured = capture();
+      } catch {
+        resolve(
+          disposed || signal?.aborted || revision !== beforeInput
+            ? 'aborted'
+            : 'error'
+        );
+        return;
+      }
+      if (disposed || signal?.aborted || revision !== beforeInput) {
+        resolve('aborted');
+        return;
+      }
+      publication.command(() => {
+        if (disposed || signal?.aborted) {
+          resolve('aborted');
+          return;
+        }
+        if (publication.getObservation().decision) {
+          resolve('error');
+          return;
+        }
+        const beforeCapture = revision;
+        let next: Observation;
+        let id: string;
+        try {
+          const previous = publication.getObservation();
+          // Capture precedes queueing, but admission uses the latest state.
+          // Incompatible patches fail before transferring the active run.
+          const sent = withExtras(previous, captured);
+          id = crypto.randomUUID();
+          next = Object.freeze({
+            ...previous,
+            status: 'running',
+            ...sent,
+            ...nextInvocationSubagents(previous),
+            run: Object.freeze({ id }),
+          });
+        } catch {
+          resolve(
+            disposed || signal?.aborted || revision !== beforeCapture
+              ? 'aborted'
+              : 'error'
+          );
+          return;
+        }
+        if (disposed || signal?.aborted || revision !== beforeCapture) {
+          resolve('aborted');
+          return;
+        }
+        saved = {
+          runId: id,
+          transcript: next.transcript,
+          state: next.state,
+        };
+        answered = undefined;
+        admit(id, next, signal, resolve, kind);
+      });
+    });
+  /** Records one pending call's result as the tool record the next request sends. */
+  const settleCall = (toolCallId: string, result: ClientToolResult): void => {
+    if (disposed) throw new Error('The session is disposed.');
+    const pending = publication.getSnapshot().pendingClientTools;
+    if (!pending?.some((call) => call.id === toolCallId))
+      throw new Error(`No pending client tool call has the id ${toolCallId}.`);
+    const ok = result.ok === true;
+    const failure = ok ? undefined : String(result.error);
+    const value = ok ? result.value : undefined;
+    const content = ok
+      ? typeof value === 'string'
+        ? value
+        : JSON.stringify(value) ?? ''
+      : `Error: ${failure}`;
+    const previous = publication.getObservation();
+    const wanted = `tool-${toolCallId}`;
+    const messageId = previous.transcript.some((row) => row.id === wanted)
+      ? crypto.randomUUID()
+      : wanted;
+    let transcript = applyToolMessage(previous.transcript, {
+      type: EventType.TOOL_CALL_RESULT,
+      messageId,
+      toolCallId,
+      content,
+    } as ToolCallResultEvent);
+    // The protocol's tool record says why a tool failed in its own field.
+    if (failure !== undefined)
+      transcript = Object.freeze(
+        transcript.map((row) =>
+          row.id === messageId ? Object.freeze({ ...row, error: failure }) : row
+        )
+      );
+    instruments.cause('client-tool:result');
+    publication.publish(Object.freeze({ ...previous, transcript }));
+  };
+  const clientTools: AgentClientTools = {
+    setCatalog: (specs: readonly ClientToolSpec[]): void => {
+      if (!Array.isArray(specs))
+        throw new TypeError('A catalog is an array of client tool specs');
+      const tools: Tool[] = [];
+      const names = new Set<string>();
+      for (const spec of specs as readonly ClientToolSpec[]) {
+        const { name, description, parameters } = spec;
+        if (typeof name !== 'string' || !name || names.has(name))
+          throw new TypeError('A client tool needs a unique name');
+        if (typeof description !== 'string')
+          throw new TypeError('A client tool needs a description');
+        names.add(name);
+        tools.push(
+          copyData(
+            {
+              name,
+              description,
+              ...(parameters !== undefined && { parameters }),
+            },
+            true
+          ) as Tool
+        );
+      }
+      if (disposed) return;
+      declared = Object.freeze(tools);
+      const catalog = Object.freeze([...names]);
+      publication.command(() => {
+        if (disposed) return;
+        instruments.cause('client-tool:catalog');
+        publication.publish(
+          Object.freeze({
+            ...publication.getObservation(),
+            clientToolCatalog: catalog,
+          })
+        );
+      });
+    },
+    settle: settleCall,
+    // A settled result is already in the history the next request sends.
+    // With persistence, the thread that holds it is saved now.
+    flush: () => durability?.save(),
+    resolve: (toolCallId, result) => {
+      settleCall(toolCallId, result);
+      void begin(() => NO_EXTRAS, undefined, 'client-tool-continuation');
+    },
   };
   const session: Session = {
     threadId,
@@ -817,10 +1212,12 @@ export function createSession(
         }
         const beforeInput = ++revision;
         let captured: readonly NativeResponse[];
+        let extras: CapturedExtras;
         try {
           const previous = publication.getObservation();
           if (!answerable || active) throw new TypeError(NOT_SETTLED);
           captured = captureResponses(responses);
+          extras = captureExtras(options);
           const eligible = assertResumeEligible(
             previous.decision,
             previous.run,
@@ -860,9 +1257,18 @@ export function createSession(
               ...previous,
               decision: claimDecision(decision, captured, id),
               status: 'running',
+              // A message and a state patch travel with the answers.
+              ...withExtras(previous, extras),
               ...nextInvocationSubagents(previous),
               run: Object.freeze({ id }),
             });
+            answered = {
+              runId: id,
+              pause: decision.id,
+              responses: captured,
+              transcript: next.transcript,
+              state: next.state,
+            };
           } catch (error) {
             if (disposed || signal?.aborted || revision !== beforeAdmission)
               resolve('aborted');
@@ -874,97 +1280,26 @@ export function createSession(
             return;
           }
           saved = undefined;
+          lifecycle.mark('interruptResolvedAt');
           admit(id, next, signal, resolve, 'resume');
         });
       }),
     submit: (input, options) =>
-      new Promise<CompleteOutcome>((resolve) => {
-        const capturedRevision = revision;
-        let signal: AbortSignal | undefined;
-        try {
-          signal = options?.signal;
-        } catch {
-          resolve(
-            disposed || revision !== capturedRevision ? 'aborted' : 'error'
-          );
-          return;
-        }
-        if (disposed || signal?.aborted || revision !== capturedRevision) {
-          resolve('aborted');
-          return;
-        }
-        if (publication.getObservation().decision) {
-          resolve('error');
-          return;
-        }
-        const beforeInput = ++revision;
-        let captured;
-        try {
-          captured = captureSubmit(input);
-        } catch {
-          resolve(
-            disposed || signal?.aborted || revision !== beforeInput
-              ? 'aborted'
-              : 'error'
-          );
-          return;
-        }
-        if (disposed || signal?.aborted || revision !== beforeInput) {
-          resolve('aborted');
-          return;
-        }
-        publication.command(() => {
-          if (disposed || signal?.aborted) {
-            resolve('aborted');
-            return;
-          }
-          if (publication.getObservation().decision) {
-            resolve('error');
-            return;
-          }
-          const beforeCapture = revision;
-          let next: Observation;
-          let id: string;
-          try {
-            const previous = publication.getObservation();
-            // Capture precedes queueing, but admission uses the latest state.
-            // Incompatible patches fail before transferring the active run.
-            const state = mergeSubmitState(previous.state, captured.state);
-            const userId = crypto.randomUUID();
-            if (previous.transcript.some((message) => message.id === userId))
-              throw new TypeError('Generated message ID collides with history');
-            id = crypto.randomUUID();
-            const user = ownTranscript([
-              { id: userId, role: 'user', content: captured.message },
-            ])[0];
-            next = Object.freeze({
-              ...previous,
-              status: 'running',
-              state,
-              transcript: Object.freeze([...previous.transcript, user]),
-              ...nextInvocationSubagents(previous),
-              run: Object.freeze({ id }),
-            });
-          } catch {
-            resolve(
-              disposed || signal?.aborted || revision !== beforeCapture
-                ? 'aborted'
-                : 'error'
-            );
-            return;
-          }
-          if (disposed || signal?.aborted || revision !== beforeCapture) {
-            resolve('aborted');
-            return;
-          }
-          saved = {
-            runId: id,
-            transcript: next.transcript,
-            state: next.state,
-          };
-          admit(id, next, signal, resolve);
-        });
-      }),
+      begin(() => {
+        const captured = captureSubmit(input);
+        return {
+          content: captured.content ?? captured.message,
+          ...(captured.state && { state: captured.state }),
+        };
+      }, options),
+    runWithoutMessage: (input, options) =>
+      begin(() => captureExtras({ state: input?.state }), options),
+    clientTools,
+    lifecycle: {
+      getSnapshot: lifecycle.source.getSnapshot,
+      subscribe: (notify) =>
+        disposed ? () => undefined : lifecycle.source.subscribe(notify),
+    },
     retry: () =>
       new Promise<CompleteOutcome>((resolve, reject) => {
         if (disposed) {
@@ -983,6 +1318,43 @@ export function createSession(
         }
         publication.command(() => {
           const previous = publication.getObservation();
+          const answer = answered;
+          // A resume that never left is sent again, exactly as it was.
+          if (!disposed && !active && answerUnsent(previous, answer)) {
+            let decision: NativeDecision;
+            const id = crypto.randomUUID();
+            try {
+              decision = claimDecision(
+                assertResumeEligible(
+                  previous.decision,
+                  previous.run,
+                  Date.now()
+                ),
+                answer.responses,
+                id
+              );
+            } catch {
+              resolve('error');
+              return;
+            }
+            answered = { ...answer, runId: id };
+            admit(
+              id,
+              Object.freeze({
+                ...previous,
+                decision,
+                status: 'running',
+                transcript: answer.transcript,
+                state: answer.state,
+                ...nextInvocationSubagents(previous, answer.transcript),
+                run: Object.freeze({ id }),
+              }),
+              undefined,
+              resolve,
+              'retry'
+            );
+            return;
+          }
           const last = saved;
           if (
             disposed ||
@@ -1045,6 +1417,7 @@ export function createSession(
             previous.transcript.slice(0, prompt + 1)
           );
           saved = { runId: id, transcript, state: previous.state };
+          answered = undefined;
           admit(
             id,
             Object.freeze({
@@ -1086,6 +1459,9 @@ function createToolsOwner(
     [...catalog.keys()],
     initial.transcript
   );
+  /** The latest answer sent, kept until another command replaces it. */
+  let answered: FailedAnswer | undefined;
+  const lifecycle = createLifecycleRecorder();
   const publication = createPublication(
     Object.freeze({
       ...initial,
@@ -1094,7 +1470,8 @@ function createToolsOwner(
     // Only the failed request this owner can rebuild is offered as retryable.
     createPresenter(
       options.stateType,
-      (observation) => retryable(observation),
+      (observation) =>
+        retryable(observation) || answerUnsent(observation, answered),
       options.persistence?.reconcile !== undefined,
       instruments.protect
     )
@@ -1128,6 +1505,7 @@ function createToolsOwner(
   };
   // Reading a snapshot asks `retryable`, so this follows its definition.
   instruments.follow(publication);
+  followLifecycle(publication, lifecycle);
   interface Physical {
     readonly id: string;
     readonly token: object;
@@ -1135,6 +1513,8 @@ function createToolsOwner(
     ended?: (outcome: CompleteOutcome) => void;
     handle?: RunHandle;
     starting: boolean;
+    /** The backend reported `RUN_STARTED` for this request. */
+    started: boolean;
     settled: boolean;
     fetchInvoked: boolean;
   }
@@ -1159,6 +1539,10 @@ function createToolsOwner(
         {
           publication,
           replayed: (events) => events.forEach(instruments.raw),
+          restored: () => {
+            lifecycle.mark('threadPersistedAt');
+            lifecycle.flush();
+          },
           active: () => active !== undefined,
           disposed: () => disposed,
           adopt: (observation) => {
@@ -1171,6 +1555,7 @@ function createToolsOwner(
               decision?.kind === 'native'
             );
             saved = undefined;
+            answered = undefined;
             pausedPhysical = undefined;
             if (decision?.kind === 'native') {
               const token = ledger.startPhysical({
@@ -1423,7 +1808,10 @@ function createToolsOwner(
     physical: Physical,
     outcome: CompleteOutcome,
     fetchInvoked: boolean,
-    failure?: { readonly status: number }
+    failure?: { readonly status: number },
+    cause?: unknown,
+    /** The request may have reached a run; see `answerTaken`. */
+    taken = fetchInvoked
   ) => {
     if (physical.settled) return;
     physical.settled = true;
@@ -1435,7 +1823,7 @@ function createToolsOwner(
     const decision = settleDecision(
       previous.decision,
       { id: physical.id, outcome, terminal },
-      fetchInvoked
+      taken
     );
     // The run announced a pause and then finished in the ordinary way.
     const noticed =
@@ -1456,19 +1844,25 @@ function createToolsOwner(
       !noticed &&
       terminal?.type === 'RUN_FINISHED' &&
       (terminal.outcome == null || terminal.outcome.type === 'success');
+    const run = Object.freeze({
+      ...previous.run,
+      id: physical.id,
+      outcome: nativeSuccess ? ('success' as const) : outcome,
+      ...(failure &&
+        !nativeSuccess &&
+        outcome === 'error' &&
+        !instruments.protect && { failure }),
+    });
+    const diagnostic =
+      !nativeSuccess && outcome === 'error' && !instruments.protect
+        ? failureDiagnostic(terminal, cause)
+        : undefined;
+    if (diagnostic) noteFailure(run, diagnostic);
     publication.publish(
       Object.freeze({
         ...previous,
         decision,
-        run: Object.freeze({
-          ...previous.run,
-          id: physical.id,
-          outcome: nativeSuccess ? 'success' : outcome,
-          ...(failure &&
-            !nativeSuccess &&
-            outcome === 'error' &&
-            !instruments.protect && { failure }),
-        }),
+        run,
         clientTools: ledger.snapshot(),
       })
     );
@@ -1596,6 +1990,7 @@ function createToolsOwner(
     )
       return;
     physical.starting = true;
+    if (options.ownThread) lifecycle.mark('threadCreatedAt');
     physical.ended = instruments.request(physical.kind);
     const scripted = instruments.scriptedFetch();
     const runner = scripted
@@ -1611,6 +2006,8 @@ function createToolsOwner(
             disposed
           )
             return;
+          if (delivered.type === 'RUN_STARTED') physical.started = true;
+          lifecycle.mark('streamStartedAt');
           const event = instruments.redact(delivered as AGUIEvent);
           const previous = publication.getObservation();
           let next = reasoningClock.observe(
@@ -1723,7 +2120,13 @@ function createToolsOwner(
           physical,
           result.outcome,
           result.fetchInvoked,
-          httpFailure(result)
+          httpFailure(result),
+          result.outcome === 'error' ? result.error : undefined,
+          answerTaken(
+            result,
+            physical.started,
+            publication.getObservation().run?.terminal
+          )
         )
       )
     );
@@ -1739,6 +2142,7 @@ function createToolsOwner(
         transcript: previous.transcript,
       }),
       starting: false,
+      started: false,
       settled: false,
       fetchInvoked: false,
     };
@@ -1792,6 +2196,7 @@ function createToolsOwner(
         transcript: next.transcript,
       }),
       starting: false,
+      started: false,
       settled: false,
       fetchInvoked: false,
     };
@@ -1821,6 +2226,7 @@ function createToolsOwner(
           // Events are not settlement: stop delivering them right away.
           publication.clearCustomEventListeners();
           instruments.clear();
+          lifecycle.clearListeners();
         }
         const command = active;
         if (command) {
@@ -1833,6 +2239,90 @@ function createToolsOwner(
       })
     );
   };
+  /**
+   * Starts a command for `submit` and `runWithoutMessage`: the captured
+   * content, when there is any, is appended as the user message.
+   */
+  const begin = (
+    capture: () => CapturedExtras,
+    options: { readonly signal?: AbortSignal } | undefined
+  ) =>
+    new Promise<CompleteOutcome>((resolve) => {
+      if (disposed) {
+        resolve('aborted');
+        return;
+      }
+      // Even options.signal is caller code. Busy/blocker checks precede it.
+      if (
+        active ||
+        ledger.snapshot().blocker ||
+        publication.getObservation().decision
+      ) {
+        resolve('error');
+        return;
+      }
+      const before = revision;
+      let signal: AbortSignal | undefined;
+      let captured: CapturedExtras;
+      try {
+        signal = options?.signal;
+        if (disposed || signal?.aborted || revision !== before) {
+          resolve('aborted');
+          return;
+        }
+        captured = capture();
+      } catch {
+        resolve(
+          disposed || signal?.aborted || revision !== before
+            ? 'aborted'
+            : 'error'
+        );
+        return;
+      }
+      if (disposed || signal?.aborted || revision !== before) {
+        resolve('aborted');
+        return;
+      }
+      publication.command(() => {
+        if (disposed || signal?.aborted || revision !== before) {
+          resolve('aborted');
+          return;
+        }
+        if (
+          active ||
+          ledger.snapshot().blocker ||
+          publication.getObservation().decision
+        ) {
+          resolve('error');
+          return;
+        }
+        try {
+          const previous = publication.getObservation();
+          if (!ledger.historyIntegrity(previous.transcript)) {
+            publishLedger();
+            resolve('error');
+            return;
+          }
+          const sent = withExtras(previous, captured);
+          const id = crypto.randomUUID();
+          answered = undefined;
+          admit(
+            Object.freeze({
+              ...previous,
+              ...sent,
+              status: 'running',
+              ...nextInvocationSubagents(previous),
+              run: Object.freeze({ id }),
+            }),
+            id,
+            signal,
+            resolve
+          );
+        } catch {
+          resolve('error');
+        }
+      });
+    });
   const session: Session = {
     threadId,
     ...(options.agentId !== undefined && { agentId: options.agentId }),
@@ -1847,88 +2337,20 @@ function createToolsOwner(
     stop: () => close(false),
     dispose: () => close(true),
     submit: (input, options) =>
-      new Promise<CompleteOutcome>((resolve) => {
-        if (disposed) {
-          resolve('aborted');
-          return;
-        }
-        // Even options.signal is caller code. Busy/blocker checks precede it.
-        if (
-          active ||
-          ledger.snapshot().blocker ||
-          publication.getObservation().decision
-        ) {
-          resolve('error');
-          return;
-        }
-        const before = revision;
-        let signal: AbortSignal | undefined;
-        let captured: ReturnType<typeof captureSubmit>;
-        try {
-          signal = options?.signal;
-          if (disposed || signal?.aborted || revision !== before) {
-            resolve('aborted');
-            return;
-          }
-          captured = captureSubmit(input);
-        } catch {
-          resolve(
-            disposed || signal?.aborted || revision !== before
-              ? 'aborted'
-              : 'error'
-          );
-          return;
-        }
-        if (disposed || signal?.aborted || revision !== before) {
-          resolve('aborted');
-          return;
-        }
-        publication.command(() => {
-          if (disposed || signal?.aborted || revision !== before) {
-            resolve('aborted');
-            return;
-          }
-          if (
-            active ||
-            ledger.snapshot().blocker ||
-            publication.getObservation().decision
-          ) {
-            resolve('error');
-            return;
-          }
-          try {
-            const previous = publication.getObservation();
-            if (!ledger.historyIntegrity(previous.transcript)) {
-              publishLedger();
-              resolve('error');
-              return;
-            }
-            const state = mergeSubmitState(previous.state, captured.state);
-            const userId = crypto.randomUUID();
-            if (previous.transcript.some((message) => message.id === userId))
-              throw new TypeError('Generated message ID collides with history');
-            const id = crypto.randomUUID();
-            const user = ownTranscript([
-              { id: userId, role: 'user', content: captured.message },
-            ])[0];
-            admit(
-              Object.freeze({
-                ...previous,
-                state,
-                status: 'running',
-                transcript: Object.freeze([...previous.transcript, user]),
-                ...nextInvocationSubagents(previous),
-                run: Object.freeze({ id }),
-              }),
-              id,
-              signal,
-              resolve
-            );
-          } catch {
-            resolve('error');
-          }
-        });
-      }),
+      begin(() => {
+        const captured = captureSubmit(input);
+        return {
+          content: captured.content ?? captured.message,
+          ...(captured.state && { state: captured.state }),
+        };
+      }, options),
+    runWithoutMessage: (input, options) =>
+      begin(() => captureExtras({ state: input?.state }), options),
+    lifecycle: {
+      getSnapshot: lifecycle.source.getSnapshot,
+      subscribe: (notify) =>
+        disposed ? () => undefined : lifecycle.source.subscribe(notify),
+    },
     resume: (responses, options) =>
       new Promise<CompleteOutcome>((resolve, reject) => {
         if (disposed) {
@@ -1943,6 +2365,7 @@ function createToolsOwner(
         let signal: AbortSignal | undefined;
         let pause: unknown;
         let captured: readonly NativeResponse[];
+        let extras: CapturedExtras;
         try {
           signal = options?.signal;
           pause = options?.pause;
@@ -1953,6 +2376,7 @@ function createToolsOwner(
           if (!answerable) throw new TypeError(NOT_SETTLED);
           const previous = publication.getObservation();
           captured = captureResponses(responses);
+          extras = captureExtras(options);
           const eligible = assertResumeEligible(
             previous.decision,
             previous.run,
@@ -1984,19 +2408,24 @@ function createToolsOwner(
             );
             assertCurrentPause(decision, pause);
             const id = crypto.randomUUID();
-            admit(
-              Object.freeze({
-                ...previous,
-                decision: claimDecision(decision, captured, id),
-                status: 'running',
-                ...nextInvocationSubagents(previous),
-                run: Object.freeze({ id }),
-              }),
-              id,
-              signal,
-              resolve,
-              'resume'
-            );
+            const next = Object.freeze({
+              ...previous,
+              decision: claimDecision(decision, captured, id),
+              status: 'running' as const,
+              // A message and a state patch travel with the answers.
+              ...withExtras(previous, extras),
+              ...nextInvocationSubagents(previous),
+              run: Object.freeze({ id }),
+            });
+            answered = {
+              runId: id,
+              pause: decision.id,
+              responses: captured,
+              transcript: next.transcript,
+              state: next.state,
+            };
+            lifecycle.mark('interruptResolvedAt');
+            admit(next, id, signal, resolve, 'resume');
           } catch (error) {
             reject(error);
           }
@@ -2019,6 +2448,48 @@ function createToolsOwner(
         }
         publication.command(() => {
           const previous = publication.getObservation();
+          const answer = answered;
+          // A resume that never left is sent again, exactly as it was.
+          if (
+            !disposed &&
+            !active &&
+            !ledger.snapshot().blocker &&
+            answerUnsent(previous, answer)
+          ) {
+            const id = crypto.randomUUID();
+            let decision: NativeDecision;
+            try {
+              decision = claimDecision(
+                assertResumeEligible(
+                  previous.decision,
+                  previous.run,
+                  Date.now()
+                ),
+                answer.responses,
+                id
+              );
+            } catch {
+              resolve('error');
+              return;
+            }
+            answered = { ...answer, runId: id };
+            admit(
+              Object.freeze({
+                ...previous,
+                decision,
+                status: 'running',
+                transcript: answer.transcript,
+                state: answer.state,
+                ...nextInvocationSubagents(previous, answer.transcript),
+                run: Object.freeze({ id }),
+              }),
+              id,
+              undefined,
+              resolve,
+              'retry'
+            );
+            return;
+          }
           const last = saved;
           if (
             disposed ||
@@ -2080,6 +2551,7 @@ function createToolsOwner(
             return;
           }
           if (saved) ledger.releaseUncertain(saved.runId);
+          answered = undefined;
           // Keep the prompt: it ends the history and is the next run's input.
           const transcript = Object.freeze(
             previous.transcript.slice(0, prompt + 1)

@@ -46,6 +46,7 @@ export const reviewedSources = [
     'durability',
     'encrypted-messages',
     'interrupt-mode',
+    'lifecycle',
     'message-projection',
     'protected-fetch',
     'reasoning-clock',

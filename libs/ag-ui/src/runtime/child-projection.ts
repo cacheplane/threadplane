@@ -5,9 +5,14 @@ import {
   type AgentSubagent,
   type Message,
   type PlainValue,
+  type StreamingToolCall,
   type ToolCall,
 } from '@threadplane/core';
-import { projectMessages, projectToolCalls } from './message-projection.js';
+import {
+  projectMessages,
+  projectStreamingToolCalls,
+  projectToolCalls,
+} from './message-projection.js';
 import type { Observation } from './session-observation.js';
 import {
   currentFrom,
@@ -34,7 +39,7 @@ export type SessionSubagent = AgentSubagent &
      * Set on a child the backend reported as an `ACTIVITY` record with
      * `activityType: 'subagent'` and not through `SUBAGENT_*` events: the
      * record's content. `started` is then derived from that content, and
-     * there is no `terminal`.
+     * there is no `terminal`. The core `state` is this content's `state`.
      */
     readonly activity?: { readonly [key: string]: PlainValue };
   };
@@ -139,9 +144,11 @@ const activityChildren = new WeakMap<
 /**
  * A child the backend reported as an `ACTIVITY` record of type `subagent`,
  * read the way the Angular adapter read one: `name`, `description`,
- * `toolCallId`, `status`, `messages` (or one `text`), `toolCalls` and
- * `state.error` from the record's content. A record without a settled status
- * is `running` in its own run and `unknown` after it.
+ * `toolCallId`, `status`, `messages` (or one `text`), `toolCalls`, `state`
+ * and `state.error` from the record's content. A record that says `pending`
+ * is `pending`: the root agent asked for the child and it has not started. A
+ * record without a settled status is otherwise `running` in its own run and
+ * `unknown` after it.
  */
 function projectActivity(
   record: TranscriptRecord & { readonly role: 'activity' },
@@ -156,6 +163,8 @@ function projectActivity(
   const state: AgentSubagent['status'] =
     reported === 'complete' || reported === 'error'
       ? reported
+      : reported === 'pending' && running && !earlier
+      ? 'pending'
       : running && !earlier
       ? 'running'
       : 'unknown';
@@ -165,9 +174,8 @@ function projectActivity(
   const name = text(content['name']);
   const description = text(content['description']);
   const toolCallId = text(content['toolCallId']);
-  const failure = isRecord(content['state'])
-    ? text(content['state']['error'])
-    : undefined;
+  const childState = isRecord(content['state']) ? content['state'] : undefined;
+  const failure = childState ? text(childState['error']) : undefined;
   const calls = content['toolCalls'];
   const child = Object.freeze({
     id: record.id,
@@ -186,6 +194,7 @@ function projectActivity(
           )
         : []
     ) as unknown as readonly ToolCall[],
+    ...(childState && { state: childState }),
     ...(state === 'error' && failure !== undefined && { error: failure }),
     started: Object.freeze({
       type: 'SUBAGENT_STARTED' as const,
@@ -204,6 +213,7 @@ function projectActivity(
 const none: readonly SessionSubagent[] = Object.freeze([]);
 const noMessages: readonly Message[] = Object.freeze([]);
 const noCalls: readonly ToolCall[] = Object.freeze([]);
+const noStreaming: readonly StreamingToolCall[] = Object.freeze([]);
 
 /**
  * Every child the session knows as a core child: those of earlier root runs
@@ -285,8 +295,13 @@ export function projectSubagents(
     };
     const messages = projectMessages(view, before?.messages ?? noMessages);
     const toolCalls = projectToolCalls(view, before?.toolCalls ?? noCalls);
+    const streaming = projectStreamingToolCalls(
+      view,
+      before?.streamingToolCalls ?? noStreaming
+    );
     if (
       before &&
+      (before.streamingToolCalls ?? noStreaming) === streaming &&
       before.started === started &&
       before.terminal === terminal &&
       before.status === state &&
@@ -313,6 +328,7 @@ export function projectSubagents(
       status: state,
       messages,
       toolCalls,
+      ...(streaming.length > 0 && { streamingToolCalls: streaming }),
       ...(terminal?.type === 'SUBAGENT_ERROR' &&
         typeof terminal.message === 'string' && { error: terminal.message }),
       started,

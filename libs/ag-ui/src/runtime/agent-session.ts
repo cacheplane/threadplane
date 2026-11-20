@@ -1,6 +1,7 @@
 import {
   readState,
   type AgentError,
+  type AgentErrorDiagnostic,
   type AgentInputBlock,
   type AgentInterrupt,
   type AgentSnapshot,
@@ -8,12 +9,17 @@ import {
   type AgentUsageEntry,
   type PlainValue,
   type StateDeclaration,
+  type ToolCall,
   type ToolContract,
 } from '@threadplane/core';
 import { projectSubagents, type SessionSubagent } from './child-projection.js';
 import type { OwnedInterrupt } from './decision.js';
 import { NO_STATE, ownState } from './state.js';
-import { projectMessages, projectToolCalls } from './message-projection.js';
+import {
+  projectMessages,
+  projectStreamingToolCalls,
+  projectToolCalls,
+} from './message-projection.js';
 import { failedWithRunError, type Observation } from './session-observation.js';
 import { PROTECTED_COPY } from './session-instruments.js';
 
@@ -25,13 +31,15 @@ type Tools = Record<string, ToolContract>;
  */
 export type SessionSnapshot<TState = unknown> = Omit<
   Observation,
-  'state' | 'subagents'
+  'state' | 'subagents' | 'clientToolCatalog'
 > &
   Omit<AgentSnapshot<Tools, TState>, 'interrupts' | 'subagents'> & {
     /**
      * What a paused run waits on, each with the protocol's own fields. Listed
      * from the pause until an answer is sent, and absent otherwise; a pause
-     * this session cannot answer lists nothing.
+     * this session cannot answer lists nothing. The core `value` is what the
+     * backend sent with the pause: a notice's value, or the protocol
+     * interrupt's `metadata`.
      */
     readonly interrupts?: readonly SessionInterrupt[];
     /**
@@ -85,6 +93,42 @@ const blocks = Object.freeze({
 
 /** A pending interrupt: the core interrupt, with the protocol's own fields. */
 export type SessionInterrupt = AgentInterrupt & OwnedInterrupt;
+
+const valued = new WeakMap<
+  readonly OwnedInterrupt[],
+  readonly SessionInterrupt[]
+>();
+
+/**
+ * The pending interrupts with the core `value`. A `CUSTOM on_interrupt`
+ * notice already has one. The protocol's own interrupt has no such field: what
+ * a backend sends with it, beside the display fields, is its `metadata`, so
+ * that is its `value`. A pause is owned and frozen, so one batch is read once.
+ */
+function withValues(
+  interrupts: readonly OwnedInterrupt[]
+): readonly SessionInterrupt[] {
+  let known = valued.get(interrupts);
+  if (!known) {
+    known = interrupts.some(
+      (interrupt) =>
+        interrupt.value === undefined && interrupt.metadata !== undefined
+    )
+      ? Object.freeze(
+          interrupts.map((interrupt) =>
+            interrupt.value === undefined && interrupt.metadata !== undefined
+              ? Object.freeze({
+                  ...interrupt,
+                  value: interrupt.metadata as PlainValue,
+                })
+              : interrupt
+          )
+        )
+      : interrupts;
+    valued.set(interrupts, known);
+  }
+  return known;
+}
 
 /** The state to publish for one state document, and why a schema rejected it. */
 interface StateView {
@@ -156,7 +200,7 @@ export const AUTH_COPY = 'Authentication failed. Check your credentials.';
  */
 function failure(
   native: Observation,
-  canRetry: boolean,
+  retryable: boolean,
   canCheck: boolean,
   protect: boolean,
   previous?: AgentError
@@ -183,10 +227,9 @@ function failure(
     ? PROTECTED_COPY
     : reported || FAILED;
   const detail = interrupted ? INTERRUPTED_COPY.detail : undefined;
-  // Only the backend's own RUN_ERROR settles what happened. Any other failure
-  // leaves open whether the request did its work, so sending it again could
-  // repeat it.
-  const retryable = canRetry && failedWithRunError(native);
+  // `retryable` is the owner's word: the backend's own RUN_ERROR settled what
+  // happened, or the request provably never left. Any other failure leaves
+  // open whether the request did its work, so sending it again could repeat it.
   // An answer that was sent and not proven taken can be asked about, when the
   // application configured a reconciler to ask.
   const recovery = retryable
@@ -261,6 +304,54 @@ function usage(native: Observation): AgentUsage | undefined {
   return projected ?? undefined;
 }
 
+const diagnostics = new WeakMap<object, AgentErrorDiagnostic>();
+
+/**
+ * Records what a failed run was classified from, for the `errorDiagnostic` a
+ * snapshot publishes beside its `error`. Keyed by the observation's own `run`
+ * evidence, so it is neither saved with a thread nor sent anywhere.
+ */
+export function noteFailure(
+  run: NonNullable<Observation['run']>,
+  diagnostic: AgentErrorDiagnostic
+): void {
+  diagnostics.set(run, diagnostic);
+}
+
+const noPending: readonly ToolCall[] = Object.freeze([]);
+
+/**
+ * The calls to declared client tools that wait for a result: none while a run
+ * is going, then every pending call whose tool is in the catalog. When the
+ * run's `RUN_FINISHED` names `pendingToolCallIds`, only those are listed.
+ */
+function pendingClientTools(
+  native: Observation,
+  toolCalls: readonly ToolCall[],
+  previous: readonly ToolCall[] = noPending
+): readonly ToolCall[] {
+  const catalog = native.clientToolCatalog ?? [];
+  if (native.status === 'running' || !catalog.length || !toolCalls.length)
+    return previous.length ? noPending : previous;
+  const terminal = native.run?.terminal;
+  const declared =
+    terminal?.type === 'RUN_FINISHED'
+      ? (terminal.outcome as { pendingToolCallIds?: unknown } | undefined)
+          ?.pendingToolCallIds
+      : undefined;
+  const named = Array.isArray(declared) ? new Set(declared) : undefined;
+  const pending = toolCalls.filter(
+    (call) =>
+      call.status === 'pending' &&
+      catalog.includes(call.name) &&
+      (!named || named.has(call.id))
+  );
+  return pending.length === previous.length &&
+    pending.every((call, index) => call === previous[index])
+    ? previous
+    : Object.freeze(pending);
+}
+
 function project(
   native: Observation,
   canRetry: boolean,
@@ -276,11 +367,22 @@ function project(
       ? failure(native, canRetry, canCheck, protect, previous?.error)
       : undefined;
   const used = usage(native);
-  const { state: _document, subagents: _children, ...evidence } = native;
+  const diagnostic =
+    error && !protect && native.run ? diagnostics.get(native.run) : undefined;
+  const streaming = projectStreamingToolCalls(
+    native,
+    previous?.streamingToolCalls
+  );
+  const {
+    state: _document,
+    subagents: _children,
+    clientToolCatalog: catalog,
+    ...evidence
+  } = native;
   const decision = native.decision;
   const interrupts =
     decision?.kind === 'native' && !decision.attempt
-      ? decision.interrupts
+      ? withValues(decision.interrupts)
       : undefined;
   const blocked: InputBlock | undefined =
     native.hold ??
@@ -298,6 +400,16 @@ function project(
     ...(blocked && { inputBlocked: blocks[blocked] }),
     ...(interrupts && { interrupts }),
     ...(error && { error }),
+    ...(diagnostic && { errorDiagnostic: diagnostic }),
+    ...(streaming.length > 0 && { streamingToolCalls: streaming }),
+    // Present, and possibly empty, on a session with the capability.
+    ...(catalog && {
+      pendingClientTools: pendingClientTools(
+        native,
+        toolCalls,
+        previous?.pendingClientTools
+      ),
+    }),
     ...(used && { usage: used }),
     ...(view.state !== undefined && { state: view.state }),
     ...(view.issues && { stateIssues: view.issues }),
@@ -328,7 +440,9 @@ export function createPresenter(
     if (observation !== seen || !current) {
       current = project(
         observation,
-        typeof canRetry === 'function' ? canRetry(observation) : canRetry,
+        typeof canRetry === 'function'
+          ? canRetry(observation)
+          : canRetry && failedWithRunError(observation),
         canCheck,
         protect,
         readView(observation.state),
