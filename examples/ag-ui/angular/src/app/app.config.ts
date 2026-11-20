@@ -52,6 +52,7 @@ export const appConfig: ApplicationConfig = {
             createSession({
               url: environment.agentUrl,
               threadId: context.threadId ?? undefined,
+              developmentRuntime: context.developmentRuntime,
               stateType: type<ItineraryState>(),
               interruptTransport: 'auto',
             }),

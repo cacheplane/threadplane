@@ -22,6 +22,7 @@ export const appConfig: ApplicationConfig = {
             threadId: context.threadId,
             onThreadId: context.onThreadId,
             onOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
             throttle: 16,
             // Types agent.state() as MessagesState.
             stateType: MESSAGES_STATE,

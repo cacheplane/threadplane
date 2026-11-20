@@ -65,6 +65,7 @@ let threadCounter = 0;
             threadId: context.threadId,
             onThreadId: context.onThreadId,
             onOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
           }),
         // Called with the id of each thread a session creates.
         onThreadId: (id: string) => {

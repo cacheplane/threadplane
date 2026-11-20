@@ -24,6 +24,7 @@ export const appConfig: ApplicationConfig = {
             assistantId: connection.assistantId,
             threadId: context.threadId,
             onThreadId: context.onThreadId,
+            developmentRuntime: context.developmentRuntime,
             transport: new MemoryTransport(
               connection.apiUrl,
               scope,

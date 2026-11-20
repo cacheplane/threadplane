@@ -20,6 +20,7 @@ export const appConfig: ApplicationConfig = {
             threadId: context.threadId,
             onThreadId: context.onThreadId,
             onOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
             // `SubAgentMiddleware` dispatches every child through one tool
             // named `task`, carrying `{description, subagent_type}`. That name
             // is also the session's default, so this line changes nothing at

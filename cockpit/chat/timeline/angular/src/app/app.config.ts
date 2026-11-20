@@ -21,6 +21,7 @@ export const appConfig: ApplicationConfig = {
             threadId: context.threadId,
             onThreadId: context.onThreadId,
             onOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
             throttle: 16,
             // The timeline slider lists agent.checkpoints(), which the session
             // publishes only when it keeps each checkpoint's saved state.

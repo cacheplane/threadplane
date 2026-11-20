@@ -22,6 +22,7 @@ export const appConfig: ApplicationConfig = {
             threadId: context.threadId,
             onThreadId: context.onThreadId,
             onOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
             // Types `agent.state()` as the parent graph's shared keys.
             stateType: type<SubgraphsState>(),
             // Only the parent's `answer` node writes the user-facing turn, so

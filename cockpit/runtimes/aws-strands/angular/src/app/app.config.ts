@@ -16,6 +16,7 @@ export const appConfig: ApplicationConfig = {
             url: connection.url,
             threadId: context.threadId ?? undefined,
             reportOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
           }),
       };
     }),

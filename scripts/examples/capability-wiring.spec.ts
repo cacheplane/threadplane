@@ -6,6 +6,7 @@ import {
 import {
   agentProviderModule,
   auditRuntimeTargetSource,
+  contextDevelopmentKey,
   defaultReporterOptionNames,
   hasExactImportBinding,
   inspectRuntimeTargetSource,
@@ -175,10 +176,12 @@ const fixtureSessionOptions: Record<CompatibleRuntimeAdapter, string> = {
         clientOptions: connection.clientOptions,
         threadId: context.threadId,
         onThreadId: context.onThreadId,
-        ${defaultReporterOptionNames.langgraph[0]}: context.reportOperationFailure,`,
+        ${defaultReporterOptionNames.langgraph[0]}: context.reportOperationFailure,
+        developmentRuntime: context.developmentRuntime,`,
   'ag-ui': `url: connection.url,
         threadId: context.threadId ?? undefined,
-        ${defaultReporterOptionNames['ag-ui'][0]}: context.reportOperationFailure,`,
+        ${defaultReporterOptionNames['ag-ui'][0]}: context.reportOperationFailure,
+        developmentRuntime: context.developmentRuntime,`,
 };
 const fixtureSessionMember = (
   adapter: CompatibleRuntimeAdapter,
@@ -1136,6 +1139,8 @@ describe('cockpit capability wiring', () => {
       changed(provider, 'transport: new', '...unsafeOverrides, transport: new'),
       // The transport is what reports a refused request for this session.
       changed(provider, 'context.reportOperationFailure', 'undefined'),
+      // The transport replaces the connection, not the development relay.
+      changed(provider, 'developmentRuntime: context.developmentRuntime,', ''),
       changed(provider, /clientOptions,(\s+)context\./, '{},$1context.'),
       changed(provider, 'threadId: context.threadId,', "threadId: 'fixed',"),
       changed(provider, 'onThreadId: context.onThreadId,', ''),
@@ -2254,6 +2259,11 @@ describe('cockpit capability wiring', () => {
     expect(sessionOptionMembers['ag-ui']).toEqual(
       expect.arrayContaining(['url', 'threadId', 'agent', 'fetch'])
     );
+    // Both sessions take the context's development-install relay under the
+    // context's own name, which is the one name the audit requires.
+    expect(providerContextKeys.has(contextDevelopmentKey)).toBe(true);
+    expect(sessionOptionMembers.langgraph).toContain(contextDevelopmentKey);
+    expect(sessionOptionMembers['ag-ui']).toContain(contextDevelopmentKey);
     // The AG-UI session names its own thread and takes no callback for it.
     // If it gains one, the audit's AG-UI contract must start requiring it.
     expect(sessionOptionMembers['ag-ui']).not.toContain('onThreadId');
@@ -2334,13 +2344,14 @@ describe('cockpit capability wiring', () => {
       inspect(
         `provideAgent(${fixtureFactory(
           'langgraph',
-          `return { createSession: ({ threadId, onThreadId, reportOperationFailure }) => createSession({
+          `return { createSession: ({ threadId, onThreadId, reportOperationFailure, developmentRuntime }) => createSession({
             apiUrl: connection.apiUrl,
             assistantId: connection.assistantId,
             clientOptions: connection.clientOptions,
             threadId,
             onThreadId,
             ${langGraphReporter}: reportOperationFailure,
+            developmentRuntime,
           }) };`
         )})`
       )
@@ -2349,13 +2360,14 @@ describe('cockpit capability wiring', () => {
       inspect(
         `provideAgent(${fixtureFactory(
           'langgraph',
-          `return { createSession: ({ threadId: thread, onThreadId: created, reportOperationFailure: report }) => createSession({
+          `return { createSession: ({ threadId: thread, onThreadId: created, reportOperationFailure: report, developmentRuntime: relay }) => createSession({
             apiUrl: connection.apiUrl,
             assistantId: connection.assistantId,
             clientOptions: connection.clientOptions,
             threadId: thread,
             onThreadId: created,
             ${langGraphReporter}: report,
+            developmentRuntime: relay,
           }) };`
         )})`
       )
@@ -2576,8 +2588,63 @@ describe('cockpit capability wiring', () => {
       'langgraph',
       () =>
         `apiUrl: connection.apiUrl, assistantId: connection.assistantId, clientOptions: connection.clientOptions, ...context,`,
-      ['operation-reporter-wiring', 'session-context-wiring'],
+      [
+        'development-runtime-wiring',
+        'operation-reporter-wiring',
+        'session-context-wiring',
+      ],
       /options may not spread the provider context/,
+    ],
+    [
+      'a dropped development runtime',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'developmentRuntime: context.developmentRuntime,',
+          ''
+        ),
+      ['development-runtime-wiring'],
+      /createSession must be given the provider context's developmentRuntime as developmentRuntime/,
+    ],
+    [
+      'a dropped AG-UI development runtime',
+      'ag-ui',
+      () =>
+        changed(agUiOptions, 'developmentRuntime: context.developmentRuntime,', ''),
+      ['development-runtime-wiring'],
+      /createSession must be given the provider context's developmentRuntime as developmentRuntime/,
+    ],
+    [
+      'the development runtime under an invented name',
+      'langgraph',
+      () => changed(langGraphOptions, 'developmentRuntime:', 'telemetryRuntime:'),
+      ['development-runtime-wiring'],
+      /passed as telemetryRuntime, which the langgraph session does not accept \(it takes developmentRuntime\); it is dropped/,
+    ],
+    [
+      'a development runtime the host never sees',
+      'ag-ui',
+      () =>
+        changed(
+          agUiOptions,
+          'context.developmentRuntime',
+          '() => undefined'
+        ),
+      ['development-runtime-wiring'],
+      /developmentRuntime must be the provider context's developmentRuntime/,
+    ],
+    [
+      'the development runtime option given another context member',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'context.developmentRuntime',
+          'context.onThreadId'
+        ),
+      ['development-runtime-wiring'],
+      /developmentRuntime must be the provider context's developmentRuntime/,
     ],
     [
       'a dropped operation reporter',

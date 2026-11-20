@@ -51,6 +51,7 @@ export const activeThreadIdState = signal<string | null>(null);
             threadId: context.threadId,
             onThreadId: context.onThreadId,
             onOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
             throttle: 16,
           }),
         threadId: activeThreadIdState,

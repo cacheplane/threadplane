@@ -13,7 +13,8 @@ import * as ts from 'typescript';
  *       apiUrl: connection.apiUrl, assistantId: connection.assistantId,
  *       clientOptions: connection.clientOptions,
  *       threadId: context.threadId, onThreadId: context.onThreadId,
- *       onOperationFailure: context.reportOperationFailure }) };
+ *       onOperationFailure: context.reportOperationFailure,
+ *       developmentRuntime: context.developmentRuntime }) };
  *   })
  *
  * What each issue kind catches:
@@ -34,6 +35,9 @@ import * as ts from 'typescript';
  * - `operation-reporter-wiring`: the host's failure reporter dropped, passed
  *   under a name the session does not accept, or its token used anywhere but
  *   the entrypoint, so a refused request never reaches the cockpit.
+ * - `development-runtime-wiring`: the context's development-install relay
+ *   dropped or passed under another name, so a development build of the
+ *   application reports nothing where it used to report a session start.
  * - `session-outside-provider-factory`: a session or directory built anywhere
  *   but its provider factory, where there is no provider context at all.
  * - `thread-directory-wiring`: a thread list read from another deployment
@@ -59,6 +63,7 @@ export type RuntimeWiringAuditKind =
   | 'session-connection-wiring'
   | 'session-context-wiring'
   | 'operation-reporter-wiring'
+  | 'development-runtime-wiring'
   | 'thread-directory-wiring'
   | 'runtime-secret-log';
 
@@ -221,8 +226,15 @@ export const providerContextKeys = new Set([
   'onThreadId',
   'clientOptions',
   'reportOperationFailure',
+  'developmentRuntime',
 ]);
 const contextReporterKey = 'reportOperationFailure';
+/**
+ * The context member that relays a session to the development-install
+ * collector, and the option both backends' sessions take it under. A factory
+ * that picks fields from the context drops it unless it names it.
+ */
+export const contextDevelopmentKey = 'developmentRuntime';
 /**
  * What each backend's session must be given, and from where. `bypass` names
  * the options that replace the connection outright: a session handed one
@@ -1055,6 +1067,7 @@ const memoryFactoryGrammar = `const factory = () => {
         assistantId: connection.assistantId,
         threadId: context.threadId,
         onThreadId: context.onThreadId,
+        developmentRuntime: context.developmentRuntime,
         transport: new MemoryTransport(connection.apiUrl, scope, undefined,
           clientOptions, context.reportOperationFailure),
       }),
@@ -2513,6 +2526,44 @@ export function inspectRuntimeTargetSource(
         `createSession must be given the provider context's ${contextReporterKey} as ${accepted.join(
           ' or '
         )}`
+      );
+    }
+    auditDevelopmentRuntimeOption(shape, options, adapter);
+  }
+
+  /**
+   * The context's development-install relay must reach the session under the
+   * one name both sessions take it by. Without it a development build reports
+   * nothing, and no error says so. (The memory application's own
+   * factory is matched whole against a grammar that includes the relay.)
+   */
+  function auditDevelopmentRuntimeOption(
+    shape: SessionFactoryShape,
+    options: SessionOptionMembers,
+    adapter: CompatibleRuntimeAdapter
+  ): void {
+    let relayPassed = false;
+    for (const [name, value] of options.values) {
+      const key = contextKeyOf(shape, value);
+      if (name === contextDevelopmentKey) {
+        relayPassed = true;
+        if (key !== contextDevelopmentKey) {
+          report(
+            'development-runtime-wiring',
+            `${name} must be the provider context's ${contextDevelopmentKey}`
+          );
+        }
+      } else if (key === contextDevelopmentKey) {
+        report(
+          'development-runtime-wiring',
+          `the development runtime is passed as ${name}, which the ${adapter} session does not accept (it takes ${contextDevelopmentKey}); it is dropped without an error`
+        );
+      }
+    }
+    if (!relayPassed) {
+      report(
+        'development-runtime-wiring',
+        `createSession must be given the provider context's ${contextDevelopmentKey} as ${contextDevelopmentKey}: a session without it reports nothing in a development build`
       );
     }
   }

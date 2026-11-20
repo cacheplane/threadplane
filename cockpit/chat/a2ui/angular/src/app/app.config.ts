@@ -21,6 +21,7 @@ export const appConfig: ApplicationConfig = {
             threadId: context.threadId,
             onThreadId: context.onThreadId,
             onOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
             throttle: 16,
             // The graph also runs a background title model after each visible turn.
             transcriptNodeNames: ['build_form', 'search_flights', 'confirm_booking'],

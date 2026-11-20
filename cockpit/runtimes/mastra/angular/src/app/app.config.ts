@@ -17,6 +17,7 @@ export const appConfig: ApplicationConfig = {
             threadId: context.threadId ?? undefined,
             interruptTransport: 'mastra-command',
             reportOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
           }),
       };
     }),

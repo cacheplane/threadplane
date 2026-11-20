@@ -21,6 +21,7 @@ export const appConfig: ApplicationConfig = {
             threadId: context.threadId,
             onThreadId: context.onThreadId,
             onOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
             throttle: 16,
             // Treat `task` tool calls as subagent dispatches: each child graph is
             // related to the call that started it, so agent.subagents() populates
