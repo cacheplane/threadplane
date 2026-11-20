@@ -59,6 +59,10 @@ export {
   type SubagentProjection,
 } from './subagent-evidence.js';
 export {
+  sessionSubagents,
+  type SessionSubagentOptions,
+} from './session-subagents.js';
+export {
   Suggestions,
   type SuggestionItem,
   type SuggestionsProps,

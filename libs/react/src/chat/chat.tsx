@@ -33,6 +33,7 @@ import {
   type MessageListProps,
 } from './message-list.js';
 import { ScrollBubble } from './scroll-bubble.js';
+import { sessionSubagents } from './session-subagents.js';
 import { Select, type SelectOption } from './select.js';
 import { ThreadList, type ThreadListItem } from './thread-list.js';
 
@@ -71,7 +72,11 @@ export interface ChatProps
    * the composer when none is. The app passes `clientTools.tools` to the session; Chat never runs a tool. Off unless set.
    */
   readonly clientTools?: ChatClientTools;
-  /** Child agents shown as subagent cards in place of the tool calls that started them. Keep stable. */
+  /**
+   * Child agents shown as subagent cards in place of the tool calls that started them. Keep stable.
+   * Left unset, Chat shows the child agents the session reports in `snapshot.subagents`. Pass a list,
+   * which may be empty, to show that instead.
+   */
   readonly subagents?: MessageListProps['subagents'];
   /** Application-owned handler for a retry declared by `toolOutcome`; Chat never re-runs a call. Keep stable. */
   readonly onToolRetry?: MessageListProps['onToolRetry'];
@@ -281,7 +286,8 @@ export function Chat({
   // handles it itself. Built-in actions stay off until `messageActions` is set.
   const actions = useMemo(() => {
     if (!messageActions || !session.regenerate) return messageActions;
-    if (messageActions !== true && messageActions.onRegenerate) return messageActions;
+    if (messageActions !== true && messageActions.onRegenerate)
+      return messageActions;
     return {
       ...(messageActions === true ? {} : messageActions),
       onRegenerate: (messageId: string) => {
@@ -415,6 +421,15 @@ export function Chat({
     suggestionFocus.current = false;
     composer.current?.focus();
   }, [greeted]);
+  // The session's own child agents, unless the app supplies the cards.
+  const children = subagents === undefined ? snapshot.subagents : undefined;
+  const reported = useMemo(
+    () =>
+      children?.length
+        ? sessionSubagents(children, { toolLabel, toolOutcome })
+        : undefined,
+    [children, toolLabel, toolOutcome]
+  );
   // The run's messages keep their identity while only later snapshots change.
   const messages = snapshot.messages;
   const runMessages = useMemo(() => {
@@ -458,7 +473,9 @@ export function Chat({
         renderToolCall={renderToolCall}
         renderToolCallPrompt={renderPrompt}
         renderToolResult={renderToolResult}
-        subagents={subagents}
+        subagents={subagents ?? reported}
+        // A session child may name no tool call, as a LangGraph child graph does not.
+        placeUnanchoredSubagents={subagents === undefined}
         onToolRetry={onToolRetry}
         plan={snapshot.plan}
         onStop={snapshot.status === 'running' ? stop : undefined}
@@ -485,7 +502,11 @@ export function Chat({
         }
       >
         {runActivity === null ? null : (
-          <div className="tp-chat__run-activity" role="status" aria-atomic="false">
+          <div
+            className="tp-chat__run-activity"
+            role="status"
+            aria-atomic="false"
+          >
             {runActivity}
           </div>
         )}

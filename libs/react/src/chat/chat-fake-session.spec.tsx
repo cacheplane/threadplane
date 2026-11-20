@@ -73,3 +73,98 @@ it('drives useAgent through the fake session controls', () => {
   expect(result.current.status).toBe('error');
   expect(result.current.error?.message).toBe('Down');
 });
+
+it('shows the child agents the session reports, with no subagents prop', () => {
+  const fake = createFakeAgentSession();
+  const view = render(<Chat session={fake.session} />);
+  act(() => {
+    fake.set({
+      messages: [
+        { role: 'user', content: 'Research it' },
+        { role: 'assistant', content: 'Delegating', toolCallIds: ['task-1'] },
+        { role: 'assistant', content: 'Here is the summary' },
+      ],
+      toolCalls: [
+        { id: 'task-1', name: 'task', args: {}, status: 'complete', result: 1 },
+      ],
+      subagents: [
+        {
+          // Related to the root call that started it: the card takes its place.
+          id: 'anchored',
+          name: 'researcher',
+          toolCallId: 'task-1',
+          messages: [
+            {
+              role: 'assistant',
+              content: 'Found two sources',
+              toolCallIds: ['search-1'],
+            },
+          ],
+          toolCalls: [
+            {
+              id: 'search-1',
+              name: 'search',
+              args: { q: 'sources' },
+              status: 'complete',
+              result: 'ok',
+            },
+          ],
+        },
+        // Related to no call, as a LangGraph child graph is.
+        { id: 'loose', name: 'writer', status: 'error', error: 'It failed' },
+      ],
+    });
+  });
+  const cards = [
+    ...view.container.querySelectorAll<HTMLElement>('[data-subagent-id]'),
+  ];
+  expect(cards.map((card) => card.dataset['subagentId'])).toEqual([
+    'anchored',
+    'loose',
+  ]);
+  expect(cards[0].textContent).toContain('researcher');
+  expect(cards[0].textContent).toContain('Found two sources');
+  expect(cards[1].textContent).toContain('writer');
+  expect(cards[1].textContent).toContain('It failed');
+  // Both belong to the turn's first assistant message, not the last one.
+  const first = view.getByText('Delegating').closest('.tp-chat-message');
+  expect(first?.contains(cards[0])).toBe(true);
+  expect(first?.contains(cards[1])).toBe(true);
+  // The delegating call is the card, not also a tool row.
+  expect(view.queryByText('task')).toBeNull();
+});
+
+it('lets the subagents prop replace the session child agents', () => {
+  const fake = createFakeAgentSession({
+    subagents: [{ id: 'reported', name: 'reported-child' }],
+    messages: [
+      { role: 'user', content: 'Go' },
+      { role: 'assistant', content: 'Done', toolCallIds: ['task-1'] },
+    ],
+    toolCalls: [
+      { id: 'task-1', name: 'task', args: {}, status: 'complete', result: 1 },
+    ],
+  });
+  const none = render(<Chat session={fake.session} subagents={[]} />);
+  expect(none.container.querySelector('[data-subagent-id]')).toBeNull();
+  none.unmount();
+  const own = render(
+    <Chat
+      session={fake.session}
+      subagents={[
+        {
+          id: 'mine',
+          toolCallId: 'task-1',
+          name: 'app-child',
+          status: 'complete',
+          messages: [],
+        },
+      ]}
+    />
+  );
+  expect(
+    [...own.container.querySelectorAll<HTMLElement>('[data-subagent-id]')].map(
+      (card) => card.dataset['subagentId']
+    )
+  ).toEqual(['mine']);
+});
