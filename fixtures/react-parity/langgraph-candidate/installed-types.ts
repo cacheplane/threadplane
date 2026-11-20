@@ -96,8 +96,10 @@ export function checkCandidate(signal: AbortSignal) {
   }
   // @ts-expect-error No invented session queue capability.
   void session.queue;
-  // @ts-expect-error No public command for joining arbitrary external runs.
+  // Joining a run by id is a command; the queue is read from the snapshot.
   void session.joinStream('other-run');
+  // @ts-expect-error Joining needs a run id.
+  void session.joinStream();
   // @ts-expect-error Reconnect accepts only its observed owned run.
   void session.reconnect({ runId: 'other-run' });
   // @ts-expect-error A message is required for application input.

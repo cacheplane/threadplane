@@ -131,7 +131,7 @@ const original = globalThis.fetch;
 globalThis.fetch = async () => { calls++; throw new Error('Unexpected candidate fetch'); };
 try {
   const imported = await import('@threadplane/langgraph');
-  assert.deepEqual(Object.keys(imported), ['createLangGraphProjectStore', 'createLangGraphThreadDirectory', 'createSession']);
+  assert.deepEqual(Object.keys(imported), ['createLangGraphProjectStore', 'createLangGraphThreadDirectory', 'createSession', 'getToolCalls', 'langGraphToolCalls', 'selectBranch']);
   const session = imported.createSession({ assistantId: 'inert', threadId: 'fixed', apiUrl: 'http://127.0.0.1:1' });
   const snapshot = session.getSnapshot();
   assert.ok(Object.isFrozen(snapshot));
