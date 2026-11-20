@@ -15184,6 +15184,16 @@
       "reason": "Private hydration, saving and status-check controller shared by both session owners. The owners keep every run decision; excluded from public exports and legacy Angular reachability."
     },
     {
+      "id": "source:libs/ag-ui/src/runtime/lifecycle.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private recorder of a session's lifecycle milestones, in the field shape the LangGraph session publishes, shared by both session owners. Nothing is stored or sent; excluded from public exports and legacy Angular reachability."
+    },
+    {
       "id": "source:libs/ag-ui/src/runtime/testing/memory-store.ts",
       "taskIds": [
         "T05",

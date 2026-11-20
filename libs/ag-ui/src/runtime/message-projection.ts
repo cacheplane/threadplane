@@ -3,7 +3,10 @@ import {
   staticDelivery,
   streamingDelivery,
   type Citation,
+  type ContentBlock,
   type Message,
+  type PlainValue,
+  type StreamingToolCall,
   type ToolCall,
 } from '@threadplane/core';
 import { copyData } from '../lib/internal/copy-data.js';
@@ -21,6 +24,7 @@ import type { Transcript } from './transcript.js';
 
 const empty: readonly Message[] = Object.freeze([]);
 const noCalls: readonly ToolCall[] = Object.freeze([]);
+const noStreaming: readonly StreamingToolCall[] = Object.freeze([]);
 
 type Assistant = Extract<Transcript[number], { role: 'assistant' }>;
 type ToolRecord = Extract<Transcript[number], { role: 'tool' }>;
@@ -40,7 +44,9 @@ const textOf = (content: unknown): string =>
     ? content
     : Array.isArray(content)
     ? content
-        .filter((part) => part?.type === 'text' && typeof part.text === 'string')
+        .filter(
+          (part) => part?.type === 'text' && typeof part.text === 'string'
+        )
         .map((part) => part.text)
         .join('\n')
     : '';
@@ -69,6 +75,7 @@ function selectCalls(snapshot: Projectable) {
       results.set(record.toolCallId, record);
   }
   const owners = new Map<string, SelectedCall[]>();
+  const withheld: CallRecord[] = [];
   for (let position = 0; position < transcript.length; position++) {
     const record = transcript[position];
     if (record.role !== 'assistant' || typeof record.subagentRunId === 'string')
@@ -94,13 +101,104 @@ function selectCalls(snapshot: Projectable) {
         !closed &&
         index === calls.length - 1 &&
         position === lastRoot
-      )
+      ) {
+        withheld.push(call);
         continue;
+      }
       shown.push({ call, ...(result && { result }), args, invalid });
     }
     if (shown.length > 0) owners.set(record.id, shown);
   }
-  return owners;
+  return { owners, withheld };
+}
+
+/**
+ * Reads argument text that is still arriving, as far as it can be read: the
+ * text closed where it stands, or cut back to the last complete member. Only
+ * an object or an array is returned; anything else is not arguments yet.
+ */
+function readPartialArguments(text: string): PlainValue | undefined {
+  const closers: string[] = [];
+  /** Where the text can be cut and closed, newest last, with the closers there. */
+  const cuts: { readonly at: number; readonly close: string }[] = [];
+  let inString = false;
+  let escaped = false;
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') inString = true;
+    else if (char === '{' || char === '[') {
+      closers.push(char === '{' ? '}' : ']');
+      cuts.push({ at: index + 1, close: [...closers].reverse().join('') });
+    } else if (char === '}' || char === ']') closers.pop();
+    else if (char === ',')
+      cuts.push({ at: index, close: [...closers].reverse().join('') });
+  }
+  const attempts = [
+    text +
+      (inString ? (escaped ? '\\"' : '"') : '') +
+      closers.reverse().join(''),
+    ...cuts
+      .slice(-3)
+      .reverse()
+      .map((cut) => text.slice(0, cut.at) + cut.close),
+  ];
+  for (const attempt of attempts)
+    try {
+      const value: unknown = JSON.parse(attempt);
+      if (typeof value === 'object' && value !== null)
+        return copyData(value, true) as PlainValue;
+    } catch {
+      /* Try the next, shorter reading. */
+    }
+  return undefined;
+}
+
+/** What a streaming call was built from, to reuse it while that is unchanged. */
+const streamingSources = new WeakMap<object, CallRecord>();
+
+/**
+ * Display only: the root tool calls whose arguments are still arriving, for
+ * the `streamingToolCalls` of a core snapshot. These are the calls
+ * `projectToolCalls` withholds (see `selectCalls`): each has the argument text
+ * so far in `argsText` and, when that text can be read, a best-effort `args`.
+ * A call leaves this list when its arguments are final and it enters the
+ * projected tool calls under the same `id`.
+ *
+ * `previous` is an optional identity hint, as in `projectMessages`.
+ */
+export function projectStreamingToolCalls(
+  snapshot: Projectable,
+  previous: readonly StreamingToolCall[] = noStreaming
+): readonly StreamingToolCall[] {
+  if (snapshot.status !== 'running')
+    return previous.length ? noStreaming : previous;
+  const { withheld } = selectCalls(snapshot);
+  if (!withheld.length) return previous.length ? noStreaming : previous;
+  const prior = new Map(previous.map((call) => [call.id, call]));
+  const calls = withheld.map((call) => {
+    const old = prior.get(call.id);
+    if (old && streamingSources.get(old) === call) return old;
+    const argsText = call.function.arguments;
+    const args = argsText === '' ? undefined : readPartialArguments(argsText);
+    const projected: StreamingToolCall = Object.freeze({
+      id: call.id,
+      name: call.function.name,
+      argsText,
+      ...(args !== undefined && { args }),
+    });
+    streamingSources.set(projected, call);
+    return projected;
+  });
+  return calls.length === previous.length &&
+    calls.every((call, index) => call === previous[index])
+    ? previous
+    : Object.freeze(calls);
 }
 
 /** What a projected call was built from, to reuse it while that is unchanged. */
@@ -133,7 +231,7 @@ export function projectToolCalls(
   const running = snapshot.status === 'running';
   const prior = new Map(previous.map((call) => [call.id, call]));
   const calls: ToolCall[] = [];
-  for (const shown of selectCalls(snapshot).values())
+  for (const shown of selectCalls(snapshot).owners.values())
     for (const { call, result, args, invalid } of shown) {
       const old = prior.get(call.id);
       const source = old && sources.get(old);
@@ -161,11 +259,16 @@ export function projectToolCalls(
           value = text;
         }
       }
+      // A result sent as parts keeps them beside its text.
+      const parts =
+        result && Array.isArray(result.content)
+          ? { parts: result.content as readonly PlainValue[] }
+          : undefined;
       const projected = Object.freeze(
         result && typeof result.error === 'string' && result.error !== ''
-          ? { ...base, status: 'error', error: result.error }
+          ? { ...base, status: 'error', error: result.error, ...parts }
           : result
-          ? { ...base, status: 'complete', result: value }
+          ? { ...base, status: 'complete', result: value, ...parts }
           : invalid
           ? { ...base, status: 'error', error: 'Invalid JSON arguments' }
           : { ...base, status: running ? 'running' : 'pending' }
@@ -260,6 +363,58 @@ const sameCitations = (
   b: readonly Citation[] | undefined
 ) => a === b || (!!a && !!b && JSON.stringify(a) === JSON.stringify(b));
 
+/** A record's structured content as core blocks, by the content list it was read from. */
+const structured = new WeakMap<
+  object,
+  {
+    readonly blocks: readonly ContentBlock[];
+    readonly extra?: Readonly<Record<string, PlainValue>>;
+  }
+>();
+
+/**
+ * A record whose content is a list of parts, as core blocks. Text and
+ * URL-sourced images have a block; every other part is kept verbatim under
+ * `extra['ag-ui'].parts`, as the Angular adapter kept them, so nothing the
+ * producer sent is dropped. Content lists are owned and frozen, so one list is
+ * read once.
+ */
+function structuredContent(content: unknown) {
+  if (!Array.isArray(content)) return undefined;
+  let known = structured.get(content);
+  if (!known) {
+    const blocks: ContentBlock[] = [];
+    const rest: PlainValue[] = [];
+    for (const part of content as readonly PlainValue[]) {
+      const fields = plain(part);
+      const source = plain(fields?.['source']);
+      if (fields?.['type'] === 'text' && typeof fields['text'] === 'string')
+        blocks.push(Object.freeze({ type: 'text', text: fields['text'] }));
+      else if (
+        fields?.['type'] === 'image' &&
+        source?.['type'] === 'url' &&
+        typeof source['value'] === 'string'
+      )
+        blocks.push(Object.freeze({ type: 'image', url: source['value'] }));
+      else rest.push(part);
+    }
+    known = Object.freeze({
+      blocks: Object.freeze(blocks),
+      ...(rest.length > 0 && {
+        extra: Object.freeze({
+          'ag-ui': Object.freeze({ parts: Object.freeze(rest) }),
+        }),
+      }),
+    });
+    structured.set(content, known);
+  }
+  return known;
+}
+/** What marks a `developer` record, which the core contract shows as `system`. */
+const DEVELOPER_EXTRA = Object.freeze({
+  'ag-ui': Object.freeze({ role: 'developer' }),
+});
+
 interface Pending {
   readonly ids: string[];
   readonly text: string[];
@@ -274,8 +429,18 @@ interface Pending {
  * - User and assistant text become messages. An assistant record lists the
  *   calls `projectToolCalls` shows for it as `toolCallIds`, and is a message
  *   even without text once it has one. A tool record becomes a `tool` message
- *   with its text and `toolCallId`. System, developer and activity records and
- *   child-attributed records are not projected in this slice.
+ *   with its text and `toolCallId`.
+ * - A system record with text becomes a `system` message, as the Angular
+ *   adapter showed one a messages snapshot carried. A developer record does
+ *   too, the core contract having no such role, marked
+ *   `extra['ag-ui'].role: 'developer'`. Activity records and child-attributed
+ *   records are not messages: a subagent activity is a child agent, and every
+ *   record stays in `transcript`.
+ * - A user or tool record whose content is a list of parts also carries
+ *   `blocks`: a text block for each text part and an image block for each
+ *   image part with a URL source. `content` stays the text. Any other part
+ *   (audio, video, a document, inline image data) is kept verbatim under
+ *   `extra['ag-ui'].parts`.
  * - The protocol sends reasoning as its own records. Each is attached to the
  *   next assistant record as that message's `reasoning`; several before one
  *   assistant are joined by blank lines. Reasoning with no assistant record
@@ -300,8 +465,10 @@ export function projectMessages(
   const durations = snapshot.reasoningDurations;
   const drafts: {
     id: string;
-    role: 'user' | 'assistant' | 'tool';
+    role: 'user' | 'assistant' | 'tool' | 'system';
     content: string;
+    blocks?: readonly ContentBlock[];
+    extra?: Readonly<Record<string, PlainValue>>;
     reasoning?: string;
     reasoningDurationMs?: number;
     toolCallId?: string;
@@ -315,7 +482,7 @@ export function projectMessages(
   let lastRoot = -1;
   let lastUser = -1;
   let lastAssistant = -1;
-  const owners = selectCalls(snapshot);
+  const { owners } = selectCalls(snapshot);
   const sources = plain(plain(snapshot.state)?.['citations']);
   const reasoned = (waiting: Pending) => ({
     reasoning: waiting.text.join('\n\n'),
@@ -355,9 +522,24 @@ export function projectMessages(
     if (role === 'user') {
       flush();
       const text = textOf(content);
-      if (text === '') continue;
+      const parts = structuredContent(content);
+      // An image alone is still a message.
+      if (text === '' && !parts?.blocks.length && !parts?.extra) continue;
       lastUser = drafts.length;
-      drafts.push({ id, role, content: text, last: position });
+      drafts.push({ id, role, content: text, ...parts, last: position });
+      continue;
+    }
+    if (role === 'system' || role === 'developer') {
+      flush();
+      const text = textOf(content);
+      if (text === '') continue;
+      drafts.push({
+        id,
+        role: 'system',
+        content: text,
+        ...(role === 'developer' && { extra: DEVELOPER_EXTRA }),
+        last: position,
+      });
       continue;
     }
     if (role === 'tool') {
@@ -365,6 +547,7 @@ export function projectMessages(
         id,
         role,
         content: textOf(content),
+        ...structuredContent(content),
         toolCallId: record.toolCallId,
         last: position,
       });
@@ -413,6 +596,8 @@ export function projectMessages(
     return old &&
       old.role === draft.role &&
       old.content === draft.content &&
+      old.blocks === draft.blocks &&
+      old.extra === draft.extra &&
       old.reasoning === draft.reasoning &&
       old.reasoningDurationMs === draft.reasoningDurationMs &&
       old.toolCallId === draft.toolCallId &&

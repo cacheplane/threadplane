@@ -65,6 +65,12 @@ export interface Observation {
   readonly earlierSubagents?: Subagents;
   readonly decision?: Decision;
   /**
+   * The names of the client tools declared through `session.clientTools`.
+   * Present, and possibly empty, on a session with that capability. It is
+   * what `pendingClientTools` is read against, and is not published itself.
+   */
+  readonly clientToolCatalog?: readonly string[];
+  /**
    * Set while the owner cannot take a command for a reason of its own: the
    * saved thread is loading, a status check is running, or storage failed.
    */

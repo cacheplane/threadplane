@@ -101,10 +101,19 @@ const rows = content.project({ status: snapshot.status, messages, toolCalls });
 
 - Root user and assistant text become messages. An assistant record lists its
   shown calls as `toolCallIds` and is a message even without text. A root tool
-  record becomes a `tool` message with its text and `toolCallId`. System,
-  developer and activity records and child-attributed records are not projected
-  in this slice, and an assistant record with no text, reasoning or shown call
-  is left out.
+  record becomes a `tool` message with its text and `toolCallId`. An assistant
+  record with no text, reasoning or shown call is left out.
+- A system record with text becomes a `system` message, as the Angular adapter
+  showed one a messages snapshot carried. A developer record does too, the
+  core contract having no such role, marked `extra['ag-ui'].role: 'developer'`.
+  Activity records and child-attributed records are not messages: a subagent
+  activity is a child agent (see "Core session"), and every record stays in
+  `transcript`.
+- A user or tool record whose content is a list of parts also carries `blocks`:
+  a text block for each text part and an image block for each image part with
+  a URL source. `content` stays the text (text parts joined by a newline). Any
+  other part, such as audio, video, a document or inline image data, is kept
+  verbatim under `extra['ag-ui'].parts`, as the Angular adapter kept it.
 - The protocol sends reasoning as its own records. Each is attached to the next
   assistant record as that message's `reasoning`; several before one assistant
   are joined by blank lines. Reasoning with no assistant record after it yet is
@@ -182,6 +191,10 @@ const session = createSession({ threadId, url });
   is sent. Each entry is the protocol's interrupt, so it has the core `id`,
   `reason`, `message` and `toolCallId` and any other field the backend sent. It
   is absent when nothing is waiting, and for a pause this session cannot answer.
+  The core `value` is what the backend sent with the pause. The protocol's
+  interrupt has no field of that name (the client removes one), so its `value`
+  is its `metadata`, the same object; a `CUSTOM on_interrupt` notice's `value`
+  is the notice's own.
 - `subagents` lists every child the session knows as a core child agent:
   children of earlier root runs first, marked `earlier`, then the current run's,
   each in start order. A child has `id`, `name`, `description`, `toolCallId`,
@@ -203,10 +216,12 @@ const session = createSession({ threadId, url });
     `activityType: 'subagent'`, as the Angular adapter supported, gets the same
     children. Each root record of that type is one child, read from its
     content: `name`, `description`, `toolCallId`, `status`, `messages` (or one
-    `text`), `toolCalls` and, for a failure, `state.error`. Listed messages are
+    `text`), `toolCalls`, `state` (published as the core child `state`) and,
+    for a failure, `state.error`. Listed messages are
     shown as the child's own output with role `assistant`, with `toolCallIds`
     and `reasoning` kept. A `status` of `complete` or `error` settles the
-    child; any other is `running` in its own run and `unknown` after it. The
+    child; `pending` is the core `pending` status while its run is going; any
+    other is `running` in its own run and `unknown` after it. The
     record's content stays on the child as `activity`; `started` is derived
     from it and there is no `terminal`. These children follow the ones with
     event evidence, in transcript order, and one from an earlier root run is
@@ -215,10 +230,13 @@ const session = createSession({ threadId, url });
     root `messages`.
 - Every publication notifies subscribers, including one that changes only
   protocol evidence such as a decision or a child.
-- `submit` takes text, or `{ message, state? }` with a state patch.
+- `submit` takes text, or `{ message, blocks?, state? }` with structured
+  content and a state patch.
 - `resume` is the core contract's command: it takes one response for each
   pending interrupt, named by `id` (see "Correlated native resume").
 - The client-tool evidence is an AG-UI addition to the core contract.
+- The optional members of the core contract are under "Optional core members"
+  below.
 - A failed run becomes `snapshot.error`. A backend `RUN_ERROR` is a `server`
   error carrying the backend's message. A stream that ended without a terminal
   is `interrupted`. A response that was not OK carries its HTTP status: 401 and
@@ -233,6 +251,13 @@ const session = createSession({ threadId, url });
   `retryable: false` and `recovery: 'none'`: a stream that ended without a
   terminal, a response that was not OK and a request that got no response leave
   open whether the backend did the work.
+- An answer is retryable in one case: its request provably reached no run. It
+  was never made, or the backend refused it with its own `RUN_ERROR` before
+  any `RUN_STARTED`. The pause is then pending again, the error is
+  `recovery: 'retry'`, and `retry` sends the same answers, message and state
+  again. An answering run that reported `RUN_STARTED` and then failed, a
+  response that was not OK, and a transport's own claim that a request did not
+  leave are not proof, and that answer is never sent twice.
 - The session has `checkStatus` when the application configures
   `persistence.reconcile` (see "Durability"). AG-UI itself defines no read-only
   way to ask a backend what became of a run: `HttpAgent` only posts new runs,
@@ -253,6 +278,83 @@ const session = createSession({ threadId, url });
   and `'hydrating'`, `'checking'` or `'storage'` while the session itself
   cannot take a command (see "Durability"). It is absent when a submission
   would be admitted. A run in progress is not a reason: read `status`.
+
+### Optional core members
+
+The session publishes or implements each optional member of the core contract
+(`libs/core/README.md`, "What a session may also carry") that the protocol
+gives it the information for.
+
+- **`Message.blocks` and `Message.extra`.** See "Core messages and reasoning
+  time". `submit({ message, blocks })` sends text and image blocks as the
+  protocol's text and image parts, in place of `message`. A `tool_use` or
+  `tool_result` block is not something a user message carries: the submission
+  resolves `error` and nothing is sent.
+- **`snapshot.streamingToolCalls`.** A root call whose arguments are still
+  arriving is listed here with the text so far in `argsText` and a best-effort
+  `args`: the text closed where it stands, or cut back to its last complete
+  member. It is the call `toolCalls` withholds, so a call is in one list or the
+  other, never both, and enters `toolCalls` under the same `id` once its
+  arguments are final. The field is absent when no call is streaming. A child
+  lists its own in `subagents[].streamingToolCalls`.
+- **Tool `parts`.** A tool record whose content is a list of parts gives its
+  call `parts`, that list, beside `result` (or `error`).
+- **`snapshot.errorDiagnostic`.** Published beside `error` for a failed run:
+  `{ name: 'RunError', message, code? }` for the backend's own `RUN_ERROR`, and
+  otherwise `projectErrorDiagnostic` of what the transport failed with, which
+  carries the HTTP status of a response that was not OK. A stream that ended
+  without a terminal has no thrown value and no diagnostic. A session with
+  `reportOperationFailure` publishes none. It is kept beside the run's
+  evidence in memory only: it is not saved with a thread.
+- **`AgentSubagent.state` and `pending`.** From `ACTIVITY` subagent records,
+  as described above. `SUBAGENT_*` events carry neither a child state nor a
+  not-yet-started status, so a child read from them has no `state` and is
+  never `pending`.
+- **`resume(responses, { message, blocks, state })`.** The message is appended
+  as a user message and the state patch merged, and both travel in the same
+  request as the answers, as the Angular adapter's
+  `submit({ resume, state, message })` sent them. An option that cannot be
+  sent rejects `resume` without claiming the pause.
+- **`runWithoutMessage({ state })`.** Starts a run on the history as it
+  stands, after merging the state. It is refused like `submit` while a
+  decision is waiting, and `retry` sends a failed one again.
+- **`session.clientTools` and `snapshot.pendingClientTools`.** On a session
+  created without a handler map. `setCatalog(specs)` declares the tools every
+  later request sends; an empty list declares none. Once a catalog was set,
+  `pendingClientTools` lists, while no run is going, each `pending` call whose
+  tool is in the catalog; when the run's `RUN_FINISHED` outcome names
+  `pendingToolCallIds`, only those. `settle(id, result)` records a result as
+  the tool record the next request sends (`tool-<id>`; a failure also sets the
+  record's `error`, so the call is an `error`), and throws for an id that is
+  not pending. `flush()` saves the thread when the session has `persistence`,
+  and otherwise does nothing: a settled result is already in the history.
+  `resolve(id, result)` settles and continues with a run that adds no user
+  message. A session created with a handler map (the second argument of
+  `createSession`) runs its tools itself, publishes `snapshot.clientTools`
+  and leaves `session.clientTools` and `pendingClientTools` undefined.
+- **`checkpoints` and `messageCheckpoints`.** Not published. AG-UI has no
+  checkpoint: the protocol names runs and threads, and nothing in it lists
+  saved points of a thread with the state at each.
+- **`state_update` events.** A `CUSTOM` event named `state_update` reaches
+  `onCustomEvent` like any other, with a JSON string value read as its data,
+  so the core helper `onAgentStateUpdate(session, listener)` follows them.
+
+Beside the core contract, for the Angular `Agent`:
+
+- **`session.lifecycle`** is an observable `{ getSnapshot, subscribe }` of when
+  the session first saw each milestone, with the fields the LangGraph
+  session's `lifecycle` has: `streamStartedAt`, `streamErrorAt`,
+  `interruptReceivedAt`, `interruptResolvedAt`, `threadCreatedAt`,
+  `threadPersistedAt`, `toolCallStartedAt` and `toolCallCompletedAt`.
+  `threadCreatedAt` is the first request of a session that named its own
+  thread, and stays null for one given a `threadId`. `threadPersistedAt` is
+  the first load that restored a saved thread.
+- **`session.load()`** is present with `replay` or `persistence`. It reads the
+  thread again, replay first and then storage, as the session did when it was
+  created. `snapshot.inputBlocked.reason` is `hydrating` meanwhile, which is
+  what a thread-loading indicator reads, and commands are refused until it
+  settles. It rejects after disposal, while a run or a status check is going,
+  and when storage could not be read.
 
 ### State
 

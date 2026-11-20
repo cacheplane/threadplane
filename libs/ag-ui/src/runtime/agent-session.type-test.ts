@@ -130,3 +130,57 @@ void childName;
 void childAgent.activity?.['status'];
 // @ts-expect-error the record's content is readonly
 if (childAgent.activity) childAgent.activity['status'] = 'complete';
+
+// The optional members of the core contract, in the core types.
+import type {
+  AgentClientTools,
+  AgentErrorDiagnostic,
+  ContentBlock,
+  StreamingToolCall,
+  ToolCall,
+} from '@threadplane/core';
+import type { SessionLifecycle } from './lifecycle';
+const published = untyped.getSnapshot();
+const streaming: readonly StreamingToolCall[] | undefined =
+  published.streamingToolCalls;
+const waiting: readonly ToolCall[] | undefined = published.pendingClientTools;
+const diagnostic: AgentErrorDiagnostic | undefined = published.errorDiagnostic;
+const blocks: readonly ContentBlock[] | undefined =
+  published.messages[0].blocks;
+const childState = published.subagents[0].state?.['step'];
+const pendingChild: 'pending' | 'running' | 'complete' | 'error' | 'unknown' =
+  published.subagents[0].status;
+void [streaming, waiting, diagnostic, blocks, childState, pendingChild];
+// AG-UI has no checkpoint, so the snapshot type carries the core field unset.
+const checkpoints: undefined | readonly unknown[] = published.checkpoints;
+void checkpoints;
+const capability: AgentClientTools | undefined = untyped.clientTools;
+capability?.setCatalog([{ name: 'ask', description: 'Asks.', parameters: {} }]);
+capability?.resolve('call', { ok: true, value: { seat: '4A' } });
+capability?.settle?.('call', { ok: false, error: 'Dismissed' });
+// @ts-expect-error a failed result says why
+capability?.resolve('call', { ok: false });
+// A session that runs its own handlers has no such capability.
+// @ts-expect-error the handler-map session leaves clientTools out
+void tools.clientTools;
+void untyped.submit({
+  message: 'Look',
+  blocks: [{ type: 'image', url: 'https://example.invalid/a.png' }],
+});
+// @ts-expect-error a block has a known type
+void untyped.submit({ message: 'Look', blocks: [{ type: 'video' }] });
+void untyped.runWithoutMessage?.({ state: { anything: 1 } });
+void typed.runWithoutMessage?.({ state: { title: 'New' } });
+// @ts-expect-error a run's state holds declared keys only
+void typed.runWithoutMessage?.({ state: { unknownKey: 1 } });
+void typed.resume([], { message: 'Go on', state: { title: 'New' } });
+// @ts-expect-error a resume's state holds declared keys only
+void typed.resume([], { state: { unknownKey: 1 } });
+const milestones: SessionLifecycle | undefined =
+  untyped.lifecycle?.getSnapshot();
+const startedAt: number | null | undefined = milestones?.streamStartedAt;
+void startedAt;
+// @ts-expect-error a lifecycle is read, never written
+if (milestones) milestones.streamStartedAt = 1;
+const loading: Promise<void> | undefined = untyped.load?.();
+void loading;
