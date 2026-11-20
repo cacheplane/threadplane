@@ -11,16 +11,23 @@ Most AG-UI integration issues are event-shape problems. Start by checking what y
 Check the provider first.
 
 ```ts
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
+
 providers: [
-  provideAgent({ url: '/api/agent' }),
+  provideAgent({
+    createSession: (context) =>
+      createSession({ url: '/api/agent', threadId: context.threadId ?? undefined }),
+  }),
 ]
 ```
 
 Then make sure the component uses the provided agent:
 
 ```ts
+import { Component } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   standalone: true,
@@ -32,37 +39,36 @@ export class ChatPage {
 }
 ```
 
-If you call `injectAgent()`, the agent must have been provided via `provideAgent()` in the same Angular injector tree.
+If you call `injectAgent()`, the agent must have been provided via `provideAgent()` from `@threadplane/angular` in the same Angular injector tree. `@threadplane/ag-ui` no longer exports a provider of its own.
 
 ## User messages appear, but no assistant response
 
-`submit()` optimistically appends the user message before calling `source.runAgent()`. If the user message appears and the assistant does not, the UI path is working. The next place to inspect is the AG-UI event stream.
+`submit()` publishes the user message with the new run before the request is sent. If the user message appears and the assistant does not, the UI path is working. The next place to inspect is the AG-UI event stream.
 
 The backend must emit at least:
 
 ```ts
-{ type: 'RUN_STARTED' }
+{ type: 'RUN_STARTED', threadId, runId }
 { type: 'TEXT_MESSAGE_START', messageId: 'm1', role: 'assistant' }
 { type: 'TEXT_MESSAGE_CONTENT', messageId: 'm1', delta: 'Hello' }
 { type: 'TEXT_MESSAGE_END', messageId: 'm1' }
-{ type: 'RUN_FINISHED' }
+{ type: 'RUN_FINISHED', threadId, runId }
 ```
 
-If `TEXT_MESSAGE_CONTENT` uses a different `messageId` than `TEXT_MESSAGE_START`, the reducer cannot append content to the message.
+`RUN_STARTED` and `RUN_FINISHED` must carry the `threadId` and `runId` of the request; a mismatch fails the run. If `TEXT_MESSAGE_CONTENT` uses a different `messageId` than `TEXT_MESSAGE_START`, the AG-UI client's verification rejects the sequence and the run fails. `agent.errorDiagnostic()` then names the event that was rejected.
 
 ## Loading never stops
 
-The adapter sets `isLoading` to `true` on `RUN_STARTED`.
+There is no separate loading flag: a run is going while `agent.status()` is `'running'`. The session sets it when a command is admitted.
 
-It sets `isLoading` back to `false` on:
+`status()` leaves `'running'` on:
 
-- `RUN_FINISHED`
+- `RUN_FINISHED`, including one carrying `outcome: { type: 'interrupt' }`, which pauses the run
 - `RUN_ERROR`
-- `onRunFailed`
-- a pause — a `CUSTOM` `on_interrupt` event, or a `RUN_FINISHED` carrying `outcome: { type: 'interrupt' }`
+- a transport failure, or a stream that closes without a terminal event
 - `stop()`, which aborts the active run
 
-If loading never stops, your backend likely did not emit a terminal event or the AG-UI source did not report a failure.
+If loading never stops, the response is still open and your backend has not emitted a terminal event. For a custom `AbstractAgent`, check that the Observable its `run()` returns completes or errors.
 
 ## Errors are not visible
 
@@ -72,7 +78,7 @@ Protocol errors should come through `RUN_ERROR`.
 { type: 'RUN_ERROR', message: 'Model quota exceeded' }
 ```
 
-Transport or runtime failures may arrive through the AG-UI subscriber `onRunFailed` callback. The adapter stores that thrown value in `agent.error()` and sets `status` to `error`.
+Transport or runtime failures are not protocol events. The session classifies them into `agent.error()`, keeps a description of what was thrown in `agent.errorDiagnostic()`, and sets `status` to `error`.
 
 Your UI still needs to render error state. The base chat composition handles common error display, but custom layouts should read:
 
@@ -83,7 +89,7 @@ agent.error();
 
 ## Tool call args are empty
 
-`TOOL_CALL_ARGS` appends each event `delta` to the tool call's accumulated argument buffer. When the accumulated buffer is valid JSON, the reducer stores the parsed object as the current args.
+`TOOL_CALL_ARGS` appends each event `delta` to the tool call's accumulated argument text. A call enters `agent.toolCalls()` once its arguments are final.
 
 This can arrive as one complete payload:
 
@@ -98,7 +104,7 @@ Or as fragments:
 { type: 'TOOL_CALL_ARGS', toolCallId: 't1', delta: '"Angular"}' }
 ```
 
-While the buffer is incomplete, the previously parsed args remain in place. If the final buffer still cannot be parsed at `TOOL_CALL_END`, the adapter leaves the last-good parsed args instead of throwing.
+While the text is still arriving, the call is listed in `agent.streamingToolCalls()` instead, with the text so far in `argsText` and a best-effort `args`. If the final text is not JSON, the call becomes an `error`. Empty argument text is a call without input: `args` is undefined.
 
 ## Citations do not show up
 
@@ -106,7 +112,7 @@ Check three things:
 
 1. Citations must live under `state.citations`.
 2. The citation key must match the assistant message id.
-3. A `STATE_SNAPSHOT` or `STATE_DELTA` must arrive after citation data is available.
+3. A `STATE_SNAPSHOT` or `STATE_DELTA` must carry the citation data.
 
 Example:
 
@@ -121,48 +127,49 @@ Example:
 }
 ```
 
-If your backend sends citations before the message exists, send another state event after the message is created. See [Citations](/docs/angular/ag-ui/guides/citations).
+The order does not matter: citations that arrive before their message exists appear once the message does. A backend that renames a message in its closing `MESSAGES_SNAPSHOT` must key the citations by the saved id. See [Citations](/docs/angular/ag-ui/guides/citations).
 
 ## Stop does not cancel the run
 
-`agent.stop()` calls `source.abortRun()`.
+`agent.stop()` ends the run locally. A session created with `url` aborts its HTTP request. A session created with `agent` unsubscribes from the stream and calls the agent's `abortRun()`.
 
-Cancellation depends on the AG-UI source implementation. `HttpAgent` supports abort behavior. A custom `AbstractAgent` subclass needs to implement cancellation itself.
+Cancellation beyond that depends on the AG-UI source implementation. A custom `AbstractAgent` subclass needs to implement cancellation itself.
 
 ## Regenerate throws
 
-`regenerate(index)` throws when:
+`regenerate(messageId)` rejects when:
 
-- Another run is already loading.
-- The target index is not an assistant message.
+- Another run is already going.
+- A decision is waiting.
+- The target id is not an assistant message.
 - There is no previous user message to rerun from.
 
-Pass the index of the assistant message you want to replace, not the user message.
+Pass the `id` of the assistant message you want to replace, not the user message, and not its index.
 
 ## Retry does nothing
 
-`retry()` re-runs the last submitted input. It is a silent no-op in two cases: a run is already in flight, or nothing has been submitted on this agent yet. Neither case throws and neither sets `error`, so a retry button that appears to do nothing usually means one of the two. Check `isLoading()` before calling it, and note that a fresh agent has nothing to retry until the first `submit()`.
+`retry()` sends the last submission again after its run failed with a backend `RUN_ERROR`. It resolves `'aborted'` without sending in three cases: a run is already going, nothing failed, or the last run was not a failed submission. None of them throws and none sets `error`, so a retry button that appears to do nothing usually means one of the three. It rejects, also without sending, when the failure leaves the backend outcome open. Show the button only while `agent.error()?.retryable` is true.
 
 ## No Retry button after a dropped stream
 
-This is deliberate. A stream that closed without terminal evidence settles as an `interrupted` error. The adapter offers Retry only for an ordinary replayable request with no observed event; resume attempts and client-tool continuations do not qualify. Retrying re-sends the captured input without adding a duplicate local message, but the server may have processed the original request before its first response byte was lost. No observed event is not proof of no dispatch or no backend effect.
+This is deliberate. A stream that closed without terminal evidence settles as an `interrupted` error, and the session does not offer Retry for it: the server may have processed the original request before its response was lost. No observed event is not proof of no dispatch or no backend effect. Retry is offered when the backend reported its own `RUN_ERROR`, which settles that the run failed.
 
-Read `error()?.recovery`: `retry` permits that captured-input replay, `check` means a read-only interrupt status check is available through `checkStatus()`, and `none` means the outcome cannot be verified. In the last case, show `error()?.detail`. Partial content and approval state are preserved.
+Read `error()?.recovery`: `retry` permits sending the request again, `check` means a read-only status check of a sent answer is available through `checkStatus()`, and `none` means the outcome cannot be verified. In the last case, show `error()?.detail`. Partial content and approval state are preserved.
 
 ## History or time-travel does not work
 
-Checkpoint browsing and time-travel are not implemented by the AG-UI adapter today. Restoring a saved conversation is supported through `replay` and `persistence`; see [Restoring a thread from the server](/docs/angular/ag-ui/guides/deployment#restoring-a-thread-from-the-server).
+Checkpoint browsing and time-travel are not implemented by the AG-UI session today. Restoring a saved conversation is supported through `replay` and `persistence`; see [Restoring a thread from the server](/docs/angular/ag-ui/guides/deployment#restoring-a-thread-from-the-server).
 
 Current scope is messages, status/loading/error, tool calls, state/custom events, reasoning messages, message snapshots, interrupts from `CUSTOM` `on_interrupt` events and from `RUN_FINISHED` interrupt outcomes, subagent progress from `SUBAGENT_*` and `ACTIVITY_*` events, and citations from state.
 
-Use `@threadplane/langgraph` if you need LangGraph Platform thread history APIs, or write a custom adapter against the `@threadplane/chat` `Agent` contract if you need AG-UI plus product-specific behavior.
+Use `@threadplane/langgraph` if you need LangGraph Platform thread history APIs, or write a session of your own against the `AgentSession` contract from `@threadplane/core` if you need AG-UI plus product-specific behavior.
 
 ## Isolate with FakeAgent
 
 When you are unsure whether the issue is UI wiring or backend events, swap in the fake provider:
 
 ```ts
-import { provideFakeAgent } from '@threadplane/ag-ui';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 
 providers: [
   provideFakeAgent({
@@ -172,4 +179,4 @@ providers: [
 ]
 ```
 
-If the UI works with `FakeAgent`, the Angular wiring is fine. Focus on the backend event stream.
+If the UI works with the fake provider, the Angular wiring is fine. To check the AG-UI session as well, hand it the `FakeAgent` class with `createSession({ agent: new FakeAgent() })`; see [Fake Agent](/docs/angular/ag-ui/guides/fake-agent). If both work, focus on the backend event stream.

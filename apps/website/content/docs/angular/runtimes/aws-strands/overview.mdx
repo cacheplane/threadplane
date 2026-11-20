@@ -41,8 +41,8 @@ The hook reads the tool result from `context.result_data` and tolerates the stri
 
 When the human answers, the call returns the decision and the rest of the function runs to completion in the resumed run.
 
-<Callout type="info" title="Two interrupt conventions, one adapter">
-AWS Strands signals an interrupt only through the protocol-standard `RUN_FINISHED` outcome, `{ type: 'interrupt', interrupts: [...] }`, never through the LangGraph bridge's `CUSTOM` event named `on_interrupt`. It reads the decision back from the protocol-standard top-level `resume` array, one `{ interruptId, status, payload }` entry per interrupt. The adapter accepts either signal and sends the shape the runtime reads, so nothing in the component changes when the backend does.
+<Callout type="info" title="Two interrupt conventions, one session">
+AWS Strands signals an interrupt only through the protocol-standard `RUN_FINISHED` outcome, `{ type: 'interrupt', interrupts: [...] }`, never through the LangGraph bridge's `CUSTOM` event named `on_interrupt`. It reads the decision back from the protocol-standard top-level `resume` array, one `{ interruptId, status, payload }` entry per interrupt. A session answers that outcome by default and sends the shape the runtime reads, so the example sets no `interruptTransport`, and the component is the same kind of code every other AG-UI example uses.
 </Callout>
 
 ### Delegating to a specialist
@@ -71,21 +71,28 @@ The backend is a FastAPI application. `add_strands_fastapi_endpoint` from the `a
 
 ### Providing the agent
 
-`provideAgent()` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. The example passes a factory because it resolves its endpoint at runtime from the host that serves the demo. Your own application does not need the factory.
+`provideAgent()` from `@threadplane/angular` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. Its `createSession` factory builds the AG-UI session. The example wraps the config in a factory because it resolves its endpoint at runtime from the host that serves the demo. Your own application does not need the outer factory.
 
 <ExampleCode file="app.config.ts" title="app.config.ts" />
 
 Pass the URL of your AG-UI endpoint directly:
 
 ```typescript
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
+
 provideAgent({
-  url: 'https://your-backend.example.com/agent',
+  createSession: (context) =>
+    createSession({
+      url: 'https://your-backend.example.com/agent',
+      threadId: context.threadId ?? undefined,
+    }),
 });
 ```
 
 ### Reading shared state in the component
 
-`injectAgent()` returns the adapter's agent, and `agent.state()` is the Signal the snapshots land on. The component narrows that object into two computed Signals, treating a half-filled entry as absent so the panel does not render an empty row.
+`injectAgent()` returns the provided agent, and `agent.state()` is the Signal the snapshots land on. The component narrows that object into two computed Signals, treating a half-filled entry as absent so the panel does not render an empty row.
 
 <ExampleCode file="aws-strands.component.ts" region="shared-state" title="aws-strands.component.ts — state signals" />
 
@@ -97,11 +104,11 @@ The panel itself is plain Angular template code reading those two Signals, with 
 
 <ExampleCode file="aws-strands.component.ts" region="approval-card" title="aws-strands.component.ts — the approval card" />
 
-The class supplies that body from the pending interrupt and maps the card's two buttons onto resume payloads. The adapter stores the interrupt outcome as `{ interrupts: [...], runId }`; each Strands entry carries the tool name under `reason` and the tool's own payload under `metadata.reason`.
+The class supplies that body from the pending interrupt and maps the card's two buttons onto resume responses. `agent.interrupts()` lists the entries of the interrupt outcome; each Strands entry carries the tool name under `reason` and the tool's own payload under `metadata.reason`.
 
 <ExampleCode file="aws-strands.component.ts" region="approval-wiring" title="aws-strands.component.ts — approval wiring" />
 
-`submit({ resume })` is the only interrupt-specific call in the component, and it is the same call every other AG-UI example makes.
+`resume(responses)` is the only interrupt-specific call in the component, and it is the same call every other AG-UI example makes.
 
 ## What the integration demonstrates
 
@@ -117,7 +124,7 @@ The class supplies that body from the pending interrupt and maps the card's two 
 
 The Strands bridge never emits `STATE_DELTA`. Outbound state exists only where a tool opts in through a per-tool `ToolBehavior` hook, which is why the example registers `state_from_result` on `check_availability` and `state_from_args` on `book_meeting` and gets nothing from `research_availability`.
 
-Because the adapter applies a `STATE_SNAPSHOT` as a full replacement, every hook has to return the **complete** state object. A hook that returns only the keys it changed clobbers its siblings, so the example keeps one module-level object and composes the whole thing on every emission.
+Because the session applies a `STATE_SNAPSHOT` as a full replacement, every hook has to return the **complete** state object. A hook that returns only the keys it changed clobbers its siblings, so the example keeps one module-level object and composes the whole thing on every emission.
 
 <ExampleCode file="agent.py" region="demo-state" title="agent.py — the complete state object" />
 
@@ -131,7 +138,7 @@ Shared state does work on Strands. It is snapshot-only, it is opt-in per tool, a
 
 Strands wraps every value an async-generator tool yields as a `tool_stream_event`, and the bridge dispatches those events to a per-tool `ToolBehavior.tool_stream_event_handler`. Natively the bridge forwards only the inner tool-call lifecycle, so a delegated run reaches the browser as one opaque result string with no child text at all.
 
-The handler registered on `research_availability` closes that gap. `subagent_emitter.py` translates the specialist's stream into `SUBAGENT_STARTED`, attributed `TEXT_MESSAGE_*` deltas carrying `subagentRunId`, and `SUBAGENT_FINISHED`, deriving every identifier from the tool call identifier the bridge already put on the wire. The adapter routes those attributed events into a subagent entry instead of the parent transcript, which is why the card streams the specialist's tokens live.
+The handler registered on `research_availability` closes that gap. `subagent_emitter.py` translates the specialist's stream into `SUBAGENT_STARTED`, attributed `TEXT_MESSAGE_*` deltas carrying `subagentRunId`, and `SUBAGENT_FINISHED`, deriving every identifier from the tool call identifier the bridge already put on the wire. The session keeps those attributed events as the child agent's own records instead of adding them to the parent transcript, which is why the card streams the specialist's tokens live.
 
 The wire capture behind that matrix cell is committed beside the backend at [`docs/wire-capture-subagents.md`](https://github.com/cacheplane/threadplane/blob/main/cockpit/runtimes/aws-strands/python/docs/wire-capture-subagents.md), before and after the emitter. Multi-agent routes crash the stale published wheel, which is one reason the example pins the bridge to a git reference instead.
 
@@ -149,7 +156,7 @@ Strands' native OpenAI provider is used on a plain `OPENAI_API_KEY`. No AWS cred
     The same matrix with the cause analysis behind each partial cell.
   </Card>
   <Card title="Subagents" href="/docs/angular/ag-ui/guides/subagents">
-    How the adapter attributes a delegated run to the tool call that spawned it.
+    How the session attributes a delegated run to the tool call that spawned it.
   </Card>
   <Card title="AWS Strands quickstart" href="/docs/angular/runtimes/aws-strands/quickstart">
     Run this backend locally and point an Angular application at it.

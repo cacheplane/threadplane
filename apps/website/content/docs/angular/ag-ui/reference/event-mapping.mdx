@@ -1,10 +1,10 @@
 ---
-description: How the adapter turns AG-UI protocol events into Angular Signals, walked through the streaming example and then listed event by event.
+description: How the session turns AG-UI protocol events into Angular Signals, walked through the streaming example and then listed event by event.
 ---
 
 # Event Mapping
 
-`@threadplane/ag-ui` reduces AG-UI protocol events into the runtime-neutral `Agent` contract from `@threadplane/chat`. Every event that reaches the browser lands on a Signal your template already reads, which is why the same `<chat>` composition renders a run from any backend that speaks the protocol. This page is the compatibility map: first the streaming example as the worked case, then every event the adapter handles and the state it changes.
+`@threadplane/ag-ui` applies AG-UI protocol events to a framework-neutral session, and `@threadplane/angular` exposes that session's snapshot as the injected `Agent`. Every event that reaches the browser lands on a Signal your template already reads, which is why the same `<chat>` composition renders a run from any backend that speaks the protocol. This page is the compatibility map: first the streaming example as the worked case, then every event the session handles and the state it changes.
 
 ## What the demo does
 
@@ -20,7 +20,7 @@ Four files carry the demo: a graph with one node, a FastAPI server that fronts i
 
 ### The graph that streams tokens
 
-The graph uses LangGraph's `MessagesState`, so its state is the message list and nothing else. One node reads the system prompt from disk, prepends it to the conversation, and awaits a single model call. The model client is constructed with `streaming=True`, which is what makes the call emit token chunks the adapter can forward while the node is still awaiting its result.
+The graph uses LangGraph's `MessagesState`, so its state is the message list and nothing else. One node reads the system prompt from disk, prepends it to the conversation, and awaits a single model call. The model client is constructed with `streaming=True`, which is what makes the call emit token chunks the bridge can forward while the node is still awaiting its result.
 
 <ExampleCode file="graph.py" />
 
@@ -38,7 +38,7 @@ That wrapper is the piece that translates LangGraph's own stream into the protoc
 
 ### Providing the agent
 
-`provideAgent()` from `@threadplane/ag-ui` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. Your own application passes `{ url: 'https://your-backend.example.com/agent' }` directly; this example passes a factory because it resolves its endpoint at runtime from the host that serves the demo.
+`provideAgent()` from `@threadplane/angular` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. Its `createSession` factory calls `createSession()` from `@threadplane/ag-ui`. Your own application passes `url: 'https://your-backend.example.com/agent'` to it directly; this example wraps the config in a factory because it resolves its endpoint at runtime from the host that serves the demo.
 
 <ExampleCode file="app.config.ts" />
 
@@ -54,67 +54,71 @@ The component is three lines of behavior. `injectAgent()` returns the agent the 
 
 ## The events one turn produces
 
-One prompt against this graph produces the following sequence. The order is the wrapper's; the effects are the reducer's.
+One prompt against this graph produces the following sequence. The order is the wrapper's; the effects are the session's.
 
-1. **`RUN_STARTED`.** `status()` becomes `running`, `isLoading()` becomes `true`, and `error()`, `interrupt()`, `customEvents()`, and the subagent map are cleared for the new run. The user message is already in the transcript at this point, because `submit()` appends it optimistically before the run opens.
-2. **`STEP_STARTED`** naming the node, `generate`. The reducer has no case for step events, so this one changes nothing. It is on the wire for consumers that want node boundaries.
-3. **`TEXT_MESSAGE_START`** on the first non-empty token chunk. The reducer creates the assistant message slot and marks it as streaming. This is the moment the empty bubble appears under your prompt.
-4. **`TEXT_MESSAGE_CONTENT`**, once per chunk, each carrying a `delta`. The reducer appends the delta to that message's content, and the composition renders the growing text. This is the streaming the demo exists to show.
-5. **`TEXT_MESSAGE_END`** when the model call ends. The reducer treats it as a no-op: the content is already accumulated in the Signal.
-6. **`STATE_SNAPSHOT`** when the node exits, carrying the graph state. The reducer replaces `state()` with it and runs the citations bridge over the transcript. This graph publishes no `state.citations`, so nothing is attached.
-7. **`STEP_FINISHED`**, then a closing **`STATE_SNAPSHOT`** and **`MESSAGES_SNAPSHOT`** read back from the checkpoint. The snapshot message carries the final message id rather than the streaming chunk id used in step 3, so the reducer maps the in-flight assistant message onto its snapshot counterpart instead of leaving two bubbles, and re-applies citations from `state()` against the new ids.
-8. **`RUN_FINISHED`.** The run is marked complete, `status()` returns to `idle`, and `isLoading()` becomes `false`.
+1. **`RUN_STARTED`.** The run is admitted: events of this response are applied from here on. `status()` is already `'running'` and the user message is already in the transcript at this point, because `submit()` publishes the message and the new run together before the request is sent. `error()` was cleared at the same moment, and the Angular agent emptied `customEvents()` when the run began.
+2. **`STEP_STARTED`** naming the node, `generate`. The session keeps no projection of step events, so this one changes no Signal. It is on the wire for consumers that want node boundaries, and it reaches [`onRawEvent`](#raw-event-stream) listeners.
+3. **`TEXT_MESSAGE_START`** on the first non-empty token chunk. The session creates the assistant message, and it is streaming while it is the last message of a running session. This is the moment the empty bubble appears under your prompt.
+4. **`TEXT_MESSAGE_CONTENT`**, once per chunk, each carrying a `delta`. The session appends the delta to that message's content, and the composition renders the growing text. This is the streaming the demo exists to show.
+5. **`TEXT_MESSAGE_END`** when the model call ends. It changes nothing: the content is already accumulated.
+6. **`STATE_SNAPSHOT`** when the node exits, carrying the graph state. The session replaces `state()` with it. This graph publishes no `state.citations`, so no message gains sources.
+7. **`STEP_FINISHED`**, then a closing **`STATE_SNAPSHOT`** and **`MESSAGES_SNAPSHOT`** read back from the checkpoint. The snapshot message carries the final message id rather than the streaming chunk id used in step 3. The session replaces the transcript with the snapshot in the snapshot's own order, so the streamed record gives way to its saved counterpart and there is still one bubble, under the saved id. Citations follow the saved id too.
+8. **`RUN_FINISHED`.** The run settles as a success and `status()` returns to `'idle'`.
 
-`RAW` events are interleaved through the stream as well, one per upstream LangGraph event. The adapter ignores them, as it ignores any event type it does not know.
+`RAW` events are interleaved through the stream as well, one per upstream LangGraph event. The session keeps no projection of them. An event type the protocol does not describe is dropped by the AG-UI client before the session sees it.
 
 ## Event reference
 
-The adapter exposes `messages`, `status`, `isLoading`, `error`, `toolCalls`, `state`, `interrupt`, `interruptSession`, `subagents`, and `customEvents` as Signals, `events$` and `rawEvents$` as Observables, and `clientTools` as a capability. Alongside `submit`, `retry`, `stop`, and `regenerate`, it provides the hydration Promise `ready`, `reconcileInterrupt()`, and `dispose()`. The tables below name the surface each event writes to. Events that reach the reducer are also emitted on [`rawEvents$`](#raw-event-stream), with the same operation-error protection as the signals.
+The injected agent exposes each snapshot field as a Signal: `messages`, `status`, `error`, `toolCalls`, `streamingToolCalls`, `state`, `plan`, `usage`, `interrupts`, `inputBlocked`, `subagents` and `pendingClientTools`, with the protocol evidence behind them in `transcript`, `decision` and `run`. It adds `customEvents`, `threadId` and `isThreadLoading`. Alongside `submit`, `resume`, `retry`, `stop` and `regenerate`, an AG-UI session provides `runWithoutMessage`, `onCustomEvent`, `onRawEvent`, the hydration Promise `ready`, and, when configured, `load()`, `reconcileInterrupt()` and `checkStatus()`. The tables below name the surface each event writes to. Events the session applies are also delivered to [`onRawEvent`](#raw-event-stream) listeners.
+
+The fields and commands only this backend has are typed when you name the session: `injectAgent<Session>()`, with `Session` imported from `@threadplane/ag-ui`.
 
 ### Run lifecycle
 
 | AG-UI event | Surface | Behavior |
 | --- | --- | --- |
-| `RUN_STARTED` | `status`, `isLoading`, `error`, `interrupt`, `interruptSession`, `customEvents`, `subagents` | Sets `status` to `running` and `isLoading` to `true`; clears the error, visible interrupt, custom events, subagents, and unfinished tool-argument buffer. A matching resume becomes `acknowledged`; the claim is retained until a terminal outcome, rather than treated as completed. Ignored when the run id does not match this delivery. |
-| `RUN_FINISHED` (no outcome, or a success outcome) | `status`, `isLoading`, `messages`, `interruptSession` | Settles the run and returns to `idle`. A collected compatibility interrupt becomes pending at this boundary; otherwise the run completes. Ignored on the same run-id gate as `RUN_STARTED`. |
-| `RUN_FINISHED` (outcome `{ type: 'interrupt' }`) | `interrupt`, `interruptSession`, `status`, `isLoading` | Records the full native batch as pending and returns to `idle`. In `auto` or `protocol`, projects `{ id, value: { interrupts, runId }, resumable: true }`; explicit command profiles project the compatibility interrupt. In default `auto` mode the native batch takes precedence over compatibility events in either arrival order. |
-| `RUN_FINISHED` (outcome `{ type: 'cancelled' }`) | `status`, `isLoading`, `messages`, `state`, `interruptSession` | Settles delivery as `aborted`, returns to `idle`, and sets no error. The producer stopped the run on request. `state` rolls back to the last committed value. A resume attempt in flight lands in a recoverable interrupt phase: `interruptSession` moves to `recovery-required`, or to `uncertain` if no `RUN_STARTED` arrived. |
-| `RUN_FINISHED` / `RUN_ERROR` with `usage` | `usage` | Replaces the optional `usage` signal with `{ entries }` for that run. Recorded only when the run finalizes (any outcome) and on `RUN_ERROR`; cleared at the next `RUN_STARTED`. |
-| `RUN_FINISHED` (success with `pendingToolCallIds`) | `clientTools.pending` | The declared list is the authoritative pending set for client tools, and an empty list means nothing is pending. Absent means derive from the stream. The set is recorded only when the run finalizes and is cleared at the next `RUN_STARTED`. |
-| `RUN_ERROR` | `status`, `isLoading`, `error` | Ends the run as failed, sets `status` to `error`, stops loading, and stores the event's `message` as an error (the raw event when no message is present). Ignored on the same run-id gate as `RUN_STARTED`. |
-| `STEP_STARTED`, `STEP_FINISHED` | none | Not reduced. Node boundaries pass through untouched. |
+| `RUN_STARTED` | none | Admits the run. It must be the first event of a response: the client's verification fails a run that opens with anything else, and a backend may refuse a request with `RUN_ERROR` alone. `status` became `'running'`, and `error` was cleared, when the command was admitted. On a session with `persistence`, the `RUN_STARTED` of an answering run records that the answer arrived. A `threadId` or `runId` that does not match the request fails the run. |
+| `RUN_FINISHED` (no outcome, or a success outcome) | `status`, `messages`, `interrupts` | Settles the run as a success and returns to `'idle'`. When the run carried a `CUSTOM` `on_interrupt` notice and `interruptTransport` answers notices, the run settles `'paused'` and the pause stays pending. Fails the run on the same identity check as `RUN_STARTED`. |
+| `RUN_FINISHED` (outcome `{ type: 'interrupt' }`) | `interrupts`, `decision`, `inputBlocked`, `status` | Records the full batch as one pending decision, settles the run `'paused'`, and returns to `'idle'`. `interrupts()` lists each entry with the protocol's own fields, and its `value` is the entry's `metadata`. With `'auto'` the protocol's outcome wins over a notice in the same run; `'legacy-command'` and `'mastra-command'` answer the pause as a command instead. A batch with duplicate interrupt ids cannot be answered. |
+| `RUN_FINISHED` (outcome `{ type: 'cancelled' }`) | `status`, `messages` | Settles the run as `'aborted'`, returns to `'idle'`, and sets no error. The producer stopped the run on request. State and history stay as the run left them. |
+| `RUN_FINISHED` / `RUN_ERROR` with `usage` | `usage` | Publishes `{ entries }` for the settled run, one entry per provider and model. Absent while a run is going and after a run that reported none. |
+| `RUN_FINISHED` (success with `pendingToolCallIds`) | `pendingClientTools` | On a session with a client-tool catalog, only the named calls are listed as pending. Absent, every `pending` call whose tool is in the catalog is listed. Nothing is listed while a run is going. |
+| `RUN_ERROR` | `status`, `error` | Ends the run as failed, sets `status` to `'error'`, and publishes a `server` error carrying the event's `message`. For a submission the error is `retryable: true` with `recovery: 'retry'`. |
+| `STEP_STARTED`, `STEP_FINISHED` | none | No projection. A step that is still open at `RUN_FINISHED` fails the client's verification, and with it the run. |
 
 ### Messages
 
 | AG-UI event | Surface | Behavior |
 | --- | --- | --- |
-| `TEXT_MESSAGE_START` | `messages` | Creates or reuses the assistant message slot for `messageId` and marks it streaming for this run. |
+| `TEXT_MESSAGE_START` | `messages` | Creates the message record for `messageId` with the event's `role`, `assistant` when it names none. |
 | `TEXT_MESSAGE_CONTENT` | `messages` | Appends `delta` to that message's content. |
-| `TEXT_MESSAGE_END` | none | A no-op. The content is already accumulated from the deltas. |
-| `REASONING_MESSAGE_START` | `messages` | Creates or reuses the slot with an empty `reasoning` field and records a start time. |
-| `REASONING_MESSAGE_CONTENT`, `REASONING_MESSAGE_CHUNK` | `messages` | Appends `delta` to `message.reasoning`. Both event names are handled identically. |
-| `REASONING_MESSAGE_END` | `messages` | Sets `reasoningDurationMs` from the browser-measured start and end times. |
-| `MESSAGES_SNAPSHOT` | `messages`, `toolCalls` | Replaces the message list with the snapshot, bridges each assistant message's `toolCalls` onto `toolCallIds`, merges snapshot-only tool calls into `toolCalls` by id, keeps the run's in-flight assistant message aligned across the id change, and re-applies citations from the current `state`. |
-| `MESSAGES_SNAPSHOT` (tool messages with part-list `content`) | `messages` | Text parts and URL-sourced image parts become chat content blocks. Every other part is preserved under `extra['ag-ui'].parts`. Snapshots do not populate `ToolCall.parts`; only `TOOL_CALL_RESULT` does. |
+| `TEXT_MESSAGE_END` | none | Changes nothing. The content is already accumulated from the deltas. |
+| `TEXT_MESSAGE_CHUNK`, `TOOL_CALL_CHUNK`, `REASONING_MESSAGE_CHUNK` | as expanded | The AG-UI client expands a chunk event into the start, content and end events above before the session applies them. |
+| `REASONING_MESSAGE_START` | `messages` | Creates a reasoning record for `messageId` and starts the local clock for it. |
+| `REASONING_MESSAGE_CONTENT` | `messages` | Appends `delta` to the reasoning record. It is attached to the next assistant message as that message's `reasoning`. |
+| `REASONING_MESSAGE_END` | `messages` | Records the time since the start event, which becomes the assistant message's `reasoningDurationMs`. |
+| `REASONING_START`, `REASONING_END` | none | No projection. |
+| `MESSAGES_SNAPSHOT` | `messages`, `toolCalls` | Replaces the transcript in the snapshot's own order. A record with a surviving id takes the snapshot's record and position, and an ordinary record the snapshot omits is dropped. Local reasoning records are kept only when the snapshot carries no reasoning, and local activity records only when it carries no activity. |
+| `MESSAGES_SNAPSHOT` (user or tool records with part-list `content`) | `messages`, `toolCalls` | Text parts and URL-sourced image parts become the message's `blocks`, and `content` stays the text. Every other part is preserved under `extra['ag-ui'].parts`. A tool record whose content is a list of parts also gives its call `parts`. |
 
-Reasoning and text write to the same message when they share a `messageId`, so one assistant bubble can carry both `reasoning` and `content`. The duration is measured in the browser between the start and end events: it is useful for display, not for billing or tracing.
+The protocol sends reasoning as its own records, so a reasoning message and a text message cannot share a `messageId`: a text event that targets a reasoning record, or the reverse, fails the run. Several reasoning records before one assistant message are joined by blank lines, and reasoning with no assistant message after it yet is shown as an assistant message under the reasoning record's id. The duration is measured in the browser between the start and end events: it is useful for display, not for billing or tracing. It is absent, never zero, for restored history.
 
 ### Tool calls
 
 | AG-UI event | Surface | Behavior |
 | --- | --- | --- |
-| `TOOL_CALL_START` | `toolCalls`, `messages` | Adds a tool call with status `running` and lists it in the owning assistant message's `toolCallIds`. With `parentMessageId`, the owner is that assistant message, created if the turn produced no text. Without one, or when that id belongs to a non-assistant message, the owner is a new assistant message whose id is the tool call id. |
-| `TOOL_CALL_ARGS` | `toolCalls` | Appends `delta` to a per-call buffer, parses the buffer whenever it becomes valid JSON, and keeps the last good args while more fragments arrive. |
-| `TOOL_CALL_END` | `toolCalls` | Parses the accumulated buffer one final time, discards the buffer, and marks the call `complete`. |
-| `TOOL_CALL_RESULT` | `toolCalls` | Stores the result on the matching call. A string is parsed as JSON when possible. For a content-part list, `result` is the text of the parts, parsed as JSON only when exactly one text part holds valid JSON. Every part is kept under `parts`, and an all-media list yields an empty-string `result`. |
+| `TOOL_CALL_START` | `streamingToolCalls`, `messages` | Adds the call to its owning assistant record. With `parentMessageId`, the owner is that assistant message, created if the turn produced no text. Without one, the owner is an assistant record whose id is the tool call id. A `parentMessageId` that belongs to a non-assistant record fails the run. |
+| `TOOL_CALL_ARGS` | `streamingToolCalls` | Appends `delta` to the call's argument text. While the arguments are arriving the call is listed in `streamingToolCalls()` with the text so far in `argsText` and a best-effort `args`. |
+| `TOOL_CALL_END` | none | Not recorded. A call moves from `streamingToolCalls()` to `toolCalls()` once its arguments are final: the run has ended, the call has a result, something follows it in the transcript, or the text already parses as a JSON object or array. |
+| `TOOL_CALL_RESULT` | `toolCalls`, `messages` | Adds a tool record for `messageId` after the call's owner and marks the call `complete`. `result` is the record's text parsed as JSON when it is JSON, and the text otherwise. A record whose content is a list of parts gives the call `parts`. |
 
-Argument deltas are fragments of one JSON document, not standalone JSON, which is why the reducer buffers rather than parses each delta. If the buffer never parses, `args` stays at the last good value, or `{}` when there was none.
+Argument deltas are fragments of one JSON document, not standalone JSON, which is why a call is withheld from `toolCalls()` until its arguments are final. A call without a tool record is `running` while the session runs and `pending` once it stops, which is where a call waiting for a decision or a client tool sits. Final arguments that are not JSON make the call an `error`.
 
 ```ts
 { type: 'TOOL_CALL_START', toolCallId: 'search-1', toolCallName: 'search' }
 { type: 'TOOL_CALL_ARGS', toolCallId: 'search-1', delta: '{"q":"Angular"}' }
-{ type: 'TOOL_CALL_RESULT', toolCallId: 'search-1', content: { hits: 3 } }
 { type: 'TOOL_CALL_END', toolCallId: 'search-1' }
+{ type: 'TOOL_CALL_RESULT', toolCallId: 'search-1', messageId: 'result-1', content: '{"hits":3}' }
 ```
 
 The resulting entry in `agent.toolCalls()`:
@@ -124,8 +128,8 @@ The resulting entry in `agent.toolCalls()`:
   id: 'search-1',
   name: 'search',
   args: { q: 'Angular' },
-  result: { hits: 3 },
   status: 'complete',
+  result: { hits: 3 },
 }
 ```
 
@@ -133,8 +137,8 @@ The resulting entry in `agent.toolCalls()`:
 
 | AG-UI event | Surface | Behavior |
 | --- | --- | --- |
-| `STATE_SNAPSHOT` | `state`, `messages` | Replaces `state` with `snapshot` and runs the citations bridge over the transcript. |
-| `STATE_DELTA` | `state`, `messages` | Applies the JSON Patch operations in `delta` to a clone of the current state, then runs the same bridge. |
+| `STATE_SNAPSHOT` | `state`, `plan`, `messages` | Replaces `state` with `snapshot`. It can remove submitted fields or change the document kind. |
+| `STATE_DELTA` | `state`, `plan`, `messages` | Applies the JSON Patch operations in `delta` to the current state. A patch that cannot be applied fails the run. |
 
 `STATE_DELTA` carries standard JSON Patch operations:
 
@@ -148,73 +152,72 @@ The resulting entry in `agent.toolCalls()`:
 }
 ```
 
-The citations bridge reads `state.citations`, an object keyed by message id, and copies the entries onto the matching messages. See [Citations](/docs/angular/ag-ui/guides/citations) for the accepted shapes.
+Two parts of the state are read into other fields. `state.citations`, an object keyed by message id, gives each matching assistant message its `citations`; see [Citations](/docs/angular/ag-ui/guides/citations) for the accepted shapes. A `state.todos` list of `{ content, status }` entries becomes `plan()`, one `{ label, status }` step per valid entry.
 
 ### Custom events and interrupts
 
 | AG-UI event | Surface | Behavior |
 | --- | --- | --- |
-| `CUSTOM` named `on_interrupt` | `interrupt`, `interruptSession`, `status`, `isLoading` | Collects a compatibility interrupt, parsing a string value as JSON. The batch becomes pending at a terminal event or clean transport close. A native batch retains precedence in `auto` mode. |
-| `CUSTOM` named `state_update` with an object value | `customEvents`, `events$` | Appends `{ name, data }` to `customEvents` and emits `{ type: 'state_update', data }` on `events$`. |
-| `CUSTOM` (every other name) | `customEvents`, `events$` | Appends `{ name, data }` to `customEvents` and emits `{ type: 'custom', name, data }` on `events$`. |
+| `CUSTOM` named `on_interrupt` | `interrupts`, `decision`, `inputBlocked` | With `interruptTransport` absent or `'protocol'`, the notice installs a decision this session cannot answer; a run that then finishes in the ordinary way settles as a success and clears it. With `'auto'`, `'legacy-command'` or `'mastra-command'`, the notice becomes one entry in `interrupts()`, `{ id, reason: 'on_interrupt', value, toolCallId? }`, with a string value read as JSON, and the run settles `'paused'`. A child-attributed notice creates no root decision. |
+| `CUSTOM` (every other name) | `customEvents`, `onCustomEvent` | Delivered to `onCustomEvent` listeners as `{ name, data }`, root and child-attributed alike, and appended to the agent's `customEvents()`. A string value that parses as JSON becomes that data; other text stays a string. A `state_update` event is delivered like any other. |
 
-Every non-interrupt custom event is fanned out to two surfaces, not one. Reach for the `customEvents()` Signal when you want an accumulated per-run snapshot for reactive rendering, and for `events$` when you want a transient stream for side effects or telemetry. These surfaces are documented on [`AgUiAgent`](/docs/api/ag-ui/AgUiAgent), returned by [`toAgent()`](/docs/api/ag-ui/toAgent).
+Every non-interrupt custom event reaches two surfaces, not one. Reach for the `customEvents()` Signal when you want an accumulated per-run list for reactive rendering, and for `onCustomEvent(listener)` when you want each event once for side effects or telemetry. Custom events are not state: no snapshot holds them, and a listener added later does not receive earlier events. See [Custom Events](/docs/angular/ag-ui/guides/custom-events).
 
 ### Subagents and activity
 
 | AG-UI event | Surface | Behavior |
 | --- | --- | --- |
-| `SUBAGENT_STARTED` | `subagents` | Creates the entry for `subagentRunId` with status `running`, or fills in the identity of an entry a child content event created first. `toolCallId` becomes `parentToolCallId`, else the id an earlier activity entry recorded, else `subagentRunId`. |
-| `SUBAGENT_FINISHED` | `subagents` | Marks the entry `complete` and records `result`. An outcome of `{ type: 'suspended' }` keeps it `running`. |
-| `SUBAGENT_ERROR` | `subagents` | Marks the entry `error` and records `message`. |
-| `ACTIVITY_SNAPSHOT` | `subagents` | Creates or merges an activity entry; `replace: true` overwrites its content rather than merging. Entries with `activityType: 'subagent'` project into `subagents()`. |
-| `ACTIVITY_DELTA` | `subagents` | Applies a JSON Patch to an existing entry's content. An unknown id or a malformed patch is dropped rather than thrown. |
+| `SUBAGENT_STARTED` | `subagents` | Adds the child for `subagentRunId` with status `running`. `parentToolCallId` becomes the child's `toolCallId` and `parentSubagentRunId` its `parentId`. A second start for an id the current run already has fails the run. |
+| `SUBAGENT_FINISHED` | `subagents` | Marks the child `complete`. An outcome of `{ type: 'suspended' }` keeps it `running` in its own run and while a later run is going, and makes it `unknown` once a later run ends without continuing it. |
+| `SUBAGENT_ERROR` | `subagents` | Marks the child `error` and records `message` as its `error`. |
+| `ACTIVITY_SNAPSHOT` | `subagents` | Creates the activity record for `messageId`, or replaces its type and content. With `replace: false` an existing record keeps its content. A root record with `activityType: 'subagent'` is one entry in `subagents()`. |
+| `ACTIVITY_DELTA` | `subagents` | Applies a JSON Patch to an existing record's content. An unknown id or a patch that cannot be applied is ignored rather than thrown. |
 
-Text and tool events may also carry a `subagentRunId`. An attributed content event feeds that child's card and never the parent transcript, and one that arrives before `SUBAGENT_STARTED` still gets a card, which `SUBAGENT_STARTED` then fills in with identity. A suspended outcome keeps the card running: the run resumes under the same id, and the pause itself surfaces through `interrupt()`, not through the card.
+Text and tool events may also carry a `subagentRunId`. An attributed content event becomes one of that child's own `messages` or `toolCalls` and never enters the root `messages()`. `subagents()` lists the children of earlier root runs first, marked `earlier`, then the current run's, each in start order. A suspended outcome keeps the card running: a child that starts again after pausing continues as the same child, and the pause itself surfaces through `interrupts()`, not through the card. A child with no ending is `running` while the root run is going and `unknown` after it.
 
 ### Everything else
 
 | AG-UI event | Surface | Behavior |
 | --- | --- | --- |
-| `RAW` and any unrecognized type | none | Ignored. A newer protocol version does not crash the adapter. |
+| `RAW` | none | No projection. Delivered to `onRawEvent` listeners. |
+| Any unrecognized type | none | Dropped by the AG-UI client before the session sees it. A newer protocol version does not crash the session. |
 
 ## Raw event stream
 
-`rawEvents$` lets a host fold the protocol stream into its own view model using the same adapter that owns the signals, persistence, and telemetry wiring:
+`onRawEvent` lets a host fold the protocol stream into its own view model using the same session that owns the signals, persistence, and telemetry wiring:
 
 ```typescript
-import { HttpAgent } from '@ag-ui/client';
-import { toAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
+import type { Session } from '@threadplane/ag-ui';
 
-const agent = toAgent(new HttpAgent({ url: '/api/agent' }));
-const subscription = agent.rawEvents$.subscribe((event) => {
+const agent = injectAgent<Session>();
+const release = agent.onRawEvent?.((event) => {
   myViewModel.fold(event);
 });
 
 // When the host is destroyed:
-subscription.unsubscribe();
-agent.dispose();
+release?.();
 ```
 
-Each event is emitted after its signal updates. Events suppressed for a superseded, stopped, failed, or already terminal run are not emitted. A terminal `RUN_ERROR` is emitted once, after status and error settle; where the provider protects operation errors, the event carries the generic message and omits the server's message, code, and payload.
+Each event is delivered after the snapshot shows it, and is the event the pipeline produced: retired shapes translated and chunk events expanded. Events the session ignores are not delivered: those of a superseded or stopped run, and anything a response sends after its run's terminal event. Where the host protects operation errors, a `RUN_ERROR` carries the fixed message and omits the server's message, code, and payload.
 
-The stream is hot and unbuffered: subscribe before submitting. With replay configured, subscribe before awaiting `ready` to see hydrated events. Persistence-only hydration emits no protocol events; initialize from `messages()` and `state()` instead. `rawEvents$` completes on disposal. The neutral `events$` remains the smaller stream of state-update and custom events. See [`AgUiAgent`](/docs/api/ag-ui/AgUiAgent) for the full contract.
+Nothing is retained for a later listener: register before submitting. With replay configured, register before awaiting `ready` to see the replayed events, which are delivered in order once the snapshot shows the whole replay. A thread restored from `persistence` restores a saved snapshot and delivers no protocol events; initialize from `messages()` and `state()` instead. Disposal releases every listener, and the listener belongs to the session the agent is on when you register it, so register again after a thread switch. `onCustomEvent` remains the smaller stream of custom events.
 
 ## Submit, stop, and failures
 
-`agent.submit({ message })` builds a local user message, appends it to `messages` and the source agent's list, and starts the run. The source agent receives the protocol fields only: the adapter's own message fields (`delivery`, `reasoningDurationMs`, `citations`, `toolCallIds`) stay local and never appear in a run's input. Omitting `message` starts a run without appending a user message, provided no interrupt blocks new input. `submit({ resume })` requires a pending batch and claims it before dispatch. Native responses must cover every pending ID exactly once; a single unwrapped value is accepted only for a single interrupt. Ordinary input and regeneration cannot abandon a pending approval.
+`agent.submit(input)` takes a string or `{ message, blocks?, state? }`. It builds a user message, merges the state patch, publishes both with the new run, and sends the request with the complete history and state. Message fields the session derives (`delivery`, `reasoningDurationMs`, `citations`, `toolCallIds`) stay local and never appear in a run's input. `agent.runWithoutMessage({ state })` starts a run on the history as it stands. While a decision is waiting, `submit` resolves `'error'` without sending, and `inputBlocked()` says why. `agent.resume(responses)` answers the pending interrupts: it needs exactly one response for each pending interrupt, named by `id`. Ordinary input and regeneration cannot abandon a pending approval.
 
-`agent.retry()` replays captured input without appending the user message again. For a resume, an error carrying `requestNotDispatched: true` retains the pending batch and exact decision for retry. Uncertain delivery or failure after acknowledgement requires `reconcileInterrupt()` with an application-provided authoritative reconciler before retrying. A failed resume restores committed protocol messages and state; provisional stream changes do not become the next request's baseline, though failed messages may remain visible in the local transcript. Native snapshots are authoritative, while compatibility pause state commits at a terminal event or clean close.
+`agent.retry()` sends the last submission again after a backend `RUN_ERROR`, without adding the user message again. A failed resume is sent again in one case: its request provably reached no run, because it was never made or the backend refused it with its own `RUN_ERROR` before any `RUN_STARTED`. The pause is then pending again and the error's `recovery` is `'retry'`. An answer that may have arrived is never sent twice; with `persistence.reconcile` configured the error's `recovery` is `'check'` and `checkStatus()` asks your backend what became of it. After a failure the session keeps the latest local state and history. There is no rollback.
 
-`interruptTransport` selects `auto`, `protocol`, `legacy-command`, or `mastra-command`. In `auto`, native outcomes use top-level `resume`; compatibility payloads use `forwardedProps.command.resume`, with `command.interruptEvent` for Mastra payloads carrying `toolCallId`. Select a command profile explicitly if the backend requires it even when native events are present.
+`interruptTransport` selects `'protocol'`, `'auto'`, `'legacy-command'`, or `'mastra-command'`, and defaults to `'protocol'`. In `'auto'`, the protocol's outcome uses top-level `resume`; a notice with no such outcome uses `forwardedProps.command.resume`, with `command.interruptEvent` when the notice's value names a `toolCallId`. Select a command profile explicitly if the backend requires it even when the protocol's outcome is present.
 
-`agent.stop()` ends the current run locally as aborted, clears the error, and calls `source.abortRun()`. Whether the backend stops producing depends on the AG-UI source implementation.
+`agent.stop()` ends the current run locally as aborted and sets no error. For a session over a handed agent it also calls that agent's `abortRun()`. Whether the backend stops producing depends on the backend.
 
-`onRunFailed` comes from the AG-UI subscriber API rather than from a protocol event. The adapter treats it as a run failure: `status` becomes `error`, `isLoading` becomes `false`, and `error` holds the thrown value. An abort that the component requested is not reported as an error.
+A transport failure is not a protocol event. A response that was not OK, a request that got no response, and an event sequence the client rejects all settle the run as failed: `status` becomes `'error'` and `error()` holds a classified error, with `errorDiagnostic()` beside it for what was thrown. A stream that closes without a terminal event settles as an `interrupted` error. An abort that the component requested is not reported as an error.
 
 ## Unsupported protocol areas
 
-The adapter carries interrupts, subagents, activity, state, and client tools. It does not implement history or time travel. Unknown protocol events are ignored rather than treated as errors, so a backend ahead of this adapter degrades to the events it does know.
+The session carries interrupts, subagents, activity, state, and client tools. It does not publish checkpoints or implement time travel. Unknown protocol events are dropped rather than treated as errors, so a backend ahead of this package degrades to the events it does know.
 
 ## What's Next
 
@@ -228,7 +231,7 @@ The adapter carries interrupts, subagents, activity, state, and client tools. It
   <Card title="Custom Events" href="/docs/angular/ag-ui/guides/custom-events">
     Read the custom-event surface from your own components.
   </Card>
-  <Card title="injectAgent()" href="/docs/api/ag-ui/injectAgent">
-    The full Signal surface the adapter exposes.
+  <Card title="Architecture" href="/docs/angular/ag-ui/concepts/architecture">
+    How the session, the provider and the injected agent fit together.
   </Card>
 </CardGroup>

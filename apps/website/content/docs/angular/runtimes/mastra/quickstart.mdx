@@ -84,15 +84,23 @@ The app opens with three welcome suggestions, one per surface.
 
 ## Configure the resume transport
 
-The Angular example config selects the compatibility command transport explicitly. Use the same selection in an Angular application using this compatibility adapter; the [native React reservation preview](/docs/angular/runtimes/mastra/overview?frontend=react) uses top-level native resume with the current opaque pause correlation:
+The Angular example config selects the compatibility command transport explicitly. Use the same selection in an Angular application that answers through the command format; the [native React reservation preview](/docs/angular/runtimes/mastra/overview?frontend=react) uses top-level native resume with the current opaque pause correlation:
 
 ```typescript
-import { provideAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 
-provideAgent({ url: '/agent', interruptTransport: 'mastra-command' });
+provideAgent({
+  createSession: (context) =>
+    createSession({
+      url: '/agent',
+      threadId: context.threadId ?? undefined,
+      interruptTransport: 'mastra-command',
+    }),
+});
 ```
 
-After an approval becomes pending, submit `{ resume: { approved: true } }` or `{ resume: { approved: false } }`. The adapter adds the observed tool-call and run IDs to the command.
+After an approval becomes pending, answer it with `agent.resume([{ interruptId, status: 'resolved', value: { approved: true } }])`, or with `value: { approved: false }`, using the `id` of the entry in `agent.interrupts()`. The session adds the observed tool-call and run IDs to the command.
 
 ## Running the service's own tests
 
@@ -101,7 +109,7 @@ cd deployments/ag-ui-mastra
 npm test
 ```
 
-These assert the Server-Sent Events grammar of every surface against the captured 2026-08-31 transcripts, and drive the interrupt-to-resume round trip through the real `@ag-ui/client` — the same client the Angular adapter wraps. The model is a scripted mock, so no network and no key are required.
+These assert the Server-Sent Events grammar of every surface against the captured 2026-08-31 transcripts, and drive the interrupt-to-resume round trip through the real `@ag-ui/client` — the same client the AG-UI session sends with. The model is a scripted mock, so no network and no key are required.
 
 ## Next steps
 

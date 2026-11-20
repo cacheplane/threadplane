@@ -1,29 +1,30 @@
 ---
-description: Run the chat UI with no backend using provideFakeAgent(), what the canned stream contains, and how to script exact AG-UI events instead.
+description: Run the chat UI with no backend using provideFakeAgent() or the FakeAgent class, what the canned stream contains, and how to script exact AG-UI events instead.
 ---
 
 # Fake Agent
 
-`FakeAgent` is an in-process AG-UI `AbstractAgent` for frontend work when the backend is not ready yet.
+`FakeAgent` is an in-process AG-UI `AbstractAgent` for frontend work when the backend is not ready yet. Hand it to `createSession({ agent })` and the real AG-UI session projects its events.
 
 It emits a canned stream:
 
 1. `RUN_STARTED`
-2. optional `REASONING_MESSAGE_*`
-3. `TEXT_MESSAGE_START`
-4. one `TEXT_MESSAGE_CONTENT` event per token
-5. `TEXT_MESSAGE_END`
-6. `RUN_FINISHED`
+2. `TEXT_MESSAGE_START`
+3. one `TEXT_MESSAGE_CONTENT` event per token
+4. `TEXT_MESSAGE_END`
+5. `RUN_FINISHED`
 
 It is for demos, story-like development, and tests. It is not a production transport.
 
+There are two ways to run without a backend, and they differ in how much of the stack they exercise. `provideFakeAgent()` from `@threadplane/angular/testing` provides the injected `Agent` over an in-memory session with no AG-UI event involved. `FakeAgent` from `@threadplane/ag-ui` is an AG-UI source, so the session's whole event pipeline runs.
+
 ## Use the provider
 
-For Angular apps, use `provideFakeAgent()`.
+For Angular apps that only need a streamed reply, use `provideFakeAgent()`.
 
 ```ts
 import { ApplicationConfig } from '@angular/core';
-import { provideFakeAgent } from '@threadplane/ag-ui';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -40,7 +41,7 @@ Your component stays the same as the real backend version:
 ```ts
 import { Component } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   standalone: true,
@@ -56,12 +57,15 @@ Switching to a real backend is a provider change:
 
 ```diff
 - provideFakeAgent({ tokens: ['Offline', ' response.'] })
-+ provideAgent({ url: '/api/agent' })
++ provideAgent({
++   createSession: (context) =>
++     createSession({ url: '/api/agent', threadId: context.threadId ?? undefined }),
++ })
 ```
 
 ## Add reasoning
 
-Pass `reasoningTokens` when you need to exercise reasoning UI.
+Pass `reasoningTokens` to `provideFakeAgent()` when you need to exercise reasoning UI.
 
 ```ts
 provideFakeAgent({
@@ -71,67 +75,102 @@ provideFakeAgent({
 });
 ```
 
-Reasoning events are emitted before text events and use the same message id, so the reducer stores reasoning and final content on one assistant message.
+The reasoning text streams before the reply and lands on the same assistant message as its `reasoning`.
 
 ## Use the class directly
 
-Use `FakeAgent` directly when a test needs an AG-UI source rather than Angular DI.
+Use `FakeAgent` when the AG-UI session itself should run: its event pipeline, its tool-call and state projection, and its interrupt handling.
 
 ```ts
-import { FakeAgent, toAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession, FakeAgent } from '@threadplane/ag-ui';
 
-const source = new FakeAgent({
-  tokens: ['One', ' two', ' three.'],
-  delayMs: 1,
+provideAgent({
+  createSession: () =>
+    createSession({
+      agent: new FakeAgent({
+        tokens: ['One', ' two', ' three.'],
+        delayMs: 1,
+      }),
+    }),
 });
-
-const agent = toAgent(source);
 ```
 
-That gives you the same `Agent` contract as `provideFakeAgent()`.
+That gives you the same injected `Agent` as a real endpoint does. A test that needs no Angular DI can use the session by itself:
+
+```ts
+import { createSession, FakeAgent } from '@threadplane/ag-ui';
+
+const session = createSession({ agent: new FakeAgent({ tokens: ['Hi'], delayMs: 0 }) });
+await session.submit('hello');
+session.getSnapshot().messages; // the user message, then the assistant reply
+```
 
 ## Configuration
+
+`provideFakeAgent()` accepts:
+
+| Option | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `tokens` | `string[]` | A short canned greeting | The assistant reply, streamed one entry at a time. |
+| `reasoningTokens` | `string[]` | none | Reasoning text streamed before the reply. |
+| `delayMs` | `number` | `60` | Milliseconds between entries. `0` streams without timers. |
+| `threadId` | `string \| null \| Signal` | none | The thread to start on; a signal makes the agent follow it. |
+| `onThreadId` | `(threadId: string) => void` | none | Called with the id the fake gives a new thread on its first submit. |
+| `session` | `FakeAgentSessionInit` | none | Initial snapshot fields and handlers for every fake session. An `onSubmit` here replaces the canned reply. |
+
+The `FakeAgent` constructor accepts:
 
 | Option | Type | Default | Notes |
 | --- | --- | --- | --- |
 | `tokens` | `string[]` | A short canned greeting | Emitted as text deltas in order. |
-| `reasoningTokens` | `string[]` | `[]` | Emitted before text deltas. |
 | `delayMs` | `number` | `60` | Delay between events after the initial start delay. |
-| `script` | `FakeAgentScript` | `[]` | Raw AG-UI event branches that replace the canned reply, each wrapped in `RUN_STARTED` / `RUN_FINISHED`. Accepted by the constructor and by `provideFakeAgent()`. |
+| `script` | `FakeAgentScript` | `[]` | Raw AG-UI event branches that replace the canned reply, each wrapped in `RUN_STARTED` / `RUN_FINISHED`. |
 
 ## Scripting exact events
 
-Set `script` when the canned text reply is not enough — tool calls, shared state, custom events, and interrupts all reach the UI through it, with no backend and no direct construction:
+Set `script` on `FakeAgent` when the canned text reply is not enough — tool calls, shared state, custom events, and interrupts all reach the UI through it, with no backend:
 
 ```ts
 import { EventType, type BaseEvent } from '@ag-ui/client';
-import { provideFakeAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession, FakeAgent } from '@threadplane/ag-ui';
 
 providers: [
-  provideFakeAgent({
-    delayMs: 0,
-    script: [
-      {
-        when: 'initial',
-        events: [
-          {
-            type: EventType.CUSTOM,
-            name: 'on_interrupt',
-            value: { kind: 'approval', amount: 42 },
-          } as BaseEvent,
-        ],
-      },
-    ],
+  provideAgent({
+    createSession: () =>
+      createSession({
+        interruptTransport: 'auto',
+        agent: new FakeAgent({
+          delayMs: 0,
+          script: [
+            {
+              when: 'initial',
+              events: [
+                {
+                  type: EventType.CUSTOM,
+                  name: 'on_interrupt',
+                  value: { kind: 'approval', amount: 42 },
+                } as BaseEvent,
+              ],
+            },
+          ],
+        }),
+      }),
   }),
 ]
 ```
 
+The session answers a `CUSTOM` `on_interrupt` notice only under a transport profile that says how, which is why this example sets `interruptTransport: 'auto'`. With it, the notice becomes one entry in `agent.interrupts()`.
+
 `when: 'initial'` matches a turn whose history carries no tool result. `{ toolMessageFor: 'tool-1' }` matches the follow-up turn whose history carries a tool result for `tool-1`, which is what resolving a client tool produces — so a two-branch script plays a tool call and then the reply that follows it. The first matching branch wins; when none matches, the canned token reply streams instead.
+
+A script goes through the same verification a real response does. Events must form a valid AG-UI sequence: a `TOOL_CALL_RESULT` needs a `messageId` and string `content`, and a reasoning message uses its own `messageId` with the role `reasoning`.
 
 ## What it does not do
 
-`provideFakeAgent()` does not call a model, execute tools, or persist history. It streams what you give it: a canned token reply by default, or the exact events in `script`.
+Neither fake calls a model, executes tools, or persists history. `provideFakeAgent()` streams the canned token reply you give it. `FakeAgent` streams that reply, or the exact events in `script`.
 
-It is deliberately small. Use it to keep UI work moving, not to validate backend behavior.
+Both are deliberately small. Use them to keep UI work moving, not to validate backend behavior.
 
 For backend integration, test against your real AG-UI endpoint and the event map in [Event Mapping](/docs/angular/ag-ui/reference/event-mapping).
