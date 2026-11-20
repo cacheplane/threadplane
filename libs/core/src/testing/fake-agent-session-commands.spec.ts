@@ -12,7 +12,7 @@ const retryable: AgentError = {
 describe('createFakeAgentSession optional members', () => {
   it('carries none of the optional commands unless asked', () => {
     const { session } = createFakeAgentSession();
-    expect(session.run).toBeUndefined();
+    expect(session.runWithoutMessage).toBeUndefined();
     expect(session.regenerate).toBeUndefined();
     expect(session.retry).toBeUndefined();
     expect(session.checkStatus).toBeUndefined();
@@ -23,16 +23,16 @@ describe('createFakeAgentSession optional members', () => {
 
   it('makes a command present when listed or when its handler is given', () => {
     const listed = createFakeAgentSession({
-      commands: ['run', 'regenerate', 'retry', 'checkStatus'],
+      commands: ['runWithoutMessage', 'regenerate', 'retry', 'checkStatus'],
     }).session;
     const handled = createFakeAgentSession({
-      onRun: () => undefined,
+      onRunWithoutMessage: () => undefined,
       onRegenerate: () => undefined,
       onRetry: () => undefined,
       onCheckStatus: () => undefined,
     }).session;
     for (const session of [listed, handled]) {
-      expect(session.run).toBeTypeOf('function');
+      expect(session.runWithoutMessage).toBeTypeOf('function');
       expect(session.regenerate).toBeTypeOf('function');
       expect(session.retry).toBeTypeOf('function');
       expect(session.checkStatus).toBeTypeOf('function');
@@ -159,16 +159,16 @@ describe('createFakeAgentSession optional members', () => {
   });
 
   it('runs without appending a message and merges the state it is given', async () => {
-    const onRun = vi.fn(() => 'paused' as const);
-    const fake = createFakeAgentSession({ state: { a: 1 }, onRun });
-    await expect(fake.session.run?.({ state: { b: 2 } })).resolves.toBe(
+    const onRunWithoutMessage = vi.fn(() => 'paused' as const);
+    const fake = createFakeAgentSession({ state: { a: 1 }, onRunWithoutMessage });
+    await expect(fake.session.runWithoutMessage?.({ state: { b: 2 } })).resolves.toBe(
       'paused'
     );
-    await expect(fake.session.run?.()).resolves.toBe('paused');
+    await expect(fake.session.runWithoutMessage?.()).resolves.toBe('paused');
     expect(fake.session.getSnapshot().messages).toEqual([]);
     expect(fake.session.getSnapshot().state).toEqual({ a: 1, b: 2 });
     expect(fake.runs).toEqual([{ input: { state: { b: 2 } } }, {}]);
-    expect(onRun).toHaveBeenCalledTimes(2);
+    expect(onRunWithoutMessage).toHaveBeenCalledTimes(2);
   });
 
   it('regenerates by removing the answer and everything after it', async () => {

@@ -1,6 +1,7 @@
 import {
   readState,
   type AgentError,
+  type AgentInputBlock,
   type AgentInterrupt,
   type AgentSnapshot,
   type AgentUsage,
@@ -51,7 +52,7 @@ export type SessionSnapshot<TState = unknown> = Omit<
      * Absent when a submission would be admitted. A run in progress is not a
      * reason here: read `status` for that.
      */
-    readonly inputBlocked?: InputBlock;
+    readonly inputBlocked?: SessionInputBlock;
   };
 
 /**
@@ -69,6 +70,18 @@ export type InputBlock =
   | 'storage'
   | 'decision'
   | 'client-tools';
+
+/** The core contract's input block, with this session's own reasons. */
+export interface SessionInputBlock extends AgentInputBlock {
+  readonly reason: InputBlock;
+}
+const blocks = Object.freeze({
+  hydrating: Object.freeze({ reason: 'hydrating' }),
+  checking: Object.freeze({ reason: 'checking' }),
+  storage: Object.freeze({ reason: 'storage' }),
+  decision: Object.freeze({ reason: 'decision' }),
+  'client-tools': Object.freeze({ reason: 'client-tools' }),
+}) satisfies Record<InputBlock, SessionInputBlock>;
 
 /** A pending interrupt: the core interrupt, with the protocol's own fields. */
 export type SessionInterrupt = AgentInterrupt & OwnedInterrupt;
@@ -281,7 +294,8 @@ function project(
     messages,
     toolCalls,
     subagents: projectSubagents(native, previous?.subagents),
-    ...(blocked && { inputBlocked: blocked }),
+    // One object per reason, so an unchanged block keeps its reference.
+    ...(blocked && { inputBlocked: blocks[blocked] }),
     ...(interrupts && { interrupts }),
     ...(error && { error }),
     ...(used && { usage: used }),

@@ -137,7 +137,7 @@ show and cannot answer. `resume(responses, options)` accepts `message`, `blocks`
 `state` in its options to send a user message and a state update in the same request
 as the answers.
 
-**Running without a message.** `run({ state })` runs the agent on the conversation as
+**Running without a message.** `runWithoutMessage({ state })` runs the agent on the conversation as
 it stands, appending no user message, after merging the state when given. `submit`
 always carries a message.
 
@@ -168,8 +168,8 @@ replays the ones sent before the listener was added.
 ## Testing a session
 
 `createFakeAgentSession` carries `resume` always and the other optional members only
-when asked, through `commands: ['run', 'regenerate', 'retry', 'checkStatus',
-'onCustomEvent', 'clientTools']` or by passing `onRun`, `onRegenerate`, `onRetry` or
+when asked, through `commands: ['runWithoutMessage', 'regenerate', 'retry', 'checkStatus',
+'onCustomEvent', 'clientTools']` or by passing `onRunWithoutMessage`, `onRegenerate`, `onRetry` or
 `onCheckStatus`. It records every call (`submits`, `resumes`, `runs`, `regenerates`,
 `retryCount`, `checkStatusCount`, `catalogs`, `clientToolResults`, `flushCount`), and
 its controls publish every snapshot field, including `setUsage`, `setCheckpoints`,

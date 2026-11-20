@@ -103,7 +103,7 @@ export interface FakeResumeCall<TState = unknown> {
   readonly options?: AgentResumeOptions<TState>;
 }
 
-/** One recorded call to `session.run`. */
+/** One recorded call to `session.runWithoutMessage`. */
 export interface FakeRunCall<TState = unknown> {
   readonly input?: { readonly state?: AgentStateUpdate<TState> };
   readonly options?: AgentSubmitOptions;
@@ -129,7 +129,7 @@ export interface FakeClientToolSettlement {
  * is given, so a view under test offers no control the test did not ask for.
  */
 export type FakeCommand =
-  | 'run'
+  | 'runWithoutMessage'
   | 'regenerate'
   | 'retry'
   | 'checkStatus'
@@ -155,7 +155,7 @@ export type FakeResumeHandler<
 ) => CompleteOutcome | void | PromiseLike<CompleteOutcome | void>;
 
 /**
- * Runs for `run`, `regenerate` and `retry` after the fake has made its own
+ * Runs for `runWithoutMessage`, `regenerate` and `retry` after the fake has made its own
  * change to the snapshot. Return the outcome the command resolves with;
  * nothing means `'success'`. Throwing rejects the command with that error.
  */
@@ -211,8 +211,8 @@ export interface FakeAgentSessionInit<
   readonly onResume?: FakeResumeHandler<TTools, TState>;
   /** Optional session members to carry; see {@link FakeCommand}. */
   readonly commands?: readonly FakeCommand[];
-  /** Makes `run` present and runs after it merges the state it was given. */
-  readonly onRun?: FakeCommandHandler<TTools, TState>;
+  /** Makes `runWithoutMessage` present and runs after it merges the state it was given. */
+  readonly onRunWithoutMessage?: FakeCommandHandler<TTools, TState>;
   /** Makes `regenerate` present and runs after it removes the old answer. */
   readonly onRegenerate?: FakeCommandHandler<TTools, TState>;
   /**
@@ -256,7 +256,7 @@ export interface FakeAgentSession<
   readonly submits: readonly FakeSubmitCall<TState>[];
   /** Resumes in call order, including ones the fake or the handler rejected. */
   readonly resumes: readonly FakeResumeCall<TState>[];
-  /** Calls to `run` in order. */
+  /** Calls to `runWithoutMessage` in order. */
   readonly runs: readonly FakeRunCall<TState>[];
   /** Calls to `regenerate` in order, including rejected ones. */
   readonly regenerates: readonly FakeRegenerateCall[];
@@ -358,12 +358,12 @@ function own<T>(value: T, ancestors = new Set<object>()): T {
  * names an interrupt the snapshot does not list, or names one twice. A message
  * or state passed in its options is applied the way `submit` applies them.
  *
- * `run`, `regenerate`, `retry`, `checkStatus`, `onCustomEvent` and
+ * `runWithoutMessage`, `regenerate`, `retry`, `checkStatus`, `onCustomEvent` and
  * `clientTools` are optional in the contract and absent here by default, so a
  * view under test offers no control for them. List one in `commands`, or pass
  * its handler, to make it present:
  *
- * - `run` merges the state it is given and appends no message.
+ * - `runWithoutMessage` merges the state it is given and appends no message.
  * - `regenerate` removes the named assistant message and everything after it.
  *   It rejects during a run and for an id that names no assistant message.
  * - `retry` resolves `'aborted'` during a run or when the snapshot holds no
@@ -619,8 +619,8 @@ export function createFakeAgentSession<
         async () => (await handler?.(input, fake, options)) ?? 'success'
       );
     },
-    ...(has('run', init.onRun) && {
-      async run(
+    ...(has('runWithoutMessage', init.onRunWithoutMessage) && {
+      async runWithoutMessage(
         input?: { readonly state?: AgentStateUpdate<TState> },
         options?: AgentSubmitOptions
       ): Promise<CompleteOutcome> {
@@ -632,7 +632,9 @@ export function createFakeAgentSession<
         );
         alive();
         if (input?.state !== undefined) publish(merged(input.state as object));
-        return attempt(async () => (await init.onRun?.(fake)) ?? 'success');
+        return attempt(
+          async () => (await init.onRunWithoutMessage?.(fake)) ?? 'success'
+        );
       },
     }),
     ...(has('regenerate', init.onRegenerate) && {

@@ -38,7 +38,7 @@ describe('inputBlocked', () => {
         },
       });
       expect(await paused).toBe('paused');
-      expect(session.getSnapshot().inputBlocked).toBe('decision');
+      expect(session.getSnapshot().inputBlocked?.reason).toBe('decision');
       // The refusal the field explains: nothing is sent.
       expect(await session.submit('Bypass')).toBe('error');
       expect(fixture.exchanges).toHaveLength(1);
@@ -47,7 +47,7 @@ describe('inputBlocked', () => {
         { interruptId: 'i', status: 'resolved' },
       ]);
       const second = await fixture.started(1);
-      expect(session.getSnapshot().inputBlocked).toBe('decision');
+      expect(session.getSnapshot().inputBlocked?.reason).toBe('decision');
       second.emit({
         type: 'RUN_FINISHED',
         threadId: second.body.threadId,
@@ -114,7 +114,7 @@ describe('inputBlocked', () => {
       const first = await fixture.started();
       first.emit({ type: 'CUSTOM', name: 'on_interrupt', value: 'x' });
       await fixture.changed((snapshot) => snapshot.decision !== undefined);
-      expect(fixture.session.getSnapshot().inputBlocked).toBe('decision');
+      expect(fixture.session.getSnapshot().inputBlocked?.reason).toBe('decision');
       first.end();
       await run;
     } finally {
@@ -137,7 +137,7 @@ describe('inputBlocked', () => {
     expect(session.getSnapshot().inputBlocked).toBeUndefined();
     expect(await session.submit('Go')).toBe('interrupted');
     expect(session.getSnapshot().clientTools.blocker?.reason).toBe('uncertain');
-    expect(session.getSnapshot().inputBlocked).toBe('client-tools');
+    expect(session.getSnapshot().inputBlocked?.reason).toBe('client-tools');
     await session.dispose();
   });
 });

@@ -193,7 +193,7 @@ describe('Agent signal view', () => {
       'retry',
       'resume',
       'checkStatus',
-      'run',
+      'runWithoutMessage',
       'clientTools',
       'fork',
       'reconnect',

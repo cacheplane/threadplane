@@ -17,7 +17,7 @@ import {
 
 const runner = { describe, it };
 const everything = [
-  'run',
+  'runWithoutMessage',
   'regenerate',
   'retry',
   'checkStatus',

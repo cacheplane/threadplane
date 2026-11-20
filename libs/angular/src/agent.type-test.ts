@@ -4,6 +4,7 @@ import type {
   AgentInterrupt,
   AgentInterruptResponse,
   AgentPlanStep,
+  AgentResumeOptions,
   AgentSession,
   AgentSessionCustomEvent,
   AgentStatus,
@@ -129,7 +130,7 @@ export function coreAgent(agent: Agent) {
       typeof agent.resume,
       | ((
           responses: readonly AgentInterruptResponse[],
-          options?: AgentSubmitOptions
+          options?: AgentResumeOptions
         ) => Promise<CompleteOutcome>)
       | undefined
     >

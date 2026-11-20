@@ -62,7 +62,7 @@ const LISTS = [
   'checkpoints',
 ] as const;
 const COMMANDS = [
-  'run',
+  'runWithoutMessage',
   'regenerate',
   'resume',
   'retry',

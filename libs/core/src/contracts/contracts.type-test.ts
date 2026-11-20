@@ -364,11 +364,11 @@ void session.submit({
 // @ts-expect-error blocks do not replace the message text
 void session.submit({ blocks: [{ type: 'text', text: 'Look' }] });
 // run carries state only, and is optional.
-const ran: Promise<CompleteOutcome> | undefined = session.run?.({
+const ran: Promise<CompleteOutcome> | undefined = session.runWithoutMessage?.({
   state: { step: 1 },
 });
 // @ts-expect-error run appends no message
-void session.run?.({ message: 'Hello' });
+void session.runWithoutMessage?.({ message: 'Hello' });
 void ran;
 
 // A resume may carry a message and a state update in the same request.

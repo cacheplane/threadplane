@@ -246,7 +246,8 @@ const session = createSession({ threadId, url });
   event's own `usage` stays on `run.terminal`.
 - While a decision is waiting, `submit` resolves `error` without sending.
   `snapshot.inputBlocked` says why, so a view can disable its input as the
-  Angular adapter's `isInputBlocked` did. It is `'decision'` from a pause until
+  Angular adapter's `isInputBlocked` did. It is the core contract's input
+  block, and its `reason` is `'decision'` from a pause until
   its answer succeeds (including a decision this session cannot answer and one
   left uncertain), `'client-tools'` while the client-tool ledger has a blocker,
   and `'hydrating'`, `'checking'` or `'storage'` while the session itself
@@ -398,7 +399,7 @@ await session.ready;
 ```
 
 - `ready` resolves once the thread is restored, and at once for a session with
-  neither option. Until then `snapshot.inputBlocked` is `'hydrating'`, and
+  neither option. Until then `snapshot.inputBlocked.reason` is `'hydrating'`, and
   `submit`, `resume`, `retry` and `regenerate` wait for it before they run. It
   rejects only when the stored thread could not be read; a failed replay does
   not reject it.
@@ -429,7 +430,7 @@ subagents?, pause? }`, where `pause` holds the pending interrupts, the
   released.
 - Writes use the revision. A write that loses its compare-and-swap is not
   retried: another writer owns the thread. That, and a store that fails, put
-  the session in `inputBlocked: 'storage'` with an error whose message is the
+  the session in `inputBlocked: { reason: 'storage' }` with an error whose message is the
   storage copy. `submit` then resolves `error` and the other commands reject
   until `reconcileInterrupt` succeeds.
 - A pause restored without an answer is `ready`. A pause restored with its
@@ -463,7 +464,7 @@ An answer that does not fit its status is rejected and nothing is written.
   only on `completed` or `pending`; `acknowledged`, `unknown` and a reconciler
   that throws leave the error in place so the check can be offered again. It
   never sends the answer again. An ordinary failed submission is never checked.
-- While a check runs `inputBlocked` is `'checking'`, `submit` resolves `error`
+- While a check runs `inputBlocked.reason` is `'checking'`, `submit` resolves `error`
   and the other commands reject.
 
 ### Interrupt session

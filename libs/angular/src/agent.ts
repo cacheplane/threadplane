@@ -11,14 +11,8 @@ import {
   type Signal,
   type WritableSignal,
 } from '@angular/core';
-import type {
-  AgentSession,
-  AgentSessionCustomEvent,
-} from '@threadplane/core';
-import {
-  AgentLifecycleRegistry,
-  type AgentLifecycle,
-} from './agent-lifecycle';
+import type { AgentSession, AgentSessionCustomEvent } from '@threadplane/core';
+import { AgentLifecycleRegistry, type AgentLifecycle } from './agent-lifecycle';
 import {
   AGENT_CLIENT_OPTIONS,
   ɵAGENT_OPERATION_FAILURE_REPORTER,
@@ -154,7 +148,7 @@ const OPTIONAL_COMMANDS: readonly string[] = [
   'resume',
   'checkStatus',
   'retry',
-  'run',
+  'runWithoutMessage',
   'clientTools',
   'load',
   'fork',
@@ -230,7 +224,9 @@ function settle(run: () => unknown): void {
   }
 }
 
-function lifecycleSource(session: AgentSessionLike): LifecycleSource | undefined {
+function lifecycleSource(
+  session: AgentSessionLike
+): LifecycleSource | undefined {
   const source = (session as unknown as Members)['lifecycle'];
   return source &&
     typeof source === 'object' &&
@@ -527,13 +523,14 @@ export function createAgent<TSession extends AgentSessionLike>(
   const agent = new Proxy(Object.create(null) as Members, {
     get: (_target, key) => (typeof key === 'string' ? read(key) : undefined),
     has: (_target, key) => typeof key === 'string' && isMember(key),
-    ownKeys: () => [
-      ...new Set([
-        ...Object.keys(controls),
-        ...Object.keys(session()),
-        ...Object.keys(untracked(source)),
-      ]),
-    ].filter(isMember),
+    ownKeys: () =>
+      [
+        ...new Set([
+          ...Object.keys(controls),
+          ...Object.keys(session()),
+          ...Object.keys(untracked(source)),
+        ]),
+      ].filter(isMember),
     getOwnPropertyDescriptor: (_target, key) =>
       typeof key === 'string' && isMember(key)
         ? {

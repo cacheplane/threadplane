@@ -42,10 +42,10 @@ const blocked:
   | 'storage'
   | 'decision'
   | 'client-tools'
-  | undefined = evidence.inputBlocked;
+  | undefined = evidence.inputBlocked?.reason;
 void blocked;
 // @ts-expect-error A run in progress is read from status, not from this field.
-const running: 'running' | undefined = evidence.inputBlocked;
+const running: 'running' | undefined = evidence.inputBlocked?.reason;
 void running;
 
 // type<T>() declares the state.

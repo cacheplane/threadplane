@@ -90,7 +90,7 @@ describe('persistence', () => {
     const { persistence } = durable();
     const fixture = bindingFixture({ persistence });
     try {
-      expect(fixture.session.getSnapshot().inputBlocked).toBe('hydrating');
+      expect(fixture.session.getSnapshot().inputBlocked?.reason).toBe('hydrating');
       const run = fixture.session.submit('Early');
       expect(fixture.exchanges).toHaveLength(0);
       await fixture.session.ready;
@@ -119,7 +119,7 @@ describe('persistence', () => {
       expect(restored).toMatchObject({
         status: 'idle',
         state: { city: 'Rome' },
-        inputBlocked: 'decision',
+        inputBlocked: { reason: 'decision' },
         interrupts: approval.interrupts,
       });
       expect(restored.messages.map((message) => message.content)).toEqual([
@@ -169,7 +169,7 @@ describe('persistence', () => {
         runId: saved()?.pause?.sourceRunId,
         attempt: { responses: [{ interruptId: 'i1' }] },
       });
-      expect(restored.inputBlocked).toBe('decision');
+      expect(restored.inputBlocked?.reason).toBe('decision');
       await expect(second.session.resume(yes)).rejects.toThrow(
         'No interrupt is waiting for an answer.'
       );
@@ -179,7 +179,7 @@ describe('persistence', () => {
       await expect(second.session.reconcileInterrupt?.()).rejects.toThrow(
         'requires a persistence reconciler'
       );
-      expect(second.session.getSnapshot().inputBlocked).toBe('decision');
+      expect(second.session.getSnapshot().inputBlocked?.reason).toBe('decision');
     } finally {
       await second.cleanup();
     }
@@ -202,7 +202,7 @@ describe('persistence', () => {
       expect(snapshot.decision).not.toHaveProperty('attempt');
       expect(snapshot).toMatchObject({
         status: 'error',
-        inputBlocked: 'storage',
+        inputBlocked: { reason: 'storage' },
         error: { message: STORAGE_COPY, recovery: 'none' },
       });
       await expect(fixture.session.resume(yes)).rejects.toThrow(
@@ -240,7 +240,7 @@ describe('persistence', () => {
       await expect(fixture.session.ready).rejects.toThrow('store offline');
       expect(fixture.session.getSnapshot()).toMatchObject({
         status: 'error',
-        inputBlocked: 'storage',
+        inputBlocked: { reason: 'storage' },
         error: { message: STORAGE_COPY },
       });
       expect(await fixture.session.submit('Go')).toBe('error');
@@ -314,7 +314,7 @@ describe('reconcileInterrupt and checkStatus', () => {
     const { persistence } = durable(memoryStore(), reconcile);
     const fixture = await truncated(persistence);
     try {
-      await fixture.changed((snapshot) => snapshot.inputBlocked === 'checking');
+      await fixture.changed((snapshot) => snapshot.inputBlocked?.reason === 'checking');
       expect(fixture.session.getSnapshot().error).toMatchObject({
         kind: 'interrupted',
         retryable: false,
@@ -332,7 +332,7 @@ describe('reconcileInterrupt and checkStatus', () => {
       await fixture.session.checkStatus?.();
       expect(reconcile).toHaveBeenCalledOnce();
       release({ status: 'unknown' });
-      await fixture.changed((snapshot) => snapshot.inputBlocked === 'decision');
+      await fixture.changed((snapshot) => snapshot.inputBlocked?.reason === 'decision');
       expect(fixture.session.getSnapshot().error?.recovery).toBe('check');
     } finally {
       await fixture.cleanup();
@@ -377,7 +377,7 @@ describe('reconcileInterrupt and checkStatus', () => {
     const fixture = await truncated(persistence);
     try {
       await vi.waitFor(() => expect(reconcile).toHaveBeenCalledOnce());
-      await fixture.changed((snapshot) => snapshot.inputBlocked === 'decision');
+      await fixture.changed((snapshot) => snapshot.inputBlocked?.reason === 'decision');
       expect(fixture.session.getSnapshot()).toMatchObject({
         status: 'error',
         error: { recovery: 'check' },
@@ -391,7 +391,7 @@ describe('reconcileInterrupt and checkStatus', () => {
       expect(adopted.status).toBe('idle');
       expect(adopted.error).toBeUndefined();
       expect(interruptSession(adopted).phase).toBe('recovery-required');
-      expect(adopted.inputBlocked).toBe('decision');
+      expect(adopted.inputBlocked?.reason).toBe('decision');
     } finally {
       await fixture.cleanup();
     }
@@ -405,13 +405,13 @@ describe('reconcileInterrupt and checkStatus', () => {
     const fixture = await truncated(persistence);
     try {
       await vi.waitFor(() => expect(reconcile).toHaveBeenCalledOnce());
-      await fixture.changed((snapshot) => snapshot.inputBlocked === 'decision');
+      await fixture.changed((snapshot) => snapshot.inputBlocked?.reason === 'decision');
       await expect(fixture.session.checkStatus?.()).resolves.toBeUndefined();
       expect(fixture.session.getSnapshot().error?.recovery).toBe('check');
       await expect(fixture.session.reconcileInterrupt?.()).rejects.toThrow(
         'backend unreachable'
       );
-      expect(fixture.session.getSnapshot().inputBlocked).toBe('decision');
+      expect(fixture.session.getSnapshot().inputBlocked?.reason).toBe('decision');
     } finally {
       await fixture.cleanup();
     }
@@ -499,7 +499,7 @@ describe('replay', () => {
     const replay = vi.fn(async () => stored);
     const fixture = bindingFixture({ persistence, replay });
     try {
-      expect(fixture.session.getSnapshot().inputBlocked).toBe('hydrating');
+      expect(fixture.session.getSnapshot().inputBlocked?.reason).toBe('hydrating');
       await fixture.session.ready;
       expect(replay).toHaveBeenCalledWith(
         'native-thread',

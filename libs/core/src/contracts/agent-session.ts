@@ -14,7 +14,7 @@ import type { PlainValue, ToolContract } from './tool.js';
  * caption; `message` is then the text shown where blocks are not rendered
  * (see `contentBlocksText`). A session that holds no state ignores `state`,
  * and a session that cannot send blocks rejects them without sending. A
- * submission always carries a message; `run` starts one without.
+ * submission always carries a message; `runWithoutMessage` starts one without.
  */
 export type AgentSubmitInput<TState = unknown> =
   | string
@@ -83,7 +83,7 @@ export type AgentSession<
        * apply a state change or to continue after tool results. A session
        * that needs a message for every run leaves the command undefined.
        */
-      run?(
+      runWithoutMessage?(
         input?: { readonly state?: AgentStateUpdate<TState> },
         options?: AgentSubmitOptions
       ): Promise<CompleteOutcome>;

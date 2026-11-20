@@ -96,7 +96,7 @@ import {
 } from './index.js';
 
 const capable = createFakeAgentSession({
-  commands: ['run', 'regenerate', 'retry', 'checkStatus', 'clientTools'],
+  commands: ['runWithoutMessage', 'regenerate', 'retry', 'checkStatus', 'clientTools'],
   stateType: type<Board>(),
   onRetry: (fake) => {
     const count: number = fake.retryCount;
@@ -108,9 +108,9 @@ const regenerated: Promise<CompleteOutcome> | undefined =
   capable.session.regenerate?.('m');
 // @ts-expect-error optional commands may be absent
 void capable.session.retry();
-void capable.session.run?.({ state: { draft: 'x' } });
+void capable.session.runWithoutMessage?.({ state: { draft: 'x' } });
 // @ts-expect-error run state follows the declared state
-void capable.session.run?.({ state: { draft: 1 } });
+void capable.session.runWithoutMessage?.({ state: { draft: 1 } });
 const sentState: Partial<Board> | undefined = capable.runs[0]?.input?.state;
 const resumedState: Partial<Board> | undefined =
   capable.resumes[0]?.options?.state;

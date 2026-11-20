@@ -41,7 +41,7 @@ describe('interruptTransport', () => {
       // The run finished in the ordinary way, and the session is paused.
       expect(snapshot).toMatchObject({
         status: 'idle',
-        inputBlocked: 'decision',
+        inputBlocked: { reason: 'decision' },
       });
       expect(snapshot.run?.outcome).toBe('paused');
       expect(interrupt).toMatchObject({
