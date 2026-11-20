@@ -125,6 +125,42 @@ describe('regenerate', () => {
     expect(t.session.getSnapshot().status).toBe('idle');
   });
 
+  it('sends the run settings it is given with the regenerated run', async () => {
+    const t = thread();
+    await t.session.load?.();
+    const created: string[] = [];
+    expect(
+      await t.session.regenerate?.('a2', {
+        config: { configurable: { model: 'small' }, tags: ['again'] },
+        context: { tone: 'brief' },
+        metadata: { reason: 'regenerate' },
+        run: {
+          interruptBefore: ['tools'],
+          streamMode: ['debug'],
+          onRunCreated: (run) => created.push(run.run_id),
+          // The run starts from the checkpoint before the prompt, whatever
+          // checkpoint the settings name.
+          checkpointId: 't2-done',
+        },
+      })
+    ).toBe('success');
+    const stream = vi.mocked(t.transport.stream);
+    const sent = stream.mock.calls.at(-1)?.[4];
+    expect(sent).toMatchObject({
+      config: { configurable: { model: 'small' }, tags: ['again'] },
+      context: { tone: 'brief' },
+      metadata: { reason: 'regenerate' },
+      interruptBefore: ['tools'],
+      checkpoint: { checkpoint_id: 't1-done' },
+    });
+    expect(sent?.streamMode).toContain('debug');
+    expect(sent?.streamMode).toContain('values');
+    expect(sent).not.toHaveProperty('checkpointId');
+    expect(sent).not.toHaveProperty('run');
+    expect(created).toEqual(['run-regenerated-1']);
+    expect(t.forks[0].from).toBe('t1-done');
+  });
+
   it('answers an earlier prompt again and drops what followed it', async () => {
     const t = thread();
     await t.session.load?.();

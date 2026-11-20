@@ -116,7 +116,9 @@ export function assertHostOptions() {
     throttle: 16,
     a2uiClientCapabilities: { supportedCatalogIds: ['standard'] },
     telemetry: (payload) => void payload.properties.requestType,
-    onOperationFailure: (code) => void (code === 'unauthorized'),
+    reportOperationFailure: (code) => void (code === 'unauthorized'),
+    // The deprecated name is still accepted.
+    onOperationFailure: (code) => void (code === 'network_blocked'),
     developmentRuntime: {
       touch() {
         /* host */

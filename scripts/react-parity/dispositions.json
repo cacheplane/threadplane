@@ -19739,6 +19739,17 @@
       "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
     },
     {
+      "id": "export:libs/chat/testing/public-api.ts#provideAgentValue",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "complete",
+      "reason": "Re-export of provideAgentValue from @threadplane/angular/testing, which makes injectAgent() return a mockAgent() in a component under test; React has no provider.",
+      "note": "Verified with libs/chat/src/lib/testing/provide-agent-value.spec.ts, which renders <chat> from a mock provided this way."
+    },
+    {
       "id": "export:libs/chat/testing/public-api.ts#reasoningFixture",
       "taskIds": [
         "T05",
@@ -19847,6 +19858,30 @@
       "status": "in-progress",
       "reason": "The fake agent provider lives in the @threadplane/angular/testing entry so the root entry imports no testing code; React tests use the core fake session directly.",
       "note": "provideFakeAgent and injectFakeAgentSession are verified with a source spec and a type test in the testing entry. Importers outside libs/angular still name the root entry and are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵAGENT",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "complete",
+      "reason": "Internal injection token of the ref-less injectAgent(), exported so the @threadplane/angular/testing entry can provide an existing agent under it; React has no injector and passes a session or mock directly.",
+      "note": "Used only by provideAgentValue in the testing entry, which is verified with a source spec, a type test and a chat spec over mockAgent()."
+    },
+    {
+      "id": "source:libs/angular/testing/src/provide-agent-value.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "complete",
+      "reason": "provideAgentValue makes injectAgent() return an agent a test already holds, such as mockAgent(); it exists because Angular components receive their agent through the injector. A React test passes its session or mock as a prop or hook argument.",
+      "note": "Verified with libs/angular/testing/src/provide-agent-value.spec.ts and its type test, and with libs/chat/src/lib/testing/provide-agent-value.spec.ts over mockAgent()."
     },
     {
       "id": "export:libs/angular/src/public-api.ts#AgentDevelopmentRuntimeRegistrar",
@@ -20307,6 +20342,11 @@
       "id": "export:libs/langgraph/src/public-api.ts#FakeStreamTransportConfig",
       "taskIds": ["T08"], "treatment": "shared", "status": "complete",
       "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#MockAgentRun",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root: the record MockAgentTransport keeps for each run it started, with the status its getRunStatus reports. Verified with mock-stream.transport.spec.ts."
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#LangGraphBranchFork",

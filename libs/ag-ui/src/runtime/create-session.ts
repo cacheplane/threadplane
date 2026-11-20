@@ -121,9 +121,23 @@ export interface SessionCommonOptions
    * The thread this session owns. Absent, the handed agent's `threadId` is
    * used, or else a new one is generated; read it from `session.threadId`.
    * `persistence` needs one the application chose, and `replay` is skipped
-   * without one: a new conversation has nothing to replay.
+   * without one: a new conversation has nothing to replay. `null` reads as
+   * absent, so a binding's "no thread selected" can be passed as it is.
    */
-  readonly threadId?: string;
+  readonly threadId?: string | null;
+  /**
+   * Called once, while the session is created, with the id of a thread the
+   * caller did not name: one the session generated, or the handed agent's own.
+   * Never called for a `threadId` given as an option. A throwing callback
+   * affects nothing.
+   */
+  readonly onThreadId?: ((threadId: string) => void) | undefined;
+  /**
+   * Accepted and ignored, so a binding's whole session context can be spread
+   * into these options. An AG-UI session has no client to configure: `url`,
+   * `headers` and `fetch` are its transport options.
+   */
+  readonly clientOptions?: object | undefined;
   /** Names the agent, when an endpoint serves more than one. Published as `session.agentId`. */
   readonly agentId?: string;
   readonly messages?: readonly Message[] | Transcript;
@@ -166,7 +180,10 @@ export type SessionOptions = SessionCommonOptions &
   (HttpSessionSource | AgentSessionSource);
 /** Options as the factory captured them: one read of each, thread resolved. */
 interface CapturedOptions
-  extends Omit<SessionCommonOptions, 'threadId'>,
+  extends Omit<
+      SessionCommonOptions,
+      'threadId' | 'onThreadId' | 'clientOptions'
+    >,
     RequestSource {
   readonly threadId: string;
   /** The session named the thread itself; its first request creates it. */
@@ -669,9 +686,13 @@ export function createSession(
     interruptTransport,
     persistence,
   } = options;
-  const given = options.threadId;
+  // `null` is a binding's "no thread selected": the same as absent.
+  const given = options.threadId ?? undefined;
   if (given !== undefined && !given)
     throw new TypeError('A nonempty threadId is required');
+  const onThreadId = options.onThreadId;
+  if (onThreadId !== undefined && typeof onThreadId !== 'function')
+    throw new TypeError('onThreadId must be a function.');
   if (agent !== undefined && url !== undefined)
     throw new TypeError('A session takes a url or an agent, not both');
   // The thread the application chose, on the option or on its own agent.
@@ -683,8 +704,18 @@ export function createSession(
   // A new conversation has nothing to replay.
   const replay = stable === undefined ? undefined : options.replay;
   const catalog = tools === undefined ? undefined : captureClientTools(tools);
-  if (catalog !== undefined)
-    return createToolsOwner(
+  /** Reports a thread the caller did not name, once the session exists. */
+  const created = <S extends Session>(session: S): S => {
+    if (given === undefined && onThreadId)
+      try {
+        onThreadId(threadId);
+      } catch {
+        /* The caller's callback cannot change the session it was told of. */
+      }
+    return session;
+  };
+  if (catalog !== undefined) {
+    const owner = createToolsOwner(
       {
         threadId,
         ownThread: stable === undefined,
@@ -708,6 +739,8 @@ export function createSession(
       },
       catalog
     );
+    return created(owner);
+  }
   const instruments = createInstruments(options);
   const factory = createRun({
     url,
@@ -1489,7 +1522,9 @@ export function createSession(
     dispose: () => close(true),
     isDevelopmentRuntimeEnabled: instruments.developmentEnabled,
   };
-  return durableSession(session, durability, persistence !== undefined);
+  return created(
+    durableSession(session, durability, persistence !== undefined)
+  );
 }
 
 /** A command can own several physical runs, but never lends execution authority

@@ -5,6 +5,7 @@ import {
   createAgentRef,
   injectAgent,
   provideAgent,
+  provideAgentClientOptions,
   ɵsetAgentDevelopmentHost,
   type AgentDevelopmentInstall,
 } from './public-api';
@@ -245,6 +246,98 @@ describe('Agent over an AG-UI session', () => {
     expect(agent.threadId()).toBe('minted-2');
     expect(agent.customEvents()).toEqual([]);
     expect(onThreadId).toHaveBeenLastCalledWith('minted-2');
+  });
+});
+
+describe('Agent over an AG-UI session given the whole context', () => {
+  /** The one provider pattern: the context spread into the session options. */
+  function mountSpread(threadId: string | null) {
+    const server = endpoint();
+    const sessions: Session[] = [];
+    const onThreadId = vi.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        // An AG-UI session accepts and ignores the app's client options.
+        provideAgentClientOptions({ apiUrl: 'https://ignored.invalid' }),
+        provideAgent(CHAT, {
+          threadId,
+          onThreadId,
+          createSession: (context) => {
+            const session = createSession({
+              url: 'https://agent.invalid/run',
+              fetch: server.fetch,
+              ...context,
+            });
+            sessions.push(session);
+            return session;
+          },
+        }),
+      ],
+    });
+    const view = TestBed.createComponent(Chat);
+    view.detectChanges();
+    const agent = view.componentInstance.agent;
+    const run = async (index: number, text: string) => {
+      const outcome = agent.submit(text);
+      const exchange = await server.exchange(index);
+      exchange.emit({ type: 'RUN_FINISHED' });
+      exchange.end();
+      await expect(outcome).resolves.toBe('success');
+      return exchange;
+    };
+    return { agent, server, sessions, onThreadId, run };
+  }
+
+  it('shows the id the session minted, with no app code reporting it', async () => {
+    const { agent, sessions, onThreadId, run } = mountSpread(null);
+    const minted = sessions[0].threadId;
+    expect(minted).toEqual(expect.any(String));
+    expect(agent.threadId()).toBe(minted);
+    expect(onThreadId).toHaveBeenCalledExactlyOnceWith(minted);
+
+    expect((await run(0, 'Hello')).threadId).toBe(minted);
+    expect(agent.threadId()).toBe(minted);
+    expect(onThreadId).toHaveBeenCalledTimes(1);
+  });
+
+  it('switches to a named thread and back to a new conversation with a new id', async () => {
+    const { agent, sessions, onThreadId, run } = mountSpread(null);
+    const first = sessions[0].threadId;
+    await run(0, 'Hello');
+
+    agent.switchThread('thread-b');
+    expect(sessions).toHaveLength(2);
+    expect(sessions[1].threadId).toBe('thread-b');
+    expect(agent.threadId()).toBe('thread-b');
+    expect(agent.messages()).toEqual([]);
+    // A thread the application named is not reported back to it.
+    expect(onThreadId).toHaveBeenCalledTimes(1);
+    expect((await run(1, 'There')).threadId).toBe('thread-b');
+
+    agent.switchThread(null);
+    expect(sessions).toHaveLength(3);
+    const second = sessions[2].threadId;
+    expect(second).toEqual(expect.any(String));
+    expect(second).not.toBe(first);
+    expect(second).not.toBe('thread-b');
+    expect(agent.threadId()).toBe(second);
+    expect(onThreadId).toHaveBeenCalledTimes(2);
+    expect(onThreadId).toHaveBeenLastCalledWith(second);
+    expect((await run(2, 'New')).threadId).toBe(second);
+
+    // Switching back to the first conversation's id names it; nothing is minted.
+    agent.switchThread(first ?? null);
+    expect(agent.threadId()).toBe(first);
+    expect(sessions[3].threadId).toBe(first);
+    expect(onThreadId).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports nothing for a thread the application selected', async () => {
+    const { agent, sessions, onThreadId, run } = mountSpread('thread-a');
+    expect(agent.threadId()).toBe('thread-a');
+    expect(sessions[0].threadId).toBe('thread-a');
+    expect((await run(0, 'Hello')).threadId).toBe('thread-a');
+    expect(onThreadId).not.toHaveBeenCalled();
   });
 });
 

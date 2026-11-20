@@ -79,9 +79,18 @@ const overAgent = createSession({ agent: new MyWebSocketAgent(config) });
   `HttpAgent` does, gets a new one before each run, as `runAgent` gives it.
 - `threadId` is optional. The session uses the option, else the handed agent's
   own `threadId`, else a new identifier, and publishes it as
-  `session.threadId`. An empty string throws. `persistence` needs a thread the
-  application chose (the option, or the agent's), and `replay` is skipped
-  without one.
+  `session.threadId`. `null` reads as absent. An empty string throws.
+  `persistence` needs a thread the application chose (the option, or the
+  agent's), and `replay` is skipped without one.
+- `onThreadId(id)` is called once, while the session is created, with the id
+  of a thread the caller did not name: the generated one, or the handed
+  agent's. It is never called for a `threadId` given as an option, nor when
+  creation throws, and a throwing callback affects nothing. A binding passes
+  its own callback here, which is how the Angular agent's `threadId()` shows
+  the id of a new conversation.
+- `clientOptions` is accepted and ignored. With `threadId: null` and
+  `onThreadId` this lets a binding's whole session context be spread into the
+  options: `createSession({ url, ...context })`.
 - `agentId` names the agent when an endpoint serves more than one. It is passed
   to the HTTP agent the session sends with and published as `session.agentId`;
   a handed agent's own `agentId` is used when the option is absent. The
@@ -762,8 +771,21 @@ the response. This option provides observation only; answering a notice is
 Neither mode parses JSON strings, executes response schemas or guesses providers.
 `RUN_FINISHED.outcome` maps `success` (or no outcome) to `success`, a native
 `interrupt` batch to `paused` and `cancelled` to `aborted`, matching the public
-adapter. An unrecognised outcome type is stripped by the 1.0 client and
-therefore reads as success.
+adapter. Any other outcome is handled in two places, as it was for the Angular
+adapter:
+
+- An object outcome whose `type` the 1.0 client does not recognise is stripped
+  by the client, with a console warning, before the session sees the event.
+  The run then has no outcome and settles `success`.
+- An outcome the client cannot strip or accept settles the run as `error`: one
+  that is not an object (a string, a number, an array), or an `interrupt`
+  without a valid `interrupts` batch. The session's own check does the same
+  for any unknown outcome that reaches it.
+
+A run over a handed `agent` goes through the same client pipeline as an HTTP
+response and settles alike. So does a replayed run, except that an outcome
+that would fail a live run fails the replay instead: nothing of it is shown,
+as for any replay that could not be read.
 
 Server evidence and local outcomes are distinct. A terminal callback can stop the
 owner, selecting local `aborted` while retaining the accepted native terminal.

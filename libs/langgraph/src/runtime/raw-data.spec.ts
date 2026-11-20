@@ -182,6 +182,59 @@ describe('tool progress', () => {
     data,
   });
 
+  it('keeps a server tool call pending until its result, while toolProgress says it runs', async () => {
+    const active = controlledTransport<StreamEvent>();
+    const session = fixture([], {}, { stream: () => active.stream });
+    const run = session.submit('Hi');
+    const calling = {
+      type: 'ai',
+      id: 'a',
+      content: '',
+      tool_calls: [{ id: 'c1', name: 'search', args: { q: 'x' } }],
+    };
+    const statuses = () =>
+      session.getSnapshot().toolCalls.map((call) => [call.id, call.status]);
+    active.release({ type: 'values', data: { messages: [calling] } });
+    // The graph's own tool node runs it: the session only knows it was called.
+    await vi.waitFor(() => expect(statuses()).toEqual([['c1', 'pending']]));
+    active.release(
+      tool({ event: 'on_tool_start', name: 'search', toolCallId: 'c1' })
+    );
+    active.release(
+      tool({
+        event: 'on_tool_event',
+        name: 'search',
+        toolCallId: 'c1',
+        data: { step: 1 },
+      })
+    );
+    await vi.waitFor(() =>
+      expect(session.getSnapshot().toolProgress?.[0]).toMatchObject({
+        toolCallId: 'c1',
+        state: 'running',
+      })
+    );
+    // Progress is reported beside the call; the call's status does not move.
+    expect(statuses()).toEqual([['c1', 'pending']]);
+    expect(session.getSnapshot().status).toBe('running');
+    active.release({
+      type: 'values',
+      data: {
+        messages: [
+          calling,
+          { type: 'tool', id: 't', tool_call_id: 'c1', content: 'found' },
+          { type: 'ai', id: 'b', content: 'Done' },
+        ],
+      },
+    });
+    active.finish();
+    await run;
+    expect(statuses()).toEqual([['c1', 'complete']]);
+    expect(session.getSnapshot().toolCalls[0]).toMatchObject({
+      result: 'found',
+    });
+  });
+
   it('follows each running tool and starts empty with every run', async () => {
     const active = controlledTransport<StreamEvent>();
     const session = fixture([], {}, { stream: () => active.stream });

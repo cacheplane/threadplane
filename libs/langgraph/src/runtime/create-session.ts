@@ -190,6 +190,7 @@ import type { LangGraphSubmitOptions } from './transport.types.js';
 import {
   createSafeRequestError,
   isUnansweredRunCreation,
+  type RuntimeOperationFailureReporter,
 } from './operation-errors.js';
 import { buildDevelopmentRuntime } from './development-install.js';
 import { createToolPersistence } from './tool-persistence.js';
@@ -315,10 +316,15 @@ export interface SessionOptions {
    * Told when a request of the owned SDK transport was refused as
    * unauthorized or blocked by the network. Supplying it also makes the owned
    * transport report generic errors only. A supplied transport ignores it.
+   * It has the name a framework binding's session context uses, so spreading
+   * that context into the options passes the host's reporter on.
    */
-  readonly onOperationFailure?: (
-    code: 'unauthorized' | 'network_blocked'
-  ) => void;
+  readonly reportOperationFailure?: RuntimeOperationFailureReporter;
+  /**
+   * @deprecated Use `reportOperationFailure`. Read only when
+   * `reportOperationFailure` is not a function.
+   */
+  readonly onOperationFailure?: RuntimeOperationFailureReporter;
   /**
    * Read the thread's history as soon as the session is created, when it has a
    * `threadId` and the transport can read history. `snapshot.loading` is then
@@ -375,9 +381,22 @@ export type LangGraphSession<
   TState = unknown
 > = Omit<
   AgentSession<TTools, TState>,
-  'getSnapshot' | 'submit' | 'resume' | 'runWithoutMessage'
+  'getSnapshot' | 'submit' | 'resume' | 'runWithoutMessage' | 'regenerate'
 > & {
   getSnapshot(): LangGraphSnapshot<TTools, TState>;
+  /**
+   * The core contract's optional regenerate command: answers the prompt before
+   * an assistant message again, from the checkpoint saved before that prompt.
+   * It takes the same run options as `submit`, so `options.run`, `config`,
+   * `context` and `metadata` are sent with the regenerated run. The run always
+   * starts from that checkpoint: `run.checkpoint` and `run.checkpointId` are
+   * not used. Absent when the transport cannot read an exact checkpoint or an
+   * exact run's status.
+   */
+  regenerate?(
+    messageId: string,
+    options?: LangGraphRunOptions
+  ): Promise<CompleteOutcome>;
   /**
    * The core contract's command for a run that adds no user message: the
    * graph continues from the thread's saved state, after merging `state` when
@@ -755,7 +774,10 @@ export function createSession(
         ...ownedClientOptions,
         maxRetries: ownedRetries,
       },
-      typeof options.onOperationFailure === 'function'
+      // The current name wins; the deprecated one is read only without it.
+      typeof options.reportOperationFailure === 'function'
+        ? options.reportOperationFailure
+        : typeof options.onOperationFailure === 'function'
         ? options.onOperationFailure
         : undefined
     );

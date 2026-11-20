@@ -17,8 +17,7 @@ limits are in
 `threadId` is optional. A session created without one (or with `null`) starts
 empty and sends no request until its first submit, which calls
 `transport.createThread(signal)` once, before the run. The owned SDK transport
-implements it with `client.threads.create()`, the call the Angular transport
-makes, under the owned `maxRetries` policy (0 unless a number is supplied). A
+implements it with `client.threads.create()`, under the owned `maxRetries` policy (0 unless a number is supplied). A
 supplied transport without `createThread` makes construction throw. The created id
 is reported once through `onThreadId` and is read from `session.threadId`; a
 throwing callback does not affect the run. The id is not part of the snapshot.
@@ -38,6 +37,29 @@ throwing callback does not affect the run. The id is not part of the snapshot.
 - The public test doubles implement `createThread` too: `MockAgentTransport`
   names threads `mock-thread-1`, `mock-thread-2` and so on and records them in
   `createdThreads`; `FakeStreamTransport` names them `fake-thread-1` and so on.
+
+### Test transports
+
+`MockAgentTransport` and `FakeStreamTransport` are for specs and offline demos.
+A session over either is the real session, so what it offers follows from what
+the transport implements:
+
+| | `MockAgentTransport` | `FakeStreamTransport` |
+| --- | --- | --- |
+| Runs | Driven by the spec: `emit(events)`, then `close()`, `fail()` or `emitError(error)`. Any number in sequence; each is listed in `runs` and `streams`. | Streams its configured tokens by itself and ends each run with the thread's saved messages. |
+| `load`, `checkStatus` | Present. `history` holds what `load()` reads. | Present. History is always empty. |
+| `retry` | Present: `getRunStatus` answers from `runs`. | Absent. |
+| `regenerate` | Absent: there is no `getState`. | Absent. |
+
+A session reads the graph state from a `values` event's `data`, so a scripted
+run ends with `{ type: 'values', data: { messages: [...] } }`: the thread's
+messages, and any other state keys beside them. A run that closes without that
+event settles `interrupted`. A mock run ended with `close()` reports `success`
+to `getRunStatus`; `fail()` closes the stream and reports `error`, so the turn
+settles `error` with `recovery: 'retry'`; `emitError()` throws from the stream,
+which settles `interrupted` with `recovery: 'check'` until `checkStatus()`
+reads the run's `error`. Assign `transport.runs[n].status` to script any other
+answer. What a stopped run left unread is dropped, so the next run starts clean.
 
 ## One message for one model response
 
@@ -89,8 +111,9 @@ execution authority; actual ToolMessage roles and IDs still determine settlement
 
 This closes text-alias loss shared by the native bindings. It does not retain rich
 media/block order for rendering, add multimodal input, or establish provider,
-SSR or performance parity. The legacy Angular extractor remains a bounded
-duplicate until the separate backend cutover.
+SSR or performance parity. The session's projection is the only reader of
+visible text: the removed Angular adapter had an extractor of its own, and
+nothing else in the package duplicates this rule now.
 
 ## Transcript node names
 
@@ -114,9 +137,9 @@ cannot undo committed canonical metadata. Equal metadata shares owned references
 including when only text changes. Terminal candidates and queued publications
 capture metadata before callers can mutate it.
 
-The private normalizer stages the existing Angular extractor's aliases without an
-Angular dependency. Consolidate this bounded duplication at the backend cutover.
-The adapters do not promise identical arbitrary-extra semantics: neutral snapshots
+The private normalizer reads the field aliases the removed Angular adapter's
+extractor read, with no Angular dependency; `extractCitations` exposes the same
+reading for one message. Arbitrary extras are not kept as sent: neutral snapshots
 accept plain provider records and string/finite-number timestamps, omit unsupported
 optional fields, and reject instances/cycles in extras at the ownership boundary.
 Exact checkpoint ingress remains stricter: it captures the complete plain state
@@ -144,9 +167,9 @@ same physical run retains captured reasoning while rebasing its delivery generat
 Equal histories preserve identity, and reasoning-only changes publish through the existing queue.
 Captured terminal candidates and published strings cannot change with wire mutation.
 
-This bounded normalization duplicates part of the legacy Angular extractor until
-backend cutover. It uses explicit event modes, not that adapter's prefix heuristics
-or clock map. No rich-block, renderer, event-only retention, provider-version
+This bounded normalization is the session's only reasoning reader. It uses
+explicit event modes, where the removed Angular adapter used prefix heuristics
+and a clock map. No rich-block, renderer, event-only retention, provider-version
 conformance or complete T09/T15 parity is claimed. Strict checkpoint capture still
 rejects non-plain/cyclic data before display normalization. Reasoning never changes
 tool admission, checkpoint authority, transport requests or lifecycle scheduling.
@@ -240,6 +263,11 @@ the snapshot shows the new one.
   transport returned. A prompt older than that page cannot be regenerated.
 - Only the prompt's text is sent again. Input state and anything else the
   original submission carried are not.
+- `options` is the `LangGraphRunOptions` a submit takes: `signal`, `config`,
+  `context`, `metadata` and `run`. They are sent with the regenerated run (see
+  "Run settings"), and the session type says so. The run always starts from the
+  checkpoint before the prompt, so `run.checkpoint` and `run.checkpointId` are
+  not used.
 - After the read, every rule of `fork` applies, including its refusal to
   replace active or unsettled work.
 
@@ -522,9 +550,8 @@ only; child graph state stays a broad record.
 ## Custom events
 
 `session.onCustomEvent(listener)` delivers each `custom` stream frame, from the
-root or any subgraph namespace, as `{ name, data }`. The frame is read the way the
-Angular adapter reads it: a `{ name, data }` payload unwraps, and any other payload
-is the data with an empty name. Events are not state: no snapshot holds them, and
+root or any subgraph namespace, as `{ name, data }`. A `{ name, data }` payload
+unwraps, and any other payload is the data with an empty name. Events are not state: no snapshot holds them, and
 a listener added later does not receive earlier events. `data` is owned frozen
 plain data; a payload that is not plain data is dropped. The middleware's
 subagent binding frame is protocol and is not delivered. A throwing listener
@@ -552,9 +579,10 @@ until its milestone happens.
 | `toolCallStartedAt`   | The first time the session held a tool call.            |
 | `toolCallCompletedAt` | The first time a tool call was complete or failed.      |
 
-A session serves one thread, so nothing is reset: where the Angular adapter
-clears its `AgentLifecycle` on `switchThread()`, a session for another thread
-starts again from null. `threadCreatedAt` stays null for a session that was
+A session serves one thread, so nothing is reset. The `Agent` that
+`@threadplane/angular` injects returns its `AgentLifecycle` to null on
+`switchThread()` because it replaces the session: the session for the other
+thread starts again from null. `threadCreatedAt` stays null for a session that was
 given a `threadId`. Interrupts and tool calls restored from saved history are
 stamped when they are read, not when they first happened. The same failure
 published again keeps its time; a different one, or one that returns after
@@ -667,6 +695,21 @@ The session produces the optional members of the core contract
   settles its call as `error`, with the message text as `error`, live and from
   history; a failed delegation therefore makes its child `error`. A tool
   message whose content is an array gives the call `parts`, that array.
+- **Tool call status.** A tool the graph runs itself (a server tool) is
+  `pending` from the moment its finalized call enters `toolCalls` until its
+  tool message arrives, and then `complete` or `error`. It is never `running`:
+  the core contract's `pending` means finalized arguments awaiting a result,
+  and the session sees a server tool's call and its result, not its start. The
+  removed Angular adapter published the same two steps. `running` is published
+  only for a function tool the session executes itself (a `tools` handler),
+  between the start of the handler and its result. While the run is in flight
+  a `pending` call is work in progress: the chat views list it under "Waiting
+  to run tools", which says the call has no result yet, and show "Running
+  tools…" for a `running` call. To show that a server tool has started, read
+  `snapshot.toolProgress` (add `run: { streamMode: ['tools'] }`), whose entry
+  for the call's `toolCallId` moves through `starting`, `running`,
+  `completed` and `error`. It is reported beside the call and does not change
+  the call's `status`.
 - **Error diagnostics.** `snapshot.errorDiagnostic` describes what the
   published error was classified from, when the session read it: an error
   event the backend sent, a failure with an HTTP status, or a malformed
@@ -686,7 +729,7 @@ The session produces the optional members of the core contract
   does not block input here: a new message replaces the pause.
 - **History.** `checkpoints` and `messageCheckpoints` are the core fields, on
   a session created with `historyState: true`: see "History with state".
-  `messageCheckpoints` keeps the Angular agent's rule, the newest checkpoint
+  `messageCheckpoints` names, for each assistant message, the newest checkpoint
   whose assistant messages end with the message, which for a message followed
   by another turn is the checkpoint that already holds the next prompt.
 - **Running without a message.** `runWithoutMessage`: see "A run with no
@@ -759,7 +802,7 @@ stays null for a session that was given a `threadId`.
 ## Host options
 
 These `createSession` options let a host (a framework binding, a development
-tool) supply what the Angular agent used to build in. None changes the
+tool) supply what the removed Angular adapter built in. None changes the
 contract; all are optional and inert when omitted.
 
 - `initialValues`: the state `snapshot.state` holds until the backend reports
@@ -773,7 +816,8 @@ contract; all are optional and inert when omitted.
   `subscribe` listener while a run streams. `getSnapshot()` is never delayed,
   the last change is always delivered, and a change that ends the run is
   delivered at once. Each listener is paced separately. Off when omitted,
-  `false` or `0`; the Angular agent's default was 16.
+  `false` or `0`. The removed Angular adapter throttled at 16 by default; a
+  session does not throttle unless asked.
 - `a2uiClientCapabilities`: `{ supportedCatalogIds, inlineCatalogs? }`, sent
   with every run that has input under the `a2ui_client_capabilities` state
   key, where the middleware reads it. A run with no input carries nothing.
@@ -785,10 +829,17 @@ contract; all are optional and inert when omitted.
   `tplane:stream_errored` (with `durationMs`, and the error kind as
   `errorClass`). A stopped or replaced run reports no ending. The sink may be
   asynchronous and a failure in it is ignored. `false` turns it off.
-- `onOperationFailure(code)`: told when the owned SDK transport's request was
-  refused as `unauthorized` or failed as `network_blocked`. Supplying it also
-  makes the owned transport report generic errors only. A supplied transport
-  ignores it.
+- `reportOperationFailure(code)`: told when the owned SDK transport's request
+  was refused as `unauthorized` or failed as `network_blocked`. Supplying it
+  also makes the owned transport report generic errors only. A supplied
+  transport ignores it. The name is the one `@threadplane/angular`'s session
+  context and `createLangGraphThreadDirectory` use, so
+  `createSession({ ...context })` passes the host's reporter on. The earlier
+  name, `onOperationFailure`, is deprecated and still read: when both are
+  functions only `reportOperationFailure` is called.
+- `clientOptions`, `threadId` and `onThreadId` accept what that context holds
+  when a field is unset: `undefined` for `clientOptions`, `null` for
+  `threadId`.
 - `developmentRuntime`: a development-install collector with `touch()`,
   `milestone(kind, durationMs?)` and `dispose()`, or a factory that builds one.
   The session touches it at creation and for each command, reports
@@ -802,8 +853,7 @@ contract; all are optional and inert when omitted.
   token the install step wrote and is read only in an Angular development
   build (`ngDevMode`); everywhere else it is `null`. `enabled()` is the session's
   `isDevelopmentRuntimeEnabled()`: true unless the session was given a
-  `telemetry` option, `false` included, which is the rule the Angular agent
-  had. The session itself builds no collector and sends nothing: without the
+  `telemetry` option, `false` included. The session itself builds no collector and sends nothing: without the
   option nothing is collected, which is what a React app gets. In Angular,
   `provideAgent` hands the factory to the session factory as
   `context.developmentRuntime`, so `createSession({ ...context })` is all an
@@ -812,7 +862,7 @@ contract; all are optional and inert when omitted.
   and never by value. `begin(type)` and `end()` bracket a stream event,
   `outside(label, run)` brackets a change no event caused (`run:start`,
   `run:end`, `history`, `queue`, `branch`), and `wrote(name)` is called inside
-  the bracket with the Angular devtools vocabulary: `status`, `values`,
+  the bracket with one of these names: `status`, `values`,
   `messages`, `error`, `interrupt`, `interrupts`, `branch`, `history`,
   `isThreadLoading`, `toolProgress`, `toolCalls`, `messageMetadata`,
   `subagents`, `queue` and `custom`.

@@ -126,7 +126,7 @@ export interface InstrumentOptions {
    * response's body and its status are replaced by a fixed message, in the
    * snapshot, in its evidence and on the raw event stream.
    */
-  readonly reportOperationFailure?: OperationFailureReporter;
+  readonly reportOperationFailure?: OperationFailureReporter | undefined;
   readonly devtools?: SessionDevtools;
 }
 

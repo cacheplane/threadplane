@@ -49,7 +49,7 @@ interface ChatDebugInstance {
 
 /**
  * The conversation sidebar: thread list, projects, search, and the new-chat
- * action. Pair it with a runtime's thread store (e.g. `LangGraphThreadsAdapter`)
+ * action. Pair it with a thread directory (e.g. `injectThreadDirectory()`)
  * and a {@link ThreadActionAdapter} for the per-row rename/delete/archive menu.
  *
  * **This component renders the sidebar only — it is not a layout wrapper.** Its

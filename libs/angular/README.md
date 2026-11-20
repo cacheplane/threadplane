@@ -77,7 +77,11 @@ The AG-UI session is also observed directly: its native snapshot contains
 remain raw protocol strings; observing them does not authorize tool execution or
 invent core pending-tool states. Integration tests run the actual session
 through a browser-safe Fetch API fixture. This is not a claim that shared
-display components accept every native snapshot.
+display components accept every native snapshot. The AG-UI `createSession`
+takes the whole session context, `createSession({ url, ...context })`: it
+names a new conversation's thread itself and reports it through the context's
+`onThreadId`, so `agent.threadId()` and `agent.switchThread()` work with no
+application code reporting an id.
 
 No backend constructor is exported here: sessions come from the backend
 packages' `createSession`. This package does not claim full SSR or hydration
@@ -182,8 +186,9 @@ providers: [
   provideAgent({
     threadId: currentThreadId, // a string, null, or a signal the agent follows
     onThreadId: (id) => router.navigate(['chat', id]),
-    createSession: ({ threadId, onThreadId }) =>
-      createSession({ assistantId: 'chat', apiUrl, threadId, onThreadId }),
+    // createSession from @threadplane/langgraph. Spread the context last.
+    createSession: (context) =>
+      createSession({ assistantId: 'chat', apiUrl, ...context }),
   }),
 ];
 
@@ -237,8 +242,15 @@ factory's `onThreadId`; the agent adopts it without switching, so the run that
 created the thread continues.
 
 `createSession` runs in the agent's injection context each time, so it may call
-`inject()`. It also receives `clientOptions` from `AGENT_CLIENT_OPTIONS` (set
-with `provideAgentClientOptions`) and the host's operation failure reporter.
+`inject()`. Its context has five fields: `threadId` (a string, or `null` for a
+new thread), `onThreadId`, `clientOptions` from `AGENT_CLIENT_OPTIONS` (set with
+`provideAgentClientOptions`, otherwise `undefined`), `reportOperationFailure`
+(the host's operation failure reporter, otherwise `undefined`) and
+`developmentRuntime`. Each is an option of the LangGraph `createSession` under
+the same name, so `createSession({ assistantId, apiUrl, ...context })` passes
+all of them on with no cast. A factory that picks fields instead drops the ones
+it does not name. `clientOptions` is typed `object | undefined` because its
+shape belongs to the backend; the backend reads the fields it knows.
 
 ### Typed refs and several agents
 
@@ -382,17 +394,65 @@ backend publishes, such as `subgraphs` or `history` on a LangGraph session,
 reads as `undefined`, and a command that only the backend has is not there.
 To test code that depends on those, build the real session on the backend's
 test transport instead: `createSession({ transport: new MockAgentTransport() })`
-from `@threadplane/langgraph`.
+from `@threadplane/langgraph`. A spec drives each run of that transport with
+`emit()` and `close()`, any number in sequence, and `fail()` scripts a failed
+run for `agent.retry()`.
+
+### Providing an agent a test already has
+
+`provideAgentValue(agent)`, also in `@threadplane/angular/testing`, makes
+`injectAgent()` return the object it is given. Use it when the component under
+test injects its agent and the test wants a mock in its place, such as
+`mockAgent()` from `@threadplane/chat`, or an agent it built by hand:
+
+```ts
+import { provideAgentValue } from '@threadplane/angular/testing';
+import { mockAgent } from '@threadplane/chat';
+
+const agent = mockAgent({ status: 'running' });
+TestBed.configureTestingModule({ providers: [provideAgentValue(agent)] });
+const view = TestBed.createComponent(AssistantPage); // calls injectAgent()
+agent.messages.set([{ id: 'a1', role: 'assistant', content: 'Hi' }]);
+```
+
+`provideAgentValue(ref, agent)` also answers `injectAgent(ref)`. The ref-less
+`injectAgent()` at that injector level returns the same agent, and a provider
+given later in the same `providers` array wins, as with `provideAgent`. Under a
+ref declared with a backend's session type the agent may be a core-shaped mock;
+a member only the backend has is then `undefined` on it. To replace an agent a
+component provides for itself, put the provider in
+`TestBed.overrideComponent(Component, { set: { providers: [...] } })`.
+
+`AGENT_LIFECYCLE` resolves to the given agent's own `lifecycle` object, so a
+mock's writable marks reach whatever reads the token. An agent with no
+`lifecycle` gets one whose milestones all stay null. The test owns the agent:
+the injector does not stop or dispose it, does not list it in
+`AgentLifecycleRegistry`, and does not register it for development-install
+collection.
+
+Choose `provideFakeAgent` for the real agent over an in-memory session, with
+thread switching and the session's own command behaviour, and
+`provideAgentValue` for an exact object whose fields the test sets directly.
 
 ### How member names are resolved
 
 The agent reads each name from the session first, then from the snapshot. A
 name found in neither is an optional snapshot field that is not set yet, so it
-reads as a signal of `undefined`. The exceptions read as `undefined`: the
-optional commands of the core contract and the first-party backends, any name in
-`AgentConfig.optionalCommands`, and names that tools probe on arbitrary objects,
-such as `then` and `toJSON`. A backend that adds an optional command lists it in
-`optionalCommands`.
+reads as a signal of `undefined`. The exceptions read as `undefined`:
+
+- The members a session type declares optional, which a caller asks for before
+  using: `onCustomEvent`, `runWithoutMessage`, `regenerate`, `resume`,
+  `clientTools`, `checkStatus` and `retry` from the core contract, `load` from
+  both first-party backends, and `onRawEvent`, `reconcileInterrupt`, `ready`,
+  `agentId` and `stateType` from the AG-UI session.
+- The commands one first-party backend always has: `isDevelopmentRuntimeEnabled`
+  on both, and `fork`, `reconnect`, `joinStream`, `setBranch`, `cancelQueued`
+  and `clearQueue` on a LangGraph session. They are typed as present on that
+  backend's agent and need no `?.` there. They read as `undefined` only on a
+  session of another kind, such as the fake provided under a backend's ref.
+- Any name in `AgentConfig.optionalCommands`. A backend that adds an optional
+  command lists it there.
+- Names that tools probe on arbitrary objects, such as `then` and `toJSON`.
 
 ## The injected thread directory
 

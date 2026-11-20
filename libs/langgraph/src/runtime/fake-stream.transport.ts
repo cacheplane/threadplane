@@ -21,9 +21,16 @@ const DEFAULT_TOKENS = ['Hello', ' from', ' the', ' fake', ' LangGraph', ' agent
 /**
  * In-process AgentTransport that auto-streams a canned assistant reply.
  *
- * Backs `provideFakeAgent()`. Unlike `MockAgentTransport` (passive, driven
- * manually from specs), this transport emits its tokens automatically on
- * `stream()`, then completes — suitable for offline demos and integration tests.
+ * Pass it to `createSession({ transport })` for an offline demo or an
+ * integration test of the real LangGraph session. Unlike `MockAgentTransport`
+ * (passive, driven by hand from a spec), it streams its tokens by itself on
+ * every `stream()` call and ends the run with the thread's saved messages, so
+ * each submit settles `success` and a thread keeps its earlier turns.
+ *
+ * It creates threads, and reports an empty history. It has no run status, so a
+ * session over it has no `retry` or `regenerate`. It is not what
+ * `provideFakeAgent()` from `@threadplane/angular/testing` uses: that provider
+ * runs the in-memory session of `@threadplane/core/testing`, with no transport.
  *
  * NOT for production use.
  */
@@ -35,8 +42,8 @@ export class FakeStreamTransport implements AgentTransport {
   constructor(config: FakeStreamTransportConfig = {}) {
     this.tokens = config.tokens ?? DEFAULT_TOKENS;
     this.reasoningTokens = config.reasoningTokens ?? [];
-    // Default 60ms matches @threadplane/ag-ui's FakeAgent so both adapters'
-    // provideFakeAgent() stream at the same cadence for the same config.
+    // 60ms is also the default cadence of `provideFakeAgent()`, so a demo
+    // streams alike whichever double it uses.
     this.delayMs = config.delayMs ?? 60;
   }
 

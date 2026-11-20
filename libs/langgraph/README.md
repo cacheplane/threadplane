@@ -70,6 +70,8 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
+Spread the whole `context`. It carries `threadId`, `onThreadId`, the app-wide `clientOptions`, the host's `reportOperationFailure` and `developmentRuntime`, each under the name `createSession` reads, so nothing is dropped and no cast is needed. An unset field arrives as `undefined` or `null`, which `createSession` treats as omitted.
+
 In React, create the session and pass it to `useAgent(session)` from `@threadplane/react`.
 
 ## Exports
@@ -105,8 +107,30 @@ The package root is the whole public surface. Everything is exported from `@thre
 
 **Testing**
 
-- `MockAgentTransport`: a scripted transport. A spec emits event batches and the real session projects them.
-- `FakeStreamTransport` and `FakeStreamTransportConfig`: a transport that streams a canned reply, for offline demos. Each run ends with the thread's saved messages, so a submit settles `success`.
+- `MockAgentTransport` and `MockAgentRun`: a transport a spec drives by hand. `emit(events)` sends events into the open run and `close()` ends it; the real session projects them. One instance serves any number of runs in sequence, each recorded in `runs` and `streams`. `fail()` ends a run as one the backend reports failed, which `session.retry()` then sends again; `emitError(error)` throws from the stream, as a broken connection does. A session over it has `load`, `checkStatus` and `retry`, and no `regenerate`.
+- `FakeStreamTransport` and `FakeStreamTransportConfig`: a transport that streams a canned reply by itself, for offline demos. Each run ends with the thread's saved messages, so a submit settles `success`. A session over it has `load` and `checkStatus`, and no `retry` or `regenerate`.
+
+```ts
+const transport = new MockAgentTransport();
+const session = createSession({ assistantId: 'agent', transport });
+
+const turn = session.submit('Hello');
+await transport.emit([
+  {
+    type: 'values',
+    data: {
+      messages: [
+        { id: 'u1', type: 'human', content: 'Hello' },
+        { id: 'a1', type: 'ai', content: 'Hi' },
+      ],
+    },
+  },
+]);
+await transport.close();
+await turn; // 'success'
+```
+
+A session reads the graph state from a `values` event's `data`, messages included. A run settles `success` only when it ends with such an event; one that closes without it settles `interrupted`, as a dropped connection does. Script the next turn the same way after the first has settled.
 
 Pass either as `createSession({ transport })`, with or without a `threadId`: both name a new thread on the first submit. Neither is for production use. For a session with no transport at all, use `createFakeAgentSession` from `@threadplane/core/testing`.
 

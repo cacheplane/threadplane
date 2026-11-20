@@ -665,4 +665,45 @@ describe('operation failure reporter', () => {
     expect(await session.submit('Go')).toBe('success');
     expect(onOperationFailure).not.toHaveBeenCalled();
   });
+
+  /** An owned-transport session whose every request the network refuses. */
+  async function refusedSubmit(options: Partial<SessionOptions>) {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
+    try {
+      const session = createSession({
+        assistantId: 'agent',
+        threadId: 'thread',
+        apiUrl: 'http://127.0.0.1:1',
+        ...options,
+      });
+      sessions.push(session);
+      expect(await session.submit('Go')).toBe('error');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  }
+
+  it('reports through reportOperationFailure, the name a host context uses', async () => {
+    const reportOperationFailure = vi.fn();
+    await refusedSubmit({ reportOperationFailure });
+    expect(reportOperationFailure).toHaveBeenCalledWith('network_blocked');
+  });
+
+  it('still reports through the deprecated onOperationFailure', async () => {
+    const onOperationFailure = vi.fn();
+    // A host context with no reporter spreads `undefined` under the new name.
+    await refusedSubmit({
+      onOperationFailure,
+      reportOperationFailure: undefined,
+    });
+    expect(onOperationFailure).toHaveBeenCalledWith('network_blocked');
+  });
+
+  it('prefers reportOperationFailure when both names are given', async () => {
+    const reportOperationFailure = vi.fn();
+    const onOperationFailure = vi.fn();
+    await refusedSubmit({ reportOperationFailure, onOperationFailure });
+    expect(reportOperationFailure).toHaveBeenCalledWith('network_blocked');
+    expect(onOperationFailure).not.toHaveBeenCalled();
+  });
 });

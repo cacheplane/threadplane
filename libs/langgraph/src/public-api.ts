@@ -100,5 +100,6 @@ export type { RuntimeOperationFailureReporter } from './runtime/operation-errors
 
 // Transports for tests and offline demos. Not for production use.
 export { MockAgentTransport } from './runtime/mock-stream.transport.js';
+export type { MockAgentRun } from './runtime/mock-stream.transport.js';
 export { FakeStreamTransport } from './runtime/fake-stream.transport.js';
 export type { FakeStreamTransportConfig } from './runtime/fake-stream.transport.js';

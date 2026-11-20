@@ -130,9 +130,17 @@ export interface AgentSessionContext {
    * A report from a session the agent has already replaced is ignored.
    */
   readonly onThreadId: (threadId: string) => void;
-  /** The app-wide `AGENT_CLIENT_OPTIONS`, when provided. */
+  /**
+   * The app-wide `AGENT_CLIENT_OPTIONS`, when provided. Typed `object` because
+   * the shape belongs to the backend, which this package does not import. A
+   * first-party `createSession` takes it as its `clientOptions` with no cast.
+   */
   readonly clientOptions: object | undefined;
-  /** The host's operation failure reporter, when provided. */
+  /**
+   * The host's operation failure reporter, when provided. The first-party
+   * sessions take it as their `reportOperationFailure` option, so spreading
+   * the context passes it on.
+   */
   readonly reportOperationFailure: AgentOperationFailureReporter | undefined;
   /**
    * Builds the session's development-install collector. A first-party session
@@ -170,21 +178,48 @@ export interface AgentConfig<TSession extends AgentSessionLike = AgentSession> {
 }
 
 /**
- * Optional session members of the core contract and of the first-party
- * backends: commands, and the client-tools capability.
+ * The session members that the core contract or a first-party backend's
+ * session type declares optional (`name?`): a session may leave each one out,
+ * so a caller asks before using it. Kept equal to those types; the agent type
+ * tests prove each name optional on at least one of them.
  */
-const OPTIONAL_COMMANDS: readonly string[] = [
+const OPTIONAL_MEMBERS: readonly string[] = [
+  // The core contract. The LangGraph session always has `onCustomEvent`,
+  // `resume` and `runWithoutMessage`; the AG-UI session always has `resume`.
   'onCustomEvent',
+  'runWithoutMessage',
   'regenerate',
   'resume',
+  'clientTools',
   'checkStatus',
   'retry',
-  'runWithoutMessage',
-  'clientTools',
+  // Both first-party backends.
   'load',
+  // The AG-UI session only.
+  'onRawEvent',
+  'reconcileInterrupt',
+  'ready',
+  'agentId',
+  'stateType',
+];
+
+/**
+ * Commands one first-party backend's session always has, so they are not
+ * optional on that backend's agent and need no `?.` there. A session of
+ * another kind lacks them: the in-memory fake provided under a backend's ref,
+ * a hand-written session, the other backend. There each reads as `undefined`,
+ * as a missing command does, and never as a snapshot field.
+ */
+const BACKEND_COMMANDS: readonly string[] = [
+  // Both first-party backends.
+  'isDevelopmentRuntimeEnabled',
+  // The LangGraph session.
   'fork',
   'reconnect',
-  'isDevelopmentRuntimeEnabled',
+  'joinStream',
+  'setBranch',
+  'cancelQueued',
+  'clearQueue',
 ];
 
 /**
@@ -321,7 +356,8 @@ export function createAgent<TSession extends AgentSessionLike>(
         ɵwhenAgentDevelopmentHost((host) => host.registerPolicy(agent, policy))
       ));
   const optionalCommands = new Set([
-    ...OPTIONAL_COMMANDS,
+    ...OPTIONAL_MEMBERS,
+    ...BACKEND_COMMANDS,
     ...(config.optionalCommands ?? []),
   ]);
   const configured = config.threadId;

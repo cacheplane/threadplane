@@ -602,6 +602,14 @@ describe('private run authority', () => {
       types: ['RUN_STARTED', 'RUN_FINISHED'],
       warns: true,
     },
+    // Only an object can be stripped. An outcome that is not one is malformed:
+    // the run fails, as the Angular adapter's "Invalid run outcome" did.
+    {
+      name: 'malformed finished outcome',
+      wire: [started, { ...finished, outcome: 'future' }],
+      outcome: 'error',
+      types: ['RUN_STARTED'],
+    },
     {
       name: 'empty native interrupts rejected by SDK',
       wire: [

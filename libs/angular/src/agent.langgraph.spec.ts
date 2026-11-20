@@ -6,6 +6,8 @@ import {
   createAgentRef,
   injectAgent,
   provideAgent,
+  provideAgentClientOptions,
+  ɵAGENT_OPERATION_FAILURE_REPORTER,
   ɵsetAgentDevelopmentHost,
   type AgentDevelopmentInstall,
 } from './public-api';
@@ -458,5 +460,52 @@ describe('Agent over a LangGraph session and the development collector', () => {
     const { agent } = mountSpreading({ telemetry: false });
     expect(host.built[0].install.enabled()).toBe(false);
     expect(host.policies.get(agent)?.()).toBe(false);
+  });
+});
+
+describe('Agent over a LangGraph session and the host failure reporter', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  /** The README's provider: the whole context spread into `createSession`. */
+  function mountOwned(report?: (code: string) => void) {
+    // The owned SDK transport is the one that reports; every request of it is
+    // refused here before it leaves the page.
+    const fetch = vi.fn().mockRejectedValue(new TypeError('offline'));
+    vi.stubGlobal('fetch', fetch);
+    TestBed.configureTestingModule({
+      providers: [
+        ...(report
+          ? [{ provide: ɵAGENT_OPERATION_FAILURE_REPORTER, useValue: report }]
+          : []),
+        provideAgentClientOptions({ defaultHeaders: { 'x-session': 'abc' } }),
+        provideAgent(CHAT, {
+          createSession: (context) =>
+            createSession({
+              apiUrl: 'http://127.0.0.1:1',
+              assistantId: 'agent',
+              ...context,
+            }),
+        }),
+      ],
+    });
+    const view = TestBed.createComponent(Chat);
+    view.detectChanges();
+    return { agent: view.componentInstance.agent, fetch };
+  }
+
+  it('calls the provided reporter when the spread context builds the session', async () => {
+    const report = vi.fn();
+    const { agent, fetch } = mountOwned(report);
+    expect(await agent.submit('Hello')).toBe('error');
+    expect(report).toHaveBeenCalledWith('network_blocked');
+    // The spread carried the app-wide client options too.
+    const [, init] = fetch.mock.calls[0] as [unknown, RequestInit];
+    expect(new Headers(init.headers).get('x-session')).toBe('abc');
+  });
+
+  it('spreads a context with no reporter without failing the session', async () => {
+    const { agent } = mountOwned();
+    expect(await agent.submit('Hello')).toBe('error');
+    expect(agent.error()?.message).toBe('The LangGraph request failed.');
   });
 });

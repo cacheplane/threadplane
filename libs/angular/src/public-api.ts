@@ -14,7 +14,12 @@ export { withAgentOverrides } from './agent-overrides';
 export type { AgentOverrides } from './agent-overrides';
 export { createAgentRef } from './agent-ref';
 export type { AgentRef } from './agent-ref';
-export { injectAgent, provideAgent, ɵisAgentRef } from './provide-agent';
+export {
+  injectAgent,
+  provideAgent,
+  ɵAGENT,
+  ɵisAgentRef,
+} from './provide-agent';
 export type { AgentConfigInput } from './provide-agent';
 export { AGENT_LIFECYCLE, AgentLifecycleRegistry } from './agent-lifecycle';
 export type { AgentLifecycle } from './agent-lifecycle';

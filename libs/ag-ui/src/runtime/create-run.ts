@@ -38,8 +38,10 @@ export interface RunHandle {
 }
 
 /**
- * What a `RUN_FINISHED` outcome settles a run as. An outcome this runtime does
- * not know settles `error`.
+ * What a `RUN_FINISHED` outcome settles a run as. An outcome that reaches this
+ * runtime and is not one it knows settles `error`. The 1.0 client strips an
+ * object outcome of an unrecognised `type` before that, so such a run arrives
+ * here with no outcome and settles `success`.
  */
 export function finishedOutcome(outcome: unknown): CompleteOutcome {
   return finishedResult(outcome).outcome;

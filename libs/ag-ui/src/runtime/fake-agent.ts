@@ -79,11 +79,14 @@ export class FakeAgent extends AbstractAgent {
     ];
 
     if (reasoningTokens.length > 0) {
-      sequence.push({ type: EventType.REASONING_MESSAGE_START, messageId, role: 'assistant' } as BaseEvent);
+      // The protocol sends reasoning as a record of its own: its own id, and
+      // the `reasoning` role. A session attaches it to the answer that follows.
+      const reasoningId = `${messageId}-reasoning`;
+      sequence.push({ type: EventType.REASONING_MESSAGE_START, messageId: reasoningId, role: 'reasoning' } as BaseEvent);
       for (const delta of reasoningTokens) {
-        sequence.push({ type: EventType.REASONING_MESSAGE_CONTENT, messageId, delta } as BaseEvent);
+        sequence.push({ type: EventType.REASONING_MESSAGE_CONTENT, messageId: reasoningId, delta } as BaseEvent);
       }
-      sequence.push({ type: EventType.REASONING_MESSAGE_END, messageId } as BaseEvent);
+      sequence.push({ type: EventType.REASONING_MESSAGE_END, messageId: reasoningId } as BaseEvent);
     }
 
     sequence.push({ type: EventType.TEXT_MESSAGE_START, messageId, role: 'assistant' } as BaseEvent);
