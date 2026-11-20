@@ -445,14 +445,15 @@ until its milestone happens.
 | `streamErrorAt`       | The most recent published failure, as `{ at, kind }`.   |
 | `interruptReceivedAt` | The first time the session held a pending interrupt.    |
 | `interruptResolvedAt` | The most recent `resume` the session accepted.          |
+| `threadCreatedAt`     | When the session created its own thread.                |
 | `threadPersistedAt`   | The first history read that returned saved checkpoints. |
 | `toolCallStartedAt`   | The first time the session held a tool call.            |
 | `toolCallCompletedAt` | The first time a tool call was complete or failed.      |
 
 A session serves one thread, so nothing is reset: where the Angular adapter
 clears its `AgentLifecycle` on `switchThread()`, a session for another thread
-starts again from null. There is no `threadCreatedAt`, because a session never
-creates its thread. Interrupts and tool calls restored from saved history are
+starts again from null. `threadCreatedAt` stays null for a session that was
+given a `threadId`. Interrupts and tool calls restored from saved history are
 stamped when they are read, not when they first happened. The same failure
 published again keeps its time; a different one, or one that returns after
 clearing, is stamped again. The timestamps are kept apart from the snapshot, so
@@ -537,6 +538,45 @@ publishes it. The tool call's own entry stays in `snapshot.toolCalls`.
 A child agent keeps its reference while its child graph and status are
 unchanged. Child agents give no command authority: answering a pause is the
 root session's `resume`.
+
+## Raw LangGraph data
+
+The transcript in `snapshot.messages` is text and tool data. A view that needs
+what LangGraph actually sent reads these backend fields, each absent until it
+has something to hold:
+
+- `snapshot.langGraphMessages`, on a session created with `rawMessages: true`:
+  one wire record for each transcript message, in transcript order, owned and
+  frozen. It is the newest record with that message id, so content blocks,
+  `additional_kwargs`, `response_metadata`, `usage_metadata` and `tool_calls`
+  are all there. A message still streaming is its latest chunk with `content`
+  replaced by the text accumulated so far; a full message is never replaced by
+  a late chunk. The user message a submit adds, and a message sent without an
+  id, are given in wire shape from what the transcript holds. A history load
+  replaces the records with the newest checkpoint's.
+- `snapshot.messageMetadata`, with the same option: by message id, the
+  `messages` stream metadata (`langgraph_node`, tags, model) of each root and
+  child message that streamed.
+- `langGraphToolCalls(messages)` pairs every tool call in such a transcript
+  with its tool message: `{ id, call, result, aiMessage, index, state }`, with
+  `state` `pending`, `completed`, or `error` when the tool message's `status`
+  is `error`. `getToolCalls(aiMessage, messages)` returns one message's calls.
+  Both are plain functions, so a binding can derive them from the snapshot.
+- `snapshot.toolProgress`: what running tools reported through the `tools`
+  stream mode, one entry for each tool (`toolCallId`, `name`, `state`,
+  `input`, `data`, `result`, `error`), starting empty with every run. Owned
+  streams do not request that mode, because older servers reject it: add it
+  with `run: { streamMode: ['tools'] }`. With a protected owned transport the
+  error is a generic text.
+- `snapshot.usage`: the core contract's token usage for the command that just
+  settled, one entry for each provider and model, from the `usage_metadata` of
+  the assistant messages it produced. A full message's usage is its total and
+  replaces what its chunks reported. Messages from earlier turns are never
+  counted. It is absent while a run is going, after a stopped run, and when
+  the backend reported none.
+
+`lifecycle.threadCreatedAt` records when the session created its thread. It
+stays null for a session that was given a `threadId`.
 
 ## Host options
 

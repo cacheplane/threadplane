@@ -12812,6 +12812,17 @@
       "note": "Covered by runtime specs. The development collector and the devtools emitter are created by the host; the neutral runtime only calls them."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/raw-data.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of what LangGraph sent beside the transcript: the wire record of each message, stream metadata by message, tool progress from the tools stream mode, token usage for a settled command, and tool calls paired with their results.",
+      "note": "Covered by runtime specs. Raw messages and metadata are opt-in through rawMessages; usage and tool progress appear when the backend reports them."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
       "taskIds": [
         "T09",
@@ -19875,7 +19886,7 @@
       "treatment": "shared",
       "status": "in-progress",
       "reason": "Framework-neutral lifecycle timestamps for a session: first stream event, latest failure with its kind, first interrupt, latest resume, first saved-history read, and first tool call start and finish, as an observable beside the snapshot.",
-      "note": "Staged in the private session. The Angular AgentLifecycle signals and registry are unchanged and not built on it. No threadCreatedAt, since a session never creates its thread; nothing resets, since a session serves one thread."
+      "note": "Staged in the private session. The Angular AgentLifecycle signals and registry are unchanged and not built on it. threadCreatedAt is set when the session creates its own thread; nothing resets, since a session serves one thread."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#useThreadRouting",

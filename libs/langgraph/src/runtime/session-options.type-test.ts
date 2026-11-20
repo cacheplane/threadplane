@@ -173,3 +173,22 @@ export function assertAutoLoad() {
   // @ts-expect-error Loading is published, not set.
   session.getSnapshot().loading = true;
 }
+
+export function assertRawData() {
+  const session = createSession({
+    assistantId: 'agent',
+    threadId: 'thread',
+    rawMessages: true,
+  });
+  const snapshot = session.getSnapshot();
+  const wire = snapshot.langGraphMessages?.[0];
+  const node = snapshot.messageMetadata?.['a'].streamMetadata['langgraph_node'];
+  const state: 'starting' | 'running' | 'completed' | 'error' | undefined =
+    snapshot.toolProgress?.[0].state;
+  const tokens: number | undefined = snapshot.usage?.entries[0].inputTokens;
+  const created: number | null =
+    session.lifecycle.getSnapshot().threadCreatedAt;
+  void [wire, node, state, tokens, created];
+  // @ts-expect-error Raw messages are read-only.
+  if (wire) wire['content'] = 'changed';
+}

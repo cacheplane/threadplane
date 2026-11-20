@@ -56,6 +56,22 @@ import {
 } from './message-reducer.js';
 import { createReasoningTimer } from './reasoning-timing.js';
 import {
+  observeHistoryWireMessages,
+  observeMessageMetadata,
+  observeToolProgress,
+  observeUsage,
+  observeWireMessages,
+  projectUsage,
+  projectWireMessages,
+  type UsageObservation,
+  type WireMessages,
+} from './raw-data.js';
+export {
+  getToolCalls,
+  langGraphToolCalls,
+  type LangGraphToolCallWithResult,
+} from './raw-data.js';
+import {
   createLifecycleRecorder,
   type LangGraphLifecycleSource,
 } from './lifecycle.js';
@@ -80,6 +96,8 @@ export {
   type LangGraphCheckpoint,
 } from './checkpoint-tree.js';
 import type {
+  LangGraphMessageMetadata,
+  LangGraphToolProgress,
   LangGraphWireInterrupt,
   LangGraphSnapshot,
   LangGraphState,
@@ -282,6 +300,12 @@ export interface SessionOptions {
    * otherwise makes no request.
    */
   readonly autoLoad?: boolean;
+  /**
+   * Keep each message as LangGraph sent it. `snapshot.langGraphMessages` and
+   * `snapshot.messageMetadata` are then published. Off by default: the
+   * records are large and most views need only the transcript.
+   */
+  readonly rawMessages?: boolean;
   /** A development-install collector to keep informed. The host creates it. */
   readonly developmentRuntime?: LangGraphDevelopmentRuntime;
   /** A development tool told which published fields each event changed. */
@@ -675,6 +699,8 @@ export function createSession(
         if (creation !== current || disposed) throw createSafeRequestError();
         creation = undefined;
         threadId = id;
+        lifecycle.mark('threadCreatedAt');
+        lifecycle.flush();
         try {
           onThreadId?.(id);
         } catch {
@@ -735,6 +761,13 @@ export function createSession(
   const joinStream = transport.joinStream?.bind(transport);
   const getChildState = transport.getChildState?.bind(transport);
   const autoLoad = options.autoLoad === true;
+  const rawMessages = options.rawMessages === true;
+  let wire: WireMessages = new Map();
+  let messageMetadata: Readonly<Record<string, LangGraphMessageMetadata>> = {};
+  let hasMessageMetadata = false;
+  let toolProgress: ReadonlyMap<string, LangGraphToolProgress> = new Map();
+  let usageObserved: UsageObservation = new Map();
+  let usage: ReturnType<typeof projectUsage>;
   let childRestore: AbortController | undefined;
   const createQueuedRun = transport.createQueuedRun?.bind(transport);
   const cancelRun = transport.cancelRun?.bind(transport);
@@ -1014,6 +1047,14 @@ export function createSession(
       ...checkpointPage,
       ...(branchName ? { branch: branchName } : {}),
       ...(autoLoad && loading ? { loading: true as const } : {}),
+      ...(toolProgress.size ? { toolProgress: [...toolProgress.values()] } : {}),
+      ...(rawMessages
+        ? {
+            langGraphMessages: projectWireMessages(state.messages, wire),
+            ...(hasMessageMetadata ? { messageMetadata } : {}),
+          }
+        : {}),
+      ...(usage ? { usage } : {}),
       ...(queue.length
         ? {
             queue: queue.map(({ id, message, createdAt }) => ({
@@ -1160,6 +1201,8 @@ export function createSession(
       attempt.branch.state = uncertainCheckpoint(attempt.branch.state);
     recoveryAttempt = error?.recovery === 'check' ? attempt : undefined;
     replayable = error?.recovery === 'retry' ? { attempt, state } : undefined;
+    // Usage belongs to a settled run; a stopped one reports none.
+    usage = outcome === 'aborted' ? undefined : projectUsage(usageObserved);
     publish(error ? 'error' : 'idle', error);
     if (outcome !== 'aborted') {
       const durationMs = Date.now() - (attempt.startedAt ?? Date.now());
@@ -1791,6 +1834,22 @@ export function createSession(
               ? cursor.evidence
               : { unsafe: true };
           if (checkpoint) run.checkpoint = checkpoint;
+          toolProgress = observeToolProgress(
+            toolProgress,
+            event,
+            protectedTransport
+          );
+          usageObserved = observeUsage(
+            usageObserved,
+            event,
+            attempt.projection.baselineIds
+          );
+          if (rawMessages) {
+            wire = observeWireMessages(wire, event);
+            const metadata = observeMessageMetadata(messageMetadata, event);
+            if (metadata !== messageMetadata) hasMessageMetadata = true;
+            messageMetadata = metadata;
+          }
           // The backend's statement outranks inference but never rewrites it.
           if (binding && !delegationBindings.has(binding.segment))
             delegationBindings.set(binding.segment, binding.toolCallId);
@@ -2181,6 +2240,9 @@ export function createSession(
     recoveryAttempt = undefined;
     replayable = undefined;
     retained = undefined;
+    toolProgress = new Map();
+    usageObserved = new Map();
+    usage = undefined;
 
     if (input.kind === 'submit')
       state = reduceMessages(state, {
@@ -2885,6 +2947,9 @@ export function createSession(
         const projectedValues = projectHistoryValues(previousValues, history);
         const projectedHistory = projectCheckpointHistory(historyPage, history);
         const restoredChildren = restoreChildren(projected.toolCalls, history);
+        const projectedWire = rawMessages
+          ? observeHistoryWireMessages(history)
+          : wire;
         const projectedCheckpoints =
           historyState && !capturedBranch ? checkpointViews(history) : undefined;
         // Even a plain projection can invoke getters supplied by a transport.
@@ -2903,6 +2968,8 @@ export function createSession(
         state = projected;
         values = projectedValues;
         interrupts = projectedInterrupts;
+        if (rawMessages) wire = projectedWire;
+        toolProgress = new Map();
         if (!capturedBranch) historyPage = projectedHistory;
         if (projectedCheckpoints) checkpointPage = projectedCheckpoints;
         subgraphs = initialSubgraphs(restoredChildren.subgraphs);
