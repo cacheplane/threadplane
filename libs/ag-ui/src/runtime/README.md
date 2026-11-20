@@ -401,8 +401,12 @@ nothing failed or when the last run was not a failed submission. It rejects
 without sending when the error's `recovery` is not `'retry'`, because the
 failure leaves the backend outcome open.
 
-- A failed resume is not retried. Its decision stays `uncertain`, as described
-  under "Correlated native resume".
+- A failed resume whose answer may have arrived is not retried. Its decision
+  stays `uncertain`, as described under "Correlated native resume". The one
+  resume `retry()` sends again is an answer that provably reached no run: its
+  request was never made, or the backend refused it with its own `RUN_ERROR`
+  before any `RUN_STARTED`. The pause is then pending again, and `retry()`
+  sends the same answers, message and state under a new run id.
 - With a client-tool catalog, `retry()` sends the failed request again,
   whichever request of the command that was: the submission itself, or the
   continuation that carried local tool results. The request is rebuilt from what
@@ -866,6 +870,65 @@ support are unproved. Literal false and native cancellation differ from the
 `{ approved: false }` application payload. Cancellation completion does not prove
 durable snapshot deletion. This local proof establishes neither hosted-model or
 remote-agent compatibility nor persistence, recovery or public backend exports.
+
+## Live suite
+
+`npx nx run ag-ui:runtime-live` creates real sessions, in Node with no browser,
+against real backends, and asserts the session features no app exercises yet.
+The files are in `fixtures/react-parity/native-ag-ui-live`.
+
+- **Python.** The unchanged cockpit graphs for interrupts, client tools and
+  subagents, each behind the real `ag-ui-langgraph` bridge and started with
+  uvicorn, as the cockpit e2e setups start them. The model is replayed from the
+  recorded fixtures those setups use. The subagents graph is served by
+  `activity_service.py`, which publishes each delegation as an `ACTIVITY`
+  record of type `subagent`, the convention that graph's own server had before
+  the protocol's `SUBAGENT_*` events.
+- **Mastra.** The hosting service in `deployments/ag-ui-mastra` with the
+  scripted model its own tests use, over HTTP and over the in-process
+  `MastraAgent` the service wraps.
+- **A recording server** stands in front of a backend, as an application's own
+  server does. It keeps each thread's events, which is what `httpReplay` and a
+  `persistence.reconcile` ask a server for. It can turn a request away with a
+  `RUN_ERROR` before any run starts, and drop the connection before the client
+  reads a run's `RUN_FINISHED`.
+
+The target first runs `prepare.mjs`, which syncs the uv environment named by
+`THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT` (the client-tools candidate proof's,
+default `/tmp/threadplane-agui-client-tools-native-fixture-env`) from the
+client-tools project's frozen lock, and installs the Mastra service's
+dependencies when they are missing. It needs `uv` and Python 3.12. The three
+Python backends run in that one environment: their locks pin the same bridge,
+protocol and server versions.
+
+What it covers: each `interruptTransport` profile (`legacy-command` and `auto`
+against the bridge's notice, the default, `protocol` and `auto` against the
+protocol's outcome on the bridge and on Mastra, and `mastra-command` against
+Mastra); `inputBlocked`; resume with a message and a state patch; `retry` of an
+answer the server refused; `checkStatus` from the server's record;
+`persistence` and `replay` across a reload, with `load()` and the lifecycle;
+the `clientTools` capability with `pendingClientTools` and
+`streamingToolCalls`; `retry` and `regenerate` with a handler map;
+`runWithoutMessage`; submitted blocks; `errorDiagnostic`; children from
+activity records; a session over a client agent that is not HTTP; and the core
+session conformance checks.
+
+What these backends showed:
+
+- The bridge answers a model failure by closing the connection, with no
+  `RUN_ERROR`. That is a failed transport to the session, so it is not
+  retryable, and a session with a handler map is then blocked
+  (`inputBlocked.reason: 'client-tools'`).
+- The bridge does not take a shorter history as a request to answer again. It
+  keeps the thread itself, so after `regenerate` its closing snapshot lists the
+  earlier answer beside the new one.
+- The bridge ignores a user message sent with a resume: its closing snapshot
+  does not list it.
+- Mastra needs the `interruptEvent` of `mastra-command`. Answered with
+  `legacy-command`, it pauses again.
+- An activity record and a tool result cannot share an identifier: the session
+  keeps one record for each. The Angular adapter kept activities apart from
+  messages and accepted that.
 
 ## Messages snapshots
 

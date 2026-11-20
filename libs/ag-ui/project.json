@@ -72,6 +72,13 @@
         "command": "node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-tests.json && node ./node_modules/typescript/bin/tsc --project libs/ag-ui/tsconfig.runtime-conformance.json"
       }
     },
+    "runtime-live": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "node fixtures/react-parity/native-ag-ui-live/prepare.mjs && node --test --test-concurrency=1 fixtures/react-parity/native-ag-ui-live/python.live.spec.mjs fixtures/react-parity/native-ag-ui-live/mastra.live.spec.mjs"
+      }
+    },
     "prepare-install": {
       "executor": "nx:run-commands",
       "cache": true,

@@ -714,6 +714,15 @@
       "note": "Isolated Node verification for the private AG-UI request owner; broader CI and release migration remain open."
     },
     {
+      "id": "asset:libs/ag-ui/tsconfig.runtime-conformance.json",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Type-checks the one runtime spec that registers the core conformance suites, with the platform timer declarations core documents; every other runtime file stays checked without them by tsconfig.runtime-tests.json."
+    },
+    {
       "id": "asset:libs/ag-ui/tsconfig.type-tests.json",
       "taskIds": [
         "T02",
