@@ -161,3 +161,122 @@ images and preserves accepted URLs without bypassing Angular's sanitizer.
 The root remains headless. Rich math, syntax highlighting, citation overlays,
 custom registries, replacement of the public legacy renderer, SSR and hydration
 remain separate work.
+
+## The injected `Agent`
+
+`provideAgent` gives a component tree one `Agent`: a session's snapshot fields
+as signals, the session's commands, and what an injected instance needs because
+it outlives any one session. The package imports no backend; the config supplies
+a function that creates a session.
+
+```ts
+import { injectAgent, provideAgent } from '@threadplane/angular';
+
+// app.config.ts
+providers: [
+  provideAgent({
+    threadId: currentThreadId, // a string, null, or a signal the agent follows
+    onThreadId: (id) => router.navigate(['chat', id]),
+    createSession: ({ threadId, onThreadId }) =>
+      createSession({ assistantId: 'chat', apiUrl, threadId, onThreadId }),
+  }),
+];
+
+// component
+readonly agent = injectAgent();
+readonly count = computed(() => this.agent.messages().length);
+send(text: string) {
+  void this.agent.submit(text);
+}
+```
+
+`Agent<TSession>` is derived from the session type:
+
+- Every snapshot field is a read-only signal: `messages()`, `status()`,
+  `toolCalls()`, and a backend's own fields. An optional field is a signal of
+  its value or `undefined`. A field's signal notifies only when that field's
+  own value changes.
+- Every session command passes through with its own signature: `submit`,
+  `stop`, and optional or backend commands such as `regenerate`, `resume` or
+  `fork`. An optional command the session lacks is `undefined`, so a view can
+  ask whether it exists.
+- Where a session member and a snapshot field share a name, the session member
+  is the one exposed.
+- `getSnapshot`, `subscribe` and `dispose` are not exposed. The agent owns its
+  sessions and disposes the last one with its injector.
+
+The agent adds:
+
+| Member | What it is |
+| --- | --- |
+| `threadId()` | The thread the agent is on, or `null` before one exists. |
+| `switchThread(id \| null)` | Moves to another thread, or to a new empty one. |
+| `isThreadLoading()` | True while the selected thread's history is read. |
+| `customEvents()` | The current run's custom events, oldest first. |
+| `lifecycle` | Milestone timestamps as signals; also `AGENT_LIFECYCLE`. |
+
+### Thread switching
+
+A session belongs to one thread. `switchThread`, or a change of the configured
+`threadId` signal to a different id, asks the config for a new session. The old
+session's subscriptions are released first, then it is stopped and disposed, so
+nothing it does afterwards reaches the agent. Every signal and command on the
+agent stays the same reference and follows the new session. `switchThread` with
+the current id reloads that thread.
+
+When a thread is selected and the session offers `load`, its history is read
+automatically. A session that creates its own thread reports the id through the
+factory's `onThreadId`; the agent adopts it without switching, so the run that
+created the thread continues.
+
+`createSession` runs in the agent's injection context each time, so it may call
+`inject()`. It also receives `clientOptions` from `AGENT_CLIENT_OPTIONS` (set
+with `provideAgentClientOptions`) and the host's operation failure reporter.
+
+### Typed refs and several agents
+
+```ts
+export const TRIP = createAgentRef<TripSession>('trip');
+providers: [provideAgent(TRIP, { createSession: … })];
+readonly agent = injectAgent(TRIP); // Agent<TripSession>
+```
+
+Each `provideAgent(ref, …)` call builds its own agent, so several refs can share
+one `providers` array. The ref-less `injectAgent()` then resolves the last one
+provided and warns in development mode; inject by ref instead.
+
+A config may also be a `() => AgentConfig` factory. It runs once, in an
+injection context.
+
+### Custom events and lifecycle
+
+`customEvents()` retains what `onCustomEvent` delivered during the current run.
+It is empty again when the next run starts and when the agent switches threads,
+and stays empty on a session without `onCustomEvent`. `agent.onCustomEvent`
+itself keeps a listener registered across thread switches.
+
+`agent.lifecycle` mirrors the session's `lifecycle` source and returns to null
+on a thread switch. `AgentLifecycleRegistry`, provided in the root injector,
+lists the lifecycle of every live agent for instrumentation.
+
+### Without a backend
+
+```ts
+providers: [provideFakeAgent({ tokens: ['Hi', ' there'], delayMs: 0 })];
+```
+
+`provideFakeAgent` provides the same `Agent` over the in-memory session from
+`@threadplane/core/testing`. Each submit streams a canned reply; a new thread is
+named on its first submit, and a thread comes back with its messages when the
+agent returns to it. `injectFakeAgentSession()` returns a signal of the current
+fake session's controls for a test to drive.
+
+### How member names are resolved
+
+The agent reads each name from the session first, then from the snapshot. A
+name found in neither is an optional snapshot field that is not set yet, so it
+reads as a signal of `undefined`. The exceptions read as `undefined`: the
+optional commands of the core contract and the first-party backends, any name in
+`AgentConfig.optionalCommands`, and names that tools probe on arbitrary objects,
+such as `then` and `toJSON`. A backend that adds an optional command lists it in
+`optionalCommands`.
