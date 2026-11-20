@@ -308,8 +308,11 @@ export function assertTextTranscript(messages: readonly Message[]) {
     child.messages[0].content = 'changed';
     // @ts-expect-error Child streams have no execution commands.
     child.submit('Run');
-    // @ts-expect-error Child streams have no executable tool list.
-    void child.toolCalls;
+    // A child's tool calls are observations of the child graph; nothing here runs them.
+    // @ts-expect-error Child tool calls are immutable.
+    child.toolCalls.push(child.toolCalls[0]);
+    // @ts-expect-error Child streams have no tool execution command.
+    child.addToolResult('id', 'result');
     if (child.state) {
       // @ts-expect-error Child values are readonly plain data.
       child.state['stage'] = 'changed';

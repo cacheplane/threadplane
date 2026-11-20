@@ -1062,6 +1062,7 @@ test('React chat requires its real supported export', () => {
   supported.citationsWithToolSources = component;
   supported.SubagentCard = component;
   supported.subagentsFromEvidence = component;
+  supported.sessionSubagents = component;
   supported.StatusPanel = component;
   supported.ChatError = component;
   supported.TypingIndicator = component;
