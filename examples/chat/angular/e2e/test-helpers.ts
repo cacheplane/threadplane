@@ -79,7 +79,7 @@ export async function activeThreadIdFromUrl(page: Page): Promise<string | null> 
  * Locate the chat-select trigger inside a toolbar field by its label.
  *
  * The toolbar's four dropdowns (Model, Effort, Gen UI, Theme) use the
- * @threadplane/chat `chat-select` primitive — not native <select>. The trigger
+ * @threadplane/angular/chat `chat-select` primitive — not native <select>. The trigger
  * is the button users click to open the popover.
  *
  * After PR #444 dropped the visible label text from the toolbar, the

@@ -15,7 +15,7 @@ export interface DevelopmentRuntimeOptions {
   packageName:
     | '@threadplane/langgraph'
     | '@threadplane/ag-ui'
-    | '@threadplane/render';
+    | '@threadplane/angular';
   packageVersion: string;
   /** Opaque package-local correlation, never identity or authorization. */
   installationToken?: string | null;

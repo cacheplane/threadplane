@@ -17,7 +17,7 @@ The A2UI (Agent-to-UI) protocol layer behind generative UI in [Threadplane](http
 - **Streaming message parser** — `createA2uiMessageParser()` returns a stateful parser that accepts JSONL chunks from a streaming agent response and emits typed `A2uiMessage` values as lines complete.
 - **Dynamic value resolution** — `resolveDynamic()` resolves a dynamic value (bare literal or `{ path }` binding) against a client data model; `isPathRef` / `isFunctionCall` guards narrow dynamic values before use.
 - **JSON-pointer utilities** — `getByPointer`, `setByPointer`, and `deleteByPointer` navigate and mutate the A2UI client data model using JSON-pointer paths, including the v0.9 array-delete rule (index set to `undefined`, length preserved).
-- **Runtime-neutral** — pure TypeScript, no runtime dependencies, works in browsers and Node.js alike. Consumed by `@threadplane/chat` to render agent-emitted generative UI.
+- **Runtime-neutral** — pure TypeScript, no runtime dependencies, works in browsers and Node.js alike. Consumed by `@threadplane/angular/chat` to render agent-emitted generative UI.
 
 ## Install
 

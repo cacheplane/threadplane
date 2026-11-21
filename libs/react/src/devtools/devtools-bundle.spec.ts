@@ -3,7 +3,7 @@ import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
 /**
- * The React twin of `libs/chat/scripts/verify-devtools-bundle.mjs`: bundle the
+ * The React twin of `libs/angular/scripts/verify-devtools-bundle.mjs`: bundle the
  * render and debug entries as an application build would, and prove that a
  * production build keeps nothing of the DevTools reporting while a
  * development build of the same entry keeps all of it.

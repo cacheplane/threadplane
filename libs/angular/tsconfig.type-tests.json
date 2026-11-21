@@ -1,0 +1,12 @@
+{
+  // The type check of the Angular binding's own sources and specs. The chat UI
+  // checks its specs through tsconfig.chat-type-tests.json; tsconfig.spec.json
+  // stays broad because the test compiler builds every spec through it.
+  "extends": "./tsconfig.spec.json",
+  "include": [
+    "src/**/*.ts",
+    "chat/src/*.ts",
+    "markdown/src/**/*.ts",
+    "testing/src/**/*.ts"
+  ]
+}

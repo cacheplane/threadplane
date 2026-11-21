@@ -1026,11 +1026,11 @@ test('private core rejects CommonJS executable exports', (t) => {
   assert.ok(validatePackage(directory).some((error) => error.includes('runtime must resolve to JavaScript')));
 });
 test('validates final package manifests separately from private scaffolding', (t) => {
-  const directory = fixture(t, { manifest: { name: '@threadplane/render', private: false } });
+  const directory = fixture(t, { manifest: { name: '@threadplane/angular/render', private: false } });
   assert.deepEqual(validatePackage(directory, { angularTransitions: [] }), []);
 });
 test('package validation rejects final-role manifest dependencies without imports', (t) => {
-  const directory = fixture(t, { manifest: { name: '@threadplane/render', dependencies: { '@threadplane/content': '*' } } });
+  const directory = fixture(t, { manifest: { name: '@threadplane/angular/render', dependencies: { '@threadplane/content': '*' } } });
   assert.ok(validatePackage(directory, { angularTransitions: [] }).some((error) => error.includes('forbidden dependencies')));
 });
 const angularManifest = { name: '@threadplane/angular', exports: { './package.json': { default: './package.json' }, '.': { types: './types/threadplane-angular.d.ts', default: './fesm2022/threadplane-angular.mjs' } } };
@@ -1181,7 +1181,7 @@ for (const project of ['core', 'content', 'react']) {
   });
 }
 test('final packages reject non-JavaScript executable exports', (t) => {
-  const directory = fixture(t, { manifest: { name: '@threadplane/render', exports: { '.': { types: './src/index.d.ts', default: './README.md' } } } });
+  const directory = fixture(t, { manifest: { name: '@threadplane/angular/render', exports: { '.': { types: './src/index.d.ts', default: './README.md' } } } });
   assert.ok(validatePackage(directory).some((error) => error.includes('runtime must resolve to JavaScript')));
 });
 for (const project of ['render', 'react']) {
@@ -1209,7 +1209,7 @@ test('stylesheet exports require their target file', (t) => {
 });
 for (const entry of [null, 42, []]) {
   test(`malformed export ${JSON.stringify(entry)} produces a validation error`, (t) => {
-    const directory = fixture(t, { manifest: { name: '@threadplane/render', exports: { '.': entry } } });
+    const directory = fixture(t, { manifest: { name: '@threadplane/angular/render', exports: { '.': entry } } });
     assert.ok(validatePackage(directory).length > 0);
   });
 }

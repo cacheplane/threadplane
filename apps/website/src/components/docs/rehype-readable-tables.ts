@@ -152,7 +152,7 @@ function isCodeOnly(cell: HastNode): boolean {
 
 /**
  * A code span with no whitespace is one identifier — `--tplane-chat-bg`,
- * `@threadplane/chat`. Breaking it at a hyphen or slash misreads as two
+ * `@threadplane/angular/chat`. Breaking it at a hyphen or slash misreads as two
  * tokens, so a short one is kept whole; a longer one may still break.
  */
 function markTokens(node: HastNode): void {

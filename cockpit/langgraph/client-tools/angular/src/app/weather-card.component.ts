@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import type { ClientToolViewProps } from '@threadplane/chat';
+import type { ClientToolViewProps } from '@threadplane/angular/chat';
 import { weatherCardSchema } from './schemas';
 
 /**

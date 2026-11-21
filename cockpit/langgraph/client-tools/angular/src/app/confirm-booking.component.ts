@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { ChatApprovalCardComponent, type ChatApprovalAction, type ClientToolViewProps } from '@threadplane/chat';
+import { ChatApprovalCardComponent, type ChatApprovalAction, type ClientToolViewProps } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
-import { injectRenderHost } from '@threadplane/render';
+import { injectRenderHost } from '@threadplane/angular/render';
 import { CLIENT_TOOLS_AGENT_REF } from './agent-ref';
 import { confirmBookingSchema } from './schemas';
 

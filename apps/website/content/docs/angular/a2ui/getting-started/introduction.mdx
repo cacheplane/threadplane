@@ -6,7 +6,7 @@ description: The protocol layer for A2UI messages, taught through the flight-boo
 
 `@threadplane/a2ui` is the protocol layer for A2UI messages. It gives the rest of the framework a shared TypeScript vocabulary for agent-built surfaces, streamed JSONL messages, dynamic values, and outbound action payloads.
 
-It does not render Angular components. It does not register handler functions. It does not decide how an agent should respond to a button click. Those jobs sit in `@threadplane/chat` and `@threadplane/render`.
+It does not render Angular components. It does not register handler functions. It does not decide how an agent should respond to a button click. Those jobs sit in `@threadplane/angular/chat` and `@threadplane/angular/render`.
 
 The running example is a flight booking flow. The agent authors each screen as an A2UI surface, and this page walks the files that produce it.
 
@@ -47,7 +47,7 @@ The model authors the components; the code writes the wire format. `_wrap_envelo
 The demo emits `createSurface`, then `updateComponents`, then `updateDataModel`. The protocol requires only that `createSurface` comes first and that a component with id `root` is defined before anything paints.
 
 <Callout type="info" title="The sentinel is what switches the client into A2UI mode">
-`A2UI_PREFIX` is `---a2ui_JSON---`. The content classifier in `@threadplane/chat` looks for exactly that string at the start of assistant content and routes the rest of the message into the A2UI pipeline instead of the markdown renderer.
+`A2UI_PREFIX` is `---a2ui_JSON---`. The content classifier in `@threadplane/angular/chat` looks for exactly that string at the start of assistant content and routes the rest of the message into the A2UI pipeline instead of the markdown renderer.
 </Callout>
 
 ### The node that authors the form
@@ -97,7 +97,7 @@ Nothing in this file is specific to A2UI; the surfaces travel as assistant messa
 
 ### Giving the chat composition a catalog
 
-The client side is one input. `a2uiBasicCatalog()` from `@threadplane/chat` returns a view registry covering all eighteen components of the A2UI basic catalog, and passing it as `[views]` is what lets `<chat>` mount a surface.
+The client side is one input. `a2uiBasicCatalog()` from `@threadplane/angular/chat` returns a view registry covering all eighteen components of the A2UI basic catalog, and passing it as `[views]` is what lets `<chat>` mount a surface.
 
 <ExampleCode file="a2ui.component.ts" title="a2ui.component.ts" />
 
@@ -123,7 +123,7 @@ The demo shows the protocol from the agent side. The package is the same protoco
 | Data access | `getByPointer()`, `setByPointer()`, `deleteByPointer()` |
 | Dynamic values | `resolveDynamic()`, `A2uiScope`, `isPathRef` / `isFunctionCall` guards |
 
-Use this package when you are building an adapter, validating an agent stream, testing A2UI payloads, or integrating a custom renderer with the same protocol surface that `@threadplane/chat` uses. Rendering the surfaces inside `<chat>`, as the demo does, needs none of it directly.
+Use this package when you are building an adapter, validating an agent stream, testing A2UI payloads, or integrating a custom renderer with the same protocol surface that `@threadplane/angular/chat` uses. Rendering the surfaces inside `<chat>`, as the demo does, needs none of it directly.
 
 ## Message flow
 
@@ -152,9 +152,9 @@ That posture is intentional. Agent streams are partial by nature. The low-level 
 
 ## Relationship to chat and render
 
-`@threadplane/chat` detects A2UI content in assistant output, feeds the JSONL stream into `createA2uiMessageParser()`, applies messages to its surface store, and renders those surfaces through the A2UI render components.
+`@threadplane/angular/chat` detects A2UI content in assistant output, feeds the JSONL stream into `createA2uiMessageParser()`, applies messages to its surface store, and renders those surfaces through the A2UI render components.
 
-`@threadplane/render` owns Angular component resolution, event dispatch, state updates, and handler execution. The A2UI package only describes protocol shapes and helper behavior.
+`@threadplane/angular/render` owns Angular component resolution, event dispatch, state updates, and handler execution. The A2UI package only describes protocol shapes and helper behavior.
 
 That separation matters when debugging:
 

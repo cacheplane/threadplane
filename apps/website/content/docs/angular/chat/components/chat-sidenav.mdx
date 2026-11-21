@@ -11,7 +11,7 @@ description: The ChatSidenavComponent thread list - its inputs and outputs, the 
 **Import:**
 
 ```typescript
-import { ChatSidenavComponent } from '@threadplane/chat';
+import { ChatSidenavComponent } from '@threadplane/angular/chat';
 ```
 
 ## When to Use It
@@ -35,7 +35,7 @@ It expects a backend that can actually enumerate and restore threads. `provideTh
 
 ```typescript
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { ChatComponent, ChatSidenavComponent } from '@threadplane/chat';
+import { ChatComponent, ChatSidenavComponent } from '@threadplane/angular/chat';
 import { injectAgent, injectThreadDirectory, refreshOnRunEnd } from '@threadplane/angular';
 
 @Component({

@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { ChatSidebarComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent } from '@threadplane/chat';
+import { ChatSidebarComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent } from '@threadplane/angular/chat';
 import { DemoShell } from '../shell/demo-shell.component';
 import { DEMO_AGENT } from '../shell/shell-tokens';
 import { MapCanvasComponent } from '../map-canvas.component';

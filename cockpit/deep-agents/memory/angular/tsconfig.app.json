@@ -17,10 +17,7 @@
       "path": "../../../../libs/example-layouts"
     },
     {
-      "path": "../../../../libs/render"
-    },
-    {
-      "path": "../../../../libs/chat"
+      "path": "../../../../libs/angular"
     },
     {
       "path": "../../../../libs/langgraph"

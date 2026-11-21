@@ -4,7 +4,7 @@ description: How RENDER_LIFECYCLE exposes mount, state-change, and handler signa
 
 # Render Lifecycle Signals
 
-The `@threadplane/render` library exposes per-context lifecycle signals through the `RENDER_LIFECYCLE` injection token. The signals are fed by the same `RenderEvent` stream `<render-spec>` emits, through three `notify*` methods on `RenderLifecycleService`, so there is no double-counting.
+The `@threadplane/angular/render` entry point exposes per-context lifecycle signals through the `RENDER_LIFECYCLE` injection token. The signals are fed by the same `RenderEvent` stream `<render-spec>` emits, through three `notify*` methods on `RenderLifecycleService`, so there is no double-counting.
 
 ## Prerequisite: provideRender()
 
@@ -13,7 +13,7 @@ The `@threadplane/render` library exposes per-context lifecycle signals through 
 ```typescript
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
-import { provideRender } from '@threadplane/render';
+import { provideRender } from '@threadplane/angular/render';
 
 export const appConfig: ApplicationConfig = {
   providers: [provideRender({ registry })],
@@ -65,7 +65,7 @@ Only mounts are recorded. `destroyed` lifecycle events are pushed through the sa
 
 ```typescript
 import { Component, inject, effect } from '@angular/core';
-import { RENDER_LIFECYCLE } from '@threadplane/render';
+import { RENDER_LIFECYCLE } from '@threadplane/angular/render';
 
 @Component({ /* ... */ })
 export class MyComponent {

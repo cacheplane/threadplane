@@ -1,11 +1,11 @@
 ---
-description: Install @threadplane/chat with the LangGraph or AG-UI backend package, confirm the Angular and peer-dependency requirements, and render a first chat surface.
+description: Install @threadplane/angular and a LangGraph or AG-UI backend package, confirm the Angular and peer requirements, and render a first chat surface.
 ---
 
 # Installation
 
-Install `@threadplane/chat`, the Angular binding, a backend package, and the
-markdown parser. Every
+Install `@threadplane/angular`, a backend package, and the markdown parser. The chat UI
+is the package's `@threadplane/angular/chat` entry point. Every
 Threadplane package is MIT-licensed; setup requires no registration, activation,
 or runtime key.
 
@@ -15,7 +15,7 @@ Supported Angular majors: 20, 21, and 22.
 
 <Steps>
 <Step title="Angular 20–22">
-`@threadplane/chat` uses Angular Signals, `input()`, and `contentChildren()`. Run `ng version` to confirm that your project uses Angular 20, 21, or 22.
+`@threadplane/angular/chat` uses Angular Signals, `input()`, and `contentChildren()`. Run `ng version` to confirm that your project uses Angular 20, 21, or 22.
 </Step>
 <Step title="Node.js compatibility">
 Use a Node.js version supported by the selected Angular major. Angular 22 supports Node.js ^22.22.3, ^24.15.0, or ^26.0.0. See the [Angular compatibility matrix](https://angular.dev/reference/versions).
@@ -26,7 +26,7 @@ The chat UI needs something to talk to. Two backend packages cover virtually eve
 - **`@threadplane/langgraph`** — pick this if your backend is LangGraph or LangGraph Platform.
 - **`@threadplane/ag-ui`** — pick this for an AG-UI-compatible backend such as CrewAI, Mastra, Microsoft Agent Framework, AG2, Pydantic AI, or AWS Strands.
 
-Both export `createSession()`, and `provideAgent()` from `@threadplane/angular` turns either session into the same `Agent` for `@threadplane/chat`, so swapping later changes one factory. If you do not have a backend yet, use `provideFakeAgent()` from `@threadplane/angular/testing` to wire up the UI first.
+Both export `createSession()`, and `provideAgent()` from `@threadplane/angular` turns either session into the same `Agent` for `@threadplane/angular/chat`, so swapping later changes one factory. If you do not have a backend yet, use `provideFakeAgent()` from `@threadplane/angular/testing` to wire up the UI first.
 
 </Step>
 </Steps>
@@ -35,22 +35,23 @@ Both export `createSession()`, and `provideAgent()` from `@threadplane/angular` 
 
 ```bash
 # LangGraph backend
-npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
 
 # AG-UI-compatible backend
-npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client rxjs marked
+npm install @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client rxjs marked
 ```
 
 `@threadplane/angular` holds `provideAgent()` and `injectAgent()`, and
 `@threadplane/core` holds the session contract both backend packages implement.
 Your application imports from both, so list them in its own dependencies.
 
-`@threadplane/chat` also uses `@threadplane/telemetry`, `@threadplane/render`,
-`@threadplane/a2ui`, `@json-render/core`, RxJS, and Zod as peer dependencies.
-npm 7 and later install required peers automatically. KaTeX is optional.
+The chat UI also uses `@threadplane/telemetry`, `@threadplane/a2ui`, `@json-render/core`,
+RxJS, and Zod, which `@threadplane/angular` declares as peer dependencies. npm 7 and later
+install required peers automatically. Math rendering uses KaTeX, which your application
+installs and passes to `provideChatMath()` from `@threadplane/angular/chat/math` only if it wants math.
 
 <Callout type="info" title="Full peer dependency list">
-These are the peers `@threadplane/chat@0.3.7` declares. npm 7 and later install
+These are the peers `@threadplane/angular@0.3.7` declares. npm 7 and later install
 every required peer for you, so the install command above is enough.
 
 | Peer | Range | Required |
@@ -60,19 +61,18 @@ every required peer for you, so the install command above is enough.
 | `@angular/platform-browser` | `^20.0.0 \|\| ^21.0.0 \|\| ^22.0.0` | yes |
 | `@angular/router` | `^20.0.0 \|\| ^21.0.0 \|\| ^22.0.0` | yes |
 | `@threadplane/telemetry` | `^0.3.7` | yes |
-| `@threadplane/angular` | `0.3.7` | yes |
 | `@threadplane/core` | `0.3.7` | yes |
-| `@threadplane/render` | `0.3.7` | yes |
+| `@threadplane/content` | `0.3.7` | yes |
 | `@threadplane/a2ui` | `0.3.7` | yes |
 | `@json-render/core` | `^0.16.0` | yes |
 | `rxjs` | `~7.8.0` | yes |
 | `marked` | `^15.0.0 \|\| ^16.0.0` | yes |
 | `zod` | `^3.25.0 \|\| ^4.0.0` | yes |
-| `katex` | `^0.16.0 \|\| ^0.17.0` | optional |
 
-Installing `@threadplane/chat` therefore also brings in `@threadplane/telemetry`,
-`@threadplane/angular`, `@threadplane/core`, `@threadplane/render`, `@threadplane/a2ui`, `@json-render/core`, `rxjs`,
-`marked`, and `zod`.
+Installing `@threadplane/angular` therefore also brings in `@threadplane/telemetry`,
+`@threadplane/core`, `@threadplane/content`, `@threadplane/a2ui`, `@json-render/core`,
+`rxjs`, `marked`, and `zod`. An application that bundles only `provideAgent()` and
+`injectAgent()` includes none of the chat code they serve.
 </Callout>
 
 ## 2. Provide the agent
@@ -114,7 +114,7 @@ appearance by the `--tplane-chat-*` custom properties.
 
 ```ts
 import { Component } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 
 @Component({
@@ -131,8 +131,8 @@ If you do not have a backend yet, replace `provideAgent()` with
 `provideFakeAgent()` from `@threadplane/angular/testing`; see
 [Try without a backend](/docs/angular/chat/getting-started/try-without-a-backend).
 For a component test that needs no injector, `mockAgent()` from
-`@threadplane/chat` builds an `Agent` with writable fields. The
-`@threadplane/chat/testing` entry point re-exports both, and adds the session
+`@threadplane/angular/chat` builds an `Agent` with writable fields. The
+`@threadplane/angular/chat/testing` entry point re-exports both, and adds the session
 conformance runners and fixtures.
 
 ## Troubleshooting

@@ -1,10 +1,10 @@
 ---
-description: The two levels of @threadplane/chat UI — styled compositions like chat and chat-sidebar, versus headless primitives you assemble yourself — and how to choose.
+description: The two levels of @threadplane/angular/chat: styled compositions like chat and chat-sidebar, or headless primitives you assemble yourself, and how to choose.
 ---
 
 # Primitives vs Compositions
 
-`@threadplane/chat` gives you two levels of UI.
+`@threadplane/angular/chat` gives you two levels of UI.
 
 Use compositions when the default product shape is close to what you need. Use primitives when the layout, interaction model, or rendering policy is part of your application.
 
@@ -15,7 +15,7 @@ This matters because chat UI gets complicated fast. Message streaming, input sta
 The main composition is `<chat>`.
 
 ```ts
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 ```
 
 ```html
@@ -50,7 +50,7 @@ Use `<chat>` when you want the library to own the chat shell.
 `<chat-debug>` is also a composition. It is built for development and inspection, not end-user chat layout, and ships from the debug-only secondary entry point.
 
 ```ts
-import { ChatDebugComponent } from '@threadplane/chat/debug';
+import { ChatDebugComponent } from '@threadplane/angular/chat/debug';
 ```
 
 ```html
@@ -73,7 +73,7 @@ import {
   ChatSidenavComponent,
   ChatPopupComponent,
   ChatSidebarComponent,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 ```
 
 See the [Layout Modes](/docs/angular/chat/guides/layout-modes) guide for when to reach for each. `<chat-sidenav>` renders the built-in footer launcher by default: `[debug]` is already `true`, so pass `[debug]="false"` to suppress it.
@@ -89,7 +89,7 @@ import {
   ChatMessageListComponent,
   MessageTemplateDirective,
   ChatInputComponent,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 ```
 
 ```html

@@ -788,7 +788,7 @@
 }
 /* The install command is the primary CTA's whole payload and it is a single
  * shell line — 774px of it in a 470px pane, so the reader saw
- * `npm install @threadplane/chat @threadplane/langgraph @langcha…` and nothing
+ * `npm install @threadplane/angular @threadplane/langgraph @langcha…` and nothing
  * told them the rest existed. It has no meaningful line breaks, so wrapping is
  * strictly better than scrolling here: `anywhere` is the last resort for a
  * package name longer than a narrow pane. Held by a style contract. */

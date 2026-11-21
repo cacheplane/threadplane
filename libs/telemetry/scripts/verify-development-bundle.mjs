@@ -12,7 +12,7 @@ const { parseCollectionBatch } = await import(
 );
 
 const entry = `
-  import { createDevelopmentRuntime } from './dist/libs/telemetry/browser/fesm2022/threadplane-telemetry.mjs';
+  import { createDevelopmentRuntime } from './dist/libs/telemetry/browser/fesm2022/threadplane-telemetry-browser-development.mjs';
   const runtime = createDevelopmentRuntime({ integration: 'langgraph', packageName: '@threadplane/langgraph', packageVersion: '0.0.65' });
   if (globalThis.exercise) { runtime.touch(); runtime.milestone('transport.connected'); }
 `;
@@ -137,9 +137,9 @@ const embedsVersion = (source, version) =>
   source.includes(`THREADPLANE_PACKAGE_VERSION = '${version}'`);
 // The Angular renderer builds its own collector handle.
 {
-  const pkg = await manifest('render');
+  const pkg = await manifest('angular');
   const bundle = await readFile(
-    resolve('dist/libs/render/fesm2022/threadplane-render.mjs'),
+    resolve('dist/libs/angular/fesm2022/threadplane-angular-render.mjs'),
     'utf8'
   );
   assert(
@@ -152,7 +152,7 @@ const embedsVersion = (source, version) =>
   );
   assert(
     pkg.peerDependencies['@threadplane/telemetry'] !== '*',
-    'render must require the telemetry API version'
+    'angular must require the telemetry API version'
   );
 }
 // The backend packages are framework-neutral: they may not import the
@@ -190,28 +190,31 @@ for (const name of ['langgraph', 'ag-ui']) {
     `${name} must stay free of the telemetry package`
   );
 }
-// The chat package is the host: it hands the collector to the agent layer and
-// is the package that requires the telemetry API version.
+// The chat entry point is the host: it hands the collector to the agent layer
+// when the first chat component sets it up, never when the package loads, and
+// `@threadplane/angular` is the package that requires the telemetry API version.
 {
-  const pkg = await manifest('chat');
+  const pkg = await manifest('angular');
   const bundle = await readFile(
-    resolve('dist/libs/chat/fesm2022/threadplane-chat.mjs'),
+    resolve('dist/libs/angular/fesm2022/threadplane-angular-chat.mjs'),
     'utf8'
   );
   assert(
     bundle.includes('createDevelopmentRuntime') &&
       bundle.includes('registerDevelopmentRuntimePolicy') &&
-      bundle.includes('ɵsetAgentDevelopmentHost'),
+      bundle.includes('ɵsetAgentDevelopmentHost') &&
+      bundle.includes('ɵCHAT_RUNTIME'),
     'chat does not connect agents to the development collector'
   );
   assert(
     typeof pkg.peerDependencies['@threadplane/telemetry'] === 'string' &&
       pkg.peerDependencies['@threadplane/telemetry'] !== '*',
-    'chat must require the telemetry API version'
+    'angular must require the telemetry API version'
   );
-  assert(
-    (pkg.sideEffects ?? []).includes('./fesm2022/threadplane-chat.mjs'),
-    'chat must keep its entry module, which registers the collector'
+  assert.deepEqual(
+    pkg.sideEffects,
+    ['**/*.css'],
+    'only stylesheets may have side effects: the chat setup runs from its components'
   );
 }
 console.log(

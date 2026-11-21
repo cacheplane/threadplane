@@ -14,10 +14,10 @@ An Angular 20–22 application and a Node.js version supported by that Angular v
 ## 1. Install the packages
 
 ```sh
-npm install @threadplane/chat @threadplane/angular @threadplane/core marked
+npm install @threadplane/angular @threadplane/core marked
 ```
 
-`@threadplane/chat` is the chat interface. `@threadplane/angular` provides the agent your components inject, and its testing entry includes a fake agent. The fake agent streams fixed text through the same chat component you can later connect to your backend.
+`@threadplane/angular/chat` is the chat interface. `@threadplane/angular` provides the agent your components inject, and its testing entry includes a fake agent. The fake agent streams fixed text through the same chat component you can later connect to your backend.
 
 ## 2. Create a fake agent
 
@@ -45,7 +45,7 @@ Import the chat component and pass it the agent. Use this template in your app's
 ```ts
 // app.component.ts
 import { Component } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 
 @Component({

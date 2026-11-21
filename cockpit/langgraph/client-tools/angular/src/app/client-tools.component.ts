@@ -1,6 +1,6 @@
 import { Component, computed } from '@angular/core';
 import type { DeepReadonly } from '@threadplane/core';
-import { ChatComponent, tools, action, view, ask } from '@threadplane/chat';
+import { ChatComponent, tools, action, view, ask } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { z } from 'zod/v4';

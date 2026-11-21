@@ -19,4 +19,12 @@ describe('assemble-dist', () => {
     expect(manifest.scripts).toBeUndefined();
     expect(manifest.exports).not.toHaveProperty('./node/postinstall');
   });
+
+  it('publishes the development runtime as an entry point without the PostHog service', () => {
+    const manifest = createCanonicalPackageJson({ name: '@threadplane/telemetry', version: '0.0.30' });
+    expect(manifest.exports['./browser/development']).toEqual({
+      types: './browser/development/index.d.ts',
+      default: './browser/fesm2022/threadplane-telemetry-browser-development.mjs',
+    });
+  });
 });

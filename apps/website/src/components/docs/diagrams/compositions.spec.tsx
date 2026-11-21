@@ -45,7 +45,7 @@ describe('RenderHowItFits', () => {
   it('mounts and shows the spec-to-components pipeline', () => {
     const { container } = render(<RenderHowItFits />);
     const titles = Array.from(container.querySelectorAll('.tp-diagram-title')).map((t) => t.textContent);
-    expect(titles).toContain('@threadplane/render');
+    expect(titles).toContain('@threadplane/angular/render');
   });
 
   it('breaks each edge around its pill so the line does not show through the label', () => {
@@ -59,9 +59,9 @@ describe('RenderVsA2ui', () => {
   it('mounts and shows both packages under chat', () => {
     const { container } = render(<RenderVsA2ui />);
     const titles = Array.from(container.querySelectorAll('.tp-diagram-title')).map((t) => t.textContent);
-    expect(titles).toContain('@threadplane/render');
+    expect(titles).toContain('@threadplane/angular/render');
     expect(titles).toContain('@threadplane/a2ui');
-    expect(titles).toContain('@threadplane/chat');
+    expect(titles).toContain('@threadplane/angular/chat');
   });
 
   it('accents exactly the two surface nodes and wires exactly four edges', () => {
@@ -79,7 +79,7 @@ describe('MiddlewareHowItFits', () => {
   it('mounts and places the middleware between frontend and graph', () => {
     const { container } = render(<MiddlewareHowItFits />);
     const titles = Array.from(container.querySelectorAll('.tp-diagram-title')).map((t) => t.textContent);
-    expect(titles).toContain('@threadplane/chat');
+    expect(titles).toContain('@threadplane/angular/chat');
     expect(titles).toContain('threadplane-middleware');
     expect(titles).toContain('Your LangGraph graph');
   });

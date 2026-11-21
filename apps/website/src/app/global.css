@@ -93,7 +93,7 @@ pre.shiki code {
   line-height: inherit;
 }
 
-/* Long unbreakable tokens (e.g. package names like @threadplane/chat,
+/* Long unbreakable tokens (e.g. package names like @threadplane/angular/chat,
  * file paths like app.config.ts) live inside marketing headings and pull
  * the layout wider than the viewport on narrow phones. Allow breaking
  * within these tokens to prevent horizontal overflow. */

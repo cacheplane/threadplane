@@ -6,7 +6,7 @@ description: How the theming example swaps --tplane-chat-* custom properties at 
 
 This default guide describes the Angular components and their `--tplane-chat-*` token API. Choose **React** in Framework for the experimental composed React example: MessageList, Markdown and ChatInput with four local presets and eight `--tp-chat-*` tokens. Its palette changes preserve the draft, stream and saved-history owner; these React tokens do not claim the full Angular CSS API. Both frontends share the aviation graph, whose tagged title model updates metadata without adding title text to the answer stream. React candidates remain private source builds.
 
-`@threadplane/chat` styles every component with CSS custom properties. Colors, radii, fonts, spacing, and z-index layers all come from variables prefixed with `--tplane-chat-`, so matching an existing design system is a matter of setting those variables rather than writing component styles. The running example puts a theme picker beside a live conversation, so every token this page names is one click away from changing in front of you.
+`@threadplane/angular/chat` styles every component with CSS custom properties. Colors, radii, fonts, spacing, and z-index layers all come from variables prefixed with `--tplane-chat-`, so matching an existing design system is a matter of setting those variables rather than writing component styles. The running example puts a theme picker beside a live conversation, so every token this page names is one click away from changing in front of you.
 
 ## What the demo does
 
@@ -138,7 +138,7 @@ Under `prefers-reduced-motion: reduce` the library shortens animations and trans
 | `--tplane-chat-line-height` | `1.6` | Assistant text |
 | `--tplane-chat-line-height-tight` | `1.5` | User bubble |
 
-Three further families are declared alongside these and follow the same override rule: `--tplane-chat-citation-*` for citation markers and the sources panel, `--tplane-chat-z-*` for the named layers (overlay content, drawer, modal, menu, confirm dialog, sidenav, overlay container, A2UI modal and the debug pill and panel, each with a scrim token where it has a backdrop), and `--a2ui-*` for generative UI surfaces rendered inside the conversation. Four ready-made presets ship as `@threadplane/chat/themes/{default,material}-{light,dark}.css` and set only `--a2ui-*` values; see [the A2UI overview](/docs/angular/chat/a2ui/overview) for what those surfaces render.
+Three further families are declared alongside these and follow the same override rule: `--tplane-chat-citation-*` for citation markers and the sources panel, `--tplane-chat-z-*` for the named layers (overlay content, drawer, modal, menu, confirm dialog, sidenav, overlay container, A2UI modal and the debug pill and panel, each with a scrim token where it has a backdrop), and `--a2ui-*` for generative UI surfaces rendered inside the conversation. Four ready-made presets ship as `@threadplane/angular/chat/themes/{default,material}-{light,dark}.css` and set only `--a2ui-*` values; see [the A2UI overview](/docs/angular/chat/a2ui/overview) for what those surfaces render.
 
 ## Light and dark mode
 
@@ -226,7 +226,7 @@ Custom properties written against the earlier `--chat-*` names are inert. Rename
 | `--chat-success` | `--tplane-chat-success` |
 
 <Callout type="warning" title="There are no style constants to import">
-`@threadplane/chat` exports no theme or markdown style strings. `CHAT_THEME_STYLES` does not exist, and `CHAT_MARKDOWN_STYLES` is an internal constant that is deliberately not part of the public API. Theming is done through the custom properties above; custom markdown rendering uses `<chat-streaming-md>` or your own host styles around the exported `renderMarkdown()`.
+`@threadplane/angular/chat` exports no theme or markdown style strings. `CHAT_THEME_STYLES` does not exist, and `CHAT_MARKDOWN_STYLES` is an internal constant that is deliberately not part of the public API. Theming is done through the custom properties above; custom markdown rendering uses `<chat-streaming-md>` or your own host styles around the exported `renderMarkdown()`.
 </Callout>
 
 ## What's Next

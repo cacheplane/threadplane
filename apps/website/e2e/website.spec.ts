@@ -484,13 +484,13 @@ test('/llms-full.txt includes generated API reference content', async ({ request
     'a2ui',
     'ag-ui',
     'angular',
-    'chat',
+    'angular/chat',
+    'angular/render',
     'content',
     'core',
     'langgraph',
     'middleware/langgraph',
     'react',
-    'render',
     'telemetry',
   ]) {
     expect(body).toContain(`### @threadplane/${entrypoint}\n`);

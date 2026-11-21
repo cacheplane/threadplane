@@ -43,11 +43,9 @@ const THREADPLANE_PACKAGES = [
   { name: '@threadplane/a2ui', dist: 'a2ui' },
   { name: '@threadplane/ag-ui', dist: 'ag-ui' },
   { name: '@threadplane/angular', dist: 'angular' },
-  { name: '@threadplane/chat', dist: 'chat' },
   { name: '@threadplane/content', dist: 'content' },
   { name: '@threadplane/core', dist: 'core' },
   { name: '@threadplane/langgraph', dist: 'langgraph' },
-  { name: '@threadplane/render', dist: 'render' },
   { name: '@threadplane/telemetry', dist: 'telemetry' },
 ];
 
@@ -249,19 +247,19 @@ async function main() {
 
 async function readLocalVersion(localDistRoot) {
   const packageJson = JSON.parse(
-    await readFile(resolve(localDistRoot, 'chat', 'package.json'), 'utf8')
+    await readFile(resolve(localDistRoot, 'angular', 'package.json'), 'utf8')
   );
   return packageJson.version;
 }
 
 async function resolvePublishedVersion() {
   try {
-    return execSync('npm view @threadplane/chat version', {
+    return execSync('npm view @threadplane/angular version', {
       encoding: 'utf8',
     }).trim();
   } catch (error) {
     console.error(
-      'Could not resolve @threadplane/chat version from npm:',
+      'Could not resolve @threadplane/angular/chat version from npm:',
       error.message
     );
     exit(1);

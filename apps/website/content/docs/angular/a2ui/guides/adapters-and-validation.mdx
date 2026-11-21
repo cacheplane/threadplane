@@ -93,7 +93,7 @@ function renderText(props: { text: unknown }, model: Record<string, unknown>) {
 }
 ```
 
-The full mechanics — component resolution, event dispatch, action emission, surface store — are exactly what Threadplane's own Angular renderer, `@threadplane/chat`'s [`<a2ui-surface>`](/docs/angular/chat/a2ui/surface-component), already implements. If you are on Angular, use it rather than re-deriving it. A custom renderer makes sense when you are on another platform or have rendering needs the component does not cover.
+The full mechanics — component resolution, event dispatch, action emission, surface store — are exactly what Threadplane's own Angular renderer, `@threadplane/angular/chat`'s [`<a2ui-surface>`](/docs/angular/chat/a2ui/surface-component), already implements. If you are on Angular, use it rather than re-deriving it. A custom renderer makes sense when you are on another platform or have rendering needs the component does not cover.
 
 ## A tradeoff: the parser swallows parse errors
 

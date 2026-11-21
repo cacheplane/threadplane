@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRender } from '@threadplane/render';
+import { provideRender } from '@threadplane/angular/render';
 
 import { COMPUTED_FUNCTIONS_SPECS } from '../computed-functions/angular/src/app/specs';
 import { ComputedFunctionsComponent } from '../computed-functions/angular/src/app/computed-functions.component';

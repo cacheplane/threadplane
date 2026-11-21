@@ -34,6 +34,10 @@
       "types": "./browser/index.d.ts",
       "default": "./browser/fesm2022/threadplane-telemetry.mjs"
     },
+    "./browser/development": {
+      "types": "./browser/development/index.d.ts",
+      "default": "./browser/fesm2022/threadplane-telemetry-browser-development.mjs"
+    },
     "./README.md": "./README.md"
   },
   "peerDependencies": {

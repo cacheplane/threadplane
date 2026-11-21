@@ -7,7 +7,7 @@ Build an Angular chat UI over the neutral `Agent` contract:
   from `@threadplane/ag-ui`, and retrieve it with `injectAgent()` — no
   backend-specific code.
 - Render the conversation with `<chat [agent]="agent">` from
-  `@threadplane/chat`.
+  `@threadplane/angular/chat`.
 - Render the pending human-in-the-loop approval with
   `<chat-approval-card [agent]="agent">`. The interrupt arrives as the
   protocol-standard `RUN_FINISHED` outcome, listed by `agent.interrupts()`;

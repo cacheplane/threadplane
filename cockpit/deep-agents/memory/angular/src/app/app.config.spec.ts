@@ -31,7 +31,7 @@ vi.mock('@langchain/langgraph-sdk', async (importOriginal) => ({
     };
   },
 }));
-import { submitMessage } from '@threadplane/chat';
+import { submitMessage } from '@threadplane/angular/chat';
 import { MemoryComponent } from './memory.component';
 import { appConfig } from './app.config';
 import { MEMORY_SCOPE_OPTIONS } from './memory-scope';

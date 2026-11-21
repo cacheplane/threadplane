@@ -121,11 +121,11 @@
       "sha256": "52cd0e7c17dc4640ea3c29fb3c656d1d3bf8b7153e02d7cd6fbfab8ea3fca5b0"
     },
     {
-      "step": "- run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2",
+      "step": "- run: npx nx run-many -t test --projects=ag-ui,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2",
       "lanes": [
         "native"
       ],
-      "sha256": "fbeb0e244d0dbc8169f093540e0567176432c2b7b874621aa42b79026ff4154a"
+      "sha256": "e7040d78a00a311cc94bd50ad2166047493bcb4f26545ca0ebfa70f6617fc99f"
     },
     {
       "step": "- run: npx nx run-many -t build --projects=$LIBS --configuration=production",
@@ -139,7 +139,7 @@
       "lanes": [
         "packages"
       ],
-      "sha256": "04a604dbc1efa86d0c4f8ace3da7949977928887bf7d884399b764b3888b7f48"
+      "sha256": "ced2c5fa387b641ec732eaaa63b610c1e7ff1463c0ec30fbc252621e95988caf"
     },
     {
       "step": "- name: Verify canonical A2UI native graph",

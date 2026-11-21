@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../dist/out-tsc/type-tests",
+    "noEmit": true,
+    "rootDir": "../..",
+    "composite": false,
+    "declarationMap": false,
+    "emitDeclarationOnly": false,
+    "strict": true,
+    "noUnusedLocals": false,
+    "lib": [
+      "es2022",
+      "dom"
+    ],
+    "types": []
+  },
+  "include": [
+    "chat/src/**/*.type-spec.ts",
+    "chat/src/testing/type-assert.ts"
+  ]
+}

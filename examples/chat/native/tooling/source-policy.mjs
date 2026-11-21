@@ -35,9 +35,13 @@ const authored = (path) =>
 const installCollector = /^libs\/[^/]+\/\.install-collector$/;
 const installStub =
   /^libs\/[^/]+\/\.install-collector\/development-install\.(?:mjs|d\.ts|d\.mts)$/;
+// The telemetry package's environment reader is a tracked source module, not an
+// env file; `@threadplane/angular` builds against it. Admitted by exact path.
+const telemetryEnvSource = 'libs/telemetry/src/shared/env.ts';
 export const excludedSourcePath = (path) =>
   !installCollector.test(path) &&
   !installStub.test(path) &&
+  path !== telemetryEnvSource &&
   path
     .split('/')
     .some(

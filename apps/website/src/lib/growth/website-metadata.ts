@@ -42,7 +42,10 @@ export function acquisitionProperties(
   }
   return properties;
 }
+// `@threadplane/chat` and `@threadplane/render` moved into `@threadplane/angular`;
+// older pages and posts still show install commands that name them.
 const PACKAGES = [
+  '@threadplane/angular',
   '@threadplane/chat',
   '@threadplane/langgraph',
   '@threadplane/ag-ui',

@@ -106,7 +106,7 @@ Each handler calls both `agent.switchThread(id)` and `activeThreadId.set(id)`. `
 
 ## Connected sidebar
 
-`<chat-thread-sidebar>` from `@threadplane/chat` draws New chat, Projects, Recent and Archived for any `ThreadDirectory`. `injectThreadDirectory()` exposes the provided one as `directory`, so the minimal setup is the provider plus the component:
+`<chat-thread-sidebar>` from `@threadplane/angular/chat` draws New chat, Projects, Recent and Archived for any `ThreadDirectory`. `injectThreadDirectory()` exposes the provided one as `directory`, so the minimal setup is the provider plus the component:
 
 ```typescript
 // app.config.ts
@@ -123,7 +123,7 @@ providers: [
 
 ```typescript
 import { Component, signal } from '@angular/core';
-import { ChatThreadSidebarComponent } from '@threadplane/chat';
+import { ChatThreadSidebarComponent } from '@threadplane/angular/chat';
 import { injectAgent, injectThreadDirectory } from '@threadplane/angular';
 
 @Component({
@@ -192,7 +192,7 @@ Given the module-scoped signal and the directory the example already has, adding
 
 ```typescript
 import { Component } from '@angular/core';
-import { injectThreadRouting } from '@threadplane/chat';
+import { injectThreadRouting } from '@threadplane/angular/chat';
 import { injectThreadDirectory } from '@threadplane/angular';
 import { activeThreadIdState } from './threads.component';
 
@@ -246,7 +246,7 @@ injectThreadRouting({
 ### Configuration reference
 
 ```typescript
-import { injectThreadRouting, type ThreadRoutingConfig } from '@threadplane/chat';
+import { injectThreadRouting, type ThreadRoutingConfig } from '@threadplane/angular/chat';
 import { WritableSignal } from '@angular/core';
 import { NavigationExtras } from '@angular/router';
 

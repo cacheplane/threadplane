@@ -11,8 +11,8 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@threadplane/chat">
-    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Fchat?color=15253E&labelColor=0A0A0A&style=flat-square" />
+  <a href="https://www.npmjs.com/package/@threadplane/angular">
+    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Fangular?color=15253E&labelColor=0A0A0A&style=flat-square" />
   </a>
   <a href="https://angular.dev">
     <img alt="Angular 20 | 21 | 22" src="https://img.shields.io/badge/Angular-20%20%7C%2021%20%7C%2022-15253E?labelColor=0A0A0A&style=flat-square" />
@@ -53,21 +53,21 @@ state. These React packages remain private source builds; from a checkout, run
 ## Install
 
 ```bash
-npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/angular @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
 ```
 
 Talking to an AG-UI endpoint instead:
 
 ```bash
-npm install @threadplane/chat @threadplane/ag-ui @ag-ui/client @ag-ui/core marked
+npm install @threadplane/angular @threadplane/ag-ui @ag-ui/client @ag-ui/core marked
 ```
 
 **Peer dependencies:**
 
 ```
 @angular/core              ^20.0.0 || ^21.0.0 || ^22.0.0   # every Angular package here
-marked                     ^15.0.0 || ^16.0.0              # @threadplane/chat
-rxjs                       ~7.8.0                          # @threadplane/chat and both adapters
+marked                     ^15.0.0 || ^16.0.0              # @threadplane/angular/chat
+rxjs                       ~7.8.0                          # @threadplane/angular/chat and both adapters
 @langchain/core            ^1.1.33                         # @threadplane/langgraph
 @langchain/langgraph-sdk   ^1.7.4                          # @threadplane/langgraph
 @ag-ui/client              ^1.0.1                          # @threadplane/ag-ui
@@ -99,7 +99,7 @@ export const appConfig: ApplicationConfig = {
 // support-agent.component.ts
 import { Component } from '@angular/core';
 import { injectAgent } from '@threadplane/langgraph';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 
 @Component({
   imports: [ChatComponent],
@@ -121,7 +121,7 @@ Walkthrough: [Try without a backend](https://threadplane.ai/docs/angular/chat/ge
 ## One UI, two adapters
 
 When the UI works, point it at a real runtime. Only the provider changes — the
-component above is untouched, because `@threadplane/chat` consumes the
+component above is untouched, because `@threadplane/angular/chat` consumes the
 runtime-neutral `Agent` contract rather than any adapter type.
 
 ```typescript
@@ -159,10 +159,10 @@ bump silently changes a lockfile.
 
 | Package | Purpose | License |
 |---|---|---|
-| `@threadplane/chat` | The Angular agent chat surface: `<chat>`, headless primitives, opinionated compositions, interrupts, subagents, generative UI | MIT |
-| `@threadplane/langgraph` | LangGraph adapter; `provideAgent()` / `injectAgent()` expose a LangGraph run as Angular Signals | MIT |
-| `@threadplane/ag-ui` | AG-UI adapter; bridges any `@ag-ui/client`-compatible backend into the same chat surface | MIT |
-| `@threadplane/render` | `@json-render/core`-backed Angular render engine that maps JSON specs to your own components | MIT |
+| `@threadplane/angular` | Angular: `provideAgent()` / `injectAgent()` and an `Agent` of Signals; the chat UI at `/chat` (`<chat>`, headless primitives, compositions, interrupts, subagents, generative UI) and the `@json-render/core`-backed render engine at `/render` | MIT |
+| `@threadplane/core` | The framework-neutral `AgentSession` contract every backend session implements | MIT |
+| `@threadplane/langgraph` | LangGraph session: `createSession()` streams a LangGraph run into the session contract | MIT |
+| `@threadplane/ag-ui` | AG-UI session: `createSession()` bridges any `@ag-ui/client`-compatible backend into the same contract | MIT |
 | `@threadplane/a2ui` | A2UI protocol types, streaming parser, and dynamic-value resolver; pure TypeScript, no Angular dependency | MIT |
 | `@threadplane/middleware` | Backend middleware for client-declared tools; the `/langgraph` entrypoint targets LangGraph.js | MIT |
 | `@threadplane/telemetry` | Explicit Node and browser capture helpers for applications that choose to send events | MIT |
@@ -170,7 +170,7 @@ bump silently changes a lockfile.
 Generated UI renders through a registry you control:
 
 ```typescript
-import { provideViews, views } from '@threadplane/render';
+import { provideViews, views } from '@threadplane/angular/render';
 
 provideViews(views({ KpiCard: KpiCardComponent, DisruptionsTable: DisruptionsTableComponent }));
 ```
@@ -201,7 +201,7 @@ construction. This architecture is required because `toSignal()` must be called
 in an injection context and cannot be called again later.
 
 The runtime-neutral `Agent` contract is the stability boundary between adapters
-and the chat surface. `@threadplane/chat` consumes `Agent` — not
+and the chat surface. `@threadplane/angular/chat` consumes `Agent` — not
 `LangGraphAgent` — so swapping `@threadplane/langgraph` for
 `@threadplane/ag-ui` requires no changes to chat components or templates.
 

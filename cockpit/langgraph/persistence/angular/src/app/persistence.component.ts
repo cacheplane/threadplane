@@ -1,6 +1,6 @@
 import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
 import { Component, signal } from '@angular/core';
-import { ChatComponent, ChatWelcomeSuggestionComponent } from '@threadplane/chat';
+import { ChatComponent, ChatWelcomeSuggestionComponent } from '@threadplane/angular/chat';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession, type LangGraphSession } from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';

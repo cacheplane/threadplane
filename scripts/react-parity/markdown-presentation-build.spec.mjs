@@ -340,7 +340,8 @@ test('canonicalization tolerates duplicate physical records only with all the sa
 function consumerFixture(
   t,
   {
-    projects = ['content', 'core', 'react', 'angular'],
+    // `@threadplane/angular` requires a2ui and telemetry for its chat UI.
+    projects = ['content', 'core', 'react', 'angular', 'a2ui', 'telemetry'],
     manifests = {},
     root = fixture(),
   } = {}
@@ -359,6 +360,10 @@ function consumerFixture(
       dependencies:
         project === 'content'
           ? { a: '^1.0.0' }
+          : project === 'a2ui'
+          ? {}
+          : project === 'telemetry'
+          ? { '@threadplane/core': '0.0.1' }
           : { '@threadplane/content': '0.0.1' },
       ...manifests[project],
     });
@@ -395,7 +400,7 @@ function consumerFixture(
 }
 
 const a2uiFixture = (t, changes = {}) => consumerFixture(t, {
-  projects: ['content', 'core', 'react', 'angular', 'a2ui'],
+  projects: ['content', 'core', 'react', 'angular', 'a2ui', 'telemetry'],
   root: lock({ ...fixture().packages, ...Object.fromEntries(presentation.presentationSeeds.map(name => ['node_modules/' + name, pkg('1.0.0', name === '@angular/build' ? { dependencies: { a: '^1.0.0' } } : {})])) }),
   manifests: {
     content: { dependencies: { a: '^1.0.0' }, peerDependencies: { '@threadplane/a2ui': '^0.3.2' }, peerDependenciesMeta: { '@threadplane/a2ui': { optional: true } } },
@@ -408,25 +413,24 @@ const renderStateSeeds = [...presentation.presentationSeeds];
 const renderStateFixture = (t) => consumerFixture(t, {
   root: lock({ ...fixture().packages, ...Object.fromEntries(renderStateSeeds.map(name => ['node_modules/' + name, pkg('1.0.0', name === '@angular/build' ? {dependencies:{a:'^1.0.0'}} : {})])) }),
 });
-test('render-state has a separate exact mixed four-artifact profile without backend SDK or optional protocol', (t) => {
+test('render-state has a separate exact mixed six-artifact profile without backend SDK', (t) => {
   const input = renderStateFixture(t), before = JSON.stringify(input.root);
   assert.deepEqual(presentation.renderStatePresentationSeeds, renderStateSeeds);
   assert.ok(Object.isFrozen(presentation.renderStatePresentationSeeds));
   const derived = derivePresentationConsumer(input.root, input.tarballs, renderStateSeeds, 'render-state');
   assert.equal(derived.profile, 'render-state');
-  assert.equal(Object.keys(derived.artifacts).length, 4);
-  assert.equal(derived.lock.packages['node_modules/@threadplane/a2ui'], undefined);
+  assert.equal(Object.keys(derived.artifacts).length, 6);
   assert.ok(derived.lock.packages['node_modules/@json-render/core']);
   assertPresentationInstallation(input.consumer, derived, input.tarballs);
   assert.equal(JSON.stringify(input.root), before);
   for (const name of Object.keys(input.tarballs)) {
     const missing = {...input.tarballs}; delete missing[name];
-    assert.throws(() => derivePresentationConsumer(input.root, missing, renderStateSeeds, 'render-state'), /Exactly four render-state/);
+    assert.throws(() => derivePresentationConsumer(input.root, missing, renderStateSeeds, 'render-state'), /Exactly six render-state/);
   }
   for (const seeds of [renderStateSeeds.slice(1), [...renderStateSeeds, renderStateSeeds[0]]])
-    assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, seeds, 'render-state'), /Exactly eighteen selected render-state seeds/);
+    assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, seeds, 'render-state'), /Exactly twenty-two selected render-state seeds/);
 });
-for (const name of ['@langchain/langgraph-sdk', '@ag-ui/client', '@threadplane/a2ui', 'openai'])
+for (const name of ['@langchain/langgraph-sdk', '@ag-ui/client', 'openai'])
   test('render-state rejects selected and installed unrelated package ' + name, (t) => {
     const input = renderStateFixture(t);
     const derived = derivePresentationConsumer(input.root, input.tarballs, renderStateSeeds, 'render-state');
@@ -438,7 +442,7 @@ for (const name of ['@langchain/langgraph-sdk', '@ag-ui/client', '@threadplane/a
     writeJson(join(input.consumer, path, 'package.json'), {name,version:'1.0.0'});
     assert.throws(() => assertPresentationInstallation(input.consumer, derived, input.tarballs), /Unexpected/);
   });
-test('A2UI surfaces selects exact mixed native roots and five artifacts without changing root bytes', (t) => {
+test('A2UI surfaces selects exact mixed native roots and six artifacts without changing root bytes', (t) => {
   const input = a2uiFixture(t);
   const before = JSON.stringify(input.root);
   const derived = deriveA2ui(input);
@@ -457,11 +461,12 @@ test('A2UI surfaces fails closed on absent, wrong, mismatched, tampered or leaki
   const input = a2uiFixture(t);
   const derived = deriveA2ui(input);
   const missing = { ...input.tarballs }; delete missing['@threadplane/a2ui'];
-  assert.throws(() => deriveA2ui({ ...input, tarballs: missing }), /five A2UI surfaces tarballs required/);
+  assert.throws(() => deriveA2ui({ ...input, tarballs: missing }), /six A2UI surfaces tarballs required/);
   assert.throws(() => deriveA2ui({ ...input, tarballs: { ...input.tarballs, '@threadplane/a2ui': input.tarballs['@threadplane/core'] } }), /identity|name/);
   assert.throws(() => deriveA2ui(a2uiFixture(t, { manifests: { a2ui: { version: '0.2.0', dependencies: {} } } })), /does not satisfy/);
   assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, [], 'a2ui-unknown'), /Unknown presentation profile/);
-  assert.throws(() => derivePresentationConsumer(input.root, input.tarballs, presentation.presentationSeeds, 'markdown'), /four Markdown foundation tarballs required/);
+  const withoutTelemetry = { ...input.tarballs }; delete withoutTelemetry['@threadplane/telemetry'];
+  assert.throws(() => derivePresentationConsumer(input.root, withoutTelemetry, presentation.presentationSeeds, 'markdown'), /six Markdown foundation tarballs required/);
   const corrupt = structuredClone(derived); corrupt.lock.packages['node_modules/@threadplane/a2ui'].integrity = 'sha512-wrong';
   assert.throws(() => assertPresentationInstallation(input.consumer, corrupt, input.tarballs), /integrity/);
   const tarball = input.tarballs['@threadplane/a2ui'].slice(5), bytes = readFileSync(tarball);
@@ -1074,7 +1079,12 @@ test('selected React AG-UI rejects extra installed packages outside its exact ve
 
 const angularSeeds = [
   '@cacheplane/json-stream',
+  '@cacheplane/partial-json',
   '@cacheplane/partial-markdown',
+  '@angular/router',
+  '@json-render/core',
+  'marked',
+  'zod',
   '@angular/core',
   '@angular/common',
   '@angular/compiler',
@@ -1103,9 +1113,12 @@ const angularRoot = () => {
 };
 const angularFixture = (t, changes = {}) =>
   consumerFixture(t, {
-    projects: ['content', 'core', 'angular', 'langgraph'],
+    // `@threadplane/angular` requires a2ui and telemetry for its chat UI.
+    projects: ['content', 'core', 'angular', 'a2ui', 'telemetry', 'langgraph'],
     root: angularRoot(),
     manifests: {
+      a2ui: { version: '0.3.2', dependencies: {} },
+      telemetry: { dependencies: { '@threadplane/core': '0.0.1' } },
       angular: {
         dependencies: { '@threadplane/content': '0.0.1' },
         peerDependencies: { '@angular/core': '^1.0.0' },
@@ -1132,18 +1145,18 @@ const angularFoundationFixture = (t, changes = {}) => {
   const root = angularRoot();
   for (const path of Object.keys(root.packages))
     if (path.startsWith('node_modules/@langchain/')) delete root.packages[path];
-  return angularFixture(t, { projects: ['content', 'core', 'angular'], root, ...changes });
+  return angularFixture(t, { projects: ['content', 'core', 'angular', 'a2ui', 'telemetry'], root, ...changes });
 };
 const deriveAngularFoundation = (input, seeds = angularFoundationSeeds) =>
   derivePresentationConsumer(input.root, input.tarballs, seeds, 'angular-foundation');
 
 for (const [profile, makeFixture, seeds] of [
-  ['markdown', consumerFixture, ['a']],
   ['react-langgraph', reactFixture, reactSeeds],
   ['react-ag-ui', agUiReactFixture, agUiReactSeeds],
   ['react-render', renderReactFixture, renderReactSeeds],
-  ['angular-langgraph', angularFixture, angularSeeds],
-  ['angular-foundation', angularFoundationFixture, angularFoundationSeeds],
+  // Not the profiles that install Angular (markdown included):
+  // `@threadplane/angular` selects a2ui itself, so content's optional a2ui
+  // peer is satisfied there, never unselected.
 ]) {
   test(`${profile} retains its exact closure when content declares the unselected optional protocol peer`, (t) => {
     const input = makeFixture(t);
@@ -1164,7 +1177,7 @@ for (const [profile, makeFixture, seeds] of [
   });
 }
 
-test('Angular foundation requires exactly thirteen root seeds and only core, content and Angular tarballs', (t) => {
+test('Angular foundation requires exactly eighteen root seeds and only core, content, Angular, a2ui and telemetry tarballs', (t) => {
   const input = angularFoundationFixture(t);
   const before = JSON.stringify(input.root);
   const derived = deriveAngularFoundation(input);
@@ -1175,15 +1188,15 @@ test('Angular foundation requires exactly thirteen root seeds and only core, con
   assertPresentationInstallation(input.consumer, derived, input.tarballs);
   assert.equal(JSON.stringify(input.root), before);
   for (const name of angularFoundationSeeds)
-    assert.throws(() => deriveAngularFoundation(input, angularFoundationSeeds.filter(seed => seed !== name)), /thirteen selected Angular foundation seeds required/);
-  assert.throws(() => deriveAngularFoundation(input, [...angularFoundationSeeds, angularFoundationSeeds[0]]), /thirteen selected Angular foundation seeds required/);
+    assert.throws(() => deriveAngularFoundation(input, angularFoundationSeeds.filter(seed => seed !== name)), /eighteen selected Angular foundation seeds required/);
+  assert.throws(() => deriveAngularFoundation(input, [...angularFoundationSeeds, angularFoundationSeeds[0]]), /eighteen selected Angular foundation seeds required/);
   for (const name of Object.keys(input.tarballs)) {
     const tarballs = { ...input.tarballs };
     delete tarballs[name];
-    assert.throws(() => deriveAngularFoundation({ ...input, tarballs }), /Angular, core and content foundation tarballs required/);
+    assert.throws(() => deriveAngularFoundation({ ...input, tarballs }), /Angular, core, content, a2ui and telemetry tarballs required/);
   }
   for (const project of ['react', 'langgraph'])
-    assert.throws(() => deriveAngularFoundation({ ...input, tarballs: { ...input.tarballs, ['@threadplane/' + project]: input.tarballs['@threadplane/core'] } }), /foundation tarballs required/);
+    assert.throws(() => deriveAngularFoundation({ ...input, tarballs: { ...input.tarballs, ['@threadplane/' + project]: input.tarballs['@threadplane/core'] } }), /a2ui and telemetry tarballs required/);
 });
 
 test('Angular foundation keeps repository nested Vite placement and integrity without SDK or React', (t) => {
@@ -1394,9 +1407,9 @@ test('selected Angular uses the repository-locked Angular toolchain and SDK clos
     );
   assert.equal(
     Object.keys(selectPresentationLock(root, angularSeeds)).length,
-    654
+    659
   );
-  assert.equal(canonicalVendorGraph(root, angularSeeds).length, 430);
+  assert.equal(canonicalVendorGraph(root, angularSeeds).length, 435);
   assert.ok(
     Object.keys(derived.lock.packages).some((path) =>
       path.includes('/node_modules/', 'node_modules/'.length)
@@ -1435,7 +1448,7 @@ for (const name of angularSeeds) {
           angularSeeds.filter((seed) => seed !== name),
           'angular-langgraph'
         ),
-      /Exactly fourteen selected Angular seeds required/
+      /Exactly nineteen selected Angular seeds required/
     );
   });
 }
@@ -1450,7 +1463,7 @@ test('selected Angular rejects duplicate and arbitrary seeds', (t) => {
         [...angularSeeds, '@angular/build'],
         'angular-langgraph'
       ),
-    /Exactly fourteen selected Angular seeds required/
+    /Exactly nineteen selected Angular seeds required/
   );
   input.root.packages['node_modules/unrelated-server-package'] = pkg();
   assert.throws(
@@ -1843,7 +1856,7 @@ test('default Markdown profile still requires Angular and denies backend SDKs', 
   assert.throws(
     () =>
       derivePresentationConsumer(input.root, reactFixture(t).tarballs, ['a']),
-    /four Markdown foundation tarballs/
+    /six Markdown foundation tarballs/
   );
 });
 

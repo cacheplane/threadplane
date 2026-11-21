@@ -52,7 +52,7 @@ The server is a FastAPI application. `LangGraphAgent` wraps the compiled graph a
 
 ### Declaring the tool registry
 
-`tools()` builds a name-keyed registry, and each entry is one of three declarations from `@threadplane/chat`. `action()` takes a handler that runs in the browser and may return a promise, `view()` takes a component the model fills, and `ask()` takes a component that reports a value back. Every entry carries a description the model reads and a schema authored with `zod/v4`. The `weather_card` and `confirm_booking` entries take their schemas from `schemas.ts`, the file the registry and the two components it points at all import from.
+`tools()` builds a name-keyed registry, and each entry is one of three declarations from `@threadplane/angular/chat`. `action()` takes a handler that runs in the browser and may return a promise, `view()` takes a component the model fills, and `ask()` takes a component that reports a value back. Every entry carries a description the model reads and a schema authored with `zod/v4`. The `weather_card` and `confirm_booking` entries take their schemas from `schemas.ts`, the file the registry and the two components it points at all import from.
 
 ```ts
 import { z } from 'zod/v4';

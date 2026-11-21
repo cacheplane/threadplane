@@ -3,8 +3,8 @@ import {
   ChatComponent,
   ChatInterruptPanelComponent,
   ChatWelcomeSuggestionComponent,
-} from '@threadplane/chat';
-import type { InterruptAction } from '@threadplane/chat';
+} from '@threadplane/angular/chat';
+import type { InterruptAction } from '@threadplane/angular/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { injectAgent } from '@threadplane/angular';
 import type { PlainValue } from '@threadplane/core';

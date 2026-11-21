@@ -1,6 +1,6 @@
 import { exampleToolLabel } from '../../../../../shared/tool-presentation';
 import { Component } from '@angular/core';
-import { ChatComponent, views } from '@threadplane/chat';
+import { ChatComponent, views } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { WeatherCardComponent } from './weather-card.component';

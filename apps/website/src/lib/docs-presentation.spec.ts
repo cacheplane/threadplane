@@ -11,7 +11,7 @@ test.each([
   '/docs/react/ag-ui/guides/interrupts',
   '/docs/shared/middleware/getting-started/introduction',
   '/docs/api',
-  '/docs/api/render/RenderSpecComponent',
+  '/docs/api/angular/render/RenderSpecComponent',
 ])('uses the shared reading layout for %s', (path) => {
   expect(isDocsReadingRoute(path)).toBe(true);
 });

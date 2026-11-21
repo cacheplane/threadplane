@@ -89,7 +89,7 @@ test('long generated API names stay inside their article on a phone', async ({ p
   await page.setViewportSize({ width: 320, height: 900 });
   for (const path of [
     '/docs/api/angular/provideAgentClientOptions',
-    '/docs/api/render/defineAngularRegistry',
+    '/docs/api/angular/render/defineAngularRegistry',
     '/docs/api/langgraph/createLangGraphThreadDirectory',
   ]) {
     await page.goto(path);

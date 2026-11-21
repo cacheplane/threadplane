@@ -51,7 +51,7 @@ Tokens arrive character-by-character
 For custom message rendering outside of `ChatComponent`, reach for `createContentClassifier()`:
 
 ```typescript
-import { createContentClassifier } from '@threadplane/chat';
+import { createContentClassifier } from '@threadplane/angular/chat';
 
 // Create a classifier instance — no injection context required
 const classifier = createContentClassifier();
@@ -92,7 +92,7 @@ For lower-level control over JSON-to-Spec materialization:
 
 ```typescript
 import { createPartialJsonParser } from '@cacheplane/partial-json';
-import { createParseTreeStore } from '@threadplane/chat';
+import { createParseTreeStore } from '@threadplane/angular/chat';
 
 const parser = createPartialJsonParser();
 const store = createParseTreeStore(parser);
@@ -159,7 +159,7 @@ This makes the `errors` signal useful for diagnostics and debugging without disr
   </Card>
   <Card
     title="ContentClassifier API"
-    href="/docs/api/chat/createContentClassifier"
+    href="/docs/api/angular/chat/createContentClassifier"
   >
     Full API reference for createContentClassifier().
   </Card>

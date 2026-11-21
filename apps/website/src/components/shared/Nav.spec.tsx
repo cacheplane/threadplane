@@ -126,7 +126,7 @@ describe('Docs mobile navigation', () => {
       within(panel).getByRole('link', { name: /@threadplane\/langgraph/ }).getAttribute('href'),
     ).toBe('/langgraph');
     expect(
-      within(panel).getByRole('link', { name: /@threadplane\/render/ }).getAttribute('href'),
+      within(panel).getByRole('link', { name: /@threadplane\/angular\/render/ }).getAttribute('href'),
     ).toBe('/render');
     expect(
       within(panel).getByRole('link', { name: /Choosing an adapter/ }).getAttribute('href'),
@@ -254,12 +254,12 @@ describe('Docs mobile navigation', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Libraries' }));
     expect(
-      within(dialog).getByRole('link', { name: /@threadplane\/chat/ }).getAttribute('href'),
+      within(dialog).getByRole('link', { name: /@threadplane\/angular\/chat/ }).getAttribute('href'),
     ).toBe('/chat');
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Back to menu' }));
     expect(within(dialog).getByRole('button', { name: 'Libraries' })).toBeTruthy();
-    expect(within(dialog).queryByRole('link', { name: /@threadplane\/chat/ })).toBeNull();
+    expect(within(dialog).queryByRole('link', { name: /@threadplane\/angular\/chat/ })).toBeNull();
   });
 
   it('shows the footer lead above the Choosing-an-adapter link in the Libraries level', () => {
@@ -388,13 +388,13 @@ describe('Docs mobile navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
     const dialog = screen.getByRole('dialog', { name: 'Mobile navigation' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Libraries' }));
-    fireEvent.click(within(dialog).getByRole('link', { name: /@threadplane\/render/ }));
+    fireEvent.click(within(dialog).getByRole('link', { name: /@threadplane\/angular\/render/ }));
 
     expect(trackCtaClick).toHaveBeenCalledWith({
       surface: 'mobile_nav',
       destination_url: '/render',
       cta_id: 'mobile_nav_libraries_render',
-      cta_text: '@threadplane/render',
+      cta_text: '@threadplane/angular/render',
     });
   });
 

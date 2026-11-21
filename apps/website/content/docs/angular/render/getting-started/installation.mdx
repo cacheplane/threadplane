@@ -1,10 +1,10 @@
 ---
-description: Setup guide for @threadplane/render in an Angular 20-22 application: install the package and its peers, configure provideRender(), and verify the first render.
+description: Setup guide for @threadplane/angular/render in an Angular 20-22 app: install the package and its peers, configure provideRender(), and verify the first render.
 ---
 
 # Installation
 
-Detailed setup guide for `@threadplane/render` in your Angular application.
+Detailed setup guide for `@threadplane/angular/render` in your Angular application.
 
 ## Requirements
 
@@ -12,7 +12,7 @@ Supported Angular majors: 20, 21, and 22.
 
 <Steps>
 <Step title="Angular 20–22">
-`@threadplane/render` uses Angular Signals, the `input()` function, and the `NgComponentOutlet` directive. Angular 20, 21, or 22 is required.
+`@threadplane/angular/render` uses Angular Signals, the `input()` function, and the `NgComponentOutlet` directive. Angular 20, 21, or 22 is required.
 </Step>
 <Step title="Node.js compatibility">
 Use a Node.js version supported by the selected Angular major. Angular 22 supports Node.js ^22.22.3, ^24.15.0, or ^26.0.0. See the [Angular compatibility matrix](https://angular.dev/reference/versions).
@@ -22,7 +22,7 @@ Use a Node.js version supported by the selected Angular major. Angular 22 suppor
 ## Install the Package
 
 ```bash
-npm install @threadplane/render @threadplane/telemetry @json-render/core
+npm install @threadplane/angular @threadplane/telemetry @json-render/core
 ```
 
 ### Peer Dependencies
@@ -47,7 +47,7 @@ Add `provideRender()` to your application config. This sets global defaults for 
 ```typescript
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
-import { provideRender, defineAngularRegistry } from '@threadplane/render';
+import { provideRender, defineAngularRegistry } from '@threadplane/angular/render';
 import { TextComponent } from './components/text.component';
 import { CardComponent } from './components/card.component';
 
@@ -76,7 +76,7 @@ The following is a complete minimal setup:
 
 ```typescript
 import { ApplicationConfig } from '@angular/core';
-import { provideRender, defineAngularRegistry } from '@threadplane/render';
+import { provideRender, defineAngularRegistry } from '@threadplane/angular/render';
 import { TextComponent } from './text.component';
 
 export const appConfig: ApplicationConfig = {
@@ -115,7 +115,7 @@ export class TextComponent {
 
 ```typescript
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { RenderSpecComponent } from '@threadplane/render';
+import { RenderSpecComponent } from '@threadplane/angular/render';
 import type { Spec } from '@json-render/core';
 
 @Component({
@@ -169,10 +169,10 @@ If you see your component rendered with the expected props, the installation is 
   <Card title="Registry Guide" href="/docs/angular/render/guides/registry">
     Learn the component registry and input contract
   </Card>
-  <Card title="provideRender() API" href="/docs/api/render/provideRender">
+  <Card title="provideRender() API" href="/docs/api/angular/render/provideRender">
     Full API reference for the provider function
   </Card>
-  <Card title="RenderSpecComponent API" href="/docs/api/render/RenderSpecComponent">
+  <Card title="RenderSpecComponent API" href="/docs/api/angular/render/RenderSpecComponent">
     Full API reference for the render-spec component
   </Card>
 </CardGroup>

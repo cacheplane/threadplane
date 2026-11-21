@@ -25,10 +25,10 @@ A running LangGraph agent reachable over HTTP. Local (`langgraph dev`) or deploy
 ## Install the packages
 
 ```bash
-npm install @threadplane/angular @threadplane/core @threadplane/langgraph @threadplane/chat @langchain/core @langchain/langgraph-sdk
+npm install @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk
 ```
 
-`@threadplane/angular` provides `provideAgent()` and `injectAgent()`. `@threadplane/langgraph` provides `createSession()`, which runs a LangGraph deployment behind the session contract that `@threadplane/core` defines. It contains no Angular code. `@threadplane/chat` provides the chat UI, which works with any backend. The LangChain packages are required peers: the session uses their message types and the LangGraph SDK client.
+`@threadplane/angular` provides `provideAgent()` and `injectAgent()`. `@threadplane/langgraph` provides `createSession()`, which runs a LangGraph deployment behind the session contract that `@threadplane/core` defines. It contains no Angular code. `@threadplane/angular/chat` provides the chat UI, which works with any backend. The LangChain packages are required peers: the session uses their message types and the LangGraph SDK client.
 
 ## Peer Dependencies
 
@@ -50,7 +50,7 @@ npm install @threadplane/angular @threadplane/core @threadplane/langgraph @threa
 
 The pins on the `@threadplane` packages are exact, because the packages are released together; the other ranges are ordinary semver.
 
-npm 7 and newer install peer dependencies automatically, so the command above is enough. It is worth knowing what arrives with it: `@threadplane/chat` declares its own peers — `@threadplane/angular`, `@threadplane/core`, `@threadplane/telemetry`, `@threadplane/render`, `@threadplane/a2ui`, `zod`, `@json-render/core`, `marked`, `rxjs`, the `@angular/common`, `@angular/platform-browser`, and `@angular/router` packages, and an optional `katex` for math rendering.
+npm 7 and newer install peer dependencies automatically, so the command above is enough. It is worth knowing what arrives with it: `@threadplane/angular/chat` declares its own peers — `@threadplane/angular`, `@threadplane/core`, `@threadplane/telemetry`, `@threadplane/angular/render`, `@threadplane/a2ui`, `zod`, `@json-render/core`, `marked`, `rxjs`, and the `@angular/common`, `@angular/platform-browser`, and `@angular/router` packages. Math rendering uses KaTeX only when your application installs it and passes it to `provideChatMath()` from `@threadplane/angular/chat/math`.
 
 ## Configure the provider
 

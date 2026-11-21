@@ -11,7 +11,7 @@ description: The ChatToolCallCardComponent status pill, its auto-expand rules an
 **Import:**
 
 ```typescript
-import { ChatToolCallCardComponent, type ToolCallInfo } from '@threadplane/chat';
+import { ChatToolCallCardComponent, type ToolCallInfo } from '@threadplane/angular/chat';
 ```
 
 ## Status pill
@@ -57,7 +57,7 @@ interface ToolCallInfo {
 }
 ```
 
-A core `ToolCall` from `agent.toolCalls()` has `result` only while its status is `complete` and `error` only while it is `error`. Map one with `toolCallResult(call)` and `toolCallError(call)` from `@threadplane/chat`, which read those fields without narrowing first.
+A core `ToolCall` from `agent.toolCalls()` has `result` only while its status is `complete` and `error` only while it is `error`. Map one with `toolCallResult(call)` and `toolCallError(call)` from `@threadplane/angular/chat`, which read those fields without narrowing first.
 
 ## Basic usage
 
@@ -72,7 +72,7 @@ Define `tc` as a `ToolCallInfo` in the component class:
 
 ```typescript
 import { Component } from '@angular/core';
-import { ChatToolCallCardComponent, type ToolCallInfo } from '@threadplane/chat';
+import { ChatToolCallCardComponent, type ToolCallInfo } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-tool-call-demo',

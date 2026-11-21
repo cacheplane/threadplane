@@ -1,4 +1,4 @@
-// Run after building the four packages. All installs live in disposable directories.
+// Run after building the three packages. All installs live in disposable directories.
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 const execute = promisify(execFile);
-const packages = ['chat', 'langgraph', 'ag-ui', 'render'];
+const packages = ['angular', 'langgraph', 'ag-ui'];
 const temporary = await mkdtemp(join(tmpdir(), 'threadplane-install-pack-'));
 const run = async (command, args, options = {}) =>
   execute(command, args, {
@@ -46,13 +46,13 @@ const request=new EventEmitter();request.destroy=()=>{};request.end=body=>{fs.ap
     const packagedHook = (await run('tar', ['-xOf', join(temporary, packed.filename), 'package/install/postinstall.cjs'])).stdout;
     assert.equal(packagedHook, await readFile(resolve('libs/telemetry/install/postinstall.cjs'), 'utf8'), `${name} must ship the shared real hook`);
     assert.notEqual(packagedHook, await readFile(resolve(`libs/${name}/install/postinstall.cjs`), 'utf8'), `${name} must not ship its contributor stub`);
-    if (name === 'chat') {
+    if (name === 'angular') {
       for (const subpath of [
-        './chat.css',
-        './themes/default-dark.css',
-        './themes/default-light.css',
-        './themes/material-dark.css',
-        './themes/material-light.css',
+        './chat/styles.css',
+        './chat/themes/default-dark.css',
+        './chat/themes/default-light.css',
+        './chat/themes/material-dark.css',
+        './chat/themes/material-light.css',
       ]) {
         assert.equal(pkg.exports[subpath], subpath, `Missing CSS export: ${subpath}`);
         assert(packed.files.some((file) => file.path === subpath.slice(2)), `Missing CSS asset: ${subpath}`);
@@ -199,7 +199,10 @@ const request=new EventEmitter();request.destroy=()=>{};request.end=body=>{fs.ap
       }
     }
     if (scenario === 'unknown')
-      assert.equal(new Set(events.map((e) => e.installationToken)).size, 4);
+      assert.equal(
+        new Set(events.map((e) => e.installationToken)).size,
+        packages.length
+      );
     if (['disabled', 'ignore-scripts'].includes(scenario)) {
       assert.equal(events.length, 0);
       await assert.rejects(
@@ -208,7 +211,7 @@ const request=new EventEmitter();request.destroy=()=>{};request.end=body=>{fs.ap
     } else {
       assert.equal(
         events.length,
-        4,
+        packages.length,
         `Expected one event per package in ${scenario}`
       );
       assert.deepEqual(
@@ -290,7 +293,7 @@ const request=new EventEmitter();request.destroy=()=>{};request.end=body=>{fs.ap
     }
   }
   console.log(
-    'All four packed artifacts passed clean npm installation checks.'
+    'All three packed artifacts passed clean npm installation checks.'
   );
 } finally {
   await rm(temporary, { recursive: true, force: true });

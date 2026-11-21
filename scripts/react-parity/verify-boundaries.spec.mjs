@@ -63,7 +63,7 @@ for (const project of ['content', 'react', 'angular']) {
       if (project === 'content' && entry === 'chat') continue;
       for (const dependency of ['@threadplane/a2ui', '@threadplane/content/a2ui', '#feature']) {
         for (const indirect of [false, true]) {
-        test(`${project} ${extension} ${entry} rejects ${indirect ? 'indirect' : 'direct'} A2UI ${dependency}`, (t) => {
+        test(`${project} ${extension} ${entry} ${project === 'angular' && entry === 'chat' ? 'does not guard' : 'rejects'} ${indirect ? 'indirect' : 'direct'} A2UI ${dependency}`, (t) => {
           const own = entry === 'root'
             ? `src/${project === 'angular' && mode === 'source' ? 'public-api' : 'index'}.${extension}`
             : project === 'angular' && mode === 'source' ? `${entry}/src/public-api.${extension}` : `src/${entry}/index.${extension}`;
@@ -91,7 +91,11 @@ for (const project of ['content', 'react', 'angular']) {
             writeFileSync(path, JSON.stringify(manifest));
           }
           const errors = verifyBoundaries({ root, mode, projects: [project], ...finalOptions });
-          assert.ok(errors.some(error => error.includes('A2UI dependency reachable from guarded entry')), errors.join('\n'));
+          // Angular's chat UI renders A2UI inline, so its `/chat` entry is not
+          // guarded; verify-angular-package proves an app using only its
+          // plain-text views ships no A2UI. Its root and `/markdown` stay guarded.
+          const guarded = !(project === 'angular' && entry === 'chat');
+          assert.equal(errors.some(error => error.includes('A2UI dependency reachable from guarded entry')), guarded, errors.join('\n'));
           assert.ok(errors.every(error => !error.includes('unresolved dependency')), errors.join('\n'));
         });
         }
@@ -308,7 +312,7 @@ for (const project of ['langgraph', 'ag-ui']) {
   });
 }
 
-for (const dependency of ['@angular/core', '@threadplane/chat', '@threadplane/angular', '@threadplane/langgraph', '@langchain/langgraph-sdk', '@ag-ui/client/private', '@ag-ui/core', 'zod', 'unreviewed']) {
+for (const dependency of ['@angular/core', '@threadplane/angular/chat', '@threadplane/angular', '@threadplane/langgraph', '@langchain/langgraph-sdk', '@ag-ui/client/private', '@ag-ui/core', 'zod', 'unreviewed']) {
   test(`AG-UI package rejects transitive ${dependency} from its root`, (t) => {
     const root = fixture(t, {
       'libs/ag-ui/src/public-api.ts': "export * from './runtime/shared';",
@@ -329,66 +333,75 @@ test('RxJS is the AG-UI client stream type and stays out of LangGraph', (t) => {
   assert.ok(verifyBoundaries({ root: fixture(t, files('langgraph')), projects: ['langgraph'] }).some((error) => error.includes('neutral runtime forbidden dependency') && error.includes('rxjs')));
 });
 
-for (const project of ['chat', 'render', 'angular']) {
+// The one Angular package: its root, and the chat and render entry points one
+// directory deeper.
+const angularSources = [['root', 'src', '../../'], ['chat', 'chat/src', '../../../'], ['render', 'render/src', '../../../']];
+for (const [label, directory, up] of angularSources) {
   for (const backend of ['ag-ui', 'langgraph']) {
     for (const edge of [
-      `export * from '../../${backend}/src/runtime/owner';`,
-      `export type { Owner } from '../../${backend}/src/runtime/owner';`,
-      `export * from '../../${backend}/src/public-api';`,
+      `export * from '${up}${backend}/src/runtime/owner';`,
+      `export type { Owner } from '${up}${backend}/src/runtime/owner';`,
+      `export * from '${up}${backend}/src/public-api';`,
       "export * from './bridge';",
       "export * from '@private-owner';",
-      `void import('../../${backend}/src/runtime/owner');`,
-      `type Owner = import('../../${backend}/src/runtime/owner').Owner;`,
-      `const owner = require('../../${backend}/src/runtime/owner');`,
+      `void import('${up}${backend}/src/runtime/owner');`,
+      `type Owner = import('${up}${backend}/src/runtime/owner').Owner;`,
+      `const owner = require('${up}${backend}/src/runtime/owner');`,
     ]) {
-      test(`${project} cannot reach ${backend} source: ${edge}`, (t) => {
+      test(`angular ${label} cannot reach ${backend} source: ${edge}`, (t) => {
         const root = fixture(t, {
           'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { '@private-owner': [`./libs/${backend}/src/runtime/owner.ts`] } } }),
-          [`libs/${project}/src/public-api.ts`]: edge,
-          ...(edge.includes('./bridge') ? { [`libs/${project}/src/bridge.ts`]: `export * from '../../${backend}/src/runtime/owner';` } : {}),
+          'libs/angular/src/public-api.ts': 'export {};',
+          [`libs/angular/${directory}/public-api.ts`]: edge,
+          ...(edge.includes('./bridge') ? { [`libs/angular/${directory}/bridge.ts`]: `export * from '${up}${backend}/src/runtime/owner';` } : {}),
           [`libs/${backend}/src/public-api.ts`]: "export * from './runtime/owner';",
           [`libs/${backend}/src/runtime/owner.ts`]: 'export interface Owner {}',
         });
-        const errors = verifyBoundaries({ root, projects: [project] });
+        const errors = verifyBoundaries({ root, projects: ['angular'] });
         assert.ok(errors.some((error) => error.includes('backend source reachable from Angular source')), errors.join('\n'));
       });
     }
   }
 }
 
-for (const project of ['angular', 'chat']) {
+for (const [label, directory] of angularSources) {
   for (const backend of ['langgraph', 'ag-ui']) {
-    test(`${project} cannot import the ${backend} package by name`, (t) => {
-      const root = fixture(t, { [`libs/${project}/src/public-api.ts`]: `export type { Session } from '@threadplane/${backend}';` });
-      assert.ok(verifyBoundaries({ root, projects: [project] }).some((error) => error.includes(`${project}: forbidden dependency`) && error.includes(backend)));
+    test(`angular ${label} cannot import the ${backend} package by name`, (t) => {
+      const root = fixture(t, {
+        'libs/angular/src/public-api.ts': 'export {};',
+        [`libs/angular/${directory}/public-api.ts`]: `export type { Session } from '@threadplane/${backend}';`,
+      });
+      assert.ok(verifyBoundaries({ root, projects: ['angular'] }).some((error) => error.includes('angular: forbidden dependency') && error.includes(backend)));
     });
   }
 }
 
-test('chat may import the Angular binding, core and its render stack, and nothing from React', (t) => {
-  const packages = ['angular', 'core', 'content', 'render', 'a2ui', 'telemetry'];
+test('the Angular chat entry may import the binding, core, content, a2ui and telemetry, and nothing from React', (t) => {
+  const packages = ['core', 'content', 'a2ui', 'telemetry'];
   const root = fixture(t, {
-    'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: Object.fromEntries(packages.map((name) => [`@threadplane/${name}`, [`./libs/${name}/src/entry.ts`]])) } }),
-    'libs/chat/src/public-api.ts': packages.map((name) => `export type { X as ${name.replace('-', '')}X } from '@threadplane/${name}';`).join('\n') + "\nexport type { Signal } from '@angular/core';",
+    'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { ...Object.fromEntries(packages.map((name) => [`@threadplane/${name}`, [`./libs/${name}/src/entry.ts`]])), '@threadplane/angular': ['./libs/angular/src/public-api.ts'] } } }),
+    'libs/angular/src/public-api.ts': 'export interface X {}',
+    'libs/angular/chat/src/public-api.ts': [...packages, 'angular'].map((name) => `export type { X as ${name}X } from '@threadplane/${name}';`).join('\n') + "\nexport type { Signal } from '@angular/core';",
     ...Object.fromEntries(packages.map((name) => [`libs/${name}/src/entry.ts`, 'export interface X {}'])),
   });
-  assert.deepEqual(verifyBoundaries({ root, projects: ['chat'] }), []);
+  assert.deepEqual(verifyBoundaries({ root, projects: ['angular'] }), []);
   for (const dependency of ['react', '@threadplane/react', '@threadplane/langgraph', '@threadplane/ag-ui', '@langchain/langgraph-sdk', '@ag-ui/client']) {
-    writeFileSync(join(root, 'libs/chat/src/public-api.ts'), `export type { X } from '${dependency}';`);
-    assert.ok(verifyBoundaries({ root, projects: ['chat'] }).some((error) => error.includes('chat: forbidden dependency') && error.includes(dependency)), dependency);
+    writeFileSync(join(root, 'libs/angular/chat/src/public-api.ts'), `export type { X } from '${dependency}';`);
+    assert.ok(verifyBoundaries({ root, projects: ['angular'] }).some((error) => error.includes('angular: forbidden dependency') && error.includes(dependency)), dependency);
   }
 });
 
-test('a filesystem alias from an Angular package keeps the backend source identity', (t) => {
+test('a filesystem alias from an Angular entry point keeps the backend source identity', (t) => {
   const root = fixture(t, {
-    'libs/chat/src/public-api.ts': "export * from './linked-request';",
+    'libs/angular/src/public-api.ts': 'export {};',
+    'libs/angular/chat/src/public-api.ts': "export * from './linked-request';",
     'libs/ag-ui/src/runtime/create-http-request.ts': 'export interface Request {}',
   });
-  symlinkSync('../../ag-ui/src/runtime/create-http-request.ts', join(root, 'libs/chat/src/linked-request.ts'));
-  assert.ok(verifyBoundaries({ root, projects: ['chat'] }).some((error) => error.includes('backend source reachable from Angular source')));
+  symlinkSync('../../../ag-ui/src/runtime/create-http-request.ts', join(root, 'libs/angular/chat/src/linked-request.ts'));
+  assert.ok(verifyBoundaries({ root, projects: ['angular'] }).some((error) => error.includes('backend source reachable from Angular source')));
   if (existsSync(join(root, 'libs/AG-UI/src/runtime/create-http-request.ts'))) {
-    writeFileSync(join(root, 'libs/chat/src/public-api.ts'), "export * from '../../AG-UI/src/RUNTIME/create-http-request';");
-    assert.ok(verifyBoundaries({ root, projects: ['chat'] }).some((error) => error.includes('backend source reachable from Angular source')));
+    writeFileSync(join(root, 'libs/angular/chat/src/public-api.ts'), "export * from '../../../AG-UI/src/RUNTIME/create-http-request';");
+    assert.ok(verifyBoundaries({ root, projects: ['angular'] }).some((error) => error.includes('backend source reachable from Angular source')));
   }
 });
 
@@ -409,7 +422,7 @@ test('the AG-UI package permits only public core, its SDK and its own modules, f
     'libs/langgraph/src/public-api.ts': 'export interface X {}',
   });
   assert.deepEqual(verifyBoundaries({ root, projects: ['ag-ui'] }), []);
-  for (const dependency of ['@backend-alias', '../../../langgraph/src/public-api', '../../../core/src/private', './testing/helper', '@angular/core', '@threadplane/chat']) {
+  for (const dependency of ['@backend-alias', '../../../langgraph/src/public-api', '../../../core/src/private', './testing/helper', '@angular/core', '@threadplane/angular/chat']) {
     for (const file of ['create-http-request.ts', 'unreferenced.ts']) {
       writeFileSync(join(root, 'libs/ag-ui/src/runtime', file), `export * from '${dependency}';`);
       assert.ok(verifyBoundaries({ root, projects: ['ag-ui'] }).some((error) => error.includes('neutral runtime')), `${file} ${dependency}`);
@@ -468,10 +481,11 @@ for (const mode of ['source', 'built']) {
 }
 const finalCases = [
   ['react', '@angular/core'], ['react', '@threadplane/langgraph'],
-  ['langgraph', '@threadplane/angular'], ['ag-ui', '@threadplane/render'],
+  ['langgraph', '@threadplane/angular'], ['ag-ui', '@threadplane/angular/render'],
   ['core', '@angular/core'], ['core', 'marked'], ['core', 'rxjs'],
   ['content', '@threadplane/ag-ui'], ['render', '@threadplane/content'],
-  ['render', '@angular/core'], ['angular', '@threadplane/telemetry'],
+  // The Angular chat UI may use telemetry; telemetry may not use Angular.
+  ['render', '@angular/core'], ['telemetry', '@threadplane/angular'],
   ['angular', 'react'], ['angular', '@threadplane/langgraph'], ['angular', '@ag-ui/client'],
 ];
 for (const variant of ['source', 'built-js', 'built-d.ts']) {
@@ -566,7 +580,7 @@ const sourceCases = [
   ['core type-only React import', 'core', "import type { ReactNode } from 'react'; export type X = ReactNode;"],
   ['core Angular re-export', 'core', "export type { Signal } from '@angular/core';"],
   ['backend UI import', 'langgraph', "export * from '@threadplane/react';"],
-  ['AG-UI backend renderer import', 'ag-ui', "export * from '@threadplane/render';"],
+  ['AG-UI backend renderer import', 'ag-ui', "export * from '@threadplane/angular/render';"],
   ['React Angular import', 'react', "export * from '@angular/core';"],
   ['React backend type import', 'react', "type X = import('@threadplane/langgraph').X; export type { X };"],
   ['Angular React import', 'chat', "export * from '@threadplane/react';"],
@@ -679,7 +693,7 @@ const builtCases = [
   ['core to Angular', 'core', '@angular/core'],
   ['core to React', 'core', 'react'],
   ['LangGraph backend to UI', 'langgraph', '@threadplane/react'],
-  ['AG-UI backend to UI', 'ag-ui', '@threadplane/render'],
+  ['AG-UI backend to UI', 'ag-ui', '@threadplane/angular/render'],
   ['backend to Angular UI', 'langgraph', '@threadplane/angular'],
   ['React to Angular', 'react', '@angular/core'],
   ['React to backend', 'react', '@threadplane/langgraph'],
@@ -703,11 +717,11 @@ for (const extension of ['js', 'd.ts']) {
 // Exercise the default CLI project selection as well as Angular's actual APF
 // layout: .mjs in fesm2022 and declarations under types, with a default export
 // condition rather than an import condition.
-for (const project of ['chat', 'langgraph', 'ag-ui', 'render']) {
+for (const project of ['angular', 'langgraph', 'ag-ui']) {
   for (const extension of ['mjs', 'd.ts']) {
     test(`default built scan rejects ${project} ${extension} importing React`, (t) => {
       const files = {};
-      for (const name of ['core', 'content', 'angular', 'react', 'chat', 'langgraph', 'ag-ui', 'render', 'a2ui', 'telemetry']) {
+      for (const name of ['core', 'content', 'angular', 'react', 'langgraph', 'ag-ui', 'a2ui', 'telemetry']) {
         files[`dist/libs/${name}/package.json`] = JSON.stringify({ name: `@threadplane/${name}`, exports: { '.': { types: `./types/${name}.d.ts`, default: `./fesm2022/${name}.mjs` } } });
         files[`dist/libs/${name}/fesm2022/${name}.mjs`] = 'export {};';
         files[`dist/libs/${name}/types/${name}.d.ts`] = 'export {};';
@@ -750,26 +764,29 @@ test('React root permits binding implementation and core contracts', (t) => {
 
 for (const extension of ['mjs', 'd.ts']) {
   test(`resolves legacy built main/module/types for Angular ${extension} dependencies`, (t) => {
+    // The chat entry point reaches A2UI, as the Angular chat UI does.
     const files = {
-      'dist/libs/chat/package.json': JSON.stringify({ name: '@threadplane/chat', exports: { '.': { types: './index.d.ts', default: './index.mjs' } } }),
-      'dist/libs/chat/index.mjs': 'export {};',
-      'dist/libs/chat/index.d.ts': 'export {};',
-      [`dist/libs/chat/index.${extension}`]: "export * from '@threadplane/a2ui';",
+      'dist/libs/angular/package.json': JSON.stringify({ name: '@threadplane/angular', exports: { '.': { types: './index.d.ts', default: './index.mjs' }, './chat': { types: './chat.d.ts', default: './chat.mjs' } } }),
+      'dist/libs/angular/index.mjs': 'export {};',
+      'dist/libs/angular/index.d.ts': 'export {};',
+      'dist/libs/angular/chat.mjs': 'export {};',
+      'dist/libs/angular/chat.d.ts': 'export {};',
+      [`dist/libs/angular/chat.${extension}`]: "export * from '@threadplane/a2ui';",
       'dist/libs/a2ui/package.json': JSON.stringify({ name: '@threadplane/a2ui', types: './src/index.d.ts', module: './src/index.js', main: './src/index.js' }),
       'dist/libs/a2ui/src/index.js': 'export {};',
       'dist/libs/a2ui/src/index.d.ts': 'export {};',
     };
     const root = fixture(t, files);
-    assert.deepEqual(verifyBoundaries({ root, mode: 'built', projects: ['chat'] }), []);
+    assert.deepEqual(verifyBoundaries({ root, mode: 'built', projects: ['angular'] }), []);
     // Following the legacy entry is mandatory, not just accepting the package
     // name: an indirect React edge must still fail in either output format.
     const entry = extension === 'd.ts' ? 'index.d.ts' : 'index.js';
     writeFileSync(join(root, 'dist/libs/a2ui/src', entry), "export * from 'react';");
-    assert.ok(verifyBoundaries({ root, mode: 'built', projects: ['chat'] }).some((error) => error.includes('forbidden dependency') && error.includes('react')));
+    assert.ok(verifyBoundaries({ root, mode: 'built', projects: ['angular'] }).some((error) => error.includes('forbidden dependency') && error.includes('react')));
   });
 }
 
-for (const dependency of ['@angular/core', '@threadplane/chat', '@threadplane/angular', '@threadplane/telemetry', '@threadplane/render', 'react', 'rxjs']) {
+for (const dependency of ['@angular/core', '@threadplane/angular/chat', '@threadplane/angular', '@threadplane/telemetry', '@threadplane/angular/render', 'react', 'rxjs']) {
   test(`the LangGraph package rejects transitive ${dependency} from its root`, (t) => {
     const root = fixture(t, {
       'libs/langgraph/src/public-api.ts': "export * from './runtime/shared.js';",

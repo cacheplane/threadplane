@@ -2,7 +2,7 @@ import { HighlightedCode } from '../HighlightedCode';
 
 const SNIPPET_1 = `import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
-import { ChatComponent, a2uiBasicCatalog } from '@threadplane/chat';
+import { ChatComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
 
 @Component({
   imports: [ChatComponent],

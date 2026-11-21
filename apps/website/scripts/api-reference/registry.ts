@@ -16,11 +16,12 @@ const definitions: [string, ApiFramework, string, string?][] = [
   ['ag-ui', 'shared', 'src/public-api.ts'],
   ['angular', 'angular', 'src/public-api.ts'],
   ['angular/chat', 'angular', 'chat/src/public-api.ts'],
+  ['angular/chat/debug', 'angular', 'chat/debug/public-api.ts'],
+  ['angular/chat/math', 'angular', 'chat/math/public-api.ts'],
+  ['angular/chat/testing', 'angular', 'chat/testing/public-api.ts'],
   ['angular/markdown', 'angular', 'markdown/src/public-api.ts'],
+  ['angular/render', 'angular', 'render/src/public-api.ts'],
   ['angular/testing', 'angular', 'testing/src/public-api.ts'],
-  ['chat', 'angular', 'src/public-api.ts'],
-  ['chat/debug', 'angular', 'debug/public-api.ts'],
-  ['chat/testing', 'angular', 'testing/public-api.ts'],
   ['content', 'shared', 'src/index.ts'],
   ...['markdown', 'messages', 'json', 'a2ui', 'render-state', 'testing'].map(
     (name) =>
@@ -44,7 +45,6 @@ const definitions: [string, ApiFramework, string, string?][] = [
         string
       ]
   ),
-  ['render', 'angular', 'src/public-api.ts'],
   ['telemetry', 'shared', 'src/index.ts'],
   ['telemetry/browser', 'angular', 'src/browser/public-api.ts'],
   ['telemetry/node', 'backend', 'src/node/index.ts'],
@@ -65,13 +65,16 @@ export const SDK_ENTRYPOINTS: SdkEntrypoint[] = definitions.map(
     );
     const docLibrary = [
       'angular/chat',
+      'angular/chat/debug',
+      'angular/chat/math',
+      'angular/chat/testing',
       'angular/markdown',
       'react/chat',
       'react/markdown',
       'react/debug',
     ].includes(id)
       ? 'chat'
-      : id === 'react/render'
+      : id === 'react/render' || id === 'angular/render'
       ? 'render'
       : id === 'react/a2ui'
       ? 'a2ui'
@@ -93,17 +96,30 @@ export const SDK_ENTRYPOINTS: SdkEntrypoint[] = definitions.map(
   }
 );
 
+// Entry points another documented entry re-exports in full, by import path
+// and source. Their symbols are documented once, under the re-exporting entry.
+const REEXPORTED_ENTRIES: Readonly<Record<string, string>> = {
+  '@threadplane/telemetry/browser/development':
+    'libs/telemetry/src/browser/development/public-api.ts',
+};
+const EXCLUDED_ENTRY_SOURCES = new Set(Object.values(REEXPORTED_ENTRIES));
+/** The re-exported entry points, which the API generator resolves to source. */
+export function reexportedEntries(): Readonly<Record<string, string>> {
+  return REEXPORTED_ENTRIES;
+}
 /** Assets and install implementation exports are intentionally outside TypeScript reference. */
 export const EXCLUDED_EXPORTS = new Set([
+  // The development runtime alone; `telemetry/browser` re-exports and
+  // documents every symbol it has.
+  'telemetry/browser/development',
   'ag-ui/development-install',
-  'chat/development-install',
+  'angular/development-install',
   'langgraph/development-install',
-  'render/development-install',
-  'chat/chat.css',
-  'chat/themes/default-dark.css',
-  'chat/themes/default-light.css',
-  'chat/themes/material-dark.css',
-  'chat/themes/material-light.css',
+  'angular/chat/styles.css',
+  'angular/chat/themes/default-dark.css',
+  'angular/chat/themes/default-light.css',
+  'angular/chat/themes/material-dark.css',
+  'angular/chat/themes/material-light.css',
   'react/chat/styles.css',
   'react/debug/styles.css',
   'react/a2ui/styles.css',
@@ -169,7 +185,10 @@ export function validateRegistry(
           root,
           path.resolve(dir, config.lib.entryFile)
         );
-        if (!entries.some((entry) => entry.source === source))
+        if (
+          !EXCLUDED_ENTRY_SOURCES.has(source) &&
+          !entries.some((entry) => entry.source === source)
+        )
           throw new Error(`Unregistered Angular entrypoint: ${source}`);
       }
     };
@@ -180,7 +199,8 @@ export function validateRegistry(
     ][]) {
       if (
         (alias === manifest.name || alias.startsWith(`${manifest.name}/`)) &&
-        !imports.has(alias)
+        !imports.has(alias) &&
+        !EXCLUDED_EXPORTS.has(alias.slice('@threadplane/'.length))
       )
         throw new Error(
           `Unregistered SDK path alias: ${alias} (${paths.join(', ')})`

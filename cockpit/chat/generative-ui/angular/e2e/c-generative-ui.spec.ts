@@ -35,7 +35,7 @@ test('c-generative-ui: dashboard prompt renders chat-generative-ui surface', asy
   );
 
   // The render_spec tool call returns a dashboard JSON spec which the
-  // content-classifier in @threadplane/chat mounts as a tree of
+  // content-classifier in @threadplane/angular/chat mounts as a tree of
   // <chat-generative-ui> hosts (one per node in the dashboard view).
   // Multiple matches expected (≥5 for the standard dashboard layout);
   // assert the count proves the GenUI tree wired up. .first() unblocks

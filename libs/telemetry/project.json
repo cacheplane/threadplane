@@ -14,7 +14,8 @@
     "scope:shared",
     "scope:website",
     "scope:website-e2e",
-    "type:lib"
+    "type:lib",
+    "layer:telemetry"
   ],
   "targets": {
     "build:node": {

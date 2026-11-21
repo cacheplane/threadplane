@@ -34,8 +34,8 @@ The event categories, purposes, and retention that apply to Threadplane's own
 properties are described at
 [threadplane.ai/privacy](https://threadplane.ai/privacy).
 
-The automatic install collector embedded in `@threadplane/chat`, `@threadplane/langgraph`,
-`@threadplane/ag-ui`, and `@threadplane/render` is a separate collection path. It can
+The automatic install collector embedded in `@threadplane/angular`, `@threadplane/langgraph`
+and `@threadplane/ag-ui` is a separate collection path. It can
 include configured Git name/full email and repository-owner hints, including CI;
 see the package READMEs and [Privacy](https://threadplane.ai/privacy). This package
 retains its own inert install and explicit helper behavior.
@@ -44,10 +44,10 @@ retains its own inert install and explicit helper behavior.
 
 LangGraph and AG-UI sessions of an Angular app and the supported JSON renderer use this
 package's lazy development collector when they are constructed and used. The backend
-packages are framework-neutral and do not import this package: `@threadplane/chat`
+packages are framework-neutral and do not import this package: `@threadplane/angular/chat`
 registers the collector with `@threadplane/angular`, whose `provideAgent` hands each
-session a handle, so an Angular app that provides an agent and loads the chat package
-is connected with no setup. A session created with a `telemetry` option, `false`
+session a handle, when the app creates its first chat component, so an Angular app that
+provides an agent and renders chat is connected with no setup. A session created with a `telemetry` option, `false`
 included, is not collected. A session created outside Angular (for example in a React
 app) is given no collector and reports nothing. Angular's `isDevMode()` must
 be true and browser APIs must be available before identity/storage/network work.
@@ -102,6 +102,11 @@ Disable from application bootstrap, before constructing adapters or render trees
 import { setDevelopmentCollectionEnabled } from '@threadplane/telemetry/browser';
 setDevelopmentCollectionEnabled(false);
 ```
+
+The same development runtime is also exported from
+`@threadplane/telemetry/browser/development`, which does not include the opt-in
+PostHog service. Both entry points share one runtime, so a setting made through
+either one applies to both.
 
 Or run in the browser console before starting the runtime:
 

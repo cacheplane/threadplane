@@ -9,7 +9,7 @@ Both the production `main.ts` and local `main.cockpit.ts` entry points call `boo
 1. Installs the runtime readiness bridge before Angular bootstrap starts.
 2. Reads those params via `readCockpitConfigFromIframe()`.
 3. If present, lazy-loads `provideCockpitTelemetry(config)`; the service initializes PostHog with memory persistence and the parent-provided `distinct_id`.
-4. Subscribes to optional `CHAT_LIFECYCLE`, `AGENT_LIFECYCLE`, and `RENDER_LIFECYCLE` signals from `@threadplane/chat`, `@threadplane/angular`, and `@threadplane/render` and emits `cockpit:*` events.
+4. Subscribes to optional `CHAT_LIFECYCLE`, `AGENT_LIFECYCLE`, and `RENDER_LIFECYCLE` signals from `@threadplane/angular/chat`, `@threadplane/angular`, and `@threadplane/angular/render` and emits `cockpit:*` events.
 5. Reports Ready only after Angular bootstrap succeeds, or reports `bootstrap_failed` before rethrowing the original bootstrap error.
 
 `bootstrapWithCockpitHarness` owns the page's single Angular bootstrap. Call it once from the entry point; repeated calls would install repeated runtime bridge listeners.

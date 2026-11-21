@@ -55,7 +55,7 @@ The server is a FastAPI application. `add_langgraph_fastapi_endpoint` mounts the
 <ExampleCode file="tool-views.component.ts" />
 
 <Callout type="tip" title="One registry, two rendering paths">
-`views` is defined in `@threadplane/render` and re-exported from `@threadplane/chat`. The same input also supplies the registry `<chat>` uses for render specs the backend sends, so a component registered for a tool call is reusable for generative UI.
+`views` is defined in `@threadplane/angular/render` and re-exported from `@threadplane/angular/chat`. The same input also supplies the registry `<chat>` uses for render specs the backend sends, so a component registered for a tool call is reusable for generative UI.
 </Callout>
 
 ### The card the tool call fills

@@ -1,5 +1,5 @@
 """Normalises the four envelope-args shapes the parent LLM may emit into
-a canonical envelope list. Parity with libs/chat/src/lib/a2ui/envelope-normalizer.ts.
+a canonical envelope list. Parity with libs/angular/chat/src/lib/a2ui/envelope-normalizer.ts.
 
 The spike (examples/chat/python/spike/parent_envelope_quality.py) observed
 these shapes across gpt-5-mini and gpt-5; strict-mode tool binding should

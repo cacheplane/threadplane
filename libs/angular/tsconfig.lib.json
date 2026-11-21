@@ -5,26 +5,63 @@
     "declaration": true,
     "declarationMap": true,
     "inlineSources": true,
-    "lib": ["es2022", "dom"],
+    "lib": [
+      "es2022",
+      "dom"
+    ],
     "types": []
   },
   "include": [
     "src/**/*.ts",
     "chat/src/**/*.ts",
+    "chat/debug/**/*.ts",
+    "chat/math/**/*.ts",
+    "chat/testing/**/*.ts",
     "markdown/src/**/*.ts",
+    "render/src/**/*.ts",
     "testing/src/**/*.ts"
   ],
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
     "src/**/*.type-test.ts",
+    "src/**/*.type-spec.ts",
     "chat/src/**/*.spec.ts",
+    "chat/src/**/*.test.ts",
     "chat/src/**/*.type-test.ts",
+    "chat/src/**/*.type-spec.ts",
+    "chat/debug/**/*.spec.ts",
+    "chat/debug/**/*.test.ts",
+    "chat/debug/**/*.type-test.ts",
+    "chat/debug/**/*.type-spec.ts",
+    "chat/math/**/*.spec.ts",
+    "chat/math/**/*.test.ts",
+    "chat/math/**/*.type-test.ts",
+    "chat/math/**/*.type-spec.ts",
+    "chat/testing/**/*.spec.ts",
+    "chat/testing/**/*.test.ts",
+    "chat/testing/**/*.type-test.ts",
+    "chat/testing/**/*.type-spec.ts",
     "markdown/src/**/*.spec.ts",
     "markdown/src/**/*.test.ts",
     "markdown/src/**/*.type-test.ts",
+    "markdown/src/**/*.type-spec.ts",
+    "render/src/**/*.spec.ts",
+    "render/src/**/*.test.ts",
+    "render/src/**/*.type-test.ts",
+    "render/src/**/*.type-spec.ts",
     "testing/src/**/*.spec.ts",
+    "testing/src/**/*.test.ts",
     "testing/src/**/*.type-test.ts",
-    "src/test-setup.ts"
+    "testing/src/**/*.type-spec.ts",
+    "src/test-setup.ts",
+    "chat/src/test-setup.ts",
+    "render/src/test-setup.ts",
+    "chat/src/testing/**/*.ts"
+  ],
+  "references": [
+    {
+      "path": "../a2ui/tsconfig.lib.json"
+    }
   ]
 }

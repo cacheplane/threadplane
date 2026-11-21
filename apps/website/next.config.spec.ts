@@ -55,6 +55,20 @@ describe('website next.config redirects', () => {
     }
   });
 
+  it('permanently redirects the moved chat and render reference to @threadplane/angular', async () => {
+    const redirects = await config.redirects!();
+    for (const entry of ['chat', 'render'])
+      for (const prefix of ['/docs/api', '/api/markdown/api']) {
+        const rule = redirects.find(
+          (r: { source: string }) => r.source === `${prefix}/${entry}/:path*`
+        );
+        expect(rule, `${prefix}/${entry}`).toMatchObject({
+          destination: `${prefix}/angular/${entry}/:path*`,
+          permanent: true,
+        });
+      }
+  });
+
   it('redirects the exact roots as well as their descendants', async () => {
     const sources = (await config.redirects!()).map(
       (r: { source: string }) => r.source
@@ -69,7 +83,7 @@ describe('website next.config redirects', () => {
 
 /**
  * `provideChat()` / `ChatConfig` / `CHAT_CONFIG` were removed from
- * `@threadplane/chat` — no shipped component ever injected the token, so the
+ * `@threadplane/angular/chat` — no shipped component ever injected the token, so the
  * three pages that documented them described a no-op. Their URLs were indexed
  * and linked, so each has to land on a page that still exists.
  */
@@ -131,9 +145,9 @@ describe('legacy API reference migration', () => {
   const destinations = {
     'render/render-spec-component': '/docs/angular/render/guides/element-rendering',
     'render/provide-render': '/docs/angular/render/guides/computed-functions',
-    'render/define-angular-registry': '/docs/api/render/defineAngularRegistry',
-    'render/signal-state-store': '/docs/api/render/signalStateStore',
-    'render/views': '/docs/api/render/views',
+    'render/define-angular-registry': '/docs/api/angular/render/defineAngularRegistry',
+    'render/signal-state-store': '/docs/api/angular/render/signalStateStore',
+    'render/views': '/docs/api/angular/render/views',
     'langgraph/inject-agent': '/docs/api/angular/injectAgent',
     'langgraph/provide-agent': '/docs/api/angular/provideAgent',
     'langgraph/fetch-stream-transport': '/docs/api/langgraph/FetchStreamTransport',
@@ -143,9 +157,9 @@ describe('legacy API reference migration', () => {
     'ag-ui/provide-agent': '/docs/api/angular/provideAgent',
     'ag-ui/to-agent': '/docs/api/ag-ui/createSession',
     'ag-ui/fake-agent': '/docs/api/ag-ui/FakeAgent',
-    'chat/content-classifier': '/docs/api/chat/createContentClassifier',
-    'chat/parse-tree-store': '/docs/api/chat/createParseTreeStore',
-    'chat/mock-agent': '/docs/api/chat/mockAgent',
+    'chat/content-classifier': '/docs/api/angular/chat/createContentClassifier',
+    'chat/parse-tree-store': '/docs/api/angular/chat/createParseTreeStore',
+    'chat/mock-agent': '/docs/api/angular/chat/mockAgent',
     'middleware/client-tool-helpers': '/docs/api/middleware/langgraph',
   };
 

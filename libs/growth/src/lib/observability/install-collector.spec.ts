@@ -13,7 +13,7 @@ describe('published install collector contract', () => {
       env: { CI: '1' },
       getHome: () => '/synthetic',
       readPackage: async () => ({
-        name: '@threadplane/chat',
+        name: '@threadplane/angular',
         version: '0.0.65',
       }),
       identify: async () => ({ id: randomUUID(), scope: 'memory' }),

@@ -16,11 +16,11 @@ Use a Node.js version supported by the selected Angular major. Angular 22 suppor
 ## Install packages
 
 ```bash
-npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked
+npm install @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked
 ```
 
-`@threadplane/chat` provides the chat UI primitives. `@threadplane/ag-ui` provides `createSession()`, which runs an AG-UI backend behind the framework-neutral session contract from `@threadplane/core`. `@threadplane/angular` provides `provideAgent()` and `injectAgent()`, which turn that session into the `Agent` the primitives consume.
-`marked` is the required markdown parser peer used by `@threadplane/chat` when assistant messages render through `<chat>`.
+`@threadplane/angular/chat` provides the chat UI primitives. `@threadplane/ag-ui` provides `createSession()`, which runs an AG-UI backend behind the framework-neutral session contract from `@threadplane/core`. `@threadplane/angular` provides `provideAgent()` and `injectAgent()`, which turn that session into the `Agent` the primitives consume.
+`marked` is the required markdown parser peer used by `@threadplane/angular/chat` when assistant messages render through `<chat>`.
 
 ## Peer Dependencies
 
@@ -76,7 +76,7 @@ export const appConfig: ApplicationConfig = {
 
 ```ts
 import { Component } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 
 @Component({

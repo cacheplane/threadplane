@@ -16,9 +16,6 @@
       "path": "../../../libs/ag-ui"
     },
     {
-      "path": "../../../libs/chat"
-    },
-    {
       "path": "../../../libs/telemetry/tsconfig.lib.json"
     }
   ]

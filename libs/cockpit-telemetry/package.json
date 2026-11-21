@@ -8,9 +8,7 @@
   "peerDependencies": {
     "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@angular/platform-browser": "^20.0.0 || ^21.0.0 || ^22.0.0",
-    "@threadplane/chat": "*",
-    "@threadplane/angular": "*",
-    "@threadplane/render": "*"
+    "@threadplane/angular": "*"
   },
   "dependencies": {
     "@threadplane/cockpit-runtime-bridge": "*",
