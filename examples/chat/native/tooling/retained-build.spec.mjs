@@ -101,7 +101,7 @@ function fixture(t, framework = 'react') {
     lockPackages = {};
   for (const name of framework === 'react'
     ? ['core', 'content', 'a2ui', 'react', 'langgraph']
-    : ['core', 'content', 'angular', 'langgraph']) {
+    : ['core', 'content', 'a2ui', 'telemetry', 'angular', 'langgraph']) {
     const packageName = '@threadplane/' + name,
       file = join(temporary, name + '.tgz');
     hashes[packageName] = put(temporary, name + '.tgz', 'archive-' + name);
@@ -495,6 +495,41 @@ for (const mutation of [
     );
   });
 
+for (const library of ['a2ui', 'telemetry'])
+  test(`angular retention rejects ${library} runtime from its required peers`, (t) => {
+    const f = fixture(t, 'angular');
+    captureRetainedBuild(f.directory, f);
+    const path = join(f.directory, 'retained.json');
+    const record = JSON.parse(readFileSync(path));
+    const [digest] = Object.values(record.provenance.bundler.inputs);
+    record.provenance.bundler.inputs[
+      'node_modules/@threadplane/' + library + '/index.js'
+    ] = digest;
+    writeFileSync(path, JSON.stringify(record));
+    assert.throws(
+      () => readRetainedBuild(f.directory),
+      /protocol runtime forbidden/
+    );
+  });
+
+for (const framework of ['react', 'angular'])
+  test(`${framework} ${
+    framework === 'angular' ? 'retains' : 'rejects'
+  } telemetry build inputs`, (t) => {
+    const f = fixture(t, framework);
+    const path = 'libs/telemetry/eslint.config.mjs';
+    f.provenance.buildInputs[path] = put(f.buildRoot, path, 'telemetry config');
+    if (framework === 'react')
+      assert.throws(
+        () => captureRetainedBuild(f.directory, f),
+        /outside selected source framework/
+      );
+    else {
+      captureRetainedBuild(f.directory, f);
+      assert.equal(readRetainedBuild(f.directory).framework, framework);
+    }
+  });
+
 for (const framework of ['react', 'angular'])
   test(`${framework} retains protocol build inputs with its exact installed selection`, (t) => {
     const f = fixture(t, framework);
@@ -511,7 +546,7 @@ for (const framework of ['react', 'angular'])
     assert.equal(readRetainedBuild(f.directory).framework, framework);
     assert.equal(
       existsSync(join(f.directory, 'consumer/node_modules/@threadplane/a2ui')),
-      framework === 'react'
+      true
     );
     writeFileSync(join(f.directory, 'build-inputs', path), 'drift');
     assert.throws(

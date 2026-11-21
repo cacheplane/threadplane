@@ -70,12 +70,21 @@ function installation(temporary: string, consumer: string) {
       else artifacts[relative(consumer, path)] = hash(path);
     }
   }
-  for (const name of ['core', 'content', 'angular', 'langgraph'])
+  // `@threadplane/angular` requires A2UI and telemetry, so they install too.
+  const locals = [
+    'a2ui',
+    'content',
+    'core',
+    'langgraph',
+    'telemetry',
+    'angular',
+  ];
+  for (const name of locals)
     inventory(join(consumer, 'node_modules/@threadplane', name));
   const archives = readdirSync(temporary)
     .filter((file) => file.endsWith('.tgz'))
     .sort();
-  expect(archives).toHaveLength(4);
+  expect(archives).toHaveLength(locals.length);
   return {
     artifacts,
     lock: hash(join(consumer, 'package-lock.json')),

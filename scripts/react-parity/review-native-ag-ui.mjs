@@ -24,7 +24,17 @@ export function resolveArtifacts(root = defaultRoot) {
       );
       if (manifest.name !== `@threadplane/${name}`)
         throw new Error('wrong package');
-      for (const subpath of name === 'core' ? ['.'] : ['.', './chat']) {
+      const required = name === 'core' ? ['.'] : ['.', './chat'];
+      // Every code entry the package exports, so a compiled entry that imports
+      // a sibling (`@threadplane/angular/chat` → `@threadplane/angular/render`,
+      // `@threadplane/core/testing`) resolves to the same prebuilt artifact.
+      const subpaths = new Set([
+        ...required,
+        ...Object.keys(manifest.exports ?? {}).filter(
+          (key) => !key.includes('*') && !/\.(css|json)$/.test(key)
+        ),
+      ]);
+      for (const subpath of subpaths) {
         const exported = manifest.exports?.[subpath];
         const entry =
           typeof exported === 'string'
@@ -32,10 +42,18 @@ export function resolveArtifacts(root = defaultRoot) {
             : exported?.import ??
               exported?.default ??
               (subpath === '.' ? manifest.module : undefined);
-        if (typeof entry !== 'string') throw new Error('missing root export');
-        const absolute = resolve(folder, entry);
-        if (!absolute.startsWith(folder + '/') || !existsSync(absolute))
-          throw new Error('missing implementation');
+        const absolute =
+          typeof entry === 'string' ? resolve(folder, entry) : undefined;
+        const usable =
+          absolute !== undefined &&
+          absolute.startsWith(folder + '/') &&
+          /\.(m?js)$/.test(absolute) &&
+          existsSync(absolute);
+        if (!usable) {
+          if (required.includes(subpath))
+            throw new Error('missing implementation');
+          continue;
+        }
         entries[manifest.name + (subpath === '.' ? '' : subpath.slice(1))] =
           absolute;
       }
@@ -123,7 +141,22 @@ export async function buildFixture(root = defaultRoot) {
     platform: 'browser',
     target: 'es2022',
     tsconfig: join(root, 'tsconfig.base.json'),
-    alias,
+    // Exact specifiers only: esbuild's `alias` rewrites by package prefix, so
+    // `@threadplane/angular/render` would become `<angular entry file>/render`.
+    plugins: [
+      {
+        name: 'prebuilt-threadplane',
+        setup(builder) {
+          builder.onResolve(
+            { filter: /^@threadplane\/(core|react|angular)(\/.*)?$/ },
+            ({ path }) =>
+              alias[path]
+                ? { path: alias[path] }
+                : { errors: [{ text: `No prebuilt artifact exports ${path}` }] }
+          );
+        },
+      },
+    ],
     define: { 'process.env.NODE_ENV': '"development"' },
     logLevel: 'silent',
   });

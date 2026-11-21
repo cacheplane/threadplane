@@ -99,6 +99,10 @@ test('Angular stats leave out code the application never loads', () => {
     },
   };
   assert.deepEqual(angular.angularStatsInputs(stats).files, ['src/main.ts', 'node_modules/a/used.mjs', 'src/styles.css']);
+  // A build from another entry names it; a missing entry fails rather than
+  // dropping every code input.
+  assert.deepEqual(angular.angularStatsInputs(stats, /orphan\.mjs$/).files, ['node_modules/c/orphan.mjs', 'src/styles.css']);
+  assert.throws(() => angular.angularStatsInputs(stats, /view-proof\/entry\.ts$/), /Application entry missing/);
 });
 
 test('Angular stats normalize workspace-relative inputs within the physical consumer', (t) => {

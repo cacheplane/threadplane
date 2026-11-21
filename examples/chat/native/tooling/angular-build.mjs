@@ -19,8 +19,8 @@ const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
 // output the application loads from its main entry, is not an input of the
 // application, so it is left out. esbuild also writes a chunk for each dynamic
 // import in dropped code; nothing loads it, so it does not count either.
-export function angularStatsInputs(stats) {
-  const shipped = shippedModules(stats);
+export function angularStatsInputs(stats, main = /(?:^|\/)main\.ts$/) {
+  const shipped = shippedModules(stats, main);
   const virtual = {};
   const files = Object.keys(stats.inputs).filter((path) => {
     if (path === 'angular:styles/global:styles') {
@@ -32,17 +32,22 @@ export function angularStatsInputs(stats) {
   return { files, virtual };
 }
 
-function shippedModules(stats) {
+function shippedModules(stats, main) {
   const outputs = stats.outputs;
   if (!outputs) return undefined;
+  const entries = Object.keys(outputs).filter((path) =>
+    main.test(outputs[path].entryPoint ?? '')
+  );
+  // Without the application entry nothing is reachable, and every code input
+  // would silently drop out of the proof.
+  assert.ok(entries.length, 'Application entry missing from bundle stats');
   const reachable = new Set();
   const visit = (path) => {
     if (reachable.has(path) || !outputs[path]) return;
     reachable.add(path);
     for (const edge of outputs[path].imports ?? []) visit(edge.path);
   };
-  for (const [path, output] of Object.entries(outputs))
-    if (/(?:^|\/)main\.ts$/.test(output.entryPoint ?? '')) visit(path);
+  for (const path of entries) visit(path);
   const shipped = new Set();
   for (const path of reachable)
     for (const [input, info] of Object.entries(outputs[path].inputs ?? {}))
