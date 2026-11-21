@@ -1,3 +1,6 @@
+// The preview server (`serve.mjs <example> --backend`) runs the real graph under
+// `langgraph dev` on aimock fixtures shared with the Angular example; controls
+// come from scripts/react-cockpit/langgraph-proxy.mjs.
 import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
@@ -58,11 +61,14 @@ test('switching away releases a held React decision and returning starts fresh',
     'Local held decision lifetime is verified before deployment'
   );
   await request.post('http://127.0.0.1:4601/__reset');
-  await request.post('http://127.0.0.1:4601/__hold-resume');
+  await request.post('http://127.0.0.1:4601/__ready', { timeout: 180000 });
   await page.goto('/docs/react/langgraph/guides/interrupts?mode=run');
   const frame = page.frameLocator('iframe');
   await frame.getByLabel('Message', { exact: true }).fill('Refund');
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(frame.getByRole('button', { name: 'Issue refund' })).toBeVisible();
+  // Hold the resume (the next stream) right after its first event.
+  await request.post('http://127.0.0.1:4601/__hold/stream', { data: { immediate: true } });
   await frame.getByRole('button', { name: 'Issue refund' }).click();
   await expect(frame.getByRole('status')).toHaveText('Sending decision…');
   const oldFrame = await page.locator('iframe').elementHandle();
@@ -73,7 +79,7 @@ test('switching away releases a held React decision and returning starts fresh',
       async () =>
         (
           await (await request.get('http://127.0.0.1:4601/__lifetime')).json()
-        ).active
+        ).activeStream
     )
     .toBe(false);
   await selectFramework(page, 'react');

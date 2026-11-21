@@ -1,36 +1,35 @@
-import {
-  createServer,
-  type Server,
-  type IncomingMessage,
-  type ServerResponse,
-} from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { mkdtempSync, writeFileSync } from 'node:fs';
-import { afterEach, expect, it, vi } from 'vitest';
+import { resolve } from 'node:path';
+import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { createFilesystemClient } from './connection';
 import { createFilesystemApplication } from './application';
 
-/* eslint-disable @nx/enforce-module-boundaries -- Local graph proof transport is never bundled. */
-// @ts-expect-error Local proof-only JavaScript has no published declaration.
-import { createDeepAgentsFilesystemFixture as createFixture } from '../../../../../scripts/react-cockpit/deep-agents-filesystem-fixture.mjs';
+/* eslint-disable @nx/enforce-module-boundaries -- Local test backend tooling is never bundled. */
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { createAimockBackend } from '../../../../../scripts/react-cockpit/aimock-backend.mjs';
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { createLanggraphProxy } from '../../../../../scripts/react-cockpit/langgraph-proxy.mjs';
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { reactCockpitConfiguration } from '../../../../../scripts/react-cockpit/configuration.mjs';
 /* eslint-enable @nx/enforce-module-boundaries */
-interface LocalFixture {
-  (
-    request: IncomingMessage,
-    response: ServerResponse,
-    pathname: string
-  ): Promise<boolean>;
-  close(): Promise<void>;
-}
-const createDeepAgentsFilesystemFixture = createFixture as () => LocalFixture;
+
+// The real graph runs under `langgraph dev` on aimock fixtures shared with the
+// Angular example (cockpit/deep-agents/filesystem/angular/e2e/fixtures). Each
+// scenario is a tagged prompt; the in-process proxy records requests and holds
+// or fails the next call (scripts/react-cockpit/langgraph-proxy.mjs).
+const { backend: config } = reactCockpitConfiguration('deep-agents-filesystem');
+const backend = createAimockBackend({ root: resolve(__dirname, '../../../../..'), backend: config });
+beforeAll(() => backend.ensure(), 180000);
+afterAll(() => backend.close());
+type Handler = (request: unknown, response: unknown, pathname: string) => Promise<boolean>;
 let server: Server | undefined,
-  fixture: ReturnType<typeof createDeepAgentsFilesystemFixture> | undefined,
   application: ReturnType<typeof createFilesystemApplication> | undefined;
 afterEach(async () => {
   await application?.dispose();
-  await fixture?.close();
   if (server)
-    await new Promise<void>((resolve) => {
-      server?.close(() => resolve());
+    await new Promise<void>((done) => {
+      server?.close(() => done());
       server?.closeAllConnections();
     });
 });
@@ -43,16 +42,12 @@ writeFileSync(
 );
 let evidenceNumber = 0;
 async function setup() {
-  const handle = createDeepAgentsFilesystemFixture();
-  fixture = handle;
+  const handle: Handler = createLanggraphProxy({
+    upstream: `http://127.0.0.1:${config.langgraphPort}`,
+    ready: () => backend.ensure(),
+  });
   const http = createServer(async (req, res) => {
-    if (
-      !(await handle(
-        req,
-        res,
-        new URL(req.url ?? '/', 'http://localhost').pathname
-      ))
-    ) {
+    if (!(await handle(req, res, new URL(req.url ?? '/', 'http://localhost').pathname))) {
       res.writeHead(404);
       res.end();
     }
@@ -98,7 +93,6 @@ async function setup() {
           lifecycle,
           rawCheckpoints,
           requests: await (await fetch(base + '/__requests')).json(),
-          proof: await (await fetch(base + '/__graph-proof')).json(),
         },
         null,
         2
@@ -108,8 +102,9 @@ async function setup() {
   evidenceNumber++;
   const submit = app.submit,
     decide = app.decide;
-  app.submit = async (...args) => {
-    const result = await submit(...args);
+  // The scenario tag selects the scripted model turns (shared aimock fixtures).
+  app.submit = async (text, ...rest) => {
+    const result = await submit(`${text} [scenario:${scenario}]`, ...rest);
     await record('submit');
     return result;
   };
@@ -118,18 +113,21 @@ async function setup() {
     await record('decision');
     return result;
   };
+  const control = async (path: string) =>
+    expect((await fetch(base + path, { method: 'POST' })).ok).toBe(true);
   const configure = async (
     nextScenario: string,
     extra: Record<string, boolean> = {}
   ) => {
-    const response = await fetch(base + '/__configure', {
-      method: 'POST',
-      body: JSON.stringify({ scenario: nextScenario, ...extra }),
-    });
-    expect(response.ok).toBe(true);
+    if (extra.failStream) await control('/__fail-stream');
+    // The confirmation read of the saved checkpoint.
+    if (extra.holdCheckpoint) await control('/__hold/state');
     scenario = nextScenario;
   };
-  const release = () => fetch(base + '/__release', { method: 'POST' });
+  const release = async () => {
+    await control('/__release-state');
+    await control('/__release');
+  };
   return { app, client, read, base, configure, release };
 }
 
@@ -157,18 +155,6 @@ it('mount is inert and native submit pauses with actual note, exact whole batch 
   expect(
     requests.filter((x) => x.body?.command).map((x) => x.body!.command!)
   ).toEqual([{ resume: { decisions: [{ type: 'approve' }] } }]);
-  const proof: {
-    actualCompiledGraph: boolean;
-    networkConnectAttempts: number;
-    op: string;
-  }[] = await (await fetch(f.base + '/__graph-proof')).json();
-  expect(proof.length).toBeGreaterThan(0);
-  expect(
-    proof.filter((x) => ['submit', 'resume'].includes(x.op)).map((x) => x.op)
-  ).toEqual(['submit', 'resume']);
-  expect(
-    proof.every((x) => x.actualCompiledGraph && x.networkConnectAttempts === 0)
-  ).toBe(true);
 }, 30000);
 for (const scenario of [
   'batch',

@@ -3,7 +3,15 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/ag-ui/subagents/react/src",
   "projectType": "application",
-  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "implicitDependencies": [
+    "cockpit-ag-ui-subagents-angular",
+    "cockpit-ag-ui-subagents-python"
+  ],
+  "tags": [
+    "scope:cockpit-examples",
+    "scope:cockpit-e2e",
+    "framework:react"
+  ],
   "targets": {
     "test": {
       "executor": "@nx/vitest:test",
@@ -15,26 +23,51 @@
       "executor": "nx:run-commands",
       "cache": false,
       "dependsOn": [
-        { "target": "build", "projects": ["core", "content", "react"] },
-        { "target": "react-ag-ui", "projects": ["website-runtime-preparation"] }
+        {
+          "target": "build",
+          "projects": [
+            "core",
+            "content",
+            "react"
+          ]
+        },
+        {
+          "target": "react-ag-ui",
+          "projects": [
+            "website-runtime-preparation"
+          ]
+        }
       ],
-      "outputs": ["{workspaceRoot}/dist/cockpit/ag-ui/subagents/react"],
+      "outputs": [
+        "{workspaceRoot}/dist/cockpit/ag-ui/subagents/react"
+      ],
       "options": {
         "command": "node scripts/react-cockpit/build.mjs ag-ui-subagents"
       }
     },
-    "lint": { "executor": "@nx/eslint:lint" },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
       "dependsOn": [
         "build",
-        { "target": "smoke", "projects": ["cockpit-ag-ui-subagents-python"] }
+        {
+          "target": "smoke",
+          "projects": [
+            "cockpit-ag-ui-subagents-python"
+          ]
+        }
       ],
       "options": {
         "config": "cockpit/ag-ui/subagents/react/e2e/playwright.config.ts",
         "skipInstall": true
-      }
+      },
+      "inputs": [
+        "default",
+        "reactAimockBackend"
+      ]
     }
   }
 }

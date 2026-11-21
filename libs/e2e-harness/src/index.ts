@@ -13,4 +13,9 @@ export {
   type CreateLanggraphGlobalSetupOpts,
   type LanggraphBackend,
 } from './global-setup-factory';
-export { createAgUiGlobalSetup, type CreateAgUiGlobalSetupOpts } from './ag-ui-global-setup-factory';
+export {
+  createAgUiGlobalSetup,
+  createAgUiBackendGlobalSetup,
+  type CreateAgUiGlobalSetupOpts,
+  type CreateAgUiBackendGlobalSetupOpts,
+} from './ag-ui-global-setup-factory';

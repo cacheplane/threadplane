@@ -5,11 +5,14 @@ export default defineConfig({
   retries: 0,
   fullyParallel: false,
   timeout: 45000,
-  // The first command includes cold startup within the owned worker's 10s bound.
+  // A real `langgraph dev` turn runs three nodes and two model calls.
   expect: { timeout: 15000 },
   outputDir: '../../../../../output/playwright/chat-debug-react',
   use: { baseURL: 'http://127.0.0.1:4645', trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // aimock + real `langgraph dev`, shared with cockpit/chat/debug/angular.
+  globalSetup: './global-setup-impl.ts',
+  globalTeardown: require.resolve('../../../../../libs/e2e-harness/src/global-teardown'),
   webServer: {
     command: 'node scripts/react-cockpit/serve.mjs chat-debug --no-parent',
     cwd: '../../../../..',

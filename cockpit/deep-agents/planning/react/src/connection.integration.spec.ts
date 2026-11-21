@@ -1,49 +1,44 @@
-import {
-  createServer,
-  type Server,
-  type IncomingMessage,
-  type ServerResponse,
-} from 'node:http';
-import { afterEach, expect, it, vi } from 'vitest';
+import { createServer, type Server } from 'node:http';
+import { resolve } from 'node:path';
+import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { createPlanningClient } from './connection';
 import { createPlanningApplication } from './application';
-import { plainRecord } from './plan-state';
-/* eslint-disable @nx/enforce-module-boundaries -- Local graph proof transport is never bundled. */
-// @ts-expect-error Local proof-only JavaScript has no published declaration.
-import { createDeepAgentsPlanningFixture as createFixture } from '../../../../../scripts/react-cockpit/deep-agents-planning-fixture.mjs';
+
+/* eslint-disable @nx/enforce-module-boundaries -- Local test backend tooling is never bundled. */
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { createAimockBackend } from '../../../../../scripts/react-cockpit/aimock-backend.mjs';
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { createLanggraphProxy } from '../../../../../scripts/react-cockpit/langgraph-proxy.mjs';
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { reactCockpitConfiguration } from '../../../../../scripts/react-cockpit/configuration.mjs';
 /* eslint-enable @nx/enforce-module-boundaries */
-interface LocalFixture {
-  (
-    request: IncomingMessage,
-    response: ServerResponse,
-    pathname: string
-  ): Promise<boolean>;
-  close(): Promise<void>;
-}
-const createDeepAgentsPlanningFixture = createFixture as () => LocalFixture;
+
+// The real graph runs under `langgraph dev` on aimock fixtures shared with the
+// Angular example (cockpit/deep-agents/planning/angular/e2e/fixtures). Each
+// scenario is a tagged prompt; the in-process proxy records requests and holds
+// or fails the next call (scripts/react-cockpit/langgraph-proxy.mjs).
+const { backend: config } = reactCockpitConfiguration('deep-agents-planning');
+const backend = createAimockBackend({ root: resolve(__dirname, '../../../../..'), backend: config });
+beforeAll(() => backend.ensure(), 180000);
+afterAll(() => backend.close());
+type Handler = (request: unknown, response: unknown, pathname: string) => Promise<boolean>;
 let server: Server | undefined,
-  fixture: ReturnType<typeof createDeepAgentsPlanningFixture> | undefined,
   application: ReturnType<typeof createPlanningApplication> | undefined;
 afterEach(async () => {
   await application?.dispose();
-  await fixture?.close();
   if (server)
-    await new Promise<void>((resolve) => {
-      server?.close(() => resolve());
+    await new Promise<void>((done) => {
+      server?.close(() => done());
       server?.closeAllConnections();
     });
 });
 async function setup() {
-  const handle = createDeepAgentsPlanningFixture();
-  fixture = handle;
+  const handle: Handler = createLanggraphProxy({
+    upstream: `http://127.0.0.1:${config.langgraphPort}`,
+    ready: () => backend.ensure(),
+  });
   const http = createServer(async (req, res) => {
-    if (
-      !(await handle(
-        req,
-        res,
-        new URL(req.url ?? '/', 'http://localhost').pathname
-      ))
-    ) {
+    if (!(await handle(req, res, new URL(req.url ?? '/', 'http://localhost').pathname))) {
       res.writeHead(404);
       res.end();
     }
@@ -55,19 +50,27 @@ async function setup() {
   const base = `http://127.0.0.1:${address.port}`,
     client = createPlanningClient({ apiUrl: base + '/api', headers: {} });
   const read = vi.spyOn(client, 'readCheckpoint'),
-    app = createPlanningApplication(client);
-  application = app;
+    created = createPlanningApplication(client);
+  application = created;
+  let scenario = 'normal';
+  const control = async (path: string) =>
+    expect((await fetch(base + path, { method: 'POST' })).ok).toBe(true);
+  // The scenario tag selects the scripted model turns (shared fixtures).
+  const app = Object.assign(Object.create(created) as typeof created, {
+    submit: (text: string) => created.submit(`${text} [scenario:${scenario}]`),
+  });
   const configure = async (
-    scenario: string,
-    extra: Record<string, boolean> = {}
+    next: string,
+    extra: { failStream?: boolean; holdCheckpoint?: boolean } = {}
   ) => {
-    const response = await fetch(base + '/__configure', {
-      method: 'POST',
-      body: JSON.stringify({ scenario, ...extra }),
-    });
-    expect(response.ok).toBe(true);
+    scenario = next;
+    if (extra.failStream) await control('/__fail-stream');
+    if (extra.holdCheckpoint) await control('/__hold/state');
   };
-  const release = () => fetch(base + '/__release', { method: 'POST' });
+  const release = async () => {
+    await control('/__release-state');
+    await control('/__release');
+  };
   return { app, client, read, base, configure, release };
 }
 it('first native transport failure before any checkpoint honestly requires New; a fresh conversation succeeds', async () => {
@@ -99,18 +102,6 @@ it('native session confirms actual middleware writes, exact checkpoint, unfinish
   await f.configure('empty');
   expect(await f.app.submit('Clear the plan')).toBe(true);
   expect(f.app.getSnapshot().savedPlan).toEqual({ kind: 'valid', items: [] });
-  const proof: unknown[] = await (
-    await fetch(f.base + '/__graph-proof')
-  ).json();
-  expect(proof.length).toBeGreaterThan(0);
-  expect(
-    proof.every(
-      (p) =>
-        plainRecord(p) &&
-        p.actualCompiledGraph === true &&
-        p.networkConnectAttempts === 0
-    )
-  ).toBe(true);
 }, 30000);
 for (const scenario of ['parallel', 'schema'])
   it(`actual ${scenario} rejection is a received core result, never saved authority; later native recovery succeeds`, async () => {

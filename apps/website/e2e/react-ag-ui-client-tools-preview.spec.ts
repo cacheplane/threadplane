@@ -10,10 +10,14 @@ interface Message { id: string; role: string; content: string; toolCallId?: stri
 interface RecordRow {
   body: { threadId: string; runId: string; messages: Message[]; tools: { name: string }[] };
   events: { type: string; messages?: Message[] }[];
-  observations: { socketAttempts: string[]; modelMessages: { type: string; id?: string; tool_call_id?: string; content: string }[][] };
+  /** Every model call so far, from aimock's request journal (scripts/react-cockpit/ag-ui-proxy.mjs). */
+  modelMessages: { role: string; tool_call_id?: string; content: string }[][];
 }
 async function records(request: APIRequestContext): Promise<RecordRow[]> {
-  return (await request.get(origin + '/__requests')).json();
+  const wire = await (await request.get(origin + '/__requests')).json();
+  const journal: { body: { messages?: RecordRow['modelMessages'][number] } }[] = await (await request.get(origin + '/__model-requests')).json();
+  const modelMessages = journal.map(entry => entry.body.messages ?? []);
+  return wire.map((row: RecordRow) => ({ ...row, modelMessages }));
 }
 async function hydrated(page: Page, mode: string) {
   await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-hydrated', 'true');
@@ -31,12 +35,11 @@ function native(wire: RecordRow[], count: number) {
   expect(new Set(wire.map(row => row.body.runId)).size).toBe(count);
   for (const row of wire) {
     expect(row.body.tools.map(tool => tool.name)).toEqual(names);
-    expect(row.observations.socketAttempts).toEqual([]);
-    const model = row.observations.modelMessages.at(-1) ?? [];
     const snapshot = row.events.filter(event => event.type === 'MESSAGES_SNAPSHOT').at(-1)?.messages ?? [];
     for (const result of row.body.messages.filter(message => message.role === 'tool')) {
       expect(row.body.messages.filter(message => message.toolCalls?.some(call => call.id === result.toolCallId))).toHaveLength(1);
-      expect(model.filter(message => message.type === 'tool' && message.id === result.id && message.tool_call_id === result.toolCallId && message.content === result.content)).toHaveLength(1);
+      // The model received the browser's exact result for that call.
+      expect(row.modelMessages.some(messages => messages.filter(message => message.role === 'tool' && message.tool_call_id === result.toolCallId && message.content === result.content).length === 1)).toBe(true);
       expect(snapshot.filter(message => message.role === 'tool' && message.id === result.id && message.content === result.content)).toHaveLength(1);
     }
   }
@@ -44,21 +47,14 @@ function native(wire: RecordRow[], count: number) {
 test.describe('native React AG-UI Client Tools workspace', () => {
   test.describe.configure({ mode: 'serial' });
   test.beforeEach(async ({ request }) => {
-    test.skip(Boolean(process.env['BASE_URL']), 'Canonical offline ownership is verified locally');
+    test.skip(Boolean(process.env['BASE_URL']), 'The real AG-UI server on aimock is verified locally');
     expect((await request.post(origin + '/__reset')).ok()).toBe(true);
   });
   test.afterEach(async ({ page, request }, info) => {
     if (process.env['BASE_URL']) return;
-    // Both success and assertion failure dispose the iframe before closing its exact worker owner.
-    try {
-      await page.goto('about:blank');
-      const wire = await records(request);
-      await writeFile(info.outputPath('native-wire.json'), JSON.stringify(wire, null, 2));
-    } finally {
-      const stats = await (await request.post(origin + '/__finish')).json();
-      await writeFile(info.outputPath('owned-fixture-receipt.json'), JSON.stringify(stats, null, 2));
-      expect(Object.values(stats.closed.at(-1).closure).every(Boolean)).toBe(true);
-    }
+    await page.goto('about:blank');
+    const wire = await records(request);
+    await writeFile(info.outputPath('native-wire.json'), JSON.stringify(wire, null, 2));
   });
   test('actual Docs, Code and Run retain native identity, source bytes and six inert presets', async ({ page, request }, info) => {
     await page.goto(reactRoute + '?topicProof=b4');

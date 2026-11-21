@@ -7,30 +7,40 @@ import {
 } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 const base = '/deep-agents/skills/react/';
+// Backend: aimock replays cockpit/deep-agents/skills/angular/e2e/fixtures
+// (shared with the Angular example; React scenarios are tagged prompts, listed
+// first so they win over the recorded prompt they contain) into a real
+// `langgraph dev`. The proxy records requests and holds or fails the next call
+// (scripts/react-cockpit/langgraph-proxy.mjs).
+let scenario = 'reads';
 async function configure(
   request: APIRequestContext,
-  scenario = 'reads',
+  next = 'reads',
   extra: Record<string, boolean> = {}
 ) {
-  expect(
-    (
-      await request.post('/__configure', {
-        data: {
-          scenario,
-          holdStream: false,
-          holdState: false,
-          holdCheckpoint: false,
-          failCreation: false,
-          failStream: false,
-          failCheckpoint: false,
-          ...extra,
-        },
-      })
-    ).ok()
-  ).toBe(true);
+  const control = async (path: string, data: object = {}) =>
+    expect((await request.post(path, { data })).ok()).toBe(true);
+  scenario = next;
+  // The saved-conversation confirmation reads the exact checkpoint.
+  if (extra.holdCheckpoint) await control('/__hold/state');
+  if (extra.holdStream) await control('/__hold/stream', { immediate: true });
+  if (extra.failCreation) await control('/__fail-create');
+  if (extra.failStream) await control('/__fail-stream');
+  await control(extra.failCheckpoint ? '/__state/failure' : '/__state/safe');
 }
+async function release(request: APIRequestContext) {
+  await request.post('/__release-state');
+  await request.post('/__release');
+}
+test.beforeEach(async ({ request }) => {
+  await request.post('/__reset');
+  scenario = 'reads';
+});
 async function send(page: Page, text = 'What is the field data for KSFO?') {
-  await page.getByRole('textbox', { name: 'Message' }).fill(text);
+  // The scenario tag selects the scripted model turns (shared fixtures).
+  await page
+    .getByRole('textbox', { name: 'Message' })
+    .fill(`${text} [scenario:${scenario}]`);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
 }
 async function saved(page: Page) {
@@ -44,7 +54,7 @@ async function proof(
   testInfo: TestInfo
 ) {
   mkdirSync(testInfo.outputDir, { recursive: true });
-  for (const endpoint of ['requests', 'graph-proof', 'raw-events'])
+  for (const endpoint of ['requests', 'captures'])
     writeFileSync(
       testInfo.outputPath(`${name}-${endpoint}.json`),
       JSON.stringify(
@@ -83,6 +93,8 @@ test('actual Skills root index, successful literal reads, followup and exact ret
     '/skills/runway-analysis/reference/margins.md'
   );
   const prior = await page.getByLabel('Saved conversations').inputValue();
+  // Same reads, with their own tool call ids.
+  await configure(request, 'reads-followup');
   await send(page, 'Followup');
   await saved(page);
   await expect(page.locator('[data-read-kind="inspected"]')).toHaveCount(4);
@@ -147,7 +159,7 @@ test('New rejects stale held checkpoint and clears draft without replay', async 
     'Confirming saved conversation…'
   );
   await page.getByRole('button', { name: 'New conversation' }).click();
-  await request.post('/__release', { data: {} });
+  await release(request);
   await expect(page.getByRole('status')).toHaveText('Ready.');
   await expect(page.locator('[data-read-kind]')).toHaveCount(0);
   await expect(page.getByRole('textbox')).toHaveValue('');
@@ -162,7 +174,7 @@ test('Stop and failed transport require New and never replay', async ({
   await send(page);
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.getByRole('textbox')).toBeDisabled();
-  await request.post('/__release', { data: {} });
+  await release(request);
   await page.getByRole('button', { name: 'New conversation' }).click();
   await configure(request, 'reads', { failStream: true });
   await send(page);
@@ -180,7 +192,7 @@ test('duplicate Send and exact confirmation failure cannot silently replay', asy
   const before = (await (await request.get('/__requests')).json()).length;
   await page
     .getByRole('textbox')
-    .fill('Can a mid-size jet operate out of KASE?');
+    .fill(`Can a mid-size jet operate out of KASE? [scenario:${scenario}]`);
   await page
     .getByRole('button', { name: 'Send', exact: true })
     .evaluate((element) => {

@@ -48,7 +48,12 @@ test('Memory backend changes select its two actual registered frontends and exac
 test('Memory owns exact closed native root metadata without changing ordinary LangGraph Memory', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   const config = reactCockpitConfiguration('deep-agents-memory');
-  assert.deepEqual(config, { topic: 'memory', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/memory/react', base: '/deep-agents/memory/react/', port: 4632, project: 'cockpit-deep-agents-memory-react' });
+  assert.deepEqual(config, { topic: 'memory', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/memory/react', base: '/deep-agents/memory/react/', port: 4632, project: 'cockpit-deep-agents-memory-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/deep-agents/memory/python',
+      fixtures: 'cockpit/deep-agents/memory/angular/e2e/fixtures', langgraphPort: 5632,
+    },
+  });
   assert.equal(Object.isFrozen(config), true);
   assert.equal(reactCockpitConfiguration('memory').appPath, 'cockpit/langgraph/memory/react');
 });
@@ -58,11 +63,32 @@ test('Planning backend changes select exactly both canonical frontends', () => {
   assert.deepEqual(selected.map(cap => cap.angular).sort(), ['cockpit-deep-agents-planning-angular', 'cockpit-deep-agents-planning-react']);
   assert.ok(selected.every(cap => cap.python === 'cockpit/deep-agents/planning/python'));
 });
+test('Skills owns an exact closed native React identity', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  for (const [topic, port] of [['skills', 4631]]) {
+    const configuration = reactCockpitConfiguration(`deep-agents-${topic}`);
+    assert.deepEqual(configuration, {
+      topic, library: 'deep-agents', adapter: 'langgraph', appPath: `cockpit/deep-agents/${topic}/react`,
+      base: `/deep-agents/${topic}/react/`, port, project: `cockpit-deep-agents-${topic}-react`,
+      backend: {
+        kind: 'aimock-langgraph', python: `cockpit/deep-agents/${topic}/python`,
+        fixtures: `cockpit/deep-agents/${topic}/angular/e2e/fixtures`, langgraphPort: port + 1000,
+      },
+    });
+    assert.ok(Object.isFrozen(configuration));
+    for (const key of [topic, `deep-agents/${topic}`, `../deep-agents-${topic}`, `deep-agents-${topic}/../../foreign`])
+      assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
+  }
+});
 test('Planning owns an exact closed native React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('deep-agents-planning'), {
     topic: 'planning', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/planning/react',
     base: '/deep-agents/planning/react/', port: 4628, project: 'cockpit-deep-agents-planning-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/deep-agents/planning/python',
+      fixtures: 'cockpit/deep-agents/planning/angular/e2e/fixtures', langgraphPort: 5628,
+    },
   });
   for (const key of ['planning', 'deep-agents/planning', '../deep-agents-planning', 'deep-agents-planning/../memory'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -78,6 +104,10 @@ test('Subagents owns an exact closed native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('deep-agents-subagents'), {
     topic: 'subagents', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/subagents/react',
     base: '/deep-agents/subagents/react/', port: 4630, project: 'cockpit-deep-agents-subagents-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/deep-agents/subagents/python',
+      fixtures: 'cockpit/deep-agents/subagents/angular/e2e/fixtures', langgraphPort: 5630,
+    },
   });
   for (const key of ['subagents', 'deep-agents/subagents', '../deep-agents-subagents', 'deep-agents-subagents/../memory'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -93,6 +123,10 @@ test('Filesystem owns an exact closed native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('deep-agents-filesystem'), {
     topic: 'filesystem', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/filesystem/react',
     base: '/deep-agents/filesystem/react/', port: 4629, project: 'cockpit-deep-agents-filesystem-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/deep-agents/filesystem/python',
+      fixtures: 'cockpit/deep-agents/filesystem/angular/e2e/fixtures', langgraphPort: 5629,
+    },
   });
   for (const key of ['filesystem', 'deep-agents/filesystem', '../deep-agents-filesystem', 'deep-agents-filesystem/../memory'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -120,6 +154,10 @@ test('Chat Timeline owns an exact native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('chat-timeline'), {
     topic: 'timeline', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/timeline/react',
     base: '/chat/timeline/react/', port: 4626, project: 'cockpit-chat-timeline-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/timeline/python',
+      fixtures: 'cockpit/chat/timeline/angular/e2e/fixtures', langgraphPort: 5626,
+    },
   });
   for (const key of ['timeline', 'chat/timeline', '../chat-timeline'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -139,6 +177,10 @@ test('Chat Threads owns an exact native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('chat-threads'), {
     topic: 'threads', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/threads/react',
     base: '/chat/threads/react/', port: 4625, project: 'cockpit-chat-threads-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/threads/python',
+      fixtures: 'cockpit/chat/threads/angular/e2e/fixtures', langgraphPort: 5625,
+    },
   });
   for (const key of ['threads', 'chat/threads', '../chat-threads'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -149,6 +191,10 @@ test('Chat Subagents owns an exact native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('chat-subagents'), {
     topic: 'subagents', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/subagents/react',
     base: '/chat/subagents/react/', port: 4624, project: 'cockpit-chat-subagents-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/subagents/python',
+      fixtures: 'cockpit/chat/subagents/angular/e2e/fixtures', langgraphPort: 5624,
+    },
   });
   for (const key of ['subagents', 'chat/subagents', '../chat-subagents'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -159,6 +205,10 @@ test('Chat Tool Calls owns an exact native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('chat-tool-calls'), {
     topic: 'tool-calls', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/tool-calls/react',
     base: '/chat/tool-calls/react/', port: 4623, project: 'cockpit-chat-tool-calls-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/tool-calls/python',
+      fixtures: 'cockpit/chat/tool-calls/angular/e2e/fixtures', langgraphPort: 5623,
+    },
   });
   for (const key of ['tool-calls', 'chat/tool-calls', '../chat-tool-calls'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -169,6 +219,10 @@ test('Chat Interrupts owns an explicit native React identity separate from LangG
   assert.deepEqual(reactCockpitConfiguration('chat-interrupts'), {
     topic: 'interrupts', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/interrupts/react',
     base: '/chat/interrupts/react/', port: 4622, project: 'cockpit-chat-interrupts-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/interrupts/python',
+      fixtures: 'cockpit/chat/interrupts/angular/e2e/fixtures', langgraphPort: 5622,
+    },
   });
   assert.equal(reactCockpitConfiguration('interrupts').appPath, 'cockpit/langgraph/interrupts/react');
   for (const key of ['chat/interrupts', '../chat-interrupts'])
@@ -179,6 +233,10 @@ test('Chat Input owns a closed native React identity', async () => {
   assert.deepEqual(reactCockpitConfiguration('chat-input'), {
     topic: 'input', adapter: 'langgraph', appPath: 'cockpit/chat/input/react',
     base: '/chat/input/react/', port: 4621, project: 'cockpit-chat-input-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/input/python',
+      fixtures: 'cockpit/chat/input/angular/e2e/fixtures', langgraphPort: 5621,
+    },
   });
   for (const key of ['input', 'chat/input', '../chat-input'])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
@@ -272,14 +330,14 @@ test('Spec Rendering has a closed local fifteenth React identity', async () => {
 });
 test('Subagents has a closed fourteenth React identity', async () => {
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
-  assert.deepEqual(reactCockpitConfiguration('ag-ui-subagents'), { topic: 'subagents', adapter: 'ag-ui', appPath: 'cockpit/ag-ui/subagents/react', base: '/ag-ui/subagents/react/', port: 4613, project: 'cockpit-ag-ui-subagents-react' });
+  assert.deepEqual(reactCockpitConfiguration('ag-ui-subagents'), { topic: 'subagents', adapter: 'ag-ui', appPath: 'cockpit/ag-ui/subagents/react', base: '/ag-ui/subagents/react/', port: 4613, project: 'cockpit-ag-ui-subagents-react', backend: {'kind': 'aimock-ag-ui', 'python': 'cockpit/ag-ui/subagents/python', 'fixtures': 'cockpit/ag-ui/subagents/angular/e2e/fixtures', 'backendPort': 5613, 'aimockPort': 6613, 'agentPath': '/agent'} });
   for (const key of ['subagents', 'ag-ui/subagents', '../ag-ui-subagents']) assert.throws(() => reactCockpitConfiguration(key), /Unsupported React cockpit topic/);
 });
 
 test('JSON Render has a closed thirteenth React identity and all routes remain unique',async()=>{
   const {reactCockpitConfiguration}=await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('ag-ui-json-render'),{
-    topic:'json-render',adapter:'ag-ui',appPath:'cockpit/ag-ui/json-render/react',base:'/ag-ui/json-render/react/',port:4612,project:'cockpit-ag-ui-json-render-react',
+    topic:'json-render',adapter:'ag-ui',appPath:'cockpit/ag-ui/json-render/react',base:'/ag-ui/json-render/react/',port:4612,project:'cockpit-ag-ui-json-render-react', backend: {'kind': 'aimock-ag-ui', 'python': 'cockpit/ag-ui/json-render/python', 'fixtures': 'cockpit/ag-ui/json-render/angular/e2e/fixtures', 'backendPort': 5612, 'aimockPort': 6612, 'agentPath': '/agent'},
   });
   const configurations=['streaming','interrupts','memory','client-tools','persistence','durable-execution','subgraphs','time-travel','deployment-runtime','ag-ui-streaming','ag-ui-interrupts','ag-ui-tool-views','ag-ui-json-render','ag-ui-subagents'].map(reactCockpitConfiguration);
   for(const field of ['appPath','base','port','project'])assert.equal(new Set(configurations.map(configuration=>configuration[field])).size,14);
@@ -290,7 +348,7 @@ test('AG-UI Tool Views has a closed twelfth identity with no overlapping runtime
   const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
   assert.deepEqual(reactCockpitConfiguration('ag-ui-tool-views'), {
     topic: 'tool-views', adapter: 'ag-ui', appPath: 'cockpit/ag-ui/tool-views/react',
-    base: '/ag-ui/tool-views/react/', port: 4611, project: 'cockpit-ag-ui-tool-views-react',
+    base: '/ag-ui/tool-views/react/', port: 4611, project: 'cockpit-ag-ui-tool-views-react', backend: {'kind': 'aimock-ag-ui', 'python': 'cockpit/ag-ui/tool-views/python', 'fixtures': 'cockpit/ag-ui/tool-views/angular/e2e/fixtures', 'backendPort': 5611, 'aimockPort': 6611, 'agentPath': '/agent'},
   });
   const configurations = [
     'streaming', 'interrupts', 'memory', 'client-tools', 'persistence',
@@ -313,7 +371,7 @@ test('AG-UI Streaming has a closed React identity distinct from LangGraph Stream
     appPath: 'cockpit/ag-ui/streaming/react',
     base: '/ag-ui/streaming/react/',
     port: 4609,
-    project: 'cockpit-ag-ui-streaming-react',
+    project: 'cockpit-ag-ui-streaming-react', backend: {'kind': 'aimock-ag-ui', 'python': 'cockpit/ag-ui/streaming/python', 'fixtures': 'cockpit/ag-ui/streaming/angular/e2e/fixtures', 'backendPort': 5609, 'aimockPort': 6609, 'agentPath': '/agent'},
   });
   assert.equal(
     reactCockpitConfiguration('streaming').appPath,
@@ -340,7 +398,7 @@ test('AG-UI Interrupts has a closed identity and all eleven React previews remai
     appPath: 'cockpit/ag-ui/interrupts/react',
     base: '/ag-ui/interrupts/react/',
     port: 4610,
-    project: 'cockpit-ag-ui-interrupts-react',
+    project: 'cockpit-ag-ui-interrupts-react', backend: {'kind': 'aimock-ag-ui', 'python': 'cockpit/ag-ui/interrupts/python', 'fixtures': 'cockpit/ag-ui/interrupts/angular/e2e/fixtures', 'backendPort': 5610, 'aimockPort': 6610, 'agentPath': '/agent/native'},
   });
   assert.equal(
     reactCockpitConfiguration('interrupts').appPath,
@@ -387,6 +445,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/deployment-runtime/react/',
     port: 4608,
     project: 'cockpit-langgraph-deployment-runtime-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/deployment-runtime/python',
+      fixtures: 'cockpit/langgraph/deployment-runtime/angular/e2e/fixtures', langgraphPort: 5608,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('time-travel'), {
     topic: 'time-travel',
@@ -394,6 +456,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/time-travel/react/',
     port: 4607,
     project: 'cockpit-langgraph-time-travel-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/time-travel/python',
+      fixtures: 'cockpit/langgraph/time-travel/angular/e2e/fixtures', langgraphPort: 5607,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('subgraphs'), {
     topic: 'subgraphs',
@@ -401,6 +467,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/subgraphs/react/',
     port: 4606,
     project: 'cockpit-langgraph-subgraphs-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/subgraphs/python',
+      fixtures: 'cockpit/langgraph/subgraphs/angular/e2e/fixtures', langgraphPort: 5606,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('durable-execution'), {
     topic: 'durable-execution',
@@ -408,6 +478,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/durable-execution/react/',
     port: 4605,
     project: 'cockpit-langgraph-durable-execution-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/durable-execution/python',
+      fixtures: 'cockpit/langgraph/durable-execution/angular/e2e/fixtures', langgraphPort: 5605,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('persistence'), {
     topic: 'persistence',
@@ -415,6 +489,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/persistence/react/',
     port: 4604,
     project: 'cockpit-langgraph-persistence-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/persistence/python',
+      fixtures: 'cockpit/langgraph/persistence/angular/e2e/fixtures', langgraphPort: 5604,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('interrupts'), {
     topic: 'interrupts',
@@ -422,6 +500,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/interrupts/react/',
     port: 4601,
     project: 'cockpit-langgraph-interrupts-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/interrupts/python',
+      fixtures: 'cockpit/langgraph/interrupts/angular/e2e/fixtures', langgraphPort: 5601,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('memory'), {
     topic: 'memory',
@@ -429,6 +511,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/memory/react/',
     port: 4602,
     project: 'cockpit-langgraph-memory-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/memory/python',
+      fixtures: 'cockpit/langgraph/memory/angular/e2e/fixtures', langgraphPort: 5602,
+    },
   });
   assert.deepEqual(reactCockpitConfiguration('client-tools'), {
     topic: 'client-tools',
@@ -436,6 +522,10 @@ test('React cockpit configuration accepts only the nine authored topics', async 
     base: '/langgraph/client-tools/react/',
     port: 4603,
     project: 'cockpit-langgraph-client-tools-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/langgraph/client-tools/python',
+      fixtures: 'cockpit/langgraph/client-tools/angular/e2e/fixtures', langgraphPort: 5603,
+    },
   });
   for (const topic of [
     'unknown',
@@ -596,6 +686,10 @@ test('native chat generative UI has an exact isolated key and route', async () =
     base: '/chat/generative-ui/react/',
     port: 4627,
     project: 'cockpit-chat-generative-ui-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/generative-ui/python',
+      fixtures: 'cockpit/chat/generative-ui/angular/e2e/fixtures', langgraphPort: 5627,
+    },
   });
   for (const key of [
     'generative-ui',
@@ -624,4 +718,35 @@ test('AG-UI Client Tools selects the two native frontends and one canonical back
   assert.deepEqual(frontends.filter(cap => cap.frontend === 'react').map(cap => cap.project).sort(), deriveCockpitCaps(root).filter(cap => cap.angular.endsWith('-react')).map(cap => cap.angular).sort());
   assert.equal(frontends.filter(cap => cap.frontend === 'angular').length, 41);
   assert.equal(frontends.find(cap => cap.project === 'cockpit-ag-ui-client-tools-react')?.runtimePath, 'ag-ui/client-tools/react');
+});
+test('aimock-backed React e2e setups match their closed configuration backends', async () => {
+  const { reactCockpitConfiguration } = await import('./react-cockpit/configuration.mjs');
+  const { readdirSync, readFileSync, existsSync } = await import('node:fs');
+  const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? walk(`${dir}/${entry.name}`) : entry.name === 'global-setup-impl.ts' && dir.endsWith('/react/e2e') ? [`${dir}/${entry.name}`] : []);
+  const setups = walk('cockpit');
+  assert.ok(setups.length > 0);
+  for (const file of setups) {
+    const call = /reactAimock(AgUi|Mastra)?GlobalSetup\(\{ example: '([^']+)', port: (\d+) \}\)/.exec(readFileSync(file, 'utf8'));
+    assert.ok(call, `${file} uses a reactAimock*GlobalSetup`);
+    const [, flavor, example, port] = call;
+    const serve = /serve\.mjs ([a-z0-9-]+)/.exec(readFileSync(file.replace('global-setup-impl.ts', 'playwright.config.ts'), 'utf8'))[1];
+    const configuration = reactCockpitConfiguration(serve);
+    assert.equal(configuration.port, Number(port), file);
+    const shared = { python: `cockpit/${example}/python`, fixtures: `cockpit/${example}/angular/e2e/fixtures` };
+    if (flavor === 'Mastra')
+      assert.deepEqual(configuration.backend, {
+        kind: 'aimock-mastra', service: 'deployments/ag-ui-mastra', fixtures: shared.fixtures,
+        backendPort: Number(port) + 1000, aimockPort: Number(port) + 2000,
+        agentPath: '/agent/mastra', publicAgentPath: '/agent', headers: { 'x-internal-token': 'dev-local-token' },
+      }, file);
+    else if (flavor === 'AgUi') {
+      const { aimockPort, agentPath, ...rest } = configuration.backend;
+      assert.deepEqual(rest, { kind: 'aimock-ag-ui', ...shared, backendPort: Number(port) + 1000 }, file);
+      if (aimockPort !== undefined) assert.equal(aimockPort, Number(port) + 2000, file);
+      assert.match(agentPath, /^\/agent(\/[a-z]+)?$/, file);
+    } else
+      assert.deepEqual(configuration.backend, { kind: 'aimock-langgraph', ...shared, langgraphPort: Number(port) + 1000 }, file);
+    assert.ok(existsSync(configuration.backend.fixtures), configuration.backend.fixtures);
+  }
 });

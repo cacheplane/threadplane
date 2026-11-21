@@ -5,11 +5,11 @@ type WebServer = Exclude<
   unknown[] | undefined
 >;
 
-/** Each original smoke must still succeed before its own runtime starts. */
+/** The five Deep Agents preview servers start as one pool with one readiness budget. */
 export function poolAgentServers(servers: WebServer[]): WebServer[] {
   const matches = servers.flatMap((server, index) => {
     const match =
-      /^npx nx run cockpit-deep-agents-(planning|filesystem|subagents|skills|memory)-python:smoke && node scripts\/react-cockpit\/serve\.mjs deep-agents-\1 --no-parent$/.exec(
+      /^node scripts\/react-cockpit\/serve\.mjs deep-agents-(planning|filesystem|subagents|skills|memory) --no-parent --backend$/.exec(
         server.command
       );
     return match ? [{ index, topic: match[1] }] : [];
@@ -20,7 +20,7 @@ export function poolAgentServers(servers: WebServer[]): WebServer[] {
     matches.some((match, i) => match.index !== matches[0].index + i)
   ) {
     throw new Error(
-      'Agents startup requires the original contiguous five unique smoke/server chains'
+      'Agents startup requires the original contiguous five unique preview servers'
     );
   }
   const first = matches[0].index;

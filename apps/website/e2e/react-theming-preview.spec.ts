@@ -2,9 +2,11 @@ import { selectWorkspaceMode } from './fixtures/workspace-controls';
 import { selectFramework } from './fixtures/framework-controls';
 import { test, expect, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 import { fromPageOrReactPreview } from './fixtures/react-preview-requests';
 
+// The preview's server (`serve.mjs chat-theming --backend`) runs the real
+// graph under `langgraph dev` on aimock fixtures shared with the Angular
+// example, and records requests through scripts/react-cockpit/langgraph-proxy.mjs.
 const origin = 'http://127.0.0.1:4644';
 const route = '/docs/angular/chat/guides/theming';
 const reactRoute = '/docs/react/chat/guides/theming';
@@ -25,7 +27,7 @@ test.describe('native Theming Website', () => {
   test.describe.configure({ mode: 'serial' });
   test.skip(
     !!process.env['BASE_URL'],
-    'Compiled graph controls and deterministic providers are local only.'
+    'The aimock-backed graph and its proxy controls are local only.'
   );
   test.beforeEach(async ({ page, request }) => {
     const observed = {
@@ -46,6 +48,10 @@ test.describe('native Theming Website', () => {
         });
     });
     expect((await request.post(origin + '/__reset')).ok()).toBe(true);
+    // The backend starts lazily; wait for it before measuring UI transitions.
+    expect(
+      (await request.post(origin + '/__ready', { timeout: 180000 })).ok()
+    ).toBe(true);
   });
   test.afterEach(async ({ page, request }, info) => {
     await writeFile(info.outputPath('page.html'), await page.content());
@@ -53,37 +59,11 @@ test.describe('native Theming Website', () => {
       info.outputPath('browser-observations.json'),
       JSON.stringify(observations.get(page), null, 2)
     );
+    // Every proxied browser connection closes and nothing stays held.
     await page.goto('about:blank');
     await expect
-      .poll(
-        async () =>
-          (
-            await (await request.get(origin + '/__lifetime')).json()
-          ).active
-      )
-      .toEqual({ children: 0, streams: 0, histories: 0, handlers: 0 });
-    await expect
-      .poll(
-        async () =>
-          (
-            await (await request.get(origin + '/__lifetime')).json()
-          ).responseOpen
-      )
-      .toBe(0);
-    const lifetime = await (await request.get(origin + '/__lifetime')).json();
-    for (const child of lifetime.children) {
-      expect(child.reaped).toBe(true);
-      expect(() => process.kill(child.pid, 0)).toThrow(/ESRCH/);
-      expect(() => process.kill(-child.pgid, 0)).toThrow(/ESRCH/);
-    }
-    await writeFile(
-      info.outputPath('observed-child-absence.json'),
-      JSON.stringify(
-        { children: lifetime.children, observedPidAndPgidAbsence: 'ESRCH' },
-        null,
-        2
-      )
-    );
+      .poll(async () => (await request.get(origin + '/__lifetime')).json())
+      .toMatchObject({ activeStream: false, activeHistory: false, openResponses: 0 });
     for (const path of ['/__requests', '/__captures', '/__lifetime'])
       await writeFile(
         info.outputPath(path.slice(3) + '.json'),
@@ -216,13 +196,17 @@ test.describe('native Theming Website', () => {
         'GET',
         'POST',
       ]);
-      const captures = await (await request.get(origin + '/__captures')).json();
+      const captures: {
+        sse: string;
+        savedMessages: { type: string; content: string }[];
+        next: string[];
+        titleBefore: string | null;
+        titleAfter: string | null;
+      }[] = await (await request.get(origin + '/__captures')).json();
       expect(captures).toHaveLength(1);
-      const { threadId, runId } = captures[0];
-      expect(wire[0].body).toMatchObject({
-        thread_id: threadId,
-        if_exists: 'raise',
-      });
+      const threadId = wire[0].body.thread_id;
+      const runId = wire[2].path.split('/').at(-1);
+      expect(wire[0].body).toMatchObject({ if_exists: 'raise' });
       expect(wire.map((r: { path: string }) => r.path)).toEqual([
         '/api/threads',
         `/api/threads/${threadId}/runs/stream`,
@@ -233,32 +217,15 @@ test.describe('native Theming Website', () => {
       expect(wire[1].body.input.messages[0].content).toBe(
         'Explain lift ✈ café'
       );
-      expect(captures[0].sseSha256).toBe(
-        createHash('sha256').update(captures[0].sse).digest('hex')
-      );
-      expect(captures[0].historyResponses).toHaveLength(1);
-      expect(captures[0].historyResponses[0]).toHaveLength(1);
-      expect(captures[0].historyResponses[0][0]).toMatchObject({
-        values: { messages: captures[0].savedMessages },
-        next: [],
-        checkpoint: { thread_id: threadId, checkpoint_ns: '' },
-      });
-      expect(captures[0].proof).toMatchObject({
-        actualCompiledGraph: true,
-        networkConnectAttempts: 0,
-        titleMessageCallbacks: 0,
-      });
-      expect(captures[0].titleUpdates).toHaveLength(1);
-      expect(captures[0].sse).not.toContain('Authored metadata title');
+      // The real server saved one finished turn with its title.
+      expect(captures[0].next).toEqual([]);
+      expect(captures[0].titleBefore).toBeNull();
+      expect(captures[0].titleAfter).toBe('Aviation snippet title');
       expect(
-        captures[0].savedMessages.find(
-          (m: { type: string }) => m.type === 'human'
-        ).content
+        captures[0].savedMessages.find((m) => m.type === 'human')?.content
       ).toBe('Explain lift ✈ café');
       expect(
-        captures[0].savedMessages.filter(
-          (m: { type: string }) => m.type === 'ai'
-        )
+        captures[0].savedMessages.filter((m) => m.type === 'ai')
       ).toHaveLength(1);
       const before = [...(observations.get(page)?.requests ?? [])];
       await frame

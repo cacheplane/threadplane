@@ -43,6 +43,7 @@
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
+      "inputs": ["default", "reactAimockBackend"],
       "dependsOn": [
         "build",
         {

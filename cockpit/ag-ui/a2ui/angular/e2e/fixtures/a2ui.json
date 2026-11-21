@@ -27,6 +27,52 @@
           }
         ]
       }
+    },
+    {
+      "match": { "systemMessage": "In 3-5 words, summarize" },
+      "response": { "content": "Local booking title" }
+    },
+    {
+      "match": {
+        "systemMessage": "find_routes() tool returned the following flights",
+        "userMessage": "SFO→SEA"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "FlightResultsSpec",
+            "arguments": "{\"surface_id\": \"results\", \"data_model\": {}, \"components\": [{\"id\": \"root\", \"component\": \"Column\", \"children\": [\"card_0\"]}, {\"id\": \"card_0\", \"component\": \"Card\", \"child\": \"col_0\"}, {\"id\": \"col_0\", \"component\": \"Column\", \"children\": [\"title_0\", \"route_0\", \"time_0\", \"btn_0\"]}, {\"id\": \"title_0\", \"component\": \"Text\", \"text\": \"UA flight UA204\", \"variant\": \"h3\"}, {\"id\": \"route_0\", \"component\": \"Text\", \"text\": \"SFO → SEA • 120 min • Boeing 737\"}, {\"id\": \"time_0\", \"component\": \"Text\", \"text\": \"Depart 09:00 • Arrive 11:00 • Gate F11\"}, {\"id\": \"btn_0\", \"component\": \"Button\", \"child\": \"btn_label_0\", \"action\": {\"event\": {\"name\": \"flightSelect\", \"context\": {\"flightId\": \"UA204\"}}}}, {\"id\": \"btn_label_0\", \"component\": \"Text\", \"text\": \"Select\"}]}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "from the flight results surface",
+        "userMessage": "flight UA204"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "ConfirmationSpec",
+            "arguments": "{\"surface_id\": \"confirmation\", \"data_model\": {}, \"components\": [{\"id\": \"root\", \"component\": \"Column\", \"children\": [\"card\"]}, {\"id\": \"card\", \"component\": \"Card\", \"child\": \"card_col\"}, {\"id\": \"card_col\", \"component\": \"Column\", \"children\": [\"title\", \"route_text\", \"time_text\", \"gate_text\", \"party_text\", \"modify\"]}, {\"id\": \"title\", \"component\": \"Text\", \"text\": \"UA flight UA204\", \"variant\": \"h2\"}, {\"id\": \"route_text\", \"component\": \"Text\", \"text\": \"SFO → SEA • Boeing 737\"}, {\"id\": \"time_text\", \"component\": \"Text\", \"text\": \"09:00 → 11:00\"}, {\"id\": \"gate_text\", \"component\": \"Text\", \"text\": \"Gate F11\"}, {\"id\": \"party_text\", \"component\": \"Text\", \"text\": \"3 passengers  •  Business\"}, {\"id\": \"modify\", \"component\": \"Button\", \"child\": \"modify_label\", \"action\": {\"event\": {\"name\": \"modifySearch\", \"context\": {\"formId\": \"booking\"}}}}, {\"id\": \"modify_label\", \"component\": \"Text\", \"text\": \"Modify search\"}]}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "booking-form designer",
+        "userMessage": "\"modifySearch\""
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "BookingFormSpec",
+            "arguments": "{\"surface_id\": \"booking\", \"data_model\": {\"origin\": [\"SFO\"], \"dest\": [\"SEA\"], \"date\": \"2027-02-17\", \"passengers\": 3, \"fare_class\": [\"Business\"]}, \"components\": [{\"id\": \"root\", \"component\": \"Column\", \"children\": [\"card\"]}, {\"id\": \"card\", \"component\": \"Card\", \"child\": \"card_col\"}, {\"id\": \"card_col\", \"component\": \"Column\", \"children\": [\"title\", \"origin\", \"dest\", \"date\", \"passengers\", \"fare\", \"submit\"]}, {\"id\": \"title\", \"component\": \"Text\", \"text\": \"Book a flight\", \"variant\": \"h2\"}, {\"id\": \"origin\", \"component\": \"ChoicePicker\", \"label\": \"Origin\", \"options\": [{\"label\": \"LAX\", \"value\": \"LAX\"}, {\"label\": \"JFK\", \"value\": \"JFK\"}, {\"label\": \"SFO\", \"value\": \"SFO\"}, {\"label\": \"ORD\", \"value\": \"ORD\"}, {\"label\": \"BOS\", \"value\": \"BOS\"}, {\"label\": \"ATL\", \"value\": \"ATL\"}, {\"label\": \"DFW\", \"value\": \"DFW\"}, {\"label\": \"SEA\", \"value\": \"SEA\"}, {\"label\": \"MIA\", \"value\": \"MIA\"}, {\"label\": \"DEN\", \"value\": \"DEN\"}], \"value\": {\"path\": \"/origin\"}, \"variant\": \"mutuallyExclusive\"}, {\"id\": \"dest\", \"component\": \"ChoicePicker\", \"label\": \"Destination\", \"options\": [{\"label\": \"LAX\", \"value\": \"LAX\"}, {\"label\": \"JFK\", \"value\": \"JFK\"}, {\"label\": \"SFO\", \"value\": \"SFO\"}, {\"label\": \"ORD\", \"value\": \"ORD\"}, {\"label\": \"BOS\", \"value\": \"BOS\"}, {\"label\": \"ATL\", \"value\": \"ATL\"}, {\"label\": \"DFW\", \"value\": \"DFW\"}, {\"label\": \"SEA\", \"value\": \"SEA\"}, {\"label\": \"MIA\", \"value\": \"MIA\"}, {\"label\": \"DEN\", \"value\": \"DEN\"}], \"value\": {\"path\": \"/dest\"}, \"variant\": \"mutuallyExclusive\"}, {\"id\": \"fare\", \"component\": \"ChoicePicker\", \"label\": \"Fare class\", \"options\": [{\"label\": \"Economy\", \"value\": \"Economy\"}, {\"label\": \"Premium\", \"value\": \"Premium\"}, {\"label\": \"Business\", \"value\": \"Business\"}, {\"label\": \"First\", \"value\": \"First\"}], \"value\": {\"path\": \"/fare_class\"}, \"variant\": \"mutuallyExclusive\"}, {\"id\": \"date\", \"component\": \"DateTimeInput\", \"label\": \"Departure date (YYYY-MM-DD)\", \"value\": {\"path\": \"/date\"}, \"enableDate\": true}, {\"id\": \"passengers\", \"component\": \"TextField\", \"label\": \"Passengers\", \"value\": {\"path\": \"/passengers\"}, \"variant\": \"number\"}, {\"id\": \"submit\", \"component\": \"Button\", \"child\": \"submit_label\", \"variant\": \"primary\", \"action\": {\"event\": {\"name\": \"bookingSubmit\", \"context\": {\"formId\": \"booking\", \"origin\": {\"path\": \"/origin\"}, \"dest\": {\"path\": \"/dest\"}, \"date\": {\"path\": \"/date\"}, \"passengers\": {\"path\": \"/passengers\"}, \"fare_class\": {\"path\": \"/fare_class\"}}}}}, {\"id\": \"submit_label\", \"component\": \"Text\", \"text\": \"Search flights\"}]}"
+          }
+        ]
+      }
     }
   ]
 }

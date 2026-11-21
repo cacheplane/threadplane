@@ -1,63 +1,53 @@
-import { createServer } from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { once } from 'node:events';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { resolve } from 'node:path';
 import type { AddressInfo } from 'node:net';
-import { expect, it, onTestFinished } from 'vitest';
+import { afterAll, beforeAll, expect, it, onTestFinished } from 'vitest';
 import { createConnectedApplication } from './connection';
 import type { A2uiApplication } from './application';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Borrow the moved private presentation type.
 import type { SurfaceView } from '../../../../../libs/cockpit-a2ui-react/src/surface';
 
+/* eslint-disable @nx/enforce-module-boundaries -- Local test backend tooling is never bundled. */
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { createAimockBackend } from '../../../../../scripts/react-cockpit/aimock-backend.mjs';
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { createLanggraphProxy } from '../../../../../scripts/react-cockpit/langgraph-proxy.mjs';
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { reactCockpitConfiguration } from '../../../../../scripts/react-cockpit/configuration.mjs';
+/* eslint-enable @nx/enforce-module-boundaries */
+
+// The real graph runs under `langgraph dev` on aimock fixtures shared with the
+// Angular example (cockpit/chat/a2ui/angular/e2e/fixtures); the in-process
+// proxy records each /api request (scripts/react-cockpit/langgraph-proxy.mjs).
+const { backend: config } = reactCockpitConfiguration('chat-a2ui');
+const backend = createAimockBackend({ root: resolve(__dirname, '../../../../..'), backend: config });
+beforeAll(() => backend.ensure(), 180000);
+afterAll(() => backend.close());
+type Handler = (request: unknown, response: unknown, pathname: string) => Promise<boolean>;
 async function fixture() {
-  const location = new URL(
-    '../../../../../scripts/react-cockpit/chat-a2ui-fixture.mjs',
-    import.meta.url
-  ).href;
-  const { createChatA2uiFixture, fixtureConfiguration } = await import(
-    /* @vite-ignore */ location
-  );
-  // Existing fixture prepares one frozen isolated Python environment; no model credentials.
-  const evidence = mkdtempSync(
-    join(tmpdir(), 'threadplane-chat-a2ui-task3-sdk-')
-  );
-  const handle = createChatA2uiFixture({
-    configuration: fixtureConfiguration(),
+  const proxy: Handler = createLanggraphProxy({
+    upstream: `http://127.0.0.1:${config.langgraphPort}`,
+    ready: () => backend.ensure(),
   });
-  const server = createServer(async (req, res) => {
-    if (
-      !(await handle(
-        req,
-        res,
-        new URL(req.url ?? '', 'http://localhost').pathname
-      ))
-    ) {
+  const server: Server = createServer(async (req, res) => {
+    if (!(await proxy(req, res, new URL(req.url ?? '', 'http://localhost').pathname))) {
       res.writeHead(404);
       res.end();
     }
   });
   server.listen(0, '127.0.0.1');
   await once(server, 'listening');
-  const app = createConnectedApplication({
-    apiUrl: `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`,
-    headers: {},
-  });
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  const app = createConnectedApplication({ apiUrl: base + '/api', headers: {} });
   onTestFinished(async () => {
     await app.dispose();
-    await handle.close();
     server.closeAllConnections();
     await new Promise<void>((r) => server.close(() => r()));
-    const receipt = handle.receipt();
-    writeFileSync(
-      join(evidence, 'receipt.json'),
-      JSON.stringify(receipt, null, 2) + '\n',
-      { mode: 0o600 }
-    );
-    console.log('Task 3 actual SDK evidence: ' + evidence);
-    expect(receipt.worker.reaped).toBe(true);
-    expect(receipt.worker.pythonAbsent).toBe(true);
   });
+  const handle = {
+    receipt: async () => ({ requests: await (await fetch(base + '/__requests')).json() }),
+  };
   return { app, handle };
 }
 async function action(app: A2uiApplication, surface: SurfaceView, id: string) {
@@ -75,7 +65,7 @@ async function action(app: A2uiApplication, surface: SurfaceView, id: string) {
 }
 it('actual default SDK session admits the compiled graph four-turn edited Search, Select and Modify flow', async () => {
   const f = await fixture();
-  expect(f.handle.receipt().requests).toEqual([]);
+  expect((await f.handle.receipt()).requests).toEqual([]);
   const publications: ReturnType<typeof f.app.getSnapshot>[] = [];
   f.app.subscribe(() => publications.push(f.app.getSnapshot()));
   expect(await f.app.submit('I want to fly LAX to JFK')).toBe(true);
@@ -116,7 +106,7 @@ it('actual default SDK session admits the compiled graph four-turn edited Search
     expect(state.messages.length).toBe(state.surfaces.length * 2);
     if (state.busy) expect(state.activeSurface).toBeNull();
   }
-  const receipt = f.handle.receipt();
+  const receipt = await f.handle.receipt();
   expect(
     receipt.requests.filter((r: { path: string }) => r.path === '/api/threads')
   ).toHaveLength(1);
@@ -160,18 +150,10 @@ it('actual default SDK session admits the compiled graph four-turn edited Search
         r.body.checkpoint.thread_id === f.app.getSnapshot().threadId
     )
   ).toBe(true);
+  // Each turn's run status was read once from the real server.
   expect(
-    receipt.runReads.map((r: { run: { status: string } }) => r.run.status)
-  ).toEqual(['success', 'success', 'success', 'success']);
-  expect(
-    receipt.proofs.every(
-      (p: { actualCompiledGraph: boolean; networkConnectAttempts: number }) =>
-        p.actualCompiledGraph && p.networkConnectAttempts === 0
+    receipt.requests.filter(
+      (r: { method: string; path: string }) => r.method === 'GET' && /\/runs\/[^/]+$/.test(r.path)
     )
-  ).toBe(true);
-  expect(
-    receipt.proofs.some((p: { tools?: { name: string }[] }) =>
-      p.tools?.some((t) => t.name === '_lookup_flight_impl')
-    )
-  ).toBe(true);
+  ).toHaveLength(4);
 }, 60000);

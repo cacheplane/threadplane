@@ -31,6 +31,60 @@
       "response": {
         "content": "Understood — a $129.00 refund to cus_z19fp for a chargeback. Pausing for operator approval; no refund is issued until a human reviews and approves."
       }
+    },
+    {
+      "match": {
+        "responseFormat": "json_schema",
+        "userMessage": "Negative amount"
+      },
+      "response": {
+        "content": {
+          "customer_id": "cus_demo",
+          "amount": -1,
+          "reason": "Fictional damaged item"
+        }
+      }
+    },
+    {
+      "match": {
+        "responseFormat": "json_schema",
+        "userMessage": ""
+      },
+      "response": {
+        "content": {
+          "customer_id": "cus_demo",
+          "amount": 25,
+          "reason": "Fictional damaged item"
+        }
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Refund Authorization Assistant",
+        "userMessage": "Hold"
+      },
+      "response": { "content": "Draft ready." },
+      "chunkSize": 3
+    },
+    {
+      "match": {
+        "systemMessage": "Refund Authorization Assistant",
+        "userMessage": "Model failure"
+      },
+      "response": {
+        "error": {
+          "message": "PRIVATE model failure",
+          "type": "server_error"
+        },
+        "status": 500
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "Refund Authorization Assistant",
+        "userMessage": ""
+      },
+      "response": { "content": "Draft ready." }
     }
   ]
 }

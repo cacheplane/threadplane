@@ -58,6 +58,401 @@
           }
         ]
       }
+    },
+    {
+      "match": { "toolCallId": "fs-normal-note" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/kase.md\", \"content\": \"KASE assessment ready.\"}",
+            "id": "fs-normal-report"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "fs-normal-report" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-read-only-ls" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-empty-empty" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-write-error-invalid" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-mixed-read" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-protected-edit-initial" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "edit_file",
+            "arguments": "{\"file_path\": \"/reports/existing.md\", \"old_string\": \"old\", \"new_string\": \"new\", \"replace_all\": true}",
+            "id": "fs-protected-edit-edit"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "fs-protected-edit-edit" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-report-overwrite-initial" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/existing.md\", \"content\": \"Replacement report\"}",
+            "id": "fs-report-overwrite-replacement"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "fs-report-overwrite-replacement" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-overwrite-note" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/notes/kase.txt\", \"content\": \"Replacement\"}",
+            "id": "fs-overwrite-overwrite"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "fs-overwrite-overwrite" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-edit-note" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "edit_file",
+            "arguments": "{\"file_path\": \"/notes/kase.txt\", \"old_string\": \"KASE\", \"new_string\": \"Aspen\", \"replace_all\": true}",
+            "id": "fs-edit-edit"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "fs-edit-edit" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-delete-report" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "delete",
+            "arguments": "{\"file_path\": \"/reports\"}",
+            "id": "fs-delete-delete"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "fs-delete-delete" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-batch-note" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/kase.md\", \"content\": \"KASE assessment ready.\"}",
+            "id": "fs-batch-report"
+          },
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/second.md\", \"content\": \"Second report\"}",
+            "id": "fs-batch-second"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "fs-batch-second" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-duplicates-note" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/kase.md\", \"content\": \"KASE assessment ready.\"}",
+            "id": "fs-duplicates-report"
+          },
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/kase.md\", \"content\": \"Second report\"}",
+            "id": "fs-duplicates-second"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "fs-duplicates-second" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": { "toolCallId": "fs-reject-reproposal-note" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/kase.md\", \"content\": \"KASE assessment ready.\"}",
+            "id": "fs-reject-reproposal-report"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "fs-reject-reproposal-report" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/kase.md\", \"content\": \"Revised assessment\"}",
+            "id": "fs-reject-reproposal-reproposal"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "fs-reject-reproposal-reproposal" },
+      "response": { "content": "Files reconciled." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:normal]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/notes/kase.txt\", \"content\": \"KASE field elevation is 7820 ft.\"}",
+            "id": "fs-normal-note"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "userMessage": "[scenario:no-files]" },
+      "response": { "content": "No file changes were needed." }
+    },
+    {
+      "match": { "userMessage": "[scenario:unchanged]" },
+      "response": { "content": "No file changes were needed." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:read-only]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "ls",
+            "arguments": "{\"path\": \"/\"}",
+            "id": "fs-read-only-ls"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:empty]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/notes/empty.txt\", \"content\": \"\"}",
+            "id": "fs-empty-empty"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:write-error]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/notes/invalid.txt\", \"content\": 42}",
+            "id": "fs-write-error-invalid"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:mixed]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/notes/kase.txt\", \"content\": \"KASE field elevation is 7820 ft.\"}",
+            "id": "fs-mixed-note"
+          },
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/kase.md\", \"content\": \"KASE assessment ready.\"}",
+            "id": "fs-mixed-report"
+          },
+          {
+            "name": "read_file",
+            "arguments": "{\"file_path\": \"/notes/kase.txt\"}",
+            "id": "fs-mixed-read"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:protected-edit]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/existing.md\", \"content\": \"old old\"}",
+            "id": "fs-protected-edit-initial"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:report-overwrite]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/existing.md\", \"content\": \"Prior report\"}",
+            "id": "fs-report-overwrite-initial"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:overwrite]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/notes/kase.txt\", \"content\": \"KASE field elevation is 7820 ft.\"}",
+            "id": "fs-overwrite-note"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:edit]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/notes/kase.txt\", \"content\": \"KASE field elevation is 7820 ft.\"}",
+            "id": "fs-edit-note"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:delete]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/reports/kase.md\", \"content\": \"KASE assessment ready.\"}",
+            "id": "fs-delete-report"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:batch]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/notes/kase.txt\", \"content\": \"KASE field elevation is 7820 ft.\"}",
+            "id": "fs-batch-note"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:duplicates]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/notes/kase.txt\", \"content\": \"KASE field elevation is 7820 ft.\"}",
+            "id": "fs-duplicates-note"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:reject-reproposal]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "write_file",
+            "arguments": "{\"file_path\": \"/notes/kase.txt\", \"content\": \"KASE field elevation is 7820 ft.\"}",
+            "id": "fs-reject-reproposal-note"
+          }
+        ]
+      }
     }
   ]
 }

@@ -2,12 +2,9 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { createHash, randomUUID } from 'node:crypto';
-import {
-  appendFileSync,
-  readFileSync,
-  realpathSync,
-  writeFileSync,
-} from 'node:fs';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
+import { realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
@@ -18,28 +15,17 @@ const entry = require.resolve('@threadplane/langgraph');
 const candidateRequire = createRequire(entry);
 const sdkEntry = candidateRequire.resolve('@langchain/langgraph-sdk');
 const { Client } = await import(sdkEntry);
-const fixtureURL = new URL(process.env.DEBUG_FIXTURE_MODULE_URL);
+// The repository that owns the backend: aimock replays the debug example's
+// shared fixtures into a real `langgraph dev`, behind the recording proxy.
+const rootURL = new URL(process.env.DEBUG_REPO_ROOT_URL);
 assert.equal(
   process.env.DEBUG_NATIVE_RECEIPT_PATH,
   join(realpathSync(process.cwd()), 'debug-native-receipt.json')
 );
-assert.equal(
-  process.env.DEBUG_NATIVE_ACQUISITIONS_PATH,
-  join(realpathSync(process.cwd()), 'debug-native-acquisitions.jsonl')
-);
-assert.ok(
-  [undefined, 'exit-after-worker-acquired'].includes(
-    process.env.DEBUG_NATIVE_PROBE_FAULT
-  )
-);
-assert.equal(fixtureURL.protocol, 'file:');
-assert.ok(
-  fixtureURL.pathname.endsWith('/scripts/react-cockpit/chat-debug-fixture.mjs')
-);
-assert.equal(
-  realpathSync(fileURLToPath(fixtureURL)),
-  fileURLToPath(fixtureURL)
-);
+assert.equal(rootURL.protocol, 'file:');
+assert.ok(rootURL.pathname.endsWith('/'));
+const root = fileURLToPath(rootURL);
+assert.equal(realpathSync(root) + '/', root);
 assert.ok(
   realpathSync(entry).startsWith(
     realpathSync(process.cwd()) + '/node_modules/@threadplane/langgraph/'
@@ -50,18 +36,31 @@ assert.ok(
     realpathSync(process.cwd()) + '/node_modules/'
   )
 );
-const { createChatDebugFixture } = await import(fixtureURL.href);
-const sourceHash = createHash('sha256')
-  .update(readFileSync(fixtureURL))
-  .digest('hex');
-const onChild = ({ pid, pgid }) => {
-  appendFileSync(
-    process.env.DEBUG_NATIVE_ACQUISITIONS_PATH,
-    JSON.stringify({ pid, pgid, sourceHash }) + '\n'
-  );
-  if (process.env.DEBUG_NATIVE_PROBE_FAULT === 'exit-after-worker-acquired')
-    process.exit(7);
-};
+const { createAimockBackend } = await import(
+  new URL('scripts/react-cockpit/aimock-backend.mjs', rootURL).href
+);
+const { createLanggraphProxy } = await import(
+  new URL('scripts/react-cockpit/langgraph-proxy.mjs', rootURL).href
+);
+const { reactCockpitConfiguration } = await import(
+  new URL('scripts/react-cockpit/configuration.mjs', rootURL).href
+);
+const { backend: backendConfig } = reactCockpitConfiguration('chat-debug');
+const sha256 = (text) => createHash('sha256').update(text).digest('hex');
+/** SSE events as the real server framed them (CRLF or LF). */
+const events = (text) =>
+  text
+    .split(/\r?\n\r?\n/)
+    .filter(Boolean)
+    .map((block) => {
+      const lines = block.split(/\r?\n/);
+      return {
+        event: lines.find((line) => line.startsWith('event: '))?.slice(7),
+        data: JSON.parse(
+          lines.find((line) => line.startsWith('data: '))?.slice(6) ?? 'null'
+        ),
+      };
+    });
 
 const neutral = (messages) =>
   messages.map((message) => {
@@ -87,16 +86,24 @@ const assertEmptyExtras = (snapshot) => {
 };
 
 test('installed native session proves two real live generations and two explicit checkpoint-backed loads', async (t) => {
-  let fixture,
+  let backend,
+    server,
     session,
     unsubscribe,
-    unicodeFixture,
     unicodeSession,
-    projectionFixture,
     projectionSession,
     cleaning;
   const controllers = [];
   const report = { entry, sdkEntry, turns: [], cleanup: null };
+  const control = async (path, body) => {
+    const response = await fetch(base + path, {
+      method: body === undefined ? 'GET' : 'POST',
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    assert.equal(response.status, 200, path);
+    return response.json();
+  };
+  let base;
   const cleanup = () =>
     (cleaning ??= (async () => {
       unsubscribe?.();
@@ -104,44 +111,28 @@ test('installed native session proves two real live generations and two explicit
       await session?.dispose();
       await unicodeSession?.dispose();
       await projectionSession?.dispose();
-      await unicodeFixture?.close();
-      await projectionFixture?.close();
-      fixture?.release();
-      await fixture?.close();
-      report.cleanup = fixture?.receipt();
-      if (report.cleanup) {
-        assert.deepEqual(report.cleanup.active, {
-          children: 0,
-          streams: 0,
-          reads: 0,
-          handlers: 0,
-          responses: 0,
+      const lifetime = base ? await control('/__lifetime').catch(() => null) : null;
+      if (server)
+        await new Promise((done) => {
+          server.closeAllConnections();
+          server.close(() => done());
         });
-        for (const child of report.cleanup.children) {
-          assert.equal(child.reaped, true);
-          if (child.pid)
-            for (const id of [child.pid, -child.pgid])
-              assert.throws(() => process.kill(id, 0), { code: 'ESRCH' });
-        }
+      const pid = backend?.pid ?? null;
+      await backend?.close();
+      report.cleanup = { lifetime, langgraph: { pid, absent: false } };
+      if (lifetime)
+        assert.deepEqual(
+          {
+            activeStream: lifetime.activeStream,
+            activeHistory: lifetime.activeHistory,
+            activeState: lifetime.activeState,
+          },
+          { activeStream: false, activeHistory: false, activeState: false }
+        );
+      if (pid) {
+        assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
+        report.cleanup.langgraph.absent = true;
       }
-      report.unicodeCleanup = unicodeFixture?.receipt();
-      if (report.unicodeCleanup)
-        assert.deepEqual(report.unicodeCleanup.active, {
-          children: 0,
-          streams: 0,
-          reads: 0,
-          handlers: 0,
-          responses: 0,
-        });
-      report.projectionCleanup = projectionFixture?.receipt();
-      if (report.projectionCleanup)
-        assert.deepEqual(report.projectionCleanup.active, {
-          children: 0,
-          streams: 0,
-          reads: 0,
-          handlers: 0,
-          responses: 0,
-        });
       writeFileSync(
         process.env.DEBUG_NATIVE_RECEIPT_PATH,
         JSON.stringify(report) + '\n',
@@ -163,8 +154,22 @@ test('installed native session proves two real live generations and two explicit
       process.off('SIGTERM', onTerminate);
     }
   });
-  fixture = createChatDebugFixture({ onChild });
-  const apiUrl = await fixture.listen();
+  backend = createAimockBackend({ root, backend: backendConfig });
+  await backend.ensure();
+  const proxy = createLanggraphProxy({
+    upstream: `http://127.0.0.1:${backendConfig.langgraphPort}`,
+  });
+  server = createServer(async (request, response) => {
+    const path = new URL(request.url ?? '/', 'http://localhost').pathname;
+    if (!(await proxy(request, response, path))) {
+      response.writeHead(404);
+      response.end();
+    }
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  base = `http://127.0.0.1:${server.address().port}`;
+  const apiUrl = base + '/api';
   const client = new Client({
     apiUrl,
     apiKey: null,
@@ -312,14 +317,17 @@ test('installed native session proves two real live generations and two explicit
         first
       );
     else first = structuredClone(exact);
-    const capture = fixture.captures.at(-1);
-    const processCallbacks = capture.events.filter(
-      ([kind, value]) =>
-        kind === 'messages' && value[1].langgraph_node === 'process'
+    // What the real server streamed and saved for this run.
+    const capture = (await control('/__captures')).at(-1);
+    const rawCallbacks = events(capture.sse).filter(
+      ({ event }) => event === 'messages'
+    );
+    const processCallbacks = rawCallbacks.filter(
+      ({ data }) => data[1].langgraph_node === 'process'
     );
     assert.equal(processCallbacks.length, 1);
-    assert.equal(processCallbacks[0][1][0].id, turn[2].id);
-    assert.equal(answer, capture.state.values.messages.at(-3).content);
+    assert.equal(processCallbacks[0].data[0].id, turn[2].id);
+    assert.equal(answer, capture.values.messages.at(-3).content);
     report.turns.push({
       input,
       generation,
@@ -328,10 +336,9 @@ test('installed native session proves two real live generations and two explicit
       analysis,
       checkpoint: cp,
       rawExact: exact,
-      rawCallbacks: capture.events.filter(([kind]) => kind === 'messages'),
+      rawCallbacks,
       processCallback: processCallbacks[0],
-      proof: capture.proof,
-      sseSha256: capture.sseSha256,
+      sseSha256: sha256(capture.sse),
       historyOrder: loaded.history.map((row) => row.checkpoint),
       liveDelivery: turn.map((m) => m.delivery),
       reloadDelivery: loaded.messages.slice(-4).map((m) => m.delivery),
@@ -339,32 +346,28 @@ test('installed native session proves two real live generations and two explicit
     prefix = frozen;
     previousGeneration = generation;
   }
-  report.requests = structuredClone(fixture.requests);
-  assert.equal(fixture.requests.length, 12);
+  const requests = await control('/__requests');
+  report.requests = requests;
+  assert.equal(requests.length, 12);
   assert.equal(
-    fixture.requests.filter(
+    requests.filter(
       (r) => r.method === 'GET' && /\/runs\/[^/]+$/.test(r.path)
     ).length,
     2,
     'Native submit confirms each exact physical run status'
   );
   assert.equal(
-    fixture.requests.filter((r) => r.path.endsWith('/runs/stream')).length,
+    requests.filter((r) => r.path.endsWith('/runs/stream')).length,
     2
   );
   assert.equal(
-    fixture.requests.filter((r) => r.path.endsWith('/history')).length,
+    requests.filter((r) => r.path.endsWith('/history')).length,
     2
   );
-  // Separate local provider extension: the natural two-turn gate above stays
-  // unchanged. Actual graph process computes analysis from generated astral A.
-  unicodeFixture = createChatDebugFixture({
-    providerVariant: 'unicode',
-    onChild,
-  });
-  const unicodeUrl = await unicodeFixture.listen();
+  // A scripted answer with astral characters (shared fixtures): the real
+  // graph's process node computes analysis from it in Python code points.
   const unicodeClient = new Client({
-    apiUrl: unicodeUrl,
+    apiUrl,
     apiKey: null,
     callerOptions: { maxRetries: 0 },
     defaultHeaders: {},
@@ -377,7 +380,7 @@ test('installed native session proves two real live generations and two explicit
   unicodeSession = createSession({
     assistantId: 'c-debug',
     threadId: unicodeThread,
-    apiUrl: unicodeUrl,
+    apiUrl,
     clientOptions: { maxRetries: 0, defaultHeaders: {} },
   });
   assert.equal(
@@ -410,20 +413,21 @@ test('installed native session proves two real live generations and two explicit
     unicodeLive.state.analysis
   );
   report.unicodeExtension = {
-    label: 'AuthoredModel _begin extension, real graph analysis',
+    label: 'Scripted astral answer, real graph analysis',
     answer: unicodeAnswer,
     utf16Length: unicodeAnswer.length,
     codepoints: [...unicodeAnswer].length,
     raw: unicodeExact,
-    proof: unicodeFixture.captures[0].proof,
   };
-  projectionFixture = createChatDebugFixture({
-    omitProcessCallback: true,
-    onChild,
+  // Transport projection: the proxy drops the process node's message callback
+  // from the stream the session receives; the real run still emits it.
+  await control('/__stream/edit', {
+    ops: [
+      { event: '^messages$', dataPattern: '"langgraph_node": ?"process"', op: 'drop' },
+    ],
   });
-  const projectionUrl = await projectionFixture.listen();
   const projectionClient = new Client({
-    apiUrl: projectionUrl,
+    apiUrl,
     apiKey: null,
     callerOptions: { maxRetries: 0 },
     defaultHeaders: {},
@@ -436,7 +440,7 @@ test('installed native session proves two real live generations and two explicit
   projectionSession = createSession({
     assistantId: 'c-debug',
     threadId: projectionThread,
-    apiUrl: projectionUrl,
+    apiUrl,
     clientOptions: { maxRetries: 0, defaultHeaders: {} },
   });
   assert.equal(
@@ -459,15 +463,17 @@ test('installed native session proves two real live generations and two explicit
     neutral(projectionLive.messages),
     neutral(projectionRaw.values.messages)
   );
-  const projected = projectionFixture.captures[0];
-  assert.equal(projected.omission.id, processMessage.id);
-  assert.equal(projected.omission.count, 1);
-  assert.notEqual(projected.originalSseSha256, projected.sseSha256);
+  const projected = (await control('/__captures')).at(-1);
+  const naturalCallbacks = events(projected.sse).filter(
+    ({ event, data }) =>
+      event === 'messages' && data[1].langgraph_node === 'process'
+  );
+  assert.equal(naturalCallbacks.length, 1);
+  assert.equal(naturalCallbacks[0].data[0].id, processMessage.id);
   report.projectionRegression = {
     label: 'Transport omission only; natural backend callback was present',
-    originalSseSha256: projected.originalSseSha256,
-    projectedSseSha256: projected.sseSha256,
-    omission: projected.omission,
+    naturalSseSha256: sha256(projected.sse),
+    omission: { id: processMessage.id, count: naturalCallbacks.length },
     semantic: neutral(projectionLive.messages),
     delivery: processMessage.delivery,
     raw: projectionRaw,

@@ -377,6 +377,38 @@
       "metadata": {
         "systemHash": "05dfe622"
       }
+    },
+    {
+      "match": { "systemMessage": "Provide a brief one-sentence summary" },
+      "response": { "content": "The traveler asked an aviation question and received a short explanation." }
+    },
+    {
+      "match": { "systemMessage": "In 3-5 words, summarize" },
+      "response": { "content": "Aviation debug question" }
+    },
+    {
+      "match": { "userMessage": "Explain lift ✈ café" },
+      "response": { "content": "Lift is the upward force a wing makes as air flows faster over its curved top than beneath it." }
+    },
+    {
+      "match": { "userMessage": "Continue lift — aérodrome" },
+      "response": { "content": "At a high aérodrome the thinner air means a wing needs more speed to make the same lift." }
+    },
+    {
+      "match": { "userMessage": "first input 🛩️" },
+      "response": { "content": "A first answer about small aircraft and their wings." }
+    },
+    {
+      "match": { "userMessage": "second input" },
+      "response": { "content": "A second answer that follows the first one." }
+    },
+    {
+      "match": { "userMessage": "labelled generated Unicode extension" },
+      "response": { "content": "Cleared for departure 🛩️ at the café gate." }
+    },
+    {
+      "match": { "userMessage": "labelled omitted B callback projection" },
+      "response": { "content": "An answer whose processing callback the transport omits." }
     }
   ]
 }

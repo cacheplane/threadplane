@@ -1,6 +1,132 @@
 {
   "fixtures": [
     {
+      "match": { "toolCallId": "skills-reads-0" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "read_file",
+            "arguments": "{\"file_path\": \"/skills/runway-analysis/reference/margins.md\"}",
+            "id": "skills-reads-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "skills-reads-1" },
+      "response": { "content": "Offline assessment complete." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:reads]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "read_file",
+            "arguments": "{\"file_path\": \"/skills/runway-analysis/SKILL.md\"}",
+            "id": "skills-reads-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:no-read]",
+        "hasToolResult": false
+      },
+      "response": { "content": "Offline assessment complete." }
+    },
+    {
+      "match": { "toolCallId": "skills-partial-0" },
+      "response": { "content": "Offline assessment complete." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:partial]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "read_file",
+            "arguments": "{\"file_path\": \"/skills/runway-analysis/SKILL.md\", \"offset\": 0, \"limit\": 2}",
+            "id": "skills-partial-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "skills-error-0" },
+      "response": { "content": "Offline assessment complete." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:error]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "read_file",
+            "arguments": "{\"file_path\": \"/skills/runway-analysis/reference/missing.md\"}",
+            "id": "skills-error-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "skills-alternate-0" },
+      "response": { "content": "Offline assessment complete." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:alternate]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "read_file",
+            "arguments": "{\"file_path\": \"/skills/weather-brief/SKILL.md\"}",
+            "id": "skills-alternate-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "skills-reads-followup-0" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "read_file",
+            "arguments": "{\"file_path\": \"/skills/runway-analysis/reference/margins.md\"}",
+            "id": "skills-reads-followup-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "toolCallId": "skills-reads-followup-1" },
+      "response": { "content": "Offline assessment complete." }
+    },
+    {
+      "match": {
+        "userMessage": "[scenario:reads-followup]",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "read_file",
+            "arguments": "{\"file_path\": \"/skills/runway-analysis/SKILL.md\"}",
+            "id": "skills-reads-followup-0"
+          }
+        ]
+      }
+    },
+    {
       "match": {
         "userMessage": "Can a mid-size jet operate out of KASE?",
         "hasToolResult": true,

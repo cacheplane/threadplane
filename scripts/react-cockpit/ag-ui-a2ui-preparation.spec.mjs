@@ -16,83 +16,14 @@ test('native A2UI preparation exports an import-inert closed entry point', () =>
 const preparation =
   typeof module.prepareAgUiA2uiFixture === 'function' ? test : test.skip;
 
-preparation('prepared browser service has its own finite lease and exact owned inputs', async () => {
-  const prepared = { env: { HOME: '/owned/home' }, python: '/owned/python', environment: '/owned/environment', home: '/owned/home', tmpdir: '/owned/tmp', attempt: '/owned/attempt' };
-  let specification;
-  await module.servePreparedAgUiA2uiFixture(prepared, { run: async (value) => { specification = value; } });
-  assert.equal(specification.timeoutMs, 35 * 60 * 1000);
-  assert.equal(specification.allowInterrupt, true);
-  assert.equal(specification.name, 'browser-server');
-  assert.equal(specification.retain, prepared.attempt);
-  assert.equal(specification.executable, process.execPath);
-  assert.deepEqual(specification.args, [join(module.root, 'scripts/react-cockpit/serve.mjs'), 'ag-ui-a2ui', '--no-parent']);
-  assert.deepEqual(specification.env, { ...prepared.env, THREADPLANE_AGUI_A2UI_BROWSER_RUNTIME: JSON.stringify({ python: prepared.python, environment: prepared.environment, home: prepared.home, tmpdir: prepared.tmpdir }), THREADPLANE_AGUI_A2UI_BROWSER_RETAIN: join(prepared.attempt, 'browser') });
-});
-
-for (const mode of ['parent-completion', 'fallback-expiry']) preparation(`actual browser stage preserves ${mode} lifetime with a fake clock`, async (context) => {
-  const retain = await mkdtemp(join(tmpdir(), 'a2ui-service-clock-'));
-  const child = new EventEmitter();
-  child.pid = 12345;
-  child.stdout = new PassThrough();
-  child.stderr = new PassThrough();
-  let exited = false;
-  const signals = [];
-  const finish = () => {
-    if (exited) return;
-    exited = true;
-    child.stdout.end();
-    child.stderr.end();
-    setImmediate(() => child.emit('close', 0, null));
-  };
-  context.mock.timers.enable({ apis: ['setTimeout'] });
-  const stage = module.servePreparedAgUiA2uiFixture({ env: {}, attempt: retain }, { run: (specification) => module.runPreparationStage({ ...specification, spawnChild: () => child, observeIdentity: () => exited ? null : '12345 1 12345 captured', observeGroup: () => exited ? [] : ['12345 1 12345 captured'], signalGroup: (_pid, signal) => { signals.push(signal); finish(); } }) }).then(value => ({ value }), error => ({ error }));
-  try {
-    // The old fixed lease expires here while the modeled 30-minute owner is still active.
-    context.mock.timers.tick(20 * 60 * 1000);
-    await new Promise(resolve => setImmediate(resolve));
-    assert.deepEqual(signals, [], 'service must remain alive at the old 20-minute deadline');
-    context.mock.timers.tick(10 * 60 * 1000);
-    assert.deepEqual(signals, [], 'service must outlive the full parent setup/test deadline');
-    if (mode === 'parent-completion') process.emit('SIGTERM');
-    else context.mock.timers.tick(5 * 60 * 1000);
-    const outcome = await stage;
-    if (mode === 'parent-completion') {
-      assert.equal(outcome.error, undefined);
-      assert.equal(outcome.value.code, 0);
-    } else assert.match(String(outcome.error), /Preparation stage deadline: browser-server/);
-    const receipt = JSON.parse(await readFile(join(retain, 'browser-server-result.json'), 'utf8'));
-    assert.equal(receipt.closure, true);
-    assert.equal(receipt.reaped, true);
-    assert.equal(receipt.stdoutEOF, true);
-    assert.equal(receipt.stderrEOF, true);
-    assert.equal(receipt.knownChildAbsent, true);
-    assert.deepEqual(receipt.groupMembers, []);
-    assert.deepEqual(signals, ['SIGTERM']);
-  } finally {
-    // Always release the injected child, even when the causal assertion fails.
-    finish();
-    await stage;
-    context.mock.timers.reset();
-  }
-});
-
-preparation('CLI accepts only explicit serve or installed proof modes', () => {
-  assert.deepEqual(module.parsePreparationArguments([]), {
-    serve: false,
-    verifyApplication: false,
-  });
-  assert.deepEqual(module.parsePreparationArguments(['--serve']), {
-    serve: true,
-    verifyApplication: false,
-  });
-  assert.deepEqual(module.parsePreparationArguments(['--verify-application']), {
-    serve: false,
-    verifyApplication: true,
-  });
+preparation('CLI accepts only preparation or the installed proof mode', () => {
+  assert.deepEqual(module.parsePreparationArguments([]), { verifyApplication: false });
+  assert.deepEqual(module.parsePreparationArguments(['--verify-application']), { verifyApplication: true });
+  // The browser server is serve.mjs on aimock now; preparation no longer serves.
   for (const flags of [
-    ['--serve', '--verify-application'],
+    ['--serve'],
+    ['--verify-application', '--verify-application'],
     ['--root', '/tmp'],
-    ['--serve', '--serve'],
     ['--unknown'],
   ])
     assert.throws(() => module.parsePreparationArguments(flags));
@@ -187,20 +118,9 @@ preparation(
     assert.ok(cache.args.includes('--fetch-retries=0'));
     assert.equal(cache.env.npm_config_cache, result.env.npm_config_cache);
     assert.ok(!cache.env.npm_config_cache.startsWith(result.attempt + '/'));
-    const manager = calls.filter(
-      (call) => call.name === 'actual-canonical-manager'
-    );
-    assert.equal(manager.length, 1);
-    assert.deepEqual(
-      JSON.parse(manager[0].env.THREADPLANE_AGUI_A2UI_MANAGER_OPTIONS),
-      {
-        retain: join(result.attempt, 'canonical-manager'),
-        python: result.python,
-        environment: result.environment,
-        home: result.home,
-        tmpdir: result.tmpdir,
-      }
-    );
+    // The React fixture's manager is gone (the browser e2e runs on aimock), so
+    // preparation no longer runs its proof.
+    assert.equal(calls.some((call) => call.name === 'actual-canonical-manager'), false);
     const failed = new Error('frozen failure');
     await assert.rejects(
       module.prepareAgUiA2uiFixture({

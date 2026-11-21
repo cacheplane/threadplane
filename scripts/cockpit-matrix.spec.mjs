@@ -28,7 +28,7 @@ test('shared dependency setup changes qualify every existing cockpit browser tar
     }), caps);
   }
   for (const paths of [[], ['scripts/cockpit-dependencies-other.mjs'], ['cockpit/chat/messages/react/src/app.tsx'],
-    ['fixtures/react-parity/native-strands-react/package.json'], ['libs/chat/src/package.json']]) {
+    ['fixtures/react-parity/native-ag-ui/package.json'], ['libs/chat/src/package.json']]) {
     assert.equal(matrixPolicy.requiresFullCockpitFleet(paths), false);
   }
 });
@@ -104,76 +104,22 @@ test('actual CLI expands shared setup diffs without Nx and keeps ordinary discov
   assert.equal(existsSync(marker), false, 'lifecycle-only changes must qualify reuse before Nx');
 });
 
-describe('Strands native fixture CI ownership', () => {
+describe('runtime React e2e on shared aimock fixtures', () => {
   const root = fileURLToPath(new URL('../', import.meta.url));
-  const project = JSON.parse(readFileSync(new URL('../cockpit/runtimes/aws-strands/react/project.json', import.meta.url), 'utf8'));
   const caps = deriveCockpitCaps(root);
-  const fixture = 'fixtures/react-parity/native-strands-react/';
-  const fixtureInputs = ['configuration.mjs', 'model.py', 'server.mjs', 'server.spec.mjs', 'service.py', 'test_model.py'].map(file => fixture + file);
-  const inputs = [
-    ...fixtureInputs,
-    'scripts/react-cockpit/native-strands-fixture.mjs',
-    'scripts/react-cockpit/native-strands-fixture.spec.mjs',
-    'scripts/react-cockpit/prepare-native-strands-fixture.mjs',
-    'scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs',
-  ];
-  const affectedFor = files => new Set(JSON.parse(execFileSync(process.execPath, [
-    'node_modules/nx/bin/nx.js', 'show', 'projects', '--affected', `--files=${files.join(',')}`, '--json',
-  ], { cwd: root, encoding: 'utf8', timeout: 45000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, NX_DAEMON: 'false', NX_ISOLATE_PLUGINS: 'false', NX_LOAD_DOT_ENV_FILES: 'false' } })));
-  const selectedFor = affected => {
-    const fullFleet = !caps.some(cap => isCapAffected(cap, affected));
-    return { fullFleet, selected: selectCockpitCaps(caps, affected, { fullFleet }) };
-  };
-
-  test('actual fixture-only inputs select their React native lane without the fleet', { timeout: 60000 }, () => {
-    const affected = affectedFor(fixtureInputs);
-    assert.ok(affected.has(project.name));
-    const scope = classifyFromAffected(fixtureInputs, [project]);
-    assert.equal(scope.library, true);
-    assert.equal(scope.cockpit_e2e, true);
-    const { fullFleet, selected } = selectedFor(affected);
-    assert.equal(fullFleet, false);
-    // Website depends on Strands; scripts depends on Website. Nx therefore
-    // also selects the existing cockpit importers of scripts for fixture files.
-    assert.equal(selected.filter(cap => cap.angular === project.name).length, 1);
-    assert.equal(selected.some(cap => cap.angular === 'cockpit-runtimes-aws-strands-angular'), false);
-    assert.ok(selected.length < caps.length);
-  });
-
-  test('actual grouped fixture inputs select their React native lane without the fleet', { timeout: 60000 }, () => {
-    const affected = affectedFor(inputs);
-    assert.ok(affected.has(project.name), 'Actual Nx must attribute the Strands native proof to its React owner');
-    const scope = classifyFromAffected(inputs, [project]);
-    assert.equal(scope.library, true, 'Parity fixture ownership remains required');
-    assert.equal(scope.cockpit_e2e, true, 'The native proof job must run');
-    const { fullFleet, selected } = selectedFor(affected);
-    assert.equal(fullFleet, false);
-    // Native preparation scripts belong to the shared scripts Nx project.
-    // Its existing A2UI, Filesystem, Memory and Planning importers also run.
-    assert.equal(selected.filter(cap => cap.angular === project.name).length, 1);
-    assert.equal(selected.some(cap => cap.angular === 'cockpit-runtimes-aws-strands-angular'), false);
-    assert.ok(selected.length < caps.length);
-  });
-
-  test('a near-prefix fixture stays outside the Strands native lane', { timeout: 60000 }, () => {
-    const files = ['fixtures/react-parity/native-strands-react-other/server.mjs'];
-    const affected = affectedFor(files);
-    assert.equal(affected.has(project.name), false);
-    const scope = classifyFromAffected(files, [{ name: 'root', tags: [] }]);
-    assert.equal(scope.library, true);
-    assert.equal(scope.cockpit_e2e, false);
-    assert.equal(selectCockpitCaps(caps, affected, { fullFleet: false }).some(cap => cap.angular === project.name), false);
-  });
-
-  test('mixed actual changes preserve the other cap and avoid Strands Angular fanout', { timeout: 60000 }, () => {
-    const affected = affectedFor([fixture + 'server.mjs', 'cockpit/chat/messages/angular/src/main.ts']);
-    assert.ok(affected.has(project.name));
-    assert.ok(affected.has('cockpit-chat-messages-angular'));
-    const { fullFleet, selected } = selectedFor(affected);
-    assert.equal(fullFleet, false);
-    assert.equal(selected.filter(cap => cap.angular === project.name).length, 1);
-    assert.ok(selected.some(cap => cap.angular === 'cockpit-chat-messages-angular'));
-    assert.equal(selected.some(cap => cap.angular === 'cockpit-runtimes-aws-strands-angular'), false);
+  // The React runtimes replay the Angular examples' fixtures into the real
+  // servers; a fixture change must select the React lane without the fleet.
+  for (const [fixture, project] of [
+    ['cockpit/runtimes/aws-strands/angular/e2e/fixtures/aws-strands.json', 'cockpit-runtimes-aws-strands-react'],
+    ['cockpit/runtimes/microsoft-agent-framework/angular/e2e/fixtures/microsoft-agent-framework.json', 'cockpit-runtimes-microsoft-agent-framework-react'],
+    ['cockpit/runtimes/mastra/angular/e2e/fixtures/mastra.json', 'cockpit-runtimes-mastra-react'],
+  ]) test(`${fixture} selects ${project}`, { timeout: 60000 }, () => {
+    const affected = new Set(JSON.parse(execFileSync(process.execPath, [
+      'node_modules/nx/bin/nx.js', 'show', 'projects', '--affected', `--files=${fixture}`, '--json',
+    ], { cwd: root, encoding: 'utf8', timeout: 45000, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, NX_DAEMON: 'false', NX_ISOLATE_PLUGINS: 'false', NX_LOAD_DOT_ENV_FILES: 'false' } })));
+    assert.ok(affected.has(project));
+    const selected = selectCockpitCaps(caps, affected, { fullFleet: false });
+    assert.equal(selected.filter(cap => cap.angular === project).length, 1);
     assert.ok(selected.length < caps.length);
   });
 });
@@ -184,7 +130,7 @@ describe('native AG-UI A2UI actual Nx proof ownership', () => {
   for (const file of [
     'fixtures/react-parity/native-ag-ui-a2ui/server.mjs',
     'fixtures/react-parity/native-ag-ui-a2ui/compiled_worker.py',
-    'scripts/react-cockpit/ag-ui-a2ui-fixture.mjs',
+    'scripts/react-cockpit/ag-ui-proxy.mjs',
     'scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs',
     'scripts/react-cockpit/ag-ui-a2ui-native-probe.mjs',
     'libs/cockpit-a2ui-react/src/surface.ts',
@@ -231,10 +177,10 @@ describe('Debug proof files through actual Nx attribution and classification', (
   const root = fileURLToPath(new URL('../', import.meta.url));
   const project = JSON.parse(readFileSync(new URL('../cockpit/chat/debug/react/project.json', import.meta.url), 'utf8'));
   for (const file of [
-    'scripts/react-cockpit/chat-debug-fixture.mjs',
-    'scripts/react-cockpit/chat-debug-wire.py',
-    'scripts/react-cockpit/chat-debug-fixture.spec.mjs',
     'scripts/react-cockpit/chat-debug-configuration.spec.mjs',
+    'scripts/react-cockpit/aimock-backend.mjs',
+    'scripts/react-cockpit/langgraph-proxy.mjs',
+    'cockpit/chat/debug/angular/e2e/fixtures/c-debug.json',
     'scripts/react-cockpit/configuration.mjs',
     'scripts/react-cockpit/serve.mjs',
     'scripts/react-cockpit/chat-debug-native-session-probe.mjs',
@@ -262,9 +208,7 @@ describe('Theming fixture files through actual Nx attribution', () => {
   const root = fileURLToPath(new URL('../', import.meta.url));
   const project = 'cockpit-chat-theming-react';
   for (const file of [
-    'scripts/react-cockpit/chat-theming-fixture.mjs',
-    'scripts/react-cockpit/chat-theming-wire.py',
-    'scripts/react-cockpit/chat-theming-fixture.spec.mjs',
+    'scripts/react-cockpit/langgraph-proxy.mjs',
     'scripts/cockpit-matrix.spec.mjs',
   ]) test(`attributes ${file} without forcing the fleet`, () => {
     const affected = new Set(JSON.parse(execFileSync(process.execPath, [

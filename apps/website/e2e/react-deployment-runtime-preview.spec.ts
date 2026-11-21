@@ -1,3 +1,6 @@
+// The preview server (`serve.mjs <example> --backend`) runs the real graph under
+// `langgraph dev` on aimock fixtures shared with the Angular example; controls
+// come from scripts/react-cockpit/langgraph-proxy.mjs.
 import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
@@ -78,6 +81,9 @@ test('switching away releases the held Deployment Runtime stream and returning s
   );
   const origin = 'http://127.0.0.1:4608';
   await request.post(origin + '/__reset');
+  await request.post(origin + '/__ready', { timeout: 180000 });
+  // "Hold" streams "Reply to Hold" in chunks; hold after "Reply to".
+  await request.post(origin + '/__hold/stream', { data: { afterText: 'Reply to' } });
   await page.goto('/docs/react/langgraph/guides/deployment?mode=run');
   const frame = page.frameLocator('iframe');
   await expect(
@@ -87,7 +93,7 @@ test('switching away releases the held Deployment Runtime stream and returning s
   await frame.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(
     frame.getByRole('region', { name: 'Conversation', exact: true })
-  ).toContainText('Live partial');
+  ).toContainText('Reply to');
   const oldFrame = await page.locator('iframe').elementHandle();
   await selectFramework(page, 'angular');
   await expect.poll(() => oldFrame?.evaluate((element) => element.isConnected)).toBe(false);
@@ -96,7 +102,7 @@ test('switching away releases the held Deployment Runtime stream and returning s
       async () =>
         (
           await (await request.get(origin + '/__lifetime')).json()
-        ).active
+        ).activeStream
     )
     .toBe(false);
   await request.post(origin + '/__release');

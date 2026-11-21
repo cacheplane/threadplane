@@ -35,6 +35,201 @@
     {
       "match": { "userMessage": "Plan a trip to Portland" },
       "response": { "toolCalls": [ { "name": "get_weather", "arguments": { "location": "Portland" } }, { "name": "confirm_booking", "arguments": { "summary": "Fictional trip to Portland" } } ] }
+    },
+    {
+      "match": { "toolCallId": "rounds-2" },
+      "response": { "content": "Canonical local results received." }
+    },
+    {
+      "match": { "toolCallId": "rounds-1" },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": "{\"location\": \"San Francisco\", \"temperatureF\": 68, \"conditions\": \"Sunny\", \"humidity\": 55, \"windMph\": 8}",
+            "id": "rounds-2"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Rounds",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "get_weather",
+            "arguments": "{\"location\": \"San Francisco\"}",
+            "id": "rounds-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Malformed",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": "{\"location\": \"San Francisco\", \"temperatureF\": 68, \"conditions\": \"Sunny\", \"humidity\": 101, \"windMph\": 8}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Unknown",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "unknown_weather",
+            "arguments": "{}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Mixed",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_snapshot",
+            "arguments": "{\"location\": \"San Francisco\", \"temperatureF\": 68, \"conditions\": \"Sunny\", \"humidity\": 55, \"windMph\": 8}"
+          },
+          {
+            "name": "get_weather",
+            "arguments": "{\"location\": \"San Francisco\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Bookings",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "confirm_booking",
+            "arguments": "{\"summary\": \"Fictional dinner A\"}"
+          },
+          {
+            "name": "confirm_booking",
+            "arguments": "{\"summary\": \"Fictional dinner B\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "confirm_booking",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "confirm_booking",
+            "arguments": "{\"summary\": \"Fictional dinner booking\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "slow_status_check",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "slow_status_check",
+            "arguments": "{\"label\": \"demo check\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Literal",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": "{\"location\": \"<script>San Francisco</script>\", \"temperatureF\": 68, \"conditions\": \"Sunny\", \"humidity\": 55, \"windMph\": 8}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "weather_snapshot",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_snapshot",
+            "arguments": "{\"location\": \"San Francisco\", \"temperatureF\": 68, \"conditions\": \"Sunny\", \"humidity\": 55, \"windMph\": 8}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "weather_card",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": "{\"location\": \"San Francisco\", \"temperatureF\": 68, \"conditions\": \"Sunny\", \"humidity\": 55, \"windMph\": 8}"
+          }
+        ]
+      },
+      "chunkSize": 12
+    },
+    {
+      "match": {
+        "userMessage": "get_weather",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "get_weather",
+            "arguments": "{\"location\": \"San Francisco\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "hasToolResult": true,
+        "userMessage": ""
+      },
+      "response": { "content": "Canonical local results received." }
+    },
+    {
+      "match": { "userMessage": "Hello canonical" },
+      "response": { "content": "Canonical plain answer: Hello canonical" }
+    },
+    {
+      "match": { "userMessage": "" },
+      "response": { "content": "Canonical plain answer." }
     }
   ]
 }

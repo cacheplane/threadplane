@@ -17,6 +17,10 @@ test('A2UI has one frozen authored native frontend allocation', () => {
     topic: 'a2ui', library: 'chat', adapter: 'langgraph',
     appPath: 'cockpit/chat/a2ui/react', base: '/chat/a2ui/react/',
     port: 4646, project: 'cockpit-chat-a2ui-react',
+    backend: {
+      kind: 'aimock-langgraph', python: 'cockpit/chat/a2ui/python',
+      fixtures: 'cockpit/chat/a2ui/angular/e2e/fixtures', langgraphPort: 5646,
+    },
   });
   assert.ok(Object.isFrozen(reactCockpitConfiguration('chat-a2ui')));
   for (const key of ['a2ui', '../chat-a2ui', 'chat-a2ui/../debug', '/chat/a2ui/react/', 'chat-a2ui-remote'])
@@ -46,24 +50,19 @@ test('only the A2UI topic packs its optional peer and selects the native A2UI pr
     assert.ok(build.includes(file), 'Emitted implementation assertion: ' + file);
   assert.match(build, /module\.renderedLength > 0/);
 });
-test('production source copying excludes testing and preserves private fixture isolation', () => {
+test('production source copying excludes testing and the local backend controls', () => {
   const visit = (directory) => readdirSync(directory).flatMap((name) => {
     const path = join(directory, name);
     return statSync(path).isDirectory() ? visit(path) : /\.spec\.|fixture\.json$/.test(path) ? [] : [path];
   });
   for (const path of visit('cockpit/chat/a2ui/react/src'))
-    assert.doesNotMatch(read(path), /chat-a2ui-(?:wire|fixture)|\/__(?:configure|reset|requests|captures|lifetime)/);
+    assert.doesNotMatch(read(path), /aimock|langgraph-proxy|\/__(?:configure|reset|requests|captures|lifetime|hold)/);
   const build = read('scripts/react-cockpit/build.mjs');
-  assert.doesNotMatch(build, /chat-a2ui-(?:fixture|wire)/);
+  assert.doesNotMatch(build, /aimock|langgraph-proxy/);
   assert.match(build, /testing/);
+  // serve.mjs has no A2UI-specific backend: the shared aimock + proxy path serves it.
   const serve = read('scripts/react-cockpit/serve.mjs');
-  assert.match(serve, /const isChatA2ui = configuration.library === 'chat' && configuration.topic === 'a2ui'/);
-  assert.equal((serve.match(/createChatA2uiFixture\(\{ configuration: chatA2uiConfiguration \}\)/g) ?? []).length, 2);
-  assert.match(serve, /chatA2uiConfiguration = Object.freeze\(fixtureConfiguration\(\)\)/);
-  assert.match(serve, /await chatA2uiFixture.close\(\)/);
-  assert.match(serve, /'\/__hold\/stream'/);
-  assert.match(serve, /heldStreams/);
-  assert.match(serve, /closedWorkers/);
+  assert.doesNotMatch(serve, /chat-a2ui-fixture|isChatA2ui|chatA2ui/);
 });
 
 test('shared aviation presentation is package-less and copied at its authored layout', () => {

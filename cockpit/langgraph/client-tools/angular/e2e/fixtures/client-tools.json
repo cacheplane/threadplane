@@ -35,6 +35,203 @@
     {
       "match": { "userMessage": "Plan a trip to Portland" },
       "response": { "toolCalls": [ { "name": "get_weather", "arguments": { "location": "Portland" } }, { "name": "confirm_booking", "arguments": { "summary": "Fictional trip to Portland" } } ] }
+    },
+    {
+      "match": {
+        "userMessage": "Weather again",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "get_weather",
+            "arguments": { "location": "Portland" },
+            "id": "weather-2"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Weather",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "get_weather",
+            "arguments": { "location": "Portland" },
+            "id": "weather-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Card",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": {
+              "location": "<script>Portland</script>",
+              "temperatureF": 68,
+              "conditions": "Sunny",
+              "humidity": 55,
+              "windMph": 8
+            },
+            "id": "card-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Snapshot",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_snapshot",
+            "arguments": {
+              "location": "Portland",
+              "temperatureF": 68,
+              "conditions": "Sunny",
+              "humidity": 55,
+              "windMph": 8
+            },
+            "id": "snapshot-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Mixed",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_snapshot",
+            "arguments": {
+              "location": "Portland",
+              "temperatureF": 68,
+              "conditions": "Sunny",
+              "humidity": 55,
+              "windMph": 8
+            },
+            "id": "snapshot-1"
+          },
+          {
+            "name": "get_weather",
+            "arguments": { "location": "Portland" },
+            "id": "weather-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Bookings",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "confirm_booking",
+            "arguments": { "summary": "Fictional booking" },
+            "id": "booking-a"
+          },
+          {
+            "name": "confirm_booking",
+            "arguments": { "summary": "Fictional booking" },
+            "id": "booking-b"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Slow",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "slow_status_check",
+            "arguments": {},
+            "id": "slow-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Trip",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "get_weather",
+            "arguments": { "location": "Portland" },
+            "id": "trip-weather"
+          },
+          {
+            "name": "confirm_booking",
+            "arguments": { "summary": "Fictional trip to Portland" },
+            "id": "trip-booking"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Malformed",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "weather_card",
+            "arguments": {
+              "location": "Portland",
+              "temperatureF": 68,
+              "conditions": "Sunny",
+              "humidity": 101,
+              "windMph": 8
+            },
+            "id": "bad-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Unknown",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "constructor",
+            "arguments": {},
+            "id": "unknown-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": { "hasToolResult": true },
+      "response": { "content": "Browser result received." }
+    },
+    {
+      "match": { "userMessage": "" },
+      "response": { "content": "Browser result received." }
     }
   ]
 }

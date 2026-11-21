@@ -249,8 +249,5 @@ class FilesystemStreamingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(terminal.values["files"]["/reports/a.txt"]["content"],"report")
         self.assertFalse(terminal.next)
 
-    def test_worker_contract_exists(self):
-        self.assertTrue((Path(__file__).parents[5]/"scripts/react-cockpit/deep-agents-filesystem-wire.py").is_file(), "Filesystem worker missing")
-
 if __name__ == "__main__":
     unittest.main()

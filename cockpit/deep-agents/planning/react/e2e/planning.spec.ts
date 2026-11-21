@@ -5,27 +5,29 @@ import {
   type APIRequestContext,
 } from '@playwright/test';
 const base = '/deep-agents/planning/react/';
+// Backend: aimock replays cockpit/deep-agents/planning/angular/e2e/fixtures
+// (shared with the Angular example; React scenarios are tagged prompts) into a
+// real `langgraph dev`. The proxy records requests and holds or fails the next
+// call (scripts/react-cockpit/langgraph-proxy.mjs).
+let scenario = 'normal';
 async function configure(
   request: APIRequestContext,
   values: Record<string, string | boolean>
 ) {
-  const response = await request.post('/__configure', {
-    data: {
-      holdStream: false,
-      holdState: false,
-      holdCheckpoint: false,
-      failCreation: false,
-      failStream: false,
-      failCheckpoint: false,
-      scenario: 'normal',
-      ...values,
-    },
-  });
-  expect(response.ok()).toBe(true);
+  const control = async (path: string) =>
+    expect((await request.post(path)).ok()).toBe(true);
+  scenario = typeof values.scenario === 'string' ? values.scenario : 'normal';
+  if (values.holdStream) await control('/__hold/stream');
+  // The saved-plan confirmation reads the exact checkpoint.
+  if (values.holdCheckpoint) await control('/__hold/state');
+  if (values.failCreation) await control('/__fail-create');
+  if (values.failStream) await control('/__fail-stream');
+  await control(values.failCheckpoint ? '/__state/failure' : '/__state/safe');
 }
 async function send(page: Page, text = 'Dispatch brief: KSFO to KASE') {
   const box = page.getByRole('textbox', { name: 'Message' });
-  await box.fill(text);
+  // The scenario tag selects the scripted model turns (shared fixtures).
+  await box.fill(`${text} [scenario:${scenario}]`);
   await box.press('Enter');
 }
 const plan = (page: Page) => page.getByRole('complementary', { name: 'Plan' });
@@ -63,6 +65,7 @@ for (const width of [375, 1280]) {
   });
 }
 test.beforeEach(async ({ page, request }) => {
+  await request.post('/__reset');
   await configure(request, {});
   await page.goto(base);
 });
@@ -86,6 +89,7 @@ test('mount is inert; the welcome suggestion sends and native live replacement b
   await expect(
     plan(page).getByText('Live plan · waiting for confirmation')
   ).toBeVisible();
+  await request.post('/__release-state');
   await request.post('/__release');
   await expect(page.getByText('Response saved.')).toBeVisible();
   await expect(
@@ -102,13 +106,6 @@ test('mount is inert; the welcome suggestion sends and native live replacement b
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth
-    )
-  ).toBe(true);
-  const proof = await (await request.get('/__graph-proof')).json();
-  expect(
-    proof.every(
-      (row: { actualCompiledGraph: boolean; networkConnectAttempts: number }) =>
-        row.actualCompiledGraph && row.networkConnectAttempts === 0
     )
   ).toBe(true);
 });
@@ -166,12 +163,13 @@ test('stop holds saved authority, ignores late stream, and New clears without cr
   await send(page, 'Change');
   await expect(page.getByRole('button', { name: 'Stop' })).toBeVisible();
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).held)
-    .toBe(1);
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
+    .toBe(true);
   await page.getByRole('button', { name: 'Stop' }).click();
   await expect(
     page.getByText('Response stopped.', { exact: true })
   ).toBeVisible();
+  await request.post('/__release-state');
   await request.post('/__release');
   await expect(plan(page).getByText('3 of 4 completed')).toBeVisible();
   const before = (await (await request.get('/__requests')).json()).filter(
@@ -193,6 +191,7 @@ test('New during held checkpoint ignores stale owner; new send owns its conversa
   await send(page);
   await expect(page.getByText('Confirming saved plan…')).toBeVisible();
   await page.getByRole('button', { name: 'New conversation' }).click();
+  await request.post('/__release-state');
   await request.post('/__release');
   await expect(plan(page).getByText(/Ask the assistant/)).toBeVisible();
   await expect(page.getByRole('article')).toHaveCount(0);

@@ -1,17 +1,18 @@
 import { documentationModes } from './fixtures/workspace-controls';
 import { writeFile } from 'node:fs/promises';
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
 
 const origin = 'http://127.0.0.1:4641';
+// The preview's backend: aimock replays cockpit/runtimes/mastra/angular/e2e/fixtures into the
+// real deployments/ag-ui-mastra service, behind the recording proxy
+// (scripts/react-cockpit/ag-ui-proxy.mjs), which lists each agent POST at /__requests.
+const runs = async (request: APIRequestContext) => (await request.get(origin + '/__requests')).json();
 test.describe('native Mastra Website', () => {
-  test.skip(!!process.env['BASE_URL'], 'Owned actual-service fixture is local only.');
-  test.beforeEach(async ({ request }) => { await request.post(origin + '/__reset', { data: { mode: 'normal' } }); });
+  test.skip(!!process.env['BASE_URL'], 'The aimock-backed preview is local only.');
+  test.beforeEach(async ({ request }) => { await request.post(origin + '/__reset'); });
   test.afterEach(async ({ page, request }, info) => {
     await page.goto('about:blank');
-    await writeFile(info.outputPath('private-actual-service-evidence.json'), JSON.stringify(await (await request.get(origin + '/__stats')).json(), null, 2));
-    const receipt = await (await request.get(origin + '/__finish')).json();
-    await writeFile(info.outputPath('private-owned-cleanup.json'), JSON.stringify(receipt, null, 2));
-    for (const owner of receipt.closed) expect(Object.values(owner.closure).every(Boolean)).toBe(true);
+    await writeFile(info.outputPath('private-actual-service-evidence.json'), JSON.stringify({ runs: await runs(request), model: await (await request.get(origin + '/__model-requests')).json() }, null, 2));
   });
   test('Docs Code and Run select the authored reservation implementation', async ({ page, request }, info) => {
     await page.goto('/docs/react/runtimes/mastra/overview');
@@ -36,14 +37,14 @@ test.describe('native Mastra Website', () => {
     const frame = page.frameLocator('iframe');
     await expect(frame.getByRole('status')).toHaveText('Ready.');
     await frame.getByRole('button', { name: 'Reserve the campsite', exact: true }).click();
-    expect((await (await request.get(origin + '/__stats')).json()).current.requests).toHaveLength(0);
+    expect(await runs(request)).toHaveLength(0);
     await frame.getByRole('button', { name: 'Send', exact: true }).click();
     await expect(frame.getByRole('button', { name: 'Approve', exact: true })).toBeEnabled();
     await expect(frame.getByRole('region', { name: 'Reservation approval' })).toContainText('North Pines');
     await frame.getByRole('button', { name: 'Approve', exact: true }).click();
     await expect(frame.getByRole('status')).toHaveText('Fictional reservation approved.');
     await expect(frame.getByRole('region', { name: 'Observed backend result' }).locator('pre')).toHaveText(JSON.stringify('Reserved North Pines for 2 night(s) — total $90. Confirmation TP-0288.'));
-    const wire = (await (await request.get(origin + '/__stats')).json()).current.requests;
+    const wire = await runs(request);
     expect(wire).toHaveLength(2);
     expect(wire[1].body.resume[0]).toMatchObject({ status: 'resolved', payload: { approved: true } });
     expect(wire[1].body.forwardedProps).not.toHaveProperty('command');

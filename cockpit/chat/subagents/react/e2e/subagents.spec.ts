@@ -1,13 +1,15 @@
 import { test, expect, type Page } from '@playwright/test';
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+// Backend: aimock replays cockpit/chat/subagents/angular/e2e/fixtures (shared
+// with the Angular example; React prompts key parent rounds on toolCallId and
+// child calls on their role prompt + task text) into a real `langgraph dev`.
+// The React static server proxies /api to it, recording requests and injecting
+// holds and failures (scripts/react-cockpit/langgraph-proxy.mjs).
 
 test('a held real tool call exposes complete arguments before its result', async ({
   page,
   request,
 }) => {
-  expect((await request.post('/__hold-tool')).status()).toBe(200);
+  expect((await request.post('/__hold/stream', { data: { beforeToolResult: true } })).status()).toBe(200);
   await page.goto(base);
   await submit(page, 'delegate sequential');
   // The transcript shows progress while the run is held, not just the footer status.
@@ -32,7 +34,7 @@ test('worker failure is generic and never retried', async ({
   page,
   request,
 }) => {
-  expect((await request.post('/__worker-failure')).status()).toBe(200);
+  expect((await request.post('/__fail-stream')).status()).toBe(200);
   await page.goto(base);
   await submit(page, 'delegate sequential');
   await blocked(page);
@@ -41,7 +43,7 @@ test('worker failure is generic and never retried', async ({
     wire.filter((item) => item.path.endsWith('/runs/stream'))
   ).toHaveLength(1);
   expect(wire.filter((item) => item.path.endsWith('/history'))).toHaveLength(0);
-  await expect(page.locator('body')).not.toContainText('Graph worker');
+  await expect(page.locator('body')).not.toContainText('PRIVATE');
 });
 test('long literal tool arguments and data remain text on mobile', async ({
   page,
@@ -93,12 +95,13 @@ test('metadata failure preserves the real tool stream and hides private diagnost
   page,
   request,
 }) => {
-  await request.post('/__metadata-failure');
+  // The title model call for this prompt fails (its own aimock error fixture);
+  // generate_title swallows it like any metadata failure.
   await page.goto(base);
-  await submit(page, 'delegate sequential');
+  await submit(page, 'delegate sequential (title fails)');
   await saved(page);
   await expect(cards(page)).toHaveCount(3);
-  await expect(page.locator('body')).not.toContainText('Authored metadata');
+  await expect(page.locator('body')).not.toContainText('PRIVATE');
 });
 test('authored developer connection routes only to its configured target', async ({
   page,
@@ -170,21 +173,6 @@ async function blocked(page: Page) {
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
 });
-test.afterEach(async ({ request }) => {
-  const proofs = await (await request.get('/__graph-proof')).json();
-  for (const proof of proofs)
-    expect(proof).toMatchObject({
-      actualCompiledGraph: true,
-      networkConnectAttempts: 0,
-      titleMessageCallbacks: 0,
-      sourceSha256: createHash('sha256')
-        .update(readFileSync(resolve(__dirname, '../../python/src/graph.py')))
-        .digest('hex'),
-      lockSha256: createHash('sha256')
-        .update(readFileSync(resolve(__dirname, '../../python/uv.lock')))
-        .digest('hex'),
-    });
-});
 test('installed SDK confirms sequential and parallel specialists on one saved conversation', async ({
   page,
   request,
@@ -234,7 +222,7 @@ test('installed SDK confirms sequential and parallel specialists on one saved co
   expect(wire.filter((item) => item.path.endsWith('/history'))).toHaveLength(2);
   expect(wire.filter((item) => item.method === 'GET')).toHaveLength(2);
   await expect(conversation(page)).not.toContainText(
-    'Authored trip conversation'
+    'Aviation snippet title'
   );
   expect(errors).toEqual([]);
 });
@@ -310,9 +298,11 @@ for (const hold of ['stream', 'child', 'history']) {
     page,
     request,
   }) => {
-    await request.post(
-      hold === 'history' ? '/__history/hold' : `/__hold-${hold}`
-    );
+    if (hold === 'history') await request.post('/__history/hold');
+    else
+      await request.post('/__hold/stream', {
+        data: hold === 'child' ? { afterChildMessage: true } : {},
+      });
     await page.goto(base);
     await submit(page, 'delegate sequential');
     if (hold === 'history')
@@ -390,7 +380,7 @@ test('held child text is local and Stop labels it without claiming specialist su
   page,
   request,
 }) => {
-  await request.post('/__hold-child');
+  await request.post('/__hold/stream', { data: { afterChildMessage: true } });
   await page.goto(base);
   await submit(page, 'delegate sequential');
   const disclosure = page.locator('details.child-observations');

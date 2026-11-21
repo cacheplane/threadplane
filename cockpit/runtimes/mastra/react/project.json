@@ -3,6 +3,9 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/runtimes/mastra/react/src",
   "projectType": "application",
+  "implicitDependencies": [
+    "cockpit-runtimes-mastra-angular"
+  ],
   "tags": [
     "scope:cockpit-examples",
     "scope:cockpit-e2e",
@@ -30,7 +33,12 @@
             "react"
           ]
         },
-        { "target": "react-ag-ui", "projects": ["website-runtime-preparation"] }
+        {
+          "target": "react-ag-ui",
+          "projects": [
+            "website-runtime-preparation"
+          ]
+        }
       ],
       "outputs": [
         "{workspaceRoot}/dist/cockpit/runtimes/mastra/react"
@@ -39,24 +47,20 @@
         "command": "node scripts/react-cockpit/build.mjs runtimes-mastra"
       }
     },
-    "prepare-fixture": {
-      "executor": "nx:run-commands",
-      "cache": false,
-      "options": {
-        "command": "node scripts/react-cockpit/prepare-native-mastra-fixture.mjs"
-      }
-    },
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
       "dependsOn": [
-        "prepare-fixture",
         "build"
       ],
       "options": {
         "config": "cockpit/runtimes/mastra/react/e2e/playwright.config.ts",
         "skipInstall": true
-      }
+      },
+      "inputs": [
+        "default",
+        "reactAimockBackend"
+      ]
     }
   }
 }

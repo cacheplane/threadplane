@@ -1,13 +1,21 @@
 {
   "fixtures": [
+    {"match": {"userMessage": "[scenario:batch]", "toolResultContains": "Meeting booked for"}, "response": {"content": "The Q3 roadmap review booking decision is complete."}},
+    {"match": {"userMessage": "[scenario:batch]", "toolResultContains": "Meeting NOT booked"}, "response": {"content": "The Q3 roadmap review booking decision is complete."}},
+    {"match": {"userMessage": "[scenario:batch]"}, "response": {"toolCalls": [{"name": "check_availability", "arguments": "{\"day\": \"Tuesday\"}"}, {"name": "book_meeting", "arguments": "{\"topic\": \"Q3 roadmap review\", \"slot\": \"Tuesday 10:00\"}"}]}},
+    {"match": {"userMessage": "[scenario:cancel]"}, "response": {"toolCalls": [{"name": "check_availability", "arguments": "{\"day\": \"Tuesday\"}"}]}, "latency": 30000},
+    {"match": {"userMessage": "fictional demo meeting", "toolResultContains": "Meeting booked for"}, "response": {"content": "The Q3 roadmap review booking decision is complete."}},
+    {"match": {"userMessage": "fictional demo meeting", "toolResultContains": "Meeting NOT booked"}, "response": {"content": "The Q3 roadmap review booking decision is complete."}},
+    {"match": {"userMessage": "fictional demo meeting", "hasToolResult": true}, "response": {"toolCalls": [{"name": "book_meeting", "arguments": "{\"topic\": \"Q3 roadmap review\", \"slot\": \"Tuesday 10:00\"}"}]}},
+    {"match": {"userMessage": "fictional demo meeting"}, "response": {"toolCalls": [{"name": "check_availability", "arguments": "{\"day\": \"Tuesday\"}"}]}},
     {
-      "match": { "userMessage": "roadmap review", "hasToolResult": true, "turnIndex": 2 },
+      "match": { "userMessage": "roadmap review meeting", "hasToolResult": true, "turnIndex": 2 },
       "response": {
         "content": "Your Q3 roadmap review is booked for Tuesday 10:00."
       }
     },
     {
-      "match": { "userMessage": "roadmap review", "hasToolResult": true, "turnIndex": 1 },
+      "match": { "userMessage": "roadmap review meeting", "hasToolResult": true, "turnIndex": 1 },
       "response": {
         "toolCalls": [
           {
@@ -21,7 +29,7 @@
       }
     },
     {
-      "match": { "userMessage": "roadmap review" },
+      "match": { "userMessage": "roadmap review meeting" },
       "response": {
         "toolCalls": [
           {

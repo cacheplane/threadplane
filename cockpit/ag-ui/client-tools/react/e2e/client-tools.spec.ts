@@ -1,17 +1,28 @@
-import { writeFile } from 'node:fs/promises';
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
+// Backend: aimock replays cockpit/ag-ui/client-tools/angular/e2e/fixtures (the
+// cockpit model of the react-parity client-tools server, as fixtures) into
+// the example's real AG-UI server; the browser executes the client tools. The
+// recording proxy (scripts/react-cockpit/ag-ui-proxy.mjs) records each run's
+// real events live, holds runs, and serves aimock's request journal: what the
+// model actually received.
 interface WireMessage { id: string; role: string; content: string; toolCallId?: string; toolCalls?: {id: string}[] }
-interface ModelMessage { id?: string; type: string; content: string; tool_call_id?: string }
+interface ModelMessage { role: string; content: string; tool_call_id?: string }
 interface WireRecord {
   body: {threadId: string; runId: string; messages: WireMessage[]; tools: {name: string}[]};
   events: {type: string; messages?: WireMessage[]; delta?: string}[];
-  observations: {socketAttempts: string[]; graphIdentity: number; checkpointerIdentity: number; modelIdentity: number; modelMessages: ModelMessage[][]};
+  /** Every model call so far, oldest first. */
+  modelMessages: ModelMessage[][];
   held: boolean; closed: boolean;
 }
 const base = '/ag-ui/client-tools/react/';
 const names = ['get_weather', 'slow_status_check', 'weather_card', 'weather_snapshot', 'confirm_booking'];
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-async function records(request: APIRequestContext) { return (await request.get('/__requests')).json() as Promise<WireRecord[]>; }
+async function records(request: APIRequestContext): Promise<WireRecord[]> {
+  const wire = await (await request.get('/__requests')).json();
+  const journal: { body: { messages?: ModelMessage[] } }[] = await (await request.get('/__model-requests')).json();
+  const modelMessages = journal.map(entry => entry.body.messages ?? []);
+  return wire.map((row: WireRecord) => ({ ...row, modelMessages }));
+}
 async function send(page: Page, text: string) {
   await page.getByLabel('Message', {exact:true}).fill(text);
   await page.getByRole('button', {name:'Send', exact:true}).click();
@@ -31,29 +42,18 @@ function causal(wire: WireRecord[], count: number) {
     expect(row.body.runId).toMatch(uuid);
     expect(row.body.threadId).toMatch(uuid);
     expect(row.body.tools.map((tool: {name: string}) => tool.name)).toEqual(names);
-    expect(row.observations.socketAttempts).toEqual([]);
-    expect(row.observations.graphIdentity).toBe(wire[0].observations.graphIdentity);
-    expect(row.observations.checkpointerIdentity).toBe(wire[0].observations.checkpointerIdentity);
-    expect(row.observations.modelIdentity).toBe(wire[0].observations.modelIdentity);
-    const model = row.observations.modelMessages.at(-1) ?? [];
     const snapshot = row.events.filter(event => event.type === 'MESSAGES_SNAPSHOT').at(-1)?.messages ?? [];
     for (const result of row.body.messages.filter(message => message.role === 'tool')) {
       const caller = row.body.messages.find(message => message.toolCalls?.some(call => call.id === result.toolCallId));
       expect(caller).toBeDefined();
       expect(row.body.messages.filter(message => message.id === result.id)).toHaveLength(1);
-      expect(model.filter(message => message.type === 'tool' && message.id === result.id && message.tool_call_id === result.toolCallId && message.content === result.content)).toHaveLength(1);
+      // The model received the browser's exact result for that call.
+      expect(row.modelMessages.some(messages => messages.filter(message => message.role === 'tool' && message.tool_call_id === result.toolCallId && message.content === result.content).length === 1)).toBe(true);
       expect(snapshot.filter(message => message.role === 'tool' && message.id === result.id && message.toolCallId === result.toolCallId && message.content === result.content)).toHaveLength(1);
     }
   }
 }
 test.beforeEach(async ({request}) => { expect((await request.post('/__reset')).ok()).toBe(true); });
-test.afterEach(async ({request}, info) => {
-  const stats = await (await request.post('/__finish')).json();
-  expect(Object.values(stats.closed.at(-1).closure).every(Boolean)).toBe(true);
-  const receipt = info.outputPath('canonical-owned-fixture-receipt.json');
-  await writeFile(receipt, JSON.stringify(stats, null, 2));
-  await info.attach('canonical-owned-fixture-receipt', {path: receipt, contentType:'application/json'});
-});
 test('mount issues no physical request and offers six example prompts', async ({page,request}) => {
   await page.goto(base);
   await expect(page.getByRole('group', {name:'Example prompts'}).getByRole('button')).toHaveCount(6);
@@ -95,7 +95,7 @@ for (const tool of ['get_weather','weather_card']) {
     const wire = await records(request); causal(wire, 2);
     const result = wire[1].body.messages.filter((message:WireMessage) => message.role === 'tool');
     expect(result).toHaveLength(1);
-    expect(wire[1].observations.modelMessages.at(-1)?.filter((message:ModelMessage) => message.type === 'tool')).toHaveLength(1);
+    expect(wire[1].modelMessages.at(-1)?.filter((message:ModelMessage) => message.role === 'tool')).toHaveLength(1);
     expect(wire[1].body.tools).toEqual(wire[0].body.tools);
     expect(result[0].content).toBe(tool === 'get_weather' ? JSON.stringify({location:'San Francisco',temperatureF:68,conditions:'Sunny',humidity:55,windMph:8}) : JSON.stringify({displayed:true}));
     await expect(page.locator('[data-native-call]')).toHaveCount(1);
@@ -169,7 +169,9 @@ for (const text of ['Unknown','Malformed']) {
 }
 for (const action of ['release','Stop','page exit']) {
   test(`actual streamed arguments held before terminal: ${action} respects execution boundary`, async ({page,request}) => {
-    await request.post('/__reset',{data:{mode:'stream',holdTerminal:true}});
+    // Hold every run just before its terminal event; weather_card's arguments
+    // stream in several chunks (fixture chunkSize).
+    await request.post('/__hold/stream',{data:{beforeType:'RUN_FINISHED',persist:true}});
     await page.goto(base); await send(page,'Use weather_card');
     await expect.poll(async()=> (await records(request))[0]?.held).toBe(true);
     await expect(page.locator('.weather-card, .tp-approval-card')).toHaveCount(0);
@@ -197,7 +199,7 @@ test('multiple native groups keep distinct causal identities on retained history
   await expect(page.locator('[data-native-call]')).toHaveCount(3);
   const ids=wire[3].body.messages.flatMap((message:WireMessage)=>message.toolCalls?.map((call:{id:string})=>call.id)??[]);
   expect(new Set(ids).size).toBe(3);
-  expect(wire[3].observations.modelMessages.at(-1)?.filter((message:ModelMessage)=>message.type==='tool')).toHaveLength(3);
+  expect(wire[3].modelMessages.at(-1)?.filter((message:ModelMessage)=>message.role==='tool')).toHaveLength(3);
 });
 test('mobile literal content and weather readings remain safe', async ({page,request}) => {
   await page.setViewportSize({width:390,height:844}); await page.goto(base);
@@ -241,7 +243,9 @@ for(const action of ['Stop','page exit']) {
   });
 }
 test('Stop during actual held continuation preserves complete sent-unconfirmed local evidence without replay',async({page,request})=>{
-  await request.post('/__reset',{data:{holdTerminal:true,holdAfterRequest:1,holdReceipt:true}});
+  // Hold the continuation (the second run) before the server acknowledges the
+  // result: right after it starts.
+  await request.post('/__hold/stream',{data:{afterType:'RUN_STARTED',persist:true,fromRequest:1}});
   await page.goto(base); await send(page,'Use get_weather');
   await expect.poll(async()=> (await records(request))[1]?.held).toBe(true);
   await expect(page.getByRole('region',{name:'Local tool evidence'})).toContainText('Local execution: complete');

@@ -7,6 +7,60 @@
       "response": {
         "content": "Hello! How can I help you today?"
       }
+    },
+    {
+      "match": {
+        "userMessage": "Alpha"
+      },
+      "response": {
+        "content": "Reply to Alpha"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Beta"
+      },
+      "response": {
+        "content": "Reply to Beta"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Gamma"
+      },
+      "response": {
+        "content": "Reply to Gamma"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Hold"
+      },
+      "response": {
+        "content": "Reply to Hold"
+      },
+      "chunkSize": 8,
+      "latency": 25
+    },
+    {
+      "match": {
+        "userMessage": "Error"
+      },
+      "response": {
+        "error": {
+          "message": "PRIVATE run",
+          "type": "server_error"
+        },
+        "status": 500
+      }
+    },
+    {
+      "match": {
+        "userMessage": ""
+      },
+      "response": {
+        "content": "Reply."
+      }
     }
   ]
 }
