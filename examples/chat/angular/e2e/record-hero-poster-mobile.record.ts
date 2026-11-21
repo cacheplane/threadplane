@@ -54,13 +54,13 @@ test('capture mobile hero poster', async ({ page }) => {
   expect(await page.locator('[data-hero-surface] chat-message[data-role="user"]').count()).toBe(1);
   // Guards the TOP EDGE, which none of the checks above can see. The clipping
   // edge is NOT the viewport's y=0: the timeline lives in its own scroll
-  // container (`.chat-scroll` in libs/chat's chat composition), whose top sits
+  // container (`.chat-scroll` in the chat composition of @threadplane/angular/chat), whose top sits
   // below the `.hero__bar` at y=96 with the current chrome. Blocks scroll out
   // there, so a message with a positive y can still be sliced.
   // A message that is wholly above that edge (the user's prompt, which may
   // legitimately scroll out of frame) is fine; a message that STRADDLES it is
   // the defect — the poster then opens mid-table or mid-sentence.
-  // `chat-message` is the element selector exported by libs/chat
+  // `chat-message` is the element selector exported by @threadplane/angular/chat
   // (primitives/chat-message/chat-message.component.ts).
   await expect(page.locator('[data-hero-surface] chat-message').last()).toBeVisible();
   const straddling = await page.evaluate(() => {

@@ -92,8 +92,12 @@ Build with `npx nx build angular` (ng-packagr and partial Angular compilation).
 Run `npx nx test angular` and `npx nx run angular:type-tests` for real-session
 and strict type coverage. The tests use Angular 21.1.6.
 
-`@threadplane/angular/chat` is a separate APF entry exporting standalone
-`TextTranscriptComponent`. Import it in your component's `imports` and bind rows:
+`@threadplane/angular/chat` is a separate APF entry holding the chat UI: `<chat>`,
+its compositions and its headless primitives (see `chat/README.md`). Nothing in it
+runs when it is imported: the first chat component an application creates sets up
+the chat styles and the development collector. It also exports two small standalone
+views. `TextTranscriptComponent` renders rows. Import it in your component's
+`imports` and bind rows:
 
 ```html
 <threadplane-text-transcript [messages]="rows" label="Conversation" />
@@ -127,8 +131,9 @@ values. The component does not parse arguments, infer execution status, subscrib
 or execute tools. Updating text preserves its mounted section and arguments DOM;
 remounting creates new DOM.
 
-The root remains headless. These text views do not provide Markdown, execution
-controls, citations, reasoning, full chat parity, SSR or hydration. The AG-UI
+The root entry point remains headless. These two text views do not provide Markdown,
+execution controls, citations, reasoning, SSR or hydration; the chat UI in the same
+entry point does. The AG-UI
 review uses O(N) pure root-text selection with optional previous-output row reuse
 bounded to current rows. Framework memoization follows immutable transcript
 references and is disposable; it is not another owner or execution controller.
@@ -304,11 +309,11 @@ the seam between a session and the collector:
   it on. A factory that picks fields from the context instead must pass
   `developmentRuntime: context.developmentRuntime` to keep collection.
 - The collector comes from a host that registers one with
-  `ɵsetAgentDevelopmentHost`. `@threadplane/chat` does so when it is loaded, so
-  an app that provides an agent and uses the chat package needs no setup. An
-  app that never loads the chat package has no collector and reports nothing.
-  A host loaded later (a lazy route) is connected to the agents that already
-  exist.
+  `ɵsetAgentDevelopmentHost`. `@threadplane/angular/chat` does so when the app
+  creates its first chat component, so an app that provides an agent and renders
+  chat needs no setup. An app that never renders a chat component has no
+  collector and reports nothing. A host registered later (a lazy route) is
+  connected to the agents that already exist.
 - Each agent is registered once with the host's policy registry (or with a
   registrar provided under `ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR`, which wins).
   Its policy asks the current session's `isDevelopmentRuntimeEnabled()` each
@@ -403,11 +408,11 @@ run for `agent.retry()`.
 `provideAgentValue(agent)`, also in `@threadplane/angular/testing`, makes
 `injectAgent()` return the object it is given. Use it when the component under
 test injects its agent and the test wants a mock in its place, such as
-`mockAgent()` from `@threadplane/chat`, or an agent it built by hand:
+`mockAgent()` from `@threadplane/angular/chat`, or an agent it built by hand:
 
 ```ts
 import { provideAgentValue } from '@threadplane/angular/testing';
-import { mockAgent } from '@threadplane/chat';
+import { mockAgent } from '@threadplane/angular/chat';
 
 const agent = mockAgent({ status: 'running' });
 TestBed.configureTestingModule({ providers: [provideAgentValue(agent)] });

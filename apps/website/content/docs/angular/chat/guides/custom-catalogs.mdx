@@ -5,12 +5,12 @@ description: Compose custom component catalogs for generative UI using ViewRegis
 
 # Custom Catalogs
 
-Both json-render specs and A2UI surfaces render through the same `ViewRegistry`. Compose catalogs using `views`, `withViews`, and `withoutViews` from `@threadplane/render`.
+Both json-render specs and A2UI surfaces render through the same `ViewRegistry`. Compose catalogs using `views`, `withViews`, and `withoutViews` from `@threadplane/angular/render`.
 
 ## Using the Built-In A2UI Catalog
 
 ```typescript
-import { a2uiBasicCatalog } from '@threadplane/chat';
+import { a2uiBasicCatalog } from '@threadplane/angular/chat';
 
 protected readonly catalog = a2uiBasicCatalog();
 ```
@@ -22,8 +22,8 @@ protected readonly catalog = a2uiBasicCatalog();
 ## Adding Custom Components
 
 ```typescript
-import { withViews } from '@threadplane/render';
-import { a2uiBasicCatalog } from '@threadplane/chat';
+import { withViews } from '@threadplane/angular/render';
+import { a2uiBasicCatalog } from '@threadplane/angular/chat';
 
 const catalog = withViews(a2uiBasicCatalog(), {
   Chart: MyChartComponent,
@@ -38,8 +38,8 @@ const catalog = withViews(a2uiBasicCatalog(), {
 ## Overriding Built-In Components
 
 ```typescript
-import { views } from '@threadplane/render';
-import { a2uiBasicCatalog } from '@threadplane/chat';
+import { views } from '@threadplane/angular/render';
+import { a2uiBasicCatalog } from '@threadplane/angular/chat';
 
 const catalog = views({
   ...a2uiBasicCatalog(),
@@ -50,8 +50,8 @@ const catalog = views({
 ## Removing Components
 
 ```typescript
-import { withoutViews } from '@threadplane/render';
-import { a2uiBasicCatalog } from '@threadplane/chat';
+import { withoutViews } from '@threadplane/angular/render';
+import { a2uiBasicCatalog } from '@threadplane/angular/chat';
 
 const catalog = withoutViews(a2uiBasicCatalog(), 'Modal', 'Video');
 ```
@@ -59,7 +59,7 @@ const catalog = withoutViews(a2uiBasicCatalog(), 'Modal', 'Video');
 ## Custom-Only (No A2UI)
 
 ```typescript
-import { views } from '@threadplane/render';
+import { views } from '@threadplane/angular/render';
 
 const catalog = views({
   Chart: MyChartComponent,
@@ -85,7 +85,7 @@ Custom components receive the standard `AngularComponentInputs`:
 
 ```typescript
 import { Component, input } from '@angular/core';
-import type { AngularComponentInputs } from '@threadplane/render';
+import type { AngularComponentInputs } from '@threadplane/angular/render';
 
 @Component({
   selector: 'my-chart',

@@ -134,7 +134,7 @@ Several fields are constrained to a fixed enum. Emit one of the listed values â€
 
 The union of the basic-catalog shapes is exported as `A2uiCatalogComponent`. The broader `A2uiComponent` also admits non-basic-catalog components (`A2uiComponentBase & Record<string, unknown>`) â€” renderers treat unknown `component` strings as unrenderable and fall back gracefully.
 
-The schema exposes `validationRegexp` on `TextField` and `checks` on input components; this package supplies the validator functions in `createA2uiFunctionRegistry()`, and `@threadplane/chat`'s surface renderer enforces the rules (inline messages, blocked event actions, `VALIDATION_FAILED` error messages).
+The schema exposes `validationRegexp` on `TextField` and `checks` on input components; this package supplies the validator functions in `createA2uiFunctionRegistry()`, and `@threadplane/angular/chat`'s surface renderer enforces the rules (inline messages, blocked event actions, `VALIDATION_FAILED` error messages).
 
 ## Message envelopes
 

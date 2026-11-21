@@ -11,7 +11,7 @@ description: How the subagents example dispatches task calls to real subgraphs, 
 **Import:**
 
 ```typescript
-import { ChatSubagentCardComponent } from '@threadplane/chat';
+import { ChatSubagentCardComponent } from '@threadplane/angular/chat';
 ```
 
 ## What the demo does
@@ -102,7 +102,7 @@ The component exposes no outputs.
 
 ## AgentSubagent
 
-The `AgentSubagent` type is defined by `@threadplane/core` and re-exported by `@threadplane/chat`. It is plain, frozen data, not a set of signals: `agent.subagents()` publishes a new list when a child changes.
+The `AgentSubagent` type is defined by `@threadplane/core` and re-exported by `@threadplane/angular/chat`. It is plain, frozen data, not a set of signals: `agent.subagents()` publishes a new list when a child changes.
 
 | Property | Type | Description |
 |----------|------|-------------|

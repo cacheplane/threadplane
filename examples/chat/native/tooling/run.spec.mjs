@@ -51,7 +51,8 @@ test('closed framework selection propagates through launcher and foundation comm
   }
   assert.deepEqual(
     foundationCommands('/owned/root', 'angular').map(({ args }) => args[2]),
-    ['core', 'a2ui', 'content', 'angular']
+    // The Angular chat UI uses the telemetry package.
+    ['core', 'a2ui', 'content', 'telemetry:build:node', 'telemetry:build:browser', 'telemetry', 'angular']
   );
   assert.throws(() => foundationCommands('/owned/root', 'vue'), /framework/i);
   assert.equal(

@@ -1,6 +1,6 @@
 import { exampleToolLabel } from '../../../../../shared/tool-presentation';
 import { Component, computed } from '@angular/core';
-import { ChatComponent, ChatWelcomeSuggestionComponent, a2uiBasicCatalog } from '@threadplane/chat';
+import { ChatComponent, ChatWelcomeSuggestionComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { injectAgent } from '@threadplane/angular';
 import type { LangGraphSession } from '@threadplane/langgraph';

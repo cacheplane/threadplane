@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 /**
- * Streaming demo — simplest possible @threadplane/chat integration with AG-UI.
+ * Streaming demo — simplest possible @threadplane/angular/chat integration with AG-UI.
  *
  * Retrieves the agent with injectAgent() (provided by provideAgent, or by
  * provideFakeAgent in a test) and passes it to the prebuilt <chat> composition. The

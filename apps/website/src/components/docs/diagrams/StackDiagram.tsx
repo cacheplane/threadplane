@@ -38,7 +38,7 @@ export function StackDiagram({ highlight = 'none', caption, scale = 'docs' }: St
         w={260}
         h={64}
         eyebrow="Chat UI"
-        title="@threadplane/chat"
+        title="@threadplane/angular/chat"
         meta="<chat> · <chat-message-list> · <chat-input>"
         tone={highlight === 'chat' ? 'accent' : 'neutral'}
       />

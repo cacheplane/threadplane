@@ -13,7 +13,7 @@ import {
   ChatInterruptPanelComponent,
   ChatSelectComponent,
   type InterruptAction,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 import { PalettePersistence } from './palette-persistence.service';
 import { ItineraryPanelComponent } from '../itinerary-panel.component';
 import { MapCanvasComponent } from '../map-canvas.component';

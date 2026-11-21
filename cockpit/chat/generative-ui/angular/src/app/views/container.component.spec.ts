@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 import type { Spec } from '@json-render/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { RenderElementComponent } from '@threadplane/render';
+import { RenderElementComponent } from '@threadplane/angular/render';
 import { ContainerComponent } from './container.component';
 
 // Stub matching <render-element>'s selector + public inputs. Swapped into

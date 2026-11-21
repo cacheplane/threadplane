@@ -313,7 +313,7 @@ const RETIRED_ROUTE_RULE: ReadonlyArray<readonly [string, RegExp]> = [
  *
  * No overlap with `mit-cutover.spec.mjs`: it looks for the retired *licensing*
  * vocabulary — read its own `retiredTerms` list for the exact strings — and
- * only in `README.md` and `libs/chat/README.md`. Different words, different
+ * only in `README.md` and `libs/angular/chat/README.md`. Different words, different
  * concern, seven READMEs it never opens. Nothing here is reported twice.
  *
  * Do not spell those terms out here. That spec bans them anywhere under
@@ -333,9 +333,16 @@ const RETIRED_ROUTE_RULE: ReadonlyArray<readonly [string, RegExp]> = [
  * `package.json`, which npm also renders. Nothing scans those yet.
  * ──────────────────────────────────────────────────────────────────────────── */
 function packageReadmeFiles(): string[] {
+  // A package's entry points can ship their own README beside it, as
+  // `@threadplane/angular` does for `chat` and `render`.
   const libraryReadmes = readdirSync(LIBS_ROOT, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => join(LIBS_ROOT, entry.name, 'README.md'))
+    .flatMap((entry) => [
+      join(LIBS_ROOT, entry.name, 'README.md'),
+      ...readdirSync(join(LIBS_ROOT, entry.name), { withFileTypes: true })
+        .filter((child) => child.isDirectory() && child.name !== 'node_modules')
+        .map((child) => join(LIBS_ROOT, entry.name, child.name, 'README.md')),
+    ])
     .filter((path) => existsSync(path));
   return [join(WORKSPACE_ROOT, 'README.md'), ...libraryReadmes];
 }
@@ -386,7 +393,8 @@ describe('published package READMEs', () => {
     expect(files.length).toBeGreaterThanOrEqual(8);
     expect(files).toContain('README.md');
     expect(files).toContain(join('libs', 'telemetry', 'README.md'));
-    expect(files).toContain(join('libs', 'chat', 'README.md'));
+    expect(files).toContain(join('libs', 'angular', 'chat', 'README.md'));
+    expect(files).toContain(join('libs', 'angular', 'render', 'README.md'));
   });
 });
 

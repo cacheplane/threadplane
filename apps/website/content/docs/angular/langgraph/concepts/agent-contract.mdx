@@ -6,7 +6,7 @@ description: The runtime-neutral session contract and the injected Angular Agent
 
 The agent contract lets the trip planner render a conversation without teaching every component a backend protocol. A backend package translates runtime messages and events into a session, and Angular reads that session as signals and commands.
 
-`@threadplane/core` owns the contract, `AgentSession`. `@threadplane/langgraph` and `@threadplane/ag-ui` each export a `createSession` that produces an object satisfying it. `@threadplane/angular` turns a session into the injected `Agent`. Chat primitives and compositions in `@threadplane/chat` consume that `Agent` without knowing which runtime is behind the stream.
+`@threadplane/core` owns the contract, `AgentSession`. `@threadplane/langgraph` and `@threadplane/ag-ui` each export a `createSession` that produces an object satisfying it. `@threadplane/angular` turns a session into the injected `Agent`. Chat primitives and compositions in `@threadplane/angular/chat` consume that `Agent` without knowing which runtime is behind the stream.
 
 The UI should not care whether a response came from LangGraph Platform, AG-UI, an in-memory fake, or a custom HTTP service. That is the point. The boundary is explicit: a backend package translates runtime events into immutable snapshots and a small command surface, and one Angular provider exposes them.
 
@@ -23,7 +23,7 @@ Angular and React read the same `AgentSession`. In Angular, `provideAgent` owns 
 
 ## The Contract Surface
 
-Import the injected type from `@threadplane/angular`. `@threadplane/chat` re-exports it, with the core data types, for components that only render a conversation:
+Import the injected type from `@threadplane/angular`. `@threadplane/angular/chat` re-exports it, with the core data types, for components that only render a conversation:
 
 ```ts
 import type { Agent } from '@threadplane/angular';
@@ -182,7 +182,7 @@ The UI lifecycle is intentionally boring, and boring is the goal.
 5. `stop()` stops the active run, and `retry()` is available for a failure whose `recovery` is `'retry'`. An uncertain outcome requires reconciliation when supported, not automatic resubmission.
 6. `regenerate(messageId)` answers the prompt behind one assistant message again. It takes that message's `id`.
 
-The agent also adds deeper lifecycle surfaces. `@threadplane/angular` exposes `injectAgent().lifecycle`, provides the `AGENT_LIFECYCLE` token from every `provideAgent()` call, and ships a root-provided `AgentLifecycleRegistry` that collects the lifecycle of every live agent. Those are useful for telemetry, debugging, and persistence. They are not required by `@threadplane/chat`. See [Agent lifecycle signals](/docs/angular/langgraph/guides/lifecycle).
+The agent also adds deeper lifecycle surfaces. `@threadplane/angular` exposes `injectAgent().lifecycle`, provides the `AGENT_LIFECYCLE` token from every `provideAgent()` call, and ships a root-provided `AgentLifecycleRegistry` that collects the lifecycle of every live agent. Those are useful for telemetry, debugging, and persistence. They are not required by `@threadplane/angular/chat`. See [Agent lifecycle signals](/docs/angular/langgraph/guides/lifecycle).
 
 `LangGraphSession` also narrows optional members of the neutral contract: `interrupts`, `subagents`, `resume`, and `onCustomEvent` are always present, because the LangGraph session always provides them. Code written against `Agent<LangGraphSession>` calls `agent.interrupts()[0]` and `agent.resume(...)` directly; code written against the neutral `Agent` still needs `agent.interrupts()?.[0]` and `agent.resume?.(...)`.
 
@@ -190,10 +190,10 @@ The agent also adds deeper lifecycle surfaces. `@threadplane/angular` exposes `i
 
 Use the closest fake to the boundary you are testing.
 
-For chat components, use `mockAgent()` from `@threadplane/chat/testing`. It has the agent's own shape, with every snapshot field writable and every command recorded.
+For chat components, use `mockAgent()` from `@threadplane/angular/chat/testing`. It has the agent's own shape, with every snapshot field writable and every command recorded.
 
 ```ts
-import { mockAgent } from '@threadplane/chat/testing';
+import { mockAgent } from '@threadplane/angular/chat/testing';
 
 const agent = mockAgent({
   messages: [{ id: 'm1', role: 'assistant', content: 'Ready' }],
@@ -219,6 +219,6 @@ It is not a message database. Persistence belongs to the runtime or application 
 
 It is not a full orchestration API. LangGraph-specific operations such as branch selection, queued runs, checkpoint forks, and raw LangGraph messages stay on `LangGraphSession`.
 
-It is not a UI renderer. Rendering belongs to `@threadplane/chat`, `@threadplane/render`, and A2UI surfaces. The agent only exposes the state and events those renderers need.
+It is not a UI renderer. Rendering belongs to `@threadplane/angular/chat`, `@threadplane/angular/render`, and A2UI surfaces. The agent only exposes the state and events those renderers need.
 
 Keep that boundary sharp. It makes backends replaceable, tests smaller, and chat components more predictable.

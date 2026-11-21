@@ -13,7 +13,7 @@
       "path": "../../../libs/langgraph"
     },
     {
-      "path": "../../../libs/chat"
+      "path": "../../../libs/angular"
     },
     {
       "path": "../../../libs/telemetry/tsconfig.lib.json"

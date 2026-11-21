@@ -1,6 +1,6 @@
 import { Component, computed } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
-import { ChatDebugComponent } from '@threadplane/chat/debug';
+import { ChatComponent } from '@threadplane/angular/chat';
+import { ChatDebugComponent } from '@threadplane/angular/chat/debug';
 import { injectAgent } from '@threadplane/angular';
 import type { LangGraphSession } from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';

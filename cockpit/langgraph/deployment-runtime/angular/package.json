@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "peerDependencies": {
-    "@threadplane/chat": "*",
+    "@threadplane/angular": "*",
     "@threadplane/langgraph": "*",
     "@langchain/langgraph-sdk": "^0.0.36"
   },

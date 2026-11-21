@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { injectRenderHost } from '@threadplane/render';
+import { injectRenderHost } from '@threadplane/angular/render';
 import { ItineraryStore } from './itinerary-store';
 
 /**

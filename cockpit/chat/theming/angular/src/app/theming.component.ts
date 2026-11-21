@@ -1,6 +1,6 @@
 import { Component, computed, signal } from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { injectAgent } from '@threadplane/angular';
 import type { LangGraphSession } from '@threadplane/langgraph';

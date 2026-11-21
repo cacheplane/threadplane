@@ -7,7 +7,7 @@ import { cssVars, type Theme } from '@threadplane/design-tokens';
  * Behavior:
  *   1. Applies the default theme synchronously: sets `data-theme` on
  *      `<html>` (which both `@threadplane/design-tokens`-aware code and
- *      `@threadplane/chat` honor) plus every `--ds-*` CSS variable on the
+ *      `@threadplane/angular/chat` honor) plus every `--ds-*` CSS variable on the
  *      same element.
  *   2. Posts `{ type: 'tplane:theme-request' }` to `window.parent` so the
  *      host (cockpit's `<ThemedFrame>`) replies with the current theme

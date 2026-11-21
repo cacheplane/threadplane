@@ -2,7 +2,7 @@ import { baseTokens } from './base.ts';
 
 /**
  * Theme-variant tokens resolved for the dark theme.
- * Neutral-dark palette aligned to @threadplane/chat lib's dark aesthetic so embedded
+ * Neutral-dark palette aligned to @threadplane/angular/chat lib's dark aesthetic so embedded
  * chat surfaces unify with cockpit chrome (no iframe color seam).
  *
  * The website's `[data-surface="dark"]` scope diverges from this on purpose:

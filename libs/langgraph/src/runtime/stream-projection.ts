@@ -487,7 +487,7 @@ export function finalizeProjection(
 }
 
 /** The shared interruption vocabulary, keyed by recovery value. The neutral
- * runtime cannot import `@threadplane/chat`, so this is a copy of that
+ * runtime cannot import `@threadplane/angular/chat`, so this is a copy of that
  * package's `AGENT_RECOVERY_MESSAGES` / `AGENT_RECOVERY_DETAILS`; a parity
  * spec under the Angular test target fails when the two drift. An interruption
  * is never published with `retry`: a creation request that got no response at

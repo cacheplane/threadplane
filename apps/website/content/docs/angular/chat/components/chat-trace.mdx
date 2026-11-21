@@ -11,7 +11,7 @@ description: How the timeline example mounts the surface that hosts trace rows, 
 **Import:**
 
 ```typescript
-import { ChatTraceComponent } from '@threadplane/chat';
+import { ChatTraceComponent } from '@threadplane/angular/chat';
 ```
 
 ## What the demo does
@@ -89,7 +89,7 @@ Mounting a row yourself is worthwhile when the thing you want to disclose is not
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
-| `state` | `TraceState` | `'pending'` | Execution state of the step. Drives auto-expansion and the running and error styling. `TraceState` is exported from `@threadplane/chat` and is `'pending' \| 'running' \| 'done' \| 'error'` |
+| `state` | `TraceState` | `'pending'` | Execution state of the step. Drives auto-expansion and the running and error styling. `TraceState` is exported from `@threadplane/angular/chat` and is `'pending' \| 'running' \| 'done' \| 'error'` |
 | `defaultExpanded` | `boolean` | `false` | Expansion used while the state is neither `running` nor `error`, and while the reader has not clicked the header |
 
 ### Outputs
@@ -135,7 +135,7 @@ Collapsing removes the body from the DOM rather than hiding it, so a collapsed r
 `ToolCall.status` and `TraceState` share three of their four names. `ToolCall` reports `'complete'` where `TraceState` expects `'done'`, so map that one explicitly:
 
 ```typescript
-import type { ToolCallStatus, TraceState } from '@threadplane/chat';
+import type { ToolCallStatus, TraceState } from '@threadplane/angular/chat';
 
 function toTraceState(status: ToolCallStatus): TraceState {
   return status === 'complete' ? 'done' : status;

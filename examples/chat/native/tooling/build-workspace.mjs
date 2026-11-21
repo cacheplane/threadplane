@@ -13,9 +13,11 @@ import { dirname, join } from 'node:path';
 import { excludedSourcePath } from './source-policy.mjs';
 import { selectedFramework } from './commands.mjs';
 
-// These are real build inputs, not an Nx workspace clone. Telemetry metadata
-// satisfies LangGraph's graph edge; no telemetry task or source is needed.
-// The trace is eagerly read by the imported packaging helper graph.
+// These are real build inputs, not an Nx workspace clone. For React,
+// telemetry metadata satisfies LangGraph's graph edge and no telemetry task or
+// source is needed; `@threadplane/angular` builds against the telemetry package,
+// which its chat UI uses. The trace is eagerly read by the imported packaging
+// helper graph.
 export function selectedBuildInputRoots(root, framework) {
   return [
     'libs/core',
@@ -23,7 +25,9 @@ export function selectedBuildInputRoots(root, framework) {
     'libs/content',
     'libs/' + selectedFramework(framework),
     'libs/langgraph',
-    'libs/telemetry/project.json',
+    selectedFramework(framework) === 'angular'
+      ? 'libs/telemetry'
+      : 'libs/telemetry/project.json',
     'scripts/react-parity',
     'fixtures/react-parity/traces/langgraph-text-state.sse',
     'package.json',

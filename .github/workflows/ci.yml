@@ -217,7 +217,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
-      LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware
+      LIBS: langgraph,ag-ui,a2ui,telemetry,middleware
       FOUNDATIONS: core,content,angular,react
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -246,7 +246,7 @@ jobs:
       matrix:
         lane: [quality, native, packages]
     env:
-      LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware
+      LIBS: langgraph,ag-ui,a2ui,telemetry,middleware
       FOUNDATIONS: core,content,angular,react
       THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT: /tmp/threadplane-agui-client-tools-native-fixture-env
     steps:
@@ -321,13 +321,13 @@ jobs:
       - name: Verify durable tool ownership and PostgreSQL migration
         if: matrix.lane == 'native'
         run: node node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.base.json scripts/react-parity/verify-tool-claims.ts
-      - run: npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2
+      - run: npx nx run-many -t test --projects=ag-ui,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2
         if: matrix.lane == 'native'
       - run: npx nx run-many -t build --projects=$LIBS --configuration=production
         if: matrix.lane == 'packages'
       - name: Verify production builds strip the devtools hook
         if: matrix.lane == 'packages'
-        run: npx nx run chat:test-devtools-bundle
+        run: npx nx run angular:test-devtools-bundle
       - name: Verify canonical A2UI native graph
         if: matrix.lane == 'packages'
         timeout-minutes: 15
@@ -478,7 +478,7 @@ jobs:
           python-version: '3.12'
           enable-cache: false
       - name: Build native conversation prerequisites
-        run: npx nx run-many -t build --projects=core,content,angular,react,chat,langgraph,ag-ui,render,a2ui,telemetry,middleware --configuration=production --parallel=2
+        run: npx nx run-many -t build --projects=core,content,angular,react,langgraph,ag-ui,a2ui,telemetry,middleware --configuration=production --parallel=2
       - name: Configure bounded Ubuntu package downloads
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium

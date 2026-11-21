@@ -3,9 +3,15 @@
   // without `strict`. See libs/core/tsconfig.nonstrict.json. This is plain
   // `tsc`, so templates are not checked.
   "extends": "../core/tsconfig.nonstrict.json",
+  "files": [
+    "chat/src/public-api.ts",
+    "chat/debug/public-api.ts",
+    "chat/testing/public-api.ts",
+    "render/src/public-api.ts"
+  ],
   "include": [
     "src/**/*.ts",
-    "chat/src/**/*.ts",
+    "chat/src/*.ts",
     "markdown/src/**/*.ts",
     "testing/src/**/*.ts"
   ],
@@ -13,13 +19,18 @@
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
     "src/**/*.type-test.ts",
+    "src/**/*.type-spec.ts",
     "chat/src/**/*.spec.ts",
     "chat/src/**/*.type-test.ts",
+    "chat/src/**/*.type-spec.ts",
     "markdown/src/**/*.spec.ts",
     "markdown/src/**/*.test.ts",
     "markdown/src/**/*.type-test.ts",
+    "markdown/src/**/*.type-spec.ts",
     "testing/src/**/*.spec.ts",
+    "testing/src/**/*.test.ts",
     "testing/src/**/*.type-test.ts",
+    "testing/src/**/*.type-spec.ts",
     "src/test-setup.ts"
   ]
 }

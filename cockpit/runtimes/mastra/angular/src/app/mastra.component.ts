@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed } from '@angular/core';
-import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
+import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 import type { Session } from '@threadplane/ag-ui';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
@@ -41,7 +41,7 @@ interface PackingList {
  * The whole point of this example: this component is the same kind of UI
  * code every other AG-UI example uses — `provideAgent` + `injectAgent()`
  * from `@threadplane/angular` over `createSession` from `@threadplane/ag-ui`,
- * the `@threadplane/chat` primitives — while the
+ * the `@threadplane/angular/chat` primitives — while the
  * backend is a genuinely non-LangGraph, non-Python runtime: Mastra agents
  * served over plain AG-UI SSE by the hand-written Node service
  * `deployments/ag-ui-mastra` (upstream ships no HTTP endpoint of its own).

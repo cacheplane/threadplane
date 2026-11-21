@@ -14,7 +14,7 @@ describe('StackDiagram', () => {
   it('renders the canonical five-node stack', () => {
     const { container } = render(<StackDiagram />);
     const titles = Array.from(container.querySelectorAll('.tp-diagram-title')).map((t) => t.textContent);
-    expect(titles).toContain('@threadplane/chat');
+    expect(titles).toContain('@threadplane/angular/chat');
     expect(titles).toContain('@threadplane/langgraph');
     expect(titles).toContain('@threadplane/ag-ui');
     const eyebrows = Array.from(container.querySelectorAll('.tp-diagram-eyebrow')).map((t) => t.textContent);
@@ -25,7 +25,7 @@ describe('StackDiagram', () => {
   it.each([
     ['ag-ui', '@threadplane/ag-ui'],
     ['langgraph', '@threadplane/langgraph'],
-    ['chat', '@threadplane/chat'],
+    ['chat', '@threadplane/angular/chat'],
   ] as const)('highlight=%s accents that node', (highlight, title) => {
     const { container } = render(<StackDiagram highlight={highlight} />);
     expect(toneOf(container, title)).toBe('accent');

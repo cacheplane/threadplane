@@ -288,7 +288,7 @@ test('RxJS is admitted as the SDK stream type; Angular, chat and other framework
   assert.deepEqual(candidateViolations(output), []);
   for (const specifier of [
     '@angular/core',
-    '@threadplane/chat',
+    '@threadplane/angular/chat',
     '@threadplane/angular',
     'react',
     'rxjs/operators',
@@ -381,7 +381,7 @@ for (const [label, change, expected] of [
     'a chat peer',
     (m) => ({
       ...m,
-      peerDependencies: { ...m.peerDependencies, '@threadplane/chat': '*' },
+      peerDependencies: { ...m.peerDependencies, '@threadplane/angular/chat': '*' },
     }),
     'candidate dependency',
   ],

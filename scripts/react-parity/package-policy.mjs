@@ -1,32 +1,32 @@
 // The package roles of the release. Each package may import only the internal
 // packages listed for it. The backend packages (langgraph, ag-ui) are
 // framework-neutral: core and their own SDK, nothing else. `angular` is the one
-// Angular binding; `chat` is the Angular chat UI built on it.
+// Angular package: the binding at its root, the chat UI at `/chat` and the
+// render engine at `/render`. Its chat UI hands the development collector to
+// the agent layer, so it may use `telemetry`.
 export const finalPackageDependencies = {
   core: [],
   langgraph: ['core'],
   'ag-ui': ['core'],
-  render: ['core'],
   a2ui: [],
-  content: ['core', 'render', 'a2ui'],
-  angular: ['core', 'content', 'render', 'a2ui'],
-  react: ['core', 'content', 'render', 'a2ui'],
+  content: ['core', 'a2ui'],
+  angular: ['core', 'content', 'a2ui', 'telemetry'],
+  react: ['core', 'content', 'a2ui'],
   telemetry: ['core'],
-  chat: ['core', 'angular', 'content', 'render', 'a2ui', 'telemetry'],
 };
 // The shared foundations every binding is built from.
 export const foundationProjects = ['core', 'content', 'angular', 'react'];
 // Published to npm at one version. `react` is the only foundation not yet released.
-export const publishableProjects = ['core', 'content', 'angular', 'chat', 'langgraph', 'ag-ui', 'render', 'a2ui', 'telemetry'];
+export const publishableProjects = ['core', 'content', 'angular', 'langgraph', 'ag-ui', 'a2ui', 'telemetry'];
 export const privateProjects = ['react'];
 export const backendProjects = ['langgraph', 'ag-ui'];
 // Packages that are Angular by role: Angular imports are theirs to make, and
 // their source entry is an APF `public-api.ts`.
-export const angularProjects = ['angular', 'chat'];
-// The one remaining whole-project exception: the Angular render engine, whose
-// final role is neutral. Its graph is scanned transitively and cannot reach React.
-export const angularTransitionProjects = ['render'];
-export const scanProjects = [...new Set([...foundationProjects, 'chat', ...backendProjects, ...angularTransitionProjects, 'a2ui', 'telemetry'])];
+export const angularProjects = ['angular'];
+// Whole-project exceptions still in transition. The Angular render engine left
+// this list when it became the `/render` entry point of `angular`.
+export const angularTransitionProjects = [];
+export const scanProjects = [...new Set([...foundationProjects, ...backendProjects, ...angularTransitionProjects, 'a2ui', 'telemetry'])];
 // The only external packages a backend package may import. RxJS is the AG-UI
 // client's own stream type; the in-process fake agent returns one.
 export const neutralRuntimeSdkEntries = { langgraph: ['@langchain/langgraph-sdk'], 'ag-ui': ['@ag-ui/client', 'rxjs'] };
@@ -73,7 +73,7 @@ export function forbiddenDependency(project, specifier, { angularTransitions = [
   if (backend && !['langgraph', 'ag-ui'].includes(role)) return true;
   const parser = ['@cacheplane/json-stream', '@cacheplane/partial-json', '@cacheplane/partial-markdown', 'marked', 'remark-gfm', 'katex', 'shiki'].includes(pkg);
   return (role === 'core' && (parser || pkg === 'zod' || pkg === '@json-render/core')) ||
-    (['core', 'content', 'render', 'a2ui', 'telemetry'].includes(role) && pkg === 'rxjs');
+    (['core', 'content', 'a2ui', 'telemetry'].includes(role) && pkg === 'rxjs');
 }
 
 export function manifestViolations(project, manifest, { angularTransitions = [], telemetryBrowserTransition = false } = {}) {

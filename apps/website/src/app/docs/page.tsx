@@ -22,7 +22,7 @@ const BACKENDS = [
     blurb:
       'Connect directly to LangGraph for streaming, threads, checkpoints, and human approvals.',
     install:
-      'npm i @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked',
+      'npm i @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked',
     href: '/docs/angular/langgraph/getting-started/quickstart',
     reactHref: '/docs/react/langgraph/guides/streaming',
     logo: '/logos/langgraph.svg',
@@ -32,7 +32,7 @@ const BACKENDS = [
     blurb:
       'Connect an AG-UI backend, including CrewAI, Mastra, Microsoft Agent Framework, and AWS Strands.',
     install:
-      'npm i @threadplane/chat @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked',
+      'npm i @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked',
     href: '/docs/angular/ag-ui/getting-started/quickstart',
     reactHref: '/docs/react/ag-ui/reference/event-mapping',
     logo: '/logos/ag-ui.svg',

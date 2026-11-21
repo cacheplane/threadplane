@@ -8,7 +8,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     include: ['shared/**/*.spec.ts'],
-    setupFiles: ['../../libs/render/src/test-setup.ts'],
+    setupFiles: ['../../libs/angular/render/src/test-setup.ts'],
     pool: 'forks',
   },
 });

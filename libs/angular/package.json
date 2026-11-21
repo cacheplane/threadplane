@@ -1,7 +1,7 @@
 {
   "name": "@threadplane/angular",
   "version": "0.3.7",
-  "description": "Angular binding for Threadplane agent sessions: provideAgent(), injectAgent() and an Agent whose state is Angular Signals.",
+  "description": "Angular for Threadplane agents: provideAgent() and injectAgent() with an Agent whose state is Angular Signals, plus the chat UI (/chat) and the generative UI renderer (/render).",
   "keywords": [
     "angular",
     "agent",
@@ -19,11 +19,52 @@
     "url": "https://github.com/cacheplane/threadplane/issues"
   },
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    "./chat/styles.css": "./chat/styles.css",
+    "./chat/themes/default-dark.css": "./chat/themes/default-dark.css",
+    "./chat/themes/default-light.css": "./chat/themes/default-light.css",
+    "./chat/themes/material-dark.css": "./chat/themes/material-dark.css",
+    "./chat/themes/material-light.css": "./chat/themes/material-light.css",
+    "./development-install": {
+      "types": "./.install-collector/development-install.d.ts",
+      "default": "./.install-collector/development-install.mjs"
+    }
+  },
+  "imports": {
+    "#development-install": {
+      "types": "./.install-collector/development-install.d.ts",
+      "default": "@threadplane/angular/development-install"
+    }
+  },
+  "scripts": {
+    "postinstall": "node install/postinstall.cjs"
+  },
+  "dependencies": {
+    "@cacheplane/partial-json": ">=0.1.1 <0.3.0",
+    "@cacheplane/partial-markdown": "0.6.1"
+  },
   "peerDependencies": {
+    "@angular/common": "^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@angular/platform-browser": "^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@angular/router": "^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@json-render/core": "^0.16.0",
+    "@threadplane/a2ui": "0.3.7",
     "@threadplane/content": "0.3.7",
     "@threadplane/core": "0.3.7",
-    "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0"
+    "@threadplane/telemetry": "^0.3.7",
+    "katex": "^0.16.0 || ^0.17.0",
+    "marked": "^15.0.0 || ^16.0.0",
+    "rxjs": "~7.8.0",
+    "zod": "^3.25.0 || ^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "katex": {
+      "optional": true
+    }
   },
   "files": [
     "chat/package.json",
@@ -33,6 +74,15 @@
     "fesm2022/*.mjs.map",
     "types/**/*.d.ts",
     "LICENSE.md",
-    "README.md"
+    "README.md",
+    "chat/debug/package.json",
+    "chat/testing/package.json",
+    "render/package.json",
+    "chat/styles.css",
+    "chat/themes/*.css",
+    ".install-collector/**",
+    "install/**",
+    "NOTICE.md",
+    "CHANGELOG.md"
   ]
 }

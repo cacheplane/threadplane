@@ -8,6 +8,13 @@ import {
   type RuntimeOwner,
 } from './types';
 
+/** The package each integration ships in. The renderer is part of `@threadplane/angular`. */
+const INTEGRATION_PACKAGES: Readonly<Record<string, string>> = {
+  langgraph: '@threadplane/langgraph',
+  'ag-ui': '@threadplane/ag-ui',
+  render: '@threadplane/angular',
+};
+
 let enabled = true;
 let collector: DevelopmentCollector | undefined;
 const policies = new WeakMap<object, () => boolean>();
@@ -95,8 +102,8 @@ export function createDevelopmentRuntime(
         return (
           !disposed &&
           (options.enabled?.() ?? true) &&
-          ['langgraph', 'ag-ui', 'render'].includes(options.integration) &&
-          options.packageName === `@threadplane/${options.integration}` &&
+          Object.hasOwn(INTEGRATION_PACKAGES, options.integration) &&
+          options.packageName === INTEGRATION_PACKAGES[options.integration] &&
           /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/u.test(options.packageVersion) &&
           options.packageVersion.length <= 64 &&
           browserAllowed()

@@ -31,7 +31,9 @@ function selection(framework, profile) {
     opposite: framework === 'react' ? 'angular' : 'react',
     locals: (framework === 'react'
       ? ['a2ui', 'content', 'core', 'langgraph', 'react']
-      : ['content', 'core', 'langgraph', 'angular']
+      : // `@threadplane/angular` requires A2UI and telemetry; the consumer
+        // installs them, and only their declarations may enter the build.
+        ['a2ui', 'content', 'core', 'langgraph', 'telemetry', 'angular']
     )
       .map((name) => '@threadplane/' + name)
       .sort(),
@@ -141,6 +143,9 @@ function selectedInputs(p, selected) {
         `libs/${framework}/`,
         'libs/langgraph/',
         'scripts/react-parity/',
+        // `@threadplane/angular` depends on telemetry, so its build is a
+        // foundation of the Angular consumer.
+        ...(framework === 'angular' ? ['libs/telemetry/'] : []),
       ].some((prefix) => path.startsWith(prefix)) ||
       path === 'libs/telemetry/project.json' ||
       path === 'fixtures/react-parity/traces/langgraph-text-state.sse';
@@ -197,14 +202,17 @@ function selectedInputs(p, selected) {
         ),
         'Unknown selected local package input: ' + path
       );
-    if (path.startsWith('node_modules/@threadplane/a2ui/'))
+    if (/^node_modules\/@threadplane\/(?:a2ui|telemetry)\//.test(path))
       assert.ok(
-        framework === 'react' && !runtime && path.endsWith('.d.ts'),
+        (framework === 'angular' ||
+          path.startsWith('node_modules/@threadplane/a2ui/')) &&
+          !runtime &&
+          /\.d\.[cm]?ts$/.test(path),
         'Protocol declarations only; protocol runtime forbidden'
       );
     const forbidden =
       framework === 'angular'
-        ? /^node_modules\/(?:react(?:-dom)?\/|@types\/react(?:-dom)?\/|@threadplane\/(?:react|chat|telemetry|render|a2ui|ag-ui)\/|@threadplane\/langgraph\/(?:fesm\d*|esm\d*|types)\/)/
+        ? /^node_modules\/(?:react(?:-dom)?\/|@types\/react(?:-dom)?\/|@threadplane\/(?:react|chat|render|ag-ui)\/|@threadplane\/langgraph\/(?:fesm\d*|esm\d*|types)\/)/
         : /^node_modules\/(?:@angular\/|@threadplane\/(?:angular|chat|telemetry|render|ag-ui)\/|@threadplane\/langgraph\/(?:fesm\d*|esm\d*|types)\/)/;
     assert.doesNotMatch(
       path,

@@ -19,7 +19,7 @@ import { JSDOM } from 'jsdom';
 
 const execute = promisify(execFile);
 const workspace = resolve('.');
-const packages = ['chat', 'langgraph', 'ag-ui', 'render'];
+const packages = ['angular', 'langgraph', 'ag-ui'];
 export async function verifyAngularInstallBridge(parseCollectionBatch) {
   const temporary = await mkdtemp(
     join(tmpdir(), 'threadplane-angular-install-')
@@ -48,7 +48,6 @@ export async function verifyAngularInstallBridge(parseCollectionBatch) {
       ...packages,
       'telemetry',
       'a2ui',
-      'angular',
       'core',
       'content',
     ]) {
@@ -159,10 +158,11 @@ export async function verifyAngularInstallBridge(parseCollectionBatch) {
       join(temporary, 'main.ts'),
       `
 // What an Angular application writes: the one provider from the binding, a
-// session factory from a backend package, and the chat package, whose loading
+// session factory from a backend package, and the chat UI, whose setup
 // connects agents to the development collector. Nothing names the telemetry
 // package or the installation token.
 import {
+  inject,
   Injector,
   provideZonelessChangeDetection,
   runInInjectionContext,
@@ -171,10 +171,11 @@ import {
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession, FakeAgent } from '@threadplane/ag-ui';
 import { createSession as createLangGraphSession } from '@threadplane/langgraph';
-// Any export loads the chat package's entry, which registers the collector. A
-// small one keeps the production build of this proof short.
-import { staticDelivery } from '@threadplane/chat';
-import { RenderElementComponent } from '@threadplane/render';
+// The first chat component an application creates sets up the chat UI, which
+// registers the collector. Injecting that setup directly stands in for a
+// component and keeps the production build of this proof short.
+import { staticDelivery, ɵCHAT_RUNTIME } from '@threadplane/angular/chat';
+import { RenderElementComponent } from '@threadplane/angular/render';
 const target = globalThis as any;
 target.fixtureExports = { createLangGraphSession, staticDelivery, RenderElementComponent };
 if (target.exercise) {
@@ -193,6 +194,7 @@ if (target.exercise) {
       }),
     ],
   });
+  runInInjectionContext(injector, () => inject(ɵCHAT_RUNTIME));
   const agent = runInInjectionContext(injector, () => injectAgent());
   target.fixtureAgent = agent;
   target.fixtureDone = agent.submit('synthetic package proof');
@@ -203,7 +205,7 @@ if (target.exercise) {
       if (scenario === 'development') {
         await run('npm', ['rebuild', ...packages.map(name => `@threadplane/${name}`), '--offline', '--foreground-scripts'], { env: lifecycleEnv });
         const events = (await readFile(capture, 'utf8')).trim().split('\n').flatMap(line => JSON.parse(line).events);
-        assert.equal(events.length, 4);
+        assert.equal(events.length, packages.length);
         for (const event of events) {
           assert.match(event.installationToken, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
           tokens.set(event.properties.packageName, event.installationToken);
@@ -231,7 +233,7 @@ if (target.exercise) {
             )
         )
       ).join('\n');
-      for (const name of scenario === 'skipped-scripts' ? [] : ['langgraph', 'ag-ui', 'render'])
+      for (const name of scenario === 'skipped-scripts' ? [] : packages)
         assert.equal(
           code.includes(tokens.get(`@threadplane/${name}`)),
           configuration === 'development',

@@ -102,7 +102,7 @@ This complete standalone Angular component uses the agent provided above. The ou
 
 ```typescript
 import { Component, signal } from '@angular/core';
-import { ChatInterruptPanelComponent, type InterruptAction } from '@threadplane/chat';
+import { ChatInterruptPanelComponent, type InterruptAction } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 
 @Component({
@@ -162,8 +162,8 @@ The panel accepts any `Agent`, but it shows only the first pending interrupt and
 ## Import
 
 ```typescript
-import { ChatInterruptPanelComponent } from '@threadplane/chat';
-import type { InterruptAction } from '@threadplane/chat';
+import { ChatInterruptPanelComponent } from '@threadplane/angular/chat';
+import type { InterruptAction } from '@threadplane/angular/chat';
 ```
 
 The component is standalone, so add it to a component's `imports` array.
@@ -254,7 +254,7 @@ summaryOf(interrupt: AgentInterrupt): string {
 The primitive's module exports the same read as a standalone function:
 
 ```typescript
-import { getInterrupt } from '@threadplane/chat';
+import { getInterrupt } from '@threadplane/angular/chat';
 
 const pending = getInterrupt(agent); // AgentInterrupt | undefined
 ```

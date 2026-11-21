@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { tools, action, view, ask, type ClientToolRegistry } from '@threadplane/chat';
+import { tools, action, view, ask, type ClientToolRegistry } from '@threadplane/angular/chat';
 import { z } from 'zod/v4';
 import { ItineraryStore } from './itinerary-store';
 import { GeocodingService } from './geocoding.service';

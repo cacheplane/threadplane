@@ -253,7 +253,7 @@ The final package map is a separate destination, not the implemented topology:
 | `@threadplane/core` | Dependency-free data, observation, execution and tool contracts |
 | `@threadplane/langgraph` | Neutral LangGraph transport and lifecycle |
 | `@threadplane/ag-ui` | Neutral AG-UI transport and recovery |
-| `@threadplane/render` | Neutral render data and registry contracts |
+| `@threadplane/angular/render` | Neutral render data and registry contracts |
 | `@threadplane/a2ui` | A2UI protocol data and processing |
 | `@threadplane/content` | Optional Markdown, JSON and A2UI processing |
 | `@threadplane/angular` | Angular binding, render components and UI |

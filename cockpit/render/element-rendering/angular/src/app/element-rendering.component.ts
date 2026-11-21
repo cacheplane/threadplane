@@ -4,7 +4,7 @@ import {
   RenderElementComponent,
   defineAngularRegistry,
   signalStateStore,
-} from '@threadplane/render';
+} from '@threadplane/angular/render';
 import type { Spec } from '@json-render/core';
 import { StreamingSimulator } from '../../../../shared/streaming-simulator';
 import { StreamingTimelineComponent } from '../../../../shared/streaming-timeline.component';

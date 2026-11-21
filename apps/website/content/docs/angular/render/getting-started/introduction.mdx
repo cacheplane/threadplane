@@ -1,18 +1,18 @@
 ---
-description: What @threadplane/render is, how it relates to @json-render/core, and the rendering pipeline that turns a JSON spec into a live Angular component tree.
+description: What @threadplane/angular/render is, how it relates to @json-render/core, and the rendering pipeline that turns a JSON spec into a live Angular component tree.
 ---
 
 # Introduction
 
-`@threadplane/render` is the Angular rendering engine for [json-render](https://github.com/nicholasgriffintn/json-render) specs. It takes a declarative JSON specification and renders it into a live Angular component tree -- with reactive state, event handling, and conditional rendering built in.
+`@threadplane/angular/render` is the Angular rendering engine for [json-render](https://github.com/nicholasgriffintn/json-render) specs. It takes a declarative JSON specification and renders it into a live Angular component tree -- with reactive state, event handling, and conditional rendering built in.
 
 ## How it fits
 
 <RenderHowItFits />
 
-## Why @threadplane/render?
+## Why @threadplane/angular/render?
 
-Building dynamic UIs from server-driven specs shows up everywhere -- AI apps, form builders, CMS-powered frontends. `@threadplane/render` bridges `@json-render/core` (a framework-agnostic spec evaluation engine) and Angular's component model.
+Building dynamic UIs from server-driven specs shows up everywhere -- AI apps, form builders, CMS-powered frontends. `@threadplane/angular/render` bridges `@json-render/core` (a framework-agnostic spec evaluation engine) and Angular's component model.
 
 You do not write imperative rendering logic. You describe your UI as a JSON spec and let the library handle the rest:
 
@@ -39,7 +39,7 @@ The library resolves `Text` from your component registry, evaluates the `$state`
 
 `@json-render/core` provides the spec format and the evaluation engine -- it resolves prop expressions (`$state`, `$item`, `$index`, `$bindState`, `$computed`), evaluates visibility conditions, and resolves bindings. It is framework-agnostic and has no Angular dependency.
 
-`@threadplane/render` is the Angular adapter layer. It provides:
+`@threadplane/angular/render` is the Angular adapter layer. It provides:
 
 - **Component registry** -- maps spec element types (like `"Text"` or `"Card"`) to Angular component classes
 - **Signal-based state store** -- an Angular Signals-backed implementation of the `StateStore` interface from `@json-render/core`
@@ -68,7 +68,7 @@ const registry = defineAngularRegistry({
 });
 ```
 
-`defineAngularRegistry()` is the canonical constructor for driving `<render-spec>` directly. When you wire components into `@threadplane/chat` instead, you will see `views()` -- a chat-facing helper that produces a `ViewRegistry` chat converts to this same registry internally. Reach for `defineAngularRegistry()` here; reach for `views()` when feeding a chat catalog.
+`defineAngularRegistry()` is the canonical constructor for driving `<render-spec>` directly. When you wire components into `@threadplane/angular/chat` instead, you will see `views()` -- a chat-facing helper that produces a `ViewRegistry` chat converts to this same registry internally. Reach for `defineAngularRegistry()` here; reach for `views()` when feeding a chat catalog.
 
 ### State Store
 

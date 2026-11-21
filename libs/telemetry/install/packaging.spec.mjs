@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 const json = async (path) => JSON.parse(await readFile(resolve(path), 'utf8'));
 describe('install collector package assembly', () => {
-  it.each(['chat', 'langgraph', 'ag-ui', 'render'])(
+  it.each(['angular', 'langgraph', 'ag-ui'])(
     'provides an inert %s source bridge before package preparation',
     async (name) => {
       expect(await readFile(resolve(`libs/${name}/.install-collector/development-install.mjs`), 'utf8'))
@@ -13,7 +13,7 @@ describe('install collector package assembly', () => {
         .toBe('export declare const installationToken: string | null;\n');
     }
   );
-  it.each(['chat', 'langgraph', 'ag-ui', 'render'])(
+  it.each(['angular', 'langgraph', 'ag-ui'])(
     'keeps the %s contributor workspace lifecycle inert',
     async (name) => {
       const directory = await mkdtemp(resolve(tmpdir(), 'threadplane-workspace-hook-'));
@@ -31,7 +31,9 @@ describe('install collector package assembly', () => {
       }
     }
   );
-  it.each(['chat', 'render'])(
+  // `@threadplane/angular` is built by ng-packagr and embeds its release
+  // version in each entry point that reports: chat and render.
+  it.each(['angular'])(
     'explicitly ships the shared hook in %s and includes it in build inputs',
     async (name) => {
       const pkg = await json(`libs/${name}/package.json`),
@@ -69,18 +71,20 @@ describe('install collector package assembly', () => {
         '{workspaceRoot}/libs/telemetry/install/*'
       );
       expect(project.implicitDependencies).toContain('telemetry');
-      const prepared = await readFile(
-        resolve(`libs/${name}/src/lib/package-version.ts`),
-        'utf8'
-      ).catch(() => '');
-      expect(prepared).toContain(
-        `export const THREADPLANE_PACKAGE_VERSION = ${JSON.stringify(
-          pkg.version
-        )};`
-      );
-      expect(project.targets['prepare-install'].outputs).toContain(
-        '{projectRoot}/src/lib/package-version.ts'
-      );
+      for (const entry of ['chat', 'render']) {
+        const prepared = await readFile(
+          resolve(`libs/${name}/${entry}/src/lib/package-version.ts`),
+          'utf8'
+        ).catch(() => '');
+        expect(prepared).toContain(
+          `export const THREADPLANE_PACKAGE_VERSION = ${JSON.stringify(
+            pkg.version
+          )};`
+        );
+        expect(project.targets['prepare-install'].outputs).toContain(
+          `{projectRoot}/${entry}/src/lib/package-version.ts`
+        );
+      }
     }
   );
   // The backend packages are framework-neutral libraries compiled by tsc. They

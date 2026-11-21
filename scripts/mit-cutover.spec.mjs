@@ -43,8 +43,8 @@ describe('MIT package cutover', () => {
       expect(manifest.license, `${manifest.name} license`).toBe('MIT');
     }
 
-    const chat = await readJson('libs/chat/package.json');
-    expect(chat.peerDependencies).not.toHaveProperty('@threadplane/licensing');
+    const angular = await readJson('libs/angular/package.json');
+    expect(angular.peerDependencies).not.toHaveProperty('@threadplane/licensing');
   });
 
   it('ships the MIT notice with every published package', async () => {
@@ -121,8 +121,8 @@ describe('MIT package cutover', () => {
   it('contains no current-facing references to the retired licensing model', async () => {
     const currentFiles = [
       'README.md',
-      'libs/chat/README.md',
-      'libs/chat/NOTICE.md',
+      'libs/angular/chat/README.md',
+      'libs/angular/NOTICE.md',
       'apps/website/src',
       'apps/website/content',
       'apps/website/public/AGENTS.md',

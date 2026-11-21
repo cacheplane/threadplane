@@ -165,7 +165,7 @@ export const docsConfig: DocsLibrary[] = [
   },
   {
     id: 'render',
-    // Display label only. The package is @threadplane/render and the docs URL
+    // Display label only. The package is @threadplane/angular/render and the docs URL
     // stays /docs/render/ — but every page of prose calls it json-render.
     title: 'json-render',
     description: 'Declarative UI rendering from JSON specifications',

@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { ChatPopupComponent, a2uiBasicCatalog } from '@threadplane/chat';
+import { ChatPopupComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
 import { AgUiShell } from '../shell/ag-ui-shell.component';
 import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
 import { AppModePromoComponent } from './app-mode-promo.component';

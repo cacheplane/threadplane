@@ -71,8 +71,8 @@ describe('positioning: hero copy', () => {
     expect(HERO_SECONDARY_HREF).toBe('/docs/angular/chat/guides/generative-ui?mode=run');
   });
 
-  it('trust line license word matches the chat package manifest', () => {
-    const chat = workspacePkgs.find((p) => p.name === '@threadplane/chat');
+  it('trust line license word matches the Angular package manifest', () => {
+    const chat = workspacePkgs.find((p) => p.name === '@threadplane/angular');
     expect(chat?.license).toBe('MIT');
     expect(HERO_TRUST_LINE).toContain(chat!.license!);
     expect(HERO_TRUST_LINE).toBe('MIT · Angular 20–22 · no account, no cloud');

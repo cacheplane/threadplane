@@ -57,13 +57,20 @@ export function preparationEnvironment(env = process.env) {
 }
 
 export function foundationCommands(root, framework) {
-  return ['core', 'a2ui', 'content', selectedFramework(framework)].map(
-    (project) => ({
+  // `@threadplane/angular` holds the chat UI, which uses the telemetry package.
+  // Telemetry's `build` assembles what `build:node` and `build:browser` emit,
+  // and task dependencies are excluded here, so those run first, in order.
+  const targets =
+    selectedFramework(framework) === 'angular'
+      ? ['core', 'a2ui', 'content', 'telemetry:build:node', 'telemetry:build:browser', 'telemetry', 'angular']
+      : ['core', 'a2ui', 'content', selectedFramework(framework)];
+  return targets.map(
+    (target) => ({
       command: process.execPath,
       args: [
         join(root, 'node_modules/nx/bin/nx.js'),
-        'build',
-        project,
+        target.includes(':') ? 'run' : 'build',
+        target,
         '--excludeTaskDependencies',
         '--skip-nx-cache',
         '--outputStyle=stream',

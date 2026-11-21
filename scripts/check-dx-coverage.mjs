@@ -22,10 +22,11 @@ const AUTHORING_EXACT = new Set([
 const isAuthoringSurface = (name) => /^(provide|inject|mock)/.test(name) || AUTHORING_EXACT.has(name);
 
 const LIBRARIES = [
-  { slug: 'chat', entryPoints: ['libs/chat/src/public-api.ts'] },
+  // Angular's entry points compile with the package's one library tsconfig.
+  { slug: 'chat', entryPoints: ['libs/angular/chat/src/public-api.ts'], tsconfig: 'libs/angular/tsconfig.lib.json' },
   { slug: 'ag-ui', entryPoints: ['libs/ag-ui/src/public-api.ts'] },
   { slug: 'langgraph', entryPoints: ['libs/langgraph/src/public-api.ts'] },
-  { slug: 'render', entryPoints: ['libs/render/src/public-api.ts'] },
+  { slug: 'render', entryPoints: ['libs/angular/render/src/public-api.ts'], tsconfig: 'libs/angular/tsconfig.lib.json' },
 ];
 
 function summaryText(comment) {
@@ -71,9 +72,9 @@ async function main() {
       continue;
     }
     const libDir = path.dirname(path.dirname(lib.entryPoints[0]));
-    const libTsconfig = fs.existsSync(path.join(libDir, 'tsconfig.lib.json'))
+    const libTsconfig = lib.tsconfig ?? (fs.existsSync(path.join(libDir, 'tsconfig.lib.json'))
       ? path.join(libDir, 'tsconfig.lib.json')
-      : undefined;
+      : undefined);
 
     const app = await Application.bootstrapWithPlugins({
       entryPoints: lib.entryPoints,

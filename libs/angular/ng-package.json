@@ -1,6 +1,54 @@
 {
   "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
   "dest": "../../dist/libs/angular",
-  "lib": { "entryFile": "src/public-api.ts" },
-  "assets": ["LICENSE.md", "README.md"]
+  "lib": {
+    "entryFile": "src/public-api.ts"
+  },
+  "assets": [
+    {
+      "input": ".install-collector",
+      "glob": "development-install.*",
+      "output": ".install-collector"
+    },
+    {
+      "input": ".install-collector",
+      "glob": "*.cjs",
+      "output": "install"
+    },
+    {
+      "input": "chat/src",
+      "glob": "styles.css",
+      "output": "chat"
+    },
+    {
+      "input": "chat/src/themes",
+      "glob": "*.css",
+      "output": "chat/themes"
+    },
+    {
+      "input": ".",
+      "glob": "LICENSE.md",
+      "output": "."
+    },
+    {
+      "input": ".",
+      "glob": "NOTICE.md",
+      "output": "."
+    },
+    {
+      "input": ".",
+      "glob": "README.md",
+      "output": "."
+    },
+    {
+      "input": "chat",
+      "glob": "CHANGELOG.md",
+      "output": "."
+    }
+  ],
+  "allowedNonPeerDependencies": [
+    "@cacheplane/partial-json",
+    "@cacheplane/partial-markdown"
+  ],
+  "keepLifecycleScripts": true
 }

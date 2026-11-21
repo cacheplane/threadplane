@@ -18,10 +18,10 @@ Angular 20–22 project using a Node.js version supported by that Angular major.
 <Step title="Install the packages">
 
 ```bash
-npm install @threadplane/angular @threadplane/core @threadplane/langgraph @threadplane/chat @langchain/core @langchain/langgraph-sdk
+npm install @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk
 ```
 
-`@threadplane/angular` holds the provider and `injectAgent()`. `@threadplane/langgraph` holds `createSession()`, the LangGraph implementation of the session contract in `@threadplane/core`. npm 7 and newer install peer dependencies automatically, so this command also brings in the peers `@threadplane/chat` declares — `@threadplane/telemetry`, `@threadplane/render`, `@threadplane/a2ui`, `zod`, `@json-render/core`, and `marked`. Listing the LangChain peers explicitly keeps stricter package managers quiet; the full contract is in the [Installation](/docs/angular/langgraph/getting-started/installation) guide.
+`@threadplane/angular` holds the provider and `injectAgent()`. `@threadplane/langgraph` holds `createSession()`, the LangGraph implementation of the session contract in `@threadplane/core`. npm 7 and newer install peer dependencies automatically, so this command also brings in the peers `@threadplane/angular/chat` declares — `@threadplane/telemetry`, `@threadplane/angular/render`, `@threadplane/a2ui`, `zod`, `@json-render/core`, and `marked`. Listing the LangChain peers explicitly keeps stricter package managers quiet; the full contract is in the [Installation](/docs/angular/langgraph/getting-started/installation) guide.
 
 </Step>
 <Step title="Configure the provider">
@@ -198,7 +198,7 @@ The optional ref name appears in Angular DI error messages. The ref comes from `
 
 <CardGroup cols={3}>
   <Card title="Drop-in chat UI" href="/docs/angular/chat/getting-started/quickstart">
-    Skip the hand-rolled template — render this agent with `<chat [agent]>` from @threadplane/chat.
+    Skip the hand-rolled template — render this agent with `<chat [agent]>` from @threadplane/angular/chat.
   </Card>
   <Card title="Streaming" href="/docs/angular/langgraph/guides/streaming">
     Learn about token-by-token updates and stream modes

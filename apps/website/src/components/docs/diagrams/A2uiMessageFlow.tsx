@@ -27,7 +27,7 @@ export function A2uiMessageFlow() {
       <DiagramEdge d="M320 60 V80" slug={SLUG} arrow />
       <DiagramNode
         x={170} y={84} w={300} h={64}
-        eyebrow="@threadplane/chat" title="Content classifier"
+        eyebrow="@threadplane/angular/chat" title="Content classifier"
         meta="switches to A2UI mode"
         titleStyle="sans"
       />
@@ -41,13 +41,13 @@ export function A2uiMessageFlow() {
       <DiagramEdge d="M320 236 V256" slug={SLUG} arrow />
       <DiagramNode
         x={170} y={260} w={300} h={64}
-        eyebrow="@threadplane/chat" title="createA2uiSurfaceStore()"
+        eyebrow="@threadplane/angular/chat" title="createA2uiSurfaceStore()"
         meta="applies those messages by surface id"
       />
       <DiagramEdge d="M320 324 V344" slug={SLUG} arrow />
       <DiagramNode
         x={170} y={348} w={300} h={64}
-        eyebrow="@threadplane/chat" title="<a2ui-surface>"
+        eyebrow="@threadplane/angular/chat" title="<a2ui-surface>"
         meta="renders progressive state through your catalog"
       />
     </DiagramFrame>

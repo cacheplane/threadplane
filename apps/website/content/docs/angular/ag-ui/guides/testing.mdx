@@ -6,8 +6,8 @@ description: Test AG-UI components with provideFakeAgent(), a scripted FakeAgent
 
 Three test doubles cover an AG-UI application, smallest scope first:
 
-- **`mockAgent()`** (from `@threadplane/chat/testing`) — an `Agent` with writable fields and recorded commands, for component and unit tests that need no injector.
-- **`provideFakeAgent()`** (from `@threadplane/angular/testing`, re-exported by `@threadplane/chat/testing`) — the real injected `Agent` over an in-memory session that streams canned tokens. No server, no LLM, no AG-UI event.
+- **`mockAgent()`** (from `@threadplane/angular/chat/testing`) — an `Agent` with writable fields and recorded commands, for component and unit tests that need no injector.
+- **`provideFakeAgent()`** (from `@threadplane/angular/testing`, re-exported by `@threadplane/angular/chat/testing`) — the real injected `Agent` over an in-memory session that streams canned tokens. No server, no LLM, no AG-UI event.
 - **`FakeAgent`** (from `@threadplane/ag-ui`) — an in-process AG-UI source. Hand it to `createSession({ agent })` and the real AG-UI session runs its whole event pipeline over a canned or scripted stream.
 
 See [Choosing an adapter → Testing](/docs/choosing-an-adapter#testing) for when to use each test double.
@@ -37,7 +37,7 @@ export const appConfig: ApplicationConfig = {
 
 ```typescript
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 
 @Component({
@@ -95,12 +95,12 @@ describe('chat via provideFakeAgent', () => {
 
 ## Contract mock: `mockAgent()`
 
-For component and unit tests where you do not need a streaming pipeline at all, use `mockAgent(options)` from `@threadplane/chat/testing`. It returns the agent's own shape with every snapshot field **writable** — set state directly and assert your component reacts. It needs no transport and no injection context.
+For component and unit tests where you do not need a streaming pipeline at all, use `mockAgent(options)` from `@threadplane/angular/chat/testing`. It returns the agent's own shape with every snapshot field **writable** — set state directly and assert your component reacts. It needs no transport and no injection context.
 
 `mockAgent()` covers the core `Agent` surface, including `customEvents`, `subagents` and `interrupts`. A component that reads the fields only an AG-UI session has (`decision`, `run`, `transcript`) needs a scripted `FakeAgent` instead.
 
 ```typescript
-import { mockAgent } from '@threadplane/chat/testing';
+import { mockAgent } from '@threadplane/angular/chat/testing';
 
 const m = mockAgent({ status: 'running' });
 m.messages.set([{ id: '1', role: 'assistant', content: 'Hello!' }]);

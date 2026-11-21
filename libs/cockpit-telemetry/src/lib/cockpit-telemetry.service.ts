@@ -2,9 +2,9 @@ import { Injectable, inject, effect, untracked, Injector, runInInjectionContext 
 import posthog from 'posthog-js';
 import { COCKPIT_TELEMETRY_CONFIG } from './tokens';
 import { ActivationAggregator } from './activation-aggregator';
-import { CHAT_LIFECYCLE } from '@threadplane/chat';
+import { CHAT_LIFECYCLE } from '@threadplane/angular/chat';
 import { AgentLifecycleRegistry, type AgentLifecycle } from '@threadplane/angular';
-import { RENDER_LIFECYCLE } from '@threadplane/render';
+import { RENDER_LIFECYCLE } from '@threadplane/angular/render';
 import type { CockpitEventName } from './events';
 
 @Injectable()

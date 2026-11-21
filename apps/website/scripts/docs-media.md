@@ -4,7 +4,7 @@
 The assets live under `apps/website/public/media/docs/`; the small encoded clips
 are versioned with their captions, posters, walkthroughs and capture metadata.
 Do not replace them with the older marketing clips: the legacy Render clip
-shows A2UI, while the documentation `ui` recording uses `@threadplane/render`.
+shows A2UI, while the documentation `ui` recording uses `@threadplane/angular/render`.
 
 ## Reproduce
 

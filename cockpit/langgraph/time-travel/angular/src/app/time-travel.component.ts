@@ -1,5 +1,5 @@
 import { Component, computed, signal } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 import {
   selectBranch,

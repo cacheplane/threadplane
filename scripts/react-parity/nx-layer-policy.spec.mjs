@@ -16,7 +16,7 @@ test('actual Nx rule admits content A2UI types and rejects unrelated layers and 
     return result.messages.filter((message) => message.ruleId === '@nx/enforce-module-boundaries');
   }
   assert.deepEqual(await violations('@threadplane/a2ui'), []);
-  for (const target of ['@threadplane/angular', '@threadplane/react', '@threadplane/render', '@threadplane/langgraph', '@threadplane/ag-ui', 'react', 'react-dom', 'rxjs', '@angular/core', '@langchain/langgraph-sdk', '@ag-ui/client']) {
+  for (const target of ['@threadplane/angular', '@threadplane/react', '@threadplane/angular/render', '@threadplane/langgraph', '@threadplane/ag-ui', 'react', 'react-dom', 'rxjs', '@angular/core', '@langchain/langgraph-sdk', '@ag-ui/client']) {
     assert.ok((await violations(target)).length > 0, `${target} must remain rejected`);
   }
 });

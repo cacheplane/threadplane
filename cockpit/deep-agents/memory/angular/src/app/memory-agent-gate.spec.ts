@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { mockAgent, submitMessage } from '@threadplane/chat';
+import { mockAgent, submitMessage } from '@threadplane/angular/chat';
 import { it, expect, vi } from 'vitest';
 import { MemoryScope, SCOPE_KEY } from './memory-scope';
 import { guardMemoryAgent } from './memory-agent-gate';

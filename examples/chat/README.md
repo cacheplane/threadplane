@@ -1,6 +1,6 @@
-# examples/chat — canonical demo for `@threadplane/chat`
+# examples/chat — canonical demo for `@threadplane/angular/chat`
 
-Full-stack demo of `@threadplane/chat` against a tiny LangGraph backend. Three
+Full-stack demo of `@threadplane/angular/chat` against a tiny LangGraph backend. Three
 chat compositions (embed, popup, sidebar), regenerate, model picker,
 debug overlay — all in one page, switchable via a floating control
 palette.

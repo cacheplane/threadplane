@@ -512,7 +512,7 @@ first). That error carries `retryable: true` and `recovery: 'retry'`.
   runs the graph again from the same input, so those steps can run again.
 
 Errors are plain frozen snapshots (`AgentError` from `@threadplane/core`), not
-`Error` instances: `instanceof Error` and `instanceof` the `@threadplane/chat`
+`Error` instances: `instanceof Error` and `instanceof` the `@threadplane/angular/chat`
 `AgentError` class are both false. Read `kind`, `recovery` and `detail` instead.
 The interruption copy is owned here: this neutral graph imports no UI package,
 and a view shows the `message` and `detail` the snapshot carries.
@@ -857,7 +857,7 @@ contract; all are optional and inert when omitted.
   option nothing is collected, which is what a React app gets. In Angular,
   `provideAgent` hands the factory to the session factory as
   `context.developmentRuntime`, so `createSession({ ...context })` is all an
-  app writes; the collector comes from `@threadplane/chat`.
+  app writes; the collector comes from `@threadplane/angular/chat`.
 - `devtools`: a sink told which published fields each event changed, by name
   and never by value. `begin(type)` and `end()` bracket a stream event,
   `outside(label, run)` brackets a change no event caused (`run:start`,

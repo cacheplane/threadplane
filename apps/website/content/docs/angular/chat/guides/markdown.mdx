@@ -4,7 +4,7 @@ description: How chat renders assistant markdown — the streaming node renderer
 
 # Markdown Rendering
 
-AI messages in `@threadplane/chat` can render full markdown -- headings, code blocks, tables, lists, blockquotes, math, HTML nodes, and inline formatting. Use `<chat-streaming-md>` for the live node-based renderer. Use `renderMarkdown()` only when you need a small sanitized-HTML helper in a custom template.
+AI messages in `@threadplane/angular/chat` can render full markdown -- headings, code blocks, tables, lists, blockquotes, math, HTML nodes, and inline formatting. Use `<chat-streaming-md>` for the live node-based renderer. Use `renderMarkdown()` only when you need a small sanitized-HTML helper in a custom template.
 
 ## How It Works
 
@@ -16,7 +16,7 @@ The markdown pipeline has two stages:
 ## The renderMarkdown() Function
 
 ```typescript
-import { renderMarkdown } from '@threadplane/chat';
+import { renderMarkdown } from '@threadplane/angular/chat';
 import { DomSanitizer } from '@angular/platform-browser';
 
 // In a component:
@@ -60,7 +60,7 @@ import {
   markdownDocument,
   type Message,
   type StreamingMarkdownDocument,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-chat-view',
@@ -94,7 +94,7 @@ If you only need sanitized HTML, call `renderMarkdown()` directly and provide yo
 ```typescript
 import { Component, inject } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import { renderMarkdown } from '@threadplane/chat';
+import { renderMarkdown } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-markdown-html',
@@ -124,7 +124,7 @@ interface StreamingMarkdownDocument {
 
 Use the exported `markdownDocument(content, delivery)` helper to derive it from message content and the session-owned `Message.delivery`. Within one generation, streaming content must be append-only. Complete the same generation once, then leave its content unchanged. A retry or replacement starts a new generation. The component uses those guarantees to preserve parser and rendered-node identity while chunks arrive.
 
-It resolves each markdown node type against `MARKDOWN_VIEW_REGISTRY` — a chat-internal DI token exported from `@threadplane/chat` and consumed by the markdown node components.
+It resolves each markdown node type against `MARKDOWN_VIEW_REGISTRY` — a chat-internal DI token exported from `@threadplane/angular/chat` and consumed by the markdown node components.
 
 Every `<chat-streaming-md>` instance provides the resolved registry on its own
 component injector, so the markdown node components below it read one value.
@@ -146,8 +146,8 @@ import {
   cacheplaneMarkdownViews,
   markdownDocument,
   staticDelivery,
-} from '@threadplane/chat';
-import { overrideViews } from '@threadplane/render';
+} from '@threadplane/angular/chat';
+import { overrideViews } from '@threadplane/angular/render';
 import { MyCodeBlockComponent } from './my-code-block.component';
 
 @Component({
@@ -169,10 +169,10 @@ export class CustomChatComponent {
 }
 ```
 
-`overrideViews(base, overrides)` replaces every key listed in `overrides` and preserves all other entries from `base`. Import it from `@threadplane/render` (chat does not re-export it).
+`overrideViews(base, overrides)` replaces every key listed in `overrides` and preserves all other entries from `base`. Import it from `@threadplane/angular/render` (chat does not re-export it).
 
 <Callout type="info" title="overrideViews vs withViews">
-Use `overrideViews` when replacing an existing node type. Use `withViews` when adding a brand-new node type that `cacheplaneMarkdownViews` does not yet cover — `withViews` is additive-only and the base registry wins on conflicts. See the [render views API](/docs/api/render/views) for full signatures.
+Use `overrideViews` when replacing an existing node type. Use `withViews` when adding a brand-new node type that `cacheplaneMarkdownViews` does not yet cover — `withViews` is additive-only and the base registry wins on conflicts. See the [render views API](/docs/api/angular/render/views) for full signatures.
 </Callout>
 
 ### App-wide override
@@ -187,8 +187,8 @@ import { ApplicationConfig } from '@angular/core';
 import {
   MARKDOWN_VIEW_REGISTRY,
   cacheplaneMarkdownViews,
-} from '@threadplane/chat';
-import { overrideViews } from '@threadplane/render';
+} from '@threadplane/angular/chat';
+import { overrideViews } from '@threadplane/angular/render';
 import { MyCodeBlockComponent } from './my-code-block.component';
 
 export const appConfig: ApplicationConfig = {
@@ -221,7 +221,7 @@ import { Component, ChangeDetectionStrategy, effect, inject, input, signal } fro
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { codeToHtml } from 'shiki';
 import type { MarkdownCodeBlockNode } from '@cacheplane/partial-markdown';
-import { MarkdownCodeCopyComponent } from '@threadplane/chat';
+import { MarkdownCodeCopyComponent } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-shiki-code-block',
@@ -311,7 +311,7 @@ All built-in markdown view components consume the same `--tplane-chat-*` and `--
 
 ## Defensive Plain-Text Fallback
 
-`marked` is a required peer dependency for supported `@threadplane/chat` installs:
+`marked` is a required peer dependency for supported `@threadplane/angular/chat` installs:
 
 ```bash
 npm install marked

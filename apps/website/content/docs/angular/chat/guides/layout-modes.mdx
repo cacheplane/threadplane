@@ -4,7 +4,7 @@ description: The four ready-made chat layouts — embedded, popup, sidebar, and 
 
 # Layout Modes
 
-`@threadplane/chat` ships four ready-made layout compositions. Pick the one that best fits how chat lives inside your app.
+`@threadplane/angular/chat` ships four ready-made layout compositions. Pick the one that best fits how chat lives inside your app.
 
 | Mode | Component | Best for |
 |---|---|---|
@@ -26,7 +26,7 @@ The embedded composition fills its parent container using `height: 100%` and a f
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-chat-page',
@@ -71,7 +71,7 @@ The popup composition renders a circular launcher button fixed to the bottom-rig
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
-import { ChatPopupComponent } from '@threadplane/chat';
+import { ChatPopupComponent } from '@threadplane/angular/chat';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
@@ -126,7 +126,7 @@ The sidebar composition renders a slide-in panel anchored to the right edge. It 
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
-import { ChatSidebarComponent } from '@threadplane/chat';
+import { ChatSidebarComponent } from '@threadplane/angular/chat';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
@@ -189,8 +189,8 @@ is silently dropped. Render the chat as a sibling and lay the two out yourself.
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
-import { ChatComponent, ChatSidenavComponent } from '@threadplane/chat';
-import type { Thread } from '@threadplane/chat';
+import { ChatComponent, ChatSidenavComponent } from '@threadplane/angular/chat';
+import type { Thread } from '@threadplane/angular/chat';
 
 const ACTIVE_THREAD = signal<string | null>(null);
 
@@ -242,7 +242,7 @@ component emits `(modeChange)` when the user presses Cmd/Ctrl+B. Cmd/Ctrl+K
 emits `(searchOpened)` so you can open your own command palette.
 
 <Callout type="tip" title="The devtools launcher is on by default">
-When `@threadplane/chat/debug` is part of your build and `[agent]` is bound,
+When `@threadplane/angular/chat/debug` is part of your build and `[agent]` is bound,
 `<chat-sidenav>` renders a Devtools launcher in its footer. `[debug]` already
 defaults to `true`; pass `[debug]="false"` to suppress it.
 </Callout>
