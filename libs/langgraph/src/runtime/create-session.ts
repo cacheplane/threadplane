@@ -15,6 +15,8 @@ import {
 } from '@threadplane/core';
 import type {
   CheckedTools,
+  ClientToolContinuationLimitEvent,
+  ClientToolContinuationPolicy,
   FunctionToolDefinition,
   ToolContracts,
   ToolExecutionStore,
@@ -153,6 +155,12 @@ export interface SessionOptions {
    * their retry policy; joining a known run is separate from replaying submit. */
   readonly clientOptions?: LangGraphClientOptions;
   readonly executionStore?: ToolExecutionStore;
+  /**
+   * How many consecutive client-tool groups one submit runs automatically
+   * (default 10; 0 removes the limit). A blocked group's calls settle with a
+   * limit error and the run ends without another request.
+   */
+  readonly continuationPolicy?: ClientToolContinuationPolicy;
   /**
    * The graph state's type: `type<T>()` to declare it, or a Standard Schema,
    * such as a Zod object, to also check each state the backend reports. A state
@@ -336,6 +344,7 @@ export function createSession(
   if (onThreadId !== undefined && typeof onThreadId !== 'function')
     throw new TypeError('onThreadId must be a function.');
   const { definitions, catalog } = captureTools(options.tools);
+  const continuation = captureContinuationPolicy(options.continuationPolicy);
   const typedTools = options.tools !== undefined;
   const suppliedStore = options.executionStore;
   const acquire = suppliedStore?.acquire;
@@ -839,6 +848,7 @@ export function createSession(
         !resolvedTools.has(call.id)
     );
     if (!calls.length) return 'complete';
+    const limited = continuation.blocks(groups);
     // Capture all calls before publication: observers may synchronously stop.
     for (const call of calls) {
       state = reduceMessages(state, { type: 'tool-admitted', toolCall: call });
@@ -863,7 +873,7 @@ export function createSession(
             attempt.controller.signal,
             { threadId: thread(), toolCallId: call.id },
             store,
-            groups >= 10
+            limited
           );
           if (outcome.type === 'conflict') {
             // This durable fact belongs to the admitted invocation, even after
@@ -920,8 +930,16 @@ export function createSession(
         }
       })
     );
+    // App code runs after the blocked calls have settled.
+    if (limited)
+      continuation.report({
+        maxTurns: continuation.maxTurns,
+        attemptedTurn: groups + 1,
+        toolCallIds: calls.map((call) => call.id),
+        toolNames: calls.map((call) => call.name),
+      });
     if (unsettledTools.size) return 'blocked';
-    return groups < 10 &&
+    return !limited &&
       calls.some((call) => definitions.get(call.name)?.followUp)
       ? 'follow-up'
       : 'complete';
@@ -2481,5 +2499,35 @@ export function createSession(
         closePreparation(preparation);
         pendingThread?.controller.abort();
       }),
+  };
+}
+
+/** Reads a continuation policy once; maxTurns 0 removes the limit. */
+function captureContinuationPolicy(
+  policy: ClientToolContinuationPolicy | undefined
+) {
+  const maxTurns = policy?.maxTurns ?? 10;
+  if (!Number.isInteger(maxTurns) || maxTurns < 0)
+    throw new TypeError('continuationPolicy.maxTurns must be a non-negative integer.');
+  const onLimit = policy?.onLimit;
+  if (onLimit !== undefined && typeof onLimit !== 'function')
+    throw new TypeError('continuationPolicy.onLimit must be a function.');
+  return {
+    maxTurns,
+    /** Whether the group after `groups` completed ones is blocked. */
+    blocks: (groups: number) => maxTurns !== 0 && groups >= maxTurns,
+    report(event: ClientToolContinuationLimitEvent) {
+      try {
+        onLimit?.(
+          Object.freeze({
+            ...event,
+            toolCallIds: Object.freeze([...event.toolCallIds]),
+            toolNames: Object.freeze([...event.toolNames]),
+          })
+        );
+      } catch {
+        // An app callback cannot change how the run ends.
+      }
+    },
   };
 }
