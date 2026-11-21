@@ -85,10 +85,9 @@ import { createSession } from '@threadplane/langgraph';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'interrupts',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 ```
@@ -223,10 +222,9 @@ export const REFUND_AGENT = createAgentRef<RefundSession>('interrupts');
 provideAgent(REFUND_AGENT, {
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'interrupts',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
       stateType: type<RefundState>(),
     }),
 });

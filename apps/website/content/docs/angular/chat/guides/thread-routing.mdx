@@ -115,8 +115,8 @@ import { createLangGraphThreadDirectory } from '@threadplane/langgraph';
 
 providers: [
   provideThreadDirectory({
-    createDirectory: () =>
-      createLangGraphThreadDirectory({ apiUrl: 'http://localhost:2024' }),
+    createDirectory: (context) =>
+      createLangGraphThreadDirectory({ ...context, apiUrl: 'http://localhost:2024' }),
   }),
 ];
 ```
@@ -211,41 +211,7 @@ export class ShellComponent {
 
 `injectThreadRouting()` calls `inject(Router)` internally, so it must run in an injection context: a constructor body, as above, or a field initializer. The `validate` callback receives every candidate id the URL produces.
 
-`getThread()` resolves with the thread, resolves `null` when the backend says there is no such thread, and rejects when that could not be determined. The core `ThreadDirectory` contract has no command that reads one thread, and the LangGraph directory lists a single page, so on its own the view can answer only for a thread in that list. Give the provider a `getThread` that asks the backend, so a stale link resolves `null` and redirects:
-
-```typescript
-import { provideThreadDirectory } from '@threadplane/angular';
-import {
-  createLangGraphClient,
-  createLangGraphThreadDirectory,
-} from '@threadplane/langgraph';
-
-const client = createLangGraphClient('http://localhost:2024');
-
-provideThreadDirectory({
-  createDirectory: () => createLangGraphThreadDirectory({ client }),
-  getThread: async (threadId) => {
-    try {
-      const thread = await client.threads.get(threadId);
-      const metadata = thread.metadata ?? {};
-      return {
-        id: thread.thread_id,
-        title: typeof metadata['title'] === 'string' ? metadata['title'] : 'New chat',
-        pinned: metadata['pinned'] === true,
-        archived: metadata['archived'] === true,
-        projectId: typeof metadata['projectId'] === 'string' ? metadata['projectId'] : null,
-      };
-    } catch (error) {
-      // 404: no such thread. 422: the id is not a valid UUID.
-      const status = (error as { status?: number }).status;
-      if (status === 404 || status === 422) return null;
-      throw error;
-    }
-  },
-});
-```
-
-Rethrowing every other failure matters: a network error then leaves the user on the thread they asked for, and a redirect happens only when the thread is really gone.
+`getThread()` resolves with the thread, resolves `null` when the backend says there is no such thread, and rejects when that could not be determined. The LangGraph directory reads the one thread from the server, so the answer covers every thread, listed or not: a stale link resolves `null` and redirects, and a network failure leaves the user on the thread they asked for. A directory with no single-thread read of its own can be given one through the `getThread` option of `provideThreadDirectory()`.
 
 ### Custom URL shapes
 

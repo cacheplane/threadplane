@@ -59,7 +59,7 @@ Switching to a real backend is a provider change:
 - provideFakeAgent({ tokens: ['Offline', ' response.'] })
 + provideAgent({
 +   createSession: (context) =>
-+     createSession({ url: '/api/agent', threadId: context.threadId ?? undefined }),
++     createSession({ ...context, url: '/api/agent' }),
 + })
 ```
 

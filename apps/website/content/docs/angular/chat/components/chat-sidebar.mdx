@@ -37,10 +37,9 @@ import { ChatSidebarComponent } from '@threadplane/chat';
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl: 'http://localhost:2024',
           assistantId: 'chat',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],
@@ -143,10 +142,9 @@ import { ChatSidebarComponent } from '@threadplane/chat';
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl: 'http://localhost:2024',
           assistantId: 'chat',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],

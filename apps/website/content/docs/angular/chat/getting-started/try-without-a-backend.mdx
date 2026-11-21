@@ -114,10 +114,9 @@ Replace `provideFakeAgent(...)` with `provideAgent({ createSession })` from `@th
   provideAgent({
     createSession: (context) =>
       createSession({
+        ...context,
         apiUrl: 'http://localhost:2024',
         assistantId: 'agent',
-        threadId: context.threadId,
-        onThreadId: context.onThreadId,
       }),
   })
   ```
@@ -128,8 +127,8 @@ Replace `provideFakeAgent(...)` with `provideAgent({ createSession })` from `@th
   provideAgent({
     createSession: (context) =>
       createSession({
+        ...context,
         url: 'http://localhost:8000/agent',
-        threadId: context.threadId ?? undefined,
       }),
   })
   ```

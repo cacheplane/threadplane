@@ -71,8 +71,8 @@ import { createSession } from '@threadplane/ag-ui';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       url: '/agent',
-      threadId: context.threadId ?? undefined,
       interruptTransport: 'mastra-command',
     }),
 });

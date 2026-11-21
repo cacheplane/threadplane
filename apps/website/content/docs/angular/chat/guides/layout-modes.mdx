@@ -37,10 +37,9 @@ import { ChatComponent } from '@threadplane/chat';
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl: 'http://localhost:2024',
           assistantId: 'chat',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],
@@ -84,10 +83,9 @@ import { RouterOutlet } from '@angular/router';
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl: 'http://localhost:2024',
           assistantId: 'support_agent',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],
@@ -140,10 +138,9 @@ import { RouterOutlet } from '@angular/router';
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl: 'http://localhost:2024',
           assistantId: 'copilot_agent',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],
@@ -207,10 +204,9 @@ const ACTIVE_THREAD = signal<string | null>(null);
       onThreadId: (id) => ACTIVE_THREAD.set(id),
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl: 'http://localhost:2024',
           assistantId: 'chat',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],

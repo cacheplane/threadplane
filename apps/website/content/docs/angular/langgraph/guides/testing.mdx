@@ -210,9 +210,9 @@ Lead with `provideFakeAgent()` for the simple case. Reach for `MockAgentTranspor
 
 Pass it to the session, `createSession({ transport })`, inside the `provideAgent()` config in the TestBed `providers` array, then resolve the agent with `TestBed.runInInjectionContext(() => injectAgent())`. Three rules follow from how the session works:
 
-- **Give the agent a `threadId`.** A session without one creates its thread through `transport.createThread()`, which `MockAgentTransport` does not implement, so creating that session throws. The same applies to `switchThread(null)`.
+- **A `threadId` is optional.** `MockAgentTransport` implements `createThread()`, so a session without a thread creates one, and `switchThread(null)` starts a new conversation.
 - **End a run the way a server does.** A stream that closes without a final `values` event settles as an `interrupted` error, not as a completed turn. Emit the final state, then `close()`.
-- **Script one run per transport.** After `close()` the transport stays closed, so a second run on it ends at once. Test `resume()` and `retry()` with the fake session above.
+- **Script each run in turn.** Every `stream()` call is a run of its own. `close()`, `fail()` or `emitError()` ends the open run, and the transport is then ready for the next one, so a spec can drive several turns, a `resume()`, or a `retry()` after `fail()`.
 
 <Callout type="warning" title="Await every emit">
 `MockAgentTransport.stream()` is an async generator: `emit()` only wakes the suspended stream loop, so nothing has reached the signals at the moment it is called. `emit()`, `emitError()` and `close()` therefore return a promise that resolves once the session has consumed the batch. `await` each one before asserting, and keep the promise `submit()` returns so the spec can await the end of the run. Specs that assert synchronously read stale signals and pass or fail for the wrong reason. `flush()` waits the same way without emitting anything, for the cases where something other than an emit drove the agent.
@@ -239,10 +239,9 @@ describe('basic transport', () => {
           threadId: 'thread-1',
           createSession: (context) =>
             createSession({
+              ...context,
               assistantId: 'test_agent',
               transport,
-              threadId: context.threadId,
-              onThreadId: context.onThreadId,
             }),
         }),
       ],
@@ -289,10 +288,9 @@ describe('streaming lifecycle', () => {
           threadId: 'thread-1',
           createSession: (context) =>
             createSession({
+              ...context,
               assistantId: 'test_agent',
               transport,
-              threadId: context.threadId,
-              onThreadId: context.onThreadId,
             }),
         }),
       ],
@@ -335,10 +333,9 @@ describe('interrupt handling', () => {
           threadId: 'thread-1',
           createSession: (context) =>
             createSession({
+              ...context,
               assistantId: 'approval_agent',
               transport,
-              threadId: context.threadId,
-              onThreadId: context.onThreadId,
             }),
         }),
       ],
@@ -389,10 +386,9 @@ function setup() {
         threadId: 'thread-1',
         createSession: (context) =>
           createSession({
+            ...context,
             assistantId: 'test_agent',
             transport,
-            threadId: context.threadId,
-            onThreadId: context.onThreadId,
           }),
       }),
     ],
@@ -432,7 +428,7 @@ describe('error handling', () => {
 });
 ```
 
-`retry` is an optional command. A LangGraph session has it only when its transport can read the status of the exact run, which `MockAgentTransport` cannot, so `agent.retry` is `undefined` in the specs above and a view offers no retry button. To test a retry button, give the fake session the command and a retryable error:
+`retry` is an optional command. A LangGraph session has it only when its transport can read the status of the exact run. `MockAgentTransport` can, so a session over it offers `retry`, and a run ended with `fail()` publishes a failure that `retry()` sends again. To test a view's retry button without a transport, give the fake session the command and a retryable error:
 
 ```typescript
 import { describe, it, expect } from 'vitest';
@@ -480,10 +476,9 @@ describe('thread switching', () => {
           threadId: 'thread-1',
           createSession: (context) =>
             createSession({
+              ...context,
               assistantId: 'test_agent',
               transport,
-              threadId: context.threadId,
-              onThreadId: context.onThreadId,
             }),
         }),
       ],
@@ -592,10 +587,9 @@ export const appConfig: ApplicationConfig = {
       },
       createSession: (context) =>
         createSession({
+          ...context,
           assistantId: 'support-agent',
           transport,
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],
@@ -635,10 +629,9 @@ describe('ChatComponent', () => {
           threadId: 'thread-1',
           createSession: (context) =>
             createSession({
+              ...context,
               assistantId: 'test-agent',
               transport,
-              threadId: context.threadId,
-              onThreadId: context.onThreadId,
             }),
         }),
       ],

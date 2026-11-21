@@ -122,10 +122,9 @@ import { createSession } from '@threadplane/langgraph';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'http://localhost:2024',
       assistantId: 'chat',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 
@@ -259,11 +258,10 @@ builder.add_conditional_edges("supervisor", lambda s: s["next_agent"])
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: '...',
       assistantId: 'orchestrator',
       subagentToolNames: ['task'],
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 ```
@@ -305,10 +303,9 @@ provideAgent({
   onThreadId: (id) => localStorage.setItem('threadId', id),
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: '...',
       assistantId: 'chat',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 

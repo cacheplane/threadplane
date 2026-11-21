@@ -73,10 +73,9 @@ import { createSession } from '@threadplane/langgraph';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'memory',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 ```
@@ -158,10 +157,9 @@ provideAgent({
   onThreadId: (id) => localStorage.setItem('memory-thread', id),
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'memory',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 ```

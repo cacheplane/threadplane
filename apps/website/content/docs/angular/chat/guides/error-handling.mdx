@@ -33,13 +33,13 @@ interface AgentError {
 
 | `kind` | Cause | `retryable` |
 |---|---|---|
-| `connection` | Offline / DNS / connection refused / `fetch` failed | `true` |
+| `connection` | Offline / DNS / connection refused / `fetch` failed | when `recovery` is `retry` |
 | `auth` | `401` / `403` — credentials or API key are wrong | `false` |
 | `server` | `5xx` (retryable) or a non-auth `4xx` like `400`/`404`/`429` (not retryable) | varies |
 | `interrupted` | The stream closed mid-response after a run had started | only when `recovery` is `retry` |
 | `aborted` | A request the caller cancelled. Pressing stop settles the run with the `'aborted'` outcome and leaves `error()` empty | `false` |
 
-The `retryable` flag is the value to branch on for UI: `connection` and `server` (5xx) are retryable; `auth`, `aborted`, and non-auth `4xx` are not. An `interrupted` error is retryable only when its `recovery` is `retry`, because replaying a request the server may already have received could duplicate a tool call or a booking.
+The `retryable` flag is the value to branch on for UI: `server` (5xx) errors are retryable; `auth`, `aborted`, and non-auth `4xx` are not. A `connection` error is retryable when the session can prove the request never reached the server, and it then reports `recovery: 'retry'`; when it cannot prove that, sending again could repeat work, so the error is not retryable. An `interrupted` error is retryable only when its `recovery` is `retry`, because replaying a request the server may already have received could duplicate a tool call or a booking.
 
 ## Recovering from an interruption
 

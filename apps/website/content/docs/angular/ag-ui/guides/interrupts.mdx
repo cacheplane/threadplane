@@ -89,8 +89,8 @@ import { createSession } from '@threadplane/ag-ui';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       url: 'https://your-backend.example.com/agent',
-      threadId: context.threadId ?? undefined,
       interruptTransport: 'auto',
     }),
 });
@@ -374,8 +374,8 @@ export function providersForRestoredThread(
     threadId,
     createSession: (context) =>
       createSession({
+        ...context,
         url: '/agent',
-        threadId: context.threadId ?? threadId,
         persistence,
       }),
   });

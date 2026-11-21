@@ -39,11 +39,10 @@ export const appConfig: ApplicationConfig = {
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl: 'http://localhost:2024',
           // 'chat' maps to the key in your langgraph.json "graphs" config
           assistantId: 'chat',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],
@@ -179,10 +178,9 @@ export const TRIP = createAgentRef<TripSession>('trip');
 provideAgent(TRIP, {
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'http://localhost:2024',
       assistantId: 'chat',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
       stateType: type<TripState>(),
     }),
 });

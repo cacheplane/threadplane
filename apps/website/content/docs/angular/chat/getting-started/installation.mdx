@@ -91,10 +91,9 @@ export const appConfig: ApplicationConfig = {
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl: 'http://localhost:2024',
           assistantId: 'chat',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],
@@ -105,8 +104,7 @@ export const appConfig: ApplicationConfig = {
 each time the agent moves to another thread. The `context` carries the thread to
 open and the callback that reports a thread the session created. For an AG-UI
 backend, import `createSession` from `@threadplane/ag-ui` and pass
-`{ url, threadId: context.threadId ?? undefined }` in place of the LangGraph
-options.
+`{ ...context, url }` in place of the LangGraph options.
 
 That is the only provider `<chat>` needs. There is no separate chat provider:
 everything the built-in components render is driven by their inputs, and their

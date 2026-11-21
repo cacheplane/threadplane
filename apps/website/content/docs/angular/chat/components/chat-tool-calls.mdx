@@ -222,10 +222,9 @@ import { createSession } from '@threadplane/langgraph';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'c-tool-calls',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 ```

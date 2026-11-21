@@ -48,8 +48,8 @@ export const appConfig: ApplicationConfig = {
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           url: 'http://localhost:3000/agent', // your AG-UI backend
-          threadId: context.threadId ?? undefined,
         }),
     }),
   ],
@@ -148,8 +148,8 @@ class MyCustomAgent extends AbstractAgent {
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       agent: new MyCustomAgent(),
-      threadId: context.threadId ?? undefined,
     }),
 });
 ```

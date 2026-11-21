@@ -569,12 +569,11 @@ provideAgent({
   threadId: 'thread_abc123',
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: '...',
       assistantId: 'react_agent',
       // Keep each checkpoint's state and read the page again after every run
       historyState: true,
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 

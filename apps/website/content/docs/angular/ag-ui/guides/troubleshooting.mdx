@@ -17,7 +17,7 @@ import { createSession } from '@threadplane/ag-ui';
 providers: [
   provideAgent({
     createSession: (context) =>
-      createSession({ url: '/api/agent', threadId: context.threadId ?? undefined }),
+      createSession({ ...context, url: '/api/agent' }),
   }),
 ]
 ```

@@ -169,10 +169,9 @@ export const appConfig: ApplicationConfig = {
       onThreadId: (id) => localStorage.setItem('threadId', id),
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl: 'http://localhost:2024',
           assistantId: 'chat',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],
@@ -319,10 +318,9 @@ export const environment = {
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: environment.langgraphUrl,
       assistantId: 'chat',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 })
 ```

@@ -84,10 +84,9 @@ import { createSession } from '@threadplane/langgraph';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'persistence',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
   onThreadId: (id) => console.log('New thread', id),
 });
@@ -219,10 +218,9 @@ provideAgent({
   },
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'persistence',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 ```
@@ -311,7 +309,11 @@ import {
   refreshOnRunEnd,
 } from '@threadplane/angular';
 import { ChatThreadListComponent, type ThreadActionAdapter } from '@threadplane/chat';
-import { createLangGraphThreadDirectory, createSession } from '@threadplane/langgraph';
+import {
+  createLangGraphThreadDirectory,
+  createSession,
+  type LangGraphThreadDirectory,
+} from '@threadplane/langgraph';
 
 const apiUrl = 'http://localhost:2024';
 
@@ -324,17 +326,17 @@ const activeThreadIdState = signal<string | null>(null);
   imports: [ChatThreadListComponent],
   providers: [
     provideThreadDirectory({
-      createDirectory: () => createLangGraphThreadDirectory({ apiUrl }),
+      createDirectory: (context) =>
+        createLangGraphThreadDirectory({ ...context, apiUrl }),
     }),
     provideAgent({
       threadId: activeThreadIdState,
       onThreadId: (id) => activeThreadIdState.set(id),
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl,
           assistantId: 'agent',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],
@@ -351,7 +353,7 @@ const activeThreadIdState = signal<string | null>(null);
 })
 export class ThreadsPanel {
   protected readonly agent = injectAgent();
-  protected readonly threads = injectThreadDirectory();
+  protected readonly threads = injectThreadDirectory<LangGraphThreadDirectory>();
   protected readonly activeThreadId = activeThreadIdState;
 
   protected readonly actions: ThreadActionAdapter = {
@@ -359,11 +361,11 @@ export class ThreadsPanel {
     pin: this.threads.pin,
     unpin: this.threads.unpin,
     archive: async (id) => {
-      await this.threads.archive?.(id);
+      await this.threads.archive(id);
       if (activeThreadIdState() === id) activeThreadIdState.set(null);
     },
     delete: async (id) => {
-      await this.threads.delete?.(id);
+      await this.threads.delete(id);
       if (activeThreadIdState() === id) activeThreadIdState.set(null);
     },
   };
@@ -378,7 +380,7 @@ export class ThreadsPanel {
   }
 
   protected async onNewThread(): Promise<void> {
-    const id = await this.threads.create?.();
+    const id = await this.threads.create();
     if (id) activeThreadIdState.set(id);
   }
 }
@@ -390,7 +392,7 @@ Four details in that component are easy to get wrong:
 
 - `activeThreadId` is `input<string>('')`, not a nullable input, so a `null` active thread has to become `''`. Passing `null` is a template type error.
 - The selection output is `threadSelected`, and `<chat>` re-emits an output of the same name, so either surface can drive the switch.
-- `injectThreadDirectory()` is typed by the core directory contract, where every command is optional, so `create`, `archive` and the rest are called with `?.`. A command the directory does not offer is `undefined`, and the list then offers no menu entry for it.
+- `injectThreadDirectory<LangGraphThreadDirectory>()` names the directory's type, so `create`, `archive` and the rest are typed as present and are called directly. Without the type argument the view is typed by the core directory contract, where every command is optional and a command the directory does not offer is `undefined`; the list then offers no menu entry for it.
 - Nothing is loaded until `refresh()` is called. A failed load is published through `threads.status()` and `threads.error()`; the promise does not reject.
 
 An application that does not bind a `threadId` signal can call `agent.switchThread(id)` from the same handler instead, and read the current thread back from `agent.threadId()`. Binding the signal is the better default, because it also suits a config factory that reads the ID from the router.
@@ -413,23 +415,17 @@ Both helpers use an Angular `effect()` under the hood, so both must be called fr
 
 ## Shared SDK client
 
-Pass `client` to `createLangGraphThreadDirectory()` to hand the directory an SDK `Client` you already own, or a test double; without it the directory builds its own client from `apiUrl`. Call `provideAgentClientOptions()` once at the application root to set the auth headers and SDK retry budget for every agent below it. The options arrive in both factories as `context.clientOptions`, and each factory decides whether to forward them:
+Pass `client` to `createLangGraphThreadDirectory()` to hand the directory an SDK `Client` you already own, or a test double; without it the directory builds its own client from `apiUrl`. Call `provideAgentClientOptions()` once at the application root to set the auth headers and SDK retry budget for every agent below it. The options arrive in both factories as `context.clientOptions`, together with the operation-failure reporter, and spreading the context forwards both:
 
 ```ts
 import { provideAgentClientOptions } from '@threadplane/angular';
-import {
-  createLangGraphThreadDirectory,
-  type LangGraphClientOptions,
-} from '@threadplane/langgraph';
+import { createLangGraphThreadDirectory } from '@threadplane/langgraph';
 
 providers: [
   provideAgentClientOptions({ defaultHeaders: { 'x-tenant': 'acme' } }),
   provideThreadDirectory({
     createDirectory: (context) =>
-      createLangGraphThreadDirectory({
-        apiUrl,
-        clientOptions: context.clientOptions as LangGraphClientOptions | undefined,
-      }),
+      createLangGraphThreadDirectory({ ...context, apiUrl }),
   }),
 ];
 ```

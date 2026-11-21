@@ -199,11 +199,10 @@ export const PROJECT_AGENT = createAgentRef<ProjectSession>('project_agent');
 // provideAgent(PROJECT_AGENT, {
 //   createSession: (context) =>
 //     createSession({
+//       ...context,
 //       apiUrl: '...',
 //       assistantId: 'project_agent',
 //       stateType: type<ProjectState>(),
-//       threadId: context.threadId,
-//       onThreadId: context.onThreadId,
 //     }),
 // });
 
@@ -405,12 +404,11 @@ provideAgent(CHAT_AGENT, () => {
 
     createSession: (context) =>
       createSession({
+        ...context,
         apiUrl: '...',
         assistantId: 'chat',
         // Keep each checkpoint's state for a time-travel UI
         historyState: true,
-        threadId: context.threadId,
-        onThreadId: context.onThreadId,
       }),
   };
 });
@@ -515,11 +513,10 @@ export const RESEARCH_AGENT = createAgentRef<ResearchSession>('research_agent');
 // provideAgent(RESEARCH_AGENT, {
 //   createSession: (context) =>
 //     createSession({
+//       ...context,
 //       apiUrl: '...',
 //       assistantId: 'research_agent',
 //       stateType: type<ResearchState>(),
-//       threadId: context.threadId,
-//       onThreadId: context.onThreadId,
 //     }),
 // });
 

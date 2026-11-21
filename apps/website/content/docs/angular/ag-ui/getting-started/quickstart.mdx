@@ -45,8 +45,8 @@ export const appConfig: ApplicationConfig = {
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           url: 'http://localhost:3000/agent',
-          threadId: context.threadId ?? undefined,
         }),
     }),
   ],
@@ -106,9 +106,9 @@ So swapping backends is a change to the session factory in `app.config.ts`, and 
 
 ```diff
 - import { createSession } from '@threadplane/langgraph';
-- createSession({ apiUrl: '...', assistantId: '...', threadId: context.threadId, onThreadId: context.onThreadId })   // LangGraph
+- createSession({ ...context, apiUrl: '...', assistantId: '...' })   // LangGraph
 + import { createSession } from '@threadplane/ag-ui';
-+ createSession({ url: '...', threadId: context.threadId ?? undefined })  // AG-UI
++ createSession({ ...context, url: '...' })  // AG-UI
 ```
 
 There is one `provideAgent` and one `injectAgent`, both from `@threadplane/angular`. The two `createSession` functions are different functions from two different packages, each with its own options (`apiUrl` and `assistantId` for LangGraph, `url` for AG-UI). A component that reads a backend's own fields, such as the checkpoints of a LangGraph thread, depends on that backend.

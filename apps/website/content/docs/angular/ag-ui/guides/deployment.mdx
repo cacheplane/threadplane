@@ -75,8 +75,8 @@ export const appConfig: ApplicationConfig = {
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           url: environment.agentUrl,
-          threadId: context.threadId ?? undefined,
         }),
     }),
   ],
@@ -181,8 +181,8 @@ provideAgent({
   createSession: (context) => {
     const session = inject(SessionService);
     return createSession({
+      ...context,
       url: '/api/agent',
-      threadId: context.threadId ?? undefined,
       headers: { Authorization: `Bearer ${session.accessToken()}` },
     });
   },
@@ -371,7 +371,7 @@ The stream is the run.
 When it closes without terminal evidence, the session surfaces an `interrupted` error rather than reporting a completed turn, and keeps whatever content and approval state had arrived.
 
 What it offers next depends on what it can prove.
-`retry()` is not offered for a dropped stream. A stream that produced no event does not prove that the server received nothing: the request may have been processed before the first response byte was lost. The error's `recovery` is `none`, and its message and `detail` explain that the result could not be confirmed and that trying again could repeat it. The person can still send the message again; preventing duplicate backend effects then requires a server-side policy such as idempotent operations or request deduplication.
+`retry()` is offered for a dropped stream in one case: the stream closed before any event arrived, for a submission, a retry or a regenerate. The session then reports `recovery: 'retry'`, and Retry sends the same request again. A stream that closes after events arrived is not retried, because the request may have been processed before the rest of the response was lost: the error's `recovery` is `none`, and its message and `detail` explain that the result could not be confirmed and that trying again could repeat it. The person can still send the message again; preventing duplicate backend effects then requires a server-side policy such as idempotent operations or request deduplication.
 An answer to an interrupt is never sent twice once it may have arrived.
 When an answering run is truncated and `persistence.reconcile` is configured, the session reports `recovery: 'check'` instead, asks the reconciler once on its own, and exposes `checkStatus()` so the user can ask again.
 The reconciler speaks only about an answer that was sent and not proven taken, which is why it is not offered for an ordinary turn.
@@ -400,8 +400,8 @@ provideAgent({
   threadId: currentThreadId, // a string, null, or a signal the agent follows
   createSession: (context) =>
     createSession({
+      ...context,
       url: '/api/agent',
-      threadId: context.threadId ?? undefined,
       replay: httpReplay({
         url: (id) => `/api/threads/${encodeURIComponent(id)}/events`,
       }),

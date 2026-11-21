@@ -59,7 +59,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
       createSession: (context) =>
-        createSession({ url: '/agent', threadId: context.threadId ?? undefined }),
+        createSession({ ...context, url: '/agent' }),
     }),
   ],
 };

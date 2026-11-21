@@ -40,8 +40,8 @@ export const appConfig: ApplicationConfig = {
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           url: '/api/agent',
-          threadId: context.threadId ?? undefined,
         }),
     }),
   ],
@@ -120,9 +120,9 @@ Use `provideAgent()` with `createSession({ url })` when you have a real AG-UI HT
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       url: '/api/agent',
       agentId: 'support-agent',
-      threadId: context.threadId ?? undefined,
       headers: { Authorization: `Bearer ${token}` },
     }),
 });
@@ -159,8 +159,8 @@ providers: [
     return {
       createSession: (context) =>
         createSession({
+          ...context,
           url: '/api/agent',
-          threadId: context.threadId ?? undefined,
           headers: { Authorization: `Bearer ${session.accessToken()}` },
         }),
     };
@@ -172,7 +172,7 @@ providers: [
 
 A session belongs to one thread. The `threadId` in the provider config is where the agent starts: a string, `null`, or a signal the agent follows. `agent.switchThread(id)`, or a change of that signal to a different id, asks the factory for a new session with `context.threadId` set, stops and disposes the old one, and keeps every signal and command on the agent the same reference. `agent.threadId()` is the thread the agent is on, and `agent.isThreadLoading()` is true while the selected thread's history is read.
 
-A session that is given no `threadId` generates one and publishes it as `session.threadId`. `agent.threadId()` stays `null` for that conversation unless the factory reports the id with `context.onThreadId`.
+A session that is given no `threadId` names the new conversation's thread itself, publishes it as `session.threadId`, and reports it through `context.onThreadId`, so `agent.threadId()` is set from the first run. A factory that spreads the context passes that callback on; one that names fields must pass `onThreadId` itself.
 
 The AG-UI protocol carries events, not snapshots, and defines no server-side endpoint for "fetch the messages of thread X". A new session for an existing thread therefore starts empty unless you give it a source to restore from:
 
@@ -195,16 +195,16 @@ providers: [
   provideAgent(TRIP, {
     createSession: (context) =>
       createSession({
+        ...context,
         url: '/api/trip',
-        threadId: context.threadId ?? undefined,
         stateType: type<TripState>(),
       }),
   }),
   provideAgent(SUPPORT, {
     createSession: (context) =>
       createSession({
+        ...context,
         url: '/api/support',
-        threadId: context.threadId ?? undefined,
         stateType: type<SupportState>(),
       }),
   }),

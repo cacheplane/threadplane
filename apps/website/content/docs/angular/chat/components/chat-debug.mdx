@@ -65,10 +65,9 @@ import { createSession } from '@threadplane/langgraph';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'debug',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
       historyState: true,
     }),
 }),
@@ -80,7 +79,7 @@ The component projects `<chat>` and `<chat-debug>` into `<example-chat-layout>` 
 
 <ExampleCode file="debug.component.ts" />
 
-The agent returned by `injectAgent()` exposes a `checkpoints()` signal as well as `state()`. The Timeline tab appears once that signal holds a loaded history; while it is `undefined`, as it stays on a LangGraph session created without `historyState: true` and on a backend that keeps no history, the panel shows the State tab alone.
+The agent returned by `injectAgent()` exposes a `checkpoints()` signal as well as `state()`. The Timeline tab appears whenever the agent can report checkpoints. A LangGraph session created with `historyState: true` publishes an empty list from the start, so the tab shows its empty state before the first turn and fills as the thread saves states. While `checkpoints()` is `undefined`, as it stays on a session created without `historyState` and on a backend that keeps no history, the panel shows the State tab alone.
 
 ## Inputs
 

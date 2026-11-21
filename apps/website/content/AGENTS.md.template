@@ -98,10 +98,9 @@ export const appConfig: ApplicationConfig = {
       // Called once when the agent is built and again for each thread it opens.
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl: 'http://localhost:2024',
           assistantId: 'chat_agent',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],
@@ -132,8 +131,8 @@ import { createSession } from '@threadplane/ag-ui';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       url: 'http://localhost:8000/agent',
-      threadId: context.threadId ?? undefined,
     }),
 });
 ```

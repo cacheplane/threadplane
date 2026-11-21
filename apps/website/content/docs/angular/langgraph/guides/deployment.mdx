@@ -43,10 +43,9 @@ import { createSession } from '@threadplane/langgraph';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'deployment-runtime',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 }),
 ```
@@ -167,10 +166,9 @@ export const appConfig: ApplicationConfig = {
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           apiUrl: environment.langgraphUrl,
           assistantId: 'deployment-runtime',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],
@@ -206,10 +204,9 @@ provideAgent(() => {
   return {
     createSession: (context) =>
       createSession({
+        ...context,
         apiUrl: environment.langgraphUrl,
         assistantId: 'deployment-runtime',
-        threadId: context.threadId,
-        onThreadId: context.onThreadId,
         clientOptions: {
           defaultHeaders: { Authorization: `Bearer ${auth.accessToken()}` },
         },

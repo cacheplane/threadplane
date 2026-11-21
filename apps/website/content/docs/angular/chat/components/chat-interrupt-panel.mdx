@@ -55,10 +55,9 @@ import { createSession } from '@threadplane/langgraph';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'c-interrupts',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 ```

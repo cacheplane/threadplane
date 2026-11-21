@@ -68,10 +68,9 @@ provideAgent({
   // Session options: everything about the backend.
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'http://localhost:2024',
       assistantId: 'chat',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 ```
@@ -93,14 +92,14 @@ import { createSession } from '@threadplane/ag-ui';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       url: 'http://localhost:8000/agent',
-      threadId: context.threadId ?? undefined,
     }),
 });
 ```
 
 - [ ] Change every `injectAgent` import to `@threadplane/angular`.
-- [ ] Pass `context.threadId` and, for LangGraph, `context.onThreadId` to the session. Without them a thread switch opens the wrong conversation.
+- [ ] Spread the provider context into the session options: `createSession({ ...context, ... })`. It carries the thread to open, the callback that reports a thread the session created, the app-wide client options, the operation-failure reporter and the development telemetry relay, each under the option name both backends accept. A factory that names fields instead drops the ones it leaves out; without the thread, a thread switch opens the wrong conversation.
 - [ ] A config that needs injected values becomes a factory: `provideAgent(() => ({ createSession: ... }))`. It runs once, in an injection context, and `createSession` itself may call `inject()` too.
 - [ ] Replace `toAgent(source)` with `createSession({ agent: source })` inside the factory.
 - [ ] Replace `LANGGRAPH_CLIENT_OPTIONS` with `provideAgentClientOptions(options)` from `@threadplane/angular`, and read it in the factory as `context.clientOptions`.
@@ -170,8 +169,8 @@ import { createLangGraphThreadDirectory } from '@threadplane/langgraph';
 
 providers: [
   provideThreadDirectory({
-    createDirectory: () =>
-      createLangGraphThreadDirectory({ apiUrl: 'http://localhost:2024' }),
+    createDirectory: (context) =>
+      createLangGraphThreadDirectory({ ...context, apiUrl: 'http://localhost:2024' }),
   }),
 ];
 
@@ -181,7 +180,7 @@ readonly threads = injectThreadDirectory();
 - [ ] The view keeps `threads()`, `archivedThreads()`, `projects()`, `status()`, `error()`, `refresh()`, `create()`, `getThread()` and the row commands, and adds `isLoading()`. `threads.directory` is still what `<chat-thread-sidebar [directory]>` takes.
 - [ ] Nothing is loaded until `refresh()` is called. `<chat-thread-sidebar>` calls it when it mounts.
 - [ ] `refreshOnRunEnd` and `refreshOnTransition` move to `@threadplane/angular`.
-- [ ] `getThread(id)` answers only for a listed thread unless the config supplies `getThread`. If you pass it to `injectThreadRouting({ validate })`, add one; see [Thread Routing](/docs/angular/chat/guides/thread-routing#routing-a-url-to-a-thread).
+- [ ] `getThread(id)` reads one thread from the backend, so it answers for any thread, listed or not, and resolves `null` for one that does not exist. Name the directory type, `injectThreadDirectory<LangGraphThreadDirectory>()`, to call the row commands without `?.`.
 - [ ] Projects are configured on the directory: `createLangGraphThreadDirectory({ projects: false })` turns them off.
 
 ### 5. Update the testing imports
@@ -220,10 +219,13 @@ A LangGraph session makes no request and keeps no large data until asked. Add th
 - [ ] If your backend pauses with a `CUSTOM on_interrupt` event, pass `interruptTransport: 'auto'` (or `'legacy-command'` or `'mastra-command'`) to `createSession()`. Without it the notice is shown and cannot be answered.
 
 ```ts
-createSession({
-  url: 'http://localhost:8000/agent',
-  threadId: context.threadId ?? undefined,
-  interruptTransport: 'auto',
+provideAgent({
+  createSession: (context) =>
+    createSession({
+      ...context,
+      url: 'http://localhost:8000/agent',
+      interruptTransport: 'auto',
+    }),
 });
 ```
 

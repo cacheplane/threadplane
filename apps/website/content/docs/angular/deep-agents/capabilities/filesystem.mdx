@@ -47,10 +47,9 @@ Your own application does not need the factory. Pass the values directly:
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'da-filesystem',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 });
 ```

@@ -84,8 +84,8 @@ import { createSession } from '@threadplane/ag-ui';
 provideAgent({
   createSession: (context) =>
     createSession({
+      ...context,
       url: 'https://your-backend.example.com/agent',
-      threadId: context.threadId ?? undefined,
     }),
 });
 ```

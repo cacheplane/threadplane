@@ -41,10 +41,9 @@ export const appConfig: ApplicationConfig = {
     provideAgent({
       createSession: (context) =>
         createSession({
+          ...context,
           assistantId: 'chat',
           apiUrl: 'http://localhost:2024',
-          threadId: context.threadId,
-          onThreadId: context.onThreadId,
         }),
     }),
   ],

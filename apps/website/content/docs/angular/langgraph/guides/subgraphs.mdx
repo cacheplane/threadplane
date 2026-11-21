@@ -78,10 +78,9 @@ import { createSession } from '@threadplane/langgraph';
 provideAgent(SUBGRAPHS_AGENT, {
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'subgraphs',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
       stateType: type<SubgraphsState>(),
       transcriptNodeNames: ['answer'],
     }),
@@ -127,10 +126,9 @@ Tool-dispatched children are related through one session option. Its default is 
 provideAgent(ORCHESTRATOR, {
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'orchestrator',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
       subagentToolNames: ['task', 'delegate_to_researcher'],
     }),
 }),

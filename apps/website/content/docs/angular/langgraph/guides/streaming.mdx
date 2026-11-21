@@ -63,10 +63,9 @@ Your own application does not need the outer factory. Pass the two connection va
 provideAgent(STREAMING_AGENT, {
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'streaming',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
     }),
 }),
 ```
@@ -261,10 +260,9 @@ By default the session delivers every change as it arrives, and the agent's sign
 provideAgent(STREAMING_AGENT, {
   createSession: (context) =>
     createSession({
+      ...context,
       apiUrl: '...',
       assistantId: 'streaming',
-      threadId: context.threadId,
-      onThreadId: context.onThreadId,
       // Deliver changes to the signals at most once every 50 ms
       throttle: 50,
     }),
