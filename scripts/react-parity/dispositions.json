@@ -19580,7 +19580,7 @@
       ],
       "treatment": "internal",
       "status": "in-progress",
-      "reason": "Private staged LangGraph runtime subset: framework-neutral thread directory and LangGraph Store project names behind the React ThreadSidebar."
+      "reason": "Private LangGraph runtime LangGraph Store project store, shared by the runtime thread directory behind the React ThreadSidebar and the Angular LangGraphThreadsAdapter."
     },
     {
       "id": "source:libs/langgraph/src/runtime/thread-directory.ts",
@@ -19598,7 +19598,7 @@
       ],
       "treatment": "internal",
       "status": "in-progress",
-      "reason": "Private staged LangGraph runtime subset: framework-neutral thread directory and LangGraph Store project names behind the React ThreadSidebar."
+      "reason": "Private LangGraph runtime module holding the one copy of the thread metadata rules, shared by the runtime thread directory behind the React ThreadSidebar and the Angular LangGraphThreadsAdapter."
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/fake-threads-client.ts",
@@ -19617,24 +19617,6 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private test fixture: in-memory LangGraph threads/store client and the shared ThreadDirectory conformance suite run against both the runtime directory and the Angular adapter."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/threads/thread-entries.ts",
-      "taskIds": [
-        "T29"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Phase 1 Angular-side copy of the runtime thread metadata projection and publication helpers behind LangGraphThreadsAdapter.directory; deleted when the adapter is rebuilt on the shared directory in phase 2."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/threads/thread-projects.ts",
-      "taskIds": [
-        "T29"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Phase 1 Angular-side copy of the runtime LangGraph Store project store behind LangGraphThreadsAdapter.directory; deleted when the adapter is rebuilt on the shared directory in phase 2."
     },
     {
       "id": "source:libs/react/src/chat/thread-sidebar.tsx",

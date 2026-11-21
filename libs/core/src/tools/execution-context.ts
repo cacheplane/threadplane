@@ -43,3 +43,20 @@ export interface ToolExecutionStore {
     settlement: ToolExecutionSettlement
   ): Promise<'accepted' | 'rejected'>;
 }
+
+/** Reported when the continuation limit blocks a group of client-tool calls. */
+export interface ClientToolContinuationLimitEvent {
+  readonly maxTurns: number;
+  /** The 1-based number of the group that was blocked. */
+  readonly attemptedTurn: number;
+  readonly toolCallIds: readonly string[];
+  readonly toolNames: readonly string[];
+}
+
+/** How many consecutive client-tool groups one submit may run automatically. */
+export interface ClientToolContinuationPolicy {
+  /** Groups per submit. Default 10; 0 removes the limit. A non-negative integer. */
+  readonly maxTurns?: number;
+  /** Called once when the limit blocks a group. A throwing callback is ignored. */
+  readonly onLimit?: (event: ClientToolContinuationLimitEvent) => void;
+}

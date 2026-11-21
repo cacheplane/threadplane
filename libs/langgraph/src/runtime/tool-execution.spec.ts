@@ -1076,4 +1076,95 @@ describe('function tool execution guard', () => {
     await session.submit('Again');
     expect(handler).toHaveBeenCalledTimes(20);
   });
+
+  it('honors continuationPolicy.maxTurns and reports the blocked group once', async () => {
+    let calls = 0;
+    const transport = fixture();
+    transport.stream.mockImplementation(async function* () {
+      yield toolEvent(`call-${++calls}`);
+    });
+    const handler = vi.fn((_args: { city: string }) => 'Result');
+    const onLimit = vi.fn();
+    const session = createSession({
+      assistantId: 'agent',
+      threadId: 'thread',
+      transport,
+      tools: { weather: { description: 'Weather', handler } },
+      continuationPolicy: { maxTurns: 2, onLimit },
+    });
+    await session.submit('Go');
+    expect(transport.stream).toHaveBeenCalledTimes(3);
+    expect(handler).toHaveBeenCalledTimes(2);
+    expect(onLimit).toHaveBeenCalledTimes(1);
+    expect(onLimit).toHaveBeenCalledWith({
+      maxTurns: 2,
+      attemptedTurn: 3,
+      toolCallIds: ['call-3'],
+      toolNames: ['weather'],
+    });
+    expect(session.getSnapshot().toolCalls[2]).toMatchObject({
+      status: 'error',
+      error: expect.stringContaining('limit'),
+    });
+  });
+
+  it('runs without a turn limit when maxTurns is 0', async () => {
+    let calls = 0;
+    const transport = fixture();
+    transport.stream.mockImplementation(async function* () {
+      if (++calls <= 12) yield toolEvent(`call-${calls}`);
+      else yield finalEvent;
+    });
+    const handler = vi.fn((_args: { city: string }) => 'Result');
+    const onLimit = vi.fn();
+    const session = createSession({
+      assistantId: 'agent',
+      threadId: 'thread',
+      transport,
+      tools: { weather: { description: 'Weather', handler } },
+      continuationPolicy: { maxTurns: 0, onLimit },
+    });
+    await session.submit('Go');
+    expect(handler).toHaveBeenCalledTimes(12);
+    expect(transport.stream).toHaveBeenCalledTimes(13);
+    expect(onLimit).not.toHaveBeenCalled();
+  });
+
+  it('keeps stopping at the limit when onLimit throws', async () => {
+    let calls = 0;
+    const transport = fixture();
+    transport.stream.mockImplementation(async function* () {
+      yield toolEvent(`call-${++calls}`);
+    });
+    const handler = vi.fn((_args: { city: string }) => 'Result');
+    const session = createSession({
+      assistantId: 'agent',
+      threadId: 'thread',
+      transport,
+      tools: { weather: { description: 'Weather', handler } },
+      continuationPolicy: {
+        maxTurns: 1,
+        onLimit: () => {
+          throw new Error('app bug');
+        },
+      },
+    });
+    await session.submit('Go');
+    expect(transport.stream).toHaveBeenCalledTimes(2);
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    'rejects maxTurns %s',
+    (maxTurns) => {
+      expect(() =>
+        createSession({
+          assistantId: 'agent',
+          threadId: 'thread',
+          transport: fixture(),
+          continuationPolicy: { maxTurns },
+        })
+      ).toThrow(TypeError);
+    }
+  );
 });
