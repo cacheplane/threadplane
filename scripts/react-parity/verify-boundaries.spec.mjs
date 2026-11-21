@@ -413,7 +413,7 @@ for (const edge of [
   });
 }
 
-for (const shared of ['transport.types', 'operation-errors']) {
+for (const shared of ['transport.types', 'operation-errors', 'thread-metadata', 'project-store']) {
   test(`legacy source may reach exactly shared ${shared}, but not private dependencies`, (t) => {
     const root = fixture(t, {
       'libs/langgraph/src/public-api.ts': `export * from './runtime/${shared}';`,

@@ -18,7 +18,14 @@ export const scanProjects = [...new Set([...privateScaffoldProjects, ...angularT
 export const neutralLangGraphRoots = ['src/lib/transport/fetch-stream.transport.ts', 'src/lib/client/create-langgraph-client.ts'];
 // Exact source-sharing exceptions during the Angular transition. Their imports
 // remain guarded; neither file may expose the private session through a bridge.
-export const sharedLangGraphRuntimeSources = ['src/runtime/transport.types.ts', 'src/runtime/operation-errors.ts'];
+// thread-metadata and project-store hold the one copy of the thread directory
+// rules, read by both the runtime directory and LangGraphThreadsAdapter.
+export const sharedLangGraphRuntimeSources = [
+  'src/runtime/transport.types.ts',
+  'src/runtime/operation-errors.ts',
+  'src/runtime/thread-metadata.ts',
+  'src/runtime/project-store.ts',
+];
 export const neutralRuntimeSdkEntries = { langgraph: '@langchain/langgraph-sdk', 'ag-ui': '@ag-ui/client' };
 // TypeScript resolution and filesystem enumeration can use different separators.
 export function backendRuntimeSourceKind(root, path) {

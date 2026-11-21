@@ -18,10 +18,14 @@ for (const root of ['/repo', '/repo/', 'C:\\repo', 'C:/repo/']) {
       `${prefix}src/runtime/create-session.ts`,
       `${prefix}src/runtime/transport.types.ts`,
       `${prefix}src/runtime/operation-errors.ts`,
+      `${prefix}src/runtime/thread-metadata.ts`,
+      `${prefix}src/runtime/project-store.ts`,
+      `${prefix}src/runtime/thread-directory.ts`,
       `${prefix}src/runtime/transport.types.ts/bridge.ts`,
       `${prefix}src/runtime-copy/create-session.ts`,
     ]) {
-      const expected = path.endsWith('/transport.types.ts') || path.endsWith('/operation-errors.ts') ? 'shared' : path.includes('/runtime/') ? 'private' : undefined;
+      const shared = ['/transport.types.ts', '/operation-errors.ts', '/thread-metadata.ts', '/project-store.ts'];
+      const expected = shared.some((name) => path.endsWith(name)) ? 'shared' : path.includes('/runtime/') ? 'private' : undefined;
       assert.equal(policy.backendRuntimeSourceKind(root, path), expected);
       assert.equal(policy.backendRuntimeSourceKind(root, path.replaceAll('/', '\\')), expected);
     }

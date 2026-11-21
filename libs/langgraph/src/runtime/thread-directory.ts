@@ -19,9 +19,15 @@ import {
   type ProjectStore,
 } from './project-store.js';
 import {
+  applyPatch,
   orderThreads,
   projectThread,
+  sameEntry,
+  sameList,
+  sameProjects,
+  stripOrder,
   type ProjectedThread,
+  type ThreadPatchFields as Fields,
 } from './thread-metadata.js';
 import type { LangGraphClientOptions } from './transport.types.js';
 
@@ -48,20 +54,12 @@ export interface LangGraphThreadDirectoryOptions {
   readonly projects?: ProjectStore | false;
 }
 
-type Fields = Partial<
-  Pick<ProjectedThread, 'title' | 'archived' | 'pinned' | 'projectId'> & {
-    pinnedOrder: number;
-    removed: true;
-  }
->;
-
 interface Patch {
   readonly id: string;
   readonly fields: Fields;
   /** Refresh sequence current when the mutation succeeded. */
   settledAt?: number;
 }
-
 
 /**
  * A framework-neutral `ThreadDirectory` over the LangGraph threads API.
@@ -390,27 +388,6 @@ async function settle(
   }
 }
 
-function stripOrder(entry: ProjectedThread): ThreadEntry {
-  return Object.freeze({
-    id: entry.id,
-    title: entry.title,
-    ...(entry.updatedAt === undefined ? {} : { updatedAt: entry.updatedAt }),
-    pinned: entry.pinned,
-    archived: entry.archived,
-    projectId: entry.projectId,
-  });
-}
-
-function sameProjects(
-  a: readonly ProjectEntry[],
-  b: readonly ProjectEntry[]
-): boolean {
-  return (
-    a.length === b.length &&
-    a.every((project, i) => project.id === b[i]?.id && project.name === b[i]?.name)
-  );
-}
-
 function ownedClient(
   options: LangGraphThreadDirectoryOptions
 ): LangGraphThreadsClient {
@@ -484,31 +461,4 @@ function linkSignal(
       caller.removeEventListener('abort', abort);
     },
   };
-}
-
-function applyPatch(
-  entry: ProjectedThread,
-  fields: Fields
-): ProjectedThread | undefined {
-  if (fields.removed) return undefined;
-  return Object.freeze({ ...entry, ...fields });
-}
-
-function sameEntry(a: ProjectedThread, b: ProjectedThread): boolean {
-  return (
-    a.id === b.id &&
-    a.title === b.title &&
-    a.updatedAt === b.updatedAt &&
-    a.pinned === b.pinned &&
-    a.archived === b.archived &&
-    a.projectId === b.projectId &&
-    a.pinnedOrder === b.pinnedOrder
-  );
-}
-
-function sameList(
-  a: readonly ThreadEntry[],
-  b: readonly ThreadEntry[]
-): boolean {
-  return a.length === b.length && a.every((entry, index) => entry === b[index]);
 }
