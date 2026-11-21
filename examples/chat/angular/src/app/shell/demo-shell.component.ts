@@ -31,7 +31,6 @@ import {
 import { DEMO_AGENT_REF, type DemoAgent, type DemoState } from './agent-ref';
 import { createDemoSession, SUBAGENT_TOOL_NAMES } from './demo-session';
 import type { DemoThreadDirectory } from './demo-threads';
-import { regenerateFromCheckpoint } from './regenerate';
 import { ItineraryStore, type ItineraryStop } from '../itinerary-store';
 import { itineraryClientTools } from '../client-tools';
 import { ThreadplaneTelemetryService } from '@threadplane/telemetry/browser';
@@ -83,8 +82,9 @@ let telemetrySink: LangGraphTelemetrySink | undefined;
  * derived agent (`DEMO_AGENT`) to every surface. A run with no message (`submit(null)`) is passed
  * through untouched: it continues the thread from its saved state.
  *
- * `regenerate` is the demo's own (see `regenerateFromCheckpoint`): it answers
- * a prompt again through that same submit, from the checkpoint before it.
+ * `regenerate` is the session's own command: it answers a prompt again from
+ * the checkpoint saved before it. Only the prompt's text is sent again, so a
+ * regenerated run does not carry the selections this submit adds.
  */
 export function withSubmitState(
   agent: DemoAgent,
@@ -95,8 +95,7 @@ export function withSubmitState(
     const given = typeof input === 'string' ? { message: input } : input;
     return agent.submit({ ...given, state: { ...given.state, ...readState() } }, options);
   };
-  const regenerate = regenerateFromCheckpoint(agent, submit);
-  return withAgentOverrides(agent, { submit, regenerate });
+  return withAgentOverrides(agent, { submit });
 }
 
 /** Parse `/embed`, `/embed/<threadId>`, `/popup/<threadId>` etc. into

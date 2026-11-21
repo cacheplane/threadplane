@@ -733,7 +733,7 @@ class CapturingTransport extends FakeStreamTransport {
     super({ delayMs: 0 });
   }
   /** A session without a thread creates one before its first run. */
-  async createThread(): Promise<string> {
+  override async createThread(): Promise<string> {
     return 'capturing-thread';
   }
   override async *stream(
