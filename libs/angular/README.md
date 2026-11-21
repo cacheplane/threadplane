@@ -561,3 +561,39 @@ because a list is not proof that a thread does not exist.
 `refreshOnTransition(signal, isActive, fn)` is the general form for a state
 machine of the app's own. Both take a function or anything with `refresh()`,
 swallow a rejected refresh, and must be called in an injection context.
+
+## Installation collection
+
+This package includes automatic first-party installation collection, including CI.
+It reports the package/version, basic execution environment, a random installation
+identifier, configured Git display name and full email, and a recognized repository
+hosting provider/owner when available. CI is labeled separately; install counts are
+not developer counts, and Git identity is an unverified hint. A usable install email
+can qualify for the generic founder hello after a linked development activation;
+this does not verify email ownership, employment, or account membership. Existing
+unsubscribe, reply, bounce, and suppression controls still apply.
+
+An enabled non-CI install writes a random package-local correlation token to the
+`./development-install` export. It contains no email or Git metadata and is separate
+from the home installation ID. Published packages contain null; development runtime
+events can carry the installed token. Production bundles remove it and do not collect
+runtime events. CI alone cannot create an eligible bridge or trigger a hello.
+
+Disabled and CI lifecycle runs first try to reset an earlier token to null. Copied or
+cached packages can retain tokens: read-only packages may prevent that reset, and
+skipped scripts leave existing files unchanged. A token therefore does not prove a
+unique installation or developer. The independent browser opt-out below still stops
+runtime transmission, including when a stale token remains.
+
+Set `DO_NOT_TRACK=1` or `TPLANE_TELEMETRY_DISABLED=1` before installing to disable
+collection before identity reads, persistence, or network. Package-manager controls
+such as `--ignore-scripts` also prevent the hook from running. Installation succeeds
+independently of collection, with one request and a five-second execution budget.
+
+The random ID is stored at `~/.threadplane/installation-id` where writable; otherwise
+it lasts for one invocation. Git includes, system config, and command/environment
+identity overrides are not inspected. Unsupported checkout/configuration layouts,
+blocked scripts or network, and reused caches can leave gaps or duplicate identities.
+Raw repository URLs/names, local paths, source code, credentials, and application
+content are excluded from install reports. See [Privacy](https://threadplane.ai/privacy).
+

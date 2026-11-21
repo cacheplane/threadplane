@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createFakeAgentSession } from '@threadplane/core/testing';
-import * as telemetry from '@threadplane/telemetry/browser';
+import * as telemetry from '@threadplane/telemetry/browser/development';
 import { ChatComponent, ɵCHAT_RUNTIME } from '../../public-api';
 
 afterEach(() => {

@@ -103,6 +103,11 @@ import { setDevelopmentCollectionEnabled } from '@threadplane/telemetry/browser'
 setDevelopmentCollectionEnabled(false);
 ```
 
+The same development runtime is also exported from
+`@threadplane/telemetry/browser/development`, which does not include the opt-in
+PostHog service. Both entry points share one runtime, so a setting made through
+either one applies to both.
+
 Or run in the browser console before starting the runtime:
 
 ```js

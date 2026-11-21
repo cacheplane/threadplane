@@ -21,7 +21,7 @@ import { DOCUMENT, NgComponentOutlet } from '@angular/common';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Keep the postinstall module external through ng-packagr.
 import { installationToken } from '#development-install';
 declare const ngDevMode: boolean;
-import { createDevelopmentRuntime, DEVELOPMENT_COLLECTION_POLICY } from '@threadplane/telemetry/browser';
+import { createDevelopmentRuntime, DEVELOPMENT_COLLECTION_POLICY } from '@threadplane/telemetry/browser/development';
 import { THREADPLANE_PACKAGE_VERSION as packageVersion } from './package-version';
 import {
   evaluateVisibility,

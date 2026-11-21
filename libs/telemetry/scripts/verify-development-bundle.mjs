@@ -12,7 +12,7 @@ const { parseCollectionBatch } = await import(
 );
 
 const entry = `
-  import { createDevelopmentRuntime } from './dist/libs/telemetry/browser/fesm2022/threadplane-telemetry.mjs';
+  import { createDevelopmentRuntime } from './dist/libs/telemetry/browser/fesm2022/threadplane-telemetry-browser-development.mjs';
   const runtime = createDevelopmentRuntime({ integration: 'langgraph', packageName: '@threadplane/langgraph', packageVersion: '0.0.65' });
   if (globalThis.exercise) { runtime.touch(); runtime.milestone('transport.connected'); }
 `;

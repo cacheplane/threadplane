@@ -14,7 +14,7 @@ import {
   createDevelopmentRuntime,
   registerDevelopmentRuntimePolicy,
   type DevelopmentRuntimeOptions,
-} from '@threadplane/telemetry/browser';
+} from '@threadplane/telemetry/browser/development';
 
 /** Registers the collector with the agent layer. Later calls do nothing. */
 export function registerChatDevelopmentHost(): void {

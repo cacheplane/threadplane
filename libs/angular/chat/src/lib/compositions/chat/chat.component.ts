@@ -4,7 +4,7 @@ import {
   ElementRef, DestroyRef, inject, Injector, runInInjectionContext, DOCUMENT, ChangeDetectorRef, type EffectRef,
 } from '@angular/core';
 import { onAgentStateUpdate } from '@threadplane/core';
-import { DEVELOPMENT_COLLECTION_POLICY, isDevelopmentRuntimeEnabled } from '@threadplane/telemetry/browser';
+import { DEVELOPMENT_COLLECTION_POLICY, isDevelopmentRuntimeEnabled } from '@threadplane/telemetry/browser/development';
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common';
 import {
   isAgentInputBlocked, isAgentRunning,

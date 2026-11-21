@@ -5,7 +5,7 @@ import { Component, signal, effect, Injector, runInInjectionContext } from '@ang
 // eslint-disable-next-line @nx/enforce-module-boundaries -- proves a LangChain BaseMessage is accepted
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 import { ChatComponent } from './chat.component';
-import { DEVELOPMENT_COLLECTION_POLICY, registerDevelopmentRuntimePolicy } from '@threadplane/telemetry/browser';
+import { DEVELOPMENT_COLLECTION_POLICY, registerDevelopmentRuntimePolicy } from '@threadplane/telemetry/browser/development';
 import { messageContent } from '../shared/message-utils';
 import { createContentClassifier, type ContentClassifier } from '../../streaming/content-classifier';
 import { mockAgent } from '../../testing/mock-agent';

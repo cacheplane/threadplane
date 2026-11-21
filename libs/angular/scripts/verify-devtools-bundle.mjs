@@ -10,7 +10,7 @@
 // `ngDevMode` left to the runtime must contain them all, so the check cannot pass by
 // bundling the wrong thing. Run after building angular, langgraph and ag-ui.
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { build } from 'esbuild';
 
@@ -94,6 +94,17 @@ assert(
   production.length < development.length,
   'the production bundle is not smaller than the development bundle',
 );
+
+// Chat and render use telemetry's development runtime only. The `/browser`
+// entry point also holds the opt-in PostHog service, whose lazy `posthog-js`
+// import an application's development server must resolve, so they must never
+// import it.
+for (const name of ['chat', 'render']) {
+  const source = readFileSync(local['@threadplane/angular/' + name], 'utf8');
+  assert.match(source, /from '@threadplane\/telemetry\/browser\/development'/, `${name} positive control: no development runtime import`);
+  assert.doesNotMatch(source, /from '@threadplane\/telemetry\/browser'/, `${name} imports @threadplane/telemetry/browser, which brings posthog-js`);
+  assert.doesNotMatch(source, /posthog/i, `${name} references posthog`);
+}
 
 console.log(
   `Devtools bundle verification passed: production strips the hook (${development.length - production.length} bytes smaller); development keeps it.`,

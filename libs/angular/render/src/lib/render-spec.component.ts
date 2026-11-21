@@ -10,7 +10,7 @@ import {
   output,
 } from '@angular/core';
 import type { ComputedFunction, Spec, StateStore } from '@json-render/core';
-import { DEVELOPMENT_COLLECTION_POLICY } from '@threadplane/telemetry/browser';
+import { DEVELOPMENT_COLLECTION_POLICY } from '@threadplane/telemetry/browser/development';
 
 import { RenderElementComponent } from './render-element.component';
 import { RENDER_CONFIG } from './provide-render';

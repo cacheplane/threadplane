@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { Spec } from '@json-render/core';
-import * as telemetry from '@threadplane/telemetry/browser';
+import * as telemetry from '@threadplane/telemetry/browser/development';
 import { RenderSpecComponent } from './render-spec.component';
 import { defineAngularRegistry } from './define-angular-registry';
 import { signalStateStore } from './signal-state-store';

@@ -70,6 +70,7 @@
       "@threadplane-internal/marketing-queue": ["marketing/queue/src/index.ts"],
       "@threadplane/telemetry": ["libs/telemetry/src/index.ts"],
       "@threadplane/telemetry/browser": ["libs/telemetry/src/browser/public-api.ts"],
+      "@threadplane/telemetry/browser/development": ["libs/telemetry/src/browser/development/public-api.ts"],
       "@threadplane/telemetry/node": ["libs/telemetry/src/node/index.ts"],
       "@threadplane/telemetry/shared": ["libs/telemetry/src/shared/public-api.ts"],
       "@threadplane-internal/growth-capture": ["libs/growth-capture/src/index.ts"],
