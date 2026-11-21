@@ -1,12 +1,12 @@
 ---
-description: Attach sources to AG-UI assistant messages through state.citations, which field names the bridge normalizes, and when the merge runs.
+description: Attach sources to AG-UI assistant messages through state.citations, which field names the session normalizes, and when the sources appear.
 ---
 
 # Citations
 
-`@threadplane/ag-ui` can copy citations from AG-UI state onto chat messages.
+`@threadplane/ag-ui` reads citations from AG-UI state onto chat messages.
 
-The bridge is deliberately simple: put citations under `state.citations`, keyed by message id. When a `STATE_SNAPSHOT` or `STATE_DELTA` arrives, the adapter merges matching citations onto `messages`.
+AG-UI has no citation event, so a backend sends sources as application state. The convention is deliberately simple: put citations under `state.citations`, keyed by message id. Each assistant message the session publishes carries the sources listed for its id.
 
 ## State shape
 
@@ -27,7 +27,7 @@ Use this shape from your AG-UI backend:
 }
 ```
 
-The key must match the assistant message id emitted by `TEXT_MESSAGE_START` or `REASONING_MESSAGE_START`.
+The key must be the assistant message's current id: the one emitted by `TEXT_MESSAGE_START`, or the saved id when the backend's `MESSAGES_SNAPSHOT` renames the message.
 
 ```ts
 { type: 'TEXT_MESSAGE_START', messageId: 'm1', role: 'assistant' }
@@ -70,7 +70,7 @@ The message becomes:
 
 ## Accepted citation fields
 
-The bridge normalizes a few common field names:
+The session normalizes a few common field names:
 
 | Citation field | Accepted input |
 | --- | --- |
@@ -81,7 +81,7 @@ The bridge normalizes a few common field names:
 | `snippet` | `snippet`, `content`, or `excerpt` |
 | `sourceType` | `sourceType` string |
 | `iconUrl` | `iconUrl` string |
-| `publishedAt` | `publishedAt` as a string, a number, or a `Date` |
+| `publishedAt` | `publishedAt` as a string or a finite number |
 | `extra` | `extra` object |
 
 String entries are also accepted:
@@ -102,18 +102,18 @@ That becomes:
 
 ## When citations update
 
-Citations are merged after:
+Citations reach the state through:
 
 - `STATE_SNAPSHOT`
 - `STATE_DELTA`
 
-They are not merged after plain text events. If your backend streams the final answer first and citations later, send a state event after citation data is available.
+Plain text events carry none. If your backend streams the final answer first and citations later, send a state event after citation data is available.
 
-If your backend sends citations before the matching message exists, send another state event after the message is created, or send a `MESSAGES_SNAPSHOT`: the adapter re-bridges the current `state.citations` over the replaced list.
+The session reads `state.citations` each time it publishes its messages, so the order of the two does not matter: sources that arrive before their message exists appear once the message does. A backend that saves a message under a new id lists its sources under the saved id, so they appear once the `MESSAGES_SNAPSHOT` arrives.
 
 ## Manual bridge
 
-`bridgeCitationsState()` is exported for advanced adapters or custom reducers.
+`bridgeCitationsState()` is exported for messages held outside a session.
 
 ```ts
 import { bridgeCitationsState } from '@threadplane/ag-ui';
@@ -124,12 +124,12 @@ const nextMessages = bridgeCitationsState(
 );
 ```
 
-Most apps should not need this directly. The built-in AG-UI reducer already calls it for state snapshots and deltas. The `bridgeCitationsState(thread, messages)` helper merges thread-level citation state onto the message list; import it from `@threadplane/ag-ui` when you assemble messages yourself outside the standard adapter pipeline.
+Most apps should not need this directly. A session already does this for the messages it publishes. The `bridgeCitationsState(thread, messages)` helper attaches thread-level citation state to a message list; import it from `@threadplane/ag-ui` when you assemble messages yourself outside a session.
 
 ## Gotchas
 
 Citation matching is by message id, not by order. Stable message ids matter.
 
-The bridge returns messages unchanged when `state.citations` is missing, is not an object, or the entry for a message is absent, not an array, or empty.
+The helper returns messages unchanged when `state.citations` is missing, is not an object, or the entry for a message is absent, not an array, or empty.
 
-The bridge normalizes citation shape; it does not fetch metadata, validate URLs, or deduplicate sources across messages.
+The session normalizes citation shape; it does not fetch metadata, validate URLs, or deduplicate sources across messages.

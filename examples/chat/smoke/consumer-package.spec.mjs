@@ -7,7 +7,7 @@ import { join } from 'node:path';
 
 import { ANGULAR_LANES, getAngularLane } from './angular-versions.mjs';
 import { applyAngularLane, strictNpmEnv } from './consumer-package.mjs';
-import { parseArgs } from './cli.mjs';
+import { parseArgs, THREADPLANE_PACKAGES } from './cli.mjs';
 
 function runNode(args) {
   return new Promise((resolve, reject) => {
@@ -136,6 +136,53 @@ test('includes browser dependencies required by the runtime pre-transform', asyn
 
   assert.equal(packageJson.dependencies.katex, '^0.17.0');
   assert.equal(packageJson.dependencies['posthog-js'], '^1.372.0');
+});
+
+test('installs the Angular provider and the session contract beside the backend packages', async () => {
+  const packageJson = JSON.parse(
+    await readFile(new URL('./template/package.json', import.meta.url), 'utf8')
+  );
+
+  for (const name of [
+    '@threadplane/angular',
+    '@threadplane/core',
+    '@threadplane/langgraph',
+    '@threadplane/ag-ui',
+    '@threadplane/chat',
+  ]) {
+    assert.equal(packageJson.dependencies[name], '*', name);
+  }
+});
+
+test('packs and pins every @threadplane package the template depends on', async () => {
+  const packageJson = JSON.parse(
+    await readFile(new URL('./template/package.json', import.meta.url), 'utf8')
+  );
+  const templated = Object.keys(packageJson.dependencies)
+    .filter((name) => name.startsWith('@threadplane/'))
+    .sort();
+
+  // A package the template names and the CLI does not pack would be resolved
+  // from the registry, so a local build would never be exercised.
+  assert.deepEqual(THREADPLANE_PACKAGES.map(({ name }) => name).sort(), templated);
+  for (const { name, dist } of THREADPLANE_PACKAGES) {
+    assert.equal(name, `@threadplane/${dist}`);
+  }
+});
+
+test('the compatibility probe uses the one Angular provider, not a backend-specific one', async () => {
+  const probe = await readFile(
+    new URL('./template/src/compatibility-probe.ts', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(probe, /import \{ injectAgent, provideAgent \} from '@threadplane\/angular';/);
+  assert.match(probe, /import \{ provideFakeAgent \} from '@threadplane\/angular\/testing';/);
+  assert.match(probe, /createSession as createLangGraphSession \} from '@threadplane\/langgraph';/);
+  assert.match(probe, /createSession as createAgUiSession \} from '@threadplane\/ag-ui';/);
+  // The backend packages no longer export an Angular provider.
+  assert.doesNotMatch(probe, /provideAgent[^']*from '@threadplane\/(langgraph|ag-ui)'/);
+  assert.doesNotMatch(probe, /provideFakeAgent[^']*from '@threadplane\/(langgraph|ag-ui)'/);
 });
 
 test('excludes dependencies that the compatibility consumer does not exercise', async () => {

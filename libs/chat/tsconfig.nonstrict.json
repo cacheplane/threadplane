@@ -1,0 +1,10 @@
+{
+  // The shipped sources, compiled the way an application compiles them:
+  // without `strict`. See libs/core/tsconfig.nonstrict.json. The entry points
+  // are the ones tsconfig.lib.json builds. This is plain `tsc`, so templates
+  // are not checked.
+  "extends": "../core/tsconfig.nonstrict.json",
+  "files": ["src/public-api.ts", "debug/public-api.ts", "testing/public-api.ts"],
+  "include": [],
+  "exclude": []
+}

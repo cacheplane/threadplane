@@ -12,8 +12,8 @@
     "@json-render/core": "0.16.0"
   },
   "peerDependencies": {
-    "@threadplane/content": "0.0.0",
-    "@threadplane/core": "0.0.0",
+    "@threadplane/content": "0.3.7",
+    "@threadplane/core": "0.3.7",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },

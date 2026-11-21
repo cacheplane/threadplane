@@ -7,6 +7,7 @@ export default defineConfig({
     alias: [
       ['@threadplane/core', '../core/src/index.ts'],
       ['@threadplane/core/tools', '../core/src/tools/index.ts'],
+      ['@threadplane/core/testing', '../core/src/testing/index.ts'],
     ].map(([name, path]) => ({
       find: new RegExp(`^${name}$`),
       replacement: fileURLToPath(new URL(path, import.meta.url)),

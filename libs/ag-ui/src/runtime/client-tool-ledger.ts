@@ -1,6 +1,6 @@
 import type { AGUIEvent } from '@ag-ui/client';
 import type { ToolContract } from '@threadplane/core';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 import type { ClientToolBlocker, ClientToolCall } from './client-tools.js';
 import { assertTranscriptIdentity } from './session-observation.js';
 import { ownTranscript, type Transcript } from './transcript.js';
@@ -161,7 +161,9 @@ function ownResult(value: unknown, ancestors = new Set<object>()): unknown {
  * cancellation/continuation and invokes the fetch guard; this module does not. */
 export function createClientToolLedger<C extends Record<string, ToolContract>>(
   names: readonly (keyof C & string)[],
-  initial: Transcript
+  initial: Transcript,
+  /** The history is a restored pause: its unresolved calls await the answer. */
+  restoredPause = false
 ) {
   const catalog = new Set<string>(names);
   const attempts = new WeakMap<object, Physical>();
@@ -428,7 +430,7 @@ export function createClientToolLedger<C extends Record<string, ToolContract>>(
     );
     return message;
   };
-  integrity(ownTranscript(initial), [], '');
+  if (!restoredPause) integrity(ownTranscript(initial), [], '');
   return {
     startPhysical(input: {
       runId: string;
@@ -794,6 +796,52 @@ export function createClientToolLedger<C extends Record<string, ToolContract>>(
       });
       captures.set(capture, batch);
       return capture;
+    },
+    /**
+     * Records that this request paused for a decision announced by a notice,
+     * whose `RUN_FINISHED` reads as an ordinary finish. The owner has already
+     * correlated the pause; this grants no admission or handler authority.
+     */
+    markPaused(token: object): void {
+      const physical = physicalFor(token);
+      physical.paused = true;
+      physical.success = false;
+    },
+    /**
+     * Lifts the blocker a failed run left when it is exactly the one `retry`
+     * may answer: `uncertain`, installed for that run, naming no call. Returns
+     * whether the ledger is unblocked. Any other blocker stays.
+     */
+    releaseUncertain(sourceRunId: string): boolean {
+      if (
+        blocker &&
+        blocker.reason === 'uncertain' &&
+        blocker.sourceRunId === sourceRunId &&
+        !blocker.callIds.length
+      )
+        blocker = undefined;
+      return !blocker;
+    },
+    /**
+     * Forgets every admitted call whose assistant record is not in `history`,
+     * with its result and their places. For a history the owner cut on
+     * purpose: without this the overlay would put the dropped rows back.
+     */
+    forgetDropped(history: Transcript): void {
+      const kept = new Set(history.map((message) => message.id));
+      for (const [id, invocation] of consumed) {
+        if (kept.has(invocation.owner.id)) continue;
+        consumed.delete(id);
+        calls.delete(id);
+        results.delete(id);
+      }
+      for (const result of results.values()) kept.add(result.id);
+      for (let index = ownedOrder.length - 1; index >= 0; index--) {
+        const id = ownedOrder[index];
+        if (kept.has(id)) continue;
+        ownedOrder.splice(index, 1);
+        ownedRoles.delete(id);
+      }
     },
     markFetchInvoked(capture: ClientToolRequestCapture): void {
       const batch = captures.get(capture);

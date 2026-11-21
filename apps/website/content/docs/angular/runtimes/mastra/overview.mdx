@@ -52,7 +52,7 @@ The parent agent collects everything: the instructions, the two tools, the child
 `MODEL` is the plain string `openai/gpt-4o-mini`, which Mastra's model router resolves from the standard `OPENAI_API_KEY` and `OPENAI_BASE_URL` variables with no provider SDK wiring.
 
 <Callout type="info" title="Working memory is the state channel">
-Mastra has no separate state object to publish. The packing list is working memory. The bridge streams it as a `STATE_SNAPSHOT` plus real JSON-Patch `STATE_DELTA` events while the agent edits the list, and the adapter applies those patches to the state signal the component reads.
+Mastra has no separate state object to publish. The packing list is working memory. The bridge streams it as a `STATE_SNAPSHOT` plus real JSON-Patch `STATE_DELTA` events while the agent edits the list, and the session applies those patches to the state the component reads as a signal.
 </Callout>
 
 ### The route contract
@@ -83,24 +83,29 @@ The agent handed to the bridge is wrapped first, which is what makes the subagen
 
 ### The agent provider
 
-`provideAgent()` registers the agent once for the whole Angular application. This Angular compatibility example selects `interruptTransport: 'mastra-command'` to send the legacy command shape alongside native interrupt observations. The native React reservation preview instead uses top-level native resume. The Angular example passes a factory because it resolves its endpoint at runtime from the host that serves the demo.
+`provideAgent()` from `@threadplane/angular` registers the agent once for the whole Angular application, and its `createSession` factory builds the AG-UI session. This Angular compatibility example passes `interruptTransport: 'mastra-command'` to `createSession()` to send the legacy command shape alongside native interrupt observations. The native React reservation preview instead uses top-level native resume. The Angular example wraps the config in a factory because it resolves its endpoint at runtime from the host that serves the demo.
 
 <ExampleCode file="app.config.ts" />
 
 Your own application passes the URL directly:
 
 ```typescript
-import { provideAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 
 provideAgent({
-  url: 'https://your-backend.example.com/agent',
-  interruptTransport: 'mastra-command',
+  createSession: (context) =>
+    createSession({
+      ...context,
+      url: 'https://your-backend.example.com/agent',
+      interruptTransport: 'mastra-command',
+    }),
 });
 ```
 
 ### Reading shared state in the component
 
-The component reads the packing list off `agent.state()`, the runtime-neutral signal the adapter maintains from the state events. Working memory arrives under its schema key, so the component narrows that key and treats a list without a title as absent.
+The component reads the packing list off `agent.state()`, the signal the injected agent publishes from the session's state. Working memory arrives under its schema key, so the component narrows that key and treats a list without a title as absent.
 
 <ExampleCode file="mastra.component.ts" region="packing-list-state" title="mastra.component.ts — reading shared state" />
 
@@ -114,11 +119,11 @@ The panel then renders that signal like any other computed value, with an empty 
 
 <ExampleCode file="mastra.component.ts" region="approval-card" title="mastra.component.ts — the approval card" />
 
-The class supplies that payload and maps the two actions onto resume calls.
+The class supplies that payload and maps the two actions onto `resume` calls.
 
 <ExampleCode file="mastra.component.ts" region="approval-actions" title="mastra.component.ts — reading the interrupt and resuming" />
 
-In this Angular compatibility example, `agent.interruptSession().legacy?.value` carries the parsed `CUSTOM on_interrupt` payload alongside the native interrupt batch. The provider selects `interruptTransport: 'mastra-command'`, so `submit({ resume })` goes back out as `forwardedProps.command = { resume, interruptEvent: { toolCallId, runId } }` — the compatibility shape the Mastra bridge reads to reopen the suspended run.
+In this Angular compatibility example, the pending interrupt's `value`, read as `agent.interrupts()?.[0]?.value`, is the parsed `CUSTOM on_interrupt` payload; the native interrupt outcome that follows it on the wire does not replace it. The session is created with `interruptTransport: 'mastra-command'`, so `agent.resume(responses)` goes back out as `forwardedProps.command = { resume, interruptEvent: { toolCallId, runId } }` — the compatibility shape the Mastra bridge reads to reopen the suspended run.
 
 ## What the integration demonstrates
 
@@ -136,7 +141,7 @@ In this Angular compatibility example, `agent.interruptSession().legacy?.value` 
 
 Threadplane therefore maintains the hosting service walked above, `deployments/ag-ui-mastra`. It is deliberately hand-written rather than generated: the Python generator targets one aggregated FastAPI process, and Mastra is a different language on a different hosting lane.
 
-This is the honest shape of the Mastra integration. The adapter needed no changes, but somebody has to serve the events, and upstream does not.
+This is the honest shape of the Mastra integration. The package needed no changes, but somebody has to serve the events, and upstream does not.
 
 ## Persistence is a hard requirement
 
@@ -148,7 +153,7 @@ Mastra registers a child agent as a delegation tool named `agent-<childKey>`, an
 
 The hosting service therefore wraps the agent in a small stream tee, `streaming-tee.mjs`, that observes each chunk before the bridge processes it, and a per-run injector, `subagent-emitter.mjs`, maps them to the protocol: the delegation `tool-call` chunk becomes an eager `TOOL_CALL_START`, `TOOL_CALL_ARGS`, and `TOOL_CALL_END` plus `SUBAGENT_STARTED`; each child text delta becomes a `TEXT_MESSAGE_CONTENT` attributed to the subagent; and the delegation result becomes `SUBAGENT_FINISHED` or `SUBAGENT_ERROR`. The bridge's own copy of the delegation tool call, flushed at the result, is dropped so the wire carries it once. Both files sit next to `server.mjs` rather than in the Code tab.
 
-The bridge itself is unmodified; the tee touches only the public agent members the bridge reads. The child's tokens reach the card while it is still running, which is what flips this cell to Supported. The component contains no subagent code at all, because the card is rendered from the projection the adapter maintains.
+The bridge itself is unmodified; the tee touches only the public agent members the bridge reads. The child's tokens reach the card while it is still running, which is what flips this cell to Supported. The component contains no subagent code at all, because the card is rendered from the child agents the session publishes.
 
 ## How the Mastra row was measured
 

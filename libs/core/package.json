@@ -1,9 +1,23 @@
 {
   "name": "@threadplane/core",
-  "version": "0.0.0",
-  "private": true,
-  "description": "Private dependency-free agent contracts, plain snapshots, and authored function-tool types.",
+  "version": "0.3.7",
+  "description": "Dependency-free agent contracts for Threadplane: the AgentSession interface, plain snapshots, authored function-tool types and testing fakes.",
+  "keywords": [
+    "agent",
+    "session",
+    "contract",
+    "threadplane"
+  ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cacheplane/threadplane.git",
+    "directory": "libs/core"
+  },
+  "homepage": "https://github.com/cacheplane/threadplane#readme",
+  "bugs": {
+    "url": "https://github.com/cacheplane/threadplane/issues"
+  },
   "type": "module",
   "types": "./src/index.d.ts",
   "sideEffects": false,

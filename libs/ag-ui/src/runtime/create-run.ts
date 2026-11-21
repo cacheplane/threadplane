@@ -1,9 +1,4 @@
-import {
-  EventType,
-  type BaseEvent,
-  type HttpAgentConfig,
-  type RunAgentInput,
-} from '@ag-ui/client';
+import { EventType, type BaseEvent, type RunAgentInput } from '@ag-ui/client';
 import type { CompleteOutcome } from '@threadplane/core';
 import {
   isLegacyInterruptTerminal,
@@ -12,6 +7,7 @@ import {
 import {
   createHttpRequest,
   type HttpRequestHandle,
+  type RequestSource,
 } from './create-http-request.js';
 
 type RunOutcome =
@@ -41,6 +37,16 @@ export interface RunHandle {
   done: Promise<RunResult>;
 }
 
+/**
+ * What a `RUN_FINISHED` outcome settles a run as. An outcome that reaches this
+ * runtime and is not one it knows settles `error`. The 1.0 client strips an
+ * object outcome of an unrecognised `type` before that, so such a run arrives
+ * here with no outcome and settles `success`.
+ */
+export function finishedOutcome(outcome: unknown): CompleteOutcome {
+  return finishedResult(outcome).outcome;
+}
+
 function finishedResult(outcome: unknown): RunOutcome {
   if (outcome == null) return { outcome: 'success' };
   if (typeof outcome === 'object' && 'type' in outcome) {
@@ -63,13 +69,29 @@ function finishedResult(outcome: unknown): RunOutcome {
 
 /** Owns one domain result; physical HTTP completion alone is not success. */
 export function createRun(
-  config: Pick<HttpAgentConfig, 'url' | 'headers' | 'fetch'> & {
+  config: RequestSource & {
     readonly interruptMode?: InterruptMode;
   }
 ) {
   const interruptMode = config.interruptMode ?? 'native';
   const request = createHttpRequest(config);
+  /** Responses left to end by themselves after their run's terminal event. */
+  const left = new Set<HttpRequestHandle>();
   return {
+    /**
+     * Closes at once every response still open after its run ended. A session
+     * calls it when it stops and when it is disposed.
+     */
+    release(): void {
+      for (const response of [...left]) {
+        left.delete(response);
+        try {
+          response.abort();
+        } catch {
+          // One response's teardown cannot keep the others open.
+        }
+      }
+    },
     start(
       input: RunAgentInput,
       onEvent: (event: BaseEvent) => void,
@@ -84,21 +106,46 @@ export function createRun(
       let fetchInvoked = false;
       let admitted = false;
       let physical: HttpRequestHandle | undefined;
-      const cleanup = () => {
+      /**
+       * `ended`: the run's own terminal event arrived, so nothing is cancelled
+       * and the response is left to end by itself, within its bound (see
+       * `HttpRequestHandle.close`).
+       */
+      const cleanup = (ended = false) => {
+        const response = physical;
+        if (!response) return;
         try {
-          physical?.abort();
+          if (ended) {
+            response.close();
+            if (!left.has(response)) {
+              left.add(response);
+              void response.done.then(
+                () => left.delete(response),
+                () => left.delete(response)
+              );
+            }
+          } else {
+            left.delete(response);
+            response.abort();
+          }
         } catch {
           // Teardown cannot replace the first result or leave done pending.
         }
       };
-      const settle = (result: RunOutcome) => {
+      let endedByTerminal = false;
+      const settle = (result: RunOutcome, ended = false) => {
         if (closed) return;
         closed = true;
+        endedByTerminal = ended;
         signal?.removeEventListener('abort', abort);
-        cleanup();
+        cleanup(ended);
         resolve({ ...result, fetchInvoked });
       };
-      const abort = () => settle({ outcome: 'aborted' });
+      const abort = () => {
+        // A response left to end by itself is closed when its owner aborts.
+        if (closed && endedByTerminal) cleanup();
+        settle({ outcome: 'aborted' });
+      };
       if (signal?.aborted) abort();
       if (closed) return { abort, done };
       // Own cancellation synchronously, including abort inside a terminal
@@ -154,7 +201,7 @@ export function createRun(
               return;
             }
             // Evidence is captured before projection; reentrant abort still wins.
-            if (candidate) settle(candidate);
+            if (candidate) settle(candidate, true);
           },
           undefined,
           () => {
@@ -169,7 +216,7 @@ export function createRun(
           }
         );
         // Synchronous SDK delivery may have settled before start returned.
-        if (closed) cleanup();
+        if (closed) cleanup(endedByTerminal);
         void physical.done
           .then((result) => {
             if (result.status === 'failed')

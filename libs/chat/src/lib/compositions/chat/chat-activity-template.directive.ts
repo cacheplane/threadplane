@@ -1,6 +1,6 @@
 // libs/chat/src/lib/compositions/chat/chat-activity-template.directive.ts
 import { Directive, TemplateRef, inject } from '@angular/core';
-import type { Agent, Message, Subagent, ToolCall } from '../../agent';
+import type { Agent, AgentSubagent, Message, ToolCall } from '../../agent';
 
 /**
  * Template context for a per-message activity template projected into
@@ -16,13 +16,13 @@ export interface ChatActivityTemplateContext {
    * generative-UI dispatcher and view-backed tool names that `<chat>` never
    * renders as cards (`let-toolCalls="toolCalls"`).
    */
-  toolCalls: ToolCall[];
+  toolCalls: readonly ToolCall[];
   /**
-   * Subagents spawned by this message's tool calls, anchored by
-   * `Subagent.toolCallId` and ordered like the spawning calls
+   * Child agents started by this message's tool calls, anchored by
+   * `AgentSubagent.toolCallId` and ordered like the spawning calls
    * (`let-subagents="subagents"`).
    */
-  subagents: Subagent[];
+  subagents: readonly AgentSubagent[];
   /** The agent bound to `<chat>` (`let-agent="agent"`). */
   agent: Agent;
 }

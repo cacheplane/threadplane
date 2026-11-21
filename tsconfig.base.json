@@ -29,6 +29,7 @@
       "@threadplane/angular": ["libs/angular/src/public-api.ts"],
       "@threadplane/angular/chat": ["libs/angular/chat/src/public-api.ts"],
       "@threadplane/angular/markdown": ["libs/angular/markdown/src/public-api.ts"],
+      "@threadplane/angular/testing": ["libs/angular/testing/src/public-api.ts"],
       "@threadplane/core": ["libs/core/src/index.ts"],
       "@threadplane/core/tools": ["libs/core/src/tools/index.ts"],
       "@threadplane/core/testing": ["libs/core/src/testing/index.ts"],

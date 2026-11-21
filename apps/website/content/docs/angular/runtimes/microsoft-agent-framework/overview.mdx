@@ -83,31 +83,38 @@ The agent handed to the endpoint is the wrapped one, because the wrapper is the 
 
 ### The agent provider
 
-`provideAgent()` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. Nothing about it is specific to this runtime. The example passes a factory because it resolves its endpoint at runtime from the host that serves the demo.
+`provideAgent()` from `@threadplane/angular` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. Its `createSession` factory builds the AG-UI session, and nothing about it is specific to this runtime. The example wraps the config in a factory because it resolves its endpoint at runtime from the host that serves the demo.
 
 <ExampleCode file="app.config.ts" />
 
-Your own application does not need the factory. Pass the URL of your AG-UI endpoint directly:
+Your own application does not need the outer factory. Pass the URL of your AG-UI endpoint directly:
 
 ```typescript
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
+
 provideAgent({
-  url: 'https://your-backend.example.com/agent',
+  createSession: (context) =>
+    createSession({
+      ...context,
+      url: 'https://your-backend.example.com/agent',
+    }),
 });
 ```
 
 ### Rendering the streamed expense
 
-The adapter applies every `STATE_SNAPSHOT` and `STATE_DELTA` to one store and projects it as `agent.state()`. The component reads the `expense` key from that signal and holds the draft back until it has a vendor, which suppresses the panel until the vendor key exists, so it does not flash a half-written draft while the arguments stream. The panel itself is ordinary Angular template code over that signal.
+The session applies every `STATE_SNAPSHOT` and `STATE_DELTA` to one state document, and the injected agent publishes it as `agent.state()`. The component reads the `expense` key from that signal and holds the draft back until it has a vendor, which suppresses the panel until the vendor key exists, so it does not flash a half-written draft while the arguments stream. The panel itself is ordinary Angular template code over that signal.
 
 <ExampleCode file="microsoft-agent-framework.component.ts" region="expense-state" title="microsoft-agent-framework.component.ts — reading shared state" />
 
 ### Approving the tool call
 
-`<chat-approval-card>` renders the pending approval as an inline panel at the end of the transcript and emits `'approve'` or `'cancel'`. Its body template is yours to write, and this one reads the pending tool call out of `agent.interrupt()`, whose `value` the adapter sets to `{ interrupts: [...], runId }`, and each entry's `metadata.agent_framework.function_call` carries the tool name and its parsed arguments.
+`<chat-approval-card>` renders the pending approval as an inline panel at the end of the transcript and emits `'approve'` or `'cancel'`. Its body template is yours to write, and this one reads the pending tool call out of `agent.interrupts()`, which lists the entries of the interrupt outcome; each entry's `metadata.agent_framework.function_call` carries the tool name and its parsed arguments.
 
 <ExampleCode file="microsoft-agent-framework.component.ts" region="approval-wiring" title="microsoft-agent-framework.component.ts — the approval wiring" />
 
-Both branches call the same neutral `agent.submit({ resume })`, and the adapter derives the wire shape from how the interrupt arrived.
+Both branches call the same core `agent.resume(responses)`, and the session sends the protocol's own resume entries because the pause arrived as the protocol's outcome.
 
 ## What the integration demonstrates
 
@@ -123,15 +130,15 @@ Together with Mastra this is the most complete third-party row in the measured m
 
 ## Why the state updates are deltas
 
-Predictive state is the interesting part of this runtime. The bridge does not wait for the tool call to finish before telling the client about it: it emits real `STATE_DELTA` patches as the argument grows, and the adapter applies each patch to the state it already holds. The user watches the expense fill in before the tool has been called, let alone approved.
+Predictive state is the interesting part of this runtime. The bridge does not wait for the tool call to finish before telling the client about it: it emits real `STATE_DELTA` patches as the argument grows, and the session applies each patch to the state it already holds. The user watches the expense fill in before the tool has been called, let alone approved.
 
-That is not true of every runtime. On AWS Strands shared state is snapshot-only and opt-in per tool, so every update replaces the whole state object and each hook has to return it complete. Here the adapter reassembles nothing.
+That is not true of every runtime. On AWS Strands shared state is snapshot-only and opt-in per tool, so every update replaces the whole state object and each hook has to return it complete. Here the session reassembles nothing.
 
 ## How the interrupt travels
 
-Microsoft Agent Framework signals an interrupt only through the protocol-standard `RUN_FINISHED` outcome, `{ type: 'interrupt', interrupts: [...] }`. It never uses the LangGraph bridge's `CUSTOM` event named `on_interrupt`. The adapter retains both conventions in one session; native batches take precedence in `auto` mode regardless of arrival order.
+Microsoft Agent Framework signals an interrupt only through the protocol-standard `RUN_FINISHED` outcome, `{ type: 'interrupt', interrupts: [...] }`. It never uses the LangGraph bridge's `CUSTOM` event named `on_interrupt`. The outcome is what a session answers by default, so the example sets no `interruptTransport`.
 
-The resume payload is shaped the same way. Because the interrupt arrived as an outcome, `submit({ resume })` goes out as the protocol-standard top-level `resume` array, one `{ interruptId, status, payload }` entry per pending interrupt — and this bridge expects an entry for every pending interrupt, not only the one the user answered. A single value is shorthand only for a single pending interrupt. For multiple interrupts, supply an entry for each observed ID; the adapter does not invent the remaining decisions.
+The resume payload is shaped the same way. Because the interrupt arrived as an outcome, `resume(responses)` goes out as the protocol-standard top-level `resume` array, one `{ interruptId, status, payload }` entry per pending interrupt — and this bridge expects an entry for every pending interrupt, not only the one the user answered. Supply a response for each ID in `interrupts()`; the session does not invent the remaining decisions.
 
 ## What's Next
 
@@ -143,9 +150,9 @@ The resume payload is shaped the same way. Because the interrupt arrived as an o
     The measured AG-UI wire behavior: outcome interrupts, resume entries, and real state deltas.
   </Card>
   <Card title="Choosing an adapter" href="/docs/choosing-an-adapter">
-    The full matrix with the cause of every gap, including the two adapter defects it found.
+    The full matrix with the cause of every gap, including the two package defects it found.
   </Card>
   <Card title="Subagents" href="/docs/angular/ag-ui/guides/subagents">
-    How the adapter attributes delegated runs and turns them into cards.
+    How the session attributes delegated runs and turns them into cards.
   </Card>
 </CardGroup>

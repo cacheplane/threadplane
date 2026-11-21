@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { provideAgent } from '@threadplane/ag-ui';
-import { ITINERARY_AGENT } from './client-tools';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
+import { type } from '@threadplane/core';
+import { ITINERARY_AGENT, type ItineraryState } from './client-tools';
 import { ItineraryPanelComponent } from './itinerary-panel.component';
 import { ItineraryStore } from './itinerary-store';
 
@@ -12,7 +14,10 @@ describe('ItineraryPanelComponent — agent-edit pulse', () => {
     TestBed.configureTestingModule({
       providers: [
         ItineraryStore,
-        provideAgent(ITINERARY_AGENT, { url: '/__test__' }),
+        provideAgent(ITINERARY_AGENT, {
+          createSession: () =>
+            createSession({ url: '/__test__', stateType: type<ItineraryState>() }),
+        }),
       ],
     });
     const store = TestBed.inject(ItineraryStore);
@@ -35,7 +40,10 @@ describe('ItineraryPanelComponent — agent-edit pulse', () => {
     TestBed.configureTestingModule({
       providers: [
         ItineraryStore,
-        provideAgent(ITINERARY_AGENT, { url: '/__test__' }),
+        provideAgent(ITINERARY_AGENT, {
+          createSession: () =>
+            createSession({ url: '/__test__', stateType: type<ItineraryState>() }),
+        }),
       ],
     });
 
@@ -61,7 +69,10 @@ describe('ItineraryPanelComponent — agent-edit pulse', () => {
     TestBed.configureTestingModule({
       providers: [
         ItineraryStore,
-        provideAgent(ITINERARY_AGENT, { url: '/__test__' }),
+        provideAgent(ITINERARY_AGENT, {
+          createSession: () =>
+            createSession({ url: '/__test__', stateType: type<ItineraryState>() }),
+        }),
       ],
     });
     const store = TestBed.inject(ItineraryStore);

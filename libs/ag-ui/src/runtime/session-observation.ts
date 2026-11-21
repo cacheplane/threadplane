@@ -11,7 +11,7 @@ import type {
   DeepReadonly,
   PlainValue,
 } from '@threadplane/core';
-import { ownTranscript, type Transcript } from './transcript.js';
+import { namedApart, ownTranscript, type Transcript } from './transcript.js';
 import {
   applySubagent,
   restoredSubagents,
@@ -23,7 +23,7 @@ import { applyTextMessage } from './text-messages.js';
 import { applyToolMessage } from './tool-messages.js';
 import { applyActivityMessage } from './activity-messages.js';
 import { applyEncryptedValue } from './encrypted-messages.js';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 import { assertAttribution } from './session-attribution.js';
 import type { Decision } from './decision.js';
 import {
@@ -31,10 +31,15 @@ import {
   type InterruptMode,
 } from './interrupt-mode.js';
 
+/** A `CUSTOM on_interrupt` notice as the session keeps it: its fields, frozen. */
 export type OwnedLegacyInterrupt = DeepReadonly<
   Pick<CustomEvent, 'type' | 'name' | 'value' | 'timestamp' | 'metadata'>
 >;
 
+/**
+ * The event that ended a root run, as the session keeps it: the fields of a
+ * `RUN_FINISHED`, a `RUN_ERROR` or an interrupt notice, frozen.
+ */
 export type OwnedRootTerminal = DeepReadonly<
   | Pick<
       RunFinishedEvent,
@@ -53,9 +58,16 @@ export type OwnedRootTerminal = DeepReadonly<
     >
   | Pick<CustomEvent, 'type' | 'name' | 'value' | 'timestamp' | 'metadata'>
 >;
+/**
+ * The protocol evidence a session holds: the transcript, the state document,
+ * the last run and its pause, as the backend's events gave them.
+ */
 export interface Observation {
+  /** Whether a run is going, and whether the last one failed. */
   readonly status: 'idle' | 'running' | 'error';
+  /** Every protocol message of the thread, in order. */
   readonly transcript: Transcript;
+  /** The literal state document, as requests send it. */
   readonly state: PlainValue;
   /** Steps the agent declared in the state's `todos` list, `[{ content, status }]`. Absent when the state holds no such list. */
   readonly plan?: readonly AgentPlanStep[];
@@ -64,6 +76,17 @@ export interface Observation {
   /** Children with terminal evidence from earlier invocations, and children supplied at restore. Absent when there are none. */
   readonly earlierSubagents?: Subagents;
   readonly decision?: Decision;
+  /**
+   * The names of the client tools declared through `session.clientTools`.
+   * Present, and possibly empty, on a session with that capability. It is
+   * what `pendingClientTools` is read against, and is not published itself.
+   */
+  readonly clientToolCatalog?: readonly string[];
+  /**
+   * Set while the owner cannot take a command for a reason of its own: the
+   * saved thread is loading, a status check is running, or storage failed.
+   */
+  readonly hold?: 'hydrating' | 'checking' | 'storage';
   /**
    * Measured arrival time of root reasoning messages, in milliseconds, by
    * message ID. Present once a reasoning message has both started and ended in
@@ -98,11 +121,15 @@ export function failedWithRunError(snapshot: Observation): boolean {
 }
 /** Session policy, not an SDK guarantee: identifiers are global in history. */
 export function assertTranscriptIdentity(transcript: Transcript): void {
-  const messages = new Set<string>();
+  const messages = new Map<string, Transcript[number]['role'][]>();
   const calls = new Set<string>();
   for (const message of transcript) {
-    if (messages.has(message.id)) throw new TypeError('Duplicate message ID');
-    messages.add(message.id);
+    const roles = messages.get(message.id);
+    // An activity record and a tool result may share an identifier.
+    if (roles?.some((role) => !namedApart(role, message.role)))
+      throw new TypeError('Duplicate message ID');
+    if (roles) roles.push(message.role);
+    else messages.set(message.id, [message.role]);
     if (message.role !== 'assistant') continue;
     for (const call of message.toolCalls ?? []) {
       if (calls.has(call.id)) throw new TypeError('Duplicate tool call ID');

@@ -33,20 +33,25 @@ This vocabulary keeps the UI honest. Receiving the first text means an answer ha
 
 <TurnSequence />
 
-The application starts with a draft. Typing changes local UI state. Pressing Send accepts that draft, creates or selects a conversation, and submits a new message. The adapter then translates the response stream into the state your components read.
+The application starts with a draft. Typing changes local UI state. Pressing Send accepts that draft, creates or selects a conversation, and submits a new message. The session then translates the response stream into the state your components read.
 
-In the published Angular API, configure the provider once and inject the resulting agent into the component that renders it:
+In Angular, configure the provider once and inject the resulting agent into the component that renders it:
 
 ```typescript
 // app.config.ts
 import type { ApplicationConfig } from '@angular/core';
-import { provideAgent } from '@threadplane/langgraph';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      apiUrl: 'http://localhost:2024',
-      assistantId: 'chat',
+      createSession: (context) =>
+        createSession({
+          ...context,
+          apiUrl: 'http://localhost:2024',
+          assistantId: 'chat',
+        }),
     }),
   ],
 };
@@ -55,8 +60,8 @@ export const appConfig: ApplicationConfig = {
 ```typescript
 // trip-planner.component.ts
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { injectAgent } from '@threadplane/angular';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
 
 @Component({
   selector: 'app-trip-planner',
@@ -69,9 +74,9 @@ export class TripPlannerComponent {
 }
 ```
 
-First, `provideAgent` identifies the backend graph; `chat` must be a graph key or assistant ID available on that server. Next, `injectAgent` retrieves that provider. Finally, `<chat>` submits input and renders the agent signals, including `messages()`, `isLoading()`, and `error()`. The provider owns the connection; the composition owns the presentation.
+First, `createSession` identifies the backend graph; `chat` must be a graph key or assistant ID available on that server. `provideAgent` calls that function for each thread and passes the thread's `context`. Next, `injectAgent` retrieves the agent. Finally, `<chat>` submits input and renders the agent signals, including `messages()`, `status()`, and `error()`. The provider owns the session and its connection; the composition owns the presentation.
 
-The React source-build API uses an application-owned session instead. Its observer is small enough to show in full:
+React reads the same session contract, but the application owns the session instead of a provider. Its observer is small enough to show in full:
 
 ```tsx
 import type { AgentSession } from '@threadplane/core';
@@ -99,7 +104,7 @@ Suppose the traveler asks for a weather summary. The model can request a named t
 
 Server tools execute behind your backend. Browser tools execute in the application, which is useful for reading local selection or updating an application-owned view. A tool view only presents a call and its result; displaying a card is not the same as executing the tool.
 
-A human decision is another boundary. When the backend pauses for approval, the application displays the pending decision and sends the selected response through the adapter. An approval button closing is presentation state, not proof that the requested operation completed. See [Client tools](/docs/angular/chat/guides/client-tools) and [Interrupts](/docs/angular/langgraph/guides/interrupts).
+A human decision is another boundary. When the backend pauses for approval, the application displays the pending decision and sends the selected response through the agent's `resume` command. An approval button closing is presentation state, not proof that the requested operation completed. See [Client tools](/docs/angular/chat/guides/client-tools) and [Interrupts](/docs/angular/langgraph/guides/interrupts).
 
 ## Render state in components you own
 
@@ -121,7 +126,7 @@ For example, changing the selected itinerary tab should not start a model run. A
 
 Render progress before the first token as well as while text arrives. A tool can still be running after the model has stopped producing text. A human approval can leave the conversation paused with no active text stream.
 
-When the transport fails, use the adapter's recovery information. A read-only status check asks what happened; retrying sends work again. Those actions are different, and the application must not replay an uncertain operation merely because its response was lost.
+When the transport fails, use the recovery information on `error()`. A read-only status check asks what happened; retrying sends work again. Those actions are different, and the application must not replay an uncertain operation merely because its response was lost.
 
 ## Come back to the same conversation
 

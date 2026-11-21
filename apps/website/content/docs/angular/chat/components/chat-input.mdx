@@ -8,7 +8,7 @@ description: How the input example wires chat-input to a streaming agent, plus t
 
 ## What the demo does
 
-The Run tab shows a conversation on the left and an Input State panel on the right. The input sits in a strip under the messages with the placeholder "Try typing here...", and the agent behind it is an aviation assistant whose mock dataset covers ten United States airports and four airlines.
+The Run tab shows a conversation on the left and an Input State panel on the right. The input sits in a strip under the messages with the placeholder "Ask an aviation question…", and the agent behind it is an aviation assistant whose mock dataset covers ten United States airports and four airlines.
 
 Ask it something like which airlines fly out of SFO, and watch the panel: Stream Status reads `running` and Is Loading reads `true` while the answer streams, and the send button turns into a stop button for as long as that lasts. Press Shift and Enter together to add a second line before sending, which is the other half of the keyboard contract below.
 
@@ -26,11 +26,11 @@ The compiled graph is exported as `graph`, which is the symbol `langgraph.json` 
 
 ### The application configuration
 
-`provideAgent()` registers the agent for the whole application, and it is the only provider the chat components require. This example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them.
+`provideAgent()` from `@threadplane/angular` provides the agent for the whole application, and it is the only provider the chat components require. Its `createSession` factory returns a LangGraph session for the thread the agent asks for. This example resolves its connection details at runtime from the host that serves the demo, which is why the config is itself a factory that reads them rather than hard-coding them.
 
 <ExampleCode file="app.config.ts" />
 
-Your own application does not need the factory: pass `apiUrl` and `assistantId` directly, where `assistantId` is the graph name declared in `langgraph.json`, which is `c-input` for this example.
+Your own application does not need the outer factory: pass `apiUrl` and `assistantId` to `createSession()` directly, where `assistantId` is the graph name declared in `langgraph.json`, which is `c-input` for this example.
 
 ### Mounting the input
 
@@ -44,7 +44,7 @@ The `submitted` output fires after the message has already been sent to the agen
 
 ### Reading the state the input reacts to
 
-The demo component mirrors two agent signals into computed fields so the panel can print them. `isLoading` is the one `chat-input` reads on its own, through the agent it is bound to.
+The demo component derives two computed fields from `agent.status()` so the panel can print them. The agent has no separate loading flag: a run is in flight exactly while `status()` is `'running'`, and that is what `chat-input` reads on its own, through the agent it is bound to.
 
 <ExampleCode file="input.component.ts" region="agent-state" title="input.component.ts — the agent signals" />
 
@@ -64,10 +64,10 @@ The selector is `chat-input`, and the component is standalone, so add it to a co
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
-| `agent` | `Agent` | **Required** | The agent to submit messages to. Its `isLoading()` signal drives the send and stop buttons. |
+| `agent` | `Agent` | **Required** | The agent to submit messages to. Its `status()` signal drives the send and stop buttons, and its `inputBlocked()` signal disables sending. |
 | `submitOnEnter` | `boolean` | `true` | When `true`, pressing Enter submits the message. Shift and Enter together insert a newline. When `false`, Enter always inserts a newline. |
 | `placeholder` | `string` | `''` | Placeholder text shown when the textarea is empty. |
-| `showStopButton` | `boolean` | `true` | When `true`, the send button is replaced by a stop button while the agent is loading. |
+| `showStopButton` | `boolean` | `true` | When `true`, the send button is replaced by a stop button while the agent is running. |
 
 ## Outputs
 
@@ -81,7 +81,7 @@ The selector is `chat-input`, and the component is standalone, so add it to a co
 Enter and the send button both call the same method:
 
 1. The textarea value is trimmed.
-2. If nothing remains after trimming, the call is a no-op: no submit, no output, and the text is left alone.
+2. If nothing remains after trimming, or the agent refuses input (`agent.inputBlocked()` is present), the call is a no-op: no submit, no output, and the text is left alone.
 3. `agent.submit({ message: trimmed })` is called.
 4. The `submitted` output emits the trimmed text.
 5. The textarea is cleared, both in the component signal and on the element.
@@ -89,12 +89,12 @@ Enter and the send button both call the same method:
 
 ## The send button and the stop button
 
-Only one button is rendered at a time. While `agent.isLoading()` is `false`, it is the send button, disabled unless the textarea holds at least one non-whitespace character. While `isLoading()` is `true` and `showStopButton` is left at its default, it is the stop button instead.
+Only one button is rendered at a time. While `agent.status()` is not `'running'`, it is the send button, disabled unless the textarea holds at least one non-whitespace character and the agent accepts input. While `status()` is `'running'` and `showStopButton` is left at its default, it is the stop button instead.
 
-Clicking stop calls `agent.stop()` and then emits `stopped`. Set `showStopButton` to `false` and the send button stays in place while the response streams, disabled for as long as the agent is loading.
+Clicking stop calls `agent.stop()` and then emits `stopped`. Set `showStopButton` to `false` and the send button stays in place while the response streams, disabled for as long as the agent is running.
 
 <Callout type="info" title="The textarea stays enabled">
-Loading disables the button, not the field. A user can keep typing the next message while the current response streams; Enter and the button are simply inert until it finishes.
+A running agent disables the button, not the field. A user can keep typing the next message while the current response streams; Enter and the button are simply inert until it finishes.
 </Callout>
 
 ## Auto-sizing
@@ -122,7 +122,7 @@ import type { Agent } from '@threadplane/chat';
 
 function sendGreeting(agent: Agent) {
   const result = submitMessage(agent, 'Hello!');
-  // result is 'Hello!', or null when the trimmed text was empty
+  // result is 'Hello!', or null when the trimmed text was empty or input is blocked
 }
 ```
 
@@ -137,7 +137,7 @@ function submitMessage(agent: Agent, text: string): string | null;
 | `agent` | `Agent` | The agent to submit to |
 | `text` | `string` | The message text to send |
 
-It trims the text, returns `null` without calling the agent when nothing remains, and otherwise calls `agent.submit({ message: trimmed })` and returns the trimmed string. The component calls this same function, so a programmatic send behaves exactly like a typed one, minus the clearing and the focus.
+It trims the text, returns `null` without calling the agent when nothing remains or the agent refuses input, and otherwise calls `agent.submit({ message: trimmed })` and returns the trimmed string. A submission the session rejects is published as the agent's error rather than thrown. The component calls this same function, so a programmatic send behaves exactly like a typed one, minus the clearing and the focus.
 
 ## Slots
 
@@ -183,7 +183,7 @@ The pill is fully rounded, and the buttons are 36 pixels square. Setting the var
 - The stop button carries `aria-label="Stop generating"` and the same text as its `title`.
 - Button icons are marked `aria-hidden="true"`.
 
-The component also exposes a `focusTextarea()` method, so a parent that holds a template reference can move focus into the input, for example after dismissing a panel.
+The component also exposes a `focusTextarea()` method, so a parent that holds a template reference can move focus into the input, for example after dismissing a panel, and a `clearDraft()` method that discards the unsent text.
 
 ## What's Next
 

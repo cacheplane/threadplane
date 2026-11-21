@@ -74,9 +74,15 @@ export class StageRecordingTransport implements AgentTransport {
     this.publish();
   }
 
-  joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal): AsyncIterable<StreamEvent> {
+  /** The session creates its thread through the transport before its first run. */
+  createThread(signal: AbortSignal): Promise<string> {
+    if (!this.inner.createThread) throw new Error('inner transport cannot create a thread');
+    return this.inner.createThread(signal);
+  }
+
+  joinStream(...args: Parameters<NonNullable<AgentTransport['joinStream']>>): AsyncIterable<StreamEvent> {
     return this.inner.joinStream
-      ? this.inner.joinStream(threadId, runId, lastEventId, signal)
+      ? this.inner.joinStream(...args)
       : (async function* (): AsyncIterable<StreamEvent> {
           /* no events */
         })();

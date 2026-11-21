@@ -1,6 +1,6 @@
 # @threadplane/content
 
-Private, unpublished content preparation. `/markdown` owns an incremental document
+Framework-neutral content preparation, shared by the Angular and React bindings. `/markdown` owns an incremental document
 using the locked `@cacheplane/partial-markdown` 0.5.8 parser. The root stays empty;
 `/testing` remains a reserved stub.
 

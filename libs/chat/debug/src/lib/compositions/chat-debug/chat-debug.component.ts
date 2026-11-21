@@ -30,7 +30,12 @@ interface TabEntry {
 function hasHistory(
   agent: DebugAgent | DebugAgentWithHistory
 ): agent is DebugAgentWithHistory {
-  return typeof (agent as DebugAgentWithHistory).history === 'function';
+  // The timeline is offered to an agent that reports checkpoints: its
+  // `checkpoints()` is a list, empty until the first history is read. On an
+  // agent that keeps no checkpoint state it is undefined, and the tab is not
+  // shown.
+  const checkpoints = (agent as DebugAgentWithHistory).checkpoints;
+  return typeof checkpoints === 'function' && checkpoints() !== undefined;
 }
 
 /** Provides a dockable agent state and checkpoint inspector with persisted panel preferences. */
@@ -412,8 +417,8 @@ function hasHistory(
           type="button"
           role="tab"
           class="panel__tab"
-          [class.is-active]="tab.id === activeTabId()"
-          [attr.aria-selected]="tab.id === activeTabId()"
+          [class.is-active]="tab.id === activeTab()?.id"
+          [attr.aria-selected]="tab.id === activeTab()?.id"
           (click)="setActiveTab(tab.id)"
         >
           {{ tab.label }}
@@ -485,9 +490,15 @@ export class ChatDebugComponent {
     ];
   });
 
-  protected readonly activeTab = computed(() =>
-    this.tabs().find((t) => t.id === this.activeTabId())
-  );
+  /**
+   * The tab shown: the chosen one while it exists, otherwise the first. The
+   * choice itself is kept, so the timeline, which is the default, is shown as
+   * soon as the agent's history loads and its tab appears.
+   */
+  protected readonly activeTab = computed(() => {
+    const tabs = this.tabs();
+    return tabs.find((t) => t.id === this.activeTabId()) ?? tabs[0];
+  });
 
   private readonly hostEl: ElementRef<HTMLElement> = inject(ElementRef);
 
@@ -496,13 +507,6 @@ export class ChatDebugComponent {
     // mappings + edge-claim primitive are in the document, even when
     // chat-debug is mounted without a sibling chat composition.
     ensureChatDebugRootStyles();
-
-    effect(() => {
-      const tabs = this.tabs();
-      if (tabs.length === 0) return;
-      if (tabs.some((tab) => tab.id === this.activeTabId())) return;
-      this.activeTabId.set(tabs[0].id);
-    });
 
     // Restore once after Angular has assigned bound input values. Doing this
     // synchronously in the constructor reads input defaults, then immediately

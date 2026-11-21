@@ -10,7 +10,7 @@ export default defineConfig({
         find: /^@threadplane\/langgraph$/,
         replacement: fileURLToPath(
           new URL(
-            '../../../../libs/langgraph/src/runtime/create-session.ts',
+            '../../../../libs/langgraph/src/public-api.ts',
             import.meta.url
           )
         ),

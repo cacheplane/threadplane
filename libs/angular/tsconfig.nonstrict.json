@@ -1,0 +1,25 @@
+{
+  // The shipped sources, compiled the way an application compiles them:
+  // without `strict`. See libs/core/tsconfig.nonstrict.json. This is plain
+  // `tsc`, so templates are not checked.
+  "extends": "../core/tsconfig.nonstrict.json",
+  "include": [
+    "src/**/*.ts",
+    "chat/src/**/*.ts",
+    "markdown/src/**/*.ts",
+    "testing/src/**/*.ts"
+  ],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/**/*.type-test.ts",
+    "chat/src/**/*.spec.ts",
+    "chat/src/**/*.type-test.ts",
+    "markdown/src/**/*.spec.ts",
+    "markdown/src/**/*.test.ts",
+    "markdown/src/**/*.type-test.ts",
+    "testing/src/**/*.spec.ts",
+    "testing/src/**/*.type-test.ts",
+    "src/test-setup.ts"
+  ]
+}

@@ -88,7 +88,7 @@ Nothing in this file is specific to generative UI.
 
 ### Registering the AG-UI agent
 
-`provideAgent()` from `@threadplane/ag-ui` needs the URL of that endpoint. The example passes a factory because it resolves the URL at runtime from the host that serves the demo; an application of your own passes `url` directly.
+`provideAgent()` from `@threadplane/angular` takes a `createSession` factory, and `createSession()` from `@threadplane/ag-ui` needs the URL of that endpoint. The example wraps the config in a factory because it resolves the URL at runtime from the host that serves the demo; an application of your own passes `url` to `createSession()` directly.
 
 <ExampleCode file="app.config.ts" title="app.config.ts" />
 
@@ -109,7 +109,7 @@ The `[store]` input is what makes the dashboard live.
 
 The pieces meet in the browser in a fixed order.
 
-The adapter reducer in `@threadplane/ag-ui` handles `STATE_SNAPSHOT` by setting the agent's `state` signal to the snapshot, and `STATE_DELTA` by applying the JSON Patch operations to the current value. The `<chat>` composition watches that signal and writes each top-level key `k` into the render store under the JSON Pointer `/k`, skipping `messages`. `@json-render/core` then resolves a `{ "$state": "/on_time/value" }` prop by reading that pointer out of the store.
+The session in `@threadplane/ag-ui` handles `STATE_SNAPSHOT` by replacing its state with the snapshot, and `STATE_DELTA` by applying the JSON Patch operations to the current value; the injected agent publishes the result as its `state` signal. The `<chat>` composition watches that signal and writes each top-level key `k` into the render store under the JSON Pointer `/k`, skipping `messages`. `@json-render/core` then resolves a `{ "$state": "/on_time/value" }` prop by reading that pointer out of the store.
 
 So the state field `on_time` on the graph becomes the pointer `/on_time` in the store, and the binding `/on_time/value` reaches the `value` key inside it. Pointer syntax, including the `~0` and `~1` escapes, is covered in the [state store guide](/docs/angular/render/guides/state-store).
 

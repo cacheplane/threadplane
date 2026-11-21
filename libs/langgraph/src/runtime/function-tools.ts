@@ -12,6 +12,7 @@ import {
   captureSettlement,
   encodeResult,
   ownResult,
+  succeeded,
 } from './tool-provenance.js';
 
 export interface ToolMessage {
@@ -196,7 +197,7 @@ export function resultCall(
   result: ToolExecutionResult
 ): ToolCall {
   return ownToolCall(
-    result.ok
+    succeeded(result)
       ? {
           id: call.id,
           name: call.name,
@@ -227,7 +228,7 @@ export function createToolBuffer() {
           role: 'tool',
           type: 'tool',
           tool_call_id: id,
-          content: result.ok
+          content: succeeded(result)
             ? result.value === undefined
               ? ''
               : typeof result.value === 'string'

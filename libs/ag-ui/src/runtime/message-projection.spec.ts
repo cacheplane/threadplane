@@ -42,6 +42,16 @@ describe('projectMessages', () => {
     );
     expect(messages).toEqual([
       {
+        id: 'system',
+        role: 'system',
+        content: 'Policy',
+        delivery: {
+          generation: 'system',
+          phase: 'complete',
+          outcome: 'success',
+        },
+      },
+      {
         id: 'u',
         role: 'user',
         content: 'Ask',
@@ -77,7 +87,7 @@ describe('projectMessages', () => {
   });
 
   it('reports no time for unmeasured reasoning and sums only measured records', () => {
-    expect(projectMessages(observed(turn))[3]).not.toHaveProperty(
+    expect(projectMessages(observed(turn))[4]).not.toHaveProperty(
       'reasoningDurationMs'
     );
     expect(
@@ -86,7 +96,7 @@ describe('projectMessages', () => {
           reasoningDurations: { r3: 900, r2: Number.NaN, other: 5 },
         })
       ).map((message) => message.reasoningDurationMs)
-    ).toEqual([undefined, undefined, undefined, 900]);
+    ).toEqual([undefined, undefined, undefined, undefined, 900]);
   });
 
   it('shows reasoning that has no answer record yet under its own identifier', () => {
@@ -122,10 +132,110 @@ describe('projectMessages', () => {
     ]);
   });
 
+  it('shows system and developer records as system messages', () => {
+    const messages = projectMessages(
+      observed([
+        { id: 'system', role: 'system', content: 'Policy' },
+        { id: 'developer', role: 'developer', content: 'Rules' },
+        { id: 'blank', role: 'system', content: '' },
+        { id: 'u', role: 'user', content: 'Ask' },
+      ])
+    );
+    expect(
+      messages.map(({ id, role, content, extra }) => ({
+        id,
+        role,
+        content,
+        extra,
+      }))
+    ).toEqual([
+      { id: 'system', role: 'system', content: 'Policy', extra: undefined },
+      {
+        id: 'developer',
+        role: 'system',
+        content: 'Rules',
+        extra: { 'ag-ui': { role: 'developer' } },
+      },
+      { id: 'u', role: 'user', content: 'Ask', extra: undefined },
+    ]);
+    expect(Object.isFrozen(messages[1].extra)).toBe(true);
+  });
+
+  it('publishes a parts list as blocks, with the other parts in extra', () => {
+    const records: Records = [
+      {
+        id: 'u',
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Look' },
+          {
+            type: 'image',
+            source: { type: 'url', value: 'https://example.invalid/a.png' },
+          },
+          {
+            type: 'image',
+            source: { type: 'data', value: 'AAAA', mimeType: 'image/png' },
+          },
+          {
+            type: 'audio',
+            source: { type: 'url', value: 'https://example.invalid/a.mp3' },
+          },
+        ],
+      } as Records[number],
+      {
+        id: 'image-only',
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: { type: 'url', value: 'https://example.invalid/b.png' },
+          },
+        ],
+      } as Records[number],
+      { id: 'text', role: 'user', content: 'Plain' },
+    ];
+    const first = projectMessages(observed(records));
+    expect(first[0]).toMatchObject({
+      id: 'u',
+      content: 'Look',
+      blocks: [
+        { type: 'text', text: 'Look' },
+        { type: 'image', url: 'https://example.invalid/a.png' },
+      ],
+      extra: {
+        'ag-ui': {
+          parts: [
+            {
+              type: 'image',
+              source: { type: 'data', value: 'AAAA', mimeType: 'image/png' },
+            },
+            {
+              type: 'audio',
+              source: { type: 'url', value: 'https://example.invalid/a.mp3' },
+            },
+          ],
+        },
+      },
+    });
+    // An image alone is a message, with no text.
+    expect(first[1]).toMatchObject({
+      id: 'image-only',
+      content: '',
+      blocks: [{ type: 'image', url: 'https://example.invalid/b.png' }],
+    });
+    expect(first[1]).not.toHaveProperty('extra');
+    expect(first[2]).not.toHaveProperty('blocks');
+    expect(Object.isFrozen(first[0].blocks)).toBe(true);
+    expect(Object.isFrozen(first[0].extra)).toBe(true);
+    // The same transcript projects the same messages.
+    const transcript = observed(records).transcript;
+    const one = projectMessages({ status: 'idle', transcript });
+    expect(projectMessages({ status: 'idle', transcript }, one)).toBe(one);
+  });
+
   it('leaves out records that are not root conversation text', () => {
     const messages = projectMessages(
       observed([
-        { id: 'developer', role: 'developer', content: 'Rules' },
         {
           id: 'parts',
           role: 'user',
@@ -170,6 +280,7 @@ describe('projectMessages', () => {
       'success',
       'success',
       'success',
+      'success',
       'streaming',
     ]);
     // A tool result after the step means that step has finished.
@@ -177,9 +288,11 @@ describe('projectMessages', () => {
       'success',
       'success',
       'success',
+      'success',
     ]);
     // A step that is still calling its tool is the one streaming.
     expect(phases(turn.slice(0, 4), { status: 'running' })).toEqual([
+      'success',
       'success',
       'streaming',
     ]);
@@ -200,17 +313,24 @@ describe('projectMessages', () => {
     ).toBe('streaming');
     expect(
       phases(turn, { run: { id: 'run', outcome: 'aborted' } })
-    ).toEqual(['success', 'success', 'success', 'aborted']);
+    ).toEqual(['success', 'success', 'success', 'success', 'aborted']);
     // A tool record after the last step does not take the outcome from it.
     expect(
       phases(turn.slice(0, 5), { run: { id: 'run', outcome: 'interrupted' } })
-    ).toEqual(['success', 'interrupted', 'success']);
+    ).toEqual(['success', 'success', 'interrupted', 'success']);
     // The outcome belongs to the latest turn, not to an earlier answer.
     expect(
       phases([...turn, { id: 'u2', role: 'user', content: 'Again' }], {
         run: { id: 'run', outcome: 'error' },
       })
-    ).toEqual(['success', 'success', 'success', 'success', 'success']);
+    ).toEqual([
+      'success',
+      'success',
+      'success',
+      'success',
+      'success',
+      'success',
+    ]);
   });
 
   it('keeps unchanged messages and an unchanged list', () => {
@@ -223,7 +343,8 @@ describe('projectMessages', () => {
     expect(done[0]).toBe(first[0]);
     expect(done[1]).toBe(first[1]);
     expect(done[2]).toBe(first[2]);
-    expect(done[3]).not.toBe(first[3]);
+    expect(done[3]).toBe(first[3]);
+    expect(done[4]).not.toBe(first[4]);
     expect(projectMessages(observed([]))).toEqual([]);
   });
 });

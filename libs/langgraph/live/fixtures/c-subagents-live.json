@@ -1,0 +1,31 @@
+{
+  "fixtures": [
+    {
+      "match": {
+        "userMessage": "Ask the cabin crew specialist to brief the passengers.",
+        "model": "gpt-5-mini",
+        "turnIndex": 0,
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "task",
+            "arguments": "{\"subagent_type\":\"cabin-crew\",\"task_description\":\"Brief the passengers before departure.\"}"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Ask the cabin crew specialist to brief the passengers.",
+        "model": "gpt-5-mini",
+        "turnIndex": 1,
+        "hasToolResult": true
+      },
+      "response": {
+        "content": "There is no cabin crew specialist, so nobody was briefed."
+      }
+    }
+  ]
+}

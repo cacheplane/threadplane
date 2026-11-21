@@ -1,10 +1,10 @@
 ---
-description: Bind the chat composition to an AG-UI backend in three steps: install the packages, register provideAgent(), and read the agent with injectAgent().
+description: Bind the chat composition to an AG-UI backend in three steps. Install the packages, give provideAgent() a createSession factory, and inject the agent.
 ---
 
 # Quick Start
 
-Connect the trip planner UI to a backend that emits AG-UI events. The adapter translates those events into the same Angular `Agent` contract that `<chat>` reads; the backend remains responsible for executing its agent and tools.
+Connect the trip planner UI to a backend that emits AG-UI events. The session translates those events into the same Angular `Agent` that `<chat>` reads; the backend remains responsible for executing its agent and tools.
 
 <Callout type="info" title="Prerequisites">
 Angular 20–22 project using a Node.js version supported by that Angular major. If you need setup help, see the [Installation](/docs/angular/ag-ui/getting-started/installation) guide.
@@ -26,27 +26,36 @@ Want to see the finished result before you build?
 <Step title="Install the packages">
 
 ```bash
-npm install @threadplane/chat @threadplane/ag-ui @ag-ui/client @ag-ui/core marked
+npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked
 ```
 
 </Step>
 <Step title="Configure the provider">
 
-Add `provideAgent()` to your application config with your AG-UI backend URL.
+Add `provideAgent()` from `@threadplane/angular` to your application config, and give it a `createSession` factory that calls `createSession()` from `@threadplane/ag-ui` with your AG-UI backend URL.
 
 ```ts
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
-import { provideAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideAgent({ url: 'http://localhost:3000/agent' }),
+    provideAgent({
+      createSession: (context) =>
+        createSession({
+          ...context,
+          url: 'http://localhost:3000/agent',
+        }),
+    }),
   ],
 };
 ```
 
-No backend yet? Swap to `provideFakeAgent({})` - it serves canned streaming responses so you can build UI offline.
+The agent calls the factory once when it is built and again each time it moves to another thread, and `context.threadId` is the thread the new session belongs to, or `null` for a new conversation.
+
+No backend yet? Swap to `provideFakeAgent()` from `@threadplane/angular/testing` - it serves canned streaming responses so you can build UI offline.
 
 </Step>
 <Step title="Use in a component">
@@ -54,7 +63,7 @@ No backend yet? Swap to `provideFakeAgent({})` - it serves canned streaming resp
 ```ts
 import { Component } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   selector: 'app-streaming',
@@ -67,14 +76,14 @@ export class StreamingComponent {
 }
 ```
 
-That is all. The `<chat>` composition handles streaming messages, tool calls, errors, and submit - all bound to the AG-UI backend through the `Agent` contract.
+That is all. The `<chat>` composition handles streaming messages, tool calls, errors, and submit - all bound to the AG-UI backend through the injected `Agent`.
 
 </Step>
 </Steps>
 
 ## Follow one request
 
-When the traveler sends a question, the adapter submits the conversation to the configured endpoint. Message events build the answer, tool events describe work, and state events update the observed application data. The terminal event tells the adapter that this run has finished; a message ending alone is not enough to establish that.
+When the traveler sends a question, the session submits the conversation to the configured endpoint. Message events build the answer, tool events describe work, and state events update the observed application data. The terminal event tells the session that this run has finished; a message ending alone is not enough to establish that.
 
 <TurnSequence />
 
@@ -82,7 +91,7 @@ AG-UI defines the event exchange. Durable threads, replay, and approval behavior
 
 ## What to read next
 
-- [Architecture](/docs/angular/ag-ui/concepts/architecture) explains how `toAgent()`, `provideAgent()`, and `injectAgent()` fit together.
+- [Architecture](/docs/angular/ag-ui/concepts/architecture) explains how `createSession()`, `provideAgent()`, and `injectAgent()` fit together.
 - [Event Mapping](/docs/angular/ag-ui/reference/event-mapping) is the backend compatibility checklist for emitted AG-UI events.
 - [Fake Agent](/docs/angular/ag-ui/guides/fake-agent) covers offline demos and frontend tests.
 - [Troubleshooting](/docs/angular/ag-ui/guides/troubleshooting) is the fastest place to start when a stream does not render.
@@ -91,15 +100,15 @@ AG-UI defines the event exchange. Durable threads, replay, and approval behavior
 
 ## Switching backends without changing UI
 
-The runtime-neutral `Agent` contract is the payoff: your component never learns which protocol it is talking to. The cost is a thin translation layer per adapter, paid once, after which the UI code stops caring.
+The framework-neutral session contract is the payoff: your component never learns which protocol it is talking to. The cost is one session implementation per backend, paid once, after which the UI code stops caring.
 
-So swapping backends is a one-line change in `app.config.ts`, and the component code stays the same:
+So swapping backends is a change to the session factory in `app.config.ts`, and the component code stays the same:
 
 ```diff
-- import { provideAgent } from '@threadplane/langgraph';
-- providers: [provideAgent({ apiUrl: '...', assistantId: '...' })],   // LangGraph
-+ import { provideAgent } from '@threadplane/ag-ui';
-+ providers: [provideAgent({ url: '...' })],  // AG-UI
+- import { createSession } from '@threadplane/langgraph';
+- createSession({ ...context, apiUrl: '...', assistantId: '...' })   // LangGraph
++ import { createSession } from '@threadplane/ag-ui';
++ createSession({ ...context, url: '...' })  // AG-UI
 ```
 
-These are two different `provideAgent` functions from two different packages — the import source changes along with the config key (`apiUrl` for LangGraph, `url` for AG-UI). It is not one symbol that accepts both.
+There is one `provideAgent` and one `injectAgent`, both from `@threadplane/angular`. The two `createSession` functions are different functions from two different packages, each with its own options (`apiUrl` and `assistantId` for LangGraph, `url` for AG-UI). A component that reads a backend's own fields, such as the checkpoints of a LangGraph thread, depends on that backend.

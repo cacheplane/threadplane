@@ -5,16 +5,18 @@ import {
   type ActivitySnapshotEvent,
   type ActivityDeltaEvent,
 } from '@ag-ui/client';
-import { copyData } from '../lib/internal/copy-data.js';
-import { applyPatch, type JsonPatchOp } from '../lib/internal/apply-patch.js';
-import type { Transcript } from './transcript.js';
+import { copyData } from './copy-data.js';
+import { applyPatch, type JsonPatchOp } from './apply-patch.js';
+import { namedApart, type Transcript } from './transcript.js';
 
 export type ActivityMessageEvent = ActivitySnapshotEvent | ActivityDeltaEvent;
 
+/** A tool result with the same identifier is a different record (see `namedApart`). */
 function messageIndex(previous: Transcript, id: string): number {
   let found = -1;
   for (let index = 0; index < previous.length; index++) {
     if (previous[index].id !== id) continue;
+    if (namedApart(previous[index].role, 'activity')) continue;
     if (found !== -1) throw new TypeError('Duplicate target message ID');
     found = index;
   }

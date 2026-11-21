@@ -29,7 +29,7 @@ import {
   type Project,
   type ProjectActionAdapter,
 } from '../../primitives/chat-project-list/chat-project-list.component';
-import type { Agent, AgentWithHistory } from '../../agent';
+import type { Agent } from '../../agent';
 import { CHAT_DEBUG_INCLUDED } from './chat-debug-gate';
 
 /** Display modes for the conversation sidebar, including a dismissible drawer. */
@@ -49,7 +49,7 @@ interface ChatDebugInstance {
 
 /**
  * The conversation sidebar: thread list, projects, search, and the new-chat
- * action. Pair it with a runtime's thread store (e.g. `LangGraphThreadsAdapter`)
+ * action. Pair it with a thread directory (e.g. `injectThreadDirectory()`)
  * and a {@link ThreadActionAdapter} for the per-row rename/delete/archive menu.
  *
  * **This component renders the sidebar only — it is not a layout wrapper.** Its
@@ -337,7 +337,7 @@ export class ChatSidenavComponent {
   readonly projects = input<Project[] | null>(null);
   readonly selectedProjectId = input<string | null>(null);
   readonly projectActions = input<ProjectActionAdapter | null>(null);
-  readonly agent = input<Agent | AgentWithHistory | null>(null);
+  readonly agent = input<Agent | null>(null);
   readonly debug = input<boolean>(true);
 
   readonly newChat = output<void>();

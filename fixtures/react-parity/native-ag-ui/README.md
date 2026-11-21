@@ -1,7 +1,7 @@
 # Native AG-UI owner review
 
 This command retains its original private-source composition. The separate
-[candidate package proof](../ag-ui-candidate/README.md) reuses this application
+[package proof](../ag-ui-package/README.md) reuses this application
 and oracle with real installed backend and framework tarballs.
 
 This fixture mounts Angular and React in the same document over one actual private

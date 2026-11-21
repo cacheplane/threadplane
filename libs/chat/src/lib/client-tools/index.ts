@@ -17,10 +17,9 @@ export type {
   ClientToolRegistry,
 } from './tool-def';
 export type { ClientToolSpec } from './to-json-schema';
-export type { ClientToolsCapability, ClientToolResult } from './client-tools-capability';
+export type { ClientToolResult } from './client-tools-capability';
 export { validateArgs, executeFunctionTool } from './execute';
-export { selectPendingClientToolCalls } from './select-pending-client-tool-calls';
-export type { SelectPendingClientToolCallsInput } from './select-pending-client-tool-calls';
+export { stopAgent } from './stop-agent';
 export { startClientToolExecutor } from './client-tool-executor';
 export type { ClientToolExecutorOptions } from './client-tool-executor';
 export { createClientToolsCoordinator, toClientToolSpecs } from './client-tools-coordinator';

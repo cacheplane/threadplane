@@ -403,8 +403,14 @@ function normalizedRaw(raw: readonly unknown[]):
       )
         return undefined;
       m.toolCallId = w.tool_call_id;
-      t.status = 'complete';
-      t.result = w.content;
+      // A failed tool call is held as failed, never as a result.
+      if (w.status === 'error') {
+        t.status = 'error';
+        t.error = w.content;
+      } else {
+        t.status = 'complete';
+        t.result = w.content;
+      }
       statuses[w.tool_call_id as string] = w.status as 'success' | 'error';
     } else if (
       pending.size ||
@@ -505,7 +511,7 @@ function matchesRoot(
       !record(t) ||
       !text(t.id) ||
       catalog.has(t.id) ||
-      t.status !== 'complete'
+      !['complete', 'error'].includes(t.status)
     )
       return false;
     catalog.set(t.id, t);

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
+import { FetchStreamTransport } from './fetch-stream.transport';
 import { createSession } from './create-session';
 import type { AgentTransport } from './transport.types';
 import { answerPending } from './testing/answer-pending';
@@ -275,7 +275,7 @@ describe('owned native checkpoint stream through the real SDK', () => {
     const requests = server({ reconnect: true });
     const session = native();
     expect(await session.submit('Question')).toBe('interrupted');
-    expect(session.getSnapshot().reconnect).toEqual({ runId: 'r' });
+    expect(session.getSnapshot().retainedRun).toEqual({ runId: 'r' });
     expect(await session.reconnect()).toBe('success');
     expect(session.getSnapshot().status).toBe('idle');
     expect(requests.map((r) => r.method)).toEqual([

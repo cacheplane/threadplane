@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { extractErrorMessage, ChatErrorComponent } from './chat-error.component';
 import { mockAgent } from '../../testing/mock-agent';
-import { AgentError } from '../../agent/agent-error';
+import type { AgentError } from '../../agent';
 import type { MockAgent } from '../../testing/mock-agent';
 
 describe('extractErrorMessage()', () => {
@@ -47,7 +47,7 @@ describe('ChatErrorComponent — rendering', () => {
   });
 
   it('renders err.message text for a retryable AgentError', () => {
-    const err = new AgentError({ kind: 'server', message: 'The server ran into an error. You can try again.', retryable: true });
+    const err = ({ kind: 'server', message: 'The server ran into an error. You can try again.', retryable: true } satisfies AgentError);
     host.agent = mockAgent({ status: 'error', error: err });
     fixture.detectChanges();
 
@@ -57,7 +57,7 @@ describe('ChatErrorComponent — rendering', () => {
   });
 
   it('shows a Retry button when retryable is true', () => {
-    const err = new AgentError({ kind: 'server', message: 'The server ran into an error. You can try again.', retryable: true });
+    const err = ({ kind: 'server', message: 'The server ran into an error. You can try again.', retryable: true } satisfies AgentError);
     host.agent = mockAgent({ status: 'error', error: err });
     fixture.detectChanges();
 
@@ -68,7 +68,7 @@ describe('ChatErrorComponent — rendering', () => {
   });
 
   it('hides the Retry button when retryable is false', () => {
-    const err = new AgentError({ kind: 'auth', message: 'Authentication failed. Check your API key or credentials.', retryable: false });
+    const err = ({ kind: 'auth', message: 'Authentication failed. Check your API key or credentials.', retryable: false } satisfies AgentError);
     host.agent = mockAgent({ status: 'error', error: err });
     fixture.detectChanges();
 
@@ -80,7 +80,7 @@ describe('ChatErrorComponent — rendering', () => {
   it('hides the generic Retry when retryHidden is set and keeps the message', () => {
     @Component({ standalone: true, imports: [ChatErrorComponent], template: `<chat-error [agent]="agent" [retryHidden]="true" />` })
     class HiddenHost {
-      agent = mockAgent({ status: 'error', error: new AgentError({ kind: 'server', message: 'Read unavailable', retryable: true }) });
+      agent = mockAgent({ status: 'error', error: ({ kind: 'server', message: 'Read unavailable', retryable: true } satisfies AgentError) });
     }
     const hidden = TestBed.createComponent(HiddenHost);
     hidden.detectChanges();
@@ -90,7 +90,7 @@ describe('ChatErrorComponent — rendering', () => {
   });
 
   it('clicking Retry calls agent.retry()', async () => {
-    const err = new AgentError({ kind: 'server', message: 'The server ran into an error. You can try again.', retryable: true });
+    const err = ({ kind: 'server', message: 'The server ran into an error. You can try again.', retryable: true } satisfies AgentError);
     const agent = mockAgent({ status: 'error', error: err });
     const retrySpy = vi.spyOn(agent, 'retry');
     host.agent = agent;
@@ -108,22 +108,22 @@ describe('ChatErrorComponent — rendering', () => {
 describe('ChatErrorComponent — interruption recovery', () => {
   function render(error: AgentError, checkStatus?: () => Promise<void>) {
     const fixture = TestBed.createComponent(HostComponent);
-    const agent = mockAgent();
+    // `checkStatus` is an optional command: the agent carries it only when asked.
+    const agent = mockAgent(checkStatus ? { onCheckStatus: () => checkStatus() } : {});
     agent.error.set(error);
-    if (checkStatus) (agent as { checkStatus?: () => Promise<void> }).checkStatus = checkStatus;
     fixture.componentInstance.agent = agent;
     fixture.detectChanges();
     return { fixture, agent, el: fixture.nativeElement as HTMLElement };
   }
 
   const interrupted = (recovery: 'retry' | 'check' | 'none', detail?: string) =>
-    new AgentError({
+    ({
       kind: 'interrupted',
       message: `interrupted-${recovery}`,
       retryable: recovery === 'retry',
       recovery,
       detail,
-    });
+    }) satisfies AgentError;
 
   it('renders Retry response when recovery is retry', () => {
     const { el } = render(interrupted('retry'));
@@ -155,28 +155,79 @@ describe('ChatErrorComponent — interruption recovery', () => {
   });
 
   it('still renders Retry for a retryable non-interrupted error', () => {
-    const { el } = render(new AgentError({ kind: 'server', message: 'boom', retryable: true }));
+    const { el } = render(({ kind: 'server', message: 'boom', retryable: true } satisfies AgentError));
     expect(el.querySelector('.chat-error__retry')).not.toBeNull();
   });
 
   it('renders Check status, not Retry, when recovery is check even if retryable is true', () => {
-    const err = new AgentError({ kind: 'interrupted', message: 'interrupted-check', retryable: true, recovery: 'check' });
+    const err = ({ kind: 'interrupted', message: 'interrupted-check', retryable: true, recovery: 'check' } satisfies AgentError);
     const { el } = render(err, async () => { /* noop */ });
     expect(el.querySelector('.chat-error__check')?.textContent).toContain('Check status');
     expect(el.querySelector('.chat-error__retry')).toBeNull();
   });
 
   it('renders no button when recovery is check, retryable is true, but the agent cannot verify', () => {
-    const err = new AgentError({
+    const err = ({
       kind: 'interrupted',
       message: 'interrupted-check',
       retryable: true,
       recovery: 'check',
       detail: 'We could not confirm the booking.',
-    });
+    } satisfies AgentError);
     const { el } = render(err);
     expect(el.querySelector('.chat-error__check')).toBeNull();
     expect(el.querySelector('.chat-error__retry')).toBeNull();
     expect(el.querySelector('.chat-error__detail')?.textContent).toContain('We could not confirm the booking.');
+  });
+});
+
+describe('ChatErrorComponent — optional commands', () => {
+  function render(agent: MockAgent) {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.componentInstance.agent = agent;
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+  const retryable: AgentError = { kind: 'server', message: 'boom', retryable: true };
+  const check: AgentError = { kind: 'interrupted', message: 'dropped', retryable: false, recovery: 'check' };
+
+  it('offers no Retry for a retryable error when the agent has no retry command', () => {
+    const agent = mockAgent({ commands: [] });
+    agent.error.set(retryable);
+    expect(agent.retry).toBeUndefined();
+    const el = render(agent);
+    expect(el.querySelector('.chat-error__msg')?.textContent).toContain('boom');
+    expect(el.querySelector('.chat-error__retry')).toBeNull();
+  });
+
+  it('offers Retry when the agent has the command, and calls it once', () => {
+    const agent = mockAgent({ commands: ['retry'] });
+    agent.error.set(retryable);
+    const el = render(agent);
+    el.querySelector<HTMLButtonElement>('.chat-error__retry')!.click();
+    expect(agent.fake.retryCount).toBe(1);
+  });
+
+  it('offers Check status only when the agent has checkStatus, and calls it once', () => {
+    const without = mockAgent();
+    without.error.set(check);
+    expect(without.checkStatus).toBeUndefined();
+    expect(render(without).querySelector('.chat-error__check')).toBeNull();
+
+    const withCheck = mockAgent({ commands: ['checkStatus'] });
+    withCheck.error.set(check);
+    const el = render(withCheck);
+    el.querySelector<HTMLButtonElement>('.chat-error__check')!.click();
+    expect(withCheck.fake.checkStatusCount).toBe(1);
+  });
+
+  it('does not leave a rejected retry unhandled', async () => {
+    const agent = mockAgent({ onRetry: () => { throw new Error('still down'); } });
+    agent.error.set(retryable);
+    const el = render(agent);
+    el.querySelector<HTMLButtonElement>('.chat-error__retry')!.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(agent.fake.retryCount).toBe(1);
   });
 });

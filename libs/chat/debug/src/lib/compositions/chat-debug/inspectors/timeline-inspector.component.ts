@@ -7,7 +7,7 @@ import {
   signal,
   HostListener,
 } from '@angular/core';
-import type { DebugAgentWithHistory } from '../debug-agent';
+import type { DebugAgentCheckpoint, DebugAgentWithHistory } from '../debug-agent';
 import { CHAT_DEBUG_TOKENS } from '../chat-debug-tokens';
 import { DebugCheckpointCardComponent, type DebugCheckpoint } from '../debug-checkpoint-card.component';
 import { DebugStateDiffComponent } from '../debug-state-diff.component';
@@ -188,17 +188,28 @@ export class TimelineInspectorComponent {
 
   readonly selectedIndex = signal<number>(-1);
 
+  /**
+   * The agent's history as the timeline lists it: newest first. The agent
+   * reports `checkpoints()` oldest first; rows, their positional `Step n`
+   * labels and the diffs all follow the listed order, so `Step 1` is the
+   * newest checkpoint.
+   */
+  private readonly listed = computed((): readonly DebugAgentCheckpoint[] =>
+    [...(this.agent().checkpoints() ?? [])].reverse(),
+  );
+
   readonly checkpoints = computed((): DebugCheckpoint[] =>
-    this.agent().history().map((cp, i) => toDebugCheckpoint(cp, i)),
+    this.listed().map((cp, i) => toDebugCheckpoint(cp, i)),
   );
 
   currentStateAt(i: number): Record<string, unknown> {
-    return extractStateValues(this.agent().history()[i]);
+    return extractStateValues(this.listed()[i]);
   }
 
+  /** The state of the row listed above row `i`; empty for the first row. */
   previousStateAt(i: number): Record<string, unknown> {
     if (i <= 0) return {};
-    return extractStateValues(this.agent().history()[i - 1]);
+    return extractStateValues(this.listed()[i - 1]);
   }
 
   @HostListener('keydown', ['$event'])

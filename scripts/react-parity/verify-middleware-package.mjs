@@ -7,7 +7,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { satisfies } from 'semver';
 import ts from 'typescript';
-import { lockedVendorGraph, vendorOverrides } from './langgraph-candidate-package.mjs';
+import { lockedVendorGraph, vendorOverrides } from './langgraph-package.mjs';
 
 export function runMiddlewareConsumer(command, args, cwd) {
   const result = spawnSync(command, args, {

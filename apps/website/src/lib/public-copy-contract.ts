@@ -27,8 +27,8 @@ export const BANNED_CLAIMS: ReadonlyArray<readonly [string, RegExp]> = [
 /**
  * Narrative uses of the word, as distinct from the identifier.
  *
- * `telemetry` is the real name of a public config field on `provideAgent()`,
- * `toAgent()`, and both `AgentConfig` types. Banning the word outright would
+ * `telemetry` is the real name of a public option of `createSession()` in
+ * both backend packages and of `provideRender()`. Banning the word outright would
  * force the API tables to either lie or omit a shipped option, so what is
  * barred is the prose that markets it — not the field itself.
  */

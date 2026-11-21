@@ -24,14 +24,14 @@ session.reconnect({ runId: 'other', lastEventId: 'cursor' });
 // @ts-expect-error Reconnect accepts only an AbortSignal.
 session.reconnect({ signal: 'wrong' });
 const snapshot = session.getSnapshot();
-if (snapshot.reconnect) {
-  const runId: string = snapshot.reconnect.runId;
+if (snapshot.retainedRun) {
+  const runId: string = snapshot.retainedRun.runId;
   // @ts-expect-error The descriptor is owned and readonly.
-  snapshot.reconnect.runId = 'wrong';
+  snapshot.retainedRun.runId = 'wrong';
   void runId;
 }
 // @ts-expect-error Backend snapshot properties are readonly.
-snapshot.reconnect = undefined;
+snapshot.retainedRun = undefined;
 for (const call of snapshot.toolCalls) {
   if (call.name === 'count' && call.status === 'complete') {
     const total: number = call.result.total;
@@ -44,5 +44,5 @@ const borrowed: AgentSession = session;
 // @ts-expect-error Reconnect is absent from the core observer contract.
 borrowed.reconnect();
 // @ts-expect-error Backend reconnect state is absent from the core snapshot.
-void borrowed.getSnapshot().reconnect;
+void borrowed.getSnapshot().retainedRun;
 void result;

@@ -2,7 +2,7 @@
 import { Injectable, computed, signal, type Signal } from '@angular/core';
 import type { CitationDefinition } from '@cacheplane/partial-markdown';
 import type { Message } from '../agent/message';
-import type { Citation } from '../agent/citation';
+import type { Citation } from '../agent';
 import type { ToolActivitySource } from '../primitives/chat-tool-activity/tool-outcome';
 
 /** A citation resolved from message metadata or a markdown definition, with its source identified. */

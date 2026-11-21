@@ -12,7 +12,8 @@
     "types": ["node"],
     "paths": {
       "@threadplane/core": ["libs/core/src/index.ts"],
-      "@threadplane/core/tools": ["libs/core/src/tools/index.ts"]
+      "@threadplane/core/tools": ["libs/core/src/tools/index.ts"],
+      "@threadplane/core/testing": ["libs/core/src/testing/index.ts"]
     }
   },
   "include": ["src/runtime/**/*.ts"],

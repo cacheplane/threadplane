@@ -28,7 +28,16 @@ const authored = (path) =>
   /^(?:examples\/chat\/native\/(?:shared|(?:react|angular)\/(?:src|public)))(?:\/|$)/.test(
     path
   );
+// A backend's install-bridge stubs are tracked sources its runtime imports, so
+// they are inputs. Everything else under `.install-collector` is generated,
+// machine-specific collector output and stays out. The folder itself is
+// walked so the stubs can be reached; each other file in it is excluded.
+const installCollector = /^libs\/[^/]+\/\.install-collector$/;
+const installStub =
+  /^libs\/[^/]+\/\.install-collector\/development-install\.(?:mjs|d\.ts|d\.mts)$/;
 export const excludedSourcePath = (path) =>
+  !installCollector.test(path) &&
+  !installStub.test(path) &&
   path
     .split('/')
     .some(

@@ -103,7 +103,7 @@ function App() {
             disabled={
               snapshot.status === 'running' ||
               !snapshot.interrupts.length ||
-              !!snapshot.reconnect
+              !!snapshot.retainedRun
             }
             onClick={() => void resume()}
           >
@@ -111,7 +111,7 @@ function App() {
           </button>
           <button onClick={() => void submit('Drop')}>Drop</button>
           <button
-            disabled={!snapshot.reconnect}
+            disabled={!snapshot.retainedRun}
             onClick={() => void reconnect()}
           >
             Reconnect
@@ -165,7 +165,7 @@ function App() {
             <div className="field">
               <h3>Reconnect run</h3>
               <output aria-label="Reconnect run" data-testid="reconnect-run">
-                {snapshot.reconnect?.runId ?? ''}
+                {snapshot.retainedRun?.runId ?? ''}
               </output>
             </div>
             <div className="field">

@@ -11,7 +11,7 @@ import { ChatCitationsComponent } from '../../primitives/chat-citations/chat-cit
 import { CitationsResolverService } from '../../markdown/citations-resolver.service';
 import { ChatStreamingMdComponent, type StreamingMarkdownDocument } from '../../streaming/streaming-markdown.component';
 import type { ContentClassifier } from '../../streaming/content-classifier';
-import { mockAgent } from '../../testing/mock-agent';
+import { rawMessagesAgent } from '../../../testing/raw-messages-agent';
 import { completeDelivery, staticDelivery, streamingDelivery, type Message } from '../../agent';
 
 const HISTORY_COUNT = 20;
@@ -25,7 +25,7 @@ async function mount() {
     })),
     { id: 'tail', role: 'assistant', content: 'Tail **answer**', delivery: streamingDelivery('tail-generation') },
   ];
-  const agent = mockAgent({ messages: initial, isLoading: true });
+  const agent = rawMessagesAgent({ messages: initial, status: 'running' });
   const fixture = TestBed.createComponent(ChatComponent);
   fixture.componentRef.setInput('agent', agent);
   fixture.detectChanges();

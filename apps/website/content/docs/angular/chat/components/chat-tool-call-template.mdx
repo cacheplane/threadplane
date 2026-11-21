@@ -20,8 +20,10 @@ Each registered template receives:
 
 | Variable | Type | Description |
 |---|---|---|
-| `let-call` (`$implicit`) | `ToolCall` | The full tool call: `{id, name, args, status, result?, error?}` |
+| `let-call` (`$implicit`) | `ToolCall` | The full tool call: `id`, `name`, `args` and `status`, with `result` on a `complete` call and `error` (a string) on an `error` call |
 | `let-status="status"` | `ToolCallStatus` | `'pending' \| 'running' \| 'complete' \| 'error'` |
+
+`args` and `result` are plain data whose shape belongs to the tool, and `result` exists only on a `complete` call. The examples below read the result through `resultOf`, a component field set to `toolCallResult` from `@threadplane/chat`, which returns `undefined` for a call that has none. Narrow `args` in the component class the same way when your templates are type-checked strictly.
 
 ## Examples
 
@@ -32,7 +34,7 @@ Each registered template receives:
   <ng-template chatToolCallTemplate="search_web" let-call let-status="status">
     <my-search-result-card
       [query]="call.args.query"
-      [results]="call.result"
+      [results]="resultOf(call)"
       [status]="status"
     />
   </ng-template>
@@ -44,7 +46,7 @@ Each registered template receives:
 ```html
 <chat-tool-calls [agent]="agent" [message]="msg">
   <ng-template chatToolCallTemplate="search_web" let-call let-status="status">
-    <my-search-result-card [query]="call.args.query" [results]="call.result" />
+    <my-search-result-card [query]="call.args.query" [results]="resultOf(call)" />
   </ng-template>
 
   <!-- Anything not search_web falls through to here -->
@@ -63,7 +65,7 @@ Each registered template receives:
   <ng-template chatToolCallTemplate="generate_image" let-call let-status="status">
     <my-image-card
       [prompt]="call.args.prompt"
-      [imageUrl]="call.result"
+      [imageUrl]="resultOf(call)"
       [status]="status"
     />
   </ng-template>

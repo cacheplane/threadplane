@@ -11,7 +11,7 @@ import { staticDelivery } from '../../agent';
   template: '<chat-typing-indicator [agent]="agent" />',
 })
 class HostComponent {
-  readonly agent = mockAgent({ isLoading: false });
+  readonly agent = mockAgent({ status: 'idle' });
 }
 
 describe('ChatTypingIndicatorComponent host visibility', () => {
@@ -31,7 +31,7 @@ describe('ChatTypingIndicatorComponent host visibility', () => {
   it('restores the same host for typing and hides it when reply text arrives', () => {
     const fixture = TestBed.createComponent(HostComponent);
     const agent = fixture.componentInstance.agent;
-    agent.isLoading.set(true);
+    agent.status.set('running');
     fixture.detectChanges();
     const host: HTMLElement = fixture.nativeElement.querySelector('chat-typing-indicator');
 
@@ -46,14 +46,14 @@ describe('ChatTypingIndicatorComponent host visibility', () => {
     expect(host.querySelector('[role="status"]')).toBeNull();
     expect(getComputedStyle(host).display).toBe('none');
 
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fixture.detectChanges();
     expect(getComputedStyle(host).display).toBe('none');
 
     agent.messages.set([
       { id: 'follow-up', role: 'user', content: 'Again', delivery: staticDelivery('follow-up') },
     ]);
-    agent.isLoading.set(true);
+    agent.status.set('running');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('chat-typing-indicator')).toBe(host);
     expect(getComputedStyle(host).display).not.toBe('none');
@@ -63,19 +63,19 @@ describe('ChatTypingIndicatorComponent host visibility', () => {
 });
 
 describe('isTyping()', () => {
-  it('returns false when agent.isLoading is false', () => {
-    const agent = mockAgent({ isLoading: false });
+  it('returns false when the agent is not running', () => {
+    const agent = mockAgent({ status: 'idle' });
     expect(isTyping(agent)).toBe(false);
   });
 
-  it('returns true when agent.isLoading is true and messages is empty', () => {
-    const agent = mockAgent({ isLoading: true, messages: [] });
+  it('returns true when the agent is running and messages is empty', () => {
+    const agent = mockAgent({ status: 'running', messages: [] });
     expect(isTyping(agent)).toBe(true);
   });
 
   it('returns true when loading and last message is user', () => {
     const agent = mockAgent({
-      isLoading: true,
+      status: 'running',
       messages: [{ id: '1', role: 'user', content: 'hi' }],
     });
     expect(isTyping(agent)).toBe(true);
@@ -83,7 +83,7 @@ describe('isTyping()', () => {
 
   it('returns false when loading and last message is non-empty assistant', () => {
     const agent = mockAgent({
-      isLoading: true,
+      status: 'running',
       messages: [
         { id: '1', role: 'user', content: 'hi' },
         { id: '2', role: 'assistant', content: 'hello there' },
@@ -94,7 +94,7 @@ describe('isTyping()', () => {
 
   it('returns true when loading and last message is empty-content assistant', () => {
     const agent = mockAgent({
-      isLoading: true,
+      status: 'running',
       messages: [
         { id: '1', role: 'user', content: 'hi' },
         { id: '2', role: 'assistant', content: '' },
@@ -105,19 +105,39 @@ describe('isTyping()', () => {
 
   it('returns true when loading and last assistant message has empty block array', () => {
     const agent = mockAgent({
-      isLoading: true,
+      status: 'running',
       messages: [
         { id: '1', role: 'user', content: 'hi' },
-        { id: '2', role: 'assistant', content: [] },
+        { id: '2', role: 'assistant', content: '', blocks: [] },
       ],
     });
     expect(isTyping(agent)).toBe(true);
   });
+
+  it('returns false when loading and last assistant message holds blocks but no text yet', () => {
+    const agent = mockAgent({
+      status: 'running',
+      messages: [
+        { id: '1', role: 'user', content: 'hi' },
+        { id: '2', role: 'assistant', content: '', blocks: [{ type: 'tool_use', id: 't1', name: 'search', args: {} }] },
+      ],
+    });
+    expect(isTyping(agent)).toBe(false);
+  });
+
+  it('returns false when the agent failed, and for a trailing tool message', () => {
+    expect(isTyping(mockAgent({ status: 'error' }))).toBe(false);
+    const agent = mockAgent({
+      status: 'running',
+      messages: [{ id: '1', role: 'tool', content: 'ok', toolCallId: 't1' }],
+    });
+    expect(isTyping(agent)).toBe(false);
+  });
 });
 
 describe('ChatTypingIndicatorComponent — visible computed', () => {
-  it('visible is false when agent.isLoading is false', () => {
-    const agent = mockAgent({ isLoading: false });
+  it('visible is false when the agent is not running', () => {
+    const agent = mockAgent({ status: 'idle' });
     const agent$ = signal(agent);
 
     const visible = computed(() => isTyping(agent$()));
@@ -125,8 +145,8 @@ describe('ChatTypingIndicatorComponent — visible computed', () => {
     expect(visible()).toBe(false);
   });
 
-  it('visible is true when agent.isLoading is true and no messages', () => {
-    const agent = mockAgent({ isLoading: true, messages: [] });
+  it('visible is true when the agent is running and no messages', () => {
+    const agent = mockAgent({ status: 'running', messages: [] });
     const agent$ = signal(agent);
 
     const visible = computed(() => isTyping(agent$()));
@@ -135,9 +155,9 @@ describe('ChatTypingIndicatorComponent — visible computed', () => {
   });
 
   it('visible updates reactively when agent changes', () => {
-    const idleAgent = mockAgent({ isLoading: false });
+    const idleAgent = mockAgent({ status: 'idle' });
     const loadingAgent = mockAgent({
-      isLoading: true,
+      status: 'running',
       messages: [{ id: '1', role: 'user', content: 'hi' }],
     });
     const agent$ = signal(idleAgent);

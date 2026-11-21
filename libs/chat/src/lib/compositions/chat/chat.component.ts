@@ -3,10 +3,13 @@ import {
   Component, ChangeDetectionStrategy, input, model, output, computed, contentChild, contentChildren, effect, signal, untracked, viewChild,
   ElementRef, DestroyRef, inject, Injector, runInInjectionContext, DOCUMENT, ChangeDetectorRef, type EffectRef,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { onAgentStateUpdate } from '@threadplane/core';
 import { DEVELOPMENT_COLLECTION_POLICY, isDevelopmentRuntimeEnabled } from '@threadplane/telemetry/browser';
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common';
-import type { Agent, AgentPlanStep, Message, MessageDelivery, Subagent } from '../../agent';
+import {
+  isAgentInputBlocked, isAgentRunning,
+  type Agent, type AgentPlanStep, type AgentSubagent, type Message, type MessageDelivery,
+} from '../../agent';
 import { ChatReasoningComponent } from '../../primitives/chat-reasoning/chat-reasoning.component';
 import type { ViewRegistry, RenderEvent } from '@threadplane/render';
 import type { A2uiActionMessage } from '@threadplane/a2ui';
@@ -412,7 +415,7 @@ export function isPinned(
                       [registry]="renderRegistry()"
                       [store]="store()"
                       [handlers]="currentHandlers"
-                      [loading]="currentAgent.isLoading()"
+                      [loading]="running()"
                       (events)="onSpecEvent($event, i)"
                     />
                   }
@@ -438,7 +441,8 @@ export function isPinned(
                     <chat-message-actions
                       chatMessageControls
                       [content]="content"
-                      [disabled]="currentAgent.isLoading() || !!currentAgent.isInputBlocked?.()"
+                      [disabled]="running() || inputBlocked()"
+                      [canRegenerate]="!!currentAgent.regenerate"
                       (regenerate)="onRegenerate(i)"
                       (rate)="onRate(message, $event)"
                       (contentCopied)="onCopy(message, $event)"
@@ -516,7 +520,7 @@ export function isPinned(
           <div chatFooter class="chat-footer-wrap">
             @if (!pinned()) {
               <chat-scroll-bubble
-                [mode]="agent().isLoading() ? 'streaming' : 'idle'"
+                [mode]="running() ? 'streaming' : 'idle'"
                 (clicked)="onScrollBubbleClick()"
               />
             }
@@ -606,10 +610,13 @@ export class ChatComponent {
 
   readonly showWelcome = computed(() => {
     if (this.welcomeDisabled()) return false;
-    const a = this.agent() as unknown as { isThreadLoading?: () => boolean };
-    if (a.isThreadLoading?.()) return false;
+    if (this.agent().isThreadLoading()) return false;
     return this.agent().messages().length === 0;
   });
+  /** True while the agent is running a request. */
+  protected readonly running = computed(() => isAgentRunning(this.agent()));
+  /** True while the agent refuses ordinary submissions. */
+  protected readonly inputBlocked = computed(() => isAgentInputBlocked(this.agent()));
   readonly threadSelected = output<string>();
   readonly renderEvent = output<ChatRenderEvent>();
   readonly clientToolContinuationLimit = output<ClientToolContinuationLimitEvent>();
@@ -689,12 +696,12 @@ export class ChatComponent {
   protected readonly trailingPlan = computed((): { readonly messageId: string; readonly steps: readonly AgentPlanStep[] } | undefined => {
     const agent = this.agent();
     // A client tool is pending only once the run has ended and before the browser settles it.
-    const waiting = agent.clientTools?.pending() ?? [];
+    const waiting = agent.pendingClientTools() ?? [];
     if (waiting.length === 0) return undefined;
     const views = new Set(this.viewToolNames());
     const waitingViews = new Set(waiting.filter((call) => views.has(call.name)).map((call) => call.id));
     if (waitingViews.size === 0) return undefined;
-    const steps = agent.plan?.()?.filter((step) => step.status === 'pending') ?? [];
+    const steps = agent.plan()?.filter((step) => step.status === 'pending') ?? [];
     if (steps.length === 0) return undefined;
     const messages = agent.messages();
     let latest: Message | undefined;
@@ -743,7 +750,7 @@ export class ChatComponent {
   readonly toolRetry = output<ToolActivityInfo>();
   protected readonly toolRetryOffered = computed(() => {
     const agent = this.agent();
-    return !agent.isLoading() && offersToolRetry(agent.toolCalls(), this.toolOutcome());
+    return !isAgentRunning(agent) && offersToolRetry(agent.toolCalls(), this.toolOutcome());
   });
 
   /**
@@ -773,7 +780,7 @@ export class ChatComponent {
   /**
    * Optional interrupt renderer projected as
    * `<ng-template chatInterruptTemplate>`. Rendered at the end of the
-   * transcript while `agent.interrupt()` is defined.
+   * transcript while `agent.interrupts()` lists a pending interrupt.
    */
   readonly interruptTemplate = contentChild(ChatInterruptTemplateDirective);
 
@@ -781,7 +788,7 @@ export class ChatComponent {
    * The current run's messages: every message after the last user message,
    * or every message when there is none.
    */
-  private readonly currentRunMessages = computed<Message[]>(
+  private readonly currentRunMessages = computed<readonly Message[]>(
     () => {
       const msgs = this.agent().messages();
       let start = msgs.length;
@@ -800,7 +807,7 @@ export class ChatComponent {
     () => {
       if (!this.runActivityTemplate()) return undefined;
       const agent = this.agent();
-      if (!agent.isLoading()) return undefined;
+      if (!isAgentRunning(agent)) return undefined;
       const messages = this.currentRunMessages();
       if (messages.some((m) => m.role === 'assistant')) return undefined;
       return { $implicit: agent, running: true, hasAssistantMessage: false, messages };
@@ -820,12 +827,14 @@ export class ChatComponent {
     () => {
       if (!this.interruptTemplate()) return undefined;
       const agent = this.agent();
-      const interrupt = agent.interrupt?.();
-      return interrupt ? { $implicit: agent, interrupt } : undefined;
+      const interrupts = agent.interrupts() ?? [];
+      const interrupt = interrupts[0];
+      return interrupt ? { $implicit: agent, interrupt, interrupts } : undefined;
     },
     {
       equal: (a, b) =>
-        a === b || (!!a && !!b && a.$implicit === b.$implicit && a.interrupt === b.interrupt),
+        a === b ||
+        (!!a && !!b && a.$implicit === b.$implicit && a.interrupt === b.interrupt && sameItems(a.interrupts, b.interrupts)),
     },
   );
 
@@ -867,17 +876,19 @@ export class ChatComponent {
   /**
    * Builds the activity template context for one assistant message. Tool
    * calls are scoped to the message (same resolution as `<chat-tool-calls>`,
-   * minus excluded dispatcher/view tool names); subagents are anchored by
-   * `Subagent.toolCallId` to the message's calls. The previous context is
+   * minus excluded dispatcher/view tool names); child agents are anchored by
+   * `AgentSubagent.toolCallId` to the message's calls. The previous context is
    * reused when nothing changed, so the embedded view keeps stable inputs.
    */
   protected activityContextFor(message: Message, index: number): ChatActivityTemplateContext {
     const agent = this.agent();
     const excluded = new Set(this.excludedToolNames());
     const toolCalls = resolveMessageToolCalls(agent, message).filter((tc) => !excluded.has(tc.name));
-    const byCallId = new Map<string, Subagent>();
-    agent.subagents?.().forEach((sa) => byCallId.set(sa.toolCallId, sa));
-    const subagents: Subagent[] = [];
+    const byCallId = new Map<string, AgentSubagent>();
+    for (const sa of agent.subagents() ?? []) {
+      if (sa.toolCallId !== undefined) byCallId.set(sa.toolCallId, sa);
+    }
+    const subagents: AgentSubagent[] = [];
     for (const tc of toolCalls) {
       const sa = byCallId.get(tc.id);
       if (sa) subagents.push(sa);
@@ -919,7 +930,7 @@ export class ChatComponent {
   }
 
   /** The nearest preceding assistant message (skipping hidden tool messages), or undefined. */
-  private prevAssistant(msgs: Message[], index: number): Message | undefined {
+  private prevAssistant(msgs: readonly Message[], index: number): Message | undefined {
     for (let j = index - 1; j >= 0; j--) {
       if (msgs[j].role === 'tool') continue;
       return msgs[j].role === 'assistant' ? msgs[j] : undefined;
@@ -1038,7 +1049,7 @@ export class ChatComponent {
   /** True while the latest turn ended because the person (or adapter) stopped it. */
   protected readonly showStoppedNotice = computed(() => {
     const agent = this.agent();
-    if (agent.isLoading()) return false;
+    if (isAgentRunning(agent)) return false;
     const msgs = agent.messages();
     const last = msgs[msgs.length - 1];
     const delivery = last?.role === 'assistant' ? last.delivery : undefined;
@@ -1096,7 +1107,7 @@ export class ChatComponent {
     effect(() => {
       const pending = this.awaitingApproval();
       const agent = this.agent();
-      const enabled = !agent.isLoading() && !agent.isInputBlocked?.();
+      const enabled = !isAgentRunning(agent) && !isAgentInputBlocked(agent);
       if (hadApproval && !pending) {
         focusOwed = true;
         untracked(() => this.continueInComposer());
@@ -1128,28 +1139,27 @@ export class ChatComponent {
       try { agent = this.agent(); } catch { return; }
       this.eventsSubscribed = true;
       this.lifecycle._internal.componentReady.set(true);
-      agent.events$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
-        if (event.type !== 'state_update') return;
-        const store = this.resolvedStore();
+      // Render-store updates arrive as `state_update` custom events. The
+      // agent's listener outlives a thread switch.
+      const release = onAgentStateUpdate(agent, (update) => {
+        const store = untracked(() => this.resolvedStore());
         if (!store) return;
-        store.update(event.data);
+        store.update({ ...update });
       });
+      this.destroyRef.onDestroy(release);
     });
 
-    // Sync the agent STATE signal into the render store. AG-UI delivers
-    // backend data as agent shared state (STATE_SNAPSHOT/STATE_DELTA); other
-    // adapters expose graph state via the same `state()` signal. The render
+    // Sync the agent STATE signal into the render store. Every backend
+    // publishes its application state through the same `state()` signal. The render
     // store keys are JSON pointers, so map each top-level state key `k` to
     // `/k`. Exclude `messages` (carried in the snapshot but irrelevant to the
-    // render store and large). Fires for any adapter whose `state()` carries
+    // render store and large). Fires for any agent whose `state()` carries
     // non-message keys; no-op when no render store is active. Coexists with
-    // the events$ `state_update` path above (both merge into the same store).
+    // the `state_update` event path above (both merge into the same store).
     effect(() => {
       let agentRef: ReturnType<typeof this.agent>;
       try { agentRef = this.agent(); } catch { return; }
-      const stateFn = (agentRef as unknown as { state?: () => unknown }).state;
-      if (typeof stateFn !== 'function') return;
-      const state = stateFn.call(agentRef);
+      const state: unknown = agentRef.state();
       const store = this.resolvedStore();
       if (!store || state == null || typeof state !== 'object' || Array.isArray(state)) return;
       const updates: Record<string, unknown> = {};
@@ -1163,13 +1173,11 @@ export class ChatComponent {
     // Spec 4: flip CHAT_LIFECYCLE.firstMessageSent when the agent's stream
     // starts, regardless of submit path (input-bound, programmatic, suggestion-
     // click). Sticky — guarded so we never re-set a flag that's already true.
-    // `lifecycle` is not on the base Agent contract; adapters like @threadplane/langgraph
-    // attach it. Duck-type the read so non-lifecycle agents are a no-op.
+    // The mark stays null on a session that publishes no lifecycle.
     effect(() => {
       let agentRef: ReturnType<typeof this.agent>;
       try { agentRef = this.agent(); } catch { return; }
-      const lc = (agentRef as unknown as { lifecycle?: { streamStartedAt?: () => number | null } }).lifecycle;
-      const streamStartedAt = lc?.streamStartedAt?.();
+      const streamStartedAt = agentRef.lifecycle.streamStartedAt();
       if (streamStartedAt != null && !this.lifecycle._internal.firstMessageSent()) {
         this.lifecycle._internal.firstMessageSent.set(true);
       }
@@ -1194,7 +1202,7 @@ export class ChatComponent {
     let runActive = false;
     effect(() => {
       let loading: boolean;
-      try { loading = this.agent().isLoading(); } catch { return; }
+      try { loading = isAgentRunning(this.agent()); } catch { return; }
       if (loading) {
         const startsRun = !runActive;
         runActive = true;
@@ -1217,7 +1225,7 @@ export class ChatComponent {
       untracked(() => {
         // Errors announce through the alert; a pending interrupt through the
         // host's interrupt template.
-        if (this.agent().error() || this.agent().interrupt?.()) return;
+        if (this.agent().error() || this.agent().interrupts()?.length) return;
         this.runAnnouncement.set(this.showStoppedNotice() ? 'Response stopped.' : 'Response complete.');
       });
     });
@@ -1309,7 +1317,7 @@ export class ChatComponent {
     // (reload, copy) render on idle and can land below the fold without this.
     effect(() => {
       let loading: boolean;
-      try { loading = this.agent().isLoading(); } catch { return; }
+      try { loading = isAgentRunning(this.agent()); } catch { return; }
       if (loading) {
         this.wasLoading = true;
         return;
@@ -1340,21 +1348,17 @@ export class ChatComponent {
       onCleanup(() => observer.disconnect());
     });
 
-    // Subscribe to a2ui-partial custom events from the LangGraph backend.
-    // Each event delivers a cumulative args string keyed by tool_call_id;
-    // bridge.push() re-parses and dispatches new envelopes incrementally.
-    // The runtime-neutral Agent contract does not require a customEvents
-    // signal, so we feature-detect: adapters that expose it (e.g.
-    // LangGraphAgent's customEvents signal) light up live streaming;
-    // others continue to use the wrapped final-message classifier path.
+    // Follow a2ui-partial custom events. Each event delivers a cumulative
+    // args string keyed by tool_call_id; bridge.push() re-parses and
+    // dispatches new envelopes incrementally. `customEvents` holds the current
+    // run's events and stays empty on a session that emits none, which then
+    // uses the wrapped final-message classifier path.
     effect(() => {
       let agent: ReturnType<typeof this.agent>;
       try { agent = this.agent(); } catch { return; }
-      const customSig = (agent as unknown as {
-        customEvents?: () => readonly { name: string; data: unknown }[];
-      }).customEvents;
-      if (typeof customSig !== 'function') return;
-      const events = customSig();
+      const events = agent.customEvents();
+      // The list empties when the next run starts and on a thread switch.
+      if (events.length < this.partialEventsLastIndex) this.partialEventsLastIndex = 0;
       for (let i = this.partialEventsLastIndex; i < events.length; i++) {
         const e = events[i];
         if (e.name !== 'a2ui-partial') continue;
@@ -1490,7 +1494,6 @@ export class ChatComponent {
   }
 
   protected onUserStopped(): void {
-    if (typeof (this.agent() as { stop?: unknown }).stop !== 'function') return;
     const users = this.agent().messages().filter((m) => m.role === 'user');
     const prompt = users[users.length - 1];
     this.stoppedTurn.set(prompt ? { userCount: users.length, prompt: messageContent(prompt) } : null);
@@ -1539,8 +1542,9 @@ export class ChatComponent {
    */
   submitMessage(text: string): void {
     const trimmed = text.trim();
-    if (!trimmed || this.agent().isInputBlocked?.()) return;
-    void this.agent().submit({ message: trimmed });
+    if (!trimmed || isAgentInputBlocked(this.agent())) return;
+    // A refused or failed submission is published as the agent's error.
+    this.agent().submit({ message: trimmed }).catch(() => undefined);
     this.recordSubmit();
   }
 
@@ -1842,19 +1846,27 @@ export class ChatComponent {
   }
 
   onA2uiAction(message: A2uiActionMessage): void {
-    if (this.agent().isInputBlocked?.()) return;
-    void this.agent().submit({ message: JSON.stringify(message) });
+    if (isAgentInputBlocked(this.agent())) return;
+    this.agent().submit({ message: JSON.stringify(message) }).catch(() => undefined);
   }
 
   onA2uiEvent(event: RenderEvent, messageIndex: number, surfaceId: string): void {
     this.renderEvent.emit({ messageIndex, surfaceId, event });
   }
 
-  /** Regenerate the assistant response at the given message index. */
+  /**
+   * Regenerate the assistant response at the given message index, through
+   * `agent.regenerate(messageId)`. The control is offered only while the agent
+   * has that command.
+   */
   onRegenerate(messageIndex: number): void {
+    const agent = this.agent();
+    const message = agent.messages()[messageIndex];
+    if (!message || !agent.regenerate) return;
     this.upwardWheel = undefined;
     this.pinned.set(true);
-    void this.agent().regenerate(messageIndex);
+    // A rejected regeneration (during a run, say) is not an unhandled failure.
+    agent.regenerate(message.id).catch(() => undefined);
     this.regenerate.emit();
   }
 

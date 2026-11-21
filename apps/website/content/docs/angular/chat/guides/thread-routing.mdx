@@ -4,7 +4,7 @@ description: How the threads example lists, switches, creates, and removes conve
 
 # Thread Routing
 
-A chat that holds more than one conversation needs two things: a store that knows which threads exist, and a single signal that says which one is active. `@threadplane/langgraph` supplies the store, `provideAgent({ threadId })` watches the signal, and `injectThreadRouting()` binds that signal to the Angular Router when you want conversations to survive a reload and travel in a link. The running example wires the store and the signal, and this guide walks its three files before turning to the URL layer.
+A chat that holds more than one conversation needs two things: a store that knows which threads exist, and a single signal that says which one is active. `provideThreadDirectory()` from `@threadplane/angular` supplies the store over `createLangGraphThreadDirectory()` from `@threadplane/langgraph`, `provideAgent({ threadId })` watches the signal, and `injectThreadRouting()` binds that signal to the Angular Router when you want conversations to survive a reload and travel in a link. The running example wires the store and the signal, and this guide walks its three files before turning to the URL layer.
 
 ## Make a conversation addressable
 
@@ -20,11 +20,11 @@ Press "New chat" at the top of the sidebar to open a second conversation, then m
 
 ## How it is built
 
-Three files carry the feature: a graph that writes a readable title into thread metadata, an application config that registers the thread store, and a component that owns the active-thread signal and the sidebar. Open the Code tab to read them in place.
+Three files carry the feature: a graph that writes a readable title into thread metadata, an application config that provides the thread directory, and a component that owns the active-thread signal and the sidebar. Open the Code tab to read them in place.
 
 ### Naming a thread from its first turn
 
-A thread id is a UUID, which makes a poor sidebar label. The `generate_title` node asks a small model to summarize the first human message and writes the result to the thread's `metadata.title`, which is exactly where the thread store looks for a label. The write itself sits inside a `try`/`except` that swallows failures, so a title write that fails never blocks the run.
+A thread id is a UUID, which makes a poor sidebar label. The `generate_title` node asks a small model to summarize the first human message and writes the result to the thread's `metadata.title`, which is exactly where the thread directory looks for a label. The write itself sits inside a `try`/`except` that swallows failures, so a title write that fails never blocks the run.
 
 <ExampleCode file="graph.py" region="title-write" title="graph.py — the title write" />
 
@@ -40,9 +40,9 @@ The title node runs after the user-visible turn, never before it, so nothing abo
 This graph calls `compile()` with no checkpointer, because the LangGraph API server provides persistence itself. `langgraph dev` refuses to load a graph that compiles its own saver, and a deployment ignores one. See [LangGraph persistence](/docs/angular/langgraph/guides/persistence) for the full story and for the cases where you do supply a saver.
 </Callout>
 
-### Registering the thread store
+### Providing the thread directory
 
-`LangGraphThreadsAdapter` is a root-provided service that wraps `client.threads.*` from `@langchain/langgraph-sdk`. It reads its base URL from `LANGGRAPH_THREADS_CONFIG`, and that token is the reason this application config is longer than most. The second root token, `LANGGRAPH_CLIENT_OPTIONS`, carries the client options — auth headers, retries — that both the adapter and the component-scoped `provideAgent` read.
+`provideThreadDirectory()` from `@threadplane/angular` gives the application one view of a `ThreadDirectory`: its snapshot as signals and its commands. The config supplies `createDirectory`, and here that calls `createLangGraphThreadDirectory()` from `@threadplane/langgraph`, which wraps `client.threads.*` from `@langchain/langgraph-sdk`. The config is a factory because the base URL comes from an injected connection. The second root provider, `AGENT_CLIENT_OPTIONS`, carries the client options — auth headers, retries — that the directory factory receives as `context.clientOptions`.
 
 <ExampleCode file="app.config.ts" />
 
@@ -50,7 +50,7 @@ Nothing else is registered at the root, because the agent itself is provided at 
 
 ### The active-thread signal
 
-One writable signal is the source of truth for the active thread. It lives at module scope so the component's `provideAgent()` factory, which runs at provider registration time, can close over it.
+One writable signal is the source of truth for the active thread. It lives at module scope so the component's `provideAgent()` config factory can close over it.
 
 <ExampleCode file="threads.component.ts" region="active-thread-signal" title="threads.component.ts — the active-thread signal" />
 
@@ -62,7 +62,7 @@ Module scope is safe here because the demo bootstraps exactly one instance of th
 
 <ExampleCode file="threads.component.ts" region="agent-provider" title="threads.component.ts — the agent provider" />
 
-The adapter watches `threadId`, so assigning to the signal switches conversations, and `onThreadId` fires when the backend allocates a thread on first submit, which keeps the signal in step without a round-trip through the sidebar.
+`createSession` is called once for each thread the agent opens: `context.threadId` is the thread to open and `context.onThreadId` reports a thread the session creates. The agent watches the `threadId` signal, so assigning a different id to it switches conversations, and the config's `onThreadId` fires when the backend allocates a thread on first submit, which keeps the signal in step without a round-trip through the sidebar.
 
 <Callout type="warning" title="Thread ids come from the server">
 Use a confirmed backend thread: one reported through `onThreadId`, or one created/read through the Threads API. A caller may request a UUID when creating a thread, but must confirm the server accepted it before treating it as an existing conversation.
@@ -70,7 +70,7 @@ Use a confirmed backend thread: one reported through `onThreadId`, or one create
 
 ### The sidebar and the thread list
 
-The `<chat>` composition owns the transcript, the input, and the loading and error states, so the template adds the sidebar beside it. `<chat-thread-sidebar>` is connected: it takes the adapter's `directory` and draws New chat, Projects, Recent, and Archived with the row commands the directory supports. It refreshes the directory when it mounts, after each row command, and, given `[agent]`, each time a run ends.
+The `<chat>` composition owns the transcript, the input, and the loading and error states, so the template adds the sidebar beside it. `<chat-thread-sidebar>` is connected: it takes the injected view's `directory` and draws New chat, Projects, Recent, and Archived with the row commands the directory supports. It refreshes the directory when it mounts, after each row command, and, given `[agent]`, each time a run ends.
 
 <ExampleCode file="threads.component.ts" region="chat-and-sidebar" title="threads.component.ts — the template" />
 
@@ -85,7 +85,7 @@ The sidebar performs each row command through the directory. The framework owns 
 Clearing the signal and calling `switchThread(null)` returns the surface to a new chat.
 
 <Callout type="info" title="Which menu entries appear">
-The sidebar offers a command only when the directory can perform it, and the `features` input turns built-in commands off. The adapter's directory supports them all. It is owned by the application: the sidebar unsubscribes when it is destroyed but never disposes it.
+The sidebar offers a command only when the directory can perform it, and the `features` input turns built-in commands off. The LangGraph directory supports them all. The injected view owns it and disposes it with its injector: the sidebar unsubscribes when it is destroyed but never disposes it.
 </Callout>
 
 ### Refreshing after a run
@@ -94,7 +94,7 @@ The store is a snapshot, not a subscription, so something has to re-fetch it. Gi
 
 <ExampleCode file="threads.component.ts" region="refresh-on-run-end" title="threads.component.ts — refresh" />
 
-Apps that draw their own list can call `refreshOnRunEnd(agent, () => threads.refresh())` inside an injection context instead.
+Apps that draw their own list can call `refreshOnRunEnd(agent, threads)` from `@threadplane/angular` inside an injection context instead.
 
 ### Switching and creating
 
@@ -102,16 +102,29 @@ Two handlers close the loop. Selecting a row tells the agent to load that thread
 
 <ExampleCode file="threads.component.ts" region="switch-and-create" title="threads.component.ts — switching and creating" />
 
-Each handler calls both `agent.switchThread(id)` and `activeThreadId.set(id)` because the two calls serve different consumers: the adapter watches the `activeThreadId` signal to drive the sidebar highlight, while `switchThread(id)` resets the agent's own derived state and re-fetches that thread's server-side history.
+Each handler calls both `agent.switchThread(id)` and `activeThreadId.set(id)`. `switchThread(id)` replaces the session underneath the agent and reads that thread's saved history, and it reloads the thread when the id is already current. Setting the signal keeps the sidebar highlight, and anything else that reads it, in step; the agent sees an id it is already on and does not switch again.
 
 ## Connected sidebar
 
-`<chat-thread-sidebar>` from `@threadplane/chat` draws New chat, Projects, Recent and Archived for any `ThreadDirectory`. `LangGraphThreadsAdapter` exposes one as `directory`, so the minimal setup is the adapter plus the component:
+`<chat-thread-sidebar>` from `@threadplane/chat` draws New chat, Projects, Recent and Archived for any `ThreadDirectory`. `injectThreadDirectory()` exposes the provided one as `directory`, so the minimal setup is the provider plus the component:
 
 ```typescript
-import { Component, inject, signal } from '@angular/core';
+// app.config.ts
+import { provideThreadDirectory } from '@threadplane/angular';
+import { createLangGraphThreadDirectory } from '@threadplane/langgraph';
+
+providers: [
+  provideThreadDirectory({
+    createDirectory: (context) =>
+      createLangGraphThreadDirectory({ ...context, apiUrl: 'http://localhost:2024' }),
+  }),
+];
+```
+
+```typescript
+import { Component, signal } from '@angular/core';
 import { ChatThreadSidebarComponent } from '@threadplane/chat';
-import { injectAgent, LangGraphThreadsAdapter } from '@threadplane/langgraph';
+import { injectAgent, injectThreadDirectory } from '@threadplane/angular';
 
 @Component({
   selector: 'app-threads',
@@ -120,17 +133,16 @@ import { injectAgent, LangGraphThreadsAdapter } from '@threadplane/langgraph';
     <chat-thread-sidebar
       [directory]="threads.directory"
       [agent]="agent"
-      [activeThreadId]="activeThreadId()"
+      [activeThreadId]="agent.threadId()"
       [selectedProjectId]="projectId()"
-      (threadSelected)="activeThreadId.set($event)"
+      (threadSelected)="agent.switchThread($event)"
       (projectSelected)="selectProject($event)"
-      (activeThreadRemoved)="activeThreadId.set(null)" />
+      (activeThreadRemoved)="agent.switchThread(null)" />
   `,
 })
 export class ThreadsPanelComponent {
-  protected readonly threads = inject(LangGraphThreadsAdapter);
+  protected readonly threads = injectThreadDirectory();
   protected readonly agent = injectAgent();
-  protected readonly activeThreadId = signal<string | null>(null);
   protected readonly projectId = signal<string | null>(null);
 
   protected selectProject(id: string | null): void {
@@ -139,15 +151,15 @@ export class ThreadsPanelComponent {
 }
 ```
 
-With no listener on `(newChat)`, New chat calls `directory.create()` and emits `threadSelected` with the new identifier. The directory belongs to the application: the sidebar unsubscribes when it is destroyed but never disposes it.
+`agent.threadId()` is the thread the agent is on, and `agent.switchThread(id)` moves it to another one, or to a new empty conversation with `null`. With no listener on `(newChat)`, New chat calls `directory.create()` and emits `threadSelected` with the new identifier. The injected view owns the directory: the sidebar unsubscribes when it is destroyed but never disposes it.
 
 ### Projects
 
-Project names are stored in the LangGraph Store under the namespace `['threadplane', 'projects']`. Each project is one item whose key is the project identifier and whose value is `{ name }`. A thread joins a project through its `projectId` metadata. To turn projects off, set `projects: false` in the `LANGGRAPH_THREADS_CONFIG` value; to keep them in another namespace, set `projects: { namespace: [...] }`. A server without the Store API still lists threads: the adapter's `projects` signal is `undefined`, the sidebar hides the Projects section and project commands fail without affecting the thread list.
+Project names are stored in the LangGraph Store under the namespace `['threadplane', 'projects']`. Each project is one item whose key is the project identifier and whose value is `{ name }`. A thread joins a project through its `projectId` metadata. To turn projects off, pass `projects: false` to `createLangGraphThreadDirectory()`; to keep the names somewhere else, pass your own `ProjectStore` as `projects`. A server without the Store API still lists threads: the view's `projects()` signal is `undefined`, the sidebar hides the Projects section and project commands fail without affecting the thread list.
 
 `[selectedProjectId]` is controlled by the application. When it holds a project identifier, Recent and Archived list only that project's conversations; `null` lists every conversation. `(projectSelected)` emits the project the user picked so the component above clears the selection when the selected project is picked again. The sidebar lists every conversation when the selected identifier matches no project in the directory, and it emits `(projectSelected)` with `null` after the selected project is deleted from the sidebar.
 
-The adapter also exposes `status`, `error` and `projects` signals for applications that draw their own list. `status` is `'loading'` until the first successful load, `'error'` after a failed load and `'idle'` otherwise. The adapter's `refresh()` resolves once the thread list is published and loads project names in the background; `directory.refresh()` resolves after both.
+The injected view also exposes `threads()`, `archivedThreads()`, `status()`, `error()`, `isLoading()` and `projects()` signals for applications that draw their own list. `status()` is `'loading'` until the first successful load and while recovering from an error, `'error'` after a failed load and `'idle'` otherwise. Nothing is read until `refresh()` is called, and a failed load is published through `status()` and `error()` rather than thrown. The directory reads one page of 50 conversations.
 
 ### Refreshing the sidebar after a run
 
@@ -176,17 +188,17 @@ The example stops at an in-memory signal, which is the right choice for a surfac
 | Validate stale links | When `validate` resolves `false`, redirects to the bare path with `replaceUrl: true` |
 | Bare URL is the welcome state | When the URL holds no thread segment, the signal is `null` |
 
-Given the module-scoped signal and the store the example already has, adding the URL layer is one call from an injection context:
+Given the module-scoped signal and the directory the example already has, adding the URL layer is one call from an injection context:
 
 ```typescript
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { injectThreadRouting } from '@threadplane/chat';
-import { LangGraphThreadsAdapter } from '@threadplane/langgraph';
+import { injectThreadDirectory } from '@threadplane/angular';
 import { activeThreadIdState } from './threads.component';
 
 @Component({ /* ... */ })
 export class ShellComponent {
-  private readonly threads = inject(LangGraphThreadsAdapter);
+  private readonly threads = injectThreadDirectory();
 
   constructor() {
     injectThreadRouting({
@@ -197,7 +209,9 @@ export class ShellComponent {
 }
 ```
 
-`injectThreadRouting()` calls `inject(Router)` internally, so it must run in an injection context: a constructor body, as above, or a field initializer. The `validate` callback receives every candidate id the URL produces. `getThread()` resolves `null` for both outcomes the server reports as "missing" — a 404 for a thread it does not have (a deleted id, or one pasted from another environment) and a 422 for an id that is not even a valid UUID — and rethrows genuine network errors, so a redirect happens only when the thread is really gone.
+`injectThreadRouting()` calls `inject(Router)` internally, so it must run in an injection context: a constructor body, as above, or a field initializer. The `validate` callback receives every candidate id the URL produces.
+
+`getThread()` resolves with the thread, resolves `null` when the backend says there is no such thread, and rejects when that could not be determined. The LangGraph directory reads the one thread from the server, so the answer covers every thread, listed or not: a stale link resolves `null` and redirects, and a network failure leaves the user on the thread they asked for. A directory with no single-thread read of its own can be given one through the `getThread` option of `provideThreadDirectory()`.
 
 ### Custom URL shapes
 
@@ -267,7 +281,7 @@ Reach for `injectThreadRouting()` when both of these hold:
 The principle underneath is that persistence in the interface should match what the backend can actually restore. A stateless server should not offer bookmarkable conversation links.
 
 <Callout type="info" title="AG-UI backends">
-The AG-UI protocol is event-stream only, and it defines no server-side thread-lookup endpoint, so there is nothing for `validate` to call. With `@threadplane/ag-ui`, pass no `validate` callback and handle thread switching in your own host service before the agent boots. See [AG-UI architecture](/docs/angular/ag-ui/concepts/architecture) for details.
+The AG-UI protocol is event-stream only, and it defines no server-side thread-lookup endpoint, so there is nothing for `validate` to call. With `@threadplane/ag-ui`, pass no `validate` callback. The agent still follows the `threadId` signal and asks `createSession` for a session on that thread; whether the conversation comes back depends on the `replay` or `persistence` option you give that session. See [AG-UI architecture](/docs/angular/ag-ui/concepts/architecture) for details.
 </Callout>
 
 ## What's Next
@@ -277,7 +291,7 @@ The AG-UI protocol is event-stream only, and it defines no server-side thread-lo
     Server-side thread store and checkpoint configuration.
   </Card>
   <Card title="Writing an Adapter" href="/docs/angular/chat/guides/writing-an-adapter">
-    Implement custom adapters that support thread switching.
+    Implement an `AgentSession` for a custom backend.
   </Card>
   <Card title="Lifecycle Signals" href="/docs/angular/chat/guides/lifecycle">
     Per-instance signals for debugging and observability.

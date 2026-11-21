@@ -36,7 +36,6 @@ function sourceProvenance(root) {
     execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
   const paths = [
     'libs/langgraph/src/runtime',
-    'libs/langgraph/src/lib/transport',
     'fixtures/react-parity/runtime',
     'scripts/react-parity/runtime-consumer.mjs',
     'scripts/react-parity/thread-lifetime.mjs',

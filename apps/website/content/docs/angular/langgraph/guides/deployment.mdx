@@ -4,7 +4,7 @@ description: How the deployment example packages a graph and points an Angular a
 
 # Deployment
 
-A deployed agent is two independent artifacts: a graph running on LangGraph Platform, and an Angular application that connects to it. The running example is the smallest pair that works — one graph, one provider, one component — and the rest of this guide covers the operational parts the example cannot show: authentication, CORS, error handling, continuous delivery, and monitoring.
+A deployed agent is two independent artifacts: a graph running on LangGraph Platform, and an Angular application that connects to it. The running example is the smallest pair that works (one graph, one provider, one component), and the rest of this guide covers the operational parts the example cannot show: authentication, CORS, error handling, continuous delivery, and monitoring.
 
 <Callout type="tip" title="Prerequisites">
 Make sure you have completed the Installation guide first.
@@ -22,7 +22,7 @@ Three files carry the deployable unit: the graph packaged for the platform, the 
 
 ### The graph you deploy
 
-The backend is a single node. `MessagesState` gives the LangGraph SDK a message list it already understands, the model is constructed with `streaming=True`, and the node prepends a system prompt read from the capability's prompt file before it awaits the model.
+The backend is a single node. Its state extends `MessagesState`, which gives the LangGraph SDK a message list it already understands, the model is constructed with `streaming=True`, and the node prepends a system prompt read from the capability's prompt file before it awaits the model. After the reply it also records the IDs of the completed turn in three optional state fields.
 
 <ExampleCode file="graph.py" />
 
@@ -30,28 +30,35 @@ The last line matters more than the graph does: `graph = build_deployment_runtim
 
 ### Pointing the app at a deployment
 
-`provideAgent()` registers the agent once for the whole application, which is where every deployment-specific value belongs. The example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them. It is the only provider `<chat>` requires.
+`provideAgent()`, from `@threadplane/angular`, registers the agent once for the whole application. It knows nothing about LangGraph: its `createSession` function builds the session, with `createSession()` from `@threadplane/langgraph`, and that call is where every deployment-specific value belongs. The agent calls the function at the start and again for each thread switch. The example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them.
 
 <ExampleCode file="app.config.ts" />
 
-Your own application does not need the factory. Pass the values directly:
+Your own application does not need the factory. Pass the config object with the values:
 
 ```typescript
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
+
 provideAgent({
-  apiUrl: 'https://your-deployment.langgraph.app',
-  assistantId: 'deployment-runtime',
+  createSession: (context) =>
+    createSession({
+      ...context,
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'deployment-runtime',
+    }),
 }),
 ```
 
-`clientOptions` is the third value the example forwards. It tunes the LangGraph SDK client behind the default transport, and it accepts two keys: `defaultHeaders`, sent with every request so a per-user session token can reach your deployment's custom auth handler, and `maxRetries` for how many times a failed request is retried with exponential backoff before the error reaches your UI. There is no `apiKey` option, on purpose: a deployment credential passed from Angular would ship in the bundle.
+`clientOptions` is the third value the example forwards. It tunes the LangGraph SDK client behind the default transport, and it accepts two keys: `defaultHeaders`, sent with every request so a per-user session token can reach your deployment's custom auth handler, and `maxRetries` for how many times the SDK retries a failed request with exponential backoff before the error reaches your UI. A session defaults `maxRetries` to 0, because a retried run-creation request could start a second run. There is no `apiKey` option, on purpose: a deployment credential passed from Angular would ship in the bundle. The example's `onOperationFailure` line is a hook for the host that serves the demo; your application can leave it out.
 
 <Callout type="warning" title="assistantId must match the graph key">
-The `assistantId` you pass to `provideAgent()` must exactly match a key in the `graphs` map of `langgraph.json`. A mismatch is not a build error: the application starts normally and the first message fails against the deployment.
+The `assistantId` you pass to `createSession()` must exactly match a key in the `graphs` map of `langgraph.json`. A mismatch is not a build error: the application starts normally and the first message fails against the deployment.
 </Callout>
 
 ### The component
 
-`injectAgent()` returns the agent registered above and hands it to `<chat>`. The class is one field.
+`injectAgent()` returns the agent registered above and hands it to `<chat>`. The class is one field and one handler: the "New conversation" button calls `agent.switchThread(null)`, which moves to a new, empty thread.
 
 <ExampleCode file="deployment-runtime.component.ts" />
 
@@ -146,17 +153,23 @@ export const environment = {
 </Tab>
 </Tabs>
 
-Wire the environment into `provideAgent()`:
+Wire the environment into the session factory:
 
 ```typescript
-import { provideAgent } from '@threadplane/langgraph';
+import type { ApplicationConfig } from '@angular/core';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      apiUrl: environment.langgraphUrl,
-      assistantId: 'deployment-runtime',
+      createSession: (context) =>
+        createSession({
+          ...context,
+          apiUrl: environment.langgraphUrl,
+          assistantId: 'deployment-runtime',
+        }),
     }),
   ],
 };
@@ -168,7 +181,7 @@ Angular CLI replaces `environment.ts` with `environment.prod.ts` during `ng buil
 
 ### Keep LangGraph credentials server-side
 
-Do not ship LangSmith or LangGraph API keys in an Angular bundle. The adapter gives you no field to put one in: `LangGraphClientOptions` has no `apiKey` member, and the SDK client is constructed with an explicit null key so it never picks one up from the environment either. The default `FetchStreamTransport` uses the LangGraph SDK client directly, not Angular `HttpClient`, so Angular HTTP interceptors do not attach headers to `injectAgent()` requests. To send a header the deployment should see, such as a per-user session token for LangGraph custom auth, use `clientOptions.defaultHeaders`.
+Do not ship LangSmith or LangGraph API keys in an Angular bundle. The session gives you no field to put one in: `LangGraphClientOptions` has no `apiKey` member, and the SDK client is constructed with an explicit null key so it never picks one up from the environment either. The default `FetchStreamTransport` uses the LangGraph SDK client directly, not Angular `HttpClient`, so Angular HTTP interceptors do not attach headers to the agent's requests. To send a header the deployment should see, such as a per-user session token for LangGraph custom auth, use `clientOptions.defaultHeaders`.
 
 For production, put a same-origin backend route, edge function, or API gateway in front of LangGraph. The browser calls your relative URL, and that server-side layer adds the deployment credentials. Set `apiUrl` to that relative path, as the production environment file above does.
 
@@ -185,20 +198,28 @@ If your app has its own user authentication, authenticate the same-origin proxy 
 If your deployment runs a custom `authenticate` handler instead, the browser can send the user's own short-lived token directly. That token is per user and expires, which is what makes it safe to hold in the page where a deployment key is not:
 
 ```typescript
-provideAgent({
-  apiUrl: environment.langgraphUrl,
-  assistantId: 'deployment-runtime',
-  clientOptions: {
-    defaultHeaders: { Authorization: `Bearer ${session.accessToken()}` },
-  },
+provideAgent(() => {
+  // The config factory runs once, in an injection context.
+  const auth = inject(AuthService);
+  return {
+    createSession: (context) =>
+      createSession({
+        ...context,
+        apiUrl: environment.langgraphUrl,
+        assistantId: 'deployment-runtime',
+        clientOptions: {
+          defaultHeaders: { Authorization: `Bearer ${auth.accessToken()}` },
+        },
+      }),
+  };
 }),
 ```
 
-The handler on the LangGraph side validates the token and scopes threads and runs to that user.
+`AuthService` stands for your own service. The handler on the LangGraph side validates the token and scopes threads and runs to that user. A session reads its client options once, when it is created, so a refreshed token reaches the deployment with the next session the agent creates, which is the next thread switch.
 
 ### Client option precedence
 
-Client options resolve as a whole object. A `clientOptions` object on `provideAgent()` takes precedence over the injected app-wide `LANGGRAPH_CLIENT_OPTIONS` token; absent both, the SDK uses its defaults. Fields are not merged. A per-agent `{ maxRetries: 0 }` therefore replaces the entire app-wide object, including any `defaultHeaders`. Include the headers explicitly in that override if the agent still needs them. See [`LangGraphClientOptions`](/docs/api/langgraph/LangGraphClientOptions) for the supported fields.
+`provideAgentClientOptions(options)`, from `@threadplane/angular`, sets app-wide client options once at the application root. Nothing applies them for you: each agent passes them to its session factory as `context.clientOptions`, and the factory decides what the session gets. The usual choice is `clientOptions: mine ?? context.clientOptions`, where `mine` is whatever that agent sets for itself. Fields are not merged. A per-agent `{ maxRetries: 0 }` chosen that way replaces the entire app-wide object, including any `defaultHeaders`. Include the headers explicitly in that object if the agent still needs them. `context.clientOptions` is typed as `object`, because the Angular package knows no backend, so cast it to `LangGraphClientOptions` when you forward it. See [`LangGraphClientOptions`](/docs/api/langgraph/LangGraphClientOptions) for the supported fields.
 
 ## CORS configuration
 
@@ -229,11 +250,11 @@ During local development with `langgraph dev`, CORS is permissive by default. Yo
 
 ## Error handling
 
-The demo leans on `<chat>`, which renders failures for you. A hand-built UI reads the same two signals the composition does: `status()` flips to `'error'`, and `error()` holds an `AgentError` with a classified `kind`, a `retryable` flag, an optional HTTP `status`, and the original failure on `cause`. An `interrupted` error adds `recovery` and `detail`, which name the one action the adapter can prove is safe.
+The demo leans on `<chat>`, which renders failures for you. A hand-built UI reads the same two signals the composition does: `status()` flips to `'error'`, and `error()` holds an `AgentError`, a plain object with a classified `kind`, a `message`, a `retryable` flag, and an optional HTTP `status`. `recovery` and `detail` name the one action the session can prove is safe. It is not an `Error` instance; what the failure was classified from is described separately in `errorDiagnostic()`.
 
 ```typescript
 import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   selector: 'app-chat',
@@ -262,7 +283,7 @@ export class ChatComponent {
     () => this.agent.error()?.recovery === 'check' && this.agent.checkStatus !== undefined,
   );
   protected readonly canRetry = computed(
-    () => this.agent.error()?.retryable === true,
+    () => this.agent.error()?.recovery === 'retry' && this.agent.retry !== undefined,
   );
 
   protected readonly errorMessage = computed(() => {
@@ -271,17 +292,15 @@ export class ChatComponent {
     switch (failure.kind) {
       case 'auth':
         return 'The deployment rejected the request. Check the credentials on your proxy.';
-      case 'connection':
-        return 'The deployment is unreachable. Check your connection and try again.';
       default:
-        // 'interrupted' included: the adapter already set the message that
+        // 'interrupted' included: the session already set the message that
         // matches the recovery it chose, and `detail` continues that sentence.
         return failure.message;
     }
   });
 
   protected retry(): void {
-    void this.agent.retry();
+    void this.agent.retry?.();
   }
 
   protected checkStatus(): void {
@@ -290,69 +309,73 @@ export class ChatComponent {
 }
 ```
 
-Branching on `kind` covers the cases that need different copy without reading HTTP status codes; `failure.status` is there when you want the exact code. Do not hard-code copy for `interrupted`: three different outcomes share that kind, and the adapter's own message is the one that matches the recovery it settled on.
+`retry` and `checkStatus` are optional commands: each is `undefined` on the agent when the session cannot offer it, which is why the component asks before it shows a button. Branching on `kind` covers the cases that need different copy without reading HTTP status codes; `failure.status` is there when you want the exact code. A LangGraph session reports three kinds: `auth` for a 401 or 403, `server` for a run or a request that failed, and `interrupted` for a stream that ended without a final state. Do not hard-code copy for `interrupted`: several different outcomes share that kind, and the session's own message is the one that matches the recovery it settled on.
 
 ### Retry with exponential backoff
 
-`submit()` resolves whether the run succeeded or failed — a failure lands on `error()` rather than rejecting the promise — so an automated retry reads the signal between attempts and uses `retry()`, which re-runs the last input and clears the error first.
+`submit()` resolves with the outcome whether the run succeeded or failed. A failure lands on `error()` rather than rejecting the promise, so an automated retry reads the signal between attempts and uses `retry()`, which clears the error and sends the same input again under the same user message ID.
 
 ```typescript
-import type { LangGraphAgent } from '@threadplane/langgraph';
+import type { Agent } from '@threadplane/angular';
 
 export async function submitWithBackoff(
-  agent: LangGraphAgent,
-  input: Record<string, unknown>,
+  agent: Agent,
+  text: string,
   maxAttempts = 3,
 ): Promise<void> {
-  await agent.submit(input);
+  let outcome = await agent.submit(text);
 
-  for (let attempt = 1; attempt < maxAttempts; attempt++) {
-    const failure = agent.error();
-    if (!failure) return;
-    if (!failure.retryable) throw failure;
+  for (let attempt = 1; attempt < maxAttempts && outcome === 'error'; attempt++) {
+    if (agent.error()?.recovery !== 'retry' || !agent.retry) break;
     await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** (attempt - 1)));
-    await agent.retry();
+    outcome = await agent.retry();
   }
 
   const failure = agent.error();
-  if (failure) throw failure;
+  if (failure) throw new Error(failure.message);
 }
 ```
 
-The `retryable` check is what keeps a wrong API key from being retried three times. It matters more than that in an automated loop: an `interrupted` error is never retryable, because the server may already have begun answering, so the guard is also what stops a backoff loop from sending the same tool call or booking three times.
+The `recovery` check is what keeps a rejected credential from being retried three times. It matters more than that in an automated loop. The session offers `retry` only for a run the backend itself reported as failed, and for a first message whose thread could not be created. An `interrupted` error never offers it, because the server may already have begun answering, so the guard is also what stops a backoff loop from sending the same tool call or booking three times. A failed run can still have done work before it failed, and a retry runs the graph again from the same input.
 
 ## Stream recovery
 
-A stream that closes without a terminal event is reported as an `interrupted` error rather than as a completed turn, and the partial content and any approval state stay on the signals. Because the server may already have begun answering, that error is not retryable. Where the transport can read thread history the adapter reports `recovery: 'check'` and exposes `checkStatus()`, a read-only reconciliation that re-reads the thread and settles the turn — clearing the error when the run completed server-side after the stream died, and leaving it in place when the outcome stays unknown. Where it cannot, the recovery is `none` and the error says the outcome could not be confirmed. Every route into an interruption here means the request was dispatched, so none of them offers Retry.
+A stream that closes without a final state is reported as an `interrupted` error rather than as a completed turn, and the partial content and any approval state stay on the signals. Because the server may already have begun answering, that error does not offer a retry. Where the transport can read thread history the session reports `recovery: 'check'` and exposes `checkStatus()`, a read-only reconciliation that reads the thread again and settles the turn: it clears the error when the run completed server-side after the stream died, and leaves it in place when the outcome stays unknown. Where it cannot, the recovery is `none` and the error says the outcome could not be confirmed.
 
-Use `joinStream()` to reconnect to a running agent execution after a network interruption, page refresh, or navigation event.
+`reconnect()` rejoins the run the session still holds, which `retainedRun()` names. Use `joinStream()` to join a run by ID after a page refresh or a navigation, when that session is gone. Both are LangGraph commands, so type the agent with `LangGraphSession`.
 
 ```typescript
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
+
+const agent = injectAgent<LangGraphSession>();
+
 // Store the run ID when LangGraph creates the run
-await this.agent.submit(
+await agent.submit(
   { message: input },
   {
-    streamResumable: true,
-    onRunCreated: ({ run_id }) => {
-      localStorage.setItem('activeRunId', run_id);
+    run: {
+      onRunCreated: ({ run_id }) => {
+        localStorage.setItem('activeRunId', run_id);
+      },
     },
   },
 );
 
-// After reconnecting, resume from where the stream left off
+// After a reload, on the same thread, join the run again
 const savedRunId = localStorage.getItem('activeRunId');
 if (savedRunId) {
   // The second arg is an optional last-event id. Omit it (or pass
-  // undefined) to replay the run from the start; pass a stored id to
-  // resume only the events after it.
-  await this.agent.joinStream(savedRunId);
+  // undefined) to join the run from its first event; pass a stored id to
+  // continue with only the events after it.
+  await agent.joinStream(savedRunId);
 }
 ```
 
-`joinStream(runId, lastEventId?)` replays any events the client missed, then switches to live streaming. Replaying from the start is the safe default — the run's full state is on the Platform, so the client just re-renders from scratch.
+Run settings such as `onRunCreated` go under `run` in the submit options. `joinStream(runId, lastEventId?)` joins a run of the agent's current thread, so restore the thread ID first. It adds no user message and creates no run, and it resolves with the joined run's outcome. Joining from the first event is the safe default: the session asks for each run it starts as a resumable stream, and the run's full state is on the Platform, so the client renders it again from the start.
 
 <Callout type="tip" title="Stateless client pattern">
-`injectAgent()` is a stateless client. All state lives on the LangGraph Platform. This means your Angular app can be deployed anywhere (CDN, edge, SSR) without state management concerns. Scale your frontend independently of your agent infrastructure.
+The agent keeps nothing that has to survive a reload except the thread ID your application stores. All conversation state lives on the LangGraph Platform. This means your Angular app can be deployed anywhere (CDN, edge, SSR) without state management concerns. Scale your frontend independently of your agent infrastructure.
 </Callout>
 
 ## Hosting the Angular app
@@ -443,7 +466,7 @@ Track stream health from your Angular app:
 
 ```typescript
 const status = this.agent.status(); // 'idle' | 'running' | 'error'
-const isStreaming = this.agent.isLoading();
+const isStreaming = status === 'running';
 
 // Log stream lifecycle for your APM tool
 effect(() => {
@@ -458,7 +481,7 @@ effect(() => {
 
 <Steps>
 <Step title="Set production apiUrl">
-Point `provideAgent({ apiUrl })` to your same-origin LangGraph proxy, or to a direct LangGraph URL only when that deployment is intentionally public.
+Point the `apiUrl` you pass to `createSession()` to your same-origin LangGraph proxy, or to a direct LangGraph URL only when that deployment is intentionally public.
 </Step>
 <Step title="Match assistantId to the manifest">
 Pass the `graphs` key from `langgraph.json` as `assistantId`. A mismatch fails on the first message, not at build time.
@@ -470,16 +493,16 @@ Route browser traffic through a server-side proxy or gateway that adds LangGraph
 Add your Angular app's origin to the `allow_origins` list in `langgraph.json`.
 </Step>
 <Step title="Handle errors gracefully">
-Branch on `error().kind` for legible copy, show a retry button only when `error().retryable` is true, and offer a status check when `error().recovery` is `check` and the agent exposes `checkStatus`.
+Branch on `error().kind` for legible copy, show a retry button only when `error().recovery` is `retry` and the agent has `retry`, and offer a status check when `error().recovery` is `check` and the agent has `checkStatus`.
 </Step>
 <Step title="Implement stream recovery">
-Store `runId` and use `joinStream()` to reconnect after network interruptions.
+Offer `checkStatus()` after a dropped stream, and store the run ID to rejoin with `joinStream()` after a reload.
 </Step>
 <Step title="Persist thread IDs">
-Store the server-issued `threadId` in `localStorage` or a backend so users can resume conversations across sessions.
+Store the thread ID that `onThreadId` reports in `localStorage` or a backend so users can resume conversations across sessions.
 </Step>
 <Step title="Configure throttle">
-Set the `throttle` option if token-by-token updates are too frequent for your UI rendering.
+A session does not throttle its updates by default. Pass `throttle` to `createSession()` if token-by-token updates are too frequent for your UI rendering.
 </Step>
 <Step title="Enable LangSmith tracing">
 Set `LANGCHAIN_TRACING_V2=true` in your agent environment for production observability.
@@ -510,10 +533,10 @@ Confirm LangSmith traces are arriving and set up alerts for error rate spikes an
   <Card title="LangGraph Basics" href="/docs/angular/langgraph/concepts/langgraph-basics">
     Understand the agent patterns your deployment will serve.
   </Card>
-  <Card title="API Reference" href="/docs/api/langgraph/provideAgent">
-    Full reference for provideAgent configuration options.
+  <Card title="API Reference" href="/docs/api/langgraph/LangGraphClientOptions">
+    Full reference for the client options a session accepts.
   </Card>
   <Card title="Error Handling" href="/docs/angular/langgraph/guides/streaming#error-handling">
-    How error() surfaces transport vs agent failures, and how to retry.
+    How error() surfaces stream and backend failures, and how to recover.
   </Card>
 </CardGroup>

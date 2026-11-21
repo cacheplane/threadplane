@@ -8,8 +8,29 @@ export type PlainValue =
   | readonly PlainValue[]
   | { readonly [key: string]: PlainValue };
 
-/** Recursively projects readonly data, mapping unknown to PlainValue, void to undefined, and functions to never. */
-export type DeepReadonly<T> = unknown extends T
+/**
+ * True for `unknown` and `any` only. `unknown extends T` alone is not that
+ * test in a program compiled without strict null checks: there it also holds
+ * for `{}`, for a record of `any` and for an object type whose fields are all
+ * optional, which would then lose their fields. None of those is `any`, and
+ * all of them are object types, which `unknown` is not.
+ */
+type IsUntyped<T> = 0 extends 1 & T
+  ? true
+  : unknown extends T
+  ? [T] extends [object]
+    ? false
+    : true
+  : false;
+
+/**
+ * Recursively projects readonly data, mapping unknown to PlainValue, void to undefined, and functions to never.
+ * PlainValue itself is kept as it is: it is readonly already, and it refers to
+ * itself, so walking it would never end.
+ */
+export type DeepReadonly<T> = IsUntyped<T> extends true
+  ? PlainValue
+  : [T, PlainValue] extends [PlainValue, T]
   ? PlainValue
   : T extends void
   ? undefined
@@ -41,7 +62,10 @@ export type ToolCallStatus = 'pending' | 'running' | 'complete' | 'error';
 
 /** A mapped union preserves each declared name's argument/result relationship.
  * pending means decoded, finalized arguments awaiting execution, not partial
- * streamed JSON. Adapters keep argument fragments private until finalized. */
+ * streamed JSON. A session that shows argument fragments lists them apart as
+ * {@link StreamingToolCall} entries until they are finalized.
+ * `parts` holds a result's structured parts when the backend returned them,
+ * such as text and media parts; `result` or `error` then holds their text. */
 export type ToolCall<
   TTools extends { [K in keyof TTools]: ToolContract } = Record<
     string,
@@ -58,8 +82,34 @@ export type ToolCall<
         readonly args: SnapshotValue<A>;
       } & (
         | { readonly status: 'pending' | 'running' }
-        | { readonly status: 'complete'; readonly result: SnapshotValue<R> }
-        | { readonly status: 'error'; readonly error: string }
+        | {
+            readonly status: 'complete';
+            readonly result: SnapshotValue<R>;
+            readonly parts?: readonly PlainValue[];
+          }
+        | {
+            readonly status: 'error';
+            readonly error: string;
+            readonly parts?: readonly PlainValue[];
+          }
       )
     : never;
 }[keyof TTools & string];
+
+/**
+ * A tool call the model is still writing. Its arguments are not final, so it
+ * is not a {@link ToolCall} and is listed apart, in a snapshot's
+ * `streamingToolCalls`. Once the arguments are complete the session removes it
+ * from that list and adds a `ToolCall` with the same `id` to `toolCalls`.
+ */
+export interface StreamingToolCall {
+  readonly id: string;
+  readonly name: string;
+  /** The argument text received so far, exactly as the model wrote it. */
+  readonly argsText: string;
+  /**
+   * The arguments as far as they can be read from `argsText`, when the session
+   * parses partial JSON. A best effort: fields may be missing or cut short.
+   */
+  readonly args?: PlainValue;
+}

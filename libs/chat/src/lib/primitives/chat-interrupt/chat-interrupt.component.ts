@@ -8,25 +8,25 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import type { Agent } from '../../agent';
-import type { AgentInterrupt } from '../../agent/agent-interrupt';
+import { pendingInterrupt, type Agent, type AgentInterrupt } from '../../agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_INTERRUPT_STYLES } from '../../styles/chat-interrupt.styles';
 
 /**
- * Read the agent's current human-in-the-loop interrupt, if any.
+ * Read the interrupt a paused agent shows first, if any. A run may pause on
+ * several at once; `agent.interrupts()` lists them all.
  *
  * @param agent - The agent to inspect.
- * @returns The pending {@link AgentInterrupt}, or `undefined` when the agent is
- *   not currently waiting on an interrupt.
+ * @returns The first pending {@link AgentInterrupt}, or `undefined` when the
+ *   agent is not waiting on one.
  * @example
  * ```ts
  * const interrupt = getInterrupt(agent);
- * if (interrupt) agent.submit({ resume: 'approved' });
+ * if (interrupt) agent.resume?.([{ interruptId: interrupt.id, status: 'resolved', value: 'approved' }]);
  * ```
  */
 export function getInterrupt(agent: Agent): AgentInterrupt | undefined {
-  return agent.interrupt?.();
+  return pendingInterrupt(agent);
 }
 
 /** Displays the agent’s current interrupt using a projected template or a default payload preview. */
@@ -63,7 +63,9 @@ export class ChatInterruptComponent {
   readonly interrupt = computed(() => getInterrupt(this.agent()));
 
   defaultText(i: AgentInterrupt): string {
-    const v = (i as { value?: unknown }).value;
-    return typeof v === 'string' ? v : JSON.stringify(v);
+    const v = i.value;
+    if (typeof v === 'string') return v;
+    // The backend's display text stands in for a pause that carries no value.
+    return v === undefined ? i.message ?? '' : JSON.stringify(v);
   }
 }

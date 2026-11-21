@@ -43,13 +43,9 @@ export function InstallDialog({ open, onClose }: InstallDialogProps) {
   const panelId = useId();
   const option =
     INSTALL_OPTIONS.find((o) => o.key === variant) ?? INSTALL_OPTIONS[0];
-  const componentSnippet =
-    variant === 'ag_ui'
-      ? COMPONENT_SNIPPET.replace(
-          "from '@threadplane/langgraph'",
-          "from '@threadplane/ag-ui'"
-        )
-      : COMPONENT_SNIPPET;
+  // One component for every variant: `injectAgent()` comes from
+  // `@threadplane/angular`, whichever backend the provider's session uses.
+  const componentSnippet = COMPONENT_SNIPPET;
 
   useEffect(() => {
     setCopied(false);
@@ -237,12 +233,12 @@ export function InstallDialog({ open, onClose }: InstallDialogProps) {
             <div className="install-dialog-react">
               <h3>Build from source. Make it yours.</h3>
               <p>
-                The React SDK is experimental. Its React, core, and content
-                packages are not published to npm yet.
+                The React SDK is experimental. Its React package is not
+                published to npm yet.
               </p>
               <p>
-                The quickstart walks you through building and packing them from
-                a repository checkout, then rendering your first conversation.
+                The quickstart walks you through building and packing it from a
+                repository checkout, then rendering your first conversation.
                 No model key or backend needed.
               </p>
             </div>

@@ -408,7 +408,7 @@ function ineligible(
         ? { status: 'running' }
         : mode === 'error'
         ? { error: { kind: 'server', message: 'failed', retryable: false } }
-        : { reconnect: { runId: 'run' } }),
+        : { retainedRun: { runId: 'run' } }),
     },
   } as ReactApplicationSnapshot;
 }

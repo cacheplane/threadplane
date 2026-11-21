@@ -526,7 +526,7 @@ test('provenance hashes transitive local inputs and reports only scoped tracked/
       mkdirSync(join(root, path, '..'), { recursive: true });
       writeFileSync(join(root, path), value);
     };
-    const runtime = 'libs/ag-ui/src/lib/internal/copy-data.ts';
+    const runtime = 'libs/ag-ui/src/runtime/copy-data.ts';
     const compiled = 'dist/libs/react/src/use-agent.js';
     const runner = 'scripts/react-parity/review-native-ag-ui.mjs';
     write(runtime, 'original');

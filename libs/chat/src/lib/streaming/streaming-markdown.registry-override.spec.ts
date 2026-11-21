@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 import { cacheplaneMarkdownViews } from '../markdown/cacheplane-markdown-views';
 import { MARKDOWN_VIEW_REGISTRY } from '../markdown/markdown-view-registry';
 import { ChatComponent } from '../compositions/chat/chat.component';
-import { staticDelivery } from '../agent/message-delivery';
+import { staticDelivery } from '../agent';
 import { mockAgent } from '../testing/mock-agent';
 import {
   ChatStreamingMdComponent,

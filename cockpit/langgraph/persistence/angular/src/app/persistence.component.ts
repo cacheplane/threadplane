@@ -1,7 +1,8 @@
 import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
 import { Component, signal } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent } from '@threadplane/chat';
-import { injectAgent, provideAgent } from '@threadplane/langgraph';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession, type LangGraphSession } from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 const WELCOME_SUGGESTIONS = [
@@ -53,9 +54,20 @@ let threadCounter = 0;
         throw new Error('incompatible runtime');
       }
       return {
-        apiUrl: connection.apiUrl,
-        assistantId: connection.assistantId,
-        clientOptions: connection.clientOptions,
+        // Runs once at start and again for each thread switch. A session
+        // belongs to one thread: `switchThread(id)` asks for a new one and the
+        // agent loads that thread's saved history.
+        createSession: (context) =>
+          createSession({
+            apiUrl: connection.apiUrl,
+            assistantId: connection.assistantId,
+            clientOptions: connection.clientOptions,
+            threadId: context.threadId,
+            onThreadId: context.onThreadId,
+            reportOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
+          }),
+        // Called with the id of each thread a session creates.
         onThreadId: (id: string) => {
           activeThreadIdState.set(id);
 
@@ -144,10 +156,10 @@ let threadCounter = 0;
       title="LangGraph persistence"
       description="Create two conversations, then switch between them to load their saved history from the server."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="agent.status() === 'running'"
         (click)="newConversation(conversation)">New conversation</button>
       <chat placeholder="Tell me a fictional fact…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="block flex-1 min-w-0">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -187,7 +199,7 @@ let threadCounter = 0;
 })
 export class PersistenceComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.agent.status() === 'running') return;
     this.newThread();
     conversation.clearDraft();
   }
@@ -198,13 +210,13 @@ export class PersistenceComponent {
 
   // #region thread-actions
   /**
-   * The streaming resource with thread persistence.
+   * The agent with thread persistence.
    *
    * The `onThreadId` callback (wired at the component-scoped provideAgent in
    * the decorator) fires when a new thread is created, tracking thread IDs for
    * the sidebar picker.
    */
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 
   protected send(text: string): void {
     void this.agent.submit({ message: text });

@@ -49,9 +49,20 @@ function tagged(value: PlainValue): unknown {
   ];
 }
 
+/**
+ * True for the result that carries a value: the one whose `ok` is truthy.
+ * A type predicate, because an application may compile this source without
+ * strict null checks, where a truthy `ok` does not narrow the result.
+ */
+export function succeeded(
+  result: ToolExecutionResult
+): result is Extract<ToolExecutionResult, { readonly ok: true }> {
+  return Boolean(result.ok);
+}
+
 export function ownResult(result: ToolExecutionResult): ToolExecutionResult {
   return Object.freeze(
-    result.ok
+    succeeded(result)
       ? { ok: true, value: ownValue(result.value) }
       : { ok: false, error: result.error }
   );

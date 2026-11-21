@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { buildSync } from 'esbuild';
 import { satisfies } from 'semver';
-import { angularTransitionProjects, emittedEntries, manifestViolations, privateScaffoldProjects, scanProjects } from './package-policy.mjs';
+import { angularTransitionProjects, emittedEntries, manifestViolations, foundationProjects, privateProjects, publishableProjects, scanProjects } from './package-policy.mjs';
 import { lockedReactManifest, prepareInstalledTypes, prepareRuntimeConsumer, runRuntimeScenarios } from './runtime-consumer.mjs';
 
 function filesIn(directory) {
@@ -53,9 +53,15 @@ export function validatePackage(directory, { angularTransitions = angularTransit
   const manifest = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8'));
   const project = manifest.name?.replace(/^@threadplane\//, '');
   if (project === 'react' && (manifest.peerDependencies?.['react-dom'] !== '^19.2.4' || manifest.peerDependenciesMeta?.['react-dom']?.optional === true)) errors.push('React requires compatible nonoptional react-dom peer ^19.2.4.');
-  const scaffold = privateScaffoldProjects.includes(project);
+  const scaffold = foundationProjects.includes(project);
   errors.push(...manifestViolations(project, manifest, { angularTransitions, telemetryBrowserTransition }));
-  if (scaffold && manifest.private !== true) errors.push('Foundation package must remain private.');
+  // React is the one foundation not yet released. Everything published ships
+  // at the release version with the metadata npm shows for it.
+  if (privateProjects.includes(project) && manifest.private !== true) errors.push('Foundation package must remain private.');
+  if (publishableProjects.includes(project)) {
+    if (manifest.private === true) errors.push('Published package cannot be private.');
+    if (scaffold && (manifest.version === '0.0.0' || manifest.repository?.directory !== `libs/${project}`)) errors.push('Published package requires its release version and repository directory.');
+  }
   if (manifest.type !== 'module') errors.push('Foundation package must emit ESM.');
   if (manifest.license !== 'MIT') errors.push('Expected MIT package license.');
   for (const file of ['LICENSE.md', 'README.md']) if (!existsSync(join(directory, file))) errors.push(`Missing ${file}`);
@@ -462,8 +468,24 @@ const SUPPORTED_EXPORTS = {
     'streamingDelivery',
     'staticDelivery',
     'projectAgentError',
+    'projectErrorDiagnostic',
+    'contentBlocksText',
+    'agentStateUpdateFromEvent',
+    'onAgentStateUpdate',
   ],
-  'core/testing': ['createFakeAgentSession'],
+  'core/testing': [
+    'createFakeAgentSession',
+    'agentSessionConformanceScenarios',
+    'runAgentSessionConformance',
+    'agentSessionHistoryConformanceScenarios',
+    'historyConformanceCheckpoints',
+    'runAgentSessionHistoryConformance',
+    'interruptConformanceBatch',
+    'interruptConformanceScenarios',
+    'runInterruptConformance',
+    'assertReasoningFixtureMessages',
+    'reasoningFixture',
+  ],
   react: ['useAgent', 'useAgentState'],
   'react/chat': [
     'ApprovalCard',
@@ -561,7 +583,7 @@ export async function verifyPackedConsumers(root = process.cwd(), { retain = fal
   root = resolve(root);
   const temporary = mkdtempSync(join(tmpdir(), 'threadplane-consumer-'));
   try {
-    const projects = privateScaffoldProjects.filter((project) => project !== 'angular');
+    const projects = foundationProjects.filter((project) => project !== 'angular');
     const tarballs = packLocalArtifacts(root, temporary, projects, { optionalPeers: ['a2ui'] });
     const core = join(temporary, 'core-consumer');
     mkdirSync(core);

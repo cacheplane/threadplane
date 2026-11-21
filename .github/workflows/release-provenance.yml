@@ -33,7 +33,7 @@ jobs:
       hashes: ${{ steps.hash.outputs.hashes }}
       tag: ${{ steps.tag.outputs.tag }}
     env:
-      NPM_PUBLISHABLE_PROJECTS: chat,langgraph,ag-ui,render,a2ui,telemetry
+      NPM_PUBLISHABLE_PROJECTS: core,content,angular,chat,langgraph,ag-ui,render,a2ui,telemetry
     steps:
       - name: Resolve target tag
         id: tag
@@ -51,7 +51,7 @@ jobs:
       - name: Pack tarballs
         run: |
           mkdir -p release-artifacts
-          for p in chat langgraph ag-ui render a2ui telemetry; do
+          for p in core content angular chat langgraph ag-ui render a2ui telemetry; do
             npm pack "dist/libs/$p" --pack-destination release-artifacts
           done
       - name: Generate subject hashes

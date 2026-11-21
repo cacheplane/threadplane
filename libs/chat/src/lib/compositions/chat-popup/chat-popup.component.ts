@@ -90,9 +90,9 @@ import { installChatSurfaceFocus } from '../shared/surface-focus';
         <ng-content select="[chatHeader]" chatHeader />
         <ng-content select="[chatWelcomeSuggestions]" chatWelcomeSuggestions />
         @if (interruptTemplate(); as renderer) {
-          <ng-template chatInterruptTemplate let-agent let-interrupt="interrupt">
+          <ng-template chatInterruptTemplate let-agent let-interrupt="interrupt" let-interrupts="interrupts">
             <ng-container [ngTemplateOutlet]="renderer.templateRef"
-              [ngTemplateOutletContext]="{ $implicit: agent, interrupt: interrupt }" />
+              [ngTemplateOutletContext]="{ $implicit: agent, interrupt: interrupt, interrupts: interrupts }" />
           </ng-template>
         }
       </chat>

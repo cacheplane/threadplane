@@ -3,16 +3,18 @@ import type { LangGraphClientOptions } from '@threadplane/langgraph';
 /**
  * Test-only escape hatch for the LangGraph SDK client tuning.
  *
- * Production keeps the SDK's resilient default (connect failures retry with
- * exponential backoff before the error surfaces — good for transient blips,
- * but a deliberate ~15s delay on a hard failure). e2e specs that force a
- * connection failure can't wait that long, so they set
+ * A session's own client never retries a request unless it is told to: a
+ * retried request could start a second run, and a session that may retry
+ * cannot regenerate an answer. The demo therefore runs with no retries, and a
+ * connection failure surfaces at once.
+ *
+ * e2e specs that force a connection failure state that budget explicitly with
  * `localStorage['THREADPLANE_E2E_MAX_RETRIES'] = '0'` (via
- * `page.addInitScript`, before the app bootstraps) to make the error surface
- * immediately.
+ * `page.addInitScript`, before the app bootstraps). A spec may also set a
+ * higher number to exercise the SDK's backoff.
  *
  * Returns `undefined` when the flag is absent — i.e. always in real use — so
- * the SDK default is preserved. Never reads anything in production.
+ * the session's default applies. Never reads anything in production.
  */
 const E2E_MAX_RETRIES_KEY = 'THREADPLANE_E2E_MAX_RETRIES';
 

@@ -58,13 +58,13 @@ const submit = (input: string) => {
             [disabled]="
               snapshot().status === 'running' ||
               !snapshot().interrupts.length ||
-              !!snapshot().reconnect
+              !!snapshot().retainedRun
             "
             (click)="resume()"
           >
             Resume</button
           ><button (click)="submit('Drop')">Drop</button
-          ><button [disabled]="!snapshot().reconnect" (click)="reconnect()">
+          ><button [disabled]="!snapshot().retainedRun" (click)="reconnect()">
             Reconnect</button
           ><button (click)="stop()">Stop</button>
         </div>
@@ -118,7 +118,7 @@ const submit = (input: string) => {
             <div class="field">
               <h3>Reconnect run</h3>
               <output aria-label="Reconnect run" data-testid="reconnect-run">{{
-                snapshot().reconnect?.runId ?? ''
+                snapshot().retainedRun?.runId ?? ''
               }}</output>
             </div>
             <div class="field">

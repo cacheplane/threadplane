@@ -3,11 +3,9 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  EnvironmentInjector,
   InjectionToken,
   afterNextRender,
   computed,
-  createEnvironmentInjector,
   inject,
   signal,
   type Provider,
@@ -16,18 +14,14 @@ import {
 import {
   ChatComponent,
   ChatInterruptPanelComponent,
-  type AgentRef,
   type InterruptAction,
 } from '@threadplane/chat';
-import {
-  FetchStreamTransport,
-  injectAgent,
-  provideAgent,
-  type AgentConfig,
-  type LangGraphAgent,
-} from '@threadplane/langgraph';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { FetchStreamTransport, type LangGraphClientOptions } from '@threadplane/langgraph';
 import { environment } from '../../environments/environment';
 import { demoViews } from '../demo-views';
+import type { DemoAgent } from '../shell/agent-ref';
+import { createDemoSession } from '../shell/demo-session';
 import { WelcomeSuggestionsComponent } from '../modes/welcome-suggestions.component';
 import { HERO_LIVE_REF, HERO_REPLAY_REF } from './hero-agent-refs';
 import { browserHeroBridge, type HeroBridge } from './hero-bridge';
@@ -91,27 +85,13 @@ export function isReplayOnly(): boolean {
 }
 
 /**
- * `provideAgent()` registers the shared AGENT token and aliases the ref to it,
- * so two calls in ONE providers array collapse into a single agent (last one
- * wins). The hero needs two live-at-once agents, so each gets its own child
- * environment injector holding exactly one `provideAgent()`.
+ * The hero needs two live-at-once agents. Each `provideAgent(ref, …)` call
+ * builds its own agent under its own ref, so both sit in this one providers
+ * array and are injected by ref. Both use the demo's session options
+ * (`createDemoSession`): the same transcript filter the shell applies, which
+ * the replay agent needs too — the recording carries the same events the live
+ * run did.
  */
-function scopedAgent(ref: AgentRef<Record<string, unknown>>, config: AgentConfig): LangGraphAgent {
-  const injector = createEnvironmentInjector(provideAgent(ref, config), inject(EnvironmentInjector));
-  inject(DestroyRef).onDestroy(() => injector.destroy());
-  return injector.get(ref.token) as LangGraphAgent;
-}
-
-/**
- * Same filter the demo shell applies: the canonical graph has side-effect LLM
- * nodes (generate_title), and only the generate node's tokens belong in the
- * transcript. Without it the title's tokens land on the just-completed answer
- * and trip the streaming-markdown contract, which stops the next turn from
- * rendering. The replay agent needs it too — the recording carries the same
- * events the live run did.
- */
-const TRANSCRIPT_NODE_NAMES = ['generate'];
-
 function heroProviders(replay?: HeroReplayTransport): Provider[] {
   return [
     // useFactory, not useValue: this array is built once at decorator time, so
@@ -119,33 +99,39 @@ function heroProviders(replay?: HeroReplayTransport): Provider[] {
     // carry its runIndex across route re-entries.
     { provide: HeroReplayTransport, useFactory: () => replay ?? new HeroReplayTransport() },
     { provide: HERO_LIVE_THREAD_ID, useFactory: () => signal<string | null>(null) },
-    {
-      provide: HERO_REPLAY_REF.token,
-      useFactory: () =>
-        scopedAgent(HERO_REPLAY_REF, {
-          assistantId: 'hero-replay',
-          transport: inject(HeroReplayTransport),
-          transcriptNodeNames: TRANSCRIPT_NODE_NAMES,
-        }),
-    },
-    {
-      provide: HERO_LIVE_REF.token,
-      useFactory: () => {
-        const liveThreadId = inject(HERO_LIVE_THREAD_ID);
-        return scopedAgent(HERO_LIVE_REF, {
-          apiUrl: environment.langGraphApiUrl,
-          assistantId: environment.assistantId,
-          threadId: liveThreadId,
-          onThreadId: (id: string) => liveThreadId.set(id),
-          transcriptNodeNames: TRANSCRIPT_NODE_NAMES,
-          transport: isRecordMode()
-            ? new HeroRecordingTransport(
-                new FetchStreamTransport(environment.langGraphApiUrl, (id) => liveThreadId.set(id)),
-              )
-            : undefined,
-        });
-      },
-    },
+    provideAgent(HERO_REPLAY_REF, () => {
+      const transport = inject(HeroReplayTransport);
+      return {
+        createSession: (context) =>
+          createDemoSession(context, { assistantId: 'hero-replay', transport }),
+      };
+    }),
+    provideAgent(HERO_LIVE_REF, () => {
+      const liveThreadId = inject(HERO_LIVE_THREAD_ID);
+      // One recorder for the component, not one per session: the recording
+      // spans every run the walkthrough drives.
+      let recorder: HeroRecordingTransport | undefined;
+      return {
+        threadId: liveThreadId,
+        onThreadId: (id: string) => liveThreadId.set(id),
+        createSession: (context) => {
+          if (isRecordMode()) {
+            recorder ??= new HeroRecordingTransport(
+              new FetchStreamTransport(
+                environment.langGraphApiUrl,
+                undefined,
+                context.clientOptions as LangGraphClientOptions | undefined,
+              ),
+            );
+          }
+          return createDemoSession(context, {
+            // At most one render per frame while tokens stream.
+            throttle: 16,
+            ...(recorder ? { transport: recorder } : {}),
+          });
+        },
+      };
+    }),
   ];
 }
 
@@ -248,13 +234,13 @@ export class HeroMode implements HeroScriptHost {
   private readonly destroyRef = inject(DestroyRef);
   private readonly replayTransport = inject(HeroReplayTransport);
   private readonly liveThreadId = inject(HERO_LIVE_THREAD_ID);
-  private readonly replayAgent = injectAgent(HERO_REPLAY_REF) as LangGraphAgent;
-  private readonly liveAgent = injectAgent(HERO_LIVE_REF) as LangGraphAgent;
+  private readonly replayAgent = injectAgent(HERO_REPLAY_REF);
+  private readonly liveAgent = injectAgent(HERO_LIVE_REF);
 
   /** Read once: the query string cannot change under a mounted frame. */
   readonly replayOnly = isReplayOnly();
   readonly mode = signal<HeroModeKind>(isRecordMode() ? 'live' : 'replay');
-  readonly activeAgent = computed<LangGraphAgent>(() =>
+  readonly activeAgent = computed<DemoAgent>(() =>
     this.mode() === 'live' ? this.liveAgent : this.replayAgent,
   );
   protected readonly catalog = demoViews();
@@ -429,7 +415,9 @@ export class HeroMode implements HeroScriptHost {
     if (this.replayOnly || this.mode() === 'live') return;
     this.runner?.stop();
     this.runner = null;
-    this.replayAgent.stop().catch((err) => console.warn('[hero] replay stop failed', err));
+    Promise.resolve(this.replayAgent.stop()).catch((err: unknown) =>
+      console.warn('[hero] replay stop failed', err),
+    );
     this.clearComposer();
     this.cursorVisible.set(false);
     this.liveThreadId.set(null);
@@ -463,10 +451,10 @@ export class HeroMode implements HeroScriptHost {
 
   protected async onInterruptAction(action: InterruptAction): Promise<void> {
     const agent = this.activeAgent();
-    const interrupt = agent.interrupt?.();
+    const interrupt = agent.interrupts()[0];
     if (!interrupt) return;
 
-    let resume: unknown;
+    let resume: string;
     switch (action) {
       case 'accept':
         resume = 'approved';
@@ -489,7 +477,7 @@ export class HeroMode implements HeroScriptHost {
         break;
     }
 
-    await agent.submit(null, { command: { resume } } as never);
+    await agent.resume([{ interruptId: interrupt.id, status: 'resolved', value: resume }]);
   }
 
   // ── HeroScriptHost ────────────────────────────────────────────────────────
@@ -539,11 +527,11 @@ export class HeroMode implements HeroScriptHost {
   }
 
   hasInterrupt(): boolean {
-    return !!this.activeAgent().interrupt?.();
+    return !!this.activeAgent().interrupts().length;
   }
 
   isRunning(): boolean {
-    return this.activeAgent().isLoading();
+    return this.activeAgent().status() === 'running';
   }
 
   async restartReplay(): Promise<void> {

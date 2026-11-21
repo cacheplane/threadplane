@@ -47,7 +47,15 @@ export type InferState<TDeclaration> = TDeclaration extends StateWitness<
   ? TState
   : unknown;
 
-type Portable<T> = T extends string | number | boolean | null | undefined
+// The data a snapshot can hold, written out of the given type. An open field
+// (`unknown`) is kept as it is: a snapshot reads it as plain data. A type that
+// is already plain data is kept whole, which also stops the walk at
+// `PlainValue`, a type that refers to itself and would otherwise never end.
+type Portable<T> = unknown extends T
+  ? T
+  : [T] extends [PlainValue]
+  ? T
+  : T extends string | number | boolean | null | undefined
   ? T
   : T extends (...args: never[]) => unknown
   ? never
@@ -61,14 +69,16 @@ type Portable<T> = T extends string | number | boolean | null | undefined
  * what the compiler reports. `any` satisfies every constraint, so it is the one
  * unusable type this cannot reject.
  */
-export type StateTypeCheck<TState> = unknown extends TState
-  ? 'State needs a declared shape. Leave the state type out to keep it untyped.'
-  : [TState] extends [object]
+export type StateTypeCheck<TState> = [TState] extends [object]
   ? [TState] extends [readonly unknown[]]
     ? 'State must be an object, not an array.'
     : [TState] extends [Portable<TState>]
     ? unknown
     : 'State must be plain data. Functions and class instances such as Date cannot be held in a snapshot.'
+  : // Asked only after the object test: without strict null checks `unknown`
+  // is assignable to a type whose fields are all optional.
+  unknown extends TState
+  ? 'State needs a declared shape. Leave the state type out to keep it untyped.'
   : 'State must be an object.';
 
 /**

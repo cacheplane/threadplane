@@ -1,13 +1,15 @@
 // Verify the development-only devtools hook is absent from production bundles.
 //
 // Bundles a consumer of the built packages the way an application build does —
-// the adapters' providers plus the chat emitter they call, with Angular's
-// production constant `ngDevMode = false` — and asserts that nothing of the
+// the Angular provider, the backend packages' session factories and the chat
+// package's devtools hooks, with Angular's production constant
+// `ngDevMode = false` — and asserts that nothing of the
 // hook survives: not its report event, not the scripted-run arm/disarm/ack
 // events, not the render report (chat's reporter and render's element
 // tracker), not its opt-out flag. The same bundle with
 // `ngDevMode` left to the runtime must contain them all, so the check cannot pass by
-// bundling the wrong thing. Run after building render, chat, langgraph and ag-ui.
+// bundling the wrong thing. Run after building render, chat, angular, langgraph
+// and ag-ui.
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -17,16 +19,19 @@ const dist = (path) => resolve('dist/libs', path);
 const local = {
   '@threadplane/render': dist('render/fesm2022/threadplane-render.mjs'),
   '@threadplane/chat': dist('chat/fesm2022/threadplane-chat.mjs'),
-  '@threadplane/langgraph': dist('langgraph/fesm2022/threadplane-langgraph.mjs'),
-  '@threadplane/ag-ui': dist('ag-ui/fesm2022/threadplane-ag-ui.mjs'),
+  '@threadplane/angular': dist('angular/fesm2022/threadplane-angular.mjs'),
+  // The backend packages are framework-neutral ES modules, not APF bundles.
+  '@threadplane/langgraph': dist('langgraph/src/public-api.js'),
+  '@threadplane/ag-ui': dist('ag-ui/src/public-api.js'),
 };
 for (const file of Object.values(local)) {
-  assert(existsSync(file), `${file} is missing; build render, chat, langgraph and ag-ui first`);
+  assert(existsSync(file), `${file} is missing; build render, chat, angular, langgraph and ag-ui first`);
 }
 
 const entry = `
-  export { provideAgent as provideLangGraphAgent } from '@threadplane/langgraph';
-  export { provideAgent as provideAgUiAgent, toAgent } from '@threadplane/ag-ui';
+  export { provideAgent, injectAgent } from '@threadplane/angular';
+  export { createSession as createLangGraphSession } from '@threadplane/langgraph';
+  export { createSession as createAgUiSession, FakeAgent } from '@threadplane/ag-ui';
   export {
     ɵcreateDevtoolsEmitter,
     ɵdevtoolsScriptedRuns,
@@ -42,7 +47,7 @@ const entry = `
 const resolveThreadplane = {
   name: 'threadplane-dist',
   setup(builder) {
-    builder.onResolve({ filter: /^@threadplane\/(render|chat|langgraph|ag-ui)$/ }, (args) => ({ path: local[args.path] }));
+    builder.onResolve({ filter: /^@threadplane\/(render|chat|angular|langgraph|ag-ui)$/ }, (args) => ({ path: local[args.path] }));
     builder.onResolve({ filter: /^[@#a-z]/ }, (args) =>
       local[args.path] ? undefined : { path: args.path, external: true });
   },

@@ -7,7 +7,8 @@ import {
 } from '@threadplane/chat';
 import type { InterruptAction } from '@threadplane/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
 const SUGGESTIONS = [
   // values match cockpit/chat/interrupts/angular/e2e/c-interrupts.spec.ts.
@@ -30,9 +31,10 @@ const SUGGESTIONS = [
  * using ChatComponent and ChatInterruptPanelComponent.
  *
  * Shows interrupt payload and action buttons inside the scrollable transcript.
- * Maps the panel's UI actions to LangGraph resume payloads:
- *   Accept  → resume('confirm')   — the book_flight tool returns Booked …
- *   Ignore  → resume('cancel')    — the book_flight tool returns Booking cancelled.
+ * Maps the panel's UI actions to the value agent.resume() answers the pending
+ * interrupt with:
+ *   Accept  → 'confirm'   — the book_flight tool returns Booked …
+ *   Ignore  → 'cancel'    — the book_flight tool returns Booking cancelled.
  * Edit / Respond are not wired for this demo's single-decision booking flow.
  *
  * Welcome chips let users one-click into either recorded aimock flow.
@@ -55,7 +57,7 @@ const SUGGESTIONS = [
     >
       <chat placeholder="Ask about a flight or request a booking…" [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <ng-template chatInterruptTemplate let-agent>
           <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
         </ng-template>
@@ -110,19 +112,27 @@ const SUGGESTIONS = [
   `],
 })
 export class InterruptsComponent {
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
+  /** True while a run streams: the agent has no separate loading flag. */
+  protected readonly isLoading = computed(() => this.agent.status() === 'running');
 
   protected readonly streamStatus = computed(() => this.agent.status());
   protected readonly suggestions = SUGGESTIONS;
 
   // #region resume
   protected onInterruptAction(action: InterruptAction): void {
-    if (action === 'accept') {
-      this.agent.submit({ resume: 'confirm' });
-    } else if (action === 'ignore') {
-      this.agent.submit({ resume: 'cancel' });
-    }
     // 'edit' and 'respond' are intentionally unhandled for the booking flow.
+    if (action !== 'accept' && action !== 'ignore') return;
+    const value = action === 'accept' ? 'confirm' : 'cancel';
+    // A paused run continues once, so every pending interrupt is answered in
+    // the same resume. This graph pauses on one at a time.
+    void this.agent.resume(
+      (this.agent.interrupts() ?? []).map((interrupt) => ({
+        interruptId: interrupt.id,
+        status: 'resolved' as const,
+        value,
+      })),
+    );
   }
   // #endregion
 

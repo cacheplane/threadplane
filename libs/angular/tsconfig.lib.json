@@ -8,7 +8,12 @@
     "lib": ["es2022", "dom"],
     "types": []
   },
-  "include": ["src/**/*.ts", "chat/src/**/*.ts", "markdown/src/**/*.ts"],
+  "include": [
+    "src/**/*.ts",
+    "chat/src/**/*.ts",
+    "markdown/src/**/*.ts",
+    "testing/src/**/*.ts"
+  ],
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
@@ -18,6 +23,8 @@
     "markdown/src/**/*.spec.ts",
     "markdown/src/**/*.test.ts",
     "markdown/src/**/*.type-test.ts",
+    "testing/src/**/*.spec.ts",
+    "testing/src/**/*.type-test.ts",
     "src/test-setup.ts"
   ]
 }

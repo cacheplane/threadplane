@@ -2,9 +2,9 @@ import type { Citation, PlainValue } from '@threadplane/core';
 import { ownValue } from './ownership.js';
 import { record } from './wire-message.js';
 
-/** Bounded staging copy of the legacy extractor's aliases. Consolidate at the
- * backend cutover: this neutral contract deliberately requires plain extras and
- * primitive timestamps. Undefined means no update; a supported list replaces. */
+/** Reads a wire message's citations. The neutral contract requires plain
+ * extras and primitive timestamps. Undefined means no update; a supported list
+ * replaces. */
 export function projectCitations(
   message: Record<string, unknown>
 ): readonly Citation[] | undefined {
@@ -52,4 +52,23 @@ export function projectCitations(
       return result;
     })
   ) as unknown as readonly Citation[];
+}
+
+/**
+ * Normalizes the citations in a message's `additional_kwargs` (`citations`, or
+ * `sources`) into core `Citation` values. For custom transports and for
+ * bridging other message shapes into the same form the session publishes.
+ *
+ * @param message - Any object with an `additional_kwargs` bag, such as a LangChain message.
+ * @returns The citations, or `undefined` when the message carries none.
+ * @example
+ * ```ts
+ * const citations = extractCitations(wireMessage);
+ * ```
+ */
+export function extractCitations(message: {
+  readonly additional_kwargs?: Readonly<Record<string, unknown>> | undefined;
+}): readonly Citation[] | undefined {
+  const citations = projectCitations(message as Record<string, unknown>);
+  return citations?.length ? citations : undefined;
 }

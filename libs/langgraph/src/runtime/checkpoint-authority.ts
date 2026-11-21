@@ -8,12 +8,12 @@ import type { StreamEvent } from './transport.types.js';
 import {
   captureCheckpoint,
   type OwnedCheckpointPosition,
-} from '../lib/transport/checkpoint-position.js';
+} from './checkpoint-position.js';
 export {
   captureCheckpoint,
   type OwnedCheckpointPosition,
   type CheckpointReference,
-} from '../lib/transport/checkpoint-position.js';
+} from './checkpoint-position.js';
 
 const unavailable = () =>
   new Error('Checkpoint execution authority is unavailable.');
@@ -54,15 +54,47 @@ export function captureCheckpointState(
   return state;
 }
 
+/**
+ * True for the checkpoint a run saves when it accepts its input: the only work
+ * left is the graph's entry, which has not yet written that input into the
+ * state. A run started there with new input replaces the waiting input, so the
+ * checkpoint's own values are all that carries over.
+ */
+function awaitsOnlyInput(state: CapturedCheckpointState) {
+  return (
+    state.next.length === 1 &&
+    state.next[0] === '__start__' &&
+    state.tasks.length <= 1 &&
+    state.tasks.every((raw) => {
+      const task = record(raw);
+      const interrupts = task?.['interrupts'];
+      return (
+        task?.['name'] === '__start__' &&
+        task['error'] == null &&
+        task['state'] == null &&
+        (interrupts === undefined ||
+          (Array.isArray(interrupts) && !interrupts.length))
+      );
+    })
+  );
+}
+
+/**
+ * Captures a checkpoint new input may be submitted from. It must hold no
+ * remaining graph work, interrupts or unanswered tool calls. With
+ * `pendingInput`, a checkpoint whose only remaining work is a run's
+ * not-yet-applied input is accepted too.
+ */
 export function captureCompletedCheckpoint(
   value: unknown,
-  position: OwnedCheckpointPosition
+  position: OwnedCheckpointPosition,
+  pendingInput = false
 ) {
   const state = captureCheckpointState(value, position);
   const values = record(state.values)!;
   if (
-    state.next.length ||
-    state.tasks.length ||
+    ((state.next.length || state.tasks.length) &&
+      !(pendingInput && awaitsOnlyInput(state))) ||
     Object.hasOwn(values, '__interrupt__') ||
     state.interrupts?.length
   )

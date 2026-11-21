@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import { AIMessage, HumanMessage } from '@langchain/core/messages';
 import type { Message } from '../../agent/message';
-import { staticDelivery } from '../../agent/message-delivery';
+import { staticDelivery } from '../../agent';
 import { messageContent } from './message-utils';
 
 describe('messageContent()', () => {

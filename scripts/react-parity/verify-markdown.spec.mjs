@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import test from 'node:test';
 import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { fileHashes, sha256 } from './langgraph-candidate-package.mjs';
+import { fileHashes, sha256 } from './langgraph-package.mjs';
 import * as markdownVerifier from './verify-markdown.mjs';
 import {
   validateMarkdown,
@@ -109,10 +109,10 @@ function fixture(t) {
     join(directory, 'package.json'),
     JSON.stringify({
       name: '@threadplane/content',
-      version: '0.0.0',
-      private: true,
+      version: '0.3.7',
       type: 'module',
       license: 'MIT',
+      repository: { type: 'git', directory: 'libs/content' },
       exports: {
         '.': conditions('./src/index'),
         './markdown': conditions('./src/markdown/index'),

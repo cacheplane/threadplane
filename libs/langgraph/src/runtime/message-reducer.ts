@@ -248,6 +248,20 @@ export function reduceMessages(
           ? previous.citations
           : incoming.citations ?? previous.citations
         : incoming.citations,
+    // Structured content and extras come only with full messages: interim
+    // omissions keep what is held, and a canonical message replaces exactly.
+    blocks:
+      sameGeneration && event.mode !== 'canonical'
+        ? canonical
+          ? previous.blocks
+          : incoming.blocks ?? previous.blocks
+        : incoming.blocks,
+    extra:
+      sameGeneration && event.mode !== 'canonical'
+        ? canonical
+          ? previous.extra
+          : incoming.extra ?? previous.extra
+        : incoming.extra,
     // A late snapshot cannot reopen a finalized generation.
     delivery:
       sameGeneration && previous.delivery.phase === 'complete'

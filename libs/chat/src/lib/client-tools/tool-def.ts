@@ -1,6 +1,6 @@
 import type { Type } from '@angular/core';
 import type { StandardSchemaV1, StandardSchemaInferInput, StandardSchemaInferOutput } from '@threadplane/render';
-import type { ToolCallStatus } from '../agent/tool-call';
+import type { ToolCallStatus } from '../agent';
 
 export type { StandardSchemaV1, StandardSchemaInferInput, StandardSchemaInferOutput };
 

@@ -195,7 +195,7 @@ describe('native decision owner', () => {
         get signal() {
           return selected();
         },
-        get state() {
+        get forwardedProps() {
           return ignored();
         },
       };

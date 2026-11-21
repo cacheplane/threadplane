@@ -37,7 +37,7 @@ Nothing about these tools is filesystem specific; they are the source of the con
 
 ### The agent provider
 
-`provideAgent()` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. The example passes a factory because it resolves its connection details at runtime from the host that serves the demo.
+`provideAgent()` from `@threadplane/angular` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. Its `createSession` function builds the LangGraph session, once at start and again for each thread switch. The example passes a config factory because it resolves its connection details at runtime from the host that serves the demo; `clientOptions` and `onOperationFailure` come from that host as well.
 
 <ExampleCode file="app.config.ts" />
 
@@ -45,8 +45,12 @@ Your own application does not need the factory. Pass the values directly:
 
 ```typescript
 provideAgent({
-  apiUrl: 'https://your-deployment.langgraph.app',
-  assistantId: 'da-filesystem',
+  createSession: (context) =>
+    createSession({
+      ...context,
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'da-filesystem',
+    }),
 });
 ```
 
@@ -54,7 +58,7 @@ provideAgent({
 
 ### The pending write, read off the interrupt
 
-A proposed new file is not yet saved, while a proposed replacement may target an existing file. The Angular component reads only the first action request of the first interrupt from the `langGraphInterrupts()` Signal exposed by `injectAgent()`. The payload is `{ action_requests: [{ name, args }], review_configs: [...] }`, and for `write_file` the target path is `args.file_path`.
+A proposed new file is not yet saved, while a proposed replacement may target an existing file. The Angular component walks the `interrupts()` Signal of the injected agent and takes the first action request that names a `file_path`. Each interrupt's `value` is the payload the graph paused with, `{ action_requests: [{ name, args }], review_configs: [...] }`, and for `write_file` the target path is `args.file_path`.
 
 <ExampleCode file="filesystem.component.ts" region="pending-path" title="filesystem.component.ts — the pending path" />
 
@@ -62,7 +66,7 @@ Reading it lets the tree show the file before it lands, so the reviewer sees whe
 
 ### The file map, projected into a tree
 
-`files` is a flat map from absolute path to a file record. This Angular projection displays a string value directly and calls `JSON.stringify` on the whole record for any non-string value; it does not extract the record's `content` field. `agent.value()` returns the live graph state that holds the map. The projection reads that map, adds the pending path as a ghost entry when one is open, and splits each key on its last slash to derive a directory and a name.
+`files` is a flat map from absolute path to a file record. This Angular projection displays a string value directly and calls `JSON.stringify` on the whole record for any non-string value; it does not extract the record's `content` field. `agent.state()` returns the live graph state that holds the map, and it is `undefined` until the backend reports one. The projection reads that map, adds the pending path as a ghost entry when one is open, and splits each key on its last slash to derive a directory and a name.
 
 <ExampleCode file="filesystem.component.ts" region="files" title="filesystem.component.ts — the file projection" />
 
@@ -82,7 +86,7 @@ Keeping the tree and the approval in one sidebar is the point of the layout: the
 
 ### Resuming with a decision
 
-`<chat-interrupt-panel>` emits an `InterruptAction` of `accept`, `edit`, `respond`, or `ignore`, and the component turns the two it handles into resume payloads. `HumanInTheLoopMiddleware` resumes on an object with a `decisions` list, one ordered decision per protected action request, each `{ "type": "approve" }`, `{ "type": "edit" }`, or `{ "type": "reject" }`.
+`<chat-interrupt-panel>` emits an `InterruptAction` of `accept`, `edit`, `respond`, or `ignore`, and the component turns the two it handles into resume values. `agent.resume()` takes one response per answered interrupt: the `interruptId`, the status `resolved`, and the `value` the paused graph receives. `HumanInTheLoopMiddleware` resumes on an object with a `decisions` list, one ordered decision per protected action request, each `{ "type": "approve" }`, `{ "type": "edit" }`, or `{ "type": "reject" }`.
 
 <ExampleCode file="filesystem.component.ts" region="resume" title="filesystem.component.ts — resuming the run" />
 
@@ -91,7 +95,7 @@ The Angular demo always sends exactly one decision. The backend can pause severa
 After either decision, subsequent graph state determines the files shown in the tree. Approval can still encounter a tool error; rejection may be followed by another proposed action. Neither button predicts final file contents or guarantees that a future write cannot occur.
 
 <Callout type="warning" title="The resume payload is an object, not a list">
-The middleware reads `interrupt(request)["decisions"]`, so a bare list or a bare string raises a `TypeError` on the server rather than a validation error the browser can show. The failure appears as a dead run rather than as a rejected submission, so the shape is worth getting right the first time.
+The `value` of the response is what the middleware receives. It reads `interrupt(request)["decisions"]`, so a bare list or a bare string raises a `TypeError` on the server rather than a validation error the browser can show. The failure appears as a dead run rather than as a rejected submission, so the shape is worth getting right the first time.
 </Callout>
 
 ## React preview

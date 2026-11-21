@@ -13,9 +13,9 @@ import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { packLocalArtifacts, runConsumer } from './verify-packages.mjs';
-import { fileHashes, sha256 } from './langgraph-candidate-package.mjs';
-import { assertInstalledInputs } from './ag-ui-candidate-package.mjs';
-import { checkTypes } from './verify-langgraph-candidate.mjs';
+import { fileHashes, sha256 } from './langgraph-package.mjs';
+import { assertInstalledInputs } from './ag-ui-package.mjs';
+import { checkTypes } from './verify-langgraph-package.mjs';
 import {
   a2uiSurfacesPresentationSeeds,
   installPresentationConsumer,
@@ -459,9 +459,9 @@ export async function verifyA2uiSurfaces({ retain, launch } = {}) {
         'verify-markdown.mjs',
         'verify-packages.mjs',
         'markdown-presentation-build.mjs',
-        'verify-langgraph-candidate.mjs',
-        'langgraph-candidate-package.mjs',
-        'ag-ui-candidate-package.mjs',
+        'verify-langgraph-package.mjs',
+        'langgraph-package.mjs',
+        'ag-ui-package.mjs',
       ].map((file) => 'scripts/react-parity/' + file),
       ...[
         'state.ts',

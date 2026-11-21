@@ -1,6 +1,6 @@
 import { createServer, type ServerResponse } from 'node:http';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
+import { FetchStreamTransport } from './fetch-stream.transport';
 import { deferred } from './testing/deferred';
 
 const cleanup: (() => Promise<void>)[] = [];

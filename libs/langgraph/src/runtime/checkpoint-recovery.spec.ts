@@ -66,7 +66,7 @@ describe('checkpoint retained authority', () => {
       await new Promise<void>((resolve) => setImmediate(resolve));
       await session.stop();
       expect(await run).toBe('aborted');
-      expect(session.getSnapshot().reconnect).toBeUndefined();
+      expect(session.getSnapshot().retainedRun).toBeUndefined();
       await expect(session.reconnect()).rejects.toThrow();
       await expect(session.submit('Wrong')).rejects.toThrow();
     }
@@ -86,7 +86,7 @@ describe('checkpoint retained authority', () => {
       transport: f.transport,
     });
     expect(await session.fork(position('a'), 'Run')).toBe('error');
-    expect(session.getSnapshot().reconnect?.runId).toBe('run-b');
+    expect(session.getSnapshot().retainedRun?.runId).toBe('run-b');
     expect(await session.reconnect()).toBe('success');
     expect(f.transport.stream).toHaveBeenCalledTimes(1);
   });

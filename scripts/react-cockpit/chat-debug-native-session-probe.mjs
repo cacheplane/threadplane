@@ -23,7 +23,7 @@ import {
   emitCandidate,
   packCandidate,
   installCandidateConsumer,
-} from '../react-parity/langgraph-candidate-package.mjs';
+} from '../react-parity/langgraph-package.mjs';
 import { packLocalArtifacts } from '../react-parity/verify-packages.mjs';
 
 /** Only an exclusive, regular file at the harness-owned exact path is data.
@@ -123,7 +123,7 @@ export async function runNativeProbe() {
   async function run() {
     const source = join(
       root,
-      'fixtures/react-parity/langgraph-candidate/chat-debug-native-session.mjs'
+      'fixtures/react-parity/langgraph-package/chat-debug-native-session.mjs'
     );
     copyFileSync(source, join(consumer, 'chat-debug-native-session.mjs'));
     const child = spawn(
@@ -283,7 +283,7 @@ export async function runNativeProbe() {
         'scripts/react-cockpit/aimock-backend.mjs',
         'scripts/react-cockpit/langgraph-proxy.mjs',
         'scripts/react-cockpit/chat-debug-native-session-probe.mjs',
-        'fixtures/react-parity/langgraph-candidate/chat-debug-native-session.mjs',
+        'fixtures/react-parity/langgraph-package/chat-debug-native-session.mjs',
       ].map((path) => [path, sha(join(root, path))])
     );
     writeFileSync(

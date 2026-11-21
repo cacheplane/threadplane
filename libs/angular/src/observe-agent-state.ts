@@ -2,8 +2,10 @@ import { computed, type Signal } from '@angular/core';
 import { observeAgent } from './observe-agent';
 
 /** A session whose snapshot holds application state. */
-interface StateSession<TState> {
+export interface AgentStateSession<TState> {
+  /** The session's current snapshot, with its application state. */
   getSnapshot(): { readonly state?: TState };
+  /** Calls `notify` after each new snapshot; returns the function that stops it. */
   subscribe(notify: () => void): () => void;
 }
 
@@ -20,14 +22,14 @@ interface StateSession<TState> {
  * and the signal changes only when the selected value does.
  */
 export function observeAgentState<TState>(
-  session: StateSession<TState>
+  session: AgentStateSession<TState>
 ): Signal<TState | undefined>;
 export function observeAgentState<TState, TSelected>(
-  session: StateSession<TState>,
+  session: AgentStateSession<TState>,
   select: (state: TState | undefined) => TSelected
 ): Signal<TSelected>;
 export function observeAgentState<TState, TSelected>(
-  session: StateSession<TState>,
+  session: AgentStateSession<TState>,
   select?: (state: TState | undefined) => TSelected
 ): Signal<TState | TSelected | undefined> {
   const snapshot = observeAgent(session);

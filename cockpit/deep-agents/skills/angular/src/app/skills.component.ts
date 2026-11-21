@@ -1,7 +1,8 @@
 import { Component, computed } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent } from '@threadplane/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
 /** Name of the custom stream event the graph's visibility middleware emits. */
 const SKILLS_EVENT = 'deep_agents.skills';
@@ -39,7 +40,7 @@ const SUGGESTIONS = [
  * a confirmed read. Optional load errors can appear when produced and normal
  * loads can omit them. The named
  * custom event always includes both keys, using an empty-list error fallback.
- * The panel prefers that event and falls back to agent.value(). Its checkpoint
+ * The panel prefers that event and falls back to agent.state(). Its checkpoint
  * label identifies that fallback, without proving reopened-thread provenance.
  *
  * Path attribution uses arguments only and does not inspect successful results.
@@ -56,11 +57,11 @@ const SUGGESTIONS = [
       title="Deep Agents skills"
       description="Inspect progressive disclosure of skill metadata, instructions, and reference files. Aviation examples use fixed sample data. Stop cancels local delivery; backend work may continue."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="agent.status() === 'running'"
         (click)="newConversation(conversation)">New conversation</button>
       <chat placeholder="Ask about aircraft and runway requirements…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -190,12 +191,12 @@ const SUGGESTIONS = [
 })
 export class SkillsComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.agent.status() === 'running') return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 
   protected readonly suggestions = SUGGESTIONS;
 
@@ -214,9 +215,7 @@ export class SkillsComponent {
   });
 
   private readonly settledSkills = computed<Record<string, unknown>[] | null>(() => {
-    const metadata = (this.agent.value() as Record<string, unknown> | undefined)?.[
-      'skills_metadata'
-    ];
+    const metadata = this.agent.state()?.['skills_metadata'];
     return Array.isArray(metadata) && metadata.length > 0
       ? (metadata as Record<string, unknown>[])
       : null;

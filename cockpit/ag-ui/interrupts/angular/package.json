@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "peerDependencies": {
     "@threadplane/chat": "*",
+    "@threadplane/angular": "*",
     "@threadplane/ag-ui": "*"
   },
   "license": "MIT",

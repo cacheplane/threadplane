@@ -1,5 +1,5 @@
 ---
-description: The ChatMessageListComponent inputs, the chatMessageTemplate directive contexts, and how to read a runtime-neutral message's content in a custom template.
+description: The ChatMessageListComponent inputs, the chatMessageTemplate directive contexts, and how to read a message's content in a custom template.
 ---
 
 # ChatMessageListComponent
@@ -28,7 +28,7 @@ import {
 
 ## Basic Usage
 
-Expose the imported helper on your component with `readonly messageContent = messageContent`. It reads visible text from both string and block-array messages:
+Expose the imported helper on your component with `readonly messageContent = messageContent`. It returns the message's visible text:
 
 ```html
 <chat-message-list [agent]="chatAgent">
@@ -56,7 +56,7 @@ Expose the imported helper on your component with `readonly messageContent = mes
 
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
-| `agent` | `Agent` | **Required** | The agent providing streaming state |
+| `agent` | `Agent` | **Required** | The agent whose `messages()` signal the list renders |
 
 ### Content Children
 
@@ -68,7 +68,7 @@ Each template receives:
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `$implicit` (via `let-message`) | `Message` | The runtime-neutral chat message |
+| `$implicit` (via `let-message`) | `Message` | The chat message, as `@threadplane/core` defines it |
 | `index` | `number` | The index of the message in the array |
 
 ```html
@@ -101,7 +101,7 @@ type MessageTemplateType = 'human' | 'ai' | 'tool' | 'system' | 'function';
 
 ## getMessageType()
 
-The `getMessageType()` function maps a runtime-neutral `Message` role to a `MessageTemplateType`.
+The `getMessageType()` function maps a `Message` role to a `MessageTemplateType`.
 
 ```typescript
 import { getMessageType } from '@threadplane/chat';
@@ -111,8 +111,8 @@ const type = getMessageType(message); // 'human' | 'ai' | 'tool' | 'system' | 'f
 
 **Mapping logic:**
 
-| Runtime-neutral role | Returns |
-|----------------------|---------|
+| Message role | Returns |
+|--------------|---------|
 | `'user'` | `'human'` |
 | `'assistant'` | `'ai'` |
 | `'tool'` | `'tool'` |
@@ -121,7 +121,7 @@ const type = getMessageType(message); // 'human' | 'ai' | 'tool' | 'system' | 'f
 
 ## Working with Message Content
 
-Runtime-neutral messages have a `content` property that is either a `string` or a `ContentBlock[]`. The library exports a `messageContent()` utility that flattens either shape to a string:
+A `Message` from `agent.messages()` always has text in `content`. When the backend sent, or the caller submitted, more than text, the same message also carries `blocks`, a list of `ContentBlock` values (`text`, `image`, `tool_use`, `tool_result`), and `content` holds the text of its `text` blocks. The library exports a `messageContent()` utility that returns the visible text:
 
 ```typescript
 // If content is a string, returns it directly.
@@ -130,9 +130,9 @@ Runtime-neutral messages have a `content` property that is either a `string` or 
 function messageContent(message: { content: unknown }): string
 ```
 
-The parameter is structural: the function reads nothing but `content`. Pass it the `Message` handed to a `chatMessageTemplate` straight out of `agent.messages()`, or a LangChain `BaseMessage` from a LangChain-shaped source. Both type-check, and neither needs a cast.
+The parameter is structural: the function reads nothing but `content`. Pass it the `Message` handed to a `chatMessageTemplate` straight out of `agent.messages()`, or a LangChain `BaseMessage` whose content may be a block array. Both type-check, and neither needs a cast.
 
-For custom templates, access `message.content` directly and narrow the type in the component class. Angular template expressions have no `typeof` operator, so the check has to live in a method:
+For custom templates, render `message.content` as text and branch on `message.blocks` when you want the structured parts:
 
 ```typescript
 import { Component } from '@angular/core';
@@ -149,10 +149,9 @@ import {
   template: `
     <chat-message-list [agent]="agent">
       <ng-template chatMessageTemplate="ai" let-message>
-        @if (isText(message.content)) {
-          <p>{{ message.content }}</p>
-        } @else {
-          <pre>{{ message.content | json }}</pre>
+        <p>{{ message.content }}</p>
+        @if (message.blocks; as blocks) {
+          <pre>{{ blocks | json }}</pre>
         }
       </ng-template>
     </chat-message-list>
@@ -160,21 +159,17 @@ import {
 })
 export class MyListComponent {
   agent!: Agent;
-
-  isText(content: unknown): content is string {
-    return typeof content === 'string';
-  }
 }
 ```
 
-The string branch renders plain, escaped text; the array branch falls back to serialized JSON. To render Markdown from either content shape, use `messageContent()` before `renderMarkdown()`, as in the full example below.
+The paragraph renders plain, escaped text; the block list falls back to serialized JSON. To render Markdown, pass `messageContent(message)` to `renderMarkdown()`, as in the full example below.
 
 ## Full Example
 
 ```typescript
 import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 import {
   ChatMessageListComponent,
   MessageTemplateDirective,
@@ -221,7 +216,7 @@ import {
 export class MessagesDemoComponent {
   private sanitizer = inject(DomSanitizer);
 
-  // Configured at the app root via provideAgent({ assistantId, threadId, ... }).
+  // Provided at the app root via provideAgent({ createSession }) from @threadplane/angular.
   chatAgent = injectAgent();
   readonly messageContent = messageContent;
 

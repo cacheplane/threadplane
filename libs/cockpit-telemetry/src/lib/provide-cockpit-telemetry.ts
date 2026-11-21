@@ -14,7 +14,7 @@ export function provideCockpitTelemetry(
   return makeEnvironmentProviders([
     { provide: COCKPIT_TELEMETRY_CONFIG, useValue: config },
     ActivationAggregator,
-    // AgentLifecycleRegistry is `providedIn: 'root'` in @threadplane/langgraph:
+    // AgentLifecycleRegistry is `providedIn: 'root'` in @threadplane/angular:
     // re-providing it here would shadow the instance every agent registers into.
     CockpitTelemetryService,
     {

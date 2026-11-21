@@ -4,6 +4,7 @@ import { createSession } from './create-session';
 import type { LangGraphSnapshot } from './langgraph-snapshot';
 import { controlledTransport } from './testing/controlled-transport';
 import { deferred } from './testing/deferred';
+import { expectFailedLoad } from './testing/failed-load';
 import type { AgentTransport, StreamEvent } from './transport.types';
 
 const ai = (content: string, id = 'answer') => ({ id, type: 'ai', content });
@@ -613,7 +614,10 @@ describe('session interrupt observation', () => {
       expect(f.snapshot().messages.map((message) => message.content)).toEqual(
         before.messages.map((message) => message.content)
       );
-      if (mode !== 'close') expect(f.snapshot()).toBe(before);
+      if (mode === 'load') {
+        expectFailedLoad(f.snapshot(), before);
+        expect(JSON.stringify(f.snapshot())).not.toContain('private payload');
+      } else if (mode !== 'close') expect(f.snapshot()).toBe(before);
     });
   }
 

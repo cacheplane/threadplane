@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import type { Spec, StateStore } from '@json-render/core';
 import type { RenderEvent, ViewRegistry } from '@threadplane/render';
 import { toRenderRegistry } from '@threadplane/render';
-import type { Agent, Message, ToolCall } from '../../agent';
+import { toolCallError, toolCallResult, type Agent, type Message, type ToolCall } from '../../agent';
 import type { ClientToolLifecycle } from '../../client-tools/tool-def';
 import { resolveMessageToolCalls } from '../chat-tool-calls/resolve-message-tool-calls';
 import { ChatGenerativeUiComponent } from '../chat-generative-ui/chat-generative-ui.component';
@@ -67,7 +67,7 @@ export class ChatToolViewsComponent {
 /** Wraps a tool call into a synthetic single-element render spec. */
 function toToolViewSpec(tc: ToolCall): Spec {
   const args = isRecord(tc.args) ? tc.args : {};
-  const result = resultRecord(tc.result);
+  const result = resultRecord(toolCallResult(tc));
   return {
     root: tc.name,
     elements: {
@@ -80,15 +80,19 @@ function toToolViewSpec(tc: ToolCall): Spec {
 }
 
 function toClientToolLifecycle(tc: ToolCall): ClientToolLifecycle {
-  const hasResult = tc.result !== undefined;
+  const result = toolCallResult(tc);
+  const error = toolCallError(tc);
+  // A failed call is answered too: the core contract carries its outcome as
+  // the error text instead of a result.
+  const hasResult = result !== undefined || error !== undefined;
   return {
     id: tc.id,
     name: tc.name,
     status: tc.status,
     phase: tc.status === 'error' ? 'error' : tc.status === 'complete' ? 'complete' : 'running',
     hasResult,
-    ...(hasResult ? { result: tc.result } : {}),
-    ...(tc.error !== undefined ? { error: tc.error } : {}),
+    ...(result !== undefined ? { result } : {}),
+    ...(error !== undefined ? { error } : {}),
   };
 }
 

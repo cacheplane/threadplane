@@ -4,11 +4,13 @@ import path from 'path';
 import { assertPublicDocOutput } from './public-doc-projection';
 import { readApiIndex, readApiSymbol, apiSymbolMarkdown } from '../src/lib/api-reference';
 
-/** The six libraries whose generated API docs the website publishes. */
+/** The libraries whose generated API docs the narrative prompts are given. */
 const PUBLIC_API_LIBRARIES = [
   'a2ui',
   'ag-ui',
+  'angular',
   'chat',
+  'core',
   'langgraph',
   'middleware',
   'render',
@@ -25,19 +27,19 @@ const TOPICS = [
   },
   {
     slug: 'streaming',
-    prompt: 'Explain how token-by-token streaming works with agent(). Cover the messages signal, how chunks arrive, and how Angular re-renders on each chunk.',
+    prompt: 'Explain how token-by-token streaming works with the Agent that injectAgent() returns. Cover the messages signal, how chunks arrive, and how Angular re-renders on each chunk.',
   },
   {
     slug: 'thread-persistence',
-    prompt: 'Explain thread persistence in agent(). Cover threadId, onThreadId, and how to resume threads across page refreshes with localStorage.',
+    prompt: 'Explain thread persistence with provideAgent({ threadId, onThreadId, createSession }). Cover threadId, onThreadId, and how to resume threads across page refreshes with localStorage.',
   },
   {
     slug: 'configuration',
-    prompt: 'Explain provideAgent() and per-call configuration. Show how to set a global apiUrl and how to override it per-call.',
+    prompt: 'Explain provideAgent({ createSession }) from @threadplane/angular and createSession() from the backend package. Show how to configure one agent for the application, how to re-provide it for a component subtree, and how to pass per-run options to submit().',
   },
   {
     slug: 'testing',
-    prompt: 'Explain how to unit test components that use agent() with MockAgentTransport. Show a complete test example.',
+    prompt: 'Explain how to unit test components that use injectAgent(), with provideFakeAgent() from @threadplane/angular/testing and with MockAgentTransport passed to createSession({ transport }). Show a complete test example.',
   },
 ];
 

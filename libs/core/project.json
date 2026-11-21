@@ -35,6 +35,11 @@
         ]
       }
     },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
+    },
     "lint": {
       "executor": "@nx/eslint:lint"
     },
@@ -52,7 +57,7 @@
         "^production"
       ],
       "options": {
-        "command": "node node_modules/typescript/bin/tsc --project libs/core/tsconfig.spec.json --noEmit --emitDeclarationOnly false --composite false --incremental false"
+        "command": "node node_modules/typescript/bin/tsc --project libs/core/tsconfig.spec.json --noEmit --emitDeclarationOnly false --composite false --incremental false && node node_modules/typescript/bin/tsc --project libs/core/tsconfig.nonstrict.json && node node_modules/typescript/bin/tsc --project libs/core/tsconfig.nonstrict-type-tests.json"
       }
     }
   }

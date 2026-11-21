@@ -1,21 +1,15 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ChatComponent } from './chat.component';
 import { ChatActivityTemplateDirective } from './chat-activity-template.directive';
 import { ChatToolCallTemplateDirective } from '../../primitives/chat-tool-calls/chat-tool-call-template.directive';
 import { mockAgent, type MockAgent } from '../../testing/mock-agent';
-import { staticDelivery, type Message, type Subagent, type ToolCall } from '../../agent';
+import { staticDelivery, type AgentSubagent, type Message, type ToolCall } from '../../agent';
 
-function subagent(toolCallId: string, name: string): Subagent {
-  return {
-    toolCallId,
-    name,
-    status: signal<'running'>('running'),
-    messages: signal<Message[]>([]),
-    state: signal({}),
-  };
+function subagent(id: string, toolCallId: string, name: string): AgentSubagent {
+  return { id, toolCallId, name, status: 'running', messages: [], toolCalls: [], state: {} };
 }
 
 function buildAgent(): MockAgent {
@@ -37,13 +31,13 @@ function buildAgent(): MockAgent {
     toolCalls: [
       { id: 'c_search', name: 'search_web', args: { q: 'x' }, status: 'complete', result: 'r' },
       { id: 'c_task', name: 'task', args: {}, status: 'running' },
-      { id: 'c_spec', name: 'render_spec', args: {}, status: 'complete' },
+      { id: 'c_spec', name: 'render_spec', args: {}, status: 'complete', result: null },
     ] as ToolCall[],
-    withSubagents: true,
+    
   });
-  // Keyed by something other than the spawning call id: anchoring must use
-  // Subagent.toolCallId, not the map key.
-  agent.subagents!.set(new Map([['run-42', subagent('c_task', 'research')]]));
+  // Its own id is something other than the spawning call id: anchoring must
+  // use AgentSubagent.toolCallId, not the child's id.
+  agent.subagents.set([subagent('run-42', 'c_task', 'research')]);
   return agent;
 }
 
@@ -88,7 +82,7 @@ class HostComponent {
     return calls.map((c) => c.id).join(',');
   }
 
-  subagentNames(subagents: Subagent[]): string {
+  subagentNames(subagents: readonly AgentSubagent[]): string {
     return subagents.map((s) => `${s.name}@${s.toolCallId}`).join(',');
   }
 }
@@ -120,7 +114,7 @@ describe('ChatComponent — chatActivityTemplate', () => {
     expect(second.dataset['calls']).toBe('');
   });
 
-  it('anchors subagents to the message by Subagent.toolCallId', () => {
+  it('anchors subagents to the message by AgentSubagent.toolCallId', () => {
     const host = render();
     const [first, second] = [...host.querySelectorAll<HTMLElement>('.activity')];
     expect(first.dataset['subagents']).toBe('research@c_task');
@@ -177,7 +171,7 @@ describe('ChatComponent — chatActivityTemplate', () => {
     const message = fixture.componentInstance.agent.messages()[1];
     const first = chat.activityContextFor(message, 1);
     expect(chat.activityContextFor(message, 1)).toBe(first);
-    fixture.componentInstance.agent.subagents!.set(new Map());
+    fixture.componentInstance.agent.subagents.set([]);
     expect(chat.activityContextFor(message, 1)).not.toBe(first);
   });
 });

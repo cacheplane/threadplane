@@ -102,12 +102,13 @@ describe('ChatComponent — agent state → render store sync', () => {
     });
   });
 
-  it('is a no-op when agent has no state signal (non-AG-UI agents)', () => {
+  it('is a no-op while the agent holds no state (a session that reports none)', () => {
     runInInjectionContext(injector, () => {
       const comp = new ChatComponent();
-      // Agent without a state property (duck-typed absent).
-      const bareAgent = { ...agent, state: undefined } as unknown as MockAgent;
-      setSignalInput(comp.agent, bareAgent);
+      // `state()` is undefined until the backend reports a state, and always
+      // on a session that holds none.
+      expect(agent.state()).toBeUndefined();
+      setSignalInput(comp.agent, agent);
       setSignalInput(comp.views, testViews);
       const store = comp.resolvedStore()!;
 

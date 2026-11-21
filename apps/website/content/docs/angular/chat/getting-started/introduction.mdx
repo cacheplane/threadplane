@@ -1,10 +1,10 @@
 ---
-description: How @threadplane/chat is organized — headless primitives, styled compositions, and where the library sits between your Angular app and a runtime adapter.
+description: How @threadplane/chat is organized — headless primitives, styled compositions, and where the library sits between your Angular app and a backend session.
 ---
 
 # Introduction
 
-`@threadplane/chat` is the Angular UI component library for building chat interfaces on top of a runtime-neutral `Agent` contract. It is a set of composable, Signal-driven components that render messages, handle user input, display tool calls, manage interrupts, and support generative UI -- all styled with CSS custom properties and built for Angular 20–22.
+`@threadplane/chat` is the Angular UI component library for building chat interfaces on top of one backend-neutral `Agent`. It is a set of composable, Signal-driven components that render messages, handle user input, display tool calls, manage interrupts, and support generative UI -- all styled with CSS custom properties and built for Angular 20–22.
 
 <Callout type="info" title="What this guide covers">
 This guide explains the library's two-tier architecture, how it relates to the rest of the Threadplane stack, and when to reach for the all-in-one composition versus assembling primitives yourself.
@@ -14,13 +14,13 @@ This guide explains the library's two-tier architecture, how it relates to the r
 
 Imagine a trip planner: the traveler enters a destination, watches an answer arrive, opens a weather result, and changes an itinerary. Start with the composition for the ordinary conversation. Reach for individual primitives when the itinerary, tool result, or approval needs a different place in the page.
 
-The component tree does not own the agent's reasoning loop or persistence. It renders the current conversation and dispatches user actions to the adapter. [Follow a conversation](/docs/angular/langgraph/concepts/conversation-turns) explains that boundary from the first request to a saved thread.
+The component tree does not own the agent's reasoning loop or persistence. It renders the current conversation and sends user actions to the agent. [Follow a conversation](/docs/angular/langgraph/concepts/conversation-turns) explains that boundary from the first request to a saved thread.
 
 ## How it fits
 
 <StackDiagram
   highlight="chat"
-  caption="The chat components consume only the Agent contract — the runtime below is swappable."
+  caption="The chat components read only the injected Agent — the backend below is swappable."
 />
 
 ## Two-Tier Architecture
@@ -40,7 +40,7 @@ Primitives are low-level, headless components that read from an `Agent` and expo
 | `ChatErrorComponent` | `chat-error` | Displays error messages from the agent |
 | `ChatInterruptComponent` | `chat-interrupt` | Projects interrupt content via a template |
 | `ChatToolCallsComponent` | `chat-tool-calls` | Iterates tool calls and projects each via a template |
-| `ChatSubagentsComponent` | `chat-subagents` | Iterates active subagent streams via a template |
+| `ChatSubagentsComponent` | `chat-subagents` | Iterates the agent's child agents via a template |
 | `ChatThreadListComponent` | `chat-thread-list` | Renders a list of conversation threads |
 | `ChatTimelineComponent` | `chat-timeline` | Iterates checkpoint history via a template |
 
@@ -59,9 +59,11 @@ Compositions are opinionated, styled components that combine primitives into rea
 
 ## How the Stack Fits Together
 
-`@threadplane/chat` sits between your application and the adapters below the Agent-contract seam shown above; alongside it, `@threadplane/render` turns specs in assistant messages into your components.
+`@threadplane/chat` sits between your application and the backend session below the `Agent` seam shown above; alongside it, `@threadplane/render` turns specs in assistant messages into your components.
 
-- **`@threadplane/langgraph`** provides `provideAgent()` and `injectAgent()` returning a `LangGraphAgent`, which satisfies the `Agent` contract consumed by `@threadplane/chat`. The base `Agent` contract exposes reactive Signals for `messages()`, `status()`, `isLoading()`, `error()`, `toolCalls()`, and `state()`, plus optional `interrupt()` and `subagents()`. Adapters can layer on more: LangGraph implements `AgentWithHistory`, adding `history()` for checkpoint time-travel.
+- **`@threadplane/angular`** provides `provideAgent()` and `injectAgent()`. The injected `Agent` is a session's snapshot fields as Signals (`messages()`, `status()`, `error()`, `toolCalls()` and `state()`, plus the optional `interrupts()`, `subagents()`, `plan()` and `checkpoints()`) and the session's commands (`submit`, `stop`, and the optional `resume`, `retry` and `regenerate`). A field the backend does not report reads as `undefined`, and a command it does not offer is `undefined`.
+
+- **`@threadplane/langgraph`** and **`@threadplane/ag-ui`** each export `createSession()`, which runs a backend behind the framework-neutral `AgentSession` contract from `@threadplane/core`. You hand that factory to `provideAgent({ createSession })`. A backend can publish more than the core contract: a LangGraph session adds `history()`, `fork()` and branch data for checkpoint time-travel.
 
 - **`@threadplane/render`** provides `RenderSpecComponent` and view registries for rendering JSON UI specs as Angular components. The `ChatComponent` auto-detects JSON specs in AI messages and renders them through `@threadplane/render` - pass a view registry via the `[views]` input. The same `[views]` input enables A2UI rendering with `a2uiBasicCatalog()`, which currently maps 18 component types.
 
@@ -95,7 +97,7 @@ Compositions are opinionated, styled components that combine primitives into rea
     title="Installation"
     href="/docs/angular/chat/getting-started/installation"
   >
-    Install the package, check the peer dependencies, and register an adapter.
+    Install the package, check the peer dependencies, and provide an agent.
   </Card>
   <Card
     title="Quick Start"

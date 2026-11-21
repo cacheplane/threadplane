@@ -6,7 +6,9 @@ import {
 } from '@threadplane/chat';
 import type { InterruptAction } from '@threadplane/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { PlainValue } from '@threadplane/core';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
 /** One entry of the `files` map `StateBackend` keeps on the graph state. */
 interface WorkspaceFile {
@@ -61,7 +63,7 @@ const SUGGESTIONS = [
     >
       <chat placeholder="Ask for a runway note…" [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -198,7 +200,7 @@ const SUGGESTIONS = [
   ],
 })
 export class FilesystemComponent {
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 
   protected readonly suggestions = SUGGESTIONS;
 
@@ -212,8 +214,8 @@ export class FilesystemComponent {
    * lives on `args.file_path`.
    */
   protected readonly pendingPath = computed<string | null>(() => {
-    for (const interrupt of this.agent.langGraphInterrupts() ?? []) {
-      const value = (interrupt as { value?: unknown }).value as
+    for (const interrupt of this.agent.interrupts()) {
+      const value = interrupt.value as
         | { action_requests?: Array<{ name?: string; args?: Record<string, unknown> }> }
         | undefined;
       for (const request of value?.action_requests ?? []) {
@@ -228,7 +230,7 @@ export class FilesystemComponent {
   // #region files
   /** Live projection of `state.files`, plus a ghost row for a pending write. */
   protected readonly files = computed<WorkspaceFile[]>(() => {
-    const raw = (this.agent.value() as Record<string, unknown> | undefined)?.['files'];
+    const raw = this.agent.state()?.['files'];
     const entries = new Map<string, string>();
     if (raw && typeof raw === 'object') {
       for (const [path, contents] of Object.entries(raw as Record<string, unknown>)) {
@@ -289,11 +291,20 @@ export class FilesystemComponent {
   // #region resume
   protected onInterruptAction(action: InterruptAction): void {
     if (action === 'accept') {
-      void this.agent.submit({ resume: { decisions: [{ type: 'approve' }] } });
+      this.answer({ decisions: [{ type: 'approve' }] });
     } else if (action === 'ignore') {
-      void this.agent.submit({ resume: { decisions: [{ type: 'reject' }] } });
+      this.answer({ decisions: [{ type: 'reject' }] });
     }
     // 'edit' and 'respond' would need the tool args echoed back; out of scope here.
+  }
+
+  /** Answers the pending interrupt; `value` is what the paused graph receives. */
+  private answer(value: PlainValue): void {
+    const interrupt = this.agent.interrupts()[0];
+    if (!interrupt) return;
+    void this.agent.resume([
+      { interruptId: interrupt.id, status: 'resolved', value },
+    ]);
   }
   // #endregion
 
