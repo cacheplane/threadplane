@@ -4,7 +4,7 @@ description: How the AG-UI session turns protocol events into Angular signals, h
 
 # Architecture
 
-`@threadplane/ag-ui` is a backend package. It does not replace `@threadplane/chat`, and it contains no UI framework code.
+`@threadplane/ag-ui` is a backend package. It does not replace `@threadplane/angular/chat`, and it contains no UI framework code.
 
 The package posts each run to an AG-UI endpoint (or calls an AG-UI `AbstractAgent` you built), reads the protocol events, and publishes them as a framework-neutral session. `@threadplane/angular` puts that session behind the injected `Agent` that the chat components already understand.
 
@@ -52,7 +52,7 @@ export const appConfig: ApplicationConfig = {
 
 ```ts
 import { Component } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 
 @Component({

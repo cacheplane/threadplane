@@ -1,5 +1,5 @@
 ---
-description: Install @threadplane/chat, provide an agent over a LangGraph session, and render a streaming chat surface — with a no-backend variant using mockAgent().
+description: Install @threadplane/angular/chat, provide an agent over a LangGraph session, and render a streaming chat surface — with a no-backend variant using mockAgent().
 ---
 
 # Quick Start
@@ -22,7 +22,7 @@ Yes. Every Threadplane package is MIT-licensed for commercial and noncommercial 
 <Step title="Install the package">
 
 ```bash
-npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
 ```
 
 `@threadplane/angular` provides `provideAgent()` and `injectAgent()`, and `@threadplane/langgraph` provides the `createSession()` factory the provider snippet below hands to it. `@threadplane/core` is the session contract both share. The LangChain packages are required peers of `@threadplane/langgraph`, and `marked` is the markdown renderer used for assistant messages.
@@ -61,7 +61,7 @@ export const appConfig: ApplicationConfig = {
 // chat-page.component.ts
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { injectAgent } from '@threadplane/angular';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-chat-page',
@@ -90,12 +90,12 @@ No model runs because the component renders. A new run starts when you submit an
 
 ## Run with no backend
 
-No LangGraph server yet? Bind `<chat>` to `mockAgent()` from `@threadplane/chat`. It builds the same `Agent` over an in-memory session with canned messages, so the UI renders exactly as it will against a real agent — only the responses are static.
+No LangGraph server yet? Bind `<chat>` to `mockAgent()` from `@threadplane/angular/chat`. It builds the same `Agent` over an in-memory session with canned messages, so the UI renders exactly as it will against a real agent — only the responses are static.
 
 ```ts
 // chat-page.component.ts
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { ChatComponent, mockAgent, staticDelivery } from '@threadplane/chat';
+import { ChatComponent, mockAgent, staticDelivery } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-chat-page',

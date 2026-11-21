@@ -46,7 +46,7 @@ Blog posts and their dev.to cross-posts stay in the register above.
 
 - **Plain text.** No markdown, no bold, no bullet glyphs, no numbered "1/" thread markers, no "🧵".
 - **Short lines.** One thought per line, like the blog register, only shorter. A blank line between thoughts is fine.
-- **Casual lowercase is fine.** Starting a post or a line in lowercase is normal. Proper nouns and package names keep their real casing (`@threadplane/chat`, LangGraph, AG-UI, Angular).
+- **Casual lowercase is fine.** Starting a post or a line in lowercase is normal. Proper nouns and package names keep their real casing (`@threadplane/angular/chat`, LangGraph, AG-UI, Angular).
 - **Minimal punctuation.** Periods are optional at the end of a line. Commas only where he'd pause. One question mark or exclamation mark is plenty.
 - **No em dashes.** Use a period, a comma, or a new line.
 - **Hashtags: zero or one.** Zero is the default.

@@ -1,10 +1,10 @@
-# @threadplane/chat
+# @threadplane/angular/chat
 
-The chat surface of [Threadplane](https://github.com/cacheplane/threadplane), the open-source thread-plane for agents. Headless primitives plus opinionated compositions read a runtime-neutral `Agent` contract, so the UI is built once and runs over LangGraph or AG-UI without changes. Angular 20–22, on Signals and DI.
+The chat surface of [Threadplane](https://github.com/cacheplane/threadplane), the open-source thread-plane for agents, published as the `@threadplane/angular/chat` entry point of `@threadplane/angular`. Headless primitives plus opinionated compositions read a runtime-neutral `Agent` contract, so the UI is built once and runs over LangGraph or AG-UI without changes. Angular 20–22, on Signals and DI.
 
 <p>
-  <a href="https://www.npmjs.com/package/@threadplane/chat">
-    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Fchat?color=15253E&labelColor=0A0A0A&style=flat-square" />
+  <a href="https://www.npmjs.com/package/@threadplane/angular">
+    <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Fangular?color=15253E&labelColor=0A0A0A&style=flat-square" />
   </a>
   <img alt="Angular 20 | 21 | 22" src="https://img.shields.io/badge/Angular-20%20%7C%2021%20%7C%2022-15253E?labelColor=0A0A0A&style=flat-square" />
   <img alt="License" src="https://img.shields.io/badge/License-MIT-15253E?labelColor=0A0A0A&style=flat-square" />
@@ -26,10 +26,12 @@ The chat surface of [Threadplane](https://github.com/cacheplane/threadplane), th
 ## Install
 
 ```bash
-npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
 ```
 
 `@threadplane/angular` supplies `provideAgent` and `injectAgent`, and `@threadplane/core` the contract types. `@threadplane/langgraph` and its two `@langchain` peers are the LangGraph backend; with another backend, install that package in their place.
+
+`@threadplane/angular` declares these peers for the chat UI.
 
 **Peer dependencies:**
 
@@ -38,10 +40,9 @@ npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplan
 @angular/common            ^20.0.0 || ^21.0.0 || ^22.0.0
 @angular/platform-browser  ^20.0.0 || ^21.0.0 || ^22.0.0
 @angular/router            ^20.0.0 || ^21.0.0 || ^22.0.0
-@threadplane/angular       same version as @threadplane/chat
-@threadplane/core          same version as @threadplane/chat
-@threadplane/render        same version as @threadplane/chat
-@threadplane/a2ui          same version as @threadplane/chat
+@threadplane/core          same version as @threadplane/angular
+@threadplane/content       same version as @threadplane/angular
+@threadplane/a2ui          same version as @threadplane/angular
 @threadplane/telemetry     ^0.3.7
 @json-render/core          ^0.16.0
 rxjs                       ~7.8.0
@@ -73,7 +74,7 @@ export const appConfig: ApplicationConfig = {
 ```typescript
 // my.component.ts
 import { Component } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 
 @Component({
@@ -126,7 +127,7 @@ Custom content templates for message bubbles, tool call rows, and citation cards
 
 ```typescript
 import { injectAgent } from '@threadplane/angular';
-import type { InterruptAction } from '@threadplane/chat';
+import type { InterruptAction } from '@threadplane/angular/chat';
 
 // Component members; add ChatInterruptPanelComponent to component imports.
 readonly agent = injectAgent();
@@ -228,8 +229,8 @@ Override individual node renderers:
 import {
   MARKDOWN_VIEW_REGISTRY,
   cacheplaneMarkdownViews,
-} from '@threadplane/chat';
-import { overrideViews } from '@threadplane/render';
+} from '@threadplane/angular/chat';
+import { overrideViews } from '@threadplane/angular/render';
 import { MyCodeBlockComponent } from './my-code-block.component';
 
 providers: [
@@ -299,10 +300,10 @@ Use app tokens for app layout and `--tplane-chat-*` tokens at chat boundaries or
 **Built-in presets** — import one in your global stylesheet:
 
 ```css
-@import '@threadplane/chat/themes/default-dark.css'; /* lib defaults, explicit */
-@import '@threadplane/chat/themes/default-light.css'; /* neutral light, blue accent */
-@import '@threadplane/chat/themes/material-dark.css'; /* Material Design 3 dark */
-@import '@threadplane/chat/themes/material-light.css'; /* Material Design 3 light */
+@import '@threadplane/angular/chat/themes/default-dark.css'; /* lib defaults, explicit */
+@import '@threadplane/angular/chat/themes/default-light.css'; /* neutral light, blue accent */
+@import '@threadplane/angular/chat/themes/material-dark.css'; /* Material Design 3 dark */
+@import '@threadplane/angular/chat/themes/material-light.css'; /* Material Design 3 light */
 ```
 
 Material presets map M3 color tokens to the `--a2ui-*` vocabulary with no `@angular/material` runtime dependency.
@@ -332,11 +333,11 @@ Chat compositions take the `Agent` that `injectAgent()` from `@threadplane/angul
 
 A custom backend implements the `AgentSession` contract and is provided the same way.
 
-For tests and stories, `mockAgent()` builds an `Agent` with writable fields and recorded commands. `@threadplane/chat/testing` adds `provideAgentValue(agent)`, which makes `injectAgent()` return that mock in a component under test, `provideFakeAgent()`, which provides the real agent over an in-memory session, and the session conformance suites.
+For tests and stories, `mockAgent()` builds an `Agent` with writable fields and recorded commands. `@threadplane/angular/chat/testing` adds `provideAgentValue(agent)`, which makes `injectAgent()` return that mock in a component under test, `provideFakeAgent()`, which provides the real agent over an in-memory session, and the session conformance suites.
 
 ```typescript
-import { mockAgent } from '@threadplane/chat';
-import { provideAgentValue } from '@threadplane/chat/testing';
+import { mockAgent } from '@threadplane/angular/chat';
+import { provideAgentValue } from '@threadplane/angular/chat/testing';
 
 const agent = mockAgent({ messages: [{ id: 'a1', role: 'assistant', content: 'Hi' }] });
 TestBed.configureTestingModule({ providers: [provideAgentValue(agent)] });
@@ -350,7 +351,7 @@ cross-device persistence depend on the backend and infrastructure you operate.
 
 ## Reliability
 
-`@threadplane/chat` follows a patch-only release cadence (`0.0.x`). The `Agent` contract is a stability boundary: backend updates do not break chat UI code and vice versa. The package is covered by the monorepo's CI lint, test, and build pipeline on every commit.
+`@threadplane/angular/chat` follows a patch-only release cadence (`0.0.x`). The `Agent` contract is a stability boundary: backend updates do not break chat UI code and vice versa. The package is covered by the monorepo's CI lint, test, and build pipeline on every commit.
 
 ---
 

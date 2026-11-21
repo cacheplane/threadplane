@@ -7,7 +7,7 @@ description: Testing LangGraph agents in Angular with provideFakeAgent, mockAgen
 An Angular LangGraph app has three test doubles to choose from, smallest setup first:
 
 - **`provideFakeAgent()`**, from `@threadplane/angular/testing`: the injected agent over an in-memory session that streams a canned reply. No server, no LLM. Reach for this first.
-- **`mockAgent()`**, from `@threadplane/chat/testing`: an agent whose fields are writable, for component and unit tests where you set `messages()`, `status()`, and the rest directly.
+- **`mockAgent()`**, from `@threadplane/angular/chat/testing`: an agent whose fields are writable, for component and unit tests where you set `messages()`, `status()`, and the rest directly.
 - **`MockAgentTransport`**, from `@threadplane/langgraph`: a transport for hand-scripting exact LangGraph stream events through the real LangGraph session (tool calls, interrupts, saved history).
 
 <Callout type="tip" title="No flaky tests">
@@ -44,7 +44,7 @@ export const appConfig: ApplicationConfig = {
 ```typescript
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { injectAgent } from '@threadplane/angular';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-chat',
@@ -60,7 +60,7 @@ export class ChatHost {
 </Tab>
 </Tabs>
 
-The component is the one you ship; only the provider changes. `FakeAgentConfig` is exported from `@threadplane/angular/testing`, and `@threadplane/chat/testing` re-exports it with `provideFakeAgent`:
+The component is the one you ship; only the provider changes. `FakeAgentConfig` is exported from `@threadplane/angular/testing`, and `@threadplane/angular/chat/testing` re-exports it with `provideFakeAgent`:
 
 | Option | Type | Notes |
 | --- | --- | --- |
@@ -150,7 +150,7 @@ A message you set needs no `delivery`: the mock fills in a complete, successful 
 
 ```typescript
 import { describe, it, expect } from 'vitest';
-import { mockAgent } from '@threadplane/chat/testing';
+import { mockAgent } from '@threadplane/angular/chat/testing';
 
 describe('mockAgent', () => {
   it('exposes the agent surface as writable fields', async () => {
@@ -167,7 +167,7 @@ describe('mockAgent', () => {
 });
 ```
 
-[`mockAgent()`](/docs/api/chat/mockAgent) has the shape of the injected agent: `messages`, `status`, `error`, `interrupts`, `toolCalls`, `state`, `threadId`, and the rest, each with `set()` and `update()`. It records `submitCalls`, `stopCount` and `switchThreadCalls`, and `agent.fake` is the fake session underneath, with `stream()` for a streaming reply and `resumes` for the answers a view sent. It carries `resume`, `regenerate`, `retry` and `onCustomEvent` by default; pass `commands` to change that list.
+[`mockAgent()`](/docs/api/angular/chat/mockAgent) has the shape of the injected agent: `messages`, `status`, `error`, `interrupts`, `toolCalls`, `state`, `threadId`, and the rest, each with `set()` and `update()`. It records `submitCalls`, `stopCount` and `switchThreadCalls`, and `agent.fake` is the fake session underneath, with `stream()` for a streaming reply and `resumes` for the answers a view sent. It carries `resume`, `regenerate`, `retry` and `onCustomEvent` by default; pass `commands` to change that list.
 
 Hand the mock to a component through its `[agent]` input, or provide it under a ref's token (`{ provide: CHAT.token, useValue: agent }`, for a ref made with `createAgentRef`) so `injectAgent(CHAT)` returns it.
 

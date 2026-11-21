@@ -16,7 +16,7 @@ import {
   MessageTemplateDirective,
   getMessageType,
   messageContent,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 ```
 
 ## How It Works
@@ -84,7 +84,7 @@ The `MessageTemplateDirective` is a structural directive applied to `ng-template
 **Selector:** `ng-template[chatMessageTemplate]`
 
 ```typescript
-import { MessageTemplateDirective } from '@threadplane/chat';
+import { MessageTemplateDirective } from '@threadplane/angular/chat';
 ```
 
 ### Input
@@ -104,7 +104,7 @@ type MessageTemplateType = 'human' | 'ai' | 'tool' | 'system' | 'function';
 The `getMessageType()` function maps a `Message` role to a `MessageTemplateType`.
 
 ```typescript
-import { getMessageType } from '@threadplane/chat';
+import { getMessageType } from '@threadplane/angular/chat';
 
 const type = getMessageType(message); // 'human' | 'ai' | 'tool' | 'system' | 'function'
 ```
@@ -141,7 +141,7 @@ import {
   ChatMessageListComponent,
   MessageTemplateDirective,
   type Agent,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-my-list',
@@ -176,7 +176,7 @@ import {
   renderMarkdown,
   messageContent,
   type Message,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-messages-demo',

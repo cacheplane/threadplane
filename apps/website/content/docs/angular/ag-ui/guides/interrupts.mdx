@@ -98,7 +98,7 @@ provideAgent({
 
 ### The approval card
 
-`<chat-approval-card>` from `@threadplane/chat` is a prebuilt composition. Give it the agent and it watches `interrupts()` for you: when a matching payload arrives it shows an approval panel, and when the interrupt resolves the panel goes away. Put it in a `chatInterruptTemplate` inside `<chat>` so the panel sits at the end of the transcript, and use `approveLabel` and `cancelLabel` to name the two actions. `matchKind` compares the `kind` field of the interrupt's value, so the card ignores any interrupt that is not a refund approval, and `showEdit` adds the third button.
+`<chat-approval-card>` from `@threadplane/angular/chat` is a prebuilt composition. Give it the agent and it watches `interrupts()` for you: when a matching payload arrives it shows an approval panel, and when the interrupt resolves the panel goes away. Put it in a `chatInterruptTemplate` inside `<chat>` so the panel sits at the end of the transcript, and use `approveLabel` and `cancelLabel` to name the two actions. `matchKind` compares the `kind` field of the interrupt's value, so the card ignores any interrupt that is not a refund approval, and `showEdit` adds the third button.
 
 <ExampleCode file="interrupts.component.ts" region="approval-card" title="interrupts.component.ts — the card" />
 

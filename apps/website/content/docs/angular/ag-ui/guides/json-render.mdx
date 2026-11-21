@@ -1,12 +1,12 @@
 ---
-description: Stream a json-render UI spec with AG-UI shared state and let @threadplane/render resolve $state bindings into a live Angular component tree.
+description: Stream a json-render UI spec with AG-UI shared state and let @threadplane/angular/render resolve $state bindings into a live Angular component tree.
 ---
 
 # Generative UI
 
 Choose **React** in the frontend selector for the experimental native React dashboard preview. Docs, Code and Run follow the selected frontend. The React preview uses the same server tools and fixed airline data with six authored read-only views; confirmed layouts bind to the latest native shared state.
 
-An AG-UI agent can author the interface, not only the text. It returns a declarative json-render specification as the assistant message content, and it puts the numbers that specification binds to in graph state, which `ag-ui-langgraph` emits as `STATE_SNAPSHOT` and `STATE_DELTA` events. The `<chat>` composition mounts the specification through your `views` registry, syncs the agent state into a render store, and `@threadplane/render` resolves the `$state` bindings against it.
+An AG-UI agent can author the interface, not only the text. It returns a declarative json-render specification as the assistant message content, and it puts the numbers that specification binds to in graph state, which `ag-ui-langgraph` emits as `STATE_SNAPSHOT` and `STATE_DELTA` events. The `<chat>` composition mounts the specification through your `views` registry, syncs the agent state into a render store, and `@threadplane/angular/render` resolves the `$state` bindings against it.
 
 The running example is an airline operations dashboard, and this guide walks the four files that build it.
 
@@ -57,7 +57,7 @@ The rest of the node replaces both messages, keeping their ids so LangGraph's `a
 The tool message becomes a short placeholder and the assistant message takes the specification JSON.
 
 <Callout type="info" title="How the client recognizes it">
-On the client the content classifier in `@threadplane/chat` sees content that begins with `{`, classifies it as `json-render`, and mounts `<chat-generative-ui>`, which renders it through `<render-spec>` from `@threadplane/render`.
+On the client the content classifier in `@threadplane/angular/chat` sees content that begins with `{`, classifies it as `json-render`, and mounts `<chat-generative-ui>`, which renders it through `<render-spec>` from `@threadplane/angular/render`.
 </Callout>
 
 ### Returning the tool data as state

@@ -160,7 +160,7 @@ Each repeated mount gets its own child injector carrying a `RepeatScope`, which 
 
 ```ts
 import { inject } from '@angular/core';
-import { REPEAT_SCOPE } from '@threadplane/render';
+import { REPEAT_SCOPE } from '@threadplane/angular/render';
 
 const scope = inject(REPEAT_SCOPE, { optional: true });
 scope?.item;     // the current item

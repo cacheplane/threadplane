@@ -55,7 +55,7 @@ The panel is a definition list over those two fields.
 ## Import
 
 ```typescript
-import { ChatInputComponent, submitMessage } from '@threadplane/chat';
+import { ChatInputComponent, submitMessage } from '@threadplane/angular/chat';
 ```
 
 The selector is `chat-input`, and the component is standalone, so add it to a component's `imports` array.
@@ -117,8 +117,8 @@ Input method editors are handled explicitly. While a composition is in progress 
 The submit path is exported on its own for programmatic sends:
 
 ```typescript
-import { submitMessage } from '@threadplane/chat';
-import type { Agent } from '@threadplane/chat';
+import { submitMessage } from '@threadplane/angular/chat';
+import type { Agent } from '@threadplane/angular/chat';
 
 function sendGreeting(agent: Agent) {
   const result = submitMessage(agent, 'Hello!');

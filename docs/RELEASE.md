@@ -1,6 +1,6 @@
 # Release Process
 
-The six publishable libraries (`@threadplane/chat`, `@threadplane/langgraph`, `@threadplane/ag-ui`, `@threadplane/render`, `@threadplane/a2ui`, `@threadplane/telemetry`) ship together at a synchronized version via Nx Release. A release with breaking changes bumps the **minor** (`0.2.0` → `0.3.0`); a release with only features and fixes bumps the **patch** (`0.3.0` → `0.3.1`). **Never cut `1.0.0` without explicit approval from the repository owner, every time.**
+The six publishable libraries (`@threadplane/angular/chat`, `@threadplane/langgraph`, `@threadplane/ag-ui`, `@threadplane/angular/render`, `@threadplane/a2ui`, `@threadplane/telemetry`) ship together at a synchronized version via Nx Release. A release with breaking changes bumps the **minor** (`0.2.0` → `0.3.0`); a release with only features and fixes bumps the **patch** (`0.3.0` → `0.3.1`). **Never cut `1.0.0` without explicit approval from the repository owner, every time.**
 
 Nx updates internal dependency and peer ranges with the synchronized release. `preserveMatchingDependencyRanges` is disabled so a prior `^0.0.x` peer range cannot block the next patch or leave companion packages on incompatible versions. External dependency ranges remain unchanged.
 
@@ -61,7 +61,7 @@ Then, by hand, before committing:
   `Unreleased` heading. Nx turns hex colours in commit bodies into issue links
   (`#181818`, `#0`, `#16`); delete those.
 - **Docs peer tables.** Update the `@threadplane/*` versions on the installation pages for
-  chat, langgraph, ag-ui and render, the `@threadplane/chat@X.Y.Z` peer list, and the
+  chat, langgraph, ag-ui and render (all under `apps/website/content/docs/angular`), the `@threadplane/angular@X.Y.Z` peer list, and the
   example range in `chat/guides/writing-an-adapter.mdx`:
   `rg -n '<old version>' apps/website/content/docs` should come back empty.
 - **Docs changelog.** In `apps/website/content/docs/chat/getting-started/changelog.mdx`,
@@ -184,30 +184,32 @@ The first publish under the `@threadplane` npm org is manual. The packages must 
 ```bash
 # 1. Install and build everything
 npm ci
-npx nx run-many -t lint,test,build --projects=chat,langgraph,ag-ui,render,a2ui,telemetry --skip-nx-cache
+npx nx run-many -t lint,test,build --projects=core,content,angular,langgraph,ag-ui,a2ui,telemetry --skip-nx-cache
 
 # 2. Verify release metadata
-node scripts/verify-release-versions.mjs --tag v$(node -p "require('./libs/chat/package.json').version")
+node scripts/verify-release-versions.mjs --tag v$(node -p "require('./libs/angular/package.json').version")
 npx nx release publish --groups=publishable --dry-run
 
 # 3. Publish manually.
 npm publish dist/libs/telemetry --access public
 npm publish dist/libs/a2ui --access public
-npm publish dist/libs/render --access public
-npm publish dist/libs/chat --access public
+npm publish dist/libs/core --access public
+npm publish dist/libs/content --access public
+npm publish dist/libs/angular --access public
 npm publish dist/libs/ag-ui --access public
 npm publish dist/libs/langgraph --access public
 
 # 5. Verify all package pages resolve.
 npm view @threadplane/telemetry version
 npm view @threadplane/a2ui version
-npm view @threadplane/render version
-npm view @threadplane/chat version
+npm view @threadplane/core version
+npm view @threadplane/content version
+npm view @threadplane/angular version
 npm view @threadplane/ag-ui version
 npm view @threadplane/langgraph version
 ```
 
-After the first `@threadplane` release, configure npm trusted publishing for all six packages against `.github/workflows/publish.yml`. Subsequent patch bumps use the one-shot flow above.
+After the first `@threadplane` release, configure npm trusted publishing for all seven packages against `.github/workflows/publish.yml`. Subsequent patch bumps use the one-shot flow above.
 
 ## Dry run
 
@@ -228,7 +230,7 @@ routinely drifts ahead of npm, and the version on disk can match the version on
 npm while the code differs. Check before assuming:
 
 ```bash
-git rev-list --count "v$(npm view @threadplane/chat version)"..origin/main
+git rev-list --count "v$(npm view @threadplane/angular/chat version)"..origin/main
 ```
 
 Anything above `0` means main has unpublished commits.

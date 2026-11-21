@@ -4,7 +4,7 @@ description: The CHAT_LIFECYCLE token exposes per-instance signals for readiness
 
 # Chat Lifecycle Signals
 
-`@threadplane/chat` exposes per-instance lifecycle signals via the `CHAT_LIFECYCLE` injection token. Subscribe to them for debugging, custom dashboards, or telemetry integrations.
+`@threadplane/angular/chat` exposes per-instance lifecycle signals via the `CHAT_LIFECYCLE` injection token. Subscribe to them for debugging, custom dashboards, or telemetry integrations.
 
 <Callout type="warning" title="The token is scoped to one chat instance">
 `ChatComponent` provides `CHAT_LIFECYCLE` in its own `providers` array, so the
@@ -40,7 +40,7 @@ suggestion strip, a footer badge:
 
 ```typescript
 import { Component, inject, effect } from '@angular/core';
-import { CHAT_LIFECYCLE } from '@threadplane/chat';
+import { CHAT_LIFECYCLE } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-chat-header',
@@ -81,7 +81,7 @@ injector:
 ```typescript
 import { Component, Injector, viewChild } from '@angular/core';
 import { injectAgent } from '@threadplane/angular';
-import { CHAT_LIFECYCLE, ChatComponent } from '@threadplane/chat';
+import { CHAT_LIFECYCLE, ChatComponent } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-chat-page',

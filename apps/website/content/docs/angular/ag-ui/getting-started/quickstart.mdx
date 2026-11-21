@@ -26,7 +26,7 @@ Want to see the finished result before you build?
 <Step title="Install the packages">
 
 ```bash
-npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked
+npm install @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked
 ```
 
 </Step>
@@ -62,7 +62,7 @@ No backend yet? Swap to `provideFakeAgent()` from `@threadplane/angular/testing`
 
 ```ts
 import { Component } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 
 @Component({
@@ -95,7 +95,7 @@ AG-UI defines the event exchange. Durable threads, replay, and approval behavior
 - [Event Mapping](/docs/angular/ag-ui/reference/event-mapping) is the backend compatibility checklist for emitted AG-UI events.
 - [Fake Agent](/docs/angular/ag-ui/guides/fake-agent) covers offline demos and frontend tests.
 - [Troubleshooting](/docs/angular/ag-ui/guides/troubleshooting) is the fastest place to start when a stream does not render.
-- The [`@threadplane/chat` Components](/docs/angular/chat/components/chat) reference covers the primitives the `<chat>` composition uses internally - handy if you want to compose your own layout.
+- The [`@threadplane/angular/chat` Components](/docs/angular/chat/components/chat) reference covers the primitives the `<chat>` composition uses internally - handy if you want to compose your own layout.
 - Looking for LangGraph instead of AG-UI? See [`@threadplane/langgraph`](/docs/angular/langgraph/getting-started/quickstart).
 
 ## Switching backends without changing UI

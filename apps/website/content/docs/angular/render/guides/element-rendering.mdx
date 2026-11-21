@@ -59,14 +59,14 @@ The checkbox writes to the store, not to the spec. `RenderElementComponent` deri
 ## Import
 
 ```typescript
-import { RenderSpecComponent } from '@threadplane/render';
+import { RenderSpecComponent } from '@threadplane/angular/render';
 ```
 
 The selector is `render-spec`, and the component is standalone, so add it to a component's `imports` array.
 
 ## API reference
 
-See the generated [RenderSpecComponent reference](/docs/api/render/RenderSpecComponent) for inputs, outputs, and their declared types.
+See the generated [RenderSpecComponent reference](/docs/api/angular/render/RenderSpecComponent) for inputs, outputs, and their declared types.
 
 ## Resolution order
 
@@ -96,13 +96,13 @@ provideRender({
 
 `RenderSpecComponent` provides a `RENDER_CONTEXT` token to its children through `viewProviders`. Every `RenderElementComponent` under it injects that context to find the registry, the store, and the rest:
 
-See [RenderContext](/docs/api/render/RenderContext) and [RENDER_CONTEXT](/docs/api/render/RENDER_CONTEXT) for the generated context declarations.
+See [RenderContext](/docs/api/angular/render/RenderContext) and [RENDER_CONTEXT](/docs/api/angular/render/RENDER_CONTEXT) for the generated context declarations.
 
 The context is a `computed` signal, so it is rebuilt when any input changes. A component mounted inside the tree can inject it directly:
 
 ```typescript
 import { inject } from '@angular/core';
-import { RENDER_CONTEXT } from '@threadplane/render';
+import { RENDER_CONTEXT } from '@threadplane/angular/render';
 
 const context = inject(RENDER_CONTEXT);
 context.store.get('/showDetail');

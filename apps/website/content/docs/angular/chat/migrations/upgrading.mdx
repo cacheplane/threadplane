@@ -10,7 +10,7 @@ Upgrade the parts that exchange data together: the frontend packages, their prot
 
 | Application | Contract to check |
 |---|---|
-| Angular chat | `@threadplane/chat` components, `@threadplane/angular`, `@threadplane/core`, and the chosen backend package with its declared peers. |
+| Angular chat | `@threadplane/angular/chat` components, `@threadplane/angular`, `@threadplane/core`, and the chosen backend package with its declared peers. |
 | LangGraph backend | Graph state, checkpoint storage, and the SDK protocol consumed by the session. |
 | AG-UI backend | Event shapes, protocol peers, and that runtime's interrupt/replay conventions. |
 | React source build | The private `@threadplane/react` binding over the same `@threadplane/core` sessions. |
@@ -187,8 +187,8 @@ readonly threads = injectThreadDirectory();
 
 | Before | After |
 |---|---|
-| `provideFakeAgent` from `@threadplane/langgraph` or `@threadplane/ag-ui` | `provideFakeAgent` from `@threadplane/angular/testing`, also re-exported by `@threadplane/chat/testing` |
-| `mockLangGraphAgent()` | `mockAgent()` from `@threadplane/chat` |
+| `provideFakeAgent` from `@threadplane/langgraph` or `@threadplane/ag-ui` | `provideFakeAgent` from `@threadplane/angular/testing`, also re-exported by `@threadplane/angular/chat/testing` |
+| `mockLangGraphAgent()` | `mockAgent()` from `@threadplane/angular/chat` |
 | `runAgentConformance(label, () => agent)` | `runAgentConformance(label, () => session)`: the factory returns an `AgentSession` |
 | A hand-written fake `Agent` | `createFakeAgentSession()` from `@threadplane/core/testing`, or `mockAgent()` |
 

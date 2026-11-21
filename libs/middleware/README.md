@@ -138,7 +138,7 @@ after a history load. Tools marked `idempotent: true` bypass durable storage whi
 retaining same-session invocation identity checks.
 
 These guarantees apply to the private shared runtime and this new provider protocol.
-The legacy `@threadplane/chat` execution guard still uses its separate old contract and
+The legacy `@threadplane/angular/chat` execution guard still uses its separate old contract and
 is outside this guarantee. Do not adapt it by merely renaming its methods.
 
 ### PostgreSQL setup and cutover
