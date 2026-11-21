@@ -246,9 +246,11 @@ for (const toolFault of ['failKpis', 'malformedTrend'])
     await configure(request, { partialDashboard: false, [toolFault]: true });
     await box(page).fill('Show another dashboard');
     await box(page).press('Enter');
-    await expect(page.getByRole('alert')).toContainText(
-      'could not be confirmed'
-    );
+    // The failed tool call shows its own error alert in the transcript; this
+    // is the app's alert about the board.
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'could not be confirmed' })
+    ).toBeVisible();
     await expect(boards(page)).toHaveCount(1);
     expect(await boards(page).innerText()).toBe(old);
     expect(await boards(page).getAttribute('data-dashboard-spec-owner')).toBe(
