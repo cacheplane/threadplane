@@ -35,6 +35,24 @@ and treats a schema that validates asynchronously as invalid because a snapshot 
 published synchronously. This package defines the contract; whether a backend session
 supplies `state` is that session's choice.
 
+A run that pauses for a person settles with the `'paused'` outcome and lists what it
+waits on in the snapshot's `interrupts`. Each `AgentInterrupt` has an `id`, and may
+carry the backend's `value`, a `reason`, display `message` and the `toolCallId` it is
+about. `resume(responses)` answers them: each `AgentInterruptResponse` names one
+pending interrupt and is `resolved`, optionally with a `value`, or `cancelled`. A
+session rejects a response that names an interrupt that is not pending, names one
+twice, or uses a status its backend cannot express. `interrupts` and `resume` are
+optional: a session that cannot pause supplies neither.
+
+The snapshot's optional `subagents` lists the child agents the root agent started, in
+start order. An `AgentSubagent` has an `id`, a `status` of `running`, `complete`,
+`error` or `unknown`, and its own `messages` and `toolCalls`, which are not repeated
+in the root transcript. `unknown` means the child started, no ending was seen, and
+no run is active that could still report one. `toolCallId` relates a child to the
+root tool call that started it, and `parentId` to the child that did. The fake
+session in `@threadplane/core/testing` publishes both fields and records `resume`
+calls.
+
 `Message.citations` optionally contains readonly `Citation` source metadata: stable
 IDs/order, title, URL, snippet, source type, icon URL, primitive publication time,
 and deeply readonly plain provider extras. These strings are authored display data;

@@ -87,7 +87,7 @@ export function runtimeResponse(body) {
         + sse('updates|review:child', { __interrupt__: [{ id: 'child-final', value: 'Child confirmation' }] })
         + sse('updates', { __interrupt__: [{ id: 'final-approval', value: { question: 'Confirm final action?' } }] });
     }
-    assert.deepEqual(response, { 'final-approval': true }, 'exact final response map');
+    assert.strictEqual(response, true, 'exact final response value');
     return sse('values|review:child', { stage: 'child-approved', messages: [{ type: 'ai', id: 'child-review', content: 'Child approved' }] })
       + sse('values', { stage: 'approved', messages: [{ type: 'ai', id: 'resume-answer', content: 'Approvals complete' }] });
   }
@@ -191,15 +191,15 @@ export function assertTextTranscript(messages: readonly Message[]) {
   void session.submit({ message: 'Hello', state: { itinerary: stops.map(stop => ({ ...stop })) } });
   const runOptions = { config: { tags: ['memory'], recursion_limit: 50, configurable: { user_id: 'user-42' } }, context: { locale: 'en' }, metadata: { source: 'ui' } } as const;
   void session.submit('Hello', runOptions);
-  void session.resume(true, runOptions);
+  void session.resume([{ interruptId: 'final-approval', status: 'resolved', value: true }], runOptions);
   // @ts-expect-error Configuration cannot change owned thread routing.
   void session.submit('Hello', { config: { configurable: { thread_id: 'other' } } });
   // @ts-expect-error Configuration cannot bypass checkpoint execution ownership.
-  void session.resume(true, { config: { configurable: { checkpoint_id: 'old' } } });
+  void session.resume([{ interruptId: 'final-approval', status: 'resolved', value: true }], { config: { configurable: { checkpoint_id: 'old' } } });
   // @ts-expect-error Run context remains plain data.
   void session.submit('Hello', { context: new Date() });
   // @ts-expect-error Metadata cannot contain callbacks.
-  void session.resume(true, { metadata: { callback: () => true } });
+  void session.resume([{ interruptId: 'final-approval', status: 'resolved', value: true }], { metadata: { callback: () => true } });
   // @ts-expect-error Object input still requires a message.
   void session.submit({ state: { model: 'gpt-5-mini' } });
   // @ts-expect-error Message text must be a string.
@@ -222,7 +222,11 @@ export function assertTextTranscript(messages: readonly Message[]) {
   void session.submit('Hello', { state: { model: 'gpt-5-mini' } });
   // @ts-expect-error Submit does not expose transport command overrides.
   void session.submit({ message: 'Hello' }, { command: { goto: 'other' } });
+  void session.resume([{ interruptId: 'final-approval', status: 'resolved' }]);
+  // @ts-expect-error Resume requires the responses it sends.
   void session.resume();
+  // @ts-expect-error A bare value does not name the interrupt it answers.
+  void session.resume(true);
   const reconnected: Promise<CompleteOutcome> = session.reconnect({ signal: new AbortController().signal });
   void reconnected;
   // @ts-expect-error Reconnect cannot attach an arbitrary run.
@@ -237,13 +241,13 @@ export function assertTextTranscript(messages: readonly Message[]) {
     // @ts-expect-error Retained run identity is readonly.
     snapshot.reconnect.runId = 'changed';
   }
-  void session.resume(false);
-  void session.resume(null);
-  void session.resume({ approval: { choice: 'yes' } } as const, { signal: new AbortController().signal });
+  void session.resume([{ interruptId: 'final-approval', status: 'resolved', value: false }]);
+  void session.resume([{ interruptId: 'final-approval', status: 'resolved', value: null }]);
+  void session.resume([{ interruptId: 'final-approval', status: 'resolved', value: { approval: { choice: 'yes' } } }] as const, { signal: new AbortController().signal });
   // @ts-expect-error Responses must be portable authored data, not SDK instances.
-  void session.resume(new Date());
+  void session.resume([{ interruptId: 'final-approval', status: 'resolved', value: new Date() }]);
   // @ts-expect-error Resume does not expose transport command overrides.
-  void session.resume(true, { command: { goto: 'other' } });
+  void session.resume([{ interruptId: 'final-approval', status: 'resolved', value: true }], { command: { goto: 'other' } });
   const direct = session.getSnapshot();
   const history = snapshot.history;
   const directHistory: typeof history = direct.history;
@@ -304,8 +308,11 @@ export function assertTextTranscript(messages: readonly Message[]) {
     child.messages[0].content = 'changed';
     // @ts-expect-error Child streams have no execution commands.
     child.submit('Run');
-    // @ts-expect-error Child streams have no executable tool list.
-    void child.toolCalls;
+    // A child's tool calls are observations of the child graph; nothing here runs them.
+    // @ts-expect-error Child tool calls are immutable.
+    child.toolCalls.push(child.toolCalls[0]);
+    // @ts-expect-error Child streams have no tool execution command.
+    child.addToolResult('id', 'result');
     if (child.state) {
       // @ts-expect-error Child values are readonly plain data.
       child.state['stage'] = 'changed';
@@ -2976,7 +2983,7 @@ export async function runRuntimeScenarios(directory, kind, { a2ui = false } = {}
     await expect(page.getByTestId('handler-calls')).toHaveText('1');
     await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeDisabled();
     assert.equal(server.requests.length, 8);
-    assert.deepEqual(server.requests[7].command, { resume: { 'final-approval': true } });
+    assert.deepEqual(server.requests[7].command, { resume: true });
     assert.equal(server.requests[7].input, null);
     completed.push('same-message resume completion without synthetic input');
 

@@ -12768,6 +12768,17 @@
       "note": "Resume projection preserves unchanged baseline delivery, attributes current same-ID activity, and limits finalized tool eligibility to the resumed turn across stream batches and follow-ups. Live pause delivery still uses the shared root interrupt batch. Broader T09 migration remains open."
     },
     {
+      "id": "source:libs/langgraph/src/runtime/subagent-projection.ts",
+      "taskIds": [
+        "T09",
+        "T10"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of the session's child graphs into the core contract's child agents: an id, the starting node's name, a status and the child's own messages and tool calls.",
+      "note": "Covered by runtime specs. LangGraph does not relate a child graph to a tool call, so toolCallId and description are never set."
+    },
+    {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
       "taskIds": [
         "T09",
@@ -12813,6 +12824,17 @@
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/controlled-transport.ts",
+      "taskIds": [
+        "T05",
+        "T06"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private controlled runtime/binding test helper; excluded from public exports and production packages.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/answer-pending.ts",
       "taskIds": [
         "T05",
         "T06"
@@ -19087,6 +19109,66 @@
       "reason": "Readonly child-agent presentation matching the Angular subagent card: name, status, message count, and the child's messages and tool activity behind one closed disclosure. MessageList places a card in the tool call that started the child. Status and messages are borrowed; execution, sessions and restored child history remain application-owned. This does not certify whole-framework parity."
     },
     {
+      "id": "export:libs/react/src/chat/index.ts#InterruptResponder",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-interrupts.tsx",
+      "reason": "React-only opt-in view of the interrupts a core session reports. Chat draws nothing by itself: the application returns each card from renderInterrupt, and Chat holds the answers until every pending interrupt has one, then sends them with one session.resume. No built-in card and no answer values."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#RenderInterrupt",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-interrupts.tsx",
+      "reason": "React-only opt-in view of the interrupts a core session reports. Chat draws nothing by itself: the application returns each card from renderInterrupt, and Chat holds the answers until every pending interrupt has one, then sends them with one session.resume. No built-in card and no answer values."
+    },
+    {
+      "id": "source:libs/react/src/chat/session-interrupts.tsx",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-interrupts.tsx",
+      "reason": "React-only opt-in view of the interrupts a core session reports. Chat draws nothing by itself: the application returns each card from renderInterrupt, and Chat holds the answers until every pending interrupt has one, then sends them with one session.resume. No built-in card and no answer values."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#sessionSubagents",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-subagents.ts",
+      "reason": "React-only projection from the child agents a core session reports into subagent card data. Chat applies it by default when no subagents prop is given; a child keeps its card's reference while it is unchanged. No session ownership."
+    },
+    {
+      "id": "export:libs/react/src/chat/index.ts#SessionSubagentOptions",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-subagents.ts",
+      "reason": "React-only projection from the child agents a core session reports into subagent card data. Chat applies it by default when no subagents prop is given; a child keeps its card's reference while it is unchanged. No session ownership."
+    },
+    {
+      "id": "source:libs/react/src/chat/session-subagents.ts",
+      "taskIds": [
+        "T28"
+      ],
+      "treatment": "react",
+      "status": "in-progress",
+      "target": "libs/react/src/chat/session-subagents.ts",
+      "reason": "React-only projection from the child agents a core session reports into subagent card data. Chat applies it by default when no subagents prop is given; a child keeps its card's reference while it is unchanged. No session ownership."
+    },
+    {
       "id": "export:libs/react/src/chat/index.ts#subagentsFromEvidence",
       "taskIds": [
         "T28"
@@ -19216,7 +19298,19 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private core AgentSession view of the native owner: a snapshot derived from the native one with the message and tool-call selectors, change-only notification, a display error for a failed run, and text submit, stop and dispose forwarded to the owner.",
-      "note": "Covered by runtime specs and a React Chat integration spec over the real owner. Exported from the test-only candidate package entry and checked from installed tarballs; not exported from the published package root. A rejected credential (401 or 403) is an auth error and another HTTP status is carried on a server error. State patches, native resume, client-tool evidence, a status check and a failure without a response are not represented."
+      "note": "Covered by runtime specs and a React Chat integration spec over the real owner. Exported from the test-only candidate package entry and checked from installed tarballs; not exported from the published package root. A rejected credential (401 or 403) is an auth error and another HTTP status is carried on a server error. Client-tool evidence, a status check and a failure without a response are not represented in the core fields."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/child-projection.ts",
+      "taskIds": [
+        "T12",
+        "T14",
+        "T23"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of the current run's child evidence into the core contract's child agents: each child's id, name, task, status and its own messages and tool calls, with the protocol evidence kept alongside.",
+      "note": "Covered by runtime specs over the real owner. Children of earlier runs are listed first and marked earlier. A child that restarts after pausing continues with its records; any other reuse of a run id starts a separate child."
     },
     {
       "id": "source:libs/ag-ui/src/runtime/message-projection.ts",

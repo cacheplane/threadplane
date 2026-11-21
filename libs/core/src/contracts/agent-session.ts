@@ -1,5 +1,6 @@
 import type { AgentSnapshot } from './agent-snapshot.js';
 import type { CompleteOutcome } from './delivery.js';
+import type { AgentInterruptResponse } from './interrupt.js';
 import type { AgentStateUpdate } from './state.js';
 import type { PlainValue, ToolContract } from './tool.js';
 
@@ -65,6 +66,19 @@ export type AgentSession<
        */
       regenerate?(
         messageId: string,
+        options?: AgentSubmitOptions
+      ): Promise<CompleteOutcome>;
+      /**
+       * Optional: answers interrupts the snapshot lists and continues the
+       * paused work, resolving with the continued run's outcome. Each response
+       * names one pending interrupt by `id`. Rejects without sending when a
+       * response names an interrupt that is not pending, names one twice, or
+       * uses a status the backend cannot express; whether every pending
+       * interrupt must be answered at once is the backend's rule. A session
+       * that cannot pause leaves the command undefined.
+       */
+      resume?(
+        responses: readonly AgentInterruptResponse[],
         options?: AgentSubmitOptions
       ): Promise<CompleteOutcome>;
       /** Read-only reconciliation; never retries an uncertain submission. */

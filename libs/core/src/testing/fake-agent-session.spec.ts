@@ -307,4 +307,159 @@ describe('createFakeAgentSession', () => {
     ).rejects.toThrow(/does not match its schema/);
     expect(fake.session.getSnapshot().messages).toHaveLength(0);
   });
+
+  it('publishes interrupts and removes the ones a resume answers', async () => {
+    const fake = createFakeAgentSession();
+    expect('interrupts' in fake.session.getSnapshot()).toBe(false);
+    const value = { tool: 'send_email', args: { to: 'ada@example.com' } };
+    fake.setInterrupts([
+      { id: 'i1', value, reason: 'tool_approval', toolCallId: 'c1' },
+      { id: 'i2', message: 'Which account?' },
+    ]);
+    const pending = fake.session.getSnapshot().interrupts;
+    expect(pending).toEqual([
+      { id: 'i1', value, reason: 'tool_approval', toolCallId: 'c1' },
+      { id: 'i2', message: 'Which account?' },
+    ]);
+    expect(Object.isFrozen(pending)).toBe(true);
+    expect(pending?.[0].value).not.toBe(value);
+    expect(Object.isFrozen(pending?.[0].value)).toBe(true);
+
+    const notify = vi.fn();
+    fake.session.subscribe(notify);
+    const signal = new AbortController().signal;
+    await expect(
+      fake.session.resume?.(
+        [{ interruptId: 'i1', status: 'resolved', value: { approved: true } }],
+        { signal }
+      )
+    ).resolves.toBe('paused');
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(fake.session.getSnapshot().interrupts).toEqual([
+      { id: 'i2', message: 'Which account?' },
+    ]);
+    await expect(
+      fake.session.resume?.([{ interruptId: 'i2', status: 'cancelled' }])
+    ).resolves.toBe('success');
+    expect(fake.session.getSnapshot().interrupts).toEqual([]);
+    expect(fake.resumes).toEqual([
+      {
+        responses: [
+          { interruptId: 'i1', status: 'resolved', value: { approved: true } },
+        ],
+        options: { signal },
+      },
+      { responses: [{ interruptId: 'i2', status: 'cancelled' }] },
+    ]);
+    fake.setInterrupts(undefined);
+    expect('interrupts' in fake.session.getSnapshot()).toBe(false);
+  });
+
+  it('rejects a resume that names no pending interrupt, or one twice', async () => {
+    const fake = createFakeAgentSession({ interrupts: [{ id: 'i1' }] });
+    const before = fake.session.getSnapshot();
+    await expect(
+      fake.session.resume?.([{ interruptId: 'other', status: 'resolved' }])
+    ).rejects.toThrow('No pending interrupt has the id "other".');
+    await expect(
+      fake.session.resume?.([
+        { interruptId: 'i1', status: 'resolved' },
+        { interruptId: 'i1', status: 'cancelled' },
+      ])
+    ).rejects.toThrow('The interrupt "i1" is answered twice.');
+    expect(fake.session.getSnapshot()).toBe(before);
+    expect(fake.resumes).toHaveLength(2);
+    await fake.session.dispose();
+    await expect(
+      fake.session.resume?.([{ interruptId: 'i1', status: 'resolved' }])
+    ).rejects.toThrow(/disposed/);
+  });
+
+  it('lets a resume handler continue the run and choose the outcome', async () => {
+    const fake = createFakeAgentSession({
+      interrupts: [{ id: 'i1' }],
+      onResume: (responses, controls) => {
+        controls.push({ role: 'assistant', content: responses[0].status });
+        return 'error';
+      },
+    });
+    await expect(
+      fake.session.resume?.([{ interruptId: 'i1', status: 'resolved' }])
+    ).resolves.toBe('error');
+    expect(fake.session.getSnapshot().messages.at(-1)?.content).toBe(
+      'resolved'
+    );
+    fake.setInterrupts([{ id: 'i2' }]);
+    fake.onResume(() => {
+      throw new Error('refused');
+    });
+    await expect(
+      fake.session.resume?.([{ interruptId: 'i2', status: 'resolved' }])
+    ).rejects.toThrow('refused');
+    fake.setInterrupts([{ id: 'i3' }]);
+    fake.onResume(undefined);
+    await expect(
+      fake.session.resume?.([{ interruptId: 'i3', status: 'resolved' }])
+    ).resolves.toBe('success');
+  });
+
+  it('publishes child agents with owned transcripts', () => {
+    const fake = createFakeAgentSession();
+    expect('subagents' in fake.session.getSnapshot()).toBe(false);
+    fake.setSubagents([
+      {
+        id: 'child-1',
+        name: 'researcher',
+        description: 'Find three sources',
+        toolCallId: 'c1',
+        status: 'running',
+        messages: [
+          { role: 'assistant', content: 'Searching', toolCallIds: ['s1'] },
+        ],
+        toolCalls: [
+          { id: 's1', name: 'search', args: { q: 'tides' }, status: 'running' },
+        ],
+      },
+      { id: 'child-2', parentId: 'child-1' },
+    ]);
+    const [first, second] = fake.session.getSnapshot().subagents ?? [];
+    expect(first).toMatchObject({
+      id: 'child-1',
+      name: 'researcher',
+      description: 'Find three sources',
+      toolCallId: 'c1',
+      status: 'running',
+    });
+    expect(first.messages).toEqual([
+      {
+        id: 'fake-assistant-1',
+        role: 'assistant',
+        content: 'Searching',
+        toolCallIds: ['s1'],
+        delivery: {
+          generation: 'fake-assistant-1',
+          phase: 'complete',
+          outcome: 'success',
+        },
+      },
+    ]);
+    expect(first.toolCalls).toEqual([
+      { id: 's1', name: 'search', args: { q: 'tides' }, status: 'running' },
+    ]);
+    expect(second).toEqual({
+      id: 'child-2',
+      parentId: 'child-1',
+      status: 'complete',
+      messages: [],
+      toolCalls: [],
+    });
+    expect(Object.isFrozen(first)).toBe(true);
+    expect(Object.isFrozen(first.messages)).toBe(true);
+    // Root changes keep the children by reference.
+    fake.push({ role: 'assistant', content: 'Done' });
+    expect(fake.session.getSnapshot().subagents?.[0]).toBe(first);
+    expect(fake.session.getSnapshot().messages).toHaveLength(1);
+    fake.set({ subagents: undefined });
+    expect('subagents' in fake.session.getSnapshot()).toBe(false);
+  });
 });

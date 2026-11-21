@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  decisionState,
-  type NativeDecision,
-  type PauseId,
-} from './decision';
+import { decisionState, type NativeDecision, type PauseId } from './decision';
 import { bindingFixture } from './testing/binding-fixture';
 
 const id = '00000000-0000-4000-8000-000000000001' as PauseId;
@@ -29,7 +25,9 @@ const claimed: NativeDecision = Object.freeze({
 describe('decisionState', () => {
   it('is absent when nothing is waiting', () => {
     expect(decisionState({})).toBeUndefined();
-    expect(decisionState({ run: { id: 'run', outcome: 'success' } })).toBeUndefined();
+    expect(
+      decisionState({ run: { id: 'run', outcome: 'success' } })
+    ).toBeUndefined();
   });
 
   it('reads a pause this owner cannot answer as unsupported', () => {
@@ -82,13 +80,21 @@ describe('decisionState', () => {
       expect(await fixture.session.submit('Ignored')).toBe('error');
       expect(fixture.exchanges).toHaveLength(1);
 
-      const answered = fixture.session.resume(ready.id, [
-        { interruptId: 'approval', status: 'resolved', payload: { approved: true } },
+      const answered = fixture.session.resume([
+        {
+          interruptId: 'approval',
+          status: 'resolved',
+          value: { approved: true },
+        },
       ]);
       const next = await fixture.started(1);
       expect(state()).toMatchObject({ phase: 'answering', id: ready.id });
       expect((next.body as { resume?: unknown }).resume).toEqual([
-        { interruptId: 'approval', status: 'resolved', payload: { approved: true } },
+        {
+          interruptId: 'approval',
+          status: 'resolved',
+          payload: { approved: true },
+        },
       ]);
       next.emit({
         type: 'RUN_FINISHED',
@@ -112,23 +118,26 @@ describe('decisionState', () => {
         type: 'RUN_FINISHED',
         threadId: exchange.body.threadId,
         runId: exchange.body.runId,
-        outcome: { type: 'interrupt', interrupts: [{ id: 'approval', reason: 'Approve' }] },
+        outcome: {
+          type: 'interrupt',
+          interrupts: [{ id: 'approval', reason: 'Approve' }],
+        },
       });
       await paused;
       const ready = state();
       if (ready?.kind !== 'native') throw new Error('Expected a native pause');
-      const answered = fixture.session.resume(ready.id, [
+      const answered = fixture.session.resume([
         { interruptId: 'approval', status: 'cancelled' },
       ]);
       await fixture.started(1);
       await fixture.session.stop();
       expect(await answered).toBe('aborted');
       expect(state()).toMatchObject({ phase: 'uncertain', id: ready.id });
-      expect(
-        await fixture.session.resume(ready.id, [
+      await expect(
+        fixture.session.resume([
           { interruptId: 'approval', status: 'cancelled' },
         ])
-      ).toBe('error');
+      ).rejects.toThrow('No interrupt is waiting for an answer.');
       expect(fixture.exchanges).toHaveLength(2);
     } finally {
       await fixture.cleanup();

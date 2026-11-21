@@ -7,6 +7,7 @@ import type {
 import { createSession } from './create-session';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { deferred } from './testing/deferred';
+import { answerPending } from './testing/answer-pending';
 
 const chunk = (content: string, sseId?: string): StreamEvent => ({
   type: 'messages',
@@ -274,7 +275,9 @@ describe('owned run reconnect', () => {
       };
     });
     f.getRunStatus.mockResolvedValue('running');
-    expect(await f.session.resume(null)).toBe('interrupted');
+    expect(await f.session.resume(answerPending(f.session, null))).toBe(
+      'interrupted'
+    );
     const anonymous = f.session
       .getSnapshot()
       .messages.find((message) => message.content === 'Foreign');
@@ -538,7 +541,9 @@ describe('owned run reconnect', () => {
     const f = fixture();
     await f.session.submit('Question');
     await expect(f.session.load?.()).rejects.toThrow();
-    await expect(f.session.resume(true)).rejects.toThrow();
+    await expect(
+      f.session.resume(answerPending(f.session, true))
+    ).rejects.toThrow();
     const wait = deferred<IteratorResult<StreamEvent>>();
     const started = deferred<void>();
     f.joinStream.mockImplementation(() => ({
@@ -929,7 +934,9 @@ describe('owned run reconnect', () => {
       yield chunk('Resumed', 'resume-1');
     });
     f.getRunStatus.mockResolvedValue('running');
-    expect(await f.session.resume({ approval: null })).toBe('interrupted');
+    expect(
+      await f.session.resume(answerPending(f.session, { approval: null }))
+    ).toBe('interrupted');
     expect(f.stream.mock.calls[1][2]).toBeNull();
     expect(f.stream.mock.calls[1][4]?.command).toEqual({
       resume: { approval: null },

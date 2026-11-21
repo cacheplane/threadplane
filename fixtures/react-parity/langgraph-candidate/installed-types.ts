@@ -52,8 +52,19 @@ export function checkCandidate(signal: AbortSignal) {
   );
   void session.submit('Hello', { signal });
   void session.load?.({ signal });
-  void session.resume({ approval: true }, options);
-  void session.resume(null);
+  void session.resume(
+    [
+      {
+        interruptId: 'approval',
+        status: 'resolved',
+        value: { approval: true },
+      },
+    ],
+    options
+  );
+  void session.resume([
+    { interruptId: 'approval', status: 'resolved', value: null },
+  ]);
   void session.reconnect({ signal });
   const snapshot = session.getSnapshot();
   const values: Readonly<Record<string, PlainValue>> | undefined =
@@ -101,8 +112,13 @@ export function checkCandidate(signal: AbortSignal) {
   void session.submit({ message: '', state: { date: new Date() } });
   // @ts-expect-error Run options cannot route another thread.
   void session.submit('', { config: { configurable: { thread_id: 'other' } } });
-  // @ts-expect-error Resume cannot override transport commands.
-  void session.resume(true, { command: { goto: 'other' } });
+  void session.resume(
+    [{ interruptId: 'approval', status: 'resolved', value: true }],
+    // @ts-expect-error Resume cannot override transport commands.
+    { command: { goto: 'other' } }
+  );
+  // @ts-expect-error A bare value does not name the interrupt it answers.
+  void session.resume(true);
   // @ts-expect-error Fork requires the actual checkpoint shape.
   void session.fork('checkpoint', 'Branch');
   // @ts-expect-error Observed state cannot be replaced by a consumer.

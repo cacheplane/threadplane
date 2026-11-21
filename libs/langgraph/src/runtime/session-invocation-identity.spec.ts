@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createSession } from './create-session';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { deferred } from './testing/deferred';
+import { answerPending } from './testing/answer-pending';
 
 const original = {
   id: 'shared-call',
@@ -497,7 +498,9 @@ describe('session invocation identity', () => {
         await expect(f.session.submit('Again')).rejects.toThrow(
           /identity|conflict/i
         );
-        await expect(f.session.resume()).rejects.toThrow(/identity|conflict/i);
+        await expect(
+          f.session.resume(answerPending(f.session))
+        ).rejects.toThrow(/identity|conflict/i);
         await expect(f.session.reconnect()).rejects.toThrow(
           /identity|conflict/i
         );

@@ -1,4 +1,5 @@
 import type {
+  AgentInterruptResponse,
   AgentSession,
   AgentSnapshot,
   CompleteOutcome,
@@ -37,11 +38,12 @@ import {
   type FilesystemSnapshot,
   type Turn,
 } from './authority';
-export interface FilesystemSession extends Omit<AgentSession, 'getSnapshot'> {
+export interface FilesystemSession
+  extends Omit<AgentSession, 'getSnapshot' | 'resume'> {
   getSnapshot(): AgentSnapshot & FilesystemSnapshot;
   load(options?: { readonly signal?: AbortSignal }): Promise<void>;
   resume(
-    value: PlainValue,
+    responses: readonly AgentInterruptResponse[],
     options?: { readonly signal?: AbortSignal }
   ): Promise<CompleteOutcome>;
 }
@@ -497,11 +499,16 @@ export function createFilesystemApplication(client: FilesystemClient) {
         (snapshot as FilesystemApplicationSnapshot).phase !== 'confirming'
       )
         throw Error('Unavailable whole batch');
+      // The whole batch is one interrupt; its id names the response.
+      const interruptId = selected.session.getSnapshot().interrupts[0]?.id;
+      if (typeof interruptId !== 'string')
+        throw Error('Unavailable whole batch');
       publish({ phase: 'working', approval: null, decisionToken: null });
       if (!current(run)) return false;
-      outcome = await selected.session.resume(decision, {
-        signal: run.controller.signal,
-      });
+      outcome = await selected.session.resume(
+        [{ interruptId, status: 'resolved', value: decision }],
+        { signal: run.controller.signal }
+      );
       if (!current(run)) return false;
       observe(run);
       if (!current(run)) return false;

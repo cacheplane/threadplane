@@ -15,7 +15,7 @@ import {
 } from './ownership.js';
 import { record, roleOf, textContent } from './wire-message.js';
 import { projectHistoryInterrupts } from './interrupt-projection.js';
-import type { LangGraphInterrupt } from './langgraph-snapshot.js';
+import type { LangGraphWireInterrupt } from './langgraph-snapshot.js';
 import { observeInvocation, type ToolInvocation } from './tool-invocations.js';
 import { projectCitations } from './citation-projection.js';
 import { projectReasoning } from './reasoning-projection.js';
@@ -26,7 +26,7 @@ export interface HistoryProjectionOptions {
   readonly registeredTools?: ReadonlySet<string>;
   /** An aggregate caller supplies its already-owned candidate to avoid reading
    * transport-owned interrupt getters a second time. */
-  readonly interrupts?: readonly LangGraphInterrupt[];
+  readonly interrupts?: readonly LangGraphWireInterrupt[];
 }
 
 function sameEntries(left: readonly unknown[], right: readonly unknown[]) {

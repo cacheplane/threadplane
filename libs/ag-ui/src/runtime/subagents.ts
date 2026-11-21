@@ -32,6 +32,97 @@ export interface SubagentObservation {
 }
 export type Subagents = readonly SubagentObservation[];
 
+/** Where in the transcript a child's own records lie: from `from`, up to but
+ * not including `to`. A child of the current invocation has no `to`. */
+export interface ChildSpan {
+  readonly from: number;
+  readonly to?: number;
+}
+/** Bookkeeping beside the evidence, so the published evidence keeps its shape. */
+const invocationStarts = new WeakMap<Subagents, number>();
+const spans = new WeakMap<SubagentObservation, ChildSpan>();
+
+/** True for a child whose last evidence says it paused and can continue. */
+export function suspended(child: SubagentObservation): boolean {
+  const terminal = child.terminal;
+  return (
+    terminal?.type === 'SUBAGENT_FINISHED' &&
+    (terminal.outcome as { type?: unknown } | undefined)?.type === 'suspended'
+  );
+}
+
+/** The transcript length when the invocation that owns `current` began. */
+export function invocationStart(current: Subagents): number {
+  return invocationStarts.get(current) ?? 0;
+}
+
+/**
+ * The records an earlier child owns. Evidence restored with a thread owns the
+ * restored records attributed to it.
+ */
+export function earlierSpan(child: SubagentObservation): ChildSpan {
+  return spans.get(child) ?? { from: 0 };
+}
+
+/**
+ * Where a child of the current invocation begins. A child continues an earlier
+ * one with the same ID when that one paused, so it keeps those records; any
+ * other reuse of an ID starts a separate child.
+ */
+export function currentFrom(
+  id: string,
+  current: Subagents,
+  earlier: Subagents | undefined
+): number {
+  const before = earlier?.find((child) => child.started.subagentRunId === id);
+  return before && suspended(before)
+    ? earlierSpan(before).from
+    : invocationStart(current);
+}
+
+/** Restored evidence owns the restored transcript's records, and no later ones. */
+export function restoredSubagents(
+  restored: unknown,
+  transcriptLength: number
+): Subagents | undefined {
+  const owned = ownSubagents(restored);
+  for (const child of owned ?? [])
+    spans.set(child, { from: 0, to: transcriptLength });
+  return owned;
+}
+
+/**
+ * Child evidence for the next root invocation. `ending` is the transcript
+ * length the ending invocation reached, and `start` the length the next one
+ * begins with; they differ when the next invocation rebuilds its history.
+ */
+export function nextInvocation(
+  previous: {
+    readonly subagents: Subagents;
+    readonly earlierSubagents?: Subagents;
+  },
+  ending: number,
+  start: number
+): { readonly subagents: Subagents; readonly earlierSubagents?: Subagents } {
+  for (const child of previous.subagents)
+    if (child.terminal)
+      spans.set(child, {
+        from: currentFrom(
+          child.started.subagentRunId,
+          previous.subagents,
+          previous.earlierSubagents
+        ),
+        to: ending,
+      });
+  const earlier = earlierSubagents(
+    previous.earlierSubagents,
+    previous.subagents
+  );
+  const subagents: Subagents = Object.freeze([]);
+  invocationStarts.set(subagents, start);
+  return { subagents, ...(earlier && { earlierSubagents: earlier }) };
+}
+
 /** History for the next root invocation: earlier children, then this
  * invocation's children that have terminal evidence. A child with no terminal
  * evidence is dropped, because nothing later can establish what became of it.
@@ -160,5 +251,7 @@ export function applySubagent(
       started: previous[index].started,
       terminal: captured,
     });
-  return Object.freeze(next);
+  const applied: Subagents = Object.freeze(next);
+  invocationStarts.set(applied, invocationStart(previous));
+  return applied;
 }

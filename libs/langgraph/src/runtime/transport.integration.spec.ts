@@ -6,6 +6,7 @@ import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
 import type { StreamEvent } from './transport.types';
 import { createSession, type SessionOptions } from './create-session';
 import type { ToolExecutionStore } from '@threadplane/core/tools';
+import { answerPending } from './testing/answer-pending';
 
 const textTrace = readFileSync(
   new URL(
@@ -510,7 +511,9 @@ describe('neutral real SDK transport', () => {
           state: { model: 'initial' },
         })
       ).toBe('paused');
-      expect(await session.resume(value)).toBe('success');
+      expect(await session.resume(answerPending(session, value))).toBe(
+        'success'
+      );
       expect(bodies[1]['input']).toBeNull();
       expect(bodies[1]['command']).toEqual(
         value === undefined ? undefined : { resume: value }
@@ -555,7 +558,7 @@ describe('neutral real SDK transport', () => {
       apiUrl: 'https://runtime.example',
     });
     expect(await session.submit('Pause')).toBe('paused');
-    const pending = session.resume(null);
+    const pending = session.resume(answerPending(session, null));
     await vi.runAllTimersAsync();
     expect(await pending).toBe('interrupted');
     expect(session.getSnapshot().error).toMatchObject({
@@ -589,7 +592,7 @@ describe('neutral real SDK transport', () => {
       apiUrl: 'https://runtime.example',
     });
     expect(await session.submit('Pause')).toBe('paused');
-    expect(await session.resume()).toBe('paused');
+    expect(await session.resume(answerPending(session))).toBe('paused');
     expect(session.getSnapshot().interrupts).toEqual([
       { id: 'second', value: { confirm: false } },
     ]);
@@ -625,7 +628,9 @@ describe('neutral real SDK transport', () => {
       tools: { weather: { description: 'Weather', handler } },
     });
     expect(await session.submit('Question')).toBe('paused');
-    expect(await session.resume({ approval: false })).toBe('success');
+    expect(
+      await session.resume(answerPending(session, { approval: false }))
+    ).toBe('success');
     expect(bodies[1]).toMatchObject({
       input: null,
       command: { resume: { approval: false } },
@@ -662,7 +667,7 @@ describe('neutral real SDK transport', () => {
     try {
       expect(await session.submit('Pause')).toBe('paused');
       expect(session.getSnapshot().interrupts).toEqual([
-        { when: 'breakpoint' },
+        { id: 'breakpoint', when: 'breakpoint' },
       ]);
       expect(session.getSnapshot().status).toBe('idle');
       expect(session.getSnapshot().messages).toHaveLength(1);

@@ -31,8 +31,7 @@ export function checkInstalledA2ui(signal: AbortSignal) {
     }
     if (snapshot.decision?.kind === 'native')
       void owner.resume(
-        snapshot.decision.id,
-        [{ interruptId: 'i', status: 'resolved', payload: null }],
+        [{ interruptId: 'i', status: 'resolved', value: null }],
         { signal }
       );
     void [snapshot.status, snapshot.state, snapshot.subagents];

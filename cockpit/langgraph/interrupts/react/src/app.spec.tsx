@@ -29,7 +29,7 @@ function setup(
     finish = resolve;
   });
   const batch = Object.freeze([{ id: 'refund', value: payload }]);
-  let interrupts: readonly { value: unknown }[] = batch;
+  let interrupts: readonly { id: string; value: unknown }[] = batch;
   const session: InterruptSession = {
     getSnapshot: () => ({
       status: 'idle',
@@ -121,7 +121,7 @@ describe('native React refund approval', () => {
       await s.pause();
       fireEvent.click(s.view.getByRole('button', { name: label }));
       expect(s.session.resume).toHaveBeenCalledWith(
-        { approved },
+        [{ interruptId: 'refund', status: 'resolved', value: { approved } }],
         expect.any(Object)
       );
       expect(s.session.submit).toHaveBeenCalledTimes(1);
@@ -185,7 +185,13 @@ describe('native React refund approval', () => {
       s.view.getByRole('button', { name: 'Approve edited amount' })
     );
     expect(s.session.resume).toHaveBeenCalledWith(
-      { approved: true, amount: 0 },
+      [
+        {
+          interruptId: 'refund',
+          status: 'resolved',
+          value: { approved: true, amount: 0 },
+        },
+      ],
       expect.any(Object)
     );
   });

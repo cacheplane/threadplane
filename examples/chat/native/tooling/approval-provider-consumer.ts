@@ -167,14 +167,19 @@ try {
         original.id === '0'.repeat(32) ? '1'.repeat(32) : '0'.repeat(32);
       const before = await journal();
       // Provider routing diagnostic only; application decisions never accept
-      // an arbitrary ID or raw resume value.
+      // an arbitrary ID or raw resume value. The session rejects an ID that
+      // is not pending before sending (its own specs cover that), so the
+      // ID-keyed command goes through the provider client.
       const session = own(thread.thread_id);
       assert.ok(session.load);
+      for await (const event of api.runs.stream(thread.thread_id, 'chat', {
+        input: null,
+        command: { resume: { [unmatched]: 'denied' } },
+        streamMode: ['values', 'updates'],
+        signal,
+      }))
+        assert.notEqual(event.event, 'error', JSON.stringify(event.data));
       await session.load({ signal });
-      assert.equal(
-        await session.resume({ [unmatched]: 'denied' }, { signal }),
-        'paused'
-      );
       assert.deepEqual(pause(session.getSnapshot()), original);
       assert.deepEqual(
         await journal(),

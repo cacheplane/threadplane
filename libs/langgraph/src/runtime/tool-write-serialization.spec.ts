@@ -3,6 +3,7 @@ import type { ToolExecutionStore } from '@threadplane/core/tools';
 import { createSession } from './create-session';
 import { deferred } from './testing/deferred';
 import type { AgentTransport, StreamEvent } from './transport.types';
+import { answerPending } from './testing/answer-pending';
 
 const drain = () => new Promise<void>((resolve) => setImmediate(resolve));
 const callIds = ['first', 'second', 'third'];
@@ -156,7 +157,9 @@ describe('terminal tool write serialization', () => {
           await expect(
             f.session.submit('Cannot overtake queued cleanup')
           ).rejects.toThrow();
-          await expect(f.session.resume()).rejects.toThrow();
+          await expect(
+            f.session.resume(answerPending(f.session))
+          ).rejects.toThrow();
           await expect(f.session.load?.()).rejects.toThrow();
           expect(f.getHistory).not.toHaveBeenCalled();
         }

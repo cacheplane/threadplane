@@ -1,6 +1,6 @@
-import type { AgentSnapshot, Message } from '@threadplane/core';
+import type { AgentInterrupt, AgentSnapshot, Message } from '@threadplane/core';
 export interface ThreadsState extends AgentSnapshot {
-  readonly interrupts: readonly unknown[];
+  readonly interrupts: readonly AgentInterrupt[];
   readonly subgraphs: readonly unknown[];
   readonly history:
     | readonly {

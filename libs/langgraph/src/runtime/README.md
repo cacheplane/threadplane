@@ -317,15 +317,15 @@ panel or telemetry: `getSnapshot()` returns a frozen `LangGraphLifecycle` and
 `useSyncExternalStore`. Each value is epoch milliseconds on this clock, null
 until its milestone happens.
 
-| Value                 | Stamped                                                        |
-| --------------------- | -------------------------------------------------------------- |
-| `streamStartedAt`     | The first event to arrive on any run's stream.                 |
-| `streamErrorAt`       | The most recent published failure, as `{ at, kind }`.          |
-| `interruptReceivedAt` | The first time the session held a pending interrupt.           |
-| `interruptResolvedAt` | The most recent `resume` the session accepted.                 |
-| `threadPersistedAt`   | The first history read that returned saved checkpoints.        |
-| `toolCallStartedAt`   | The first time the session held a tool call.                   |
-| `toolCallCompletedAt` | The first time a tool call was complete or failed.             |
+| Value                 | Stamped                                                 |
+| --------------------- | ------------------------------------------------------- |
+| `streamStartedAt`     | The first event to arrive on any run's stream.          |
+| `streamErrorAt`       | The most recent published failure, as `{ at, kind }`.   |
+| `interruptReceivedAt` | The first time the session held a pending interrupt.    |
+| `interruptResolvedAt` | The most recent `resume` the session accepted.          |
+| `threadPersistedAt`   | The first history read that returned saved checkpoints. |
+| `toolCallStartedAt`   | The first time the session held a tool call.            |
+| `toolCallCompletedAt` | The first time a tool call was complete or failed.      |
 
 A session serves one thread, so nothing is reset: where the Angular adapter
 clears its `AgentLifecycle` on `switchThread()`, a session for another thread
@@ -339,6 +339,20 @@ Disposal releases every listener and later subscriptions are inert.
 
 ## Dynamic pauses
 
+Every interrupt in the snapshot's `interrupts` has the `id` a response names: the
+backend's id when it sent one, `breakpoint` for a static breakpoint, and the
+position (`interrupt-0`) otherwise. The wire metadata stays alongside. Child
+observations in `subgraphs` keep the wire shape, where `id` is optional.
+
+`resume(responses)` is the core contract's command. Each response names one pending
+interrupt and has the status `resolved`. With one interrupt pending, its response's
+`value` is sent as the resume value, and a response with no value sends no command.
+With several pending, the answered ones are sent as one map keyed by backend id, so
+each needs an id the backend sent and a value; the others stay pending. `resume`
+rejects without sending when a response names an interrupt that is not pending,
+names one twice, or is `cancelled`: LangGraph has no cancelled response, so a
+refusal is a value the graph reads.
+
 Branch resume reads the exact retained pause before sending a decision. Task and
 interrupt identities, payloads and unconsumed task results must match. Undefined
 does not mean replay; pass an explicit defined response, including null where
@@ -350,6 +364,32 @@ first decision even though checkpoint values and interrupt metadata still look
 paused. The preflight detects already-observed consumption, but it is not an atomic
 server claim. Applications must coordinate responders to the same task. Distinct
 checkpoint branches do not provide independent opposing decisions on one task.
+
+## Child agents
+
+`snapshot.subgraphs` holds one entry for each child graph the run reported, with
+its `namespace`, its own `messages` and `toolCalls`, its `state`, `interrupts`
+and `error`. `snapshot.subagents` publishes the same children as the core
+contract's child agents, one for each and in the same order, so a component
+written for core sessions can show them:
+
+- `id` is the namespace path as JSON, which stays unique whatever a segment
+  contains. `parentId` is the `id` of the enclosing child graph, and is absent
+  for a child of the root graph. `namespace` is kept alongside.
+- `name` is the node that started the child: the part of the last namespace
+  segment before its `:`.
+- `messages` and `toolCalls` are the child graph's own, the same references as
+  in `subgraphs`. The root `messages` and `toolCalls` do not repeat them.
+- `status` is `error` for a child that failed, with the display text in
+  `error`, and `running` while the root run is going. After the run, a child
+  whose last message succeeded is `complete`, one a pause stopped is still
+  `running` because a resume continues it, and any other child is `unknown`.
+- LangGraph does not relate a child graph to a tool call, so `toolCallId` and
+  `description` are never set.
+
+A child agent keeps its reference while its child graph and status are
+unchanged. Child agents give no command authority: answering a pause is the
+root session's `resume`.
 
 ## Thread directory
 

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Run } from '@langchain/langgraph-sdk';
 import { createSession } from './create-session';
+import { answerPending } from './testing/answer-pending';
 import { deferred } from './testing/deferred';
 import type { AgentTransport, StreamEvent } from './transport.types';
 
@@ -96,9 +97,9 @@ describe('a session without a thread', () => {
     await expect(f.session.reconnect()).rejects.toThrow(
       'Reconnect requires an idle retained run'
     );
-    await expect(f.session.resume(true)).rejects.toThrow(
-      'Resume requires an observed interrupt.'
-    );
+    await expect(
+      f.session.resume(answerPending(f.session, true))
+    ).rejects.toThrow('Resume requires an observed interrupt.');
     await expect(
       f.session.fork(
         {
@@ -142,7 +143,9 @@ describe('a session without a thread', () => {
       f.stream.mock.invocationCallOrder[0]
     );
     expect(
-      f.session.getSnapshot().messages.map(({ role, content }) => [role, content])
+      f.session
+        .getSnapshot()
+        .messages.map(({ role, content }) => [role, content])
     ).toEqual([
       ['user', 'Hello'],
       ['assistant', 'Done'],
@@ -247,7 +250,9 @@ describe('a session without a thread', () => {
     expect(f.session.threadId).toBe('second');
     expect(f.onThreadId).toHaveBeenCalledWith('second');
     expect(
-      f.session.getSnapshot().messages.map(({ role, content }) => [role, content])
+      f.session
+        .getSnapshot()
+        .messages.map(({ role, content }) => [role, content])
     ).toEqual([
       ['user', 'Hello'],
       ['assistant', 'Done'],

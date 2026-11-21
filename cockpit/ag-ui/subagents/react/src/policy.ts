@@ -85,7 +85,7 @@ export function confirmParent(
     if (!valid()) return;
     const run = snapshot.run,
       transcript = snapshot.transcript,
-      children = snapshot.subagents;
+      children = snapshot.subagents.filter((child) => !child.earlier);
     if (
       !valid() ||
       snapshot.status !== 'idle' ||

@@ -1,6 +1,7 @@
 import {
   readState,
   type AgentError,
+  type AgentInterrupt,
   type AgentSnapshot,
   type AgentUsage,
   type AgentUsageEntry,
@@ -8,12 +9,11 @@ import {
   type StateDeclaration,
   type ToolContract,
 } from '@threadplane/core';
+import { projectSubagents, type SessionSubagent } from './child-projection.js';
+import type { OwnedInterrupt } from './decision.js';
 import { NO_STATE, ownState } from './state.js';
 import { projectMessages, projectToolCalls } from './message-projection.js';
-import {
-  failedWithRunError,
-  type Observation,
-} from './session-observation.js';
+import { failedWithRunError, type Observation } from './session-observation.js';
 
 type Tools = Record<string, ToolContract>;
 /**
@@ -21,8 +21,24 @@ type Tools = Record<string, ToolContract>;
  * evidence behind it. `state` is the typed state; the literal document a
  * request sends is not published.
  */
-export type SessionSnapshot<TState = unknown> = Omit<Observation, 'state'> &
-  AgentSnapshot<Tools, TState> & {
+export type SessionSnapshot<TState = unknown> = Omit<
+  Observation,
+  'state' | 'subagents'
+> &
+  Omit<AgentSnapshot<Tools, TState>, 'interrupts' | 'subagents'> & {
+    /**
+     * What a paused run waits on, each with the protocol's own fields. Listed
+     * from the pause until an answer is sent, and absent otherwise; a pause
+     * this session cannot answer lists nothing.
+     */
+    readonly interrupts?: readonly SessionInterrupt[];
+    /**
+     * Every child agent the session knows, each with its own messages and
+     * tool calls and the protocol evidence it was read from: children of
+     * earlier root runs first, marked `earlier`, then the current run's.
+     * `earlierSubagents` still holds the earlier children's bare evidence.
+     */
+    readonly subagents: readonly SessionSubagent[];
     /**
      * Why the session's state schema rejected the current state document.
      * `state` then keeps the last document that passed. Absent while the
@@ -30,6 +46,9 @@ export type SessionSnapshot<TState = unknown> = Omit<Observation, 'state'> &
      */
     readonly stateIssues?: readonly string[];
   };
+
+/** A pending interrupt: the core interrupt, with the protocol's own fields. */
+export type SessionInterrupt = AgentInterrupt & OwnedInterrupt;
 
 /** The state to publish for one state document, and why a schema rejected it. */
 interface StateView {
@@ -99,8 +118,10 @@ function failure(
     terminal?.type === 'RUN_ERROR' && 'message' in terminal
       ? terminal.message
       : undefined;
-  const interrupted = reported === undefined && native.run?.outcome === 'interrupted';
-  const status = reported === undefined ? native.run?.failure?.status : undefined;
+  const interrupted =
+    reported === undefined && native.run?.outcome === 'interrupted';
+  const status =
+    reported === undefined ? native.run?.failure?.status : undefined;
   const auth = status === 401 || status === 403;
   const kind = interrupted ? 'interrupted' : auth ? 'auth' : 'server';
   const message = interrupted
@@ -189,11 +210,18 @@ function project(
       ? failure(native, canRetry, previous?.error)
       : undefined;
   const used = usage(native);
-  const { state: _document, ...evidence } = native;
+  const { state: _document, subagents: _children, ...evidence } = native;
+  const decision = native.decision;
+  const interrupts =
+    decision?.kind === 'native' && !decision.attempt
+      ? decision.interrupts
+      : undefined;
   return Object.freeze({
     ...evidence,
     messages,
     toolCalls,
+    subagents: projectSubagents(native, previous?.subagents),
+    ...(interrupts && { interrupts }),
     ...(error && { error }),
     ...(used && { usage: used }),
     ...(view.state !== undefined && { state: view.state }),

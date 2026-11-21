@@ -1,4 +1,5 @@
 import type {
+  AgentInterruptResponse,
   AgentSession,
   AgentSnapshot,
   AgentError,
@@ -74,12 +75,21 @@ export function reviewRunOptions(label: string) {
 }
 
 /** Application-authored choices for this fixture, not a library targeting helper. */
-export function reviewResponse(snapshot: FixtureSnapshot): PlainValue {
+export function reviewResponse(
+  snapshot: FixtureSnapshot
+): readonly AgentInterruptResponse[] {
   return snapshot.interrupts.some(
     (interrupt) => interrupt.id === 'final-approval'
   )
-    ? { 'final-approval': true }
-    : { 'live-approval': 'yes', 'live-confirmation': false };
+    ? [{ interruptId: 'final-approval', status: 'resolved', value: true }]
+    : [
+        { interruptId: 'live-approval', status: 'resolved', value: 'yes' },
+        {
+          interruptId: 'live-confirmation',
+          status: 'resolved',
+          value: false,
+        },
+      ];
 }
 
 export interface FixtureTools {
@@ -222,7 +232,9 @@ export function display(snapshot: FixtureSnapshot) {
 /** Owner controls deliberately survive framework teardown. */
 export function attachOwner(
   session: AgentSession<FixtureTools> & {
-    resume(value?: PlainValue): Promise<CompleteOutcome>;
+    resume(
+      responses: readonly AgentInterruptResponse[]
+    ): Promise<CompleteOutcome>;
     reconnect(): Promise<CompleteOutcome>;
   },
   unmount: () => void
@@ -261,7 +273,9 @@ export function attachOwner(
   });
   button('Resume after dispose', async () => {
     status.textContent = 'resuming';
-    status.textContent = await session.resume(true);
+    status.textContent = await session.resume([
+      { interruptId: 'final-approval', status: 'resolved', value: true },
+    ]);
   });
   button('Reconnect after dispose', async () => {
     status.textContent = 'reconnecting';

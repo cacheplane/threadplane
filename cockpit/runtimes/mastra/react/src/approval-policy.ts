@@ -1,4 +1,4 @@
-import type { Session } from '@threadplane/ag-ui';
+import type { DecisionState, Session } from '@threadplane/ag-ui';
 export type NativeSnapshot = ReturnType<Session['getSnapshot']>;
 type Transcript = NativeSnapshot['transcript'];
 export interface OwnedTurn {
@@ -10,7 +10,7 @@ export interface OwnedTurn {
 export interface ReservationApproval {
   readonly threadId: string;
   readonly sourceRunId: string;
-  readonly pause: Parameters<Session['resume']>[0];
+  readonly pause: Extract<DecisionState, { kind: 'native' }>['id'];
   readonly interruptId: string;
   readonly toolCallId: string;
   readonly site: string;

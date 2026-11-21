@@ -9,9 +9,11 @@ import {
 import { PROTOCOL_VERSION, type RunAgentInput } from '@ag-ui/client';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Explicit fixture binding preserves the source or installed owner.
 import { createSession } from '../../fixtures/react-parity/native-ag-ui/mastra-backend.js';
-type NativeResponse = Parameters<
-  ReturnType<typeof createSession>['resume']
->[1][number];
+type Answer = Parameters<ReturnType<typeof createSession>['resume']>[0][number];
+/** An answer as the request carries it. */
+type NativeResponse =
+  | { interruptId: string; status: 'resolved'; payload?: unknown }
+  | { interruptId: string; status: 'cancelled' };
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Test-only local service composition; no package API is introduced.
 import {
   bounded,
@@ -293,7 +295,7 @@ async function verifyCase(
     assert.equal(owner.getSnapshot(), paused);
     assert.equal(proxy.posts(), pendingPosts);
     assert.equal(service.stats().length, providerPosts);
-    const pauseId = paused.decision.id;
+    // The request carries the answer as `payload`; the command takes `value`.
     scenario.response =
       name === 'cancel'
         ? { interruptId: interrupt.id, status: 'cancelled' }
@@ -302,16 +304,21 @@ async function verifyCase(
             status: 'resolved',
             payload: { approved: name !== 'decline' },
           };
-    const done = owner.resume(pauseId, [scenario.response]);
+    const answer: Answer =
+      name === 'cancel'
+        ? { interruptId: interrupt.id, status: 'cancelled' }
+        : {
+            interruptId: interrupt.id,
+            status: 'resolved',
+            value: { approved: name !== 'decline' },
+          };
+    const done = owner.resume([answer]);
     const claimed = owner.getSnapshot();
     assert.equal(claimed.transcript, paused.transcript);
     assert.equal(claimed.state, paused.state);
-    assert.equal(
-      await bounded(
-        owner.resume(pauseId, [scenario.response]),
-        'duplicate active claim'
-      ),
-      'error'
+    await assert.rejects(
+      bounded(owner.resume([answer]), 'duplicate active claim'),
+      TypeError
     );
     assert.equal(owner.getSnapshot(), claimed);
     const outcome = await bounded(done, `${name} resume`);
@@ -370,12 +377,9 @@ async function verifyCase(
       assert.equal(second.suppressed, 0);
       assert.equal(final.decision, undefined);
     }
-    assert.equal(
-      await bounded(
-        owner.resume(pauseId, [scenario.response]),
-        'stale or uncertain resume'
-      ),
-      'error'
+    await assert.rejects(
+      bounded(owner.resume([answer]), 'stale or uncertain resume'),
+      TypeError
     );
     assert.equal(owner.getSnapshot(), final);
     assert.equal(proxy.posts(), pendingPosts + 1);

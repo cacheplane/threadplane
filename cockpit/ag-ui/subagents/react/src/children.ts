@@ -50,14 +50,16 @@ export function observeChildren(
   const cards = new Map(previous.map((card) => [card.id, card]));
   let unsupported = false;
   try {
+    // Cards follow the current run; children of earlier runs are history.
+    const children = snapshot.subagents.filter((child) => !child.earlier);
     if (
       cards.size !== previous.length ||
       previous.length > 100 ||
-      snapshot.subagents.length > 30
+      children.length > 30
     )
       throw new Error();
     const attributed = new Set(
-      snapshot.subagents.map((child) => child.started.subagentRunId)
+      children.map((child) => child.started.subagentRunId)
     );
     if (
       snapshot.transcript.some(
@@ -68,7 +70,7 @@ export function observeChildren(
     )
       throw new Error();
     const seen = new Set<string>();
-    for (const child of snapshot.subagents) {
+    for (const child of children) {
       const started = child.started;
       const id = started.subagentRunId,
         callId = started.parentToolCallId;

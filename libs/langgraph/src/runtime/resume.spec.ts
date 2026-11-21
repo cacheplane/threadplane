@@ -5,6 +5,7 @@ import { createSession, type SessionOptions } from './create-session';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { controlledTransport } from './testing/controlled-transport';
 import { deferred } from './testing/deferred';
+import { answerPending } from './testing/answer-pending';
 
 const human = { type: 'human', id: 'saved-user', content: 'Question' };
 const saved = { type: 'ai', id: 'saved-answer', content: 'Waiting' };
@@ -105,9 +106,11 @@ describe('explicit interrupt resume', () => {
       const external = new AbortController();
       const seen: unknown[] = [];
       f.session.subscribe(() => seen.push(f.session.getSnapshot()));
-      expect(await f.session.resume(value, { signal: external.signal })).toBe(
-        'success'
-      );
+      expect(
+        await f.session.resume(answerPending(f.session, value), {
+          signal: external.signal,
+        })
+      ).toBe('success');
       expect(f.stream).toHaveBeenCalledTimes(1);
       expect(f.stream.mock.calls[0].slice(0, 3)).toEqual(['a', 't', null]);
       expect(f.stream.mock.calls[0][3]).not.toBe(external.signal);
@@ -133,10 +136,76 @@ describe('explicit interrupt resume', () => {
     }
   );
 
+  it('publishes the id a response names and rejects responses it cannot send', async () => {
+    const f = await fixture();
+    const before = f.session.getSnapshot();
+    expect(before.interrupts).toEqual([{ id: 'approve', value: 'Proceed?' }]);
+    await expect(
+      f.session.resume([{ interruptId: 'other', status: 'resolved' }])
+    ).rejects.toThrow('No pending interrupt has the id "other".');
+    await expect(
+      f.session.resume([{ interruptId: 'approve', status: 'cancelled' }])
+    ).rejects.toThrow(/cannot cancel an interrupt/);
+    await expect(f.session.resume([])).rejects.toThrow(/at least one/);
+    expect(f.session.getSnapshot()).toBe(before);
+    expect(f.stream).not.toHaveBeenCalled();
+    expect(
+      await f.session.resume([
+        { interruptId: 'approve', status: 'resolved', value: { ok: true } },
+      ])
+    ).toBe('success');
+    expect(f.stream.mock.calls[0][4]).toEqual({
+      command: { resume: { ok: true } },
+    });
+  });
+
+  it('answers several pending interrupts by id in one command', async () => {
+    const [state] = history();
+    const stream = vi.fn<AgentTransport['stream']>(async function* () {
+      yield final;
+    });
+    const session = createSession({
+      assistantId: 'a',
+      threadId: 't',
+      transport: {
+        stream,
+        getHistory: async () => [
+          {
+            ...state,
+            tasks: [
+              {
+                ...state.tasks[0],
+                interrupts: [
+                  { id: 'first', value: 'One?' },
+                  { id: 'second', value: 'Two?' },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    await session.load?.();
+    expect(session.getSnapshot().interrupts.map(({ id }) => id)).toEqual([
+      'first',
+      'second',
+    ]);
+    expect(
+      await session.resume([
+        { interruptId: 'second', status: 'resolved', value: false },
+        { interruptId: 'first', status: 'resolved', value: 'yes' },
+      ])
+    ).toBe('success');
+    expect(stream.mock.calls[0][4]).toEqual({
+      command: { resume: { second: false, first: 'yes' } },
+    });
+    await session.dispose();
+  });
+
   it('owns nested response data before dispatch without freezing caller objects', async () => {
     const f = await fixture();
     const value = { approve: { choices: ['first'] } };
-    const done = f.session.resume(value);
+    const done = f.session.resume(answerPending(f.session, value));
     value.approve.choices.push('later');
     await done;
     const command = f.stream.mock.calls[0][4]?.command;
@@ -153,7 +222,9 @@ describe('explicit interrupt resume', () => {
         yield pause;
       },
     });
-    expect(await f.session.resume(true)).toBe('paused');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'paused'
+    );
     expect(f.session.getSnapshot().interrupts).toEqual([
       { id: 'next', value: 'Again?' },
     ]);
@@ -171,7 +242,7 @@ describe('explicit interrupt resume', () => {
             yield { type: 'error', data: { message: 'failed' } };
         },
       });
-      expect(await f.session.resume(true)).toBe(
+      expect(await f.session.resume(answerPending(f.session, true))).toBe(
         kind === 'error' ? 'error' : 'interrupted'
       );
       // History is readable, so the check is offered, but the old checkpoint
@@ -206,7 +277,7 @@ describe('explicit interrupt resume', () => {
       },
     });
     const before = f.session.getSnapshot().messages;
-    expect(await f.session.resume()).toBe('success');
+    expect(await f.session.resume(answerPending(f.session))).toBe('success');
     expect(f.session.getSnapshot().messages).toBe(before);
   });
 
@@ -217,7 +288,7 @@ describe('explicit interrupt resume', () => {
         yield { type: 'values', data: { stage: 'done' } };
       },
     });
-    expect(await f.session.resume()).toBe('success');
+    expect(await f.session.resume(answerPending(f.session))).toBe('success');
     expect(f.session.getSnapshot().messages).toEqual([]);
     expect(f.session.getSnapshot().state).toEqual({ stage: 'done' });
   });
@@ -225,13 +296,17 @@ describe('explicit interrupt resume', () => {
   it('rejects absent pause without effects and keeps disposed/pre-aborted calls inert', async () => {
     const f = await fixture();
     const before = f.session.getSnapshot();
-    expect(await f.session.resume(true, { signal: AbortSignal.abort() })).toBe(
-      'aborted'
-    );
+    expect(
+      await f.session.resume(answerPending(f.session, true), {
+        signal: AbortSignal.abort(),
+      })
+    ).toBe('aborted');
     expect(f.session.getSnapshot()).toBe(before);
     await f.session.dispose();
     const disposed = f.session.getSnapshot();
-    expect(await f.session.resume(true)).toBe('aborted');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'aborted'
+    );
     expect(f.session.getSnapshot()).toBe(disposed);
     expect(f.stream).not.toHaveBeenCalled();
     const fresh = createSession({
@@ -239,21 +314,27 @@ describe('explicit interrupt resume', () => {
       threadId: 't',
       transport: { stream: f.stream },
     });
-    await expect(fresh.resume()).rejects.toThrow(/interrupt|pause/i);
+    await expect(fresh.resume(answerPending(fresh))).rejects.toThrow(
+      /interrupt|pause/i
+    );
     expect(fresh.getSnapshot().status).toBe('idle');
   });
 
   it('admits only one concurrent resume and rejects during an active load', async () => {
     const controlled = controlledTransport<StreamEvent>();
     const f = await fixture({ stream: () => controlled.stream });
-    const first = f.session.resume(true);
-    await expect(f.session.resume(false)).rejects.toThrow(/active|request/i);
+    const first = f.session.resume(answerPending(f.session, true));
+    await expect(
+      f.session.resume(answerPending(f.session, false))
+    ).rejects.toThrow(/active|request/i);
     await f.session.stop();
     expect(await first).toBe('aborted');
     const read = deferred<ThreadState[]>();
     f.getHistory.mockImplementation(() => read.promise);
     const loading = f.session.load?.();
-    await expect(f.session.resume()).rejects.toThrow(/active|load|history/i);
+    await expect(f.session.resume(answerPending(f.session))).rejects.toThrow(
+      /active|load|history/i
+    );
     read.resolve(history());
     await loading;
     expect(f.stream).toHaveBeenCalledTimes(1);
@@ -273,7 +354,9 @@ describe('explicit interrupt resume', () => {
           return true;
         },
       };
-      expect(await f.session.resume(response)).toBe('aborted');
+      expect(await f.session.resume(answerPending(f.session, response))).toBe(
+        'aborted'
+      );
       await nested;
       expect(f.stream).toHaveBeenCalledTimes(command === 'submit' ? 1 : 0);
       if (command === 'submit')
@@ -298,7 +381,9 @@ describe('explicit interrupt resume', () => {
     async (value) => {
       const f = await fixture();
       const before = f.session.getSnapshot();
-      await expect(f.session.resume(value() as PlainValue)).rejects.toThrow();
+      await expect(
+        f.session.resume(answerPending(f.session, value() as PlainValue))
+      ).rejects.toThrow();
       expect(f.session.getSnapshot()).toBe(before);
       expect(f.stream).not.toHaveBeenCalled();
     }
@@ -312,7 +397,7 @@ describe('explicit interrupt resume', () => {
         if (f.session.getSnapshot().status === 'running')
           void f.session[command]();
       });
-      expect(await f.session.resume()).toBe('aborted');
+      expect(await f.session.resume(answerPending(f.session))).toBe('aborted');
       expect(f.stream).not.toHaveBeenCalled();
     }
   );
@@ -332,7 +417,9 @@ describe('explicit interrupt resume', () => {
       }),
     });
     const external = new AbortController();
-    const pending = f.session.resume(true, { signal: external.signal });
+    const pending = f.session.resume(answerPending(f.session, true), {
+      signal: external.signal,
+    });
     await opened.promise;
     external.abort();
     expect(await pending).toBe('aborted');
@@ -360,7 +447,9 @@ describe('explicit interrupt resume', () => {
         else yield final;
       },
     });
-    expect(await f.session.resume({ approve: true })).toBe('success');
+    expect(
+      await f.session.resume(answerPending(f.session, { approve: true }))
+    ).toBe('success');
     expect(f.handler).toHaveBeenCalledExactlyOnceWith(
       { amount: 3 },
       expect.anything()
@@ -407,7 +496,7 @@ describe('explicit interrupt resume', () => {
         };
       },
     });
-    expect(await f.session.resume()).toBe('success');
+    expect(await f.session.resume(answerPending(f.session))).toBe('success');
     expect(f.handler).not.toHaveBeenCalled();
     expect(f.stream).toHaveBeenCalledTimes(1);
   });
@@ -425,7 +514,7 @@ describe('explicit interrupt resume', () => {
             yield { type: 'error', data: { message: 'failed' } };
         },
       });
-      expect(await f.session.resume(true)).toBe(
+      expect(await f.session.resume(answerPending(f.session, true))).toBe(
         failure === 'error' ? 'error' : 'interrupted'
       );
       expect(f.session.getSnapshot().error).toMatchObject({
@@ -436,7 +525,9 @@ describe('explicit interrupt resume', () => {
       expect(f.getHistory).not.toHaveBeenCalled();
       await f.session.checkStatus?.();
       await expect(f.session.load?.()).rejects.toThrow(/unsettled/i);
-      await expect(f.session.resume(true)).rejects.toThrow(/unsettled/i);
+      await expect(
+        f.session.resume(answerPending(f.session, true))
+      ).rejects.toThrow(/unsettled/i);
       f.stream.mockImplementation(async function* () {
         yield final;
       });
@@ -465,7 +556,7 @@ it('never re-enables a later-turn call when subsequent terminal data omits its h
       yield { type: 'values', data: { messages: [later] } };
     },
   });
-  expect(await f.session.resume()).toBe('success');
+  expect(await f.session.resume(answerPending(f.session))).toBe('success');
   expect(f.handler).not.toHaveBeenCalled();
   expect(f.stream).toHaveBeenCalledTimes(1);
 });
@@ -483,7 +574,7 @@ it('retracts tool eligibility when a later terminal batch reveals its foreign us
       };
     },
   });
-  expect(await f.session.resume()).toBe('success');
+  expect(await f.session.resume(answerPending(f.session))).toBe('success');
   expect(f.handler).not.toHaveBeenCalled();
 });
 
@@ -500,7 +591,7 @@ it('does not attribute an unseen assistant after an observed later user to the r
       };
     },
   });
-  expect(await f.session.resume()).toBe('success');
+  expect(await f.session.resume(answerPending(f.session))).toBe('success');
   expect(f.handler).not.toHaveBeenCalled();
 });
 
@@ -518,7 +609,7 @@ it('allows finalized anonymous assistant tools after a message-less pause', asyn
         : final;
     },
   });
-  expect(await f.session.resume()).toBe('success');
+  expect(await f.session.resume(answerPending(f.session))).toBe('success');
   expect(f.handler).toHaveBeenCalledExactlyOnceWith(
     { amount: 4 },
     expect.anything()
@@ -535,9 +626,11 @@ it('an abort during listener registration cannot publish stale running state', a
       external.abort();
     }
   );
-  expect(await f.session.resume(true, { signal: external.signal })).toBe(
-    'aborted'
-  );
+  expect(
+    await f.session.resume(answerPending(f.session, true), {
+      signal: external.signal,
+    })
+  ).toBe('aborted');
   expect(f.session.getSnapshot().status).toBe('idle');
   expect(f.stream).not.toHaveBeenCalled();
 });
@@ -553,7 +646,9 @@ it('blocks resume while an uncertain normal submit still owns history recovery',
   expect(f.session.getSnapshot().interrupts.length).toBeGreaterThan(0);
   expect(f.session.getSnapshot().error?.recovery).toBe('check');
   const before = f.session.getSnapshot();
-  await expect(f.session.resume(true)).rejects.toThrow(/recovery/i);
+  await expect(
+    f.session.resume(answerPending(f.session, true))
+  ).rejects.toThrow(/recovery/i);
   expect(f.session.getSnapshot()).toBe(before);
   expect(f.stream).toHaveBeenCalledTimes(1);
 });
@@ -592,7 +687,7 @@ it.each(['acquire', 'settle', 'write'] as const)(
       writeStarted.resolve();
       return written.promise;
     });
-    const resumed = f.session.resume(true);
+    const resumed = f.session.resume(answerPending(f.session, true));
     await (phase === 'acquire'
       ? claimStarted.promise
       : phase === 'settle'
@@ -600,11 +695,15 @@ it.each(['acquire', 'settle', 'write'] as const)(
       : writeStarted.promise);
     await f.session.stop();
     expect(await resumed).toBe('aborted');
-    await expect(f.session.resume(true)).rejects.toThrow(/unsettled/i);
+    await expect(
+      f.session.resume(answerPending(f.session, true))
+    ).rejects.toThrow(/unsettled/i);
     acquire.resolve({ status: 'acquired' as const, token: 'owner' });
     recorded.resolve();
     await writeStarted.promise;
-    await expect(f.session.resume(true)).rejects.toThrow(/unsettled/i);
+    await expect(
+      f.session.resume(answerPending(f.session, true))
+    ).rejects.toThrow(/unsettled/i);
     written.resolve();
     // Drain acknowledged cleanup without depending on its promise-chain depth.
     await new Promise<void>((resolve) => setImmediate(resolve));
@@ -612,7 +711,9 @@ it.each(['acquire', 'settle', 'write'] as const)(
     f.stream.mockImplementation(async function* () {
       yield final;
     });
-    expect(await f.session.resume(true)).toBe('success');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'success'
+    );
     expect(f.stream).toHaveBeenCalledTimes(2);
   }
 );
@@ -632,13 +733,17 @@ it('preserves durable completed facts and local resolved IDs across explicit rel
         : final;
     },
   });
-  expect(await f.session.resume(true)).toBe('success');
+  expect(await f.session.resume(answerPending(f.session, true))).toBe(
+    'success'
+  );
   expect(f.session.getSnapshot().toolCalls[0]).toMatchObject({
     status: 'complete',
     result: { doubled: 12 },
   });
   await f.session.load?.();
-  expect(await f.session.resume(true)).toBe('success');
+  expect(await f.session.resume(answerPending(f.session, true))).toBe(
+    'success'
+  );
   expect(acquire).toHaveBeenCalledTimes(1);
   expect(settle).not.toHaveBeenCalled();
   expect(f.handler).not.toHaveBeenCalled();
@@ -659,11 +764,13 @@ it('keeps sessions independent and observes stale rejected reads after disposal'
     }),
   });
   const b = await fixture();
-  const pending = a.session.resume(true);
+  const pending = a.session.resume(answerPending(a.session, true));
   await entered.promise;
   await a.session.dispose();
   expect(await pending).toBe('aborted');
-  expect(await b.session.resume(false)).toBe('success');
+  expect(await b.session.resume(answerPending(b.session, false))).toBe(
+    'success'
+  );
   const before = a.session.getSnapshot();
   next.reject(new Error('Late failure'));
   await next.promise.catch(() => undefined);
@@ -689,7 +796,7 @@ it('retracts an anonymous candidate when a later batch reveals its foreign turn'
       };
     },
   });
-  expect(await f.session.resume()).toBe('success');
+  expect(await f.session.resume(answerPending(f.session))).toBe('success');
   expect(f.handler).not.toHaveBeenCalled();
 });
 
@@ -716,7 +823,9 @@ it('retains later-turn evidence across a legitimate current-turn tool follow-up'
         : final;
     },
   });
-  expect(await f.session.resume(true)).toBe('success');
+  expect(await f.session.resume(answerPending(f.session, true))).toBe(
+    'success'
+  );
   expect(f.handler).toHaveBeenCalledTimes(1);
   expect(f.stream).toHaveBeenCalledTimes(2);
 });
@@ -736,12 +845,12 @@ it('admits at most one of two resumes queued by a paused observer', async () => 
       f.session.getSnapshot().interrupts[0]?.id === 'next'
     ) {
       queued = Promise.allSettled([
-        f.session.resume(true),
-        f.session.resume(false),
+        f.session.resume(answerPending(f.session, true)),
+        f.session.resume(answerPending(f.session, false)),
       ]);
     }
   });
-  expect(await f.session.resume()).toBe('paused');
+  expect(await f.session.resume(answerPending(f.session))).toBe('paused');
   expect(await queued).toEqual([
     { status: 'fulfilled', value: 'success' },
     { status: 'rejected', reason: expect.any(Error) },

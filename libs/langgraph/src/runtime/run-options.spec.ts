@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createSession } from './create-session';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { deferred } from './testing/deferred';
+import { answerPending } from './testing/answer-pending';
 
 const sessions: ReturnType<typeof createSession>[] = [];
 const complete: StreamEvent = {
@@ -198,12 +199,16 @@ describe('owned run options', () => {
         data: { __interrupt__: [{ id: 'second', value: 'Again?' }] },
       };
     });
-    expect(await f.session.resume(false, choices())).toBe('paused');
+    expect(
+      await f.session.resume(answerPending(f.session, false), choices())
+    ).toBe('paused');
     expect(f.stream.mock.calls[1][4]).toEqual({
       ...choices(),
       command: { resume: false },
     });
-    expect(await f.session.resume(true)).toBe('success');
+    expect(await f.session.resume(answerPending(f.session, true))).toBe(
+      'success'
+    );
     expect(f.stream.mock.calls[2][4]).toEqual({ command: { resume: true } });
   });
 
@@ -273,7 +278,7 @@ describe('owned run options', () => {
       })
     ).toBe('aborted');
     await expect(
-      f.session.resume(true, {
+      f.session.resume(answerPending(f.session, true), {
         get context() {
           return poison();
         },
@@ -295,7 +300,7 @@ describe('owned run options', () => {
       });
       expect(await f.session.submit('Pause')).toBe('paused');
       let replacement: Promise<unknown> | undefined;
-      const run = f.session.resume(true, {
+      const run = f.session.resume(answerPending(f.session, true), {
         get context() {
           replacement =
             command === 'submit'

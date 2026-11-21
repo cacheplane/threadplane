@@ -21,6 +21,14 @@ export type {
   StateTypeCheck,
   StateWitness,
 } from './contracts/state.js';
+export type {
+  AgentInterrupt,
+  AgentInterruptResponse,
+} from './contracts/interrupt.js';
+export type {
+  AgentSubagent,
+  AgentSubagentStatus,
+} from './contracts/subagent.js';
 export type { AgentPlanStep } from './contracts/plan.js';
 export { agentPlanFromState } from './contracts/plan.js';
 export type { Message, Role } from './contracts/message.js';

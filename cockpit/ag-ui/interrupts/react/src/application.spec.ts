@@ -182,12 +182,11 @@ it.each(['approve', 'edit', 'cancel'] as const)(
       action === 'edit' ? 20 : undefined
     );
     expect(session.resume).toHaveBeenCalledWith(
-      approval.pause,
       [
         {
           interruptId: approval.interruptId,
           status: 'resolved',
-          payload:
+          value:
             action === 'cancel'
               ? { approved: false }
               : action === 'edit'

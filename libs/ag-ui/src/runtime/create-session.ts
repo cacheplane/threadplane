@@ -37,7 +37,7 @@ import {
   initialObservation,
   type Observation,
 } from './session-observation.js';
-import { earlierSubagents, type Subagents } from './subagents.js';
+import { nextInvocation, type Subagents } from './subagents.js';
 import { createRun, httpFailure, type RunHandle } from './create-run.js';
 import { createPublication } from './session-publication.js';
 import {
@@ -53,9 +53,13 @@ import {
   claimDecision,
   observeDecision,
   settleDecision,
+  type InterruptResponse,
   type NativeResponse,
   type PauseId,
 } from './decision.js';
+
+/** Why `resume` rejects while a run is active or the session cannot answer. */
+const NOT_SETTLED = 'Resume needs a settled session with a pending interrupt.';
 import { copyData } from '../lib/internal/copy-data.js';
 import {
   captureSubmit,
@@ -78,16 +82,20 @@ export interface SessionOptions
   readonly subagents?: Subagents;
   readonly interruptMode?: InterruptMode;
 }
-/** A new root invocation observes no children yet; settled ones become history. */
-function nextInvocationSubagents(previous: Observation) {
-  const earlier = earlierSubagents(
-    previous.earlierSubagents,
-    previous.subagents
+/**
+ * A new root invocation observes no children yet; settled ones become history.
+ * `transcript` is the history the new invocation begins with, when it is not
+ * the previous one.
+ */
+function nextInvocationSubagents(
+  previous: Observation,
+  transcript: Transcript = previous.transcript
+) {
+  return nextInvocation(
+    previous,
+    previous.transcript.length,
+    transcript.length
   );
-  return {
-    subagents: Object.freeze([]) as Subagents,
-    ...(earlier && { earlierSubagents: earlier }),
-  };
 }
 export interface Session<TState = unknown> {
   /** The state declaration this session was created with, when it has one. */
@@ -98,9 +106,18 @@ export interface Session<TState = unknown> {
     input: SubmitInput<TState>,
     options?: { readonly signal?: AbortSignal }
   ): Promise<CompleteOutcome>;
+  /**
+   * Answers the pending interrupts, as the core contract's `resume`: one
+   * response for each interrupt in the snapshot's `interrupts`, naming it by
+   * `id`. A response may also carry the protocol's `metadata`.
+   *
+   * Rejects without sending when no interrupt is waiting, a run is active, an
+   * interrupt has expired, a response names an interrupt that is not pending
+   * or names one twice, or an interrupt is left unanswered. Resolves `aborted`
+   * without sending after disposal or when the signal is already aborted.
+   */
   resume(
-    pause: PauseId,
-    responses: readonly NativeResponse[],
+    responses: readonly InterruptResponse[],
     options?: { readonly signal?: AbortSignal }
   ): Promise<CompleteOutcome>;
   stop(): Promise<void>;
@@ -453,8 +470,8 @@ export function createSession(
       disposed ? () => undefined : publication.subscribe(notify),
     onCustomEvent: (listener) =>
       disposed ? () => undefined : publication.onCustomEvent(listener),
-    resume: (pause, responses, options) =>
-      new Promise<CompleteOutcome>((resolve) => {
+    resume: (responses, options) =>
+      new Promise<CompleteOutcome>((resolve, reject) => {
         const beforeSignal = revision;
         let signal: AbortSignal | undefined;
         try {
@@ -472,20 +489,17 @@ export function createSession(
         try {
           const previous = publication.getObservation();
           if (interruptMode !== 'native' || active)
-            throw new TypeError('Resume requires a settled native owner');
-          assertResumeEligible(
-            previous.decision,
-            previous.run,
-            pause,
-            Date.now()
-          );
+            throw new TypeError(NOT_SETTLED);
           captured = captureResponses(responses);
-        } catch {
-          resolve(
-            disposed || signal?.aborted || revision !== beforeInput
-              ? 'aborted'
-              : 'error'
+          claimDecision(
+            assertResumeEligible(previous.decision, previous.run, Date.now()),
+            captured,
+            ''
           );
+        } catch (error) {
+          if (disposed || signal?.aborted || revision !== beforeInput)
+            resolve('aborted');
+          else reject(error);
           return;
         }
         if (disposed || signal?.aborted || revision !== beforeInput) {
@@ -503,11 +517,10 @@ export function createSession(
           try {
             const previous = publication.getObservation();
             if (active || interruptMode !== 'native')
-              throw new TypeError('Resume requires a settled native owner');
+              throw new TypeError(NOT_SETTLED);
             const decision = assertResumeEligible(
               previous.decision,
               previous.run,
-              pause,
               Date.now()
             );
             id = crypto.randomUUID();
@@ -518,12 +531,10 @@ export function createSession(
               ...nextInvocationSubagents(previous),
               run: Object.freeze({ id }),
             });
-          } catch {
-            resolve(
-              disposed || signal?.aborted || revision !== beforeAdmission
-                ? 'aborted'
-                : 'error'
-            );
+          } catch (error) {
+            if (disposed || signal?.aborted || revision !== beforeAdmission)
+              resolve('aborted');
+            else reject(error);
             return;
           }
           if (disposed || signal?.aborted || revision !== beforeAdmission) {
@@ -666,7 +677,7 @@ export function createSession(
               status: 'running',
               transcript: last.transcript,
               state: last.state,
-              ...nextInvocationSubagents(previous),
+              ...nextInvocationSubagents(previous, last.transcript),
               run: Object.freeze({ id }),
             }),
             undefined,
@@ -696,7 +707,9 @@ export function createSession(
                 root(index)
             );
             if (at < 0)
-              throw new Error('Regenerate needs the id of an assistant message.');
+              throw new Error(
+                'Regenerate needs the id of an assistant message.'
+              );
             for (let index = at - 1; index >= 0 && prompt < 0; index--)
               if (transcript[index].role === 'user' && root(index))
                 prompt = index;
@@ -721,7 +734,7 @@ export function createSession(
               ...previous,
               status: 'running',
               transcript,
-              ...nextInvocationSubagents(previous),
+              ...nextInvocationSubagents(previous, transcript),
               run: Object.freeze({ id }),
             }),
             signal,
@@ -1466,14 +1479,14 @@ function createToolsOwner(
           }
         });
       }),
-    resume: (pause, responses, options) =>
-      new Promise<CompleteOutcome>((resolve) => {
+    resume: (responses, options) =>
+      new Promise<CompleteOutcome>((resolve, reject) => {
         if (disposed) {
           resolve('aborted');
           return;
         }
         if (active || ledger.snapshot().blocker) {
-          resolve('error');
+          reject(new TypeError(NOT_SETTLED));
           return;
         }
         const before = revision;
@@ -1485,22 +1498,18 @@ function createToolsOwner(
             resolve('aborted');
             return;
           }
-          if (interruptMode !== 'native')
-            throw new TypeError('Native resume required');
+          if (interruptMode !== 'native') throw new TypeError(NOT_SETTLED);
           const previous = publication.getObservation();
-          assertResumeEligible(
-            previous.decision,
-            previous.run,
-            pause,
-            Date.now()
-          );
           captured = captureResponses(responses);
-        } catch {
-          resolve(
-            disposed || signal?.aborted || revision !== before
-              ? 'aborted'
-              : 'error'
+          claimDecision(
+            assertResumeEligible(previous.decision, previous.run, Date.now()),
+            captured,
+            ''
           );
+        } catch (error) {
+          if (disposed || signal?.aborted || revision !== before)
+            resolve('aborted');
+          else reject(error);
           return;
         }
         publication.command(() => {
@@ -1509,7 +1518,7 @@ function createToolsOwner(
             return;
           }
           if (active || ledger.snapshot().blocker) {
-            resolve('error');
+            reject(new TypeError(NOT_SETTLED));
             return;
           }
           try {
@@ -1517,7 +1526,6 @@ function createToolsOwner(
             const decision = assertResumeEligible(
               previous.decision,
               previous.run,
-              pause,
               Date.now()
             );
             const id = crypto.randomUUID();
@@ -1533,8 +1541,8 @@ function createToolsOwner(
               signal,
               resolve
             );
-          } catch {
-            resolve('error');
+          } catch (error) {
+            reject(error);
           }
         });
       }),

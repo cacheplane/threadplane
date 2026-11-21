@@ -3,6 +3,7 @@ import { createSession } from './create-session';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { controlledSession } from './testing/controlled-session';
 import { saved } from './testing/checkpoint-fixture';
+import { answerPending } from './testing/answer-pending';
 
 const cleanups: (() => Promise<void>)[] = [];
 afterEach(async () => {
@@ -210,7 +211,9 @@ describe('visible text through actual session ownership', () => {
       await session.load!();
       const paused = session.getSnapshot();
       expect(paused.messages.at(-1)?.content).toBe('Waiting');
-      expect(await session.resume(true)).toBe('success');
+      expect(await session.resume(answerPending(session, true))).toBe(
+        'success'
+      );
       expect(
         session.getSnapshot().messages.filter((m) => m.role === 'assistant')
       ).toMatchObject([

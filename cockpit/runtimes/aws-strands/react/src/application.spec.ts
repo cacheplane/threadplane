@@ -690,12 +690,11 @@ it.each([true, false])(
     void h.app.decide(a, 'approve', 0);
     expect(h.session.resume).toHaveBeenCalledTimes(1);
     expect(h.session.resume).toHaveBeenCalledWith(
-      a.pause,
       [
         {
           interruptId: 'opaque-native-interrupt',
           status: 'resolved',
-          payload: { approved },
+          value: { approved },
         },
       ],
       expect.anything()
@@ -822,7 +821,7 @@ it('Stop during resume aborts and makes late completion powerless', async () => 
   const h = harness(),
     a = await h.pause(),
     pending = h.app.decide(a, 'approve', 0);
-  const options = vi.mocked(h.session.resume).mock.calls[0][2];
+  const options = vi.mocked(h.session.resume).mock.calls[0][1];
   const stopped = h.app.stop();
   expect(options?.signal?.aborted).toBe(true);
   expect(h.app.getSnapshot().approval).toBeUndefined();

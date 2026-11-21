@@ -33,6 +33,11 @@ import {
   type MessageListProps,
 } from './message-list.js';
 import { ScrollBubble } from './scroll-bubble.js';
+import {
+  useSessionInterrupts,
+  type RenderInterrupt,
+} from './session-interrupts.js';
+import { sessionSubagents } from './session-subagents.js';
 import { Select, type SelectOption } from './select.js';
 import { ThreadList, type ThreadListItem } from './thread-list.js';
 
@@ -71,7 +76,11 @@ export interface ChatProps
    * the composer when none is. The app passes `clientTools.tools` to the session; Chat never runs a tool. Off unless set.
    */
   readonly clientTools?: ChatClientTools;
-  /** Child agents shown as subagent cards in place of the tool calls that started them. Keep stable. */
+  /**
+   * Child agents shown as subagent cards in place of the tool calls that started them. Keep stable.
+   * Left unset, Chat shows the child agents the session reports in `snapshot.subagents`. Pass a list,
+   * which may be empty, to show that instead.
+   */
   readonly subagents?: MessageListProps['subagents'];
   /** Application-owned handler for a retry declared by `toolOutcome`; Chat never re-runs a call. Keep stable. */
   readonly onToolRetry?: MessageListProps['onToolRetry'];
@@ -104,6 +113,20 @@ export interface ChatProps
    * composer. The app decides when it is pending and what answering does.
    */
   readonly approval?: ReactNode;
+  /**
+   * Draws each interrupt the session reports in `snapshot.interrupts`, in the place `approval`
+   * takes. Chat shows nothing for an interrupt by itself: return the card, and call
+   * `respond.resolve(value)` or `respond.cancel()` from it. Chat holds each answer until every
+   * pending interrupt has one, then sends them together with `session.resume`. Which value answers
+   * an interrupt is the backend's contract, so it stays with the app. Ignored while `approval` is
+   * set, and on a session with no `resume`. Off unless set.
+   */
+  readonly renderInterrupt?: RenderInterrupt;
+  /**
+   * Called when `session.resume` rejects an answer sent from `renderInterrupt`; the interrupts can
+   * then be answered again. Left unset, the failure is reported as an unhandled error.
+   */
+  readonly onInterruptError?: (error: unknown) => void;
   /** Answered approvals as one-line records in the transcript; see `MessageListProps.approvalRecords`. */
   readonly approvalRecords?: MessageListProps['approvalRecords'];
   /** Built-in Copy and rating under finished assistant messages; see `MessageListProps.messageActions`. Keep stable. */
@@ -247,7 +270,9 @@ export function Chat({
   inputTrailing,
   inputFooter,
   modelPicker,
-  approval,
+  approval: ownApproval,
+  renderInterrupt,
+  onInterruptError,
   approvalRecords,
   messageActions,
   math,
@@ -281,7 +306,8 @@ export function Chat({
   // handles it itself. Built-in actions stay off until `messageActions` is set.
   const actions = useMemo(() => {
     if (!messageActions || !session.regenerate) return messageActions;
-    if (messageActions !== true && messageActions.onRegenerate) return messageActions;
+    if (messageActions !== true && messageActions.onRegenerate)
+      return messageActions;
     return {
       ...(messageActions === true ? {} : messageActions),
       onRegenerate: (messageId: string) => {
@@ -316,6 +342,14 @@ export function Chat({
   // composer. An app that disables the composer while the answered run goes on
   // gets focus there as soon as it is enabled again.
   const composer = useRef<ChatInputHandle>(null);
+  // The session's own pending interrupts, unless the app supplies the approval.
+  const asks = useSessionInterrupts(
+    session,
+    snapshot.interrupts,
+    ownApproval === undefined ? renderInterrupt : undefined,
+    onInterruptError
+  );
+  const approval = ownApproval === undefined ? asks : ownApproval;
   const pending =
     approval !== undefined && approval !== null && approval !== false;
   const disabled = input.disabled ?? false;
@@ -415,6 +449,15 @@ export function Chat({
     suggestionFocus.current = false;
     composer.current?.focus();
   }, [greeted]);
+  // The session's own child agents, unless the app supplies the cards.
+  const children = subagents === undefined ? snapshot.subagents : undefined;
+  const reported = useMemo(
+    () =>
+      children?.length
+        ? sessionSubagents(children, { toolLabel, toolOutcome })
+        : undefined,
+    [children, toolLabel, toolOutcome]
+  );
   // The run's messages keep their identity while only later snapshots change.
   const messages = snapshot.messages;
   const runMessages = useMemo(() => {
@@ -458,7 +501,9 @@ export function Chat({
         renderToolCall={renderToolCall}
         renderToolCallPrompt={renderPrompt}
         renderToolResult={renderToolResult}
-        subagents={subagents}
+        subagents={subagents ?? reported}
+        // A session child may name no tool call, as a LangGraph child graph does not.
+        placeUnanchoredSubagents={subagents === undefined}
         onToolRetry={onToolRetry}
         plan={snapshot.plan}
         onStop={snapshot.status === 'running' ? stop : undefined}
@@ -485,7 +530,11 @@ export function Chat({
         }
       >
         {runActivity === null ? null : (
-          <div className="tp-chat__run-activity" role="status" aria-atomic="false">
+          <div
+            className="tp-chat__run-activity"
+            role="status"
+            aria-atomic="false"
+          >
             {runActivity}
           </div>
         )}

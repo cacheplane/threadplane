@@ -2,6 +2,8 @@ import type { AgentError } from './error.js';
 import type { Message } from './message.js';
 import type { DeepReadonly, ToolCall, ToolContract } from './tool.js';
 import type { AgentPlanStep } from './plan.js';
+import type { AgentInterrupt } from './interrupt.js';
+import type { AgentSubagent } from './subagent.js';
 
 /**
  * Token counts for one model in one run, as the runtime reported them. Absent
@@ -52,5 +54,15 @@ export type AgentSnapshot<
        * Absent until the backend reports a state, and on sessions that hold none.
        */
       readonly state?: DeepReadonly<TState>;
+      /**
+       * What a paused run is waiting on. Empty or absent when nothing is
+       * pending, and always absent on sessions that cannot pause.
+       */
+      readonly interrupts?: readonly AgentInterrupt[];
+      /**
+       * Child agents the root agent started, in start order. Absent on
+       * sessions that report none.
+       */
+      readonly subagents?: readonly AgentSubagent[];
     }
   : never;

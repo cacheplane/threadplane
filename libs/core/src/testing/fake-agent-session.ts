@@ -13,7 +13,15 @@ import {
 } from '../contracts/delivery.js';
 import { projectAgentError, type AgentError } from '../contracts/error.js';
 import type { Message } from '../contracts/message.js';
+import type {
+  AgentInterrupt,
+  AgentInterruptResponse,
+} from '../contracts/interrupt.js';
 import type { AgentPlanStep } from '../contracts/plan.js';
+import type {
+  AgentSubagent,
+  AgentSubagentStatus,
+} from '../contracts/subagent.js';
 import {
   readState,
   type AgentStateUpdate,
@@ -32,9 +40,20 @@ export type FakeMessageInput = Omit<Message, 'id' | 'delivery'> & {
   readonly delivery?: MessageDelivery;
 };
 
+/** A child agent to place in a fake snapshot. The status defaults to
+ * `'complete'`, and its messages take the same defaults as root messages. */
+export type FakeSubagentInput = Omit<
+  AgentSubagent,
+  'status' | 'messages' | 'toolCalls'
+> & {
+  readonly status?: AgentSubagentStatus;
+  readonly messages?: readonly FakeMessageInput[];
+  readonly toolCalls?: readonly ToolCall[];
+};
+
 /** Snapshot fields a test may replace. Omitted fields keep their value; an
- * explicit `error: undefined`, `plan: undefined` or `state: undefined` removes
- * the field. `state` replaces the whole state and is checked against the
+ * explicit `undefined` for `error`, `plan`, `state`, `interrupts` or
+ * `subagents` removes the field. `state` replaces the whole state and is checked against the
  * session's `stateType` when that is a schema. */
 export interface FakeAgentSnapshotPatch<
   TTools extends { [K in keyof TTools]: ToolContract } = Record<
@@ -49,7 +68,33 @@ export interface FakeAgentSnapshotPatch<
   readonly error?: AgentError;
   readonly plan?: readonly AgentPlanStep[];
   readonly state?: NoInfer<TState> | DeepReadonly<NoInfer<TState>>;
+  readonly interrupts?: readonly AgentInterrupt[];
+  readonly subagents?: readonly FakeSubagentInput[];
 }
+
+/** One recorded call to `session.resume`. */
+export interface FakeResumeCall {
+  readonly responses: readonly AgentInterruptResponse[];
+  readonly options?: AgentSubmitOptions;
+}
+
+/**
+ * Runs after the fake removes the answered interrupts from the snapshot.
+ * Return the outcome `resume` resolves with; nothing means `'paused'` while
+ * interrupts remain and `'success'` otherwise. Throwing rejects `resume` with
+ * that error.
+ */
+export type FakeResumeHandler<
+  TTools extends { [K in keyof TTools]: ToolContract } = Record<
+    string,
+    ToolContract
+  >,
+  TState = unknown
+> = (
+  responses: readonly AgentInterruptResponse[],
+  fake: FakeAgentSession<TTools, TState>,
+  options?: AgentSubmitOptions
+) => CompleteOutcome | void | PromiseLike<CompleteOutcome | void>;
 
 /** One recorded call to `session.submit`. */
 export interface FakeSubmitCall<TState = unknown> {
@@ -90,6 +135,7 @@ export interface FakeAgentSessionInit<
    */
   readonly stateType?: StateDeclaration<TState>;
   readonly onSubmit?: FakeSubmitHandler<TTools, TState>;
+  readonly onResume?: FakeResumeHandler<TTools, TState>;
 }
 
 /** An assistant message that receives text until it completes. */
@@ -114,6 +160,8 @@ export interface FakeAgentSession<
   readonly session: AgentSession<TTools, TState>;
   /** Submissions in call order, including ones the handler rejected. */
   readonly submits: readonly FakeSubmitCall<TState>[];
+  /** Resumes in call order, including ones the fake or the handler rejected. */
+  readonly resumes: readonly FakeResumeCall[];
   readonly stopCount: number;
   readonly disposed: boolean;
   /** Replaces the listed snapshot fields and notifies subscribers once. */
@@ -127,6 +175,10 @@ export interface FakeAgentSession<
   setToolCalls(toolCalls: readonly ToolCall<TTools>[]): void;
   /** Replaces the state; `undefined` removes it. Throws when a schema `stateType` rejects it. */
   setState(state: NoInfer<TState> | undefined): void;
+  /** Replaces the pending interrupts; `undefined` removes the field. */
+  setInterrupts(interrupts: readonly AgentInterrupt[] | undefined): void;
+  /** Replaces the child agents; `undefined` removes the field. */
+  setSubagents(subagents: readonly FakeSubagentInput[] | undefined): void;
   /** Starts a streaming assistant message and sets status `'running'`. */
   stream(options?: {
     readonly id?: string;
@@ -134,6 +186,8 @@ export interface FakeAgentSession<
   }): FakeAssistantStream;
   /** Replaces the handler used by later submissions. */
   onSubmit(handler: FakeSubmitHandler<TTools, TState> | undefined): void;
+  /** Replaces the handler used by later resumes. */
+  onResume(handler: FakeResumeHandler<TTools, TState> | undefined): void;
 }
 
 const owned = new WeakSet<object>();
@@ -167,6 +221,10 @@ function own<T>(value: T, ancestors = new Set<object>()): T {
  * submitted state into the snapshot's state, and resolves `'success'`. Pass
  * `onSubmit` to stream a reply or return another outcome.
  *
+ * `resume` records the call, removes the interrupts it answers and resolves
+ * `'success'`, or `'paused'` while others remain. It rejects a response that
+ * names an interrupt the snapshot does not list, or names one twice.
+ *
  * @example
  * ```ts
  * const fake = createFakeAgentSession({
@@ -195,6 +253,8 @@ export function createFakeAgentSession<
     readonly error?: AgentError;
     readonly plan?: readonly AgentPlanStep[];
     readonly state?: DeepReadonly<TState>;
+    readonly interrupts?: readonly AgentInterrupt[];
+    readonly subagents?: readonly AgentSubagent[];
   };
   const checkState = (value: unknown): DeepReadonly<TState> => {
     const reading = readState(init.stateType as StateDeclaration, value);
@@ -215,6 +275,15 @@ export function createFakeAgentSession<
       delivery: input.delivery ?? staticDelivery(id),
     });
   };
+  const ownSubagent = (input: FakeSubagentInput): AgentSubagent => {
+    if (owned.has(input)) return input as AgentSubagent;
+    return own({
+      ...input,
+      status: input.status ?? 'complete',
+      messages: (input.messages ?? []).map(ownMessage),
+      toolCalls: input.toolCalls ?? [],
+    });
+  };
   const build = (
     base: Snapshot | undefined,
     patch: FakeAgentSnapshotPatch<TTools, TState>
@@ -226,6 +295,8 @@ export function createFakeAgentSession<
       error?: AgentError;
       plan?: readonly AgentPlanStep[];
       state?: DeepReadonly<TState>;
+      interrupts?: readonly AgentInterrupt[];
+      subagents?: readonly AgentSubagent[];
     } = {
       status: patch.status ?? base?.status ?? 'idle',
       messages: patch.messages
@@ -249,13 +320,23 @@ export function createFakeAgentSession<
           : checkState(patch.state)
         : base?.state;
     if (state !== undefined) next.state = state;
+    const interrupts =
+      'interrupts' in patch ? patch.interrupts : base?.interrupts;
+    if (interrupts) next.interrupts = own(interrupts);
+    const subagents =
+      'subagents' in patch
+        ? patch.subagents && own(patch.subagents.map(ownSubagent))
+        : base?.subagents;
+    if (subagents) next.subagents = subagents;
     return Object.freeze(next);
   };
 
   let snapshot = build(undefined, init);
   let handler = init.onSubmit;
   const listeners = new Set<() => void>();
+  let resumeHandler = init.onResume;
   const submits: FakeSubmitCall<TState>[] = [];
+  const resumes: FakeResumeCall[] = [];
   const streams = new Set<() => void>();
   let stopCount = 0;
   let disposed = false;
@@ -307,6 +388,37 @@ export function createFakeAgentSession<
       const outcome = await handler?.(input, fake, options);
       return outcome ?? 'success';
     },
+    async resume(
+      responses: readonly AgentInterruptResponse[],
+      options?: AgentSubmitOptions
+    ): Promise<CompleteOutcome> {
+      const answers = own([...responses]);
+      resumes.push(
+        Object.freeze(
+          options ? { responses: answers, options } : { responses: answers }
+        )
+      );
+      if (disposed) throw new Error('The fake agent session is disposed.');
+      const pending = snapshot.interrupts ?? [];
+      const answered = new Set<string>();
+      for (const { interruptId } of answers) {
+        if (!pending.some((interrupt) => interrupt.id === interruptId))
+          throw new TypeError(
+            `No pending interrupt has the id "${interruptId}".`
+          );
+        if (answered.has(interruptId))
+          throw new TypeError(
+            `The interrupt "${interruptId}" is answered twice.`
+          );
+        answered.add(interruptId);
+      }
+      const remaining = pending.filter(
+        (interrupt) => !answered.has(interrupt.id)
+      );
+      if (answered.size > 0) publish({ interrupts: remaining });
+      const outcome = await resumeHandler?.(answers, fake, options);
+      return outcome ?? (remaining.length > 0 ? 'paused' : 'success');
+    },
     async stop() {
       stopCount++;
       for (const abort of [...streams]) abort();
@@ -321,6 +433,7 @@ export function createFakeAgentSession<
   const fake: FakeAgentSession<TTools, TState> = {
     session: session as unknown as AgentSession<TTools, TState>,
     submits,
+    resumes,
     get stopCount() {
       return stopCount;
     },
@@ -345,6 +458,8 @@ export function createFakeAgentSession<
       ),
     setToolCalls: (toolCalls) => publish({ toolCalls }),
     setState: (state) => publish({ state }),
+    setInterrupts: (interrupts) => publish({ interrupts }),
+    setSubagents: (subagents) => publish({ subagents }),
     stream(options = {}) {
       const id = options.id ?? nextId('assistant');
       let open = true;
@@ -385,6 +500,9 @@ export function createFakeAgentSession<
     },
     onSubmit(next) {
       handler = next;
+    },
+    onResume(next) {
+      resumeHandler = next;
     },
   };
   return fake;

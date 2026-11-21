@@ -2,9 +2,9 @@ import { streamingDelivery } from '@threadplane/core';
 import { describe, expect, it } from 'vitest';
 import { createPublication } from './publication';
 import { deferred } from './testing/deferred';
-import type { LangGraphSnapshot } from './langgraph-snapshot';
+import type { LangGraphPublication } from './langgraph-snapshot';
 
-function snapshot(content = 'one'): LangGraphSnapshot {
+function snapshot(content = 'one'): LangGraphPublication {
   return {
     status: 'idle',
     history: undefined,
@@ -36,7 +36,7 @@ describe('private snapshot publication', () => {
   it('publishes reasoning-only changes, owns queued getter strings and suppresses equal values', () => {
     const publication = createPublication(snapshot());
     let reasoning = 'Captured';
-    const input = (): LangGraphSnapshot => ({
+    const input = (): LangGraphPublication => ({
       ...snapshot(),
       messages: [
         {
@@ -47,7 +47,7 @@ describe('private snapshot publication', () => {
         },
       ],
     });
-    const seen: LangGraphSnapshot[] = [];
+    const seen: LangGraphPublication[] = [];
     publication.subscribe(() => {
       seen.push(publication.getSnapshot());
       if (seen.length === 1) {
@@ -78,11 +78,11 @@ describe('private snapshot publication', () => {
     const citations = [
       { id: 'c', index: 1, title: 'Original', extra: { tags: ['original'] } },
     ];
-    const input = (): LangGraphSnapshot => ({
+    const input = (): LangGraphPublication => ({
       ...snapshot('two'),
       messages: [{ ...snapshot('two').messages[0], citations }],
     });
-    const seen: LangGraphSnapshot[] = [];
+    const seen: LangGraphPublication[] = [];
     publication.subscribe(() => {
       seen.push(publication.getSnapshot());
       if (seen.length === 1) {
@@ -138,7 +138,7 @@ describe('private snapshot publication', () => {
         if (populated) array[0] = 1;
         return array;
       };
-      const input = (length: number): LangGraphSnapshot => ({
+      const input = (length: number): LangGraphPublication => ({
         ...snapshot(),
         toolCalls: [
           {
@@ -230,7 +230,7 @@ describe('private snapshot publication', () => {
         ...snapshot('Invalid'),
         state: { count: 9 },
         interrupts: [{ value: new Date() }],
-      } as unknown as LangGraphSnapshot)
+      } as unknown as LangGraphPublication)
     ).toThrow(TypeError);
     expect(publication.getSnapshot()).toBe(before);
   });
@@ -241,7 +241,7 @@ describe('private snapshot publication', () => {
       publication.publish({
         ...snapshot('candidate'),
         state: { bad: new Date(0) },
-      } as unknown as LangGraphSnapshot)
+      } as unknown as LangGraphPublication)
     ).toThrow(TypeError);
     expect(publication.getSnapshot()).toBe(before);
   });
@@ -249,12 +249,12 @@ describe('private snapshot publication', () => {
   it('owns application values and suppresses equal queued aggregate publications', () => {
     const data = { stable: { x: 1 }, count: 1 };
     const publication = createPublication({ ...snapshot(), state: data });
-    const first = publication.getSnapshot() as LangGraphSnapshot;
+    const first = publication.getSnapshot() as LangGraphPublication;
     expect(first.state).toEqual(data);
     expect(first.state).not.toBe(data);
     data.stable.x = 9;
     expect(first.state?.['stable']).toEqual({ x: 1 });
-    const seen: LangGraphSnapshot[] = [];
+    const seen: LangGraphPublication[] = [];
     for (let index = 0; index < 2; index++)
       publication.subscribe(() => {
         if (publication.getSnapshot().status === 'running') {
@@ -268,7 +268,7 @@ describe('private snapshot publication', () => {
         }
       });
     publication.subscribe(() =>
-      seen.push(publication.getSnapshot() as LangGraphSnapshot)
+      seen.push(publication.getSnapshot() as LangGraphPublication)
     );
     publication.publish({ ...first, status: 'running' });
     expect(seen).toHaveLength(2);
@@ -288,7 +288,7 @@ describe('private snapshot publication', () => {
       toolCalls: [{ ...input.toolCalls[0], args: new Date() }],
     };
     expect(() =>
-      createPublication(invalid as unknown as LangGraphSnapshot)
+      createPublication(invalid as unknown as LangGraphPublication)
     ).toThrow(TypeError);
     const publication = createPublication({
       ...input,
@@ -300,7 +300,7 @@ describe('private snapshot publication', () => {
         toolCalls: [
           { id: 't', name: 'search', status: 'running', args: new Date() },
         ],
-      } as unknown as LangGraphSnapshot)
+      } as unknown as LangGraphPublication)
     ).toThrow(TypeError);
   });
   it('caches repeated reads per session and observes only actual changes', () => {
