@@ -57,7 +57,7 @@
         "^production"
       ],
       "options": {
-        "command": "node node_modules/typescript/bin/tsc --project libs/core/tsconfig.spec.json --noEmit --emitDeclarationOnly false --composite false --incremental false && node node_modules/typescript/bin/tsc --project libs/core/tsconfig.nonstrict.json"
+        "command": "node node_modules/typescript/bin/tsc --project libs/core/tsconfig.spec.json --noEmit --emitDeclarationOnly false --composite false --incremental false && node node_modules/typescript/bin/tsc --project libs/core/tsconfig.nonstrict.json && node node_modules/typescript/bin/tsc --project libs/core/tsconfig.nonstrict-type-tests.json"
       }
     }
   }
