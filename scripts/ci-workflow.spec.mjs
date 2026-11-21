@@ -965,7 +965,7 @@ describe('CI workflow', () => {
     assert.match(production, /readVerification\(directory\)/);
     assert.doesNotMatch(production, /buildConsumer|captureVerification|runBrowserProofs/, 'the production case must not duplicate the CLI build or browser proofs');
     for (const prerequisite of [
-      'run-many -t build --projects=core,content,angular,react,chat,langgraph,ag-ui,render,a2ui,telemetry,middleware',
+      'run-many -t build --projects=core,content,angular,react,langgraph,ag-ui,a2ui,telemetry,middleware',
       CHROMIUM_INSTALL,
     ]) assert.ok(job.indexOf(prerequisite) >= 0 && job.indexOf(step) > job.indexOf(prerequisite));
     assert.doesNotMatch(step, /continue-on-error|\|\|\s*true|set\s+\+e|if:|--grep|--test-name-pattern/);
@@ -1108,7 +1108,7 @@ describe('CI workflow', () => {
     assert.match(source, /node scripts\/react-parity\/verify-boundaries\.mjs/);
     const build = readNamedStep(job, 'Build and validate private React foundations');
     assert.ok(job.includes(`FOUNDATIONS: ${foundationProjects.join(',')}`));
-    assert.match(job, /LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry/);
+    assert.match(job, /LIBS: langgraph,ag-ui,a2ui,telemetry/);
     assert.match(build, /run-many -t lint test type-tests build --projects=\$FOUNDATIONS/);
     const packages = readNamedStep(job, 'Verify emitted boundaries and isolated packages');
     assert.match(packages, /verify-boundaries\.mjs --built/);
@@ -1389,7 +1389,7 @@ describe('CI workflow', () => {
     );
     assert.match(
       libraryJob,
-      /npx nx run-many -t test --projects=chat,ag-ui,render,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2/
+      /npx nx run-many -t test --projects=ag-ui,a2ui,telemetry,middleware --coverage --parallel=1 --maxWorkers=2/
     );
   });
 

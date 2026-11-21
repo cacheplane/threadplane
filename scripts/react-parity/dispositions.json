@@ -803,6 +803,16 @@
       "status": "planned"
     },
     {
+      "id": "asset:libs/angular/tsconfig.type-tests.json",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "asset:libs/cockpit-registry/package.json",
       "taskIds": [
         "T02",

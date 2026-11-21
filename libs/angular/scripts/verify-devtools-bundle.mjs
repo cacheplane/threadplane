@@ -8,8 +8,7 @@
 // events, not the render report (chat's reporter and render's element
 // tracker), not its opt-out flag. The same bundle with
 // `ngDevMode` left to the runtime must contain them all, so the check cannot pass by
-// bundling the wrong thing. Run after building render, chat, angular, langgraph
-// and ag-ui.
+// bundling the wrong thing. Run after building angular, langgraph and ag-ui.
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -17,15 +16,15 @@ import { build } from 'esbuild';
 
 const dist = (path) => resolve('dist/libs', path);
 const local = {
-  '@threadplane/angular/render': dist('render/fesm2022/threadplane-render.mjs'),
-  '@threadplane/angular/chat': dist('chat/fesm2022/threadplane-chat.mjs'),
+  '@threadplane/angular/render': dist('angular/fesm2022/threadplane-angular-render.mjs'),
+  '@threadplane/angular/chat': dist('angular/fesm2022/threadplane-angular-chat.mjs'),
   '@threadplane/angular': dist('angular/fesm2022/threadplane-angular.mjs'),
   // The backend packages are framework-neutral ES modules, not APF bundles.
   '@threadplane/langgraph': dist('langgraph/src/public-api.js'),
   '@threadplane/ag-ui': dist('ag-ui/src/public-api.js'),
 };
 for (const file of Object.values(local)) {
-  assert(existsSync(file), `${file} is missing; build render, chat, angular, langgraph and ag-ui first`);
+  assert(existsSync(file), `${file} is missing; build angular, langgraph and ag-ui first`);
 }
 
 const entry = `
