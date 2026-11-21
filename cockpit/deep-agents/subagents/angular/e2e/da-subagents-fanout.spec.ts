@@ -11,7 +11,7 @@ test('da-subagents: a parallel fan-out lands as four separate cards', async ({ p
 
   // The orchestrator issued four `task` calls in ONE turn, so four child graphs
   // streamed concurrently. Each ran in its own `tools:<call_id>` namespace,
-  // which is what lets the SubagentTracker keep them apart — a tracker guessing
+  // which is what lets the session keep them apart — a session guessing
   // from message order would fold concurrent children into one card.
   await expect(page.locator('chat-subagent-card')).toHaveCount(4, { timeout: 30_000 });
   await expect(page.getByTestId('dispatch-count')).toHaveText('4 dispatched, 0 running');

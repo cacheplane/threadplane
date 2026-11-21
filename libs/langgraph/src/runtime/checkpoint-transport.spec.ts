@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
+import { FetchStreamTransport } from './fetch-stream.transport';
 
 afterEach(() => vi.unstubAllGlobals());
 const checkpoint = {

@@ -1,8 +1,9 @@
 import { exampleToolLabel } from '../../../../../shared/tool-presentation';
-import { Component } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent, a2uiBasicCatalog } from '@threadplane/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
 const WELCOME_SUGGESTIONS = [
   {
@@ -26,11 +27,11 @@ const WELCOME_SUGGESTIONS = [
       title="Plan a flight"
       description="Flight preview: request a flight form, edit your details, and select a demonstration flight. This preview makes no booking or payment."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="isLoading()"
         (click)="newConversation(conversation)">New conversation</button>
       <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask for a flight form…" #conversation [welcomeDisabled]="true" main [agent]="agent" [views]="catalog" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -48,12 +49,14 @@ const WELCOME_SUGGESTIONS = [
 export class A2uiComponent {
   protected readonly toolLabel = exampleToolLabel;
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.isLoading()) return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
+  /** True while a run streams: the agent has no separate loading flag. */
+  protected readonly isLoading = computed(() => this.agent.status() === 'running');
   protected readonly catalog = a2uiBasicCatalog();
   protected readonly suggestions = WELCOME_SUGGESTIONS;
 

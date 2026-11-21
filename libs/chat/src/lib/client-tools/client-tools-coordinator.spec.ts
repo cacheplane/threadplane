@@ -1,18 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { computed, signal } from '@angular/core';
+import { computed, signal, type Signal } from '@angular/core';
+import type { AgentClientTools } from '@threadplane/core';
 import { z } from 'zod/v4';
 import { action, view, ask, tools } from './tools';
 import { toClientToolSpecs, createClientToolsCoordinator } from './client-tools-coordinator';
-import type { ClientToolsCapability, ClientToolResult } from './client-tools-capability';
+import type { ClientToolResult } from './client-tools-capability';
+import { stopAgent } from './stop-agent';
+import { mockAgent } from '../testing/mock-agent';
 import type {
   ClientToolExecutionGuard,
   ClientToolExecutionRecord,
   ClientToolExecutionStore,
 } from './client-tool-execution-guard';
-import type { Agent } from '../agent/agent';
-import type { Message } from '../agent/message';
-import type { ToolCall } from '../agent/tool-call';
+import type { Agent } from '../agent';
+import type { Message } from '../agent';
+import type { ToolCall } from '../agent';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,17 +36,20 @@ class FakeAskComponent {}
 
 // ── factory helpers ───────────────────────────────────────────────────────────
 
-/** Both shipped adapters mark a call resolved inside settle()/resolve() so that
- *  `pending()` drops it immediately — a settled call can never be re-presented
- *  to the executor effect. The fakes below mirror that, otherwise they invite
- *  guards against hazards the real adapters cannot produce. Tests drive the raw
- *  list; the capability sees the filtered view. */
+/** A session takes a call out of `pendingClientTools` inside settle()/resolve(),
+ *  so a settled call can never be re-presented to the executor effect. The
+ *  fakes below mirror that, otherwise they invite guards against hazards a
+ *  real session cannot produce. Tests drive the raw list; the agent's
+ *  `pendingClientTools` is the filtered view. */
 function pendingView(
   raw: ReturnType<typeof signal<readonly ToolCall[]>>,
   resolvedIds: ReturnType<typeof signal<ReadonlySet<string>>>,
 ) {
   return computed<readonly ToolCall[]>(() => raw().filter((tc) => !resolvedIds().has(tc.id)));
 }
+
+/** The calls each hand-built capability's agent lists in `pendingClientTools`. */
+const pendingByCapability = new WeakMap<AgentClientTools, Signal<readonly ToolCall[]>>();
 
 function makeFakeCapability() {
   const pending = signal<readonly ToolCall[]>([]);
@@ -53,13 +59,13 @@ function makeFakeCapability() {
   const flush = vi.fn<[], void>();
   const resolve = vi.fn<[string, ClientToolResult], void>((id) => drop(id));
   const setCatalog = vi.fn<[readonly unknown[]], void>();
-  const capability: ClientToolsCapability = {
+  const capability: AgentClientTools = {
     setCatalog,
-    pending: pendingView(pending, resolvedIds),
     settle,
     flush,
     resolve,
   };
+  pendingByCapability.set(capability, pendingView(pending, resolvedIds));
   return { pending, settle, flush, resolve, setCatalog, capability };
 }
 
@@ -70,29 +76,27 @@ function makeFakeCapabilityWithoutSettle() {
     resolvedIds.update((s) => new Set(s).add(id)),
   );
   const setCatalog = vi.fn<[readonly unknown[]], void>();
-  const capability: ClientToolsCapability = {
+  const capability: AgentClientTools = {
     setCatalog,
-    pending: pendingView(pending, resolvedIds),
     resolve,
   };
+  pendingByCapability.set(capability, pendingView(pending, resolvedIds));
   return { pending, resolve, setCatalog, capability };
 }
 
-function makeFakeAgent(capability: ClientToolsCapability | undefined): Agent {
+/**
+ * The mock agent with a hand-built capability in place of the fake session's,
+ * and that capability's pending list as `pendingClientTools`. `submit` and
+ * `stop` are spies, so a test can prove no run was started.
+ */
+function makeFakeAgent(capability: AgentClientTools | undefined) {
   return {
-    messages: signal([]),
-    status: signal('idle'),
-    isLoading: signal(false),
-    error: signal(undefined),
-    toolCalls: signal([]),
-    state: signal({}),
-    events$: { subscribe: () => ({ unsubscribe: () => undefined }) } as never,
-    submit: vi.fn(),
-    stop: vi.fn(),
-    retry: vi.fn(),
-    regenerate: vi.fn(),
+    ...mockAgent(),
+    submit: vi.fn(async () => 'success' as const),
+    stop: vi.fn(async () => undefined),
     clientTools: capability,
-  };
+    pendingClientTools: (capability && pendingByCapability.get(capability)) ?? signal<readonly ToolCall[]>([]),
+  } satisfies Agent;
 }
 
 function makeGuardStore(): ClientToolExecutionStore & {
@@ -190,6 +194,89 @@ describe('createClientToolsCoordinator()', () => {
     expect(names).toContain('get_weather');
     expect(names).toContain('weather_card');
     expect(names).toContain('confirm_booking');
+  });
+
+  it('sends the catalog again when the agent holds another capability object (a thread switch)', () => {
+    const first = makeFakeCapability();
+    const second = makeFakeCapability();
+    const messages = signal<Message[]>([]);
+    const agent = { ...makeFakeAgent(first.capability), messages };
+    const coordinator = createClientToolsCoordinator(testRegistry);
+
+    TestBed.runInInjectionContext(() => {
+      coordinator.connect(agent);
+    });
+    TestBed.flushEffects();
+    expect(first.setCatalog).toHaveBeenCalledOnce();
+
+    // A snapshot change on the same session sends nothing.
+    messages.set([{ id: 'u1', role: 'user', content: 'hi', delivery: { generation: 'u1', phase: 'complete', outcome: 'success' } }]);
+    TestBed.flushEffects();
+    expect(first.setCatalog).toHaveBeenCalledOnce();
+
+    // A thread switch replaces the session: another capability, another snapshot.
+    (agent as { clientTools: AgentClientTools }).clientTools = second.capability;
+    messages.set([]);
+    TestBed.flushEffects();
+
+    expect(first.setCatalog).toHaveBeenCalledOnce();
+    expect(second.setCatalog).toHaveBeenCalledOnce();
+    expect(second.setCatalog.mock.calls[0][0]).toEqual(first.setCatalog.mock.calls[0][0]);
+
+    // And only once for that session.
+    messages.set([{ id: 'u2', role: 'user', content: 'again', delivery: { generation: 'u2', phase: 'complete', outcome: 'success' } }]);
+    TestBed.flushEffects();
+    expect(second.setCatalog).toHaveBeenCalledOnce();
+  });
+
+  it('does not send an ask result for a call the agent no longer lists as pending', () => {
+    const { pending, resolve, settle, capability } = makeFakeCapability();
+    const agent = makeFakeAgent(capability);
+    const coordinator = createClientToolsCoordinator(testRegistry);
+
+    TestBed.runInInjectionContext(() => {
+      coordinator.connect(agent);
+    });
+    const call: ToolCall = { id: 'a1', name: 'confirm_booking', args: { flight: 'UA1' }, status: 'pending' };
+    pending.set([call]);
+    TestBed.flushEffects();
+    // The session that asked is gone before the person answers.
+    pending.set([]);
+    TestBed.flushEffects();
+
+    coordinator.handleRenderEvent(agent, { type: 'result', elementKey: 'confirm_booking', value: { ok: true } } as never);
+
+    expect(resolve).not.toHaveBeenCalled();
+    expect(settle).not.toHaveBeenCalled();
+  });
+
+  it('ships the catalog and answers calls through the fake session the mock agent stands on', async () => {
+    const agent = mockAgent({ commands: ['clientTools'] });
+    const coordinator = createClientToolsCoordinator(testRegistry);
+
+    TestBed.runInInjectionContext(() => {
+      coordinator.connect(agent);
+    });
+    expect(agent.fake.catalogs).toHaveLength(1);
+    expect(agent.fake.catalogs[0].map((spec) => spec.name)).toEqual(['get_weather', 'weather_card', 'confirm_booking']);
+
+    const calls: ToolCall[] = [
+      { id: 'f1', name: 'get_weather', args: { city: 'SF' }, status: 'pending' },
+      { id: 'v1', name: 'weather_card', args: { city: 'SF' }, status: 'pending' },
+    ];
+    agent.toolCalls.set(calls);
+    agent.pendingClientTools.set(calls);
+    TestBed.flushEffects();
+    await drainMicrotasks();
+    TestBed.flushEffects();
+
+    // One group: the first result is recorded, the last one continues the run.
+    expect(agent.fake.clientToolResults).toEqual([
+      { kind: 'settle', toolCallId: 'v1', result: { ok: true, value: { shown: true } } },
+      { kind: 'resolve', toolCallId: 'f1', result: { ok: true, value: { temp: 72, city: 'SF' } } },
+    ]);
+    expect(agent.pendingClientTools()).toEqual([]);
+    expect(agent.fake.catalogs).toHaveLength(1);
   });
 
   it('connect() is a no-op when the agent lacks the clientTools capability', () => {
@@ -296,7 +383,7 @@ describe('createClientToolsCoordinator()', () => {
     TestBed.flushEffects();
     await drainMicrotasks();
 
-    await agent.stop();
+    await stopAgent(agent);
     await drainMicrotasks();
 
     // A single-call group with default followUp would normally resolve(), which
@@ -329,7 +416,7 @@ describe('createClientToolsCoordinator()', () => {
     TestBed.flushEffects();
     await drainMicrotasks();
 
-    await agent.stop();
+    await stopAgent(agent);
     await drainMicrotasks();
 
     expect(resolve).not.toHaveBeenCalled();
@@ -502,13 +589,13 @@ describe('createClientToolsCoordinator()', () => {
       coordinator.connect(agent);
     });
 
-    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
-    pending.set([{ id: 'c2', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c2', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
-    pending.set([{ id: 'c3', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c3', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
 
@@ -539,7 +626,7 @@ describe('createClientToolsCoordinator()', () => {
     });
 
     for (let i = 1; i <= 11; i++) {
-      pending.set([{ id: `c${i}`, name: 'loop', args: {}, status: 'complete' }]);
+      pending.set([{ id: `c${i}`, name: 'loop', args: {}, status: 'pending' }]);
       TestBed.flushEffects();
       await drainMicrotasks();
     }
@@ -565,7 +652,7 @@ describe('createClientToolsCoordinator()', () => {
     });
 
     for (let i = 1; i <= 12; i++) {
-      pending.set([{ id: `c${i}`, name: 'loop', args: {}, status: 'complete' }]);
+      pending.set([{ id: `c${i}`, name: 'loop', args: {}, status: 'pending' }]);
       TestBed.flushEffects();
       await drainMicrotasks();
     }
@@ -591,12 +678,12 @@ describe('createClientToolsCoordinator()', () => {
       coordinator.connect(agent);
     });
 
-    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
 
     messages.set([{ id: 'u1', role: 'user', content: 'start' }, { id: 'u2', role: 'user', content: 'next' }]);
-    pending.set([{ id: 'c2', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c2', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
 
@@ -621,7 +708,7 @@ describe('createClientToolsCoordinator()', () => {
       coordinator.connect(agent);
     });
 
-    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
 
@@ -629,7 +716,7 @@ describe('createClientToolsCoordinator()', () => {
     TestBed.flushEffects();
     await drainMicrotasks();
 
-    pending.set([{ id: 'c2', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c2', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
 
@@ -698,7 +785,7 @@ describe('createClientToolsCoordinator()', () => {
     });
 
     // Turn 1 consumes the single allowed continuation.
-    pending.set([{ id: 'a1', name: 'loop_a', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'a1', name: 'loop_a', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
 
@@ -710,8 +797,8 @@ describe('createClientToolsCoordinator()', () => {
     // group must flush exactly once — adapters coalesce concurrent flushes, so
     // a per-call flush strands b2's batch and leaves it unanswered on reload.
     pending.set([
-      { id: 'b1', name: 'loop_a', args: {}, status: 'complete' },
-      { id: 'b2', name: 'loop_b', args: {}, status: 'complete' },
+      { id: 'b1', name: 'loop_a', args: {}, status: 'pending' },
+      { id: 'b2', name: 'loop_b', args: {}, status: 'pending' },
     ]);
     TestBed.flushEffects();
     await drainMicrotasks();
@@ -738,12 +825,12 @@ describe('createClientToolsCoordinator()', () => {
       coordinator.connect(agent);
     });
 
-    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
     resolve.mockClear();
 
-    pending.set([{ id: 'c2', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c2', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
 
@@ -772,7 +859,7 @@ describe('createClientToolsCoordinator()', () => {
     });
 
     // Turn 1 consumes the single allowed continuation.
-    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
 
@@ -784,7 +871,7 @@ describe('createClientToolsCoordinator()', () => {
 
     // Turn 2 is blocked. Re-emitting the same pending call must not re-settle it:
     // the predicate that records the block runs on every effect pass.
-    const blocked: ToolCall = { id: 'c2', name: 'loop', args: {}, status: 'complete' };
+    const blocked: ToolCall = { id: 'c2', name: 'loop', args: {}, status: 'pending' };
     pending.set([blocked]);
     TestBed.flushEffects();
     await drainMicrotasks();
@@ -814,13 +901,13 @@ describe('createClientToolsCoordinator()', () => {
     TestBed.runInInjectionContext(() => {
       coordinator.connect(agent);
     });
-    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c1', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
     settle.mockClear();
 
     // c2 is blocked and settled with a limit error.
-    pending.set([{ id: 'c2', name: 'loop', args: {}, status: 'complete' }]);
+    pending.set([{ id: 'c2', name: 'loop', args: {}, status: 'pending' }]);
     TestBed.flushEffects();
     await drainMicrotasks();
 
@@ -828,8 +915,8 @@ describe('createClientToolsCoordinator()', () => {
     // empty settle bookkeeping, but settle() already dropped c2 from pending(),
     // so the effect never sees it again and it is not re-settled.
     const reformed: readonly ToolCall[] = [
-      { id: 'c2', name: 'loop', args: {}, status: 'complete' },
-      { id: 'c9', name: 'loop', args: {}, status: 'complete' },
+      { id: 'c2', name: 'loop', args: {}, status: 'pending' },
+      { id: 'c9', name: 'loop', args: {}, status: 'pending' },
     ];
     pending.set(reformed);
     TestBed.flushEffects();

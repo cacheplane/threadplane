@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 import { ITINERARY_AGENT } from './client-tools';
 import { ItineraryStop, ItineraryStore } from './itinerary-store';
 

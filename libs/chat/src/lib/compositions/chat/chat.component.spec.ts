@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { Subject } from 'rxjs';
-import { Component, signal, effect, DestroyRef, inject, Injector, runInInjectionContext } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, signal, effect, Injector, runInInjectionContext } from '@angular/core';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 import { ChatComponent } from './chat.component';
 import { DEVELOPMENT_COLLECTION_POLICY, registerDevelopmentRuntimePolicy } from '@threadplane/telemetry/browser';
@@ -12,7 +10,7 @@ import { createContentClassifier, type ContentClassifier } from '../../streaming
 import { mockAgent } from '../../testing/mock-agent';
 import { createPartialArgsBridge } from '../../a2ui/partial-args-bridge';
 import { createA2uiSurfaceStore } from '../../a2ui/surface-store';
-import { signalStateStore, toRenderRegistry, views } from '@threadplane/render';
+import { toRenderRegistry, views } from '@threadplane/render';
 import { a2uiBasicCatalog } from '../../a2ui/catalog/index';
 import { ChatGenerativeUiComponent } from '../../primitives/chat-generative-ui/chat-generative-ui.component';
 import { ChatMessageComponent } from '../../primitives/chat-message/chat-message.component';
@@ -21,9 +19,8 @@ import { ChatToolResultTemplateDirective } from '../../primitives/chat-tool-call
 import { ChatActivityTemplateDirective } from './chat-activity-template.directive';
 import { ChatRunActivityTemplateDirective } from './chat-run-activity-template.directive';
 import type { Spec, StateStore } from '@json-render/core';
-import { AgentError } from '../../agent/agent-error';
-import type { AgentEvent } from '../../agent/agent-event';
-import type { Subagent } from '../../agent/subagent';
+import type { AgentError, AgentSubagent } from '../../agent';
+import { rawMessagesAgent } from '../../../testing/raw-messages-agent';
 import {
   completeDelivery,
   staticDelivery,
@@ -182,7 +179,7 @@ describe('ChatComponent', () => {
     expect(root.querySelector('.tp-tool-activity__results')).toBeNull();
   });
   it('forwards a declared tool retry and drops the generic banner Retry while it is offered', () => {
-    const retryable = new AgentError({ kind: 'server', message: 'Read unavailable', retryable: true });
+    const retryable: AgentError = { kind: 'server', message: 'Read unavailable', retryable: true };
     const agent = mockAgent({
       status: 'error',
       error: retryable,
@@ -208,7 +205,7 @@ describe('ChatComponent', () => {
     button!.click();
     expect(retried).toEqual(['c']);
     // While the agent works the per-call retry is withdrawn; the banner's own state is the agent's.
-    agent.isLoading.set(true);
+    agent.status.set('running');
     fixture.detectChanges();
     expect(root.querySelector('button.tp-tool-activity__retry')).toBeNull();
   });
@@ -222,7 +219,7 @@ describe('ChatComponent', () => {
         ],
         toolCalls: [failedRead, { ...failedRead, id: 'c2', status: 'running' as const, result: undefined }],
       });
-      agent.isLoading.set(true);
+      agent.status.set('running');
       const fixture = TestBed.createComponent(ChatComponent);
       fixture.componentRef.setInput('agent', agent);
       fixture.componentRef.setInput('groupRelatedTools', grouped);
@@ -254,7 +251,7 @@ describe('ChatComponent', () => {
     it('drops the line once the repeat call finishes', () => {
       const { agent, fixture, root } = retrying(false);
       agent.toolCalls.update((calls) => calls.map((call) => (call.id === 'c2' ? { ...call, status: 'complete' as const, result: 'ok' } : call)));
-      agent.isLoading.set(false);
+      agent.status.set('idle');
       fixture.detectChanges();
       expect(retryingLines(root)).toEqual([]);
     });
@@ -283,12 +280,12 @@ describe('ChatComponent', () => {
     };
     const plain = { kind: 'server' as const, message: 'Read unavailable', retryable: false };
     // Same words, nothing to add: one alert is enough.
-    expect(notice(new AgentError(plain), ' Read unavailable ')).toBeNull();
+    expect(notice(plain, ' Read unavailable ')).toBeNull();
     // Different words, a detail, a status check or the notice's own Retry all keep it.
-    expect(notice(new AgentError(plain), 'Reference missing')).toBeTruthy();
-    expect(notice(new AgentError({ ...plain, detail: 'HTTP 503' }), 'Read unavailable')).toBeTruthy();
-    expect(notice(new AgentError({ ...plain, recovery: 'check' }), 'Read unavailable')).toBeTruthy();
-    expect(notice(new AgentError({ ...plain, retryable: true }), 'Read unavailable')?.querySelector('button')).toBeTruthy();
+    expect(notice(plain, 'Reference missing')).toBeTruthy();
+    expect(notice({ ...plain, detail: 'HTTP 503' }, 'Read unavailable')).toBeTruthy();
+    expect(notice({ ...plain, recovery: 'check' }, 'Read unavailable')).toBeTruthy();
+    expect(notice({ ...plain, retryable: true }, 'Read unavailable')?.querySelector('button')).toBeTruthy();
   });
   it('is defined as a class', () => {
     expect(typeof ChatComponent).toBe('function');
@@ -571,73 +568,60 @@ describe('ChatComponent — left-flash regression', () => {
   });
 });
 
-describe('ChatComponent — events$ routing', () => {
-  // Angular 21 zoneless mode (ZONELESS_ENABLED defaults to true) means
-  // ComponentFixture.autoDetect cannot be disabled, making createComponent
-  // + setInput impractical for required-input signal components.  We test the
-  // routing effect logic directly in a runInInjectionContext, mirroring
-  // exactly the effect body in ChatComponent's constructor — the same pattern
-  // used by other primitive specs in this library.  These tests verify the
-  // routing contract: state_update events update the store; other event types
-  // are silently ignored.
+describe('ChatComponent — state_update event routing', () => {
+  // Render-store updates arrive as custom events named `state_update`. The
+  // real component is constructed in an injection context (same pattern as the
+  // welcome-branch tests) with [views] bound, so resolvedStore() is its
+  // internal store, and the events are delivered through the agent.
+
+  function mount(agent: ReturnType<typeof mockAgent>) {
+    TestBed.configureTestingModule({ imports: [ChatComponent] });
+    const injector = TestBed.inject(Injector);
+    let comp!: ChatComponent;
+    runInInjectionContext(injector, () => {
+      comp = new ChatComponent();
+      setSignalInput(comp.agent, agent);
+      setSignalInput(comp.views, views({}));
+    });
+    // Flush pending effects so the listener is attached before emitting.
+    TestBed.flushEffects();
+    return comp.resolvedStore()!;
+  }
 
   it('routes state_update events to the resolved render store', () => {
-    TestBed.configureTestingModule({});
-    TestBed.runInInjectionContext(() => {
-      const events$ = new Subject<AgentEvent>();
-      const store = signalStateStore({});
-      const agent = mockAgent({ events$: events$.asObservable() });
-      const destroyRef = inject(DestroyRef);
+    const agent = mockAgent();
+    const store = mount(agent);
 
-      // Re-implement the exact routing effect from ChatComponent's constructor
-      // so that a regression in the component would cause this test to fail if
-      // the effect body is changed to not forward state_update events.
-      const agentSig = signal(agent);
-      const storeSig = signal<ReturnType<typeof signalStateStore>>(store);
-      let subscribed = false;
-      effect(() => {
-        if (subscribed) return;
-        subscribed = true;
-        agentSig().events$.pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
-          if (event.type !== 'state_update') return;
-          storeSig().update(event.data);
-        });
-      });
+    agent.emitCustomEvent('state_update', { '/counter': 7 });
 
-      // Flush pending effects so the subscription is established before emitting.
-      TestBed.flushEffects();
-      events$.next({ type: 'state_update', data: { '/counter': 7 } });
-
-      expect(store.getSnapshot()).toMatchObject({ counter: 7 });
-    });
+    expect(store.getSnapshot()).toMatchObject({ counter: 7 });
   });
 
   it('ignores non-state_update events', () => {
-    TestBed.configureTestingModule({});
-    TestBed.runInInjectionContext(() => {
-      const events$ = new Subject<AgentEvent>();
-      const store = signalStateStore({ initial: true });
-      const agent = mockAgent({ events$: events$.asObservable() });
-      const destroyRef = inject(DestroyRef);
+    const agent = mockAgent();
+    const store = mount(agent);
+    store.update({ '/initial': true });
 
-      const agentSig = signal(agent);
-      const storeSig = signal<ReturnType<typeof signalStateStore>>(store);
-      let subscribed = false;
-      effect(() => {
-        if (subscribed) return;
-        subscribed = true;
-        agentSig().events$.pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
-          if (event.type !== 'state_update') return;
-          storeSig().update(event.data);
-        });
-      });
+    agent.emitCustomEvent('a2ui.surface', { surfaceId: 'main' });
 
-      // Flush pending effects so the subscription is established before emitting.
-      TestBed.flushEffects();
-      events$.next({ type: 'custom', name: 'a2ui.surface', data: { surfaceId: 'main' } });
+    expect(store.getSnapshot()).toEqual({ initial: true });
+  });
 
-      expect(store.getSnapshot()).toEqual({ initial: true });
-    });
+  it('ignores a state_update whose data is not an object', () => {
+    const agent = mockAgent();
+    const store = mount(agent);
+
+    agent.emitCustomEvent('state_update', 'not an update');
+    agent.emitCustomEvent('state_update', [1, 2]);
+
+    expect(store.getSnapshot()).toEqual({});
+  });
+
+  it('stays inert for an agent whose session emits no custom events', () => {
+    const agent = mockAgent({ commands: [] });
+    expect(agent.onCustomEvent).toBeUndefined();
+    const store = mount(agent);
+    expect(store.getSnapshot()).toEqual({});
   });
 });
 
@@ -888,15 +872,15 @@ describe('ChatComponent — subagent cards render once (no duplicate per-message
   // the correct single render, exactly one card appears. With the redundant
   // <chat-subagents> mount, TWO appear (once per assistant bubble).
 
-  function runningSubagent(): Subagent {
+  function runningSubagent(): AgentSubagent {
     return {
+      id: 'child-1',
       toolCallId: 'call_t',
       name: 'research',
-      status: signal<'running'>('running'),
-      messages: signal([{
-        id: 'm1', role: 'assistant', content: 'hi', delivery: staticDelivery('m1'),
-      } as never]),
-      state: signal({}),
+      status: 'running',
+      messages: [{ id: 'm1', role: 'assistant', content: 'hi', delivery: staticDelivery('m1') }],
+      toolCalls: [],
+      state: {},
     };
   }
 
@@ -914,9 +898,9 @@ describe('ChatComponent — subagent cards render once (no duplicate per-message
         } as never,
       ],
       toolCalls: [{ id: 'call_t', name: 'task', args: {}, status: 'success' } as ToolCall],
-      withSubagents: true,
+      
     });
-    agent.subagents!.set(new Map<string, Subagent>([['call_t', runningSubagent()]]));
+    agent.subagents.set([runningSubagent()]);
 
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);
@@ -951,7 +935,8 @@ describe('ChatComponent — reasoning runs (merged pill)', () => {
     let comp!: ChatComponent;
     runInInjectionContext(injector, () => {
       comp = new ChatComponent();
-      setSignalInput(comp.agent, mockAgent({ messages, isLoading }));
+      // The messages are held as given, so a delivery can be compared by identity.
+      setSignalInput(comp.agent, rawMessagesAgent({ messages, status: isLoading ? 'running' : 'idle' }));
     });
     return comp as unknown as ReasoningApi;
   }
@@ -1082,19 +1067,19 @@ describe('ChatComponent — markdown delivery', () => {
     {
       name: 'streams when message delivery is streaming even while the agent is not loading',
       delivery: streamingDelivery('answer-attempt'),
-      isLoading: false,
+      status: 'idle',
       expected: true,
     },
     {
       name: 'does not stream when message delivery is complete even while the agent is loading',
       delivery: completeDelivery('answer-attempt', 'success'),
-      isLoading: true,
+      status: 'running',
       expected: false,
     },
-  ])('$name', ({ delivery, isLoading, expected }) => {
+  ] as const)('$name', ({ delivery, status, expected }) => {
     const agent = mockAgent({
       messages: [{ id: 'a1', role: 'assistant', content: 'answer', delivery }],
-      isLoading,
+      status,
     });
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);
@@ -1128,7 +1113,7 @@ describe('ChatComponent — markdown delivery', () => {
     const message: Message = {
       id: 'a1', role: 'assistant', content: 'paused answer', delivery,
     };
-    const agent = mockAgent({ messages: [message], isLoading: false });
+    const agent = mockAgent({ messages: [message], status: 'idle' });
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);
     fixture.detectChanges();
@@ -1136,7 +1121,7 @@ describe('ChatComponent — markdown delivery', () => {
     let markdown = fixture.debugElement.query(By.directive(ChatStreamingMdComponent));
     const document = markdown.componentInstance.document();
 
-    agent.isLoading.set(true);
+    agent.status.set('running');
     fixture.detectChanges();
     markdown = fixture.debugElement.query(By.directive(ChatStreamingMdComponent));
     expect(markdown.componentInstance.document()).toBe(document);
@@ -1241,7 +1226,7 @@ describe('ChatComponent — markdown delivery', () => {
         { id: 'u1', role: 'user', content: 'question', delivery: staticDelivery('u1') },
         first,
       ],
-      isLoading: false,
+      status: 'idle',
     });
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);
@@ -1292,7 +1277,7 @@ describe('ChatComponent — markdown delivery', () => {
     } as const;
     expect(markdown.componentInstance.document()).toEqual(expected);
 
-    agent.isLoading.set(true);
+    agent.status.set('running');
     fixture.detectChanges();
     expect(markdown.componentInstance.document()).toEqual(expected);
 
@@ -1315,7 +1300,7 @@ describe('ChatComponent — markdown delivery', () => {
   template: '<chat [agent]="agent"><ng-template chatRunActivityTemplate>Working</ng-template></chat>',
 })
 class ScrollActivityHost {
-  readonly agent = mockAgent({ isLoading: true, messages: [{ id: 'user', role: 'user', content: 'Question', delivery: staticDelivery('user') }] });
+  readonly agent = mockAgent({ status: 'running', messages: [{ id: 'user', role: 'user', content: 'Question', delivery: staticDelivery('user') }] });
 }
 
 describe('ChatComponent — scrollToBottom', () => {
@@ -1332,7 +1317,7 @@ describe('ChatComponent — scrollToBottom', () => {
   function streamingChat() {
     TestBed.configureTestingModule({});
     const fx = TestBed.createComponent(ChatComponent);
-    const agent = mockAgent({ isLoading: true, messages: [{ id: 'stream', role: 'assistant', content: 'First token', delivery: streamingDelivery('run') }] });
+    const agent = mockAgent({ status: 'running', messages: [{ id: 'stream', role: 'assistant', content: 'First token', delivery: streamingDelivery('run') }] });
     fx.componentRef.setInput('agent', agent);
     fx.detectChanges();
     const el = (fx.nativeElement as HTMLElement).querySelector<HTMLElement>('.chat-scroll');
@@ -1380,7 +1365,7 @@ describe('ChatComponent — scrollToBottom', () => {
     try {
       const { fx, agent, el, pinned } = streamingChat();
       frames.flush();
-      agent.isLoading.set(false);
+      agent.status.set('idle');
       fx.detectChanges();
       // Completion queued a frame while pinned; the user moves before it runs.
       el.dispatchEvent(new WheelEvent('wheel', { deltaY: -600, bubbles: true, cancelable: true }));
@@ -1400,7 +1385,7 @@ describe('ChatComponent — scrollToBottom', () => {
       const { fx, agent, el, pinned } = streamingChat();
       frames.flush();
       fx.componentInstance.scrollToBottom();
-      agent.isLoading.set(false);
+      agent.status.set('idle');
       fx.detectChanges();
       el.scrollTop = 1400;
       el.dispatchEvent(new Event('scroll'));
@@ -1493,7 +1478,7 @@ describe('ChatComponent — scrollToBottom', () => {
       const { fx, agent, el, pinned } = streamingChat();
       frames.flush();
       fx.componentInstance.scrollToBottom();
-      agent.isLoading.set(false);
+      agent.status.set('idle');
       fx.detectChanges();
       const top = kind === 'cancelled' ? 1400 : 1851;
       el.scrollTop = top;
@@ -1824,7 +1809,7 @@ describe('ChatComponent — reading position while a reply arrives', () => {
     TestBed.configureTestingModule({});
     const fx = TestBed.createComponent(ChatComponent);
     const agent = mockAgent({
-      isLoading: true,
+      status: 'running',
       messages: [
         { id: 'u0', role: 'user', content: 'Earlier question', delivery: staticDelivery('u0') },
         { id: 'a0', role: 'assistant', content: 'Earlier answer', delivery: staticDelivery('a0') },
@@ -1866,12 +1851,12 @@ describe('ChatComponent — reading position while a reply arrives', () => {
 
   it('follows a run that starts on the person\'s own prompt again, as Retry does', async () => {
     const { fx, agent, el, pinned } = pendingChat();
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fx.detectChanges();
     await scrollUp(el, 600);
     expect(pinned()).toBe(false);
 
-    agent.isLoading.set(true);
+    agent.status.set('running');
     fx.detectChanges();
 
     expect(pinned()).toBe(true);
@@ -1899,7 +1884,7 @@ describe('ChatComponent — run endings are distinguishable', () => {
     TestBed.configureTestingModule({});
     const fx = TestBed.createComponent(ChatComponent);
     const agent = mockAgent({
-      isLoading: true,
+      status: 'running',
       messages: [{ id: 'u1', role: 'user', content: 'Long question', delivery: staticDelivery('u1') }],
     });
     fx.componentRef.setInput('agent', agent);
@@ -1911,7 +1896,7 @@ describe('ChatComponent — run endings are distinguishable', () => {
   it('marks a turn the person stopped, even when no partial reply is kept, and announces it', () => {
     const { fx, agent, host, status } = runningChat();
     (host.querySelector('button[aria-label="Stop generating"]') as HTMLButtonElement).click();
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fx.detectChanges();
 
     expect(host.querySelector('.chat-stopped-notice')?.textContent).toContain('Response stopped');
@@ -1921,12 +1906,12 @@ describe('ChatComponent — run endings are distinguishable', () => {
   it('clears the stopped marker when the next run starts', () => {
     const { fx, agent, host } = runningChat();
     (host.querySelector('button[aria-label="Stop generating"]') as HTMLButtonElement).click();
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fx.detectChanges();
-    agent.isLoading.set(true);
+    agent.status.set('running');
     fx.detectChanges();
     agent.messages.update((m) => [...m, { id: 'u2', role: 'user', content: 'Next', delivery: staticDelivery('u2') }]);
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fx.detectChanges();
 
     expect(host.querySelector('.chat-stopped-notice')).toBeNull();
@@ -1935,7 +1920,7 @@ describe('ChatComponent — run endings are distinguishable', () => {
   it('marks a reply whose delivery ended aborted, whoever stopped it', () => {
     const { fx, agent, host } = runningChat();
     agent.messages.update((m) => [...m, { id: 'a1', role: 'assistant', content: 'Partial', delivery: completeDelivery('run', 'aborted') }]);
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fx.detectChanges();
     expect(host.querySelector('.chat-stopped-notice')).not.toBeNull();
   });
@@ -1943,7 +1928,7 @@ describe('ChatComponent — run endings are distinguishable', () => {
   it('announces completion without a stopped marker when the reply finishes', () => {
     const { fx, agent, host, status } = runningChat();
     agent.messages.update((m) => [...m, { id: 'a1', role: 'assistant', content: 'Answer', delivery: completeDelivery('run', 'success') }]);
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fx.detectChanges();
     expect(host.querySelector('.chat-stopped-notice')).toBeNull();
     expect(status()).toBe('Response complete.');
@@ -1952,7 +1937,7 @@ describe('ChatComponent — run endings are distinguishable', () => {
   it('leaves failures to the error alert', () => {
     const { fx, agent, status } = runningChat();
     agent.error.set({ kind: 'network', message: 'Offline', retryable: true } as never);
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fx.detectChanges();
     expect(status()).toBe('');
   });
@@ -1961,7 +1946,7 @@ describe('ChatComponent — run endings are distinguishable', () => {
     const { fx, agent, host } = runningChat();
     (host.querySelector('button[aria-label="Stop generating"]') as HTMLButtonElement).click();
     agent.messages.update((m) => [...m, { id: 'a1', role: 'assistant', content: 'Full answer', delivery: completeDelivery('run', 'success') }]);
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fx.detectChanges();
     expect(host.querySelector('.chat-stopped-notice')).toBeNull();
   });
@@ -1969,11 +1954,11 @@ describe('ChatComponent — run endings are distinguishable', () => {
   it('does not announce completion while the run waits on an interrupt', () => {
     TestBed.configureTestingModule({});
     const fx = TestBed.createComponent(ChatComponent);
-    const agent = mockAgent({ isLoading: true, withInterrupt: true, messages: [{ id: 'u1', role: 'user', content: 'Delete backups', delivery: staticDelivery('u1') }] } as never);
+    const agent = mockAgent({ status: 'running', messages: [{ id: 'u1', role: 'user', content: 'Delete backups', delivery: staticDelivery('u1') }] } as never);
     fx.componentRef.setInput('agent', agent);
     fx.detectChanges();
-    agent.interrupt!.set({ id: 'i1', value: { question: 'Approve?' } } as never);
-    agent.isLoading.set(false);
+    agent.interrupts.set([{ id: 'i1', value: { question: 'Approve?' } } as never]);
+    agent.status.set('idle');
     fx.detectChanges();
     expect((fx.nativeElement as HTMLElement).querySelector('.chat-sr-only[role="status"]')?.textContent?.trim()).toBe('');
   });
@@ -1981,7 +1966,7 @@ describe('ChatComponent — run endings are distinguishable', () => {
   it('names the transcript region and each speaker for assistive technology', () => {
     const { fx, agent, host } = runningChat();
     agent.messages.update((m) => [...m, { id: 'a1', role: 'assistant', content: 'Answer', delivery: completeDelivery('run', 'success') }]);
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fx.detectChanges();
     const region = host.querySelector('.chat-scroll')!;
     expect(region.getAttribute('role')).toBe('region');

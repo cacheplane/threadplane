@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ChatSubagentCardComponent, statusColor } from './chat-subagent-card.component';
-import type { Subagent } from '../../agent/subagent';
+import type { AgentSubagent } from '../../agent';
 import { ChatStreamingMdComponent } from '../../streaming/streaming-markdown.component';
 import { completeDelivery, staticDelivery, streamingDelivery, type ToolCall } from '../../agent';
 import type { ToolActivityInfo } from '../../primitives/chat-tool-activity/chat-tool-activity.component';
@@ -16,12 +15,13 @@ describe('ChatSubagentCardComponent', () => {
   });
 
   it('renders full transcript with reasoning, text, and tool-call cards', async () => {
-    const fakeSubagent: Subagent = {
+    const fakeSubagent: AgentSubagent = {
+      id: 'child-1',
       toolCallId: 'tc-root',
       name: 'Research',
       // Use 'running' so chat-trace auto-expands and the transcript DOM is rendered.
-      status: signal('running'),
-      messages: signal([
+      status: 'running',
+      messages: [
         {
           id: 'm1',
           role: 'assistant',
@@ -36,11 +36,11 @@ describe('ChatSubagentCardComponent', () => {
           content: 'done',
           delivery: completeDelivery('nested-2', 'error'),
         },
-      ]),
-      toolCalls: signal([
+      ],
+      toolCalls: [
         { id: 't1', name: 'search', args: { q: 'x' }, status: 'complete', result: { n: 1 } },
-      ]),
-      state: signal({}),
+      ],
+      state: {},
     };
 
     TestBed.configureTestingModule({
@@ -86,16 +86,17 @@ describe('ChatSubagentCardComponent', () => {
   });
 
   it('hands sources declared for its completed calls to the message Sources panel', () => {
-    const calls = signal<ToolCall[]>([
+    const calls: ToolCall[] = [
       { id: 't1', name: 'read', args: { id: 1 }, status: 'complete', result: { url: 'https://example.com/signals' } },
       { id: 't2', name: 'read', args: { id: 2 }, status: 'running' },
-    ]);
-    const subagent: Subagent = {
+    ];
+    const subagent: AgentSubagent = {
+      id: 'child-1',
       toolCallId: 'tc-root',
-      status: signal('complete'),
-      messages: signal([]),
+      status: 'complete',
+      messages: [],
       toolCalls: calls,
-      state: signal({}),
+      state: {},
     };
     TestBed.configureTestingModule({ imports: [ChatSubagentCardComponent], providers: [CitationsResolverService] });
     const resolver = TestBed.inject(CitationsResolverService);
@@ -126,17 +127,18 @@ describe('ChatSubagentCardComponent', () => {
   });
 
   it('shows the message count in the collapsed summary when complete', async () => {
-    const fakeSubagent: Subagent = {
+    const fakeSubagent: AgentSubagent = {
+      id: 'child-1',
       toolCallId: 'tc-root',
       name: 'Research',
       // 'complete' → chat-trace collapses; the transcript DOM is hidden.
-      status: signal('complete'),
-      messages: signal([
+      status: 'complete',
+      messages: [
         { id: 'm1', role: 'assistant', content: 'a', delivery: staticDelivery('m1') },
         { id: 'm2', role: 'assistant', content: 'b', delivery: staticDelivery('m2') },
-      ]),
-      toolCalls: signal([]),
-      state: signal({}),
+      ],
+      toolCalls: [],
+      state: {},
     };
 
     TestBed.configureTestingModule({
@@ -160,19 +162,20 @@ describe('ChatSubagentCardComponent', () => {
   });
 
   it('preserves nested markdown document identity across unrelated parent updates', () => {
-    const messages = signal([{
+    const messages = [{
       id: 'm1',
       role: 'assistant' as const,
       content: 'stable',
       delivery: staticDelivery('m1'),
-    }]);
-    const fakeSubagent: Subagent = {
+    }];
+    const fakeSubagent: AgentSubagent = {
+      id: 'child-1',
       toolCallId: 'tc-root',
       name: 'Research',
-      status: signal('running'),
+      status: 'running',
       messages,
-      toolCalls: signal([]),
-      state: signal({}),
+      toolCalls: [],
+      state: {},
     };
     TestBed.configureTestingModule({ imports: [ChatSubagentCardComponent] });
     const fixture = TestBed.createComponent(ChatSubagentCardComponent);
@@ -182,7 +185,8 @@ describe('ChatSubagentCardComponent', () => {
     let markdown = fixture.debugElement.query(By.directive(ChatStreamingMdComponent));
     const document = markdown.componentInstance.document();
 
-    messages.set([...messages()]);
+    // The session publishes the child again with nothing about this message changed.
+    fixture.componentRef.setInput('subagent', { ...fakeSubagent, messages: [...messages], state: { step: 2 } });
     fixture.detectChanges();
 
     markdown = fixture.debugElement.query(By.directive(ChatStreamingMdComponent));
@@ -190,7 +194,49 @@ describe('ChatSubagentCardComponent', () => {
   });
 });
 
+describe('ChatSubagentCardComponent — a child whose ending was never seen', () => {
+  it('labels an unknown status in the reader\'s words and shows the trace as finished', () => {
+    TestBed.configureTestingModule({ imports: [ChatSubagentCardComponent] });
+    const fixture = TestBed.createComponent(ChatSubagentCardComponent);
+    fixture.componentRef.setInput('subagent', {
+      id: 'child-1',
+      name: 'Research',
+      status: 'unknown',
+      messages: [{ id: 'm1', role: 'assistant', content: 'a', delivery: staticDelivery('m1') }],
+      toolCalls: [],
+    } satisfies AgentSubagent);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.chat-trace__label')?.textContent?.trim()).toBe('Research Status unavailable');
+    expect(host.querySelector('.sac__pill')?.getAttribute('data-status')).toBe('unknown');
+    expect(fixture.componentInstance.state()).toBe('done');
+    // No longer working: collapsed like a completed child, with the count still shown.
+    expect(host.querySelectorAll('.sac__msg').length).toBe(0);
+    expect(host.textContent).toContain('1 message');
+  });
+
+  it('follows the status when the session publishes the child again', () => {
+    TestBed.configureTestingModule({ imports: [ChatSubagentCardComponent] });
+    const fixture = TestBed.createComponent(ChatSubagentCardComponent);
+    const child: AgentSubagent = { id: 'child-1', status: 'pending', messages: [], toolCalls: [] };
+    fixture.componentRef.setInput('subagent', child);
+    fixture.detectChanges();
+    const pill = () => (fixture.nativeElement as HTMLElement).querySelector('.sac__pill');
+    expect(pill()?.textContent).toBe('Pending');
+    // Without a name the card says what it is.
+    expect((fixture.nativeElement as HTMLElement).querySelector('.sac__name')?.textContent).toBe('Subagent');
+    fixture.componentRef.setInput('subagent', { ...child, status: 'error' });
+    fixture.detectChanges();
+    expect(pill()?.textContent).toBe('Failed');
+    expect(pill()?.getAttribute('data-status')).toBe('error');
+  });
+});
+
 describe('statusColor', () => {
+  it('returns muted style for a status that is unavailable', () => {
+    expect(statusColor('unknown')).toContain('var(--tplane-chat-text-muted)');
+  });
+
   it('returns muted style for pending', () => {
     expect(statusColor('pending')).toContain('var(--tplane-chat-text-muted)');
   });

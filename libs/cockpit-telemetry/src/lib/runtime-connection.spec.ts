@@ -1,19 +1,19 @@
 // @vitest-environment jsdom
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import type { Client } from '@langchain/langgraph-sdk';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  injectAgent as injectAgUiAgent,
-  provideAgent as provideAgUiAgent,
-} from '@threadplane/ag-ui';
-import {
-  LANGGRAPH_CLIENT,
-  LANGGRAPH_CLIENT_OPTIONS,
-  LANGGRAPH_THREADS_CONFIG,
-  LangGraphThreadsAdapter,
+  AGENT_CLIENT_OPTIONS,
   injectAgent,
+  injectThreadDirectory,
   provideAgent,
+  provideThreadDirectory,
+} from '@threadplane/angular';
+import { createSession as createAgUiSession } from '@threadplane/ag-ui';
+import {
+  createLangGraphThreadDirectory,
+  createSession,
+  type LangGraphThreadsClient,
 } from '@threadplane/langgraph';
 import {
   COCKPIT_RUNTIME_CONNECTION,
@@ -23,12 +23,13 @@ import {
 
 let agentConnection: CockpitRuntimeConnection | undefined;
 let threadsConnection: CockpitRuntimeConnection | undefined;
+let directoryClientOptions: object | undefined;
 
 const threadsClient = {
   threads: {
     search: async () => [],
   },
-} as unknown as Client;
+} as unknown as LangGraphThreadsClient;
 
 @Component({
   standalone: true,
@@ -40,24 +41,34 @@ const threadsClient = {
       if (connection.adapter !== 'langgraph')
         throw new Error('incompatible runtime');
       return {
-        apiUrl: connection.apiUrl,
-        assistantId: connection.assistantId,
-        clientOptions: connection.clientOptions,
+        createSession: (context) =>
+          createSession({
+            apiUrl: connection.apiUrl,
+            assistantId: connection.assistantId,
+            clientOptions: connection.clientOptions,
+            threadId: context.threadId,
+            onThreadId: context.onThreadId,
+          }),
       };
     }),
-    LangGraphThreadsAdapter,
+    provideThreadDirectory(() => {
+      const connection = injectCockpitRuntimeConnection();
+      threadsConnection = connection;
+      if (connection.adapter !== 'langgraph')
+        throw new Error('incompatible runtime');
+      return {
+        createDirectory: (context) => {
+          directoryClientOptions = context.clientOptions;
+          return createLangGraphThreadDirectory({
+            apiUrl: connection.apiUrl,
+            client: threadsClient,
+            projects: false,
+          });
+        },
+      };
+    }),
     {
-      provide: LANGGRAPH_THREADS_CONFIG,
-      useFactory: () => {
-        const connection = injectCockpitRuntimeConnection();
-        threadsConnection = connection;
-        if (connection.adapter !== 'langgraph')
-          throw new Error('incompatible runtime');
-        return { apiUrl: connection.apiUrl };
-      },
-    },
-    {
-      provide: LANGGRAPH_CLIENT_OPTIONS,
+      provide: AGENT_CLIENT_OPTIONS,
       useFactory: () => {
         const connection = injectCockpitRuntimeConnection();
         if (connection.adapter !== 'langgraph')
@@ -65,29 +76,34 @@ const threadsClient = {
         return connection.clientOptions;
       },
     },
-    { provide: LANGGRAPH_CLIENT, useValue: threadsClient },
   ],
 })
 class ScopedLangGraphComponent {
   readonly agent = injectAgent();
-  readonly threads = inject(LangGraphThreadsAdapter);
+  readonly threads = injectThreadDirectory();
 }
 
 @Component({
   standalone: true,
   template: '',
   providers: [
-    provideAgUiAgent(() => {
+    provideAgent(() => {
       const connection = injectCockpitRuntimeConnection();
       agentConnection = connection;
       if (connection.adapter !== 'ag-ui')
         throw new Error('incompatible runtime');
-      return { url: connection.url };
+      return {
+        createSession: (context) =>
+          createAgUiSession({
+            url: connection.url,
+            threadId: context.threadId ?? undefined,
+          }),
+      };
     }),
   ],
 })
 class ScopedAgUiComponent {
-  readonly agent = injectAgUiAgent();
+  readonly agent = injectAgent();
 }
 
 describe('Cockpit runtime connection DI seam', () => {
@@ -95,6 +111,7 @@ describe('Cockpit runtime connection DI seam', () => {
     TestBed.resetTestingModule();
     agentConnection = undefined;
     threadsConnection = undefined;
+    directoryClientOptions = undefined;
   });
 
   it('preserves component-scoped LangGraph Agent and threads provider factories', () => {
@@ -117,6 +134,8 @@ describe('Cockpit runtime connection DI seam', () => {
     expect(fixture.componentInstance.threads).toBeDefined();
     expect(agentConnection).toBe(connection);
     expect(threadsConnection).toBe(connection);
+    // The component-scoped client options reach the thread directory factory.
+    expect(directoryClientOptions).toBe(connection.clientOptions);
   });
 
   it('preserves a component-scoped AG-UI Agent provider factory', () => {
@@ -131,8 +150,9 @@ describe('Cockpit runtime connection DI seam', () => {
       ],
     });
 
-    TestBed.createComponent(ScopedAgUiComponent);
+    const fixture = TestBed.createComponent(ScopedAgUiComponent);
 
+    expect(fixture.componentInstance.agent).toBeDefined();
     expect(agentConnection).toBe(connection);
   });
 });

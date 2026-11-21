@@ -128,30 +128,93 @@ for (const configuration of [
 ]) {
   await check(...configuration);
 }
-for (const name of ['langgraph', 'ag-ui', 'render']) {
-  const pkg = JSON.parse(
+const manifest = async (name) =>
+  JSON.parse(
     await readFile(resolve('dist/libs', name, 'package.json'), 'utf8')
   );
+const embedsVersion = (source, version) =>
+  source.includes(`THREADPLANE_PACKAGE_VERSION = ${JSON.stringify(version)}`) ||
+  source.includes(`THREADPLANE_PACKAGE_VERSION = '${version}'`);
+// The Angular renderer builds its own collector handle.
+{
+  const pkg = await manifest('render');
   const bundle = await readFile(
-    resolve('dist/libs', name, `fesm2022/threadplane-${name}.mjs`),
+    resolve('dist/libs/render/fesm2022/threadplane-render.mjs'),
     'utf8'
   );
   assert(
-    bundle.includes(
-      `THREADPLANE_PACKAGE_VERSION = ${JSON.stringify(pkg.version)}`
-    ) || bundle.includes(`THREADPLANE_PACKAGE_VERSION = '${pkg.version}'`),
-    `${name} runtime version differs from published manifest; rebuild after versioning`
+    embedsVersion(bundle, pkg.version),
+    'render runtime version differs from published manifest; rebuild after versioning'
   );
   assert(
     bundle.includes('createDevelopmentRuntime'),
-    `${name} missing runtime instrumentation`
+    'render missing runtime instrumentation'
   );
   assert(
     pkg.peerDependencies['@threadplane/telemetry'] !== '*',
-    `${name} must require the telemetry API version`
+    'render must require the telemetry API version'
+  );
+}
+// The backend packages are framework-neutral: they may not import the
+// collector. Each describes its own installation (version and bridge token)
+// to the collector a host hands its sessions, and reports to that handle.
+for (const name of ['langgraph', 'ag-ui']) {
+  const pkg = await manifest(name);
+  const runtime = (file) =>
+    readFile(resolve('dist/libs', name, 'src/runtime', file), 'utf8');
+  assert(
+    embedsVersion(await runtime('package-version.js'), pkg.version),
+    `${name} runtime version differs from published manifest; rebuild after versioning`
+  );
+  const install = await runtime('development-install.js');
+  assert(
+    install.includes(
+      "from '../../.install-collector/development-install.mjs'"
+    ) &&
+      install.includes('THREADPLANE_PACKAGE_VERSION') &&
+      install.includes(`'@threadplane/${name}'`),
+    `${name} does not describe its installation to the collector`
+  );
+  const instrumented = await runtime(
+    name === 'langgraph' ? 'create-session.js' : 'session-instruments.js'
+  );
+  assert(
+    instrumented.includes('buildDevelopmentRuntime') &&
+      instrumented.includes("'runtime.first_stream_completed'") &&
+      instrumented.includes("'transport.connected'"),
+    `${name} missing runtime instrumentation`
+  );
+  assert(
+    !('@threadplane/telemetry' in (pkg.peerDependencies ?? {})) &&
+      !('@threadplane/telemetry' in (pkg.dependencies ?? {})),
+    `${name} must stay free of the telemetry package`
+  );
+}
+// The chat package is the host: it hands the collector to the agent layer and
+// is the package that requires the telemetry API version.
+{
+  const pkg = await manifest('chat');
+  const bundle = await readFile(
+    resolve('dist/libs/chat/fesm2022/threadplane-chat.mjs'),
+    'utf8'
+  );
+  assert(
+    bundle.includes('createDevelopmentRuntime') &&
+      bundle.includes('registerDevelopmentRuntimePolicy') &&
+      bundle.includes('ɵsetAgentDevelopmentHost'),
+    'chat does not connect agents to the development collector'
+  );
+  assert(
+    typeof pkg.peerDependencies['@threadplane/telemetry'] === 'string' &&
+      pkg.peerDependencies['@threadplane/telemetry'] !== '*',
+    'chat must require the telemetry API version'
+  );
+  assert(
+    (pkg.sideEffects ?? []).includes('./fesm2022/threadplane-chat.mjs'),
+    'chat must keep its entry module, which registers the collector'
   );
 }
 console.log(
-  'Built browser verification passed: production, SSR and import-only silence; remote development exchange; three package runtime versions.'
+  'Built browser verification passed: production, SSR and import-only silence; remote development exchange; three package runtime versions; chat connects the collector.'
 );
 await verifyAngularInstallBridge(parseCollectionBatch);

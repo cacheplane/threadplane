@@ -4,6 +4,8 @@ import { By } from '@angular/platform-browser';
 import { describe, it, expect } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import type { Agent } from '../../agent';
+import { mockAgent } from '../../testing/mock-agent';
+import { ChatInterruptTemplateDirective } from '../chat/chat-interrupt-template.directive';
 import { ChatComponent } from '../chat/chat.component';
 import { ChatPopupComponent } from './chat-popup.component';
 
@@ -146,5 +148,60 @@ describe('ChatPopupComponent', () => {
     innerChat.messageCopy.emit(event);
 
     expect(copyEvents).toEqual([event]);
+  });
+});
+
+@Component({
+  standalone: true,
+  imports: [ChatPopupComponent, ChatInterruptTemplateDirective],
+  template: `
+    <chat-popup [agent]="agent" [open]="true">
+      <ng-template chatInterruptTemplate let-ctxAgent let-interrupt="interrupt" let-interrupts="interrupts">
+        <div
+          class="interrupt-card"
+          [attr.data-interrupt]="interrupt.id"
+          [attr.data-batch]="ids(interrupts)"
+          [attr.data-same-agent]="ctxAgent === agent"
+        ></div>
+      </ng-template>
+    </chat-popup>
+  `,
+})
+class InterruptTemplateHost {
+  agent = mockAgent({ messages: [{ id: 'u1', role: 'user', content: 'Refund both' }] });
+  ids(interrupts: readonly { id: string }[]): string {
+    return interrupts.map((entry) => entry.id).join(',');
+  }
+}
+
+describe('ChatPopupComponent — projected chatInterruptTemplate', () => {
+  it('forwards the agent, the first interrupt and the whole pending batch to the inner chat', () => {
+    TestBed.configureTestingModule({ imports: [InterruptTemplateHost] });
+    const fixture = TestBed.createComponent(InterruptTemplateHost);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.interrupt-card')).toBeNull();
+
+    fixture.componentInstance.agent.interrupts.set([
+      { id: 'approve-1', value: {} },
+      { id: 'approve-2', value: {} },
+    ]);
+    fixture.detectChanges();
+    const card = root.querySelector<HTMLElement>('.chat-interrupt-region .interrupt-card');
+    expect(card).not.toBeNull();
+    expect(card?.dataset['interrupt']).toBe('approve-1');
+    expect(card?.dataset['batch']).toBe('approve-1,approve-2');
+    expect(card?.dataset['sameAgent']).toBe('true');
+
+    fixture.componentInstance.agent.interrupts.set([{ id: 'approve-2', value: {} }]);
+    fixture.detectChanges();
+    const next = root.querySelector<HTMLElement>('.interrupt-card');
+    expect(next?.dataset['interrupt']).toBe('approve-2');
+    expect(next?.dataset['batch']).toBe('approve-2');
+
+    fixture.componentInstance.agent.interrupts.set([]);
+    fixture.detectChanges();
+    expect(root.querySelector('.interrupt-card')).toBeNull();
+    fixture.destroy();
   });
 });

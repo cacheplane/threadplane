@@ -8,7 +8,7 @@ const PROMPT =
 
 // Mirrors examples/chat's interrupt-approval spec over the AG-UI transport:
 // the langgraph node calls interrupt({...}), ag-ui-langgraph emits the
-// on_interrupt CUSTOM event, the adapter populates agent.interrupt(), and the
+// on_interrupt CUSTOM event, the session lists it in agent.interrupts(), and the
 // app shell renders <chat-interrupt-panel> (added for parity in #649).
 test('interrupt approval: pause renders the interrupt panel with the captured reason', async ({
   page,

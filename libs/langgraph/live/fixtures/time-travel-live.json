@@ -1,0 +1,46 @@
+{
+  "fixtures": [
+    {
+      "match": {
+        "userMessage": "Describe this picture."
+      },
+      "response": {
+        "content": "It is a small test image."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Wait for me before answering."
+      },
+      "response": {
+        "content": "Answered after the breakpoint."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Queue this behind the first run."
+      },
+      "response": {
+        "content": "This reply came from the queued run."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Start outside the session."
+      },
+      "response": {
+        "content": "This run was started by another client."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Take your time answering."
+      },
+      "response": {
+        "content": "One. Two. Three. Four. Five. Six. Seven. Eight. Nine. Ten."
+      },
+      "chunkSize": 6,
+      "latency": 150
+    }
+  ]
+}

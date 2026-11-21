@@ -54,6 +54,28 @@ test('selected input hashes exclude private, generated and unrelated files', (t)
   ]);
 });
 
+test('a backend install-bridge stub is an input and the rest of its collector is not', (t) => {
+  const root = fixture(t);
+  const stubs = [
+    'libs/langgraph/.install-collector/development-install.mjs',
+    'libs/langgraph/.install-collector/development-install.d.ts',
+    'libs/langgraph/.install-collector/development-install.d.mts',
+  ];
+  const generated = [
+    'libs/langgraph/.install-collector/collector.cjs',
+    'libs/langgraph/.install-collector/git-context.cjs',
+    'libs/langgraph/.install-collector/bridge.cjs',
+    'libs/core/.install-collector/development-install.mjs.bak',
+  ];
+  for (const path of [...stubs, ...generated]) {
+    mkdirSync(dirname(join(root, path)), { recursive: true });
+    writeFileSync(join(root, path), path);
+  }
+  const inputs = Object.keys(inputFingerprint(root));
+  for (const path of stubs) assert.ok(inputs.includes(path), path);
+  for (const path of generated) assert.ok(!inputs.includes(path), path);
+});
+
 for (const local of [
   'libs/a2ui/src/index.ts',
   'libs/telemetry/project.json',

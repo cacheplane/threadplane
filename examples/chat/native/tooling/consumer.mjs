@@ -327,7 +327,7 @@ function assertComposition(consumer, typeInputs, runtimeInputs, profile) {
     );
   }
   for (const suffix of [
-    '@threadplane/langgraph/runtime/create-session',
+    '@threadplane/langgraph/src/runtime/create-session',
     '@threadplane/react/src/use-agent',
     '@threadplane/react/src/markdown/markdown',
     '@threadplane/react/src/chat/message-list',
@@ -385,7 +385,7 @@ export async function productionOperations(buildRoot) {
   ] = await Promise.all([
     import(
       pathToFileURL(
-        join(buildRoot, 'scripts/react-parity/langgraph-candidate-package.mjs')
+        join(buildRoot, 'scripts/react-parity/langgraph-package.mjs')
       ).href
     ),
     import(

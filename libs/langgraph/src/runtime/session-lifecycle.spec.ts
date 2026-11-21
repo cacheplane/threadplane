@@ -748,9 +748,11 @@ describe('neutral session ownership', () => {
     await session.dispose();
   });
 
-  it('keeps an advertised status check usable after a protected SDK network failure without retrying', async () => {
+  it('adopts a committed turn after a protected SDK network failure without sending it again', async () => {
     const request = vi
       .fn<typeof fetch>()
+      .mockRejectedValueOnce(new TypeError('SECRET network failure'))
+      // The read made when the failure is first seen fails the same way.
       .mockRejectedValueOnce(new TypeError('SECRET network failure'));
     vi.stubGlobal('fetch', request);
     const session = createSession({
@@ -760,12 +762,17 @@ describe('neutral session ownership', () => {
       clientOptions: { maxRetries: 0, defaultHeaders: {} },
     });
     expect(await session.submit('hello')).toBe('error');
-    expect(session.getSnapshot().error).toMatchObject({
-      kind: 'server',
-      message: 'The LangGraph request failed.',
-      retryable: false,
-      recovery: 'check',
+    // Nothing answered the creation request: a connection error with a retry,
+    // in the session's own words and never the thrown value's.
+    expect(session.getSnapshot().error).toEqual({
+      kind: 'connection',
+      message: "Can't reach the server. Check your connection and try again.",
+      retryable: true,
+      recovery: 'retry',
     });
+    expect(session.getSnapshot().errorDiagnostic).toBeUndefined();
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(String(request.mock.calls[1][0])).toContain('/history');
     const input = JSON.parse(String(request.mock.calls[0][1]?.body)).input;
     request.mockResolvedValueOnce(
       new Response(
@@ -785,13 +792,18 @@ describe('neutral session ownership', () => {
       )
     );
     expect(session.checkStatus).toBeTypeOf('function');
-    await session.checkStatus?.();
+    // The request had arrived after all. The retry reads the thread first and
+    // adopts the saved answer; the creation request is not made a second time.
+    expect(await session.retry?.()).toBe('success');
     expect(session.getSnapshot()).toMatchObject({
       status: 'idle',
       error: undefined,
     });
-    expect(request).toHaveBeenCalledTimes(2);
-    expect(String(request.mock.calls[1][0])).toContain('/history');
+    expect(
+      session.getSnapshot().messages.map((message) => message.content)
+    ).toEqual(['hello', 'committed']);
+    expect(request).toHaveBeenCalledTimes(3);
+    expect(String(request.mock.calls[2][0])).toContain('/history');
     expect(
       request.mock.calls.filter(([url]) => String(url).endsWith('/runs/stream'))
     ).toHaveLength(1);

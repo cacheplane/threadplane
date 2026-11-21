@@ -1,14 +1,21 @@
 import {
   agentPlanFromState,
   completeDelivery,
+  projectErrorDiagnostic,
   readState,
   type InferState,
   type StateDeclaration,
+  type AgentClientTools,
   type AgentError,
+  type AgentErrorDiagnostic,
+  type AgentInputBlock,
   type AgentInterruptResponse,
   type AgentSession,
   type AgentSessionCustomEvent,
+  type ClientToolResult,
+  type ClientToolSpec,
   type CompleteOutcome,
+  type ContentBlock,
   type PlainValue,
   type ToolCall,
   type ToolContract,
@@ -20,13 +27,60 @@ import type {
   ToolExecutionStore,
 } from '@threadplane/core/tools';
 import type { ThreadState } from '@langchain/langgraph-sdk';
-import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport.js';
+import {
+  FetchStreamTransport,
+  normalizeSdkEvent,
+} from './fetch-stream.transport.js';
+import {
+  changedSignals,
+  convertEventMessages,
+  convertSavedMessages,
+  errorClass,
+  safely,
+  throttleListener,
+  type A2uiClientCapabilities,
+  type LangGraphDevelopmentRuntime,
+  type LangGraphDevelopmentRuntimeFactory,
+  type LangGraphDevtoolsSink,
+  type LangGraphScriptedRuns,
+  type LangGraphTelemetryEvent,
+  type LangGraphTelemetrySink,
+} from './session-hooks.js';
+export type {
+  A2uiClientCapabilities,
+  LangGraphDevelopmentInstall,
+  LangGraphDevelopmentRuntime,
+  LangGraphDevelopmentRuntimeFactory,
+  LangGraphDevtoolsSignal,
+  LangGraphDevtoolsSink,
+  LangGraphScriptedRun,
+  LangGraphScriptedRuns,
+  LangGraphTelemetryEvent,
+  LangGraphTelemetryPayload,
+  LangGraphTelemetrySink,
+} from './session-hooks.js';
 import {
   initialMessageState,
   reduceMessages,
   type MessageState,
 } from './message-reducer.js';
 import { createReasoningTimer } from './reasoning-timing.js';
+import {
+  observeHistoryWireMessages,
+  observeMessageMetadata,
+  observeToolProgress,
+  observeUsage,
+  observeWireMessages,
+  projectUsage,
+  projectWireMessages,
+  type UsageObservation,
+  type WireMessages,
+} from './raw-data.js';
+export {
+  getToolCalls,
+  langGraphToolCalls,
+  type LangGraphToolCallWithResult,
+} from './raw-data.js';
 import {
   createLifecycleRecorder,
   type LangGraphLifecycleSource,
@@ -37,7 +91,23 @@ import {
   projectHistory,
 } from './history-projection.js';
 import { projectCheckpointHistory } from './checkpoint-history.js';
+import {
+  projectBranchTree,
+  projectCheckpoints,
+  projectMessageCheckpoints,
+  type LangGraphBranchTree,
+  type LangGraphCheckpoint,
+} from './checkpoint-tree.js';
+export {
+  selectBranch,
+  type LangGraphBranchFork,
+  type LangGraphBranchNode,
+  type LangGraphBranchTree,
+  type LangGraphCheckpoint,
+} from './checkpoint-tree.js';
 import type {
+  LangGraphMessageMetadata,
+  LangGraphToolProgress,
   LangGraphWireInterrupt,
   LangGraphSnapshot,
   LangGraphState,
@@ -50,7 +120,22 @@ import {
   projectInterrupts,
   resumeValue,
 } from './interrupt-projection.js';
-import { ownMessage, ownValue } from './ownership.js';
+import { ownMessage, ownSubgraphs, ownValue, sameError } from './ownership.js';
+import {
+  initialStreamingToolCalls,
+  observeStreamingToolCalls,
+  projectStreamingToolCalls,
+} from './streaming-tool-calls.js';
+import { captureInputBlocks } from './content-blocks.js';
+import {
+  captureDelegationBinding,
+  DEFAULT_SUBAGENT_TOOL_NAMES,
+  delegationCallIds,
+  mapChildExecutions,
+  relateSubgraphs,
+  restoredDelegation,
+  type ChildExecution,
+} from './delegation-projection.js';
 import {
   captureStreamEvent,
   initialSubgraphs,
@@ -60,10 +145,14 @@ import {
   type SubgraphObservation,
 } from './subgraph-projection.js';
 import {
+  captureInputState,
   captureSubmitInput,
+  createContinuationPayload,
   createSubmitPayload,
   type LangGraphInputState,
   type LangGraphSubmitInput,
+  type LangGraphSubmitState,
+  type WireContent,
 } from './submit-input.js';
 export type {
   LangGraphInputState,
@@ -75,9 +164,13 @@ import {
   type CapturedRunOptions,
   type LangGraphRunOptions,
 } from './run-options.js';
-export type { LangGraphRunOptions } from './run-options.js';
+export type {
+  LangGraphRunOptions,
+  LangGraphRunSettings,
+} from './run-options.js';
 export {
   createLangGraphThreadDirectory,
+  type LangGraphThreadDirectory,
   type LangGraphThreadDirectoryOptions,
   type LangGraphThreadsClient,
 } from './thread-directory.js';
@@ -93,7 +186,13 @@ import {
   rebaseRun,
   type RunEvidence,
 } from './run-recovery.js';
-import { createSafeRequestError } from './operation-errors.js';
+import type { LangGraphSubmitOptions } from './transport.types.js';
+import {
+  createSafeRequestError,
+  isUnansweredRunCreation,
+  type RuntimeOperationFailureReporter,
+} from './operation-errors.js';
+import { buildDevelopmentRuntime } from './development-install.js';
 import { createToolPersistence } from './tool-persistence.js';
 import { hasInvocationConflict } from './tool-invocations.js';
 import { observeInvocation } from './tool-invocations.js';
@@ -119,6 +218,8 @@ import {
   failureProjection,
   finalizeProjection,
   interruptionError,
+  unansweredError,
+  isTranscriptEvent,
   projectStream,
   record,
   type StreamProjection,
@@ -136,7 +237,9 @@ import {
   resultCall,
 } from './function-tools.js';
 
+/** What `createSession` takes: the assistant, the thread and how to reach the backend. */
 export interface SessionOptions {
+  /** The assistant, or graph name, each run is created for. */
   readonly assistantId: string;
   /** The thread this session belongs to. Omit it, or pass null, to start an
    * empty session that creates its thread on the first submit. That requires
@@ -145,13 +248,16 @@ export interface SessionOptions {
   /** Called once with the id of the thread this session created. Never called
    * when `threadId` is given. A throwing callback does not affect the run. */
   readonly onThreadId?: (threadId: string) => void;
+  /** A transport to use in place of the SDK transport the session would own. */
   readonly transport?: AgentTransport;
+  /** The LangGraph API base the owned SDK transport calls. A supplied transport ignores it. */
   readonly apiUrl?: string;
   /** The owned SDK transport defaults maxRetries to 0: an ambiguous failed
    * run-creation POST must not silently create another run. A supplied numeric
    * maxRetries explicitly opts into SDK request retries. Custom transports own
    * their retry policy; joining a known run is separate from replaying submit. */
   readonly clientOptions?: LangGraphClientOptions;
+  /** Where client-tool executions are recorded, for a session created with tools. */
   readonly executionStore?: ToolExecutionStore;
   /**
    * The graph state's type: `type<T>()` to declare it, or a Standard Schema,
@@ -159,7 +265,119 @@ export interface SessionOptions {
    * the schema rejects is withheld and described in `snapshot.stateIssues`.
    */
   readonly stateType?: StateDeclaration;
+  /**
+   * Node names whose streamed message chunks enter the transcript. Omit it to
+   * accept every root node. Use it when a graph has side-effect model nodes,
+   * such as title generation, whose output is not chat content. Messages a
+   * node writes to the graph state still arrive with that state, and child
+   * graphs are never affected: their messages belong to `subgraphs`.
+   */
+  readonly transcriptNodeNames?: readonly string[];
+  /**
+   * Names of the root tools that start a child agent; `['task']` when omitted.
+   * A child graph started by such a call, whose arguments carry a
+   * `subagent_type`, is related to it: see `LangGraphSubgraph.delegation`.
+   * Pass an empty list to relate nothing.
+   */
+  readonly subagentToolNames?: readonly string[];
+  /**
+   * Keep each loaded checkpoint's state. `snapshot.checkpoints`,
+   * `snapshot.messageCheckpoints` and `snapshot.branchTree` are then published
+   * from every history page, and the page is read again after each run that
+   * ends in success or a pause. `snapshot.checkpoints` is an empty list until
+   * the first page is read. Omitted, the states are not kept: a page's states
+   * can be large, and a session otherwise keeps only checkpoint metadata in
+   * `snapshot.history`.
+   */
+  readonly historyState?: boolean;
+  /**
+   * The state `snapshot.state` holds until the backend reports one. It is
+   * published as given, without the `stateType` check, and never sent.
+   */
+  readonly initialValues?: Readonly<Record<string, PlainValue>>;
+  /**
+   * Converts each wire message, from a stream event or a saved checkpoint, of
+   * the root graph or a child, before the session reads it. Return the plain
+   * wire shape the session projects (`type` or `role`, `id`, `content`,
+   * `tool_calls`, `tool_call_id`). A message the function throws on is read
+   * as it was sent.
+   */
+  readonly toMessage?: (message: unknown) => unknown;
+  /**
+   * The least time, in milliseconds, between two calls to a `subscribe`
+   * listener while a run streams. The snapshot is never delayed, the last
+   * change is always delivered, and a change that ends the run is delivered
+   * at once. Off when omitted, `false` or `0`.
+   */
+  readonly throttle?: number | false;
+  /**
+   * Generated UI capabilities to advertise to the graph. They are sent with
+   * every run that has input, under the `a2ui_client_capabilities` state key.
+   */
+  readonly a2uiClientCapabilities?: A2uiClientCapabilities;
+  /** Receives the session's runtime telemetry events. `false` is the same as omitting it. */
+  readonly telemetry?: LangGraphTelemetrySink | false;
+  /**
+   * Told when a request of the owned SDK transport was refused as
+   * unauthorized or blocked by the network. Supplying it also makes the owned
+   * transport report generic errors only. A supplied transport ignores it.
+   * It has the name a framework binding's session context uses, so spreading
+   * that context into the options passes the host's reporter on.
+   * @internal Host plumbing: a framework binding passes it through its session context. Not part of the consumer API reference.
+   */
+  readonly reportOperationFailure?: RuntimeOperationFailureReporter;
+  /**
+   * @deprecated Use `reportOperationFailure`. Read only when
+   * `reportOperationFailure` is not a function.
+   * @internal Host plumbing: a framework binding passes it through its session context. Not part of the consumer API reference.
+   */
+  readonly onOperationFailure?: RuntimeOperationFailureReporter;
+  /**
+   * Read the thread's history as soon as the session is created, when it has a
+   * `threadId` and the transport can read history. `snapshot.loading` is then
+   * published while any history read is in flight, and a failed automatic
+   * read is published as an error. Omitted, creating a session makes no
+   * request.
+   */
+  readonly autoLoad?: boolean;
+  /**
+   * Rebuild the tool-started child agents from the saved thread when history
+   * is loaded: their relation and status from the root's history, and their
+   * transcripts through `transport.getChildState`. Omitted, a history load
+   * publishes no child, as no child event replays.
+   */
+  readonly restoreSubagents?: boolean;
+  /**
+   * Keep each message as LangGraph sent it. `snapshot.langGraphMessages` and
+   * `snapshot.messageMetadata` are then published. Omitted, they are not
+   * kept: the records are large and most views need only the transcript.
+   */
+  readonly rawMessages?: boolean;
+  /**
+   * A development-install collector to keep informed, or a factory that builds
+   * one from what this package knows of its own installation. The host owns
+   * the collector; the session only calls it.
+   */
+  readonly developmentRuntime?:
+    | LangGraphDevelopmentRuntime
+    | LangGraphDevelopmentRuntimeFactory;
+  /** A development tool told which published fields each event changed. */
+  readonly devtools?: LangGraphDevtoolsSink;
+  /** Development only: a source of scripted runs that stand in for the network. */
+  readonly scriptedRuns?: LangGraphScriptedRuns;
 }
+
+/**
+ * Options for `resume`: the run options, and what the core contract lets a
+ * caller send in the same request as the answers. `state` is merged before the
+ * paused graph continues, and `message` or `blocks` appends a user message.
+ * They travel in the resume command's `update`, beside `run.command.update`.
+ */
+export type LangGraphResumeOptions<TState = unknown> = LangGraphRunOptions & {
+  readonly message?: string;
+  readonly blocks?: readonly ContentBlock[];
+  readonly state?: LangGraphSubmitState<TState>;
+};
 
 /** Backend-private capability; core sessions and borrowed observers stay minimal. */
 export type LangGraphSession<
@@ -168,15 +386,61 @@ export type LangGraphSession<
     ToolContract
   >,
   TState = unknown
-> = Omit<AgentSession<TTools, TState>, 'getSnapshot' | 'submit' | 'resume'> & {
+> = Omit<
+  AgentSession<TTools, TState>,
+  'getSnapshot' | 'submit' | 'resume' | 'runWithoutMessage' | 'regenerate'
+> & {
   getSnapshot(): LangGraphSnapshot<TTools, TState>;
+  /**
+   * The core contract's optional regenerate command: answers the prompt before
+   * an assistant message again, from the checkpoint saved before that prompt.
+   * It takes the same run options as `submit`, so `options.run`, `config`,
+   * `context` and `metadata` are sent with the regenerated run. The run always
+   * starts from that checkpoint: `run.checkpoint` and `run.checkpointId` are
+   * not used. Absent when the transport cannot read an exact checkpoint or an
+   * exact run's status.
+   */
+  regenerate?(
+    messageId: string,
+    options?: LangGraphRunOptions
+  ): Promise<CompleteOutcome>;
+  /**
+   * The core contract's command for a run that adds no user message: the
+   * graph continues from the thread's saved state, after merging `state` when
+   * given. Staged client tool results travel with it. `submit(null)` is the
+   * same run without a state.
+   */
+  runWithoutMessage(
+    input?: { readonly state?: LangGraphSubmitState<TState> },
+    options?: LangGraphRunOptions
+  ): Promise<CompleteOutcome>;
   /** The session's thread: the given `threadId`, or the thread it created on
    * the first submit. Undefined until that thread exists. */
   readonly threadId: string | undefined;
+  /**
+   * Starts a run. With `null` or `undefined` the run has no input: the graph
+   * continues from the thread's saved state, and no user message is added.
+   * With `run.multitaskStrategy: 'enqueue'` during a run, the run is queued
+   * instead and the promise resolves with its outcome once it has been joined.
+   */
   submit(
-    input: LangGraphSubmitInput<TState>,
+    input: LangGraphSubmitInput<TState> | null | undefined,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome>;
+  /**
+   * Removes one queued run and asks the backend to cancel it. Resolves `true`
+   * when the backend confirmed; `false` when the run is not queued, the
+   * transport cannot cancel, or the request failed.
+   */
+  cancelQueued(runId: string): Promise<boolean>;
+  /**
+   * Whether a host may run development-install collection for this session:
+   * true unless the session was created with a `telemetry` option, `false`
+   * included. The session itself collects nothing.
+   */
+  isDevelopmentRuntimeEnabled(): boolean;
+  /** Removes every queued run and asks the backend to cancel each. */
+  clearQueue(): Promise<void>;
   fork(
     checkpoint: CheckpointReference,
     input: LangGraphSubmitInput<TState>,
@@ -186,6 +450,20 @@ export type LangGraphSession<
     readonly signal?: AbortSignal;
   }): Promise<CompleteOutcome>;
   /**
+   * Joins a run of this thread by id and projects its stream: one started
+   * elsewhere, or before a reload. `lastEventId` continues after that event;
+   * without it the run is joined from its first event, which the backend
+   * serves only for a resumable stream. It replaces an active run the way a
+   * submit does, adds no user message, and resolves with the joined run's
+   * outcome, or `'aborted'` when the session has no thread yet. `reconnect`
+   * remains the way to continue the session's own retained run.
+   */
+  joinStream(
+    runId: string,
+    lastEventId?: string,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome>;
+  /**
    * Answers pending interrupts and continues the paused graph. One pending
    * interrupt receives its response's value as the resume value. Several are
    * answered by backend id, each with a value. LangGraph has no cancelled
@@ -193,9 +471,16 @@ export type LangGraphSession<
    */
   resume(
     responses: readonly AgentInterruptResponse[],
-    options?: LangGraphRunOptions
+    options?: LangGraphResumeOptions<TState>
   ): Promise<CompleteOutcome>;
   load?(options?: { readonly signal?: AbortSignal }): Promise<void>;
+  /**
+   * Selects the branch a view shows and publishes it as `snapshot.branch`. The
+   * value is the fork choices joined with `>`, as `selectBranch` reads it; an
+   * empty string selects the default branch. It is a view selection only: no
+   * request is made and the transcript does not change.
+   */
+  setBranch(branch: string): Promise<void>;
   /** Always present here: `custom` stream frames as application events. */
   onCustomEvent(listener: (event: AgentSessionCustomEvent) => void): () => void;
   /** When this session first saw each milestone; see `LangGraphLifecycle`. */
@@ -217,10 +502,20 @@ interface Preparation extends Omit<HistoryRead, 'result' | 'resolve'> {
   readonly adopt: (saved: ThreadState) => () => Attempt;
 }
 
+/** A user message a command adds: what the transcript shows and what is sent. */
+interface AuthoredMessage {
+  readonly wire: { type: 'human'; id: string; content: WireContent };
+  readonly text: string;
+  readonly blocks?: readonly ContentBlock[];
+}
+
 type AttemptInput =
   | {
       readonly kind: 'submit';
-      readonly messages: { type: 'human'; id: string; content: string }[];
+      readonly messages: { type: 'human'; id: string; content: WireContent }[];
+      /** The submitted message as the transcript shows it. */
+      readonly text: string;
+      readonly blocks?: readonly ContentBlock[];
       readonly state?: LangGraphInputState;
     }
   | {
@@ -228,7 +523,99 @@ type AttemptInput =
       readonly value: PlainValue | undefined;
       /** The pending interrupts this decision answers, for history reconciliation. */
       readonly interrupts: readonly LangGraphWireInterrupt[];
+      /** A run with no input at all, from `submit(null)`: nothing is answered. */
+      readonly bare?: boolean;
+      /**
+       * A partial state: sent as the input of a bare run, and in the command's
+       * `update` of a resume.
+       */
+      readonly state?: LangGraphInputState;
+      /** A user message a resume sends in its command's `update`. */
+      readonly message?: AuthoredMessage;
     };
+
+function authoredMessage(captured: {
+  readonly message: string;
+  readonly blocks?: readonly ContentBlock[];
+  readonly content?: WireContent;
+}): AuthoredMessage {
+  return {
+    wire: {
+      type: 'human',
+      id: crypto.randomUUID(),
+      content: captured.content ?? captured.message,
+    },
+    text: captured.message,
+    ...(captured.blocks ? { blocks: captured.blocks } : {}),
+  };
+}
+
+/** A submission's attempt input from its captured message and state. */
+function submission(captured: {
+  readonly message: string;
+  readonly blocks?: readonly ContentBlock[];
+  readonly content?: WireContent;
+  readonly state?: LangGraphInputState;
+}): AttemptInput & { readonly kind: 'submit' } {
+  const authored = authoredMessage(captured);
+  return {
+    kind: 'submit',
+    state: captured.state,
+    messages: [authored.wire],
+    text: authored.text,
+    ...(authored.blocks ? { blocks: authored.blocks } : {}),
+  };
+}
+
+function plainRecord(value: unknown): value is Record<string, PlainValue> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value))
+    return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+/** Owns a client tool catalog: each spec a name, a description and a schema. */
+function captureCatalog(specs: unknown): readonly ClientToolSpec[] {
+  if (!Array.isArray(specs))
+    throw new TypeError('A client tool catalog is a list of tool specs.');
+  const names = new Set<string>();
+  const catalog: ClientToolSpec[] = [];
+  const length = specs.length;
+  for (let index = 0; index < length; index += 1) {
+    const spec = specs[index] as Partial<ClientToolSpec> | null | undefined;
+    const name = spec?.name;
+    const description = spec?.description;
+    const parameters = spec?.parameters;
+    if (typeof name !== 'string' || !name)
+      throw new TypeError('A client tool needs a name.');
+    if (names.has(name))
+      throw new TypeError(`The client tool "${name}" is declared twice.`);
+    names.add(name);
+    catalog.push({
+      name,
+      description: typeof description === 'string' ? description : '',
+      parameters: (plainRecord(parameters)
+        ? ownValue(parameters)
+        : {}) as ClientToolSpec['parameters'],
+    });
+  }
+  return ownValue(
+    catalog as unknown as PlainValue
+  ) as unknown as readonly ClientToolSpec[];
+}
+
+const noCatalog: readonly ClientToolSpec[] = Object.freeze([]);
+const noTools: readonly ToolCall[] = Object.freeze([]);
+
+interface QueuedRun {
+  readonly id: string;
+  readonly message?: string;
+  readonly createdAt: number;
+  readonly input: AttemptInput;
+  readonly runOptions: CapturedRunOptions | undefined;
+  readonly result: Promise<CompleteOutcome>;
+  readonly resolve: (outcome: CompleteOutcome) => void;
+}
 
 interface PhysicalRun {
   readonly batch: ReturnType<ReturnType<typeof createToolBuffer>['snapshot']>;
@@ -236,6 +623,8 @@ interface PhysicalRun {
   captureOpen: boolean;
   received: boolean;
   confirmed: boolean;
+  /** The transport was asked to report this run's creation and has not yet. */
+  creating?: boolean;
   checkpoint?: CheckpointCandidate;
   positionConfirmed?: boolean;
 }
@@ -259,6 +648,23 @@ interface Attempt {
   groups: number;
   physical?: PhysicalRun;
   joinCursor?: string;
+  /** Join the known run from its first event, with no cursor. */
+  joinStart?: boolean;
+  /** The run started from a checkpoint the session could not rewind to. */
+  travel?: boolean;
+  /** A development tool scripted this run; the backend never saw it. */
+  scripted?: boolean;
+  /** This command's creation request got no response from anything. */
+  unanswered?: boolean;
+  /** A retry of an unanswered command: the thread is read for this turn's
+   * message before anything is sent again. */
+  verifyUnsent?: boolean;
+  /** For telemetry: when the command began. */
+  startedAt?: number;
+  /** For the development collector: what created the request. */
+  requestType?: string;
+  /** Queued submissions waiting for this command's run to exist on the backend. */
+  created?: (() => void)[];
   handoffIds: readonly string[];
   iterator?: AsyncIterator<StreamEvent>;
   unlink?: () => void;
@@ -368,10 +774,123 @@ export function createSession(
   const ownedRetries = ownedClientOptions?.maxRetries ?? 0;
   const transport =
     suppliedTransport ??
-    new FetchStreamTransport(options.apiUrl ?? '', undefined, {
-      ...ownedClientOptions,
-      maxRetries: ownedRetries,
-    });
+    new FetchStreamTransport(
+      options.apiUrl ?? '',
+      undefined,
+      {
+        ...ownedClientOptions,
+        maxRetries: ownedRetries,
+      },
+      // The current name wins; the deprecated one is read only without it.
+      typeof options.reportOperationFailure === 'function'
+        ? options.reportOperationFailure
+        : typeof options.onOperationFailure === 'function'
+        ? options.onOperationFailure
+        : undefined
+    );
+  const toMessage =
+    typeof options.toMessage === 'function' ? options.toMessage : undefined;
+  const telemetry =
+    typeof options.telemetry === 'function' ? options.telemetry : undefined;
+  // The legacy rule: collection is on unless the app chose a destination of
+  // its own, and `telemetry: false` is such a choice.
+  const developmentEnabled = () => options.telemetry === undefined;
+  const developmentRuntime: LangGraphDevelopmentRuntime | undefined =
+    typeof options.developmentRuntime === 'function'
+      ? buildDevelopmentRuntime(options.developmentRuntime, developmentEnabled)
+      : options.developmentRuntime;
+  const devtools = options.devtools;
+  const scriptedRuns = options.scriptedRuns;
+  const a2uiClientCapabilities = options.a2uiClientCapabilities
+    ? ownValue({
+        supportedCatalogIds: options.a2uiClientCapabilities.supportedCatalogIds,
+        ...(options.a2uiClientCapabilities.inlineCatalogs !== undefined
+          ? { inlineCatalogs: options.a2uiClientCapabilities.inlineCatalogs }
+          : {}),
+      })
+    : undefined;
+  const throttleMs =
+    typeof options.throttle === 'number' && options.throttle > 0
+      ? options.throttle
+      : 0;
+  function report(
+    event: LangGraphTelemetryEvent,
+    properties: {
+      requestType?: string;
+      durationMs?: number;
+      errorClass?: string;
+    } = {}
+  ) {
+    if (!telemetry) return;
+    safely(() =>
+      telemetry({
+        event,
+        properties: { transport: 'langgraph', surface: 'agent', ...properties },
+      })
+    );
+  }
+  /** Reports one command to telemetry and the development collector. */
+  function reportRequest(attempt: Attempt, requestType: string) {
+    attempt.startedAt = Date.now();
+    attempt.requestType = requestType;
+    if (developmentRuntime) safely(() => developmentRuntime.touch());
+    report('tplane:runtime_request_created', { requestType });
+    report('tplane:stream_started');
+  }
+  /** The run payload for a submission: its messages, state and what the
+   * session itself advertises. */
+  function runPayload(
+    messages: readonly unknown[],
+    state?: LangGraphInputState
+  ): Record<string, unknown> {
+    const payload = createSubmitPayload(messages, activeCatalog(), state);
+    if (a2uiClientCapabilities)
+      payload['a2ui_client_capabilities'] = a2uiClientCapabilities;
+    return payload;
+  }
+  /** The payload of a run that adds no user message; null when it has
+   * neither staged tool results nor a state to carry. */
+  function continuationPayload(
+    messages: readonly unknown[],
+    state?: LangGraphInputState
+  ): Record<string, unknown> | null {
+    const payload = createContinuationPayload(messages, activeCatalog(), state);
+    if (payload && a2uiClientCapabilities)
+      payload['a2ui_client_capabilities'] = a2uiClientCapabilities;
+    return payload;
+  }
+  /** Tools declared after creation, through `clientTools.setCatalog`. A
+   * session created with a fixed handler map sends that map's catalog. */
+  let declaredTools = noCatalog;
+  /** Set by the first `setCatalog`; `pendingClientTools` is published from then on. */
+  let catalogDeclared = false;
+  const activeCatalog = (): readonly unknown[] =>
+    typedTools ? catalog : declaredTools;
+  function takeScript() {
+    if (!scriptedRuns) return null;
+    try {
+      const script = scriptedRuns.take();
+      return script && Array.isArray(script.frames) ? script : null;
+    } catch {
+      return null;
+    }
+  }
+  /** A scripted run's frames, normalized as the owned transport normalizes
+   * the SDK's and delivered one per turn, as a stream would. */
+  async function* streamScript(
+    frames: readonly { readonly event: string; readonly data: unknown }[],
+    signal: AbortSignal
+  ): AsyncIterable<StreamEvent> {
+    for (const frame of frames) {
+      await Promise.resolve();
+      if (signal.aborted) {
+        const error = new Error('Scripted run aborted.');
+        error.name = 'AbortError';
+        throw error;
+      }
+      yield normalizeSdkEvent(frame.event as StreamEvent['type'], frame.data);
+    }
+  }
   const protectedTransport =
     transport instanceof FetchStreamTransport &&
     transport.protectsOperationErrors;
@@ -406,10 +925,13 @@ export function createSession(
     current.id = (async () => {
       try {
         const id = await create(current.controller.signal);
-        if (typeof id !== 'string' || !id) throw new Error('Invalid thread id.');
+        if (typeof id !== 'string' || !id)
+          throw new Error('Invalid thread id.');
         if (creation !== current || disposed) throw createSafeRequestError();
         creation = undefined;
         threadId = id;
+        lifecycle.mark('threadCreatedAt');
+        lifecycle.flush();
         try {
           onThreadId?.(id);
         } catch {
@@ -455,26 +977,92 @@ export function createSession(
       }
     }
   );
-  const getHistory =
+  const readHistoryPage =
     typeof transport.getHistory === 'function'
       ? transport.getHistory.bind(transport)
       : undefined;
+  const getHistory: typeof readHistoryPage =
+    readHistoryPage && toMessage
+      ? async (id, signal) =>
+          (await readHistoryPage(id, signal)).map((saved) =>
+            convertSavedMessages(saved, toMessage)
+          )
+      : readHistoryPage;
   const canCheck = !!getHistory;
   const joinStream = transport.joinStream?.bind(transport);
+  const getChildState = transport.getChildState?.bind(transport);
+  const autoLoad = options.autoLoad === true;
+  const restoreSubagents = options.restoreSubagents === true;
+  const rawMessages = options.rawMessages === true;
+  let wire: WireMessages = new Map();
+  let messageMetadata: Readonly<Record<string, LangGraphMessageMetadata>> = {};
+  let hasMessageMetadata = false;
+  let toolProgress: ReadonlyMap<string, LangGraphToolProgress> = new Map();
+  let usageObserved: UsageObservation = new Map();
+  let usage: ReturnType<typeof projectUsage>;
+  let childRestore: AbortController | undefined;
+  const createQueuedRun = transport.createQueuedRun?.bind(transport);
+  const cancelRun = transport.cancelRun?.bind(transport);
+  const queue: QueuedRun[] = [];
   const getRunStatus = transport.getRunStatus?.bind(transport);
   type RunStatus = Awaited<ReturnType<NonNullable<typeof getRunStatus>>>;
-  const getState = transport.getState?.bind(transport);
+  const readSavedState = transport.getState?.bind(transport);
+  const getState: typeof readSavedState =
+    readSavedState && toMessage
+      ? async (id, checkpoint, signal) =>
+          convertSavedMessages(
+            await readSavedState(id, checkpoint, signal),
+            toMessage
+          )
+      : readSavedState;
   const canReconnect = !!joinStream && !!getRunStatus;
+  const initialValues = options.initialValues
+    ? (record(ownValue(options.initialValues)) as LangGraphState | undefined)
+    : undefined;
   const publication = createPublication({
     status: 'idle',
     messages: [],
     toolCalls: [],
-    state: undefined,
+    state: initialValues,
     interrupts: [],
     subgraphs: [],
     history: undefined,
+    ...(options.historyState === true ? { checkpoints: [] } : {}),
   });
   let historyPage: LangGraphSnapshot['history'];
+  const historyState = options.historyState === true;
+  /**
+   * What `snapshot.checkpoints` holds before a page is read: the session keeps
+   * checkpoint state, and has none yet. A view tells that apart from a session
+   * that keeps none, where the field is absent.
+   */
+  const noCheckpoints = publication.getSnapshot().checkpoints;
+  let checkpointPage:
+    | {
+        /** The page as the backend sent it, newest first. */
+        readonly page: readonly LangGraphCheckpoint[];
+        /** The same entries oldest first, as the core contract lists them. */
+        readonly checkpoints: readonly LangGraphCheckpoint[];
+        readonly messageCheckpoints: Readonly<Record<string, string>>;
+        readonly branchTree: LangGraphBranchTree;
+      }
+    | undefined;
+  /** Derives the published checkpoint views once for each distinct page. */
+  function checkpointViews(
+    history: readonly ThreadState[]
+  ): typeof checkpointPage {
+    const page = projectCheckpoints(checkpointPage?.page, history);
+    return page === checkpointPage?.page
+      ? checkpointPage
+      : {
+          page,
+          checkpoints: Object.freeze([...page].reverse()),
+          messageCheckpoints: projectMessageCheckpoints(page),
+          branchTree: projectBranchTree(page),
+        };
+  }
+  let branchName = '';
+  let pageRefresh: AbortController | undefined;
   let subgraphs = initialSubgraphs(publication.getSnapshot().subgraphs);
   let state = initialMessageState();
   const reasoningTimer = createReasoningTimer();
@@ -503,8 +1091,15 @@ export function createSession(
       if (!present.has(key)) subgraphTimers.delete(key);
     return changed ? timed : observed;
   }
+  const subagentToolNames: ReadonlySet<string> = new Set(
+    (options.subagentToolNames ?? DEFAULT_SUBAGENT_TOOL_NAMES).filter(
+      (name) => typeof name === 'string'
+    )
+  );
+  /** `tools:<task id>` namespace segment to the tool call that started it. */
+  const delegationBindings = new Map<string, string>();
   const lifecycle = createLifecycleRecorder();
-  let values: LangGraphState | undefined;
+  let values: LangGraphState | undefined = initialValues;
   let interrupts: readonly LangGraphWireInterrupt[] =
     publication.getSnapshot().interrupts;
   let owner: Attempt | undefined;
@@ -634,19 +1229,27 @@ export function createSession(
   }
 
   const owns = (attempt: Attempt) => owner === attempt && !disposed;
+  const transcriptNodeNames = options.transcriptNodeNames
+    ? Object.freeze(
+        [...options.transcriptNodeNames].filter(
+          (name) => typeof name === 'string'
+        )
+      )
+    : undefined;
   const stateType = options.stateType;
   let published: {
     readonly source: LangGraphState | undefined;
     readonly state: LangGraphState | undefined;
     readonly issues?: readonly string[];
-  } = { source: undefined, state: undefined };
+  } = { source: initialValues, state: initialValues };
   /** The state to publish for the current values, checked once per reported state. */
   function readPublishedState(): typeof published {
     if (values === published.source) return published;
     if (values === undefined || stateType === undefined)
       return (published = { source: values, state: values });
     const reading = readState(stateType, values);
-    if (!reading.valid)
+    // Compared with `false` so the reading narrows without strict null checks.
+    if (reading.valid === false)
       return (published = {
         source: values,
         state: published.state,
@@ -669,11 +1272,124 @@ export function createSession(
           issues: ['The state schema must produce a plain data record.'],
         });
   }
-  function publish(status: 'idle' | 'running' | 'error', error?: AgentError) {
+  /** The description of what the published error was classified from. */
+  let diagnosed:
+    | { readonly error: AgentError; readonly diagnostic: AgentErrorDiagnostic }
+    | undefined;
+  /** Tool calls still being written in the current run, by namespace. */
+  let streamingCalls = initialStreamingToolCalls();
+  const streamingSubgraphs = new WeakMap<
+    LangGraphSubgraph,
+    {
+      readonly calls: NonNullable<LangGraphSubgraph['streamingToolCalls']>;
+      readonly subgraph: LangGraphSubgraph;
+    }
+  >();
+  /** Each child graph with the calls its model is still writing, if any. */
+  function withStreamingCalls(
+    observed: readonly LangGraphSubgraph[]
+  ): readonly LangGraphSubgraph[] {
+    if (streamingCalls.size === 0) return observed;
+    let changed = false;
+    const result = observed.map((subgraph) => {
+      const calls = projectStreamingToolCalls(
+        streamingCalls,
+        subgraph.namespace,
+        subgraph.toolCalls.map((call) => call.id)
+      );
+      if (!calls.length) return subgraph;
+      const known = streamingSubgraphs.get(subgraph);
+      if (known?.calls === calls) {
+        changed = true;
+        return known.subgraph;
+      }
+      const next = Object.freeze({ ...subgraph, streamingToolCalls: calls });
+      streamingSubgraphs.set(subgraph, { calls, subgraph: next });
+      changed = true;
+      return next;
+    });
+    return changed ? result : observed;
+  }
+  /** Why `submit` would be refused right now, in the session's own words. */
+  function submissionBlock(): AgentInputBlock | undefined {
+    if (hasInvocationConflict(state.invocations))
+      return {
+        reason: 'tool-conflict',
+        message: invocationConflictError().message,
+      };
+    if (branch || preparing) {
+      let ready = !preparing;
+      if (branch && ready) {
+        try {
+          readyCheckpoint(branch.state);
+        } catch {
+          ready = false;
+        }
+      }
+      if (
+        !ready ||
+        owner ||
+        loading ||
+        checkController ||
+        recoveryAttempt ||
+        retained ||
+        pendingToolSettlements ||
+        persistence.pending ||
+        unsettledTools.size ||
+        buffer.snapshot().messages.length
+      )
+        return {
+          reason: 'checkpoint',
+          message:
+            'A checkpoint branch accepts a new message once its current work has settled.',
+        };
+    }
+    if (unsettledTools.size)
+      return {
+        reason: 'unsettled-tools',
+        message:
+          'A tool is still running or its result is unresolved. Wait for it, or load the conversation again.',
+      };
+    if (persistence.pending)
+      return {
+        reason: 'persisting-tools',
+        message: 'Tool results are still being saved.',
+      };
+    return undefined;
+  }
+  /** Calls to declared client tools that wait for a result from the caller.
+   * Actionable only between runs: a run that ends without a result for one
+   * leaves it to the caller. */
+  function pendingClientCalls(running: boolean): readonly ToolCall[] {
+    if (running || !declaredTools.length) return noTools;
+    const names = new Set(declaredTools.map((spec) => spec.name));
+    const pending = state.toolCalls.filter(
+      (call) => call.status === 'pending' && names.has(call.name)
+    );
+    return pending.length ? pending : noTools;
+  }
+  function publish(
+    status: 'idle' | 'running' | 'error',
+    error?: AgentError,
+    cause?: unknown
+  ) {
     if (hasInvocationConflict(state.invocations)) {
       status = 'error';
       error = invocationConflictError();
+      cause = undefined;
     }
+    // A diagnostic describes one published error and goes when it does. A
+    // protected transport keeps failures generic, so it describes nothing.
+    if (!error) diagnosed = undefined;
+    else if (cause !== undefined && !protectedTransport) {
+      try {
+        diagnosed = { error, diagnostic: projectErrorDiagnostic(cause) };
+      } catch {
+        diagnosed = undefined;
+      }
+    } else if (!diagnosed || !sameError(diagnosed.error, error))
+      diagnosed = undefined;
+    const inputBlocked = submissionBlock();
     const plan = agentPlanFromState(values);
     lifecycle.observe({
       error,
@@ -681,16 +1397,65 @@ export function createSession(
       toolCalls: state.toolCalls,
     });
     const reading = readPublishedState();
+    const before = devtools && publication.getSnapshot();
+    const streamingToolCalls = projectStreamingToolCalls(
+      streamingCalls,
+      [],
+      state.toolCalls.map((call) => call.id)
+    );
     publication.publish({
       status,
       history: historyPage,
+      ...(checkpointPage
+        ? {
+            checkpoints: checkpointPage.checkpoints,
+            messageCheckpoints: checkpointPage.messageCheckpoints,
+            branchTree: checkpointPage.branchTree,
+          }
+        : noCheckpoints
+        ? { checkpoints: noCheckpoints }
+        : {}),
+      ...(streamingToolCalls.length ? { streamingToolCalls } : {}),
+      ...(catalogDeclared
+        ? { pendingClientTools: pendingClientCalls(status === 'running') }
+        : {}),
+      ...(inputBlocked ? { inputBlocked } : {}),
+      ...(diagnosed ? { errorDiagnostic: diagnosed.diagnostic } : {}),
+      ...(branchName ? { branch: branchName } : {}),
+      ...(autoLoad && loading ? { loading: true as const } : {}),
+      ...(toolProgress.size
+        ? { toolProgress: [...toolProgress.values()] }
+        : {}),
+      ...(rawMessages
+        ? {
+            langGraphMessages: projectWireMessages(state.messages, wire),
+            ...(hasMessageMetadata ? { messageMetadata } : {}),
+          }
+        : {}),
+      ...(usage ? { usage } : {}),
+      ...(queue.length
+        ? {
+            queue: queue.map(({ id, message, createdAt }) => ({
+              id,
+              ...(message !== undefined ? { message } : {}),
+              createdAt,
+            })),
+          }
+        : {}),
       state: reading.state,
       ...(reading.issues ? { stateIssues: reading.issues } : {}),
       ...(plan ? { plan } : {}),
       interrupts: identifyInterrupts(interrupts),
-      subgraphs: timedSubgraphs(subgraphs.subgraphs),
+      subgraphs: withStreamingCalls(
+        relateSubgraphs(
+          timedSubgraphs(subgraphs.subgraphs),
+          state.toolCalls,
+          subagentToolNames,
+          delegationBindings
+        )
+      ),
       ...(retained?.run.evidence.runId
-        ? { reconnect: { runId: retained.run.evidence.runId } }
+        ? { retainedRun: { runId: retained.run.evidence.runId } }
         : {}),
       messages: reasoningTimer.observe(state.messages),
       toolCalls: typedTools
@@ -706,8 +1471,35 @@ export function createSession(
         : state.toolCalls,
       ...(error ? { error } : {}),
     });
+    if (devtools && before) reportWrites(before);
     // Last, so a lifecycle listener runs where a snapshot listener would.
     lifecycle.flush();
+  }
+  /** What the next publication is attributed to in a development tool. */
+  let writeLabel: { readonly event?: string; readonly label?: string } = {};
+  let customWrite = false;
+  function reportWrites(before: LangGraphSnapshot) {
+    const sink = devtools;
+    if (!sink) return;
+    const { event, label = 'run:end' } = writeLabel;
+    writeLabel = {};
+    const names = [
+      ...changedSignals(before, publication.getSnapshot()),
+      ...(customWrite ? (['custom'] as const) : []),
+    ];
+    customWrite = false;
+    const write = () => {
+      for (const name of names) sink.wrote(name);
+    };
+    safely(() => {
+      if (event === undefined) return sink.outside(label, write);
+      sink.begin(event);
+      try {
+        write();
+      } finally {
+        sink.end();
+      }
+    });
   }
   function invalidateCheck() {
     revision += 1;
@@ -763,7 +1555,8 @@ export function createSession(
     attempt: Attempt,
     outcome: CompleteOutcome,
     error?: AgentError,
-    retainRun = false
+    retainRun = false,
+    cause?: unknown
   ) {
     if (!owns(attempt)) return;
     retainRun ||= !!attempt.branch;
@@ -789,7 +1582,46 @@ export function createSession(
       attempt.branch.state = uncertainCheckpoint(attempt.branch.state);
     recoveryAttempt = error?.recovery === 'check' ? attempt : undefined;
     replayable = error?.recovery === 'retry' ? { attempt, state } : undefined;
-    publish(error ? 'error' : 'idle', error);
+    // Usage belongs to a settled run; a stopped one reports none.
+    usage = outcome === 'aborted' ? undefined : projectUsage(usageObserved);
+    publish(error ? 'error' : 'idle', error, cause);
+    if (outcome !== 'aborted') {
+      const durationMs = Date.now() - (attempt.startedAt ?? Date.now());
+      if (error)
+        report('tplane:stream_errored', {
+          durationMs,
+          errorClass: errorClass(error),
+        });
+      else report('tplane:stream_ended', { durationMs });
+      // A run the backend completed, with nothing left to answer. A scripted
+      // run never reached a backend, so it proves nothing.
+      if (
+        developmentRuntime &&
+        outcome === 'success' &&
+        !error &&
+        !attempt.scripted
+      )
+        safely(() => {
+          developmentRuntime.milestone(
+            'runtime.first_stream_completed',
+            durationMs
+          );
+          if (attempt.requestType === 'resume')
+            developmentRuntime.milestone('interrupt.handled');
+        });
+    }
+    if (
+      historyState &&
+      !error &&
+      (outcome === 'success' || outcome === 'paused')
+    )
+      void refreshHistoryPage();
+    // A run from a checkpoint the session could not rewind to leaves the saved
+    // branch as the only account of the transcript.
+    if (attempt.travel && !error && getHistory)
+      void load().catch(() => undefined);
+    else if (queue.length && (!error || (error.recovery ?? 'none') === 'none'))
+      drainQueue();
     // An error can end local consumption before the HTTP body closes. SDK
     // iterator return releases its reader; abort also cancels our request.
     close(
@@ -797,13 +1629,60 @@ export function createSession(
       outcome === 'error' || hasInvocationConflict(state.invocations)
     );
   }
+  /** Reads the history page again after a run, for the checkpoint views only.
+   * The transcript is the stream's; a failed or superseded read changes nothing. */
+  async function refreshHistoryPage() {
+    if (!getHistory || threadId === undefined || branch || disposed) return;
+    pageRefresh?.abort();
+    const controller = new AbortController();
+    pageRefresh = controller;
+    const current = () =>
+      pageRefresh === controller &&
+      !disposed &&
+      !owner &&
+      !loading &&
+      !preparing &&
+      !branch;
+    try {
+      const history = await getHistory(thread(), controller.signal);
+      await publication.command(() => {
+        if (!current()) return;
+        const page = projectCheckpointHistory(historyPage, history);
+        const views = checkpointViews(history);
+        if (!current()) return;
+        pageRefresh = undefined;
+        historyPage = page;
+        checkpointPage = views;
+        writeLabel = { label: 'history' };
+        republish();
+      });
+    } catch {
+      /* The page stays as it was last read. */
+    } finally {
+      if (pageRefresh === controller) pageRefresh = undefined;
+    }
+  }
+  function cancelPageRefresh() {
+    const previous = pageRefresh;
+    pageRefresh = undefined;
+    previous?.abort();
+  }
+  /** Publishes changed backend fields under the status already published. */
+  function republish() {
+    const { status, error } = publication.getSnapshot();
+    publish(status, error);
+  }
   function detach(outcome: CompleteOutcome): Attempt | undefined {
     const attempt = owner;
-    if (!attempt) return;
+    if (!attempt) return undefined;
     owner = undefined;
     recoveryAttempt = undefined;
     replayable = undefined;
     retained = undefined;
+    // Argument fragments belong to a live stream; a settled run has none.
+    streamingCalls = initialStreamingToolCalls();
+    if (attempt.physical) attempt.physical.creating = false;
+    for (const release of attempt.created?.splice(0) ?? []) release();
     for (const call of attempt.calls.values()) {
       const current = state.toolCalls.find((entry) => entry.id === call.id);
       if (current?.status !== 'running') continue;
@@ -827,6 +1706,24 @@ export function createSession(
     attempt.subgraphs = subgraphs;
     attempt.resolve(outcome);
     return attempt;
+  }
+
+  /** The backend has this run: its creation was reported or it streamed. */
+  function announceCreated(attempt: Attempt, run: PhysicalRun) {
+    if (!run.creating) return;
+    run.creating = false;
+    if (attempt.physical !== run) return;
+    for (const release of attempt.created?.splice(0) ?? []) release();
+  }
+  /** Resolves once the active command's run exists on the backend, or the
+   * command has ended. LangGraph orders queued runs by their creation, so a
+   * run queued behind the active one must be created after it. */
+  function activeRunCreated(): Promise<void> {
+    const active = owner;
+    if (!active?.physical?.creating) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      (active.created ??= []).push(resolve);
+    });
   }
 
   async function executeTools(attempt: Attempt, groups: number) {
@@ -861,7 +1758,7 @@ export function createSession(
             definition,
             call,
             attempt.controller.signal,
-            { threadId: thread(), toolCallId: call.id },
+            { threadId: threadId ?? '', toolCallId: call.id },
             store,
             groups >= 10
           );
@@ -927,6 +1824,8 @@ export function createSession(
       : 'complete';
   }
   function stopExecution() {
+    cancelPageRefresh();
+    const dropped = queue.splice(0);
     const preparation = detachPreparation();
     const hadRetained = !!retained;
     const previousRetained = retained;
@@ -950,10 +1849,157 @@ export function createSession(
       attempt.branch.state = uncertainCheckpoint(attempt.branch.state);
     retained = retainBranch ?? (branch ? previousRetained : undefined);
     if (attempt || hadRetained) publish('idle');
+    else if (dropped.length || (autoLoad && reading)) republish();
+    for (const entry of dropped) entry.resolve('aborted');
+    if (dropped.length) void cancelRuns(dropped);
     checking?.abort();
     if (attempt) close(attempt, true);
     closeLoad(reading);
     closePreparation(preparation);
+  }
+
+  /** Asks the backend to cancel runs the session no longer waits for. */
+  async function cancelRuns(entries: readonly QueuedRun[]): Promise<boolean> {
+    if (!cancelRun || threadId === undefined) return false;
+    const id = threadId;
+    const results = await Promise.all(
+      entries.map(async (entry) => {
+        try {
+          await cancelRun(id, entry.id, new AbortController().signal);
+          return true;
+        } catch {
+          return false;
+        }
+      })
+    );
+    return results.every(Boolean);
+  }
+
+  /** The run-creation settings for one physical run of an attempt. The
+   * session's own needs come first; a caller's settings add to them. */
+  function requestOptions(
+    attempt: Pick<Attempt, 'runOptions' | 'input'>,
+    choices: {
+      readonly from?: OwnedCheckpointPosition;
+      readonly capture?: (run: { run_id: string; thread_id?: string }) => void;
+      readonly resuming?: boolean;
+      readonly first: boolean;
+      readonly notify?: () => boolean;
+    }
+  ): LangGraphSubmitOptions | undefined {
+    const { from, capture, first } = choices;
+    const answer =
+      choices.resuming &&
+      attempt.input.kind === 'resume' &&
+      attempt.input.value !== undefined
+        ? { resume: attempt.input.value }
+        : undefined;
+    // What a resume sends beside its answer: a state and a user message, in
+    // the command's update.
+    const accompanying =
+      choices.resuming &&
+      first &&
+      attempt.input.kind === 'resume' &&
+      !attempt.input.bare &&
+      (attempt.input.state || attempt.input.message)
+        ? {
+            ...attempt.input.state,
+            ...(attempt.input.message
+              ? { messages: [attempt.input.message.wire] }
+              : {}),
+          }
+        : undefined;
+    if (
+      suppliedTransport &&
+      !attempt.runOptions &&
+      !capture &&
+      !answer &&
+      !accompanying
+    )
+      return undefined;
+    const { run: settings, ...base } = attempt.runOptions ?? {};
+    const {
+      command,
+      checkpoint,
+      checkpointId,
+      streamMode,
+      onRunCreated,
+      ...passed
+    } = settings ?? {};
+    const required = !suppliedTransport || from;
+    const modes =
+      required || streamMode
+        ? [
+            ...new Set([
+              ...(required ? checkpointStreamModes : []),
+              ...(streamMode ?? []),
+            ]),
+          ]
+        : undefined;
+    let update = command?.update;
+    if (accompanying) {
+      // `resume` admitted only a record here, so the two updates merge.
+      const given = (record(update) ?? {}) as Record<string, unknown>;
+      const earlier = given['messages'];
+      update = {
+        ...given,
+        ...accompanying,
+        ...(accompanying.messages && Array.isArray(earlier)
+          ? { messages: [...earlier, ...accompanying.messages] }
+          : {}),
+      };
+    }
+    const sent =
+      first && (command || answer || accompanying)
+        ? {
+            ...command,
+            ...(update !== undefined ? { update } : {}),
+            ...answer,
+          }
+        : undefined;
+    const created =
+      capture || onRunCreated
+        ? (run: { run_id: string; thread_id?: string }) => {
+            capture?.(run);
+            if (!onRunCreated || choices.notify?.() === false) return;
+            try {
+              onRunCreated(run);
+            } catch {
+              /* Application callbacks cannot affect the run. */
+            }
+          }
+        : undefined;
+    return {
+      ...base,
+      ...(capture
+        ? { streamResumable: true, onDisconnect: 'continue' as const }
+        : {}),
+      ...passed,
+      ...(from
+        ? { checkpoint: from }
+        : first && checkpoint !== undefined
+        ? { checkpoint }
+        : first && checkpointId !== undefined
+        ? { checkpointId }
+        : {}),
+      ...(modes ? { streamMode: modes } : {}),
+      ...(created ? { onRunCreated: created } : {}),
+      ...(sent ? { command: sent } : {}),
+    };
+  }
+
+  /** Whether any saved checkpoint in the page holds this turn's own user
+   * message: proof the backend received the request that carried it. */
+  function holdsTurn(attempt: Attempt, history: ThreadState[]) {
+    const userId = attempt.projection.userId;
+    if (userId === undefined) return false;
+    return history.some((saved) => {
+      const messages = record(saved?.values)?.['messages'];
+      return (
+        Array.isArray(messages) &&
+        messages.some((message) => record(message)?.['id'] === userId)
+      );
+    });
   }
 
   function reconcile(attempt: Attempt, history: ThreadState[]) {
@@ -1089,8 +2135,16 @@ export function createSession(
       (attempt.input.kind === 'submit' ||
         (attempt.input.kind === 'resume' && attempt.groups === 0)) &&
       canCheck &&
+      !attempt.scripted &&
       !attempt.physical?.evidence.unsafe;
-    if (threadId === undefined) {
+    // Development only: an armed scripted run stands in for the network, so
+    // it creates no thread either.
+    let script =
+      attempt.joinStart || attempt.joinCursor !== undefined
+        ? null
+        : takeScript();
+    if (script) attempt.scripted = true;
+    if (threadId === undefined && !script) {
       // The first submit of a session without a thread creates it before the
       // run. A replacing submit waits for the same request.
       try {
@@ -1101,12 +2155,51 @@ export function createSession(
       }
       if (!owns(attempt)) return;
     }
+    if (attempt.verifyUnsent) {
+      // A retry of a command whose creation request got no response. `fetch`
+      // rejects the same way when a response is lost on its way back, so the
+      // thread is asked first: a turn it already holds is adopted or left to
+      // a status check, and only a turn it does not hold is sent again.
+      attempt.verifyUnsent = false;
+      if (getHistory && !script) {
+        let history: ThreadState[] | undefined;
+        try {
+          history = await getHistory(thread(), attempt.controller.signal);
+        } catch {
+          /* The thread cannot be read; the unanswered request is all that is known. */
+        }
+        if (!owns(attempt)) return;
+        if (history) {
+          let recovered: ReturnType<typeof reconcile>;
+          let held: boolean;
+          try {
+            recovered = reconcile(attempt, history);
+            held = holdsTurn(attempt, history);
+          } catch {
+            held = true;
+          }
+          if (!owns(attempt)) return;
+          if (recovered) {
+            state = recovered.state;
+            values = recovered.values;
+            interrupts = recovered.interrupts;
+            settle(attempt, recovered.outcome);
+            return;
+          }
+          if (held) {
+            settle(attempt, 'interrupted', interruptionError(attemptCanCheck()));
+            return;
+          }
+        }
+      }
+    }
     try {
       let groups = attempt.groups;
       let input = attempt.input.kind === 'submit' ? attempt.input.messages : [];
       while (owns(attempt)) {
         assertInvocationIdentity();
-        const joining = attempt.joinCursor;
+        const joinCursor = attempt.joinCursor;
+        const joining = joinCursor !== undefined || attempt.joinStart === true;
         const run: PhysicalRun =
           joining && attempt.physical
             ? attempt.physical
@@ -1122,15 +2215,23 @@ export function createSession(
         attempt.handoffIds =
           groups > 0 ? batch.messages.map((message) => message.id) : [];
         const resuming = groups === 0 && attempt.input.kind === 'resume';
+        // A run that answers a pause sends its command alone. One that adds
+        // no message still hands back staged tool results, and a state.
         const payload = resuming
-          ? null
-          : createSubmitPayload(
+          ? attempt.input.kind === 'resume' && attempt.input.bare && !joining
+            ? continuationPayload(batch.messages, attempt.input.state)
+            : null
+          : runPayload(
               [...batch.messages, ...input],
-              catalog,
               !joining && groups === 0 && attempt.input.kind === 'submit'
                 ? attempt.input.state
                 : undefined
             );
+        const scripted = joining
+          ? null
+          : script ?? (groups > 0 ? takeScript() : null);
+        script = null;
+        if (scripted) attempt.scripted = true;
         const from =
           attempt.branch && !joining
             ? readyCheckpoint(attempt.branch.state).position
@@ -1157,50 +2258,38 @@ export function createSession(
           if (owns(attempt) && attempt.physical === run && run.captureOpen)
             run.evidence =
               run.evidence === previous ? evidence : { unsafe: true };
+          announceCreated(attempt, run);
         };
         const events =
           joining && joinStream && run.evidence.runId
             ? joinStream(
                 thread(),
                 run.evidence.runId,
-                joining,
+                joinCursor,
                 attempt.controller.signal,
                 ...(!suppliedTransport || attempt.branch
                   ? [{ streamMode: [...checkpointStreamModes] }]
                   : [])
               )
+            : scripted
+            ? streamScript(scripted.frames, attempt.controller.signal)
             : transport.stream(
                 assistantId,
                 thread(),
                 payload,
                 attempt.controller.signal,
-                !suppliedTransport ||
-                  attempt.runOptions ||
-                  canReconnect ||
-                  (resuming &&
-                    attempt.input.kind === 'resume' &&
-                    attempt.input.value !== undefined)
-                  ? {
-                      ...attempt.runOptions,
-                      ...(from ? { checkpoint: from } : {}),
-                      ...(!suppliedTransport || from
-                        ? { streamMode: [...checkpointStreamModes] }
-                        : {}),
-                      ...(canReconnect
-                        ? {
-                            streamResumable: true,
-                            onDisconnect: 'continue' as const,
-                            onRunCreated: capture,
-                          }
-                        : {}),
-                      ...(resuming &&
-                      attempt.input.kind === 'resume' &&
-                      attempt.input.value !== undefined
-                        ? { command: { resume: attempt.input.value } }
-                        : {}),
-                    }
-                  : undefined
+                requestOptions(attempt, {
+                  from,
+                  ...(canReconnect ? { capture } : {}),
+                  resuming,
+                  first: groups === 0,
+                  notify: () => owns(attempt),
+                })
               );
+        // With a creation report requested, a queued submission waits for it:
+        // a run queued before this one exists would run ahead of it.
+        run.creating =
+          canReconnect && !joining && !scripted && !run.evidence.runId;
         attempt.iterator = events[Symbol.asyncIterator]();
         if (!owns(attempt)) {
           close(attempt);
@@ -1212,10 +2301,18 @@ export function createSession(
           if (next.done) break;
           // Run creation precedes stream frames. A later callback cannot safely
           // attach an identity to already consumed data, including reentrant getters.
+          const firstEvent = !run.received;
           run.received = true;
-          const event = captureStreamEvent(next.value);
+          if (firstEvent) announceCreated(attempt, run);
+          const event = convertEventMessages(
+            captureStreamEvent(next.value),
+            toMessage
+          );
           if (!owns(attempt)) return;
+          if (developmentRuntime && firstEvent)
+            safely(() => developmentRuntime.milestone('transport.connected'));
           const custom = captureCustomEvent(event);
+          const binding = captureDelegationBinding(event);
           const previousState = state;
           const previousValues = values;
           const previousInterrupts = interrupts;
@@ -1227,24 +2324,22 @@ export function createSession(
               true,
               attemptCanCheck()
             );
-            settle(attempt, 'error', error);
+            settle(attempt, 'error', error, false, event['data'] ?? event);
             return;
           }
           const previousEvidence = run.evidence;
           const checkpoint = attempt.branch
             ? captureCheckpointEvent(event, thread())
             : undefined;
-          const cursor = advanceCursor(previousEvidence, event, joining);
+          const cursor = advanceCursor(previousEvidence, event, joinCursor);
           if (!owns(attempt)) return;
           if (cursor.replay) {
             run.evidence = cursor.evidence;
             throw new Error('The joined stream repeated its requested cursor.');
           }
-          const projected = projectStream(
-            previousState,
-            previousProjection,
-            event
-          );
+          const projected = isTranscriptEvent(event, transcriptNodeNames)
+            ? projectStream(previousState, previousProjection, event)
+            : { state: previousState, projection: previousProjection };
           const projectedValues = projectValues(previousValues, event);
           const projectedInterrupts = projectInterrupts(
             previousInterrupts,
@@ -1256,7 +2351,8 @@ export function createSession(
             groups === 0
               ? attempt.generation
               : `${attempt.generation}-step-${groups}`,
-            attempt.projection.messageIdPrefix
+            attempt.projection.messageIdPrefix,
+            rawMessages
           );
           // All projections may invoke transport-owned getters. Commit no
           // candidate if projection failed or a getter changed the owner.
@@ -1266,6 +2362,26 @@ export function createSession(
               ? cursor.evidence
               : { unsafe: true };
           if (checkpoint) run.checkpoint = checkpoint;
+          toolProgress = observeToolProgress(
+            toolProgress,
+            event,
+            protectedTransport
+          );
+          usageObserved = observeUsage(
+            usageObserved,
+            event,
+            attempt.projection.baselineIds
+          );
+          streamingCalls = observeStreamingToolCalls(streamingCalls, event);
+          if (rawMessages) {
+            wire = observeWireMessages(wire, event);
+            const metadata = observeMessageMetadata(messageMetadata, event);
+            if (metadata !== messageMetadata) hasMessageMetadata = true;
+            messageMetadata = metadata;
+          }
+          // The backend's statement outranks inference but never rewrites it.
+          if (binding && !delegationBindings.has(binding.segment))
+            delegationBindings.set(binding.segment, binding.toolCallId);
           state = projected.state;
           values = projectedValues;
           interrupts = projectedInterrupts;
@@ -1280,6 +2396,8 @@ export function createSession(
             return;
           }
           lifecycle.mark('streamStartedAt');
+          writeLabel = { event: event.type };
+          customWrite = !!custom;
           publish('running');
           // publish drains observer commands before returning. Never dispatch or
           // read on behalf of an attempt a listener just stopped/superseded.
@@ -1465,9 +2583,11 @@ export function createSession(
             groups += 1;
             attempt.groups = groups;
             attempt.joinCursor = undefined;
+            attempt.joinStart = false;
             attempt.physical = undefined;
             subgraphs = initialSubgraphs(subgraphs.subgraphs);
             attempt.subgraphs = subgraphs;
+            streamingCalls = initialStreamingToolCalls();
             close(attempt, false, false);
             if (!owns(attempt)) return;
             attempt.closed = false;
@@ -1492,6 +2612,7 @@ export function createSession(
                     },
                   }
                 : {}),
+              ...(rawMessages ? { extras: true } : {}),
             };
             input = [];
             continue;
@@ -1524,18 +2645,28 @@ export function createSession(
     } catch (raw) {
       if (!owns(attempt)) return;
       if (attempt.physical) attempt.physical.captureOpen = false;
-      const error = failureProjection(
-        raw,
-        protectedTransport,
-        false,
-        attemptCanCheck()
-      );
+      // The default transport's fetch seam saw this plain submission's
+      // creation request rejected with no response from anything. Nothing
+      // answered, so there is no run to ask about, and `retry()` can send the
+      // same command again once the thread shows no trace of it.
+      let unanswered =
+        !!getRunStatus &&
+        attempt.input.kind === 'submit' &&
+        attempt.groups === 0 &&
+        !attempt.branch &&
+        !attempt.physical?.received &&
+        !attempt.physical?.evidence.runId &&
+        !attempt.physical?.evidence.unsafe &&
+        isUnansweredRunCreation(raw);
+      let error = unanswered
+        ? unansweredError()
+        : failureProjection(raw, protectedTransport, false, attemptCanCheck());
       // A thrown stream gets the same single read-only reconciliation a closed
       // one gets, unless the exact run is known to be still in flight. A
       // conclusive answer settles the attempt itself; nothing is retried.
       if (
-        error.kind === 'interrupted' &&
-        error.recovery === 'check' &&
+        (unanswered ||
+          (error.kind === 'interrupted' && error.recovery === 'check')) &&
         getHistory
       ) {
         const run = attempt.physical;
@@ -1569,16 +2700,26 @@ export function createSession(
               settle(attempt, recovered.outcome);
               return;
             }
+            // The thread holds this turn's message after all: the request
+            // did arrive, so its outcome is checked and it is not sent again.
+            if (unanswered && holdsTurn(attempt, history)) {
+              unanswered = false;
+              error = interruptionError(attemptCanCheck());
+            }
           } catch {
             if (!owns(attempt)) return;
           }
         }
       }
+      attempt.unanswered = unanswered;
       settle(
         attempt,
         error.kind === 'interrupted' ? 'interrupted' : 'error',
         error,
-        true
+        true,
+        // A failure the session could not read is reported in its own words
+        // only; what was thrown may hold anything and stays out.
+        error.kind === 'interrupted' ? undefined : raw
       );
     }
   }
@@ -1595,8 +2736,14 @@ export function createSession(
   function beginAttempt(
     input: AttemptInput,
     external?: AbortSignal,
-    runOptions?: CapturedRunOptions
+    runOptions?: CapturedRunOptions,
+    requestType = input.kind === 'submit'
+      ? 'submit'
+      : input.bare
+      ? 'continue'
+      : 'resume'
   ): Attempt {
+    cancelPageRefresh();
     const reading = detachLoad();
     const checking = invalidateCheck();
     const previous = detach('interrupted');
@@ -1604,11 +2751,27 @@ export function createSession(
       input.kind === 'submit' ? undefined : subgraphs.subgraphs
     );
     const generation = crypto.randomUUID();
-    const userId =
+    // A resume normally belongs to the turn it continues. One that sends a
+    // user message starts the transcript's next turn at that message.
+    const resumed =
+      input.kind === 'resume'
+        ? state.messages.filter((message) => message.role === 'user').at(-1)?.id
+        : undefined;
+    const authored =
       input.kind === 'submit'
-        ? input.messages[0].id
-        : state.messages.filter((message) => message.role === 'user').at(-1)
-            ?.id;
+        ? {
+            id: input.messages[0].id,
+            text: input.text,
+            blocks: input.blocks,
+          }
+        : input.message
+        ? {
+            id: input.message.wire.id,
+            text: input.message.text,
+            blocks: input.message.blocks,
+          }
+        : undefined;
+    const userId = authored?.id ?? resumed;
     let resolve!: Attempt['resolve'];
     const result = new Promise<CompleteOutcome>((done) => {
       resolve = done;
@@ -1636,23 +2799,28 @@ export function createSession(
         canonical: [],
         ...(branch ? { baselineCallIds: branch.baselineCallIds } : {}),
         ...(input.kind === 'resume'
-          ? { resume: { turnIds: turnIds(userId) } }
+          ? { resume: { turnIds: turnIds(resumed) } }
           : {}),
+        ...(rawMessages ? { extras: true } : {}),
       },
     };
     owner = created;
     recoveryAttempt = undefined;
     replayable = undefined;
     retained = undefined;
+    toolProgress = new Map();
+    usageObserved = new Map();
+    usage = undefined;
 
-    if (input.kind === 'submit')
+    if (authored)
       state = reduceMessages(state, {
         type: 'message',
         mode: 'snapshot',
         message: {
-          id: input.messages[0].id,
+          id: authored.id,
           role: 'user',
-          content: input.messages[0].content,
+          content: authored.text,
+          ...(authored.blocks ? { blocks: authored.blocks } : {}),
           delivery: completeDelivery(generation, 'success'),
         },
       });
@@ -1670,7 +2838,10 @@ export function createSession(
       if (external.aborted) abort();
     }
     if (owns(created)) {
-      if (input.kind === 'resume') lifecycle.mark('interruptResolvedAt');
+      if (input.kind === 'resume' && !input.bare)
+        lifecycle.mark('interruptResolvedAt');
+      reportRequest(created, requestType);
+      writeLabel = { label: 'run:start' };
       publish('running');
     }
     checking?.abort();
@@ -1759,6 +2930,18 @@ export function createSession(
     input: LangGraphSubmitInput,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome> {
+    return forkFrom(checkpoint, input, options, false);
+  }
+
+  /** `fork`, optionally from the checkpoint a run saved when it accepted its
+   * input. Only `regenerate` asks for that: the new input replaces the one
+   * still waiting there. */
+  function forkFrom(
+    checkpoint: CheckpointReference,
+    input: LangGraphSubmitInput,
+    options: LangGraphRunOptions | undefined,
+    pendingInput: boolean
+  ): Promise<CompleteOutcome> {
     let preparation: Preparation | undefined;
     const beginning = publication.command(() => {
       if (disposed) return;
@@ -1786,12 +2969,13 @@ export function createSession(
       if (!current()) return;
       admitBranchCommand();
       preparation = prepare(position, external, (raw) => {
-        const source = captureCompletedCheckpoint(raw, position);
+        const source = captureCompletedCheckpoint(raw, position, pendingInput);
         let projected = projectHistory(state, [source.state], {
           interrupts: [],
           ...(typedTools
             ? { registeredTools: new Set(definitions.keys()) }
             : {}),
+          ...(rawMessages ? { extras: true } : {}),
         });
         let invocations = projected.invocations;
         for (const call of source.calls)
@@ -1813,21 +2997,7 @@ export function createSession(
             baselineCallIds: source.calls.map((call) => call.id),
             settledToolIds: new Set(),
           };
-          return beginAttempt(
-            {
-              kind: 'submit',
-              state: captured.state,
-              messages: [
-                {
-                  type: 'human',
-                  id: crypto.randomUUID(),
-                  content: captured.message,
-                },
-              ],
-            },
-            external,
-            runOptions
-          );
+          return beginAttempt(submission(captured), external, runOptions);
         };
       });
     });
@@ -1839,10 +3009,28 @@ export function createSession(
   }
 
   function submit(
-    input: LangGraphSubmitInput,
+    input: LangGraphSubmitInput | null | undefined,
     options?: LangGraphRunOptions
   ): Promise<CompleteOutcome> {
+    return startRun(input, options);
+  }
+
+  /** The core contract's run without a message: `submit(null)`, after merging
+   * a partial state when one is given. */
+  function runWithoutMessage(
+    input?: { readonly state?: LangGraphInputState },
+    options?: LangGraphRunOptions
+  ): Promise<CompleteOutcome> {
+    return startRun(null, options, input ?? {});
+  }
+
+  function startRun(
+    input: LangGraphSubmitInput | null | undefined,
+    options?: LangGraphRunOptions,
+    continuation?: { readonly state?: LangGraphInputState }
+  ): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
+    let queued: Parameters<typeof enqueueRun>[0] | undefined;
     const beginning = publication.command(() => {
       if (disposed) return;
       admitSubmission();
@@ -1857,7 +3045,14 @@ export function createSession(
         capturedLoad !== loading
       )
         return;
-      const captured = captureSubmitInput(input);
+      const captured =
+        input === null || input === undefined
+          ? undefined
+          : captureSubmitInput(input);
+      // State getters are caller effects too; read the field once.
+      const given = continuation?.state;
+      const bareState =
+        given === undefined ? undefined : captureInputState(given);
       if (
         disposed ||
         external?.aborted ||
@@ -1874,28 +3069,249 @@ export function createSession(
       )
         return;
       admitSubmission();
-      attempt = beginAttempt(
+      const settings = runOptions?.run;
+      const from =
+        settings?.checkpointId ?? settings?.checkpoint?.checkpoint_id;
+      if (from !== undefined && branch)
+        throw new Error(
+          'A checkpoint branch starts its runs from its own checkpoint.'
+        );
+      const attemptInput: AttemptInput = captured
+        ? submission(captured)
+        : {
+            kind: 'resume',
+            value: undefined,
+            interrupts,
+            bare: true,
+            ...(bareState ? { state: bareState } : {}),
+          };
+      if (settings?.multitaskStrategy === 'enqueue' && owner) {
+        if (threadId === undefined)
+          throw new Error('A run cannot be queued before its thread exists.');
+        if (!createQueuedRun || !joinStream)
+          throw new Error(
+            'Queueing requires transport.createQueuedRun() and transport.joinStream().'
+          );
+        queued = { input: attemptInput, runOptions, external };
+        return;
+      }
+      // The local transcript goes back to the checkpoint when its state is
+      // known, so the run's stream continues from what the checkpoint held.
+      const source =
+        from === undefined
+          ? undefined
+          : checkpointPage?.checkpoints.find(
+              (checkpoint) => checkpoint.id === from
+            );
+      if (source) {
+        const saved = [source.saved as unknown as ThreadState];
+        const projected = projectHistory(state, saved, {
+          interrupts: [],
+          ...(typedTools
+            ? { registeredTools: new Set(definitions.keys()) }
+            : {}),
+          ...(rawMessages ? { extras: true } : {}),
+        });
+        if (hasInvocationConflict(projected.invocations))
+          throw new Error(invocationConflictError().message);
+        state = projected;
+        values = projectHistoryValues(values, saved);
+        authoredTools.clear();
+      }
+      attempt = beginAttempt(attemptInput, external, runOptions);
+      if (from !== undefined && !source) attempt.travel = true;
+    });
+    return beginning.then(() => {
+      if (queued) return enqueueRun(queued);
+      if (!attempt) return 'aborted';
+      void execute(attempt);
+      return attempt.result;
+    });
+  }
+
+  /** Creates a queued run on the backend and waits for its turn. */
+  async function enqueueRun(request: {
+    readonly input: AttemptInput;
+    readonly runOptions: CapturedRunOptions | undefined;
+    readonly external: AbortSignal | undefined;
+  }): Promise<CompleteOutcome> {
+    const create = createQueuedRun;
+    if (!create || threadId === undefined) throw createSafeRequestError();
+    if (developmentRuntime) safely(() => developmentRuntime.touch());
+    report('tplane:runtime_request_created', { requestType: 'enqueue' });
+    const { input } = request;
+    let run: RunEvidence;
+    let created: { run_id: string; thread_id?: string };
+    await activeRunCreated();
+    if (disposed) return 'aborted';
+    try {
+      const entry = await create(
+        assistantId,
+        threadId,
+        input.kind === 'submit'
+          ? runPayload(input.messages, input.state)
+          : continuationPayload([], input.state),
+        request.external ?? new AbortController().signal,
         {
-          kind: 'submit',
-          state: captured.state,
-          messages: [
-            {
-              type: 'human',
-              id: crypto.randomUUID(),
-              content: captured.message,
-            },
-          ],
-        },
-        external,
-        runOptions
+          ...requestOptions(request, {
+            first: true,
+            // The queue calls back once the run is recorded.
+            notify: () => false,
+          }),
+          ...(canReconnect
+            ? { streamResumable: true, onDisconnect: 'continue' as const }
+            : {}),
+          multitaskStrategy: 'enqueue',
+          onRunCreated: undefined,
+        }
       );
+      created = { run_id: entry.id, thread_id: entry.threadId };
+      run = captureRun({}, created, threadId);
+    } catch {
+      throw createSafeRequestError();
+    }
+    if (run.unsafe || !run.runId) throw createSafeRequestError();
+    const id = run.runId;
+    return publication.command(() => {
+      // The backend still runs it, but a disposed session observes nothing.
+      if (disposed) return 'aborted' as const;
+      let resolve!: QueuedRun['resolve'];
+      const result = new Promise<CompleteOutcome>((done) => {
+        resolve = done;
+      });
+      queue.push({
+        id,
+        ...(input.kind === 'submit' ? { message: input.text } : {}),
+        createdAt: Date.now(),
+        input,
+        runOptions: request.runOptions,
+        result,
+        resolve,
+      });
+      try {
+        request.runOptions?.run?.onRunCreated?.(created);
+      } catch {
+        /* Application callbacks cannot affect the run. */
+      }
+      writeLabel = { label: 'queue' };
+      if (owner) republish();
+      // The active run can end while the queued one is being created.
+      else drainQueue();
+      return result;
+    });
+  }
+
+  /** Joins the oldest queued run once nothing else owns the session. */
+  function drainQueue() {
+    let attempt: Attempt | undefined;
+    void publication
+      .command(() => {
+        if (
+          disposed ||
+          owner ||
+          loading ||
+          preparing ||
+          branch ||
+          !joinStream ||
+          !queue.length
+        )
+          return;
+        const entry = queue.shift() as QueuedRun;
+        attempt = beginAttempt(
+          entry.input,
+          undefined,
+          entry.runOptions,
+          'join_queued'
+        );
+        attempt.physical = {
+          batch: buffer.snapshot(),
+          evidence: { runId: entry.id },
+          captureOpen: false,
+          received: false,
+          confirmed: false,
+        };
+        attempt.joinStart = true;
+        void attempt.result.then(entry.resolve);
+      })
+      .then(() => {
+        if (attempt) void execute(attempt);
+      });
+  }
+
+  function joinRun(
+    runId: string,
+    lastEventId?: string,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<CompleteOutcome> {
+    let attempt: Attempt | undefined;
+    const beginning = publication.command(() => {
+      if (disposed) return;
+      if (!joinStream)
+        throw new Error('Joining a run requires transport.joinStream().');
+      if (lastEventId !== undefined && typeof lastEventId !== 'string')
+        throw new TypeError('lastEventId must be a string.');
+      admitSubmission();
+      const capturedRevision = revision;
+      const external = options?.signal;
+      if (
+        disposed ||
+        external?.aborted ||
+        capturedRevision !== revision ||
+        threadId === undefined
+      )
+        return;
+      const evidence = captureRun({}, { run_id: runId }, threadId);
+      if (evidence.unsafe || !evidence.runId)
+        throw new TypeError('joinStream requires a valid run id.');
+      attempt = beginAttempt(
+        { kind: 'resume', value: undefined, interrupts, bare: true },
+        external,
+        undefined,
+        'join'
+      );
+      attempt.physical = {
+        batch: buffer.snapshot(),
+        evidence,
+        captureOpen: false,
+        received: false,
+        confirmed: false,
+      };
+      if (lastEventId) attempt.joinCursor = lastEventId;
+      else attempt.joinStart = true;
     });
     return dispatch(beginning, () => attempt);
   }
 
+  function cancelQueued(runId: string): Promise<boolean> {
+    return publication
+      .command(() => {
+        const index = queue.findIndex((entry) => entry.id === runId);
+        if (disposed || index < 0) return undefined;
+        const [entry] = queue.splice(index, 1);
+        republish();
+        entry.resolve('aborted');
+        return entry;
+      })
+      .then((entry) => (entry ? cancelRuns([entry]) : false));
+  }
+
+  function clearQueue(): Promise<void> {
+    return publication
+      .command(() => {
+        if (disposed || !queue.length) return [];
+        const entries = queue.splice(0);
+        republish();
+        for (const entry of entries) entry.resolve('aborted');
+        return entries;
+      })
+      .then(async (entries) => {
+        if (entries.length) await cancelRuns(entries);
+      });
+  }
+
   function resume(
     responses: readonly AgentInterruptResponse[],
-    options?: LangGraphRunOptions
+    options?: LangGraphResumeOptions
   ): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
     let preparation: Preparation | undefined;
@@ -1944,6 +3360,41 @@ export function createSession(
       )
         return;
       const runOptions = captureRunOptions(options);
+      // What the core contract lets a resume carry beside its answers. Each
+      // option getter is a caller effect and is read once.
+      const sentMessage = options?.message;
+      const sentBlocks = options?.blocks;
+      const sentState = options?.state;
+      if (sentMessage !== undefined && typeof sentMessage !== 'string')
+        throw new TypeError('A resume message must be text.');
+      const blocks =
+        sentBlocks === undefined ? undefined : captureInputBlocks(sentBlocks);
+      const accompanyingState =
+        sentState === undefined
+          ? undefined
+          : captureInputState(
+              sentState as Readonly<Record<string, PlainValue>>
+            );
+      const accompanyingMessage =
+        sentMessage !== undefined || blocks
+          ? authoredMessage({
+              message:
+                sentMessage ??
+                (blocks?.blocks ?? [])
+                  .map((block) => (block.type === 'text' ? block.text : ''))
+                  .join(''),
+              ...(blocks
+                ? { blocks: blocks.blocks, content: blocks.content }
+                : {}),
+            })
+          : undefined;
+      if (accompanyingState || accompanyingMessage) {
+        const update = runOptions?.run?.command?.update;
+        if (update !== undefined && update !== null && !plainRecord(update))
+          throw new TypeError(
+            'A resume with a message or a state needs run.command.update to be a record.'
+          );
+      }
       // Response getters are caller effects, not a lock-protected projection.
       if (
         disposed ||
@@ -1953,26 +3404,24 @@ export function createSession(
       )
         return;
       admit();
+      const decision: AttemptInput = {
+        kind: 'resume',
+        value: captured,
+        interrupts,
+        ...(accompanyingState ? { state: accompanyingState } : {}),
+        ...(accompanyingMessage ? { message: accompanyingMessage } : {}),
+      };
       if (branch) {
         if (!getState)
           throw new Error('Branch resume requires an exact checkpoint read.');
         const confirmed = readyCheckpoint(branch.state);
         preparation = prepare(confirmed.position, external, (saved) => {
           assertResumeCheckpoint(confirmed, saved);
-          return () =>
-            beginAttempt(
-              { kind: 'resume', value: captured, interrupts },
-              external,
-              runOptions
-            );
+          return () => beginAttempt(decision, external, runOptions);
         });
         return;
       }
-      attempt = beginAttempt(
-        { kind: 'resume', value: captured, interrupts },
-        external,
-        runOptions
-      );
+      attempt = beginAttempt(decision, external, runOptions);
     });
     return beginning.then(() => {
       if (preparation) {
@@ -2072,7 +3521,11 @@ export function createSession(
         external.addEventListener('abort', abort, { once: true });
         if (external.aborted) abort();
       }
-      if (owns(created)) publish('running');
+      if (owns(created)) {
+        reportRequest(created, 'reconnect');
+        writeLabel = { label: 'run:start' };
+        publish('running');
+      }
       checking?.abort();
     });
     return dispatch(beginning, () => attempt);
@@ -2110,9 +3563,18 @@ export function createSession(
           ...(typedTools
             ? { registeredTools: new Set(definitions.keys()) }
             : {}),
+          ...(rawMessages ? { extras: true } : {}),
         });
         const projectedValues = projectHistoryValues(previousValues, history);
         const projectedHistory = projectCheckpointHistory(historyPage, history);
+        const restoredChildren = restoreChildren(projected.toolCalls, history);
+        const projectedWire = rawMessages
+          ? observeHistoryWireMessages(history)
+          : wire;
+        const projectedCheckpoints =
+          historyState && !capturedBranch
+            ? checkpointViews(history)
+            : undefined;
         // Even a plain projection can invoke getters supplied by a transport.
         // Such a getter can submit/stop/dispose; never commit its stale result.
         if (!ownsLoad(read)) return;
@@ -2129,26 +3591,165 @@ export function createSession(
         state = projected;
         values = projectedValues;
         interrupts = projectedInterrupts;
+        if (rawMessages) wire = projectedWire;
+        toolProgress = new Map();
         if (!capturedBranch) historyPage = projectedHistory;
-        subgraphs = initialSubgraphs();
+        if (projectedCheckpoints) checkpointPage = projectedCheckpoints;
+        subgraphs = initialSubgraphs(restoredChildren.subgraphs);
+        for (const [segment, toolCallId] of restoredChildren.bindings)
+          if (!delegationBindings.has(segment))
+            delegationBindings.set(segment, toolCallId);
         authoredTools.clear();
         loading = undefined;
         read.resolve();
         if (history.length > 0) lifecycle.mark('threadPersistedAt');
+        if (developmentRuntime && projected.messages.length > 0)
+          safely(() => developmentRuntime.milestone('thread.persisted'));
+        writeLabel = { label: 'history' };
         publish(
           unsettledTools.size ? 'error' : 'idle',
           unsettledTools.size ? unsettledToolError() : undefined
         );
         closeLoad(read, false);
+        void restoreChildTranscripts(restoredChildren.executions);
       });
     } catch {
       await publication.command(() => {
         if (!ownsLoad(read)) return;
         loading = undefined;
         read.reject(createSafeRequestError());
+        // The caller's promise rejects, and a view that only reads the
+        // snapshot learns of the failure too. The transcript is untouched,
+        // and the failure itself stays out of the snapshot.
+        writeLabel = { label: 'history' };
+        publish('error', loadError());
         closeLoad(read);
       });
     }
+  }
+
+  function loadError(): AgentError {
+    return {
+      kind: 'server',
+      message: 'The conversation could not be loaded.',
+      retryable: false,
+      recovery: 'none',
+    };
+  }
+
+  /**
+   * The child agents a saved thread records: one for each delegation call
+   * that history links to the task that ran it, and one for each such call
+   * that already has a result. A call still pending with no recorded task is
+   * left out, as it is while a run streams and no child has reported yet.
+   */
+  function restoreChildren(
+    toolCalls: readonly ToolCall[],
+    history: readonly ThreadState[]
+  ) {
+    const ids = restoreSubagents
+      ? delegationCallIds(toolCalls, subagentToolNames)
+      : new Set<string>();
+    const executions = mapChildExecutions(history, ids);
+    const bindings = new Map<string, string>();
+    const restored: LangGraphSubgraph[] = [];
+    for (const id of ids) {
+      const execution = executions.get(id);
+      const delegation = restoredDelegation(
+        toolCalls,
+        subagentToolNames,
+        id,
+        execution
+      );
+      if (!delegation || (!execution && !delegation.status)) continue;
+      // Without a recorded task the call id stands in for the task id.
+      const segment = execution?.checkpointNs ?? `tools:${id}`;
+      if (segment.startsWith('tools:')) bindings.set(segment, id);
+      restored.push({
+        namespace: [segment],
+        messages: [],
+        toolCalls: [],
+        state: undefined,
+        interrupts: [],
+        delegation,
+      });
+    }
+    return {
+      subgraphs: ownSubgraphs(restored),
+      bindings,
+      executions: [...executions.values()],
+    };
+  }
+
+  /** Fills restored children with the transcripts their own checkpoints
+   * hold. A child that has streamed since, or is gone, is left alone, and a
+   * failed read leaves the child with its status and no messages. */
+  async function restoreChildTranscripts(
+    executions: readonly ChildExecution[]
+  ) {
+    childRestore?.abort();
+    childRestore = undefined;
+    if (!getChildState || !executions.length || threadId === undefined) return;
+    const controller = new AbortController();
+    childRestore = controller;
+    const id = threadId;
+    await Promise.all(
+      executions.map(async (execution) => {
+        try {
+          const saved = convertSavedMessages(
+            await getChildState(id, execution.checkpointNs, controller.signal),
+            toMessage
+          );
+          if (!saved || controller.signal.aborted) return;
+          // Only a checkpoint from the requested namespace is the child's.
+          const namespace = saved.checkpoint?.checkpoint_ns;
+          if (
+            typeof namespace !== 'string' ||
+            (namespace !== execution.checkpointNs &&
+              !namespace.startsWith(`${execution.checkpointNs}|`))
+          )
+            return;
+          const child = record(saved.values);
+          if (!child || !Array.isArray(child['messages'])) return;
+          const projected = projectHistory(initialMessageState(), [saved], {
+            interrupts: [],
+            ...(rawMessages ? { extras: true } : {}),
+          });
+          const state = projectHistoryValues(undefined, [saved]);
+          await publication.command(() => {
+            if (disposed || childRestore !== controller) return;
+            const key = JSON.stringify([execution.checkpointNs]);
+            const index = subgraphs.subgraphs.findIndex(
+              (entry) => JSON.stringify(entry.namespace) === key
+            );
+            const entry = subgraphs.subgraphs[index];
+            if (
+              !entry ||
+              entry.messages.length ||
+              subgraphs.active.has(key) ||
+              !projected.messages.length
+            )
+              return;
+            const entries = [...subgraphs.subgraphs];
+            entries[index] = {
+              ...entry,
+              messages: projected.messages,
+              toolCalls: projected.toolCalls,
+              state,
+            };
+            subgraphs = {
+              subgraphs: ownSubgraphs(entries, subgraphs.subgraphs),
+              active: subgraphs.active,
+            };
+            writeLabel = { label: 'history' };
+            republish();
+          });
+        } catch {
+          /* The transcript is supplementary to a usable thread. */
+        }
+      })
+    );
+    if (childRestore === controller) childRestore = undefined;
   }
 
   function load(options?: { readonly signal?: AbortSignal }): Promise<void> {
@@ -2182,6 +3783,7 @@ export function createSession(
         recoveryAttempt = undefined;
         withdrawn = invalidateCheck();
       }
+      cancelPageRefresh();
       const previous = detachLoad();
       let resolve!: HistoryRead['resolve'];
       let reject!: HistoryRead['reject'];
@@ -2197,11 +3799,20 @@ export function createSession(
       };
       read = created;
       loading = created;
+      childRestore?.abort();
+      childRestore = undefined;
+      if (autoLoad) {
+        writeLabel = { label: 'history' };
+        republish();
+      }
       const external = options?.signal;
       if (external) {
         const abort = () => {
           void publication.command(() => {
-            if (ownsLoad(created)) closeLoad(detachLoad());
+            if (!ownsLoad(created)) return;
+            const reading = detachLoad();
+            if (autoLoad) republish();
+            closeLoad(reading);
           });
         };
         created.unlink = () => external.removeEventListener('abort', abort);
@@ -2212,7 +3823,7 @@ export function createSession(
       withdrawn?.abort();
     });
     return beginning.then(() => {
-      if (!read) return;
+      if (!read) return undefined;
       void readHistory(read);
       return read.result;
     });
@@ -2223,7 +3834,8 @@ export function createSession(
    * message id, so the snapshot gains no second copy and an `add_messages`
    * thread replaces rather than appends it; a resume sends the same response.
    * Resolves with the re-run's outcome, or `aborted` when nothing ran. It
-   * never replays an uncertain outcome. */
+   * never replays an uncertain outcome. A command whose creation request got
+   * no response is sent again only after the thread shows no trace of it. */
   function retry(): Promise<CompleteOutcome> {
     let attempt: Attempt | undefined;
     const beginning = publication.command(() => {
@@ -2240,7 +3852,13 @@ export function createSession(
       const previous = failed.attempt;
       state = previous.baseline.state;
       values = previous.baseline.values;
-      attempt = beginAttempt(previous.input, undefined, previous.runOptions);
+      attempt = beginAttempt(
+        previous.input,
+        undefined,
+        previous.runOptions,
+        'retry'
+      );
+      if (previous.unanswered) attempt.verifyUnsent = true;
     });
     // No attempt means nothing ran: `aborted`, as for an ignored submit.
     return dispatch(beginning, () => attempt);
@@ -2419,12 +4037,84 @@ export function createSession(
       throw new Error(
         'The checkpoint before that prompt is not in the loaded history.'
       );
-    return fork(
+    // On a real backend that checkpoint is the one the prompt's own run saved
+    // when it accepted its input: its only remaining work is that input.
+    return forkFrom(
       source.checkpoint as CheckpointReference,
       prompt.content,
-      options
+      options,
+      true
     );
   }
+  /** Records one client tool result: the call shows it at once, and its
+   * tool message is staged for the next run or an explicit flush. */
+  function settleClientTool(toolCallId: string, result: ClientToolResult) {
+    if (disposed) throw new Error('The session is disposed.');
+    const pending = () =>
+      pendingClientCalls(!!owner).find((call) => call.id === toolCallId);
+    if (!pending())
+      throw new Error(
+        `No pending client tool call has the id "${String(toolCallId)}".`
+      );
+    // Result getters are caller effects; capture the outcome once, owned.
+    const ok = result?.ok === true;
+    const captured = ok
+      ? { ok: true as const, value: ownValue(result.value) }
+      : {
+          ok: false as const,
+          error: String((result as { error?: unknown } | undefined)?.error),
+        };
+    void publication.command(() => {
+      const call = pending();
+      if (disposed || !call) return;
+      resolvedTools.add(call.id);
+      authoredTools.add(call.id);
+      buffer.stage(call.id, captured);
+      state = reduceMessages(state, {
+        type: 'tool',
+        toolCall: resultCall(call, captured),
+      });
+      republish();
+    });
+  }
+  /** The core capability for tools the caller declares after creation and
+   * runs itself. A session with a fixed handler map runs its own tools. */
+  const clientTools: AgentClientTools | undefined = typedTools
+    ? undefined
+    : {
+        setCatalog(specs) {
+          const captured = captureCatalog(specs);
+          void publication.command(() => {
+            if (disposed) return;
+            declaredTools = captured;
+            catalogDeclared = true;
+            republish();
+          });
+        },
+        settle: settleClientTool,
+        flush() {
+          if (disposed) return Promise.resolve();
+          const written = persistence.flush(
+            new AbortController().signal,
+            branch
+          );
+          const announce = () =>
+            void publication.command(() => {
+              if (!disposed) republish();
+            });
+          announce();
+          return written.finally(announce);
+        },
+        resolve(toolCallId, result) {
+          settleClientTool(toolCallId, result);
+          // The continuation hands the staged results back. A refused or
+          // failed run leaves them staged for the next one.
+          void startRun(null).catch(() => undefined);
+        },
+      };
+  const throttles = new Set<{ cancel(): void }>();
+  if (developmentRuntime) safely(() => developmentRuntime.touch());
+  report('tplane:runtime_instance_created');
   const canRegenerate =
     !!getHistory &&
     !!getState &&
@@ -2432,13 +4122,47 @@ export function createSession(
     !!joinStream &&
     (!!suppliedTransport || ownedRetries === 0);
 
+  if (autoLoad && threadId !== undefined && getHistory)
+    void Promise.resolve().then(() => {
+      // Anything the application did first, or a dispose, takes precedence.
+      if (disposed || owner || loading || preparing) return;
+      load().catch(() =>
+        publication.command(() => {
+          if (
+            disposed ||
+            owner ||
+            loading ||
+            preparing ||
+            publication.getSnapshot().status !== 'idle'
+          )
+            return;
+          writeLabel = { label: 'history' };
+          publish('error', loadError());
+        })
+      );
+    });
+
   return {
     getSnapshot: publication.getSnapshot,
     get threadId() {
       return threadId;
     },
-    subscribe: (notify) =>
-      disposed ? () => undefined : publication.subscribe(notify),
+    subscribe: (notify) => {
+      if (disposed) return () => undefined;
+      if (!throttleMs) return publication.subscribe(notify);
+      const throttled = throttleListener(
+        notify,
+        throttleMs,
+        () => publication.getSnapshot().status !== 'running'
+      );
+      throttles.add(throttled);
+      const release = publication.subscribe(throttled);
+      return () => {
+        throttles.delete(throttled);
+        throttled.cancel();
+        release();
+      };
+    },
     onCustomEvent: (listener) =>
       disposed ? () => undefined : publication.onCustomEvent(listener),
     lifecycle: {
@@ -2447,10 +4171,24 @@ export function createSession(
         disposed ? () => undefined : lifecycle.source.subscribe(notify),
     },
     submit,
+    runWithoutMessage,
+    ...(clientTools ? { clientTools } : {}),
+    cancelQueued,
+    clearQueue,
     fork,
+    setBranch: (selected) =>
+      publication.command(() => {
+        if (typeof selected !== 'string')
+          throw new TypeError('A branch is a string.');
+        if (disposed || selected === branchName) return;
+        branchName = selected;
+        writeLabel = { label: 'branch' };
+        republish();
+      }),
     ...(canRegenerate ? { regenerate } : {}),
     resume,
     reconnect,
+    joinStream: joinRun,
     stop: () =>
       publication.command(() => {
         if (disposed) return;
@@ -2460,10 +4198,12 @@ export function createSession(
     // Only the exact run's status can settle a failure, so without it nothing
     // could ever be retried and the command is left out.
     ...(getRunStatus ? { retry } : {}),
+    isDevelopmentRuntimeEnabled: developmentEnabled,
     dispose: () =>
       publication.command(() => {
         if (disposed) return;
         disposed = true;
+        cancelPageRefresh();
         const pendingThread = creation;
         creation = undefined;
         const preparation = detachPreparation();
@@ -2472,7 +4212,14 @@ export function createSession(
         const checking = invalidateCheck();
         const attempt = detach('aborted');
         recoveryAttempt = undefined;
+        const dropped = queue.splice(0);
         publish('idle');
+        for (const entry of dropped) entry.resolve('aborted');
+        childRestore?.abort();
+        childRestore = undefined;
+        for (const throttled of throttles) throttled.cancel();
+        throttles.clear();
+        if (developmentRuntime) safely(() => developmentRuntime.dispose());
         publication.clearListeners();
         lifecycle.clearListeners();
         checking?.abort();

@@ -12,7 +12,7 @@ export type StageBeat = (typeof STAGE_BEATS)[number];
  * controller, so the replay performs the same calls the recording did.
  */
 export type StageAction =
-  | { readonly kind: 'submit'; readonly message: string; /** Fork: index into the agent's history() at that moment. */ readonly checkpointIndex?: number }
+  | { readonly kind: 'submit'; readonly message: string; /** Fork: index into the agent's history() at that moment, newest checkpoint first. */ readonly checkpointIndex?: number }
   | { readonly kind: 'resume'; readonly value: string }
   /** Simulated page reload: reset, then re-adopt the thread so history restores it. Has no stream. */
   | { readonly kind: 'reload' };

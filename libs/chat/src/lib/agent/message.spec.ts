@@ -3,7 +3,7 @@ import {
   completeDelivery,
   staticDelivery,
   streamingDelivery,
-} from './message-delivery';
+} from '@threadplane/core';
 
 describe('MessageDelivery', () => {
   it('creates streaming delivery state', () => {

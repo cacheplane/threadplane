@@ -5,7 +5,7 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import type { Message } from '../../agent/message';
-import type { Citation } from '../../agent/citation';
+import type { Citation } from '../../agent';
 import { ChatCitationsCardComponent } from './chat-citations-card.component';
 import { CitationsResolverService, mdDefToCitation } from '../../markdown/citations-resolver.service';
 import { citationSourceVisual } from '../../agent/citation-display';

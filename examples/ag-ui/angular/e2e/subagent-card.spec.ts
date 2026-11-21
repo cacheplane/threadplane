@@ -23,7 +23,7 @@ interface SubagentProbe {
 // <chat-subagent-card> for each delegation tool call, and the card binds the
 // ORDERED transcript: `messages()` (the assistant turn(s) the child streamed,
 // each carrying `toolCallIds`/reasoning) and `toolCalls()` (the child's own
-// `lookup` calls, rendered as <chat-tool-call-card>). We read the projected map
+// `lookup` calls, rendered as <chat-tool-call-card>). We read the projected list
 // directly rather than scraping the rendered card: it IS the data the card
 // renders, and asserting on it proves the SUBAGENT_* + subagentRunId-attributed
 // event stream reconstructed the full reason→tool→answer transcript and
@@ -34,27 +34,34 @@ async function readSubagents(page: Page): Promise<SubagentProbe> {
     const el = document.querySelector('ag-ui-shell');
     const out: SubagentProbe = { size: 0, entries: [] };
     if (!ng?.getComponent || !el) return out;
-    const cmp = ng.getComponent(el) as { agent?: { subagents?: () => Map<string, unknown> } };
-    const map = cmp?.agent?.subagents?.();
-    if (!map) return out;
-    out.size = map.size;
-    map.forEach((s) => {
-      const sa = s as {
-        name?: string;
-        status?: () => string;
-        messages?: () => { content?: string }[];
-        toolCalls?: () => { name?: string; result?: string }[];
+    // `agent.subagents()` is a plain list of child agents: `status`,
+    // `messages` and `toolCalls` are data, not signals.
+    const cmp = ng.getComponent(el) as {
+      agent?: {
+        subagents?: () =>
+          | readonly {
+              name?: string;
+              status?: string;
+              messages?: readonly { content?: string }[];
+              toolCalls?: readonly { name?: string; result?: string }[];
+            }[]
+          | undefined;
       };
-      const messages = sa.messages?.() ?? [];
-      const toolCalls = sa.toolCalls?.() ?? [];
+    };
+    const list = cmp?.agent?.subagents?.();
+    if (!list) return out;
+    out.size = list.length;
+    for (const sa of list) {
+      const messages = sa.messages ?? [];
+      const toolCalls = sa.toolCalls ?? [];
       out.entries.push({
         name: sa.name,
-        status: sa.status?.(),
+        status: sa.status,
         messageCount: messages.length,
         messageTexts: messages.map((m) => (typeof m.content === 'string' ? m.content : '')),
         toolCalls: toolCalls.map((tc) => ({ name: tc.name, result: tc.result })),
       });
-    });
+    }
     return out;
   });
 }
@@ -66,7 +73,7 @@ async function readSubagents(page: Page): Promise<SubagentProbe> {
 // AG-UI server's SubagentEmittingAgent expands the subagent_activity CUSTOM
 // events into the protocol's SUBAGENT_STARTED/FINISHED plus subagentRunId-
 // attributed TEXT_MESSAGE_* / TOOL_CALL_* events. The @threadplane/ag-ui
-// reducer projects them to agent.subagents() (the ordered transcript
+// session projects them to agent.subagents() (the ordered transcript
 // chat-subagent-card renders) and the child's research text must stay OUT of
 // the parent's bubble.
 test('research delegation reconstructs the multi-message subagent transcript', async ({

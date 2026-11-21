@@ -1535,11 +1535,21 @@ describe('followup canonical boundaries', () => {
       expect(captureAuthority(input).kind).toBe('unconfirmed');
     }
   });
-  it('keeps raw root ToolMessage error status separate from native complete delivery', () => {
+  it('keeps raw root ToolMessage error status alongside the native failed call', () => {
     const result = captureAuthority(evidence(rootError));
     expect(result.kind).toBe('terminal');
     if (result.kind === 'terminal')
       expect(Object.values(result.rawToolStatuses)).toEqual(['error']);
+  });
+  it('rejects a raw ToolMessage error that the native snapshot holds as a result', () => {
+    const input = evidence(rootError);
+    for (const s of [input.snapshot, input.loadedSnapshot])
+      for (const call of s.toolCalls as Record<string, unknown>[]) {
+        call.status = 'complete';
+        call.result = call.error;
+        delete call.error;
+      }
+    expect(captureAuthority(input).kind).toBe('unconfirmed');
   });
   it('does not evaluate getters in raw authority', () => {
     let reads = 0;
@@ -2056,8 +2066,8 @@ const rootError = {
         id: 'e2bf0109-d910-499c-b861-838aa540e081-invalid-task',
         name: 'task',
         args: { subagent_type: 'field-researcher' },
-        status: 'complete',
-        result:
+        status: 'error',
+        error:
           "Error invoking tool 'task' with kwargs {'subagent_type': 'field-researcher'} with error:\n description: Field required\n Please fix the error and try again.",
       },
     ],
@@ -2120,8 +2130,8 @@ const rootError = {
         id: 'e2bf0109-d910-499c-b861-838aa540e081-invalid-task',
         name: 'task',
         args: { subagent_type: 'field-researcher' },
-        status: 'complete',
-        result:
+        status: 'error',
+        error:
           "Error invoking tool 'task' with kwargs {'subagent_type': 'field-researcher'} with error:\n description: Field required\n Please fix the error and try again.",
       },
     ],

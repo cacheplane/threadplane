@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { injectAgent } from '@threadplane/langgraph';
-import { DEMO_AGENT_REF } from './shell/agent-ref';
+import { DEMO_AGENT } from './shell/shell-tokens';
 import { ItineraryStop, ItineraryStore } from './itinerary-store';
 
 @Component({
@@ -476,7 +475,9 @@ export class ItineraryPanelComponent {
     return `${n} stop${n === 1 ? '' : 's'}`;
   });
   protected readonly showFooterAdd = computed(() => this.store.days().length > 0);
-  private readonly agent = injectAgent(DEMO_AGENT_REF);
+  /** The shell's agent, so a suggestion carries the shell's model and
+   *  itinerary state like any other message sent from the chat. */
+  private readonly agent = inject(DEMO_AGENT);
 
   protected suggestion(prompt: string): void {
     void this.agent.submit({ message: prompt });

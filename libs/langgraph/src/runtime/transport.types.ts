@@ -7,8 +7,8 @@ import type {
   StreamMode,
   ThreadState,
 } from '@langchain/langgraph-sdk';
-import type { OwnedCheckpointPosition } from '../lib/transport/checkpoint-position.d.ts';
-export type { OwnedCheckpointPosition } from '../lib/transport/checkpoint-position.d.ts';
+import type { OwnedCheckpointPosition } from './checkpoint-position.js';
+export type { OwnedCheckpointPosition } from './checkpoint-position.js';
 
 /** An event emitted by a LangGraph stream. */
 export interface StreamEvent {
@@ -54,8 +54,11 @@ export type LangGraphMultitaskStrategy =
   | 'rollback'
   | 'enqueue';
 
+/** When a run's checkpoints are saved: LangGraph's `durability` run setting. */
 export type LangGraphDurability = 'exit' | 'async' | 'sync';
+/** What the backend does when a run completes: LangGraph's `on_completion` run setting. */
 export type LangGraphOnCompletion = 'complete' | 'continue';
+/** What the backend does with a run whose client disconnects: LangGraph's `on_disconnect` run setting. */
 export type LangGraphOnDisconnect = 'cancel' | 'continue';
 
 /** Options accepted by LangGraph-backed submit calls. */

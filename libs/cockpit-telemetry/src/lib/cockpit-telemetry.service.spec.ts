@@ -6,7 +6,7 @@ import { CockpitTelemetryService } from './cockpit-telemetry.service';
 import { COCKPIT_TELEMETRY_CONFIG } from './tokens';
 import { ActivationAggregator } from './activation-aggregator';
 import { CHAT_LIFECYCLE, type ChatLifecycle } from '@threadplane/chat';
-import { AgentLifecycleRegistry, type AgentLifecycle } from '@threadplane/langgraph';
+import { AgentLifecycleRegistry, type AgentLifecycle } from '@threadplane/angular';
 
 function makeAgentLifecycle(): AgentLifecycle & {
   _setStreamStarted: () => void;

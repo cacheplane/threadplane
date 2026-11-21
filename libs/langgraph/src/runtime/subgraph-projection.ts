@@ -118,7 +118,8 @@ export function projectSubgraphs(
   previous: SubgraphObservation,
   input: StreamEvent,
   generation: string,
-  messageIdPrefix = generation
+  messageIdPrefix = generation,
+  extras = false
 ): SubgraphObservation {
   const routed = route(input);
   if (!routed) return previous;
@@ -141,6 +142,7 @@ export function projectSubgraphs(
     terminal: false,
     paused: false,
     canonical: [],
+    ...(extras ? { extras: true } : {}),
   };
   if (event.type === 'error') {
     state = reduceMessages(state, {

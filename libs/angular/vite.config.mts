@@ -16,6 +16,7 @@ export default defineConfig({
       'chat/src/**/*.spec.ts',
       'markdown/src/**/*.spec.ts',
       'markdown/src/**/*.test.ts',
+      'testing/src/**/*.spec.ts',
     ],
     passWithNoTests: false,
   },

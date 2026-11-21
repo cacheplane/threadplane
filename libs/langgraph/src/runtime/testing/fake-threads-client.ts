@@ -101,6 +101,10 @@ export function createFakeThreadsClient(
       await enter('threads.search', query?.signal);
       return answer;
     },
+    async get(id: string, options?: { signal?: AbortSignal }) {
+      await enter('threads.get', options?.signal);
+      return clone(required(id));
+    },
     async create(payload?: {
       metadata?: Record<string, unknown>;
       signal?: AbortSignal;

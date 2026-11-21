@@ -20,7 +20,7 @@ interface SubagentProbe {
 // inline AS a <chat-subagent-card> anchored to its message, and the card
 // PERSISTS (collapsed) after the subagent completes — there is no separate
 // active-only mount, and the `task` call no longer renders a generic tool-call
-// chip. The map read here is the data the card binds to: it proves the
+// chip. The list read here is the data the card binds to: it proves the
 // SUBAGENT_STARTED + subagentRunId-attributed TEXT_MESSAGE_* pipeline populated
 // the subagent (name + streamed child text) and that SUBAGENT_FINISHED settled
 // it to `complete`. The card element and this projection are
@@ -31,22 +31,25 @@ async function readSubagents(page: Page): Promise<SubagentProbe> {
     const el = document.querySelector('app-subagents');
     const out: SubagentProbe = { size: 0, entries: [] };
     if (!ng?.getComponent || !el) return out;
-    const cmp = ng.getComponent(el) as { agent?: { subagents?: () => Map<string, unknown> } };
-    const map = cmp?.agent?.subagents?.();
-    if (!map) return out;
-    out.size = map.size;
-    map.forEach((s) => {
-      const sa = s as {
-        name?: string;
-        status?: () => string;
-        messages?: () => { content?: string }[];
+    // `agent.subagents()` is a plain list of child agents: `status` and
+    // `messages` are data, not signals.
+    const cmp = ng.getComponent(el) as {
+      agent?: {
+        subagents?: () =>
+          | readonly { name?: string; status?: string; messages?: readonly { content?: string }[] }[]
+          | undefined;
       };
+    };
+    const list = cmp?.agent?.subagents?.();
+    if (!list) return out;
+    out.size = list.length;
+    for (const sa of list) {
       out.entries.push({
         name: sa.name,
-        status: sa.status?.(),
-        text: sa.messages?.()[0]?.content,
+        status: sa.status,
+        text: sa.messages?.[0]?.content,
       });
-    });
+    }
     return out;
   });
 }
@@ -55,7 +58,7 @@ async function readSubagents(page: Page): Promise<SubagentProbe> {
 // `task` tool, the subagent LLM streams a summary, and the AG-UI server's
 // SubagentEmittingAgent expands the graph's subagent_activity CUSTOM events into
 // the protocol's standard SUBAGENT_STARTED / TEXT_MESSAGE_* (carrying
-// subagentRunId) / SUBAGENT_FINISHED events. The @threadplane/ag-ui reducer
+// subagentRunId) / SUBAGENT_FINISHED events. The @threadplane/ag-ui session
 // projects them to agent.subagents(), which the inline <chat-subagent-card>
 // (rendered in place of the `task` tool call) binds to. The child's research
 // text must stay OUT of the parent's bubble.

@@ -78,10 +78,14 @@ void session.resume([
 session.resume(pause, [resolved]);
 // @ts-expect-error a backend ID cannot stand in for the responses
 session.resume('backend-id', [resolved]);
-// @ts-expect-error native resume never accepts a new user message
-session.resume([resolved], { message: 'new intent' });
-// @ts-expect-error native resume never accepts a state patch
-session.resume([resolved], { state: {} });
+// The core resume options: a message and a state patch travel with the answers.
+void session.resume([resolved], { message: 'new intent' });
+void session.resume([resolved], { state: {} });
+void session.resume([resolved], {
+  blocks: [{ type: 'image', url: 'https://example.invalid/a.png' }],
+});
+// @ts-expect-error a resume message is text
+session.resume([resolved], { message: 1 });
 // @ts-expect-error transport fields cannot override a correlated native resume
 session.resume([resolved], { runId: 'guessed' });
 // @ts-expect-error an explicit response batch is required

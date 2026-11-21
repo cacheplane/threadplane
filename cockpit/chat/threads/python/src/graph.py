@@ -5,7 +5,7 @@ Conversational agent with inline thread-title generation. Each new
 thread gets an LLM-generated 3-5 word title written to LangGraph
 thread metadata on the first turn (idempotent — subsequent turns skip
 the write). The chat-threads frontend reads `metadata.title` from
-`client.threads.search()` via LangGraphThreadsAdapter and displays
+`client.threads.search()` through the LangGraph thread directory and displays
 it in the sidenav.
 
 Pattern D from spec 2026-05-19-llm-generated-labels-design.md: the
@@ -44,7 +44,7 @@ async def generate_title(state: MessagesState, config) -> dict:
     user-visible turn so it never blocks the response.
 
     Writes to `metadata.title` (matches the legacy examples/chat
-    convention and the LangGraphThreadsAdapter default). Spec
+    convention and the LangGraph thread directory default). Spec
     2026-05-19 originally chose `thread_title`; we converged on
     `title` to drop the per-cap `titleMetadataKey` config knob.
     """

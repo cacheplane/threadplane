@@ -98,11 +98,12 @@ describe('MIT package cutover', () => {
     }
 
     const root = await readJson('package.json');
-    const langgraphTestSetup = await read('libs/langgraph/src/test-setup.ts');
     expect(root.scripts).not.toHaveProperty('postinstall');
     expect(root.dependencies).not.toHaveProperty('@noble/ed25519');
     expect(root.dependencies).not.toHaveProperty('stripe');
-    expect(langgraphTestSetup).not.toContain('@noble/ed25519');
+    // The LangGraph package is framework-neutral and has no Angular test setup
+    // left to carry the retired key library.
+    expect(await exists('libs/langgraph/src/test-setup.ts')).toBe(false);
   });
 
   it('keeps telemetry explicit instead of mutating package artifacts or installs', async () => {

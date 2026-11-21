@@ -2,7 +2,7 @@ import { canonicalInvocation } from './tool-provenance';
 import { readFileSync } from 'node:fs';
 import { ReadableStream, ReadableStreamDefaultReader } from 'node:stream/web';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { FetchStreamTransport } from '../lib/transport/fetch-stream.transport';
+import { FetchStreamTransport } from './fetch-stream.transport';
 import type { StreamEvent } from './transport.types';
 import { createSession, type SessionOptions } from './create-session';
 import type { ToolExecutionStore } from '@threadplane/core/tools';
@@ -400,7 +400,7 @@ describe('neutral real SDK transport', () => {
       apiUrl: 'https://runtime.example',
     });
     expect(await session.submit('Question')).toBe('interrupted');
-    expect(session.getSnapshot().reconnect).toEqual({ runId: 'r' });
+    expect(session.getSnapshot().retainedRun).toEqual({ runId: 'r' });
     expect(await session.reconnect()).toBe('success');
     expect(requests.map((request) => request.method)).toEqual([
       'POST',
@@ -994,13 +994,16 @@ describe('neutral real SDK transport', () => {
         await vi.runAllTimersAsync();
         const outcome = await submitted;
         expect(posts).toHaveLength(expectedPosts);
-        expect(outcome).toBe(
-          expectedPosts === 2
-            ? 'success'
-            : clientOptions?.defaultHeaders
-            ? 'error'
-            : 'interrupted'
-        );
+        // Nothing is replayed without the opt-in. `fetch` rejected with no
+        // response, so the failure offers a retry, and that retry reads the
+        // thread before it sends anything (see unanswered-creation.spec.ts).
+        expect(outcome).toBe(expectedPosts === 2 ? 'success' : 'error');
+        if (expectedPosts === 1)
+          expect(session.getSnapshot().error).toMatchObject({
+            kind: 'connection',
+            retryable: true,
+            recovery: 'retry',
+          });
         expect(posts.every((post) => post.method === 'POST')).toBe(true);
         for (const post of posts)
           expect(new Headers(post.headers).get('authorization')).toBe(

@@ -6,7 +6,7 @@ description: How the persistence example lists, switches, and starts threads wit
 
 <DocsDemoVideo demo="persistence" frontend="angular" />
 
-Thread persistence keeps conversations alive across page refreshes, browser restarts, and server deployments. LangGraph checkpoints agent state at every super-step, keyed by a thread ID, and `injectAgent()` connects to those checkpoints for you. The running example is a chat with a thread sidebar, and this guide walks the four files that make it work.
+Thread persistence keeps conversations alive across page refreshes, browser restarts, and server deployments. LangGraph checkpoints agent state at every super-step, keyed by a thread ID, and the agent you get from `injectAgent()` reads them back whenever a thread is selected. The running example is a chat with a thread sidebar, and this guide walks the four files that make it work.
 
 <Callout type="tip" title="Prerequisites">
 Make sure you have completed the Installation guide first.
@@ -24,7 +24,7 @@ The thread ID is an address. A checkpoint is a saved version of the agent state 
 
 The Run tab shows the prebuilt `<chat>` composition next to a thread sidebar. Send a message and the backend assigns a thread ID, which appears in the sidebar as "Thread 1". Click "+ New Thread" and send another message, and you have two conversations you can move between.
 
-Switching back to an earlier thread replays its stored history: the messages come back from the server checkpoint, not from anything the browser kept. The welcome suggestion, "Start a saved thread", asks the agent to draft a project brief you can revisit, which gives each thread enough content to recognize in the sidebar.
+Switching back to an earlier thread replays its stored history: the messages come back from the server checkpoint, not from anything the browser kept. Give each thread a different fictional fact, and you can tell them apart when you return.
 
 ## How it is built
 
@@ -71,14 +71,31 @@ Module scope works here because the demo bootstraps exactly one component instan
 
 ### Capturing thread IDs with onThreadId
 
-`provideAgent()` sits in the component's `providers` array, so the agent and its callback are created with the component. The example passes a factory because it resolves its connection details at runtime from the host that serves the demo; your own application passes `apiUrl` and `assistantId` directly.
+`provideAgent()`, from `@threadplane/angular`, sits in the component's `providers` array, so the agent and its callback are created with the component. The config has two members. `createSession` builds a LangGraph session for one thread with `createSession()` from `@threadplane/langgraph`; the agent calls it once at the start and again for each thread switch, passing the thread to open as `context.threadId`. `onThreadId` is the application's callback.
 
 <ExampleCode file="persistence.component.ts" region="agent-provider" title="persistence.component.ts — the agent provider" />
 
-`onThreadId` fires when the backend creates a thread and reports its ID, which is why the callback checks whether it already knows the ID before adding it. The callback records it as the active thread and appends it to the list if it is new, which is the only bookkeeping the sidebar needs.
+The example passes a factory because it resolves its connection details at runtime from the host that serves the demo. Your own application passes the config object with its `apiUrl` and `assistantId`:
+
+```typescript
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
+
+provideAgent({
+  createSession: (context) =>
+    createSession({
+      ...context,
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'persistence',
+    }),
+  onThreadId: (id) => console.log('New thread', id),
+});
+```
+
+A session that starts without a thread creates one on its first submit and reports the ID. The agent adopts it and calls `onThreadId` once for that thread. The example's callback records it as the active thread and appends it to the list if it is new, which is the only bookkeeping the sidebar needs.
 
 <Callout type="warning" title="Thread IDs come from the server">
-Use a thread that the backend has confirmed exists. This Angular provider supplies its ID through `onThreadId`. An application using the Threads API may request its own UUID, but must create that thread and confirm the returned identity before submitting a run; generating a string alone creates no saved conversation.
+Use a thread that the backend has confirmed exists. The agent supplies the ID of each thread a session creates through `onThreadId`. An application using the Threads API may request its own UUID, but must create that thread and confirm the returned identity before submitting a run; generating a string alone creates no saved conversation.
 </Callout>
 
 <Callout type="warning" title="Keep the API key on the server">
@@ -93,18 +110,18 @@ The `<chat>` composition owns message rendering, the input, loading states, and 
 
 ### Switching and starting threads
 
-The class itself is small. It injects the agent registered above, forwards a welcome suggestion into `submit()`, and exposes the two thread actions the sidebar calls.
+The class itself is small. It injects the agent registered above, forwards a suggestion into `submit()`, and exposes the two thread actions the sidebar calls. `injectAgent<LangGraphSession>()` names the session type, which adds the LangGraph fields and commands to the core ones.
 
 <ExampleCode file="persistence.component.ts" region="thread-actions" title="persistence.component.ts — agent and thread actions" />
 
-`switchThread(id)` loads that thread's latest checkpoint and repopulates every signal the composition reads. `switchThread(null)` clears the conversation; the backend assigns a new ID on the next submit, and `onThreadId` adds it to the sidebar.
+A session belongs to one thread. `switchThread(id)` replaces the session with one for that thread and reads its saved history; every signal the composition reads stays the same reference and follows the new session. `switchThread(null)` moves to a new, empty conversation and sends no request; the thread is created on the next submit, and `onThreadId` adds it to the sidebar. `agent.threadId()` is the thread the agent is on, or `null` before one exists.
 
 <Callout type="info" title="Injection context">
 `injectAgent()` must run inside an Angular injection context: a field initializer, as it is here, or a constructor body.
 </Callout>
 
-<Callout type="info" title="Adapter-defined behavior">
-"Restore a prior thread's messages when the user switches to it" is a behavior the `@threadplane/langgraph` adapter implements because the LangGraph protocol exposes per-thread checkpoint history. The runtime-neutral `Agent` contract in `@threadplane/chat` does not require this — adapters built on event-stream protocols (like `@threadplane/ag-ui`) typically cannot offer it. If you are writing your own adapter, the [Writing an Adapter guide](/docs/angular/chat/guides/writing-an-adapter#hydrating-from-a-server-stored-thread) covers the design choice.
+<Callout type="info" title="Backend-defined behavior">
+The agent reads a selected thread's history through the session's optional `load()` command. A LangGraph session has it because the LangGraph API exposes per-thread checkpoint history. The core session contract does not require it, so an agent over a backend without `load()` switches to an empty transcript. If you are writing your own backend, the [Writing an Adapter guide](/docs/angular/chat/guides/writing-an-adapter) covers the design choice.
 </Callout>
 
 ## Choosing a checkpointer
@@ -185,72 +202,89 @@ Use stable, user-scoped identifiers for thread IDs. A common pattern is `f"{user
 The example keeps its thread list in memory, so a browser refresh starts it over. An application that should survive a reload writes the IDs somewhere durable and reads them back at startup:
 
 ```typescript
+import { signal } from '@angular/core';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
+
+const threadId = signal<string | null>(localStorage.getItem('threadId'));
+
 provideAgent({
-  apiUrl: 'https://your-deployment.langgraph.app',
-  assistantId: 'persistence',
   // Restore the last thread on app start
-  threadId: signal(localStorage.getItem('threadId')),
-  // Persist the ID whenever the backend assigns one
-  onThreadId: (id) => localStorage.setItem('threadId', id),
+  threadId,
+  // Persist the ID whenever a session creates a thread
+  onThreadId: (id) => {
+    threadId.set(id);
+    localStorage.setItem('threadId', id);
+  },
+  createSession: (context) =>
+    createSession({
+      ...context,
+      apiUrl: 'https://your-deployment.langgraph.app',
+      assistantId: 'persistence',
+    }),
 });
 ```
 
-`threadId` accepts a Signal, which is the other way to change threads: set the signal and `injectAgent()` reacts to it, fetches that thread's checkpoint history, and rebuilds the derived signals from it. The example calls `switchThread()` instead because it wants the switch to happen exactly when the button is clicked.
+`threadId` accepts a string, `null`, or a signal. A signal is the other way to change threads: set it to a different ID and the agent switches to that thread and reads its checkpoint history, as `switchThread()` does. The change is picked up when Angular next runs effects. The example calls `switchThread()` instead because it wants the switch to happen exactly when the button is clicked.
+
+The agent reads history itself, so an Angular app does not set the session's `autoLoad` option. That option is for a session used without the agent: with `autoLoad: true`, a session created with a `threadId` calls its own `load()`.
 
 ### What a reloaded thread shows
 
 A reloaded thread is rebuilt from checkpoint history, not from the stream events the live view saw, so it shows what history carries and no more:
 
-- **Messages, values, tool calls and pending interrupts** come from the latest checkpoint.
-- **Reasoning** is restored from the `reasoning` and `thinking` content blocks the checkpoint saved with each assistant message. Its duration is not: history records no start or end time for reasoning, so a reloaded message shows its reasoning without the "Thought for" duration label.
-- **Subagent cards** for delegation tool calls (the `subagentToolNames` option, `task` by default) are rebuilt from the parent's tool calls and their results, so each card sits under its tool call with its final status and result. The parent checkpoints also link each call to the child's checkpoint namespace; the default transport reads the child's latest checkpoint there to restore the card's transcript, and a run that resumes after the reload streams into the same card instead of opening a second one.
-- **Not rebuilt:** cards for compiled subgraphs added as plain graph nodes, nested delegations (a subagent that delegates again), and tool progress events. History does not tie these to a parent tool call, so they appear only while a run is streaming.
+- **Messages, state, tool calls and pending interrupts** come from the latest checkpoint.
+- **Reasoning** is restored from the `reasoning` and `thinking` content blocks the checkpoint saved with each assistant message. Its duration is not: the session measures reasoning time as text arrives and history was never observed arriving, so a reloaded message has no `reasoningDurationMs` and shows its reasoning without the "Thought for" duration label.
+- **Subagent cards** are not rebuilt by default, because no child event replays when a thread is loaded. Pass `restoreSubagents: true` to `createSession()` and a load rebuilds the children started by delegation tool calls (the `subagentToolNames` option, `task` by default) from the parent's tool calls and their results, so each card sits under its tool call with its final status. The parent checkpoints also link each call to the child's checkpoint namespace; the default transport reads the child's latest checkpoint there to restore the card's transcript, and a run that resumes after the reload updates the same child instead of opening a second one.
+- **Not rebuilt:** compiled subgraphs added as plain graph nodes, nested delegations (a subagent that delegates again), and tool progress events. History does not tie these to a parent tool call, so they appear only while a run is streaming.
 
-A custom transport restores child transcripts only if it implements the optional `getChildState()` method; without it, subagent cards come back with their status and result but no messages.
+A custom transport restores child transcripts only if it implements the optional `getChildState()` method; without it, restored subagent cards come back with their status and no messages.
 
 <Callout type="tip" title="Thread loading state">
-Use the `isThreadLoading()` signal to show a skeleton UI while `injectAgent()` fetches checkpoint state from the server. This avoids a flash of empty content when switching threads.
+Use the `isThreadLoading()` signal to show a skeleton UI while the agent reads checkpoint state from the server. This avoids a flash of empty content when switching threads.
 </Callout>
 
-<Callout type="info" title="LANGGRAPH_CLIENT">
-`LANGGRAPH_CLIENT` is the DI token that holds the shared LangGraph SDK `Client` used by the threads adapter (`LangGraphThreadsAdapter`). The adapter injects it optionally and, when no client is provided, constructs one via `createLangGraphClient(apiUrl)`. Provide your own client through this token to share a single SDK instance — or to inject an explicit client in tests.
+<Callout type="info" title="Reloading the current thread">
+`switchThread()` with the ID the agent is already on reads that thread again. It replaces the session, as any switch does, so a run in progress on the old session is stopped first.
 </Callout>
 
 ## Forking a conversation
 
-To fork, capture `agent.messages()` first, start a fresh thread with `switchThread(null)`, and resubmit the captured history as a `state` patch. For a fork that branches from an earlier checkpoint, use the [Time Travel guide](/docs/angular/langgraph/guides/time-travel).
+A fork branches the same thread from an earlier checkpoint: `agent.fork(checkpoint, input)`, on an agent typed with `LangGraphSession`, starts a run from that checkpoint, and the thread gains a branch there. The [Time Travel guide](/docs/angular/langgraph/guides/time-travel) covers checkpoints and branches. There is no command that copies a transcript into a new thread: a `state` patch on `submit()` cannot carry `messages`.
 
 ## Checkpoint recovery
 
-When a connection drops mid-stream, `joinStream()` reconnects to an in-progress run without restarting the agent. That prevents duplicate work and lost tokens.
+When a connection drops mid-stream, the run may still be going on the server. The session reports an `interrupted` error and never sends the input again on its own. `joinStream()` joins a run of the current thread by ID without starting a new one, which prevents duplicate work.
 
 ```typescript
-// Rejoin a running stream after a network interruption
+// Join a run of this thread after a network interruption or a reload
 await this.agent.joinStream(runId, lastEventId);
-// Picks up from the last event — no duplicate agent execution
+// Continues after lastEventId; no second agent execution
 ```
 
-<Callout type="info" title="Automatic recovery">
-In most cases `injectAgent()` handles reconnection internally. Use `joinStream()` directly only when you need explicit control — for example, when restoring a run ID from a URL parameter after a full page reload.
+`joinStream()` is a LangGraph command, so the agent has to be typed with `LangGraphSession`. Without `lastEventId` the run is joined from its first event, which the backend serves only for a resumable stream.
+
+<Callout type="info" title="Recovery without a run ID">
+In most cases you do not need a run ID. When a stream closes without a final state, the session reads the thread once to settle the turn. If the outcome is still unknown, `error()` carries `recovery: 'check'` and `agent.checkStatus()` reads the thread again without sending anything. `agent.reconnect()` rejoins the run the session itself still holds, named by `retainedRun()`. Use `joinStream()` when the ID comes from somewhere else, for example a URL parameter after a full page reload.
 </Callout>
 
 ## Thread lifecycle
 
 <Steps>
-<Step title="Component mounts">
-`injectAgent()` reads the `threadId` signal. If it contains a value, the existing thread's checkpoint is fetched from the server.
+<Step title="Agent is created">
+The agent reads the configured `threadId` and asks `createSession` for a session. If there is a thread, its checkpoint history is read from the server and `isThreadLoading()` is true meanwhile.
 </Step>
 <Step title="User sends first message">
-If `threadId` is null, `injectAgent()` creates a new thread via the LangGraph API and fires `onThreadId` with the new ID.
+If there is no thread yet, the session creates one through the LangGraph API before the run starts, and `onThreadId` is called with the new ID.
 </Step>
 <Step title="Agent streams response">
 Each super-step is checkpointed server-side. The `messages()` signal updates in real time as events arrive.
 </Step>
 <Step title="User switches threads">
-Setting the `threadId` signal (or calling `switchThread()`, as the example does) loads the target thread's latest checkpoint. All signals update to reflect the restored state.
+Setting the `threadId` signal (or calling `switchThread()`, as the example does) stops and disposes the old session, creates one for the target thread, and loads its latest checkpoint. All signals update to reflect the restored state.
 </Step>
 <Step title="Connection drops">
-`joinStream()` reconnects to the in-progress run. The agent does not restart — streaming resumes from the last received event.
+The run settles as `interrupted`. `checkStatus()` reads what the server saved, and `reconnect()` or `joinStream()` joins a run that is still in progress. The graph does not run a second time.
 </Step>
 </Steps>
 
@@ -261,36 +295,49 @@ In your backend's persistence layer. Threadplane exposes thread, history, and re
 
 ## Wiring a thread list
 
-`<chat-thread-list>` renders the rows; the application owns the active-thread signal. That signal is the same one handed to `provideAgent({ threadId })`, which is what makes selecting a row switch the conversation: the agent watches the signal, resets its derived state, and re-fetches that thread's server-side history.
+The example keeps its own list of the threads it created. A real application lists the conversations the deployment has saved. `provideThreadDirectory()` and `injectThreadDirectory()`, from `@threadplane/angular`, give a component tree one view of a thread directory, and `createLangGraphThreadDirectory()`, from `@threadplane/langgraph`, builds the directory over the LangGraph Threads API.
+
+`<chat-thread-list>` renders the rows; the application owns the active-thread signal. That signal is the same one handed to `provideAgent({ threadId })`, which is what makes selecting a row switch the conversation: the agent follows the signal, replaces its session, and reads that thread's server-side history.
 
 ```ts
-import { Component, inject, signal } from '@angular/core';
-import { ChatThreadListComponent, type ThreadActionAdapter } from '@threadplane/chat';
+import { Component, signal } from '@angular/core';
 import {
   injectAgent,
+  injectThreadDirectory,
   provideAgent,
-  LangGraphThreadsAdapter,
-  LANGGRAPH_THREADS_CONFIG,
+  provideThreadDirectory,
   refreshOnRunEnd,
+} from '@threadplane/angular';
+import { ChatThreadListComponent, type ThreadActionAdapter } from '@threadplane/chat';
+import {
+  createLangGraphThreadDirectory,
+  createSession,
+  type LangGraphThreadDirectory,
 } from '@threadplane/langgraph';
 
+const apiUrl = 'http://localhost:2024';
+
 /** Source of truth for the active thread. Module scope, because the
- *  `provideAgent()` config below is evaluated at provider-registration
- *  time and has to close over it. */
+ *  `provideAgent()` config below has to close over it. */
 const activeThreadIdState = signal<string | null>(null);
 
 @Component({
   selector: 'app-threads-panel',
-  standalone: true,
   imports: [ChatThreadListComponent],
   providers: [
-    LangGraphThreadsAdapter,
-    { provide: LANGGRAPH_THREADS_CONFIG, useValue: { apiUrl: 'http://localhost:2024' } },
+    provideThreadDirectory({
+      createDirectory: (context) =>
+        createLangGraphThreadDirectory({ ...context, apiUrl }),
+    }),
     provideAgent({
-      apiUrl: 'http://localhost:2024',
-      assistantId: 'agent',
       threadId: activeThreadIdState,
-      onThreadId: (id: string) => activeThreadIdState.set(id),
+      onThreadId: (id) => activeThreadIdState.set(id),
+      createSession: (context) =>
+        createSession({
+          ...context,
+          apiUrl,
+          assistantId: 'agent',
+        }),
     }),
   ],
   template: `
@@ -306,13 +353,13 @@ const activeThreadIdState = signal<string | null>(null);
 })
 export class ThreadsPanel {
   protected readonly agent = injectAgent();
-  protected readonly threads = inject(LangGraphThreadsAdapter);
+  protected readonly threads = injectThreadDirectory<LangGraphThreadDirectory>();
   protected readonly activeThreadId = activeThreadIdState;
 
   protected readonly actions: ThreadActionAdapter = {
-    rename: (id, title) => this.threads.rename(id, title),
-    pin: (id) => this.threads.pin(id),
-    unpin: (id) => this.threads.unpin(id),
+    rename: this.threads.rename,
+    pin: this.threads.pin,
+    unpin: this.threads.unpin,
     archive: async (id) => {
       await this.threads.archive(id);
       if (activeThreadIdState() === id) activeThreadIdState.set(null);
@@ -325,7 +372,7 @@ export class ThreadsPanel {
 
   constructor() {
     void this.threads.refresh();
-    refreshOnRunEnd(this.agent, () => this.threads.refresh());
+    refreshOnRunEnd(this.agent, this.threads);
   }
 
   protected onThreadSelected(id: string): void {
@@ -334,40 +381,54 @@ export class ThreadsPanel {
 
   protected async onNewThread(): Promise<void> {
     const id = await this.threads.create();
-    if (id !== null) activeThreadIdState.set(id);
+    if (id) activeThreadIdState.set(id);
   }
 }
 ```
 
-The example scopes both the thread adapter and its required `LANGGRAPH_THREADS_CONFIG` to the panel. To share a root-provided thread adapter across the app, provide that configuration at the application root instead.
+The example scopes both the directory and the agent to the panel. To share one thread list across the app, call `provideThreadDirectory()` at the application root instead.
 
-Three details in that template are easy to get wrong:
+Four details in that component are easy to get wrong:
 
 - `activeThreadId` is `input<string>('')`, not a nullable input, so a `null` active thread has to become `''`. Passing `null` is a template type error.
 - The selection output is `threadSelected`, and `<chat>` re-emits an output of the same name, so either surface can drive the switch.
-- The agent has no `threadId` member of its own. The id lives in the application's signal; reading it back off the agent is not possible.
+- `injectThreadDirectory<LangGraphThreadDirectory>()` names the directory's type, so `create`, `archive` and the rest are typed as present and are called directly. Without the type argument the view is typed by the core directory contract, where every command is optional and a command the directory does not offer is `undefined`; the list then offers no menu entry for it.
+- Nothing is loaded until `refresh()` is called. A failed load is published through `threads.status()` and `threads.error()`; the promise does not reject.
 
-An application that does not bind a `threadId` signal can call `agent.switchThread(id)` from the same handler instead. Binding the signal is the better default, because it also survives a `provideAgent()` factory that reads the id from the router.
+An application that does not bind a `threadId` signal can call `agent.switchThread(id)` from the same handler instead, and read the current thread back from `agent.threadId()`. Binding the signal is the better default, because it also suits a config factory that reads the ID from the router.
 
 <Callout type="info" title="Which menu entries appear">
-`<chat-thread-list>` builds its row menu from the keys the adapter actually defines, and from `[mode]`. A list in the default `active` mode offers Rename, Pin or Unpin, Move up and Move down for a pinned row with `reorderPinned`, Move to project when `[projects]` is bound, Archive, and Delete. A list rendered with `[mode]="'archived'"` — the natural home for `archivedThreads()` — offers only Unarchive and Delete.
+`<chat-thread-list>` builds its row menu from the keys the adapter actually defines, and from `[mode]`. A list in the default `active` mode offers Rename, Pin or Unpin, Move up and Move down for a pinned row with `reorderPinned`, Move to project when `[projects]` is bound, Archive, and Delete. A list rendered with `[mode]="'archived'"`, the natural home for `archivedThreads()`, offers only Unarchive and Delete.
 </Callout>
 
 ## Keeping the list fresh
 
-The store is a snapshot, not a subscription, so something has to re-fetch it. `refreshOnRunEnd()` fires on every transition out of the running status, which is precisely when a title-writing node has finished.
+The directory does not watch the server, so something has to read the list again. `refreshOnRunEnd()` fires on every transition out of the `'running'` status, which is precisely when a title-writing node has finished, and it keeps following the agent across thread switches. Pass it the directory view, or a function:
 
 ```ts
-refreshOnRunEnd(this.agent, () => this.threads.refresh());
+refreshOnRunEnd(this.agent, this.threads);
 ```
 
 `refreshOnTransition(watch, isActive, fn)` is the generic form for any other signal that has an active state: it calls `fn` whenever `isActive(watch())` goes from `true` to `false`.
 
-Both helpers use an Angular `effect()` under the hood, so both must be called from an injection context — a constructor body or a field initializer. `refresh()` itself is a plain asynchronous call with no such requirement.
+Both helpers use an Angular `effect()` under the hood, so both must be called from an injection context: a constructor body or a field initializer. `refresh()` itself is a plain asynchronous call with no such requirement. A rename, pin, archive or delete shows in the list at once and rolls back if the request fails, so those need no refresh of their own.
 
 ## Shared SDK client
 
-Provide `LANGGRAPH_CLIENT` to hand the adapter an SDK `Client` you already own, or a test double; when the token is absent the adapter builds its own client from `apiUrl`. Provide `LANGGRAPH_CLIENT_OPTIONS` once at the application root to tune the SDK retry budget and auth headers shared by `FetchStreamTransport` and this adapter.
+Pass `client` to `createLangGraphThreadDirectory()` to hand the directory an SDK `Client` you already own, or a test double; without it the directory builds its own client from `apiUrl`. Call `provideAgentClientOptions()` once at the application root to set the auth headers and SDK retry budget for every agent below it. The options arrive in both factories as `context.clientOptions`, together with the operation-failure reporter, and spreading the context forwards both:
+
+```ts
+import { provideAgentClientOptions } from '@threadplane/angular';
+import { createLangGraphThreadDirectory } from '@threadplane/langgraph';
+
+providers: [
+  provideAgentClientOptions({ defaultHeaders: { 'x-tenant': 'acme' } }),
+  provideThreadDirectory({
+    createDirectory: (context) =>
+      createLangGraphThreadDirectory({ ...context, apiUrl }),
+  }),
+];
+```
 
 <Callout type="warning" title="Thread ids come from the server">
 Use a confirmed backend thread ID: the value `create()` resolves, the one handed to `onThreadId`, or one returned by the Threads API. A caller can request a UUID during thread creation, but must confirm the returned identity before using it for a run. Generating an ID alone creates no backend thread.

@@ -9,7 +9,7 @@
     "emitDeclarationOnly": false,
     "declarationMap": false,
     "paths": {
-      "@threadplane/ag-ui": ["fixtures/react-parity/ag-ui-candidate/entry.ts"],
+      "@threadplane/ag-ui": ["libs/ag-ui/src/public-api.ts"],
       "@threadplane/core": ["libs/core/src/index.ts"],
       "@threadplane/core/tools": ["libs/core/src/tools/index.ts"],
       "@threadplane/react": ["libs/react/src/index.ts"],

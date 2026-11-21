@@ -49,7 +49,9 @@ The Angular app (`angular/`) consumes `@threadplane/*` via workspace TS paths
 (fast iteration: edit a lib, demo reloads). The Python graph (`python/`)
 is a single-node `__start__ → generate → __end__` LangGraph; the demo
 sets `state.model` on every submit so the model picker takes effect
-without reconnecting. The smoke generator (`smoke/cli.mjs`) creates a
+without reconnecting. The app provides its agents with `provideAgent` from
+`@threadplane/angular`, over sessions created by `createSession` from
+`@threadplane/langgraph` (`angular/src/app/shell/demo-session.ts`). The smoke generator (`smoke/cli.mjs`) creates a
 **second** consumer at `~/tmp/threadplane` (default) with `@threadplane/*` resolved
 from npm — used to validate the published packages match the workspace
 behavior.

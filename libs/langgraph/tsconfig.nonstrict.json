@@ -1,0 +1,12 @@
+{
+  // The shipped sources, compiled the way an application compiles them:
+  // without `strict`. See libs/core/tsconfig.nonstrict.json.
+  "extends": "../core/tsconfig.nonstrict.json",
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/**/*.type-test.ts",
+    "src/runtime/testing/**"
+  ]
+}

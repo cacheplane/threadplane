@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { HeroReplayTransport, type ReplayClock } from './hero-replay.transport';
+import { HERO_REPLAY_THREAD_ID, HeroReplayTransport, type ReplayClock } from './hero-replay.transport';
 import type { HeroRecording } from './hero-recording.types';
 
 const recording: HeroRecording = {
@@ -83,6 +83,37 @@ describe('HeroReplayTransport', () => {
     await expect(t.ready()).rejects.toThrow('fixture missing');
     await expect(t.ready()).resolves.toBeUndefined();
     expect(load).toHaveBeenCalledTimes(2);
+  });
+  it('creates the one thread a session asks for before its first run', async () => {
+    const t = new HeroReplayTransport(fakeClock(), async () => recording);
+    expect(await t.createThread()).toBe(HERO_REPLAY_THREAD_ID);
+  });
+  it('answers a run with its prompt renamed to the id the session sent', async () => {
+    const human = (id: string, content: string) => ({ id, type: 'human', content });
+    const prompted: HeroRecording = {
+      version: 1,
+      recordedAt: '2026-09-02T00:00:00.000Z',
+      runs: [
+        { label: 'prompt', events: [{ tMs: 0, event: { type: 'values', messages: [human('recorded', 'Clean up')] } as never }] },
+        { label: 'resume', events: [{ tMs: 0, event: { type: 'values', messages: [human('recorded', 'Clean up')] } as never }] },
+        { label: 'genui', events: [{ tMs: 0, event: { type: 'values', messages: [human('recorded', 'Clean up'), human('recorded-2', 'Form')] } as never }] },
+      ],
+    };
+    const t = new HeroReplayTransport(fakeClock(), async () => prompted);
+    const sig = new AbortController().signal;
+    const ids = (events: unknown[]) =>
+      (events[0] as { messages: { id: string }[] }).messages.map((message) => message.id);
+
+    // A session names the user message it submits; the recording carries
+    // another session's name for the same prompt.
+    expect(ids(await collect(t.stream('hero', null, { messages: [human('live-1', 'Clean up')] }, sig)))).toEqual(['live-1']);
+    // A resume sends no user message; the earlier prompt keeps its new name.
+    expect(ids(await collect(t.stream('hero', null, null, sig)))).toEqual(['live-1']);
+    expect(ids(await collect(t.stream('hero', null, { messages: [human('live-2', 'Form')] }, sig)))).toEqual(['live-1', 'live-2']);
+
+    // A restart replays from the first run for a new session and its new ids.
+    t.reset();
+    expect(ids(await collect(t.stream('hero', null, { messages: [human('again', 'Clean up')] }, sig)))).toEqual(['again']);
   });
   it('never sleeps a negative gap when tMs goes backwards', async () => {
     const clock = fakeClock();

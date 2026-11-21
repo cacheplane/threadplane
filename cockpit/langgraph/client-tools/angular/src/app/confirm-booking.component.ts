@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { ChatApprovalCardComponent, type ChatApprovalAction, type ClientToolViewProps } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 import { injectRenderHost } from '@threadplane/render';
 import { CLIENT_TOOLS_AGENT_REF } from './agent-ref';
 import { confirmBookingSchema } from './schemas';
@@ -15,7 +15,7 @@ import { confirmBookingSchema } from './schemas';
  * every other approval: named actions, focus on the first one, the composer hint
  * while it waits, and the one-line "Approved: Booking" record once answered.
  *
- * Once the ask resolves, the adapter writes the emitted `{ confirmed }` back
+ * Once the ask resolves, the chat library writes the emitted `{ confirmed }` back
  * onto the local tool call, so this component re-renders with `confirmed` as a
  * prop. The request then clears and the panel gives way to the record.
  *

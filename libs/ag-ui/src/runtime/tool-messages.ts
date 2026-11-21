@@ -7,8 +7,8 @@ import {
   type ToolCallEndEvent,
   type ToolCallResultEvent,
 } from '@ag-ui/client';
-import { copyData } from '../lib/internal/copy-data.js';
-import type { Transcript } from './transcript.js';
+import { copyData } from './copy-data.js';
+import { namedApart, type Transcript } from './transcript.js';
 
 export type ToolMessageEvent =
   | ToolCallStartEvent
@@ -18,11 +18,17 @@ export type ToolMessageEvent =
 
 type Assistant = Extract<Transcript[number], { role: 'assistant' }>;
 type Call = NonNullable<Assistant['toolCalls']>[number];
+type ToolResult = Extract<Transcript[number], { role: 'tool' }>;
 
-function messageIndex(previous: Transcript, id: string): number {
+/**
+ * `result` looks for a tool result's own record: an activity record with the
+ * same identifier is a different record (see `namedApart`).
+ */
+function messageIndex(previous: Transcript, id: string, result = false): number {
   let found = -1;
   for (let index = 0; index < previous.length; index++) {
     if (previous[index].id !== id) continue;
+    if (result && namedApart(previous[index].role, 'tool')) continue;
     if (found !== -1) throw new TypeError('Duplicate target message ID');
     found = index;
   }
@@ -67,13 +73,16 @@ export function applyToolMessage(
   const selected = selectedCall(previous, toolCallId);
   if (type === EventType.TOOL_CALL_RESULT) {
     const { messageId, content } = event;
-    const index = messageIndex(previous, messageId);
-    const current = index === -1 ? undefined : previous[index];
-    if (
-      current &&
-      (current.role !== 'tool' || current.toolCallId !== toolCallId)
-    )
-      throw new TypeError('Tool result target is incompatible');
+    const index = messageIndex(previous, messageId, true);
+    const found = index === -1 ? undefined : previous[index];
+    // Assigned inside the role check, so the record is typed as a tool result
+    // without strict null checks too.
+    let current: ToolResult | undefined;
+    if (found) {
+      if (found.role !== 'tool' || found.toolCallId !== toolCallId)
+        throw new TypeError('Tool result target is incompatible');
+      current = found;
+    }
     if (current?.content === content && metadata === undefined) return previous;
     const subagentRunId = current ? undefined : event.subagentRunId;
     const record = current
@@ -123,9 +132,14 @@ export function applyToolMessage(
       const id =
         typeof parentMessageId === 'string' ? parentMessageId : toolCallId;
       ownerIndex = messageIndex(previous, id);
-      const current = ownerIndex === -1 ? undefined : previous[ownerIndex];
-      if (current && current.role !== 'assistant')
-        throw new TypeError('Tool call parent role is incompatible');
+      const found = ownerIndex === -1 ? undefined : previous[ownerIndex];
+      // Assigned inside the role check, as for a tool result above.
+      let current: Assistant | undefined;
+      if (found) {
+        if (found.role !== 'assistant')
+          throw new TypeError('Tool call parent role is incompatible');
+        current = found;
+      }
       const subagentRunId = current ? undefined : event.subagentRunId;
       owner = current ?? {
         id,

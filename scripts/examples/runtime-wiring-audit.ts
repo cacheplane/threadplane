@@ -1,5 +1,56 @@
 import * as ts from 'typescript';
 
+/**
+ * Syntax-tree audit of how a configurable cockpit Angular application wires
+ * its agent to the cockpit's runtime connection.
+ *
+ * The wiring it pins (LangGraph; AG-UI passes `url` in place of the three
+ * connection members, and the same context members):
+ *
+ *   provideAgent(() => {
+ *     const connection = injectCockpitRuntimeConnection();
+ *     if (connection.adapter !== 'langgraph') throw new Error('incompatible runtime');
+ *     return { createSession: (context) => createSession({
+ *       apiUrl: connection.apiUrl, assistantId: connection.assistantId,
+ *       clientOptions: connection.clientOptions,
+ *       threadId: context.threadId, onThreadId: context.onThreadId,
+ *       reportOperationFailure: context.reportOperationFailure,
+ *       developmentRuntime: context.developmentRuntime }) };
+ *   })
+ *
+ * What each issue kind catches:
+ *
+ * - `noncanonical-provider-wiring`: the provider, the connection injector or
+ *   the session factory imported from the wrong place or aliased; a provider
+ *   registered where Angular never runs it; a factory that does anything but
+ *   read the connection, check its adapter and return; a session from a
+ *   backend other than the one the application declares.
+ * - `direct-agent-provider-config`: a provider given a ready config, which
+ *   cannot have read the connection.
+ * - `session-connection-wiring`: a deployment URL, assistant or client options
+ *   that do not come from the connection (so the runtime switcher and the
+ *   developer's key are ignored), or an option that replaces the connection.
+ * - `session-context-wiring`: a session that does not take its thread from
+ *   the provider context, or does not report the thread it creates; the
+ *   context spread, copied or handed away.
+ * - `operation-reporter-wiring`: the host's failure reporter dropped, passed
+ *   under a name the session does not accept or under a deprecated alias
+ *   (`onOperationFailure` on a LangGraph session), or its token used anywhere but
+ *   the entrypoint, so a refused request never reaches the cockpit.
+ * - `development-runtime-wiring`: the context's development-install relay
+ *   dropped or passed under another name, so a development build of the
+ *   application reports nothing where it used to report a session start.
+ * - `session-outside-provider-factory`: a session or directory built anywhere
+ *   but its provider factory, where there is no provider context at all.
+ * - `thread-directory-wiring`: a thread list read from another deployment
+ *   than the agent's, without the agent's client options, or without the
+ *   host's failure reporter.
+ * - `direct-agent-construction`: a client, transport or agent built by hand.
+ * - `environment-config-outside-entrypoint`, `browser-state-read`,
+ *   `global-runtime-secret-read`, `imported-runtime-secret`,
+ *   `module-global-runtime-cache`, `runtime-secret-log`: a second source of
+ *   runtime configuration, or a place a connection value can leak to.
+ */
 export type CompatibleRuntimeAdapter = 'ag-ui' | 'langgraph';
 
 export type RuntimeWiringAuditKind =
@@ -11,6 +62,12 @@ export type RuntimeWiringAuditKind =
   | 'direct-agent-provider-config'
   | 'noncanonical-provider-wiring'
   | 'direct-agent-construction'
+  | 'session-outside-provider-factory'
+  | 'session-connection-wiring'
+  | 'session-context-wiring'
+  | 'operation-reporter-wiring'
+  | 'development-runtime-wiring'
+  | 'thread-directory-wiring'
   | 'runtime-secret-log';
 
 export interface RuntimeWiringAuditIssue {
@@ -19,13 +76,79 @@ export interface RuntimeWiringAuditIssue {
 }
 
 export interface CanonicalProviderCall {
+  /** The backend whose `createSession` the provider's factory calls. */
   adapter: CompatibleRuntimeAdapter;
   agentRef?: string;
   provideAgentBinding?: ExactImportBinding;
   agentRefBinding?: ExactImportBinding;
+  createSessionBinding?: ExactImportBinding;
+  /** Members of the agent config the provider factory returns. */
   properties: Readonly<Record<string, string>>;
+  /** Members of the options object handed to the backend's `createSession`. */
+  sessionProperties: Readonly<Record<string, string>>;
   owner?: ProviderRegistrationOwner;
 }
+
+export interface ThreadDirectoryProviderRecord {
+  provideBinding?: ExactImportBinding;
+  createDirectoryBinding?: ExactImportBinding;
+  /** Members of the options handed to `createLangGraphThreadDirectory`. */
+  directoryProperties: Readonly<Record<string, string>>;
+  /** Where the directory's client options come from. */
+  clientOptionsSource?: 'connection' | 'context';
+  /** True when every thread-directory rule held for this provider. */
+  canonical: boolean;
+  owner?: ProviderRegistrationOwner;
+}
+
+/**
+ * The option a backend's session takes the host's operation-failure reporter
+ * under. The provider context names it `reportOperationFailure` and so do
+ * both sessions; a reporter passed under any other name is silently dropped,
+ * except a deprecated alias, which is rejected for being deprecated. The
+ * audit is told the accepted names rather than
+ * assuming them: `capability-wiring.spec.ts` reads them from the session
+ * option interfaces, so a rename in a library needs no edit here.
+ */
+export type ReporterOptionNames = Readonly<
+  Record<CompatibleRuntimeAdapter, readonly string[]>
+>;
+
+/** The names in the libraries (2026-11-20): one name for both sessions. */
+export const defaultReporterOptionNames: ReporterOptionNames = {
+  langgraph: ['reportOperationFailure'],
+  'ag-ui': ['reportOperationFailure'],
+};
+
+/**
+ * Names a session still reads but marks `@deprecated`. A reporter passed
+ * under one is delivered, so it is not "dropped"; it is rejected so that no
+ * application depends on a name the library is removing.
+ */
+export const defaultDeprecatedReporterOptionNames: ReporterOptionNames = {
+  langgraph: ['onOperationFailure'],
+  'ag-ui': [],
+};
+
+/** The option the thread directory takes the reporter under (2026-11-20). */
+export const defaultDirectoryReporterOptionNames: readonly string[] = [
+  'reportOperationFailure',
+];
+
+export interface RuntimeWiringAuditOptions {
+  readonly reporterOptionNames?: ReporterOptionNames;
+  readonly deprecatedReporterOptionNames?: ReporterOptionNames;
+  /**
+   * The option `createLangGraphThreadDirectory` takes the reporter under,
+   * which the audit requires. An empty list says the directory declares none:
+   * its refused requests then go unreported and no wiring can change that.
+   */
+  readonly directoryReporterOptionNames?: readonly string[];
+}
+
+/** The one token every cockpit entrypoint hands the harness. */
+export const operationReporterToken = 'ɵAGENT_OPERATION_FAILURE_REPORTER';
+export const agentProviderModule = '@threadplane/angular';
 
 export type ProviderRegistrationOwner =
   | { readonly kind: 'appConfig' }
@@ -83,6 +206,7 @@ export interface RuntimeTargetSourceInspection {
   providerCalls: CanonicalProviderCall[];
   bootstrapCalls: BootstrapCallRecord[];
   angularProviders: AngularProviderRecord[];
+  threadDirectoryProviders: ThreadDirectoryProviderRecord[];
 }
 
 const browserStateNames = new Set([
@@ -115,6 +239,71 @@ const unconditionalSecretMemberNames = new Set([
 ]);
 const agentModule =
   /^(?:@threadplane\/(?:ag-ui|langgraph)|@ag-ui\/|@langchain\/langgraph)/;
+/** What the provider context offers a session factory. */
+export const providerContextKeys = new Set([
+  'threadId',
+  'onThreadId',
+  'clientOptions',
+  'reportOperationFailure',
+  'developmentRuntime',
+]);
+const contextReporterKey = 'reportOperationFailure';
+/**
+ * The context member that relays a session to the development-install
+ * collector, and the option both backends' sessions take it under. A factory
+ * that picks fields from the context drops it unless it names it.
+ */
+export const contextDevelopmentKey = 'developmentRuntime';
+/**
+ * What each backend's session must be given, and from where. `bypass` names
+ * the options that replace the connection outright: a session handed one
+ * ignores the URL (and, for LangGraph, the client options and the reporter).
+ */
+const sessionContract: Readonly<
+  Record<
+    CompatibleRuntimeAdapter,
+    {
+      readonly module: string;
+      readonly connection: readonly string[];
+      readonly context: readonly string[];
+      readonly bypass: readonly string[];
+    }
+  >
+> = {
+  langgraph: {
+    module: '@threadplane/langgraph',
+    connection: ['apiUrl', 'assistantId', 'clientOptions'],
+    context: ['threadId', 'onThreadId'],
+    bypass: ['transport'],
+  },
+  'ag-ui': {
+    module: '@threadplane/ag-ui',
+    connection: ['url'],
+    // The AG-UI session names a new conversation's thread itself and reports
+    // it through `onThreadId`, as the LangGraph session reports the thread it
+    // creates. Without it `agent.threadId()` stays null after the first run.
+    context: ['threadId', 'onThreadId'],
+    bypass: ['agent', 'fetch'],
+  },
+};
+/** Names that may not be aliased, destructured or called anywhere else. */
+const protectedWiringNames = [
+  'provideAgent',
+  'provideThreadDirectory',
+  'createSession',
+  'createLangGraphThreadDirectory',
+];
+const sessionFactoryNames = new Set([
+  'createSession',
+  'createLangGraphThreadDirectory',
+]);
+const agentConfigKeys = new Set([
+  'createSession',
+  'threadId',
+  'onThreadId',
+  'optionalCommands',
+]);
+const directoryConfigKeys = new Set(['createDirectory', 'getThread']);
 
 function identifierTokens(value: string): string[] {
   return value
@@ -554,10 +743,18 @@ function directReturnedExpression(
   return returns.length === 1 ? returns[0].expression : undefined;
 }
 
+/**
+ * `sanctionedObjects` are the object literals that may read the connection as
+ * an explicit `name: connection.name` member: the options handed to the
+ * backend's session or directory factory, or the value an Angular provider's
+ * factory returns. A read anywhere else is treated as a write, because the
+ * audit cannot follow where the value goes.
+ */
 function connectionFactoryMetadata(
   factory: ts.ArrowFunction | ts.FunctionExpression,
   sourceFile: ts.SourceFile,
-  expectedAdapter: CompatibleRuntimeAdapter
+  expectedAdapter: CompatibleRuntimeAdapter,
+  sanctionedObjects?: ReadonlySet<ts.Node>
 ): Pick<
   AngularProviderRecord,
   | 'connectionDeclaration'
@@ -624,8 +821,15 @@ function connectionFactoryMetadata(
     ) {
       connectionWrites = true;
     }
-    if (ts.isReturnStatement(node)) returnCount++;
   });
+  // Only the factory's own returns: a nested function returns for itself.
+  const countOwnReturns = (node: ts.Node): void => {
+    if (ts.isReturnStatement(node)) returnCount++;
+    ts.forEachChild(node, (child) => {
+      if (!functionParameters(child)) countOwnReturns(child);
+    });
+  };
+  countOwnReturns(factory.body);
   const returned = directReturnedExpression(factory);
   const returnedProperties: Record<string, string> = {};
   if (returned && ts.isObjectLiteralExpression(returned)) {
@@ -709,6 +913,9 @@ function connectionFactoryMetadata(
       } else if (
         ts.isPropertyAssignment(access.parent) &&
         access.parent.initializer === access &&
+        (sanctionedObjects
+          ? sanctionedObjects.has(access.parent.parent)
+          : access.parent.parent === returnStatement.expression) &&
         ts.isIdentifier(access.parent.name) &&
         access.parent.name.text === access.name.text &&
         (access.name.text === 'url' ||
@@ -875,13 +1082,18 @@ const memoryFactoryGrammar = `const factory = () => {
   const connection = injectCockpitRuntimeConnection();
   if (connection.adapter !== 'langgraph') { throw new Error('incompatible runtime'); }
   const scope = inject(MemoryScope);
-  const threadId = signal<string | null>(null);
-  const onThreadId = (id: string) => threadId.set(id);
   const clientOptions = { ...connection.clientOptions, maxRetries: 0 };
-  const transport = new MemoryTransport(connection.apiUrl, scope, onThreadId,
-    clientOptions, inject(ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER, { optional: true }) ?? undefined);
-  return { apiUrl: connection.apiUrl, assistantId: connection.assistantId,
-    clientOptions, threadId, onThreadId, transport };
+  return {
+    createSession: (context) =>
+      createSession({
+        assistantId: connection.assistantId,
+        threadId: context.threadId,
+        onThreadId: context.onThreadId,
+        developmentRuntime: context.developmentRuntime,
+        transport: new MemoryTransport(connection.apiUrl, scope, undefined,
+          clientOptions, context.reportOperationFailure),
+      }),
+  };
 };`;
 
 function matchesMemoryFactory(factory: ts.Node): boolean {
@@ -1061,12 +1273,299 @@ function memoryScopeStorageAccess(
     : undefined;
 }
 
+/** Looks through parentheses, casts and a trailing `?? undefined`. */
+function unwrapValue(expression: ts.Expression): ts.Expression {
+  let current = expression;
+  for (;;) {
+    if (
+      ts.isParenthesizedExpression(current) ||
+      ts.isAsExpression(current) ||
+      ts.isSatisfiesExpression(current) ||
+      ts.isNonNullExpression(current)
+    ) {
+      current = current.expression;
+    } else if (
+      ts.isBinaryExpression(current) &&
+      current.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken &&
+      ts.isIdentifier(current.right) &&
+      current.right.text === 'undefined'
+    ) {
+      current = current.left;
+    } else {
+      return current;
+    }
+  }
+}
+
+interface SessionFactoryShape {
+  readonly arrow: ts.ArrowFunction;
+  readonly call: ts.CallExpression;
+  readonly callee: ts.Identifier;
+  readonly options: ts.ObjectLiteralExpression;
+  /** `(context) => ...`: the parameter's name. */
+  readonly contextName?: string;
+  /** `({ threadId, onThreadId: report }) => ...`: local name to context key. */
+  readonly contextBindings?: ReadonlyMap<string, string>;
+}
+
+/**
+ * Matches `(context) => factory({ ... })`, the only form in which a session
+ * or directory factory receives the provider context. Returns a reason when
+ * the member is something else.
+ */
+function sessionFactoryShape(
+  initializer: ts.Expression,
+  factoryName: string
+): SessionFactoryShape | string {
+  if (!ts.isArrowFunction(initializer)) {
+    return `must be an inline arrow function that calls ${factoryName}`;
+  }
+  if (initializer.parameters.length !== 1) {
+    return 'must take exactly the provider context parameter';
+  }
+  const parameter = initializer.parameters[0];
+  if (parameter.initializer || parameter.dotDotDotToken) {
+    return 'context parameter may not have a default or be a rest parameter';
+  }
+  let contextName: string | undefined;
+  let contextBindings: Map<string, string> | undefined;
+  if (ts.isIdentifier(parameter.name)) {
+    contextName = parameter.name.text;
+  } else if (ts.isObjectBindingPattern(parameter.name)) {
+    contextBindings = new Map();
+    for (const element of parameter.name.elements) {
+      const key = element.propertyName ?? element.name;
+      if (
+        element.dotDotDotToken ||
+        element.initializer ||
+        !ts.isIdentifier(element.name) ||
+        !ts.isIdentifier(key)
+      ) {
+        return 'context parameter may only destructure plain members';
+      }
+      contextBindings.set(element.name.text, key.text);
+    }
+  } else {
+    return 'context parameter must be an identifier or a plain destructuring';
+  }
+  let body: ts.Expression | undefined;
+  if (ts.isBlock(initializer.body)) {
+    const statements = initializer.body.statements;
+    if (statements.length === 1 && ts.isReturnStatement(statements[0])) {
+      body = statements[0].expression;
+    }
+  } else {
+    body = initializer.body;
+  }
+  while (body && ts.isParenthesizedExpression(body)) body = body.expression;
+  if (
+    !body ||
+    !ts.isCallExpression(body) ||
+    !ts.isIdentifier(body.expression) ||
+    body.expression.text !== factoryName
+  ) {
+    return `must return a direct ${factoryName}(...) call and nothing else`;
+  }
+  if (
+    body.arguments.length !== 1 ||
+    !ts.isObjectLiteralExpression(body.arguments[0])
+  ) {
+    return `${factoryName} must be given one inline options object`;
+  }
+  return {
+    arrow: initializer,
+    call: body,
+    callee: body.expression,
+    options: body.arguments[0],
+    ...(contextName ? { contextName } : {}),
+    ...(contextBindings ? { contextBindings } : {}),
+  };
+}
+
+/** The provider context key an option value reads, if it reads exactly one. */
+function contextKeyOf(
+  shape: SessionFactoryShape,
+  value: ts.Expression
+): string | undefined {
+  const inner = unwrapValue(value);
+  if (
+    shape.contextName &&
+    ts.isPropertyAccessExpression(inner) &&
+    ts.isIdentifier(inner.expression) &&
+    inner.expression.text === shape.contextName
+  ) {
+    return inner.name.text;
+  }
+  if (shape.contextBindings && ts.isIdentifier(inner)) {
+    return shape.contextBindings.get(inner.text);
+  }
+  return undefined;
+}
+
+interface SessionOptionProblem {
+  readonly kind: RuntimeWiringAuditKind;
+  readonly detail: string;
+}
+
+interface SessionOptionMembers {
+  /** Option name to its value; a shorthand member is its own value. */
+  readonly values: ReadonlyMap<string, ts.Expression>;
+  readonly text: Readonly<Record<string, string>>;
+  readonly problems: readonly SessionOptionProblem[];
+}
+
+/**
+ * Reads an options object member by member. Spreads, computed names, methods
+ * and duplicates are problems: each can replace a value the audit checked.
+ */
+function sessionOptionMembers(
+  shape: SessionFactoryShape,
+  sourceFile: ts.SourceFile,
+  factoryName: string
+): SessionOptionMembers {
+  const values = new Map<string, ts.Expression>();
+  const text: Record<string, string> = {};
+  const problems: SessionOptionProblem[] = [];
+  for (const property of shape.options.properties) {
+    if (ts.isSpreadAssignment(property)) {
+      const spread = unwrapValue(property.expression);
+      if (
+        shape.contextName &&
+        ts.isIdentifier(spread) &&
+        spread.text === shape.contextName
+      ) {
+        problems.push({
+          kind: 'session-context-wiring',
+          detail: `${factoryName} options may not spread the provider context: the factory takes its own option names, and members it does not accept are dropped without an error`,
+        });
+      } else {
+        problems.push({
+          kind: 'session-connection-wiring',
+          detail: `${factoryName} options may not contain spreads`,
+        });
+      }
+      continue;
+    }
+    let name: string | undefined;
+    let value: ts.Expression | undefined;
+    if (ts.isPropertyAssignment(property) && ts.isIdentifier(property.name)) {
+      name = property.name.text;
+      value = property.initializer;
+    } else if (ts.isShorthandPropertyAssignment(property)) {
+      name = property.name.text;
+      value = property.name;
+    }
+    if (!name || !value) {
+      problems.push({
+        kind: 'session-connection-wiring',
+        detail: `${factoryName} options forbid computed, method, and accessor members`,
+      });
+      continue;
+    }
+    if (values.has(name)) {
+      problems.push({
+        kind: 'session-connection-wiring',
+        detail: `${factoryName} option ${name} is given more than once`,
+      });
+      continue;
+    }
+    values.set(name, value);
+    text[name] = value.getText(sourceFile);
+  }
+  return { values, text, problems };
+}
+
+/**
+ * Every read of the provider context must be the whole value of one option.
+ * Anything else (the context handed to a helper, copied, or read inside an
+ * expression) leaves the audit unable to say which option it reached.
+ */
+function strayContextReads(
+  shape: SessionFactoryShape,
+  sourceFile: ts.SourceFile
+): string[] {
+  const names = shape.contextName
+    ? new Set([shape.contextName])
+    : new Set(shape.contextBindings?.keys() ?? []);
+  const stray: string[] = [];
+  walk(shape.arrow.body, (node) => {
+    if (!ts.isIdentifier(node) || !names.has(node.text)) return;
+    if (
+      ts.isShorthandPropertyAssignment(node.parent) &&
+      node.parent.parent === shape.options
+    ) {
+      if (shape.contextName) stray.push(node.text);
+      return;
+    }
+    if (isDeclarationIdentifier(node)) return;
+    let value: ts.Expression = node;
+    if (shape.contextName) {
+      if (
+        !ts.isPropertyAccessExpression(node.parent) ||
+        node.parent.expression !== node
+      ) {
+        // The spread is reported with its own, more useful message.
+        if (
+          !ts.isSpreadAssignment(node.parent) ||
+          node.parent.parent !== shape.options
+        ) {
+          stray.push(node.text);
+        }
+        return;
+      }
+      value = node.parent;
+    }
+    let held: ts.Node = value;
+    let holder: ts.Node = value.parent;
+    while (
+      ts.isParenthesizedExpression(holder) ||
+      ts.isAsExpression(holder) ||
+      ts.isSatisfiesExpression(holder) ||
+      ts.isNonNullExpression(holder) ||
+      (ts.isBinaryExpression(holder) &&
+        holder.left === held &&
+        holder.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken &&
+        ts.isIdentifier(holder.right) &&
+        holder.right.text === 'undefined')
+    ) {
+      held = holder;
+      holder = holder.parent;
+    }
+    if (
+      !ts.isPropertyAssignment(holder) ||
+      holder.initializer !== held ||
+      holder.parent !== shape.options
+    ) {
+      stray.push(value.getText(sourceFile));
+    }
+  });
+  return stray;
+}
+
 export function inspectRuntimeTargetSource(
   source: string,
   fileName: string,
   expectedAdapter?: CompatibleRuntimeAdapter,
-  project?: string
+  project?: string,
+  options: RuntimeWiringAuditOptions = {}
 ): RuntimeTargetSourceInspection {
+  const reporterOptionNames =
+    options.reporterOptionNames ?? defaultReporterOptionNames;
+  // Every name any backend takes the reporter under, plus the context's own.
+  const directoryReporterOptionNames =
+    options.directoryReporterOptionNames ??
+    defaultDirectoryReporterOptionNames;
+  const deprecatedReporterOptionNames =
+    options.deprecatedReporterOptionNames ??
+    (options.reporterOptionNames
+      ? { langgraph: [], 'ag-ui': [] }
+      : defaultDeprecatedReporterOptionNames);
+  const reporterShapedNames = new Set([
+    contextReporterKey,
+    ...Object.values(reporterOptionNames).flat(),
+    ...Object.values(deprecatedReporterOptionNames).flat(),
+    ...directoryReporterOptionNames,
+  ]);
   const sourceFile = ts.createSourceFile(
     fileName,
     source,
@@ -1080,7 +1579,12 @@ export function inspectRuntimeTargetSource(
   const providerCalls: CanonicalProviderCall[] = [];
   const bootstrapCalls: BootstrapCallRecord[] = [];
   const angularProviders: AngularProviderRecord[] = [];
-  const canonicalProviderAdapters = new Set<CompatibleRuntimeAdapter>();
+  const threadDirectoryProviders: ThreadDirectoryProviderRecord[] = [];
+  // Calls and references the wiring rules have checked and accepted. Any
+  // other use of the same imported name is reported after the walk.
+  const sanctionedFactoryCalls = new Set<ts.CallExpression>();
+  const sanctionedTokenReferences = new Set<ts.Identifier>();
+  let canonicalClientOptionsProvider = false;
   const importBindingsByLocalName = new Map<
     string,
     Array<{
@@ -1171,16 +1675,31 @@ export function inspectRuntimeTargetSource(
         importedName,
         !specifier.propertyName && localName === importedName
       );
-      const adapter = providerAdapter(moduleName);
-      if (adapter && importedName === 'provideAgent') {
-        if (specifier.propertyName || localName !== 'provideAgent') {
+      if (
+        importedName === 'provideAgent' ||
+        importedName === 'provideThreadDirectory'
+      ) {
+        if (moduleName !== agentProviderModule) {
           report(
             'noncanonical-provider-wiring',
-            `provideAgent must use its direct named import from ${moduleName}`
+            `${importedName} must be imported from ${agentProviderModule}, not ${moduleName}`
           );
-        } else {
-          canonicalProviderAdapters.add(adapter);
+        } else if (specifier.propertyName || localName !== importedName) {
+          report(
+            'noncanonical-provider-wiring',
+            `${importedName} must use its direct named import from ${moduleName}`
+          );
         }
+      }
+      if (
+        sessionFactoryNames.has(importedName) &&
+        providerAdapter(moduleName) &&
+        (specifier.propertyName || localName !== importedName)
+      ) {
+        report(
+          'noncanonical-provider-wiring',
+          `${importedName} must use its direct named import from ${moduleName}`
+        );
       }
       if (
         importedName === 'injectCockpitRuntimeConnection' &&
@@ -1223,7 +1742,11 @@ export function inspectRuntimeTargetSource(
         }
       }
       if (agentModule.test(moduleName)) {
-        if (/^(?:Agent|Client|HttpAgent|LangGraphClient)$/.test(importedName)) {
+        if (
+          /^(?:Agent|Client|HttpAgent|LangGraphClient|FetchStreamTransport)$/.test(
+            importedName
+          )
+        ) {
           directConstructorNames.add(localName);
         }
         if (
@@ -1233,6 +1756,14 @@ export function inspectRuntimeTargetSource(
         ) {
           directFactoryNames.add(localName);
         }
+      }
+      // The agent and the directory view are built by their providers. Built
+      // by hand they sit outside the registration the audit pins.
+      if (
+        moduleName === agentProviderModule &&
+        /^(?:createAgent|createThreadDirectoryView)$/.test(importedName)
+      ) {
+        directFactoryNames.add(localName);
       }
       if (
         !/(?:^|\/|\.)environments?(?:\/|\.|$)/i.test(moduleName) &&
@@ -1476,7 +2007,8 @@ export function inspectRuntimeTargetSource(
       if (
         ts.isCallExpression(element) &&
         ts.isIdentifier(element.expression) &&
-        element.expression.text === 'provideAgent'
+        (element.expression.text === 'provideAgent' ||
+          element.expression.text === 'provideThreadDirectory')
       ) {
         providerRegistrationOwners.set(element, owner);
       }
@@ -1621,25 +2153,24 @@ export function inspectRuntimeTargetSource(
   walk(sourceFile, (node) => {
     if (ts.isVariableDeclaration(node)) {
       const initializer = node.initializer;
-      const declaresProvider =
-        bindingNameContains(node.name, 'provideAgent') ||
-        bindingPropertyContains(node.name, 'provideAgent');
-      const aliasesProvider =
-        !!initializer &&
-        ((ts.isIdentifier(initializer) &&
-          initializer.text === 'provideAgent') ||
-          (ts.isPropertyAccessExpression(initializer) &&
-            initializer.name.text === 'provideAgent') ||
-          (ts.isElementAccessExpression(initializer) &&
-            !!initializer.argumentExpression &&
-            staticPropertyName(initializer.argumentExpression) ===
-              'provideAgent') ||
-          (ts.isIdentifier(node.name) && node.name.text === 'provideAgent'));
-      if (declaresProvider || aliasesProvider) {
-        report(
-          'noncanonical-provider-wiring',
-          'provideAgent may not be destructured, reversed, or locally aliased'
-        );
+      for (const name of protectedWiringNames) {
+        const declares =
+          bindingNameContains(node.name, name) ||
+          bindingPropertyContains(node.name, name);
+        const aliases =
+          !!initializer &&
+          ((ts.isIdentifier(initializer) && initializer.text === name) ||
+            (ts.isPropertyAccessExpression(initializer) &&
+              initializer.name.text === name) ||
+            (ts.isElementAccessExpression(initializer) &&
+              !!initializer.argumentExpression &&
+              staticPropertyName(initializer.argumentExpression) === name));
+        if (declares || aliases) {
+          report(
+            'noncanonical-provider-wiring',
+            `${name} may not be destructured, reversed, or locally aliased`
+          );
+        }
       }
     }
 
@@ -1669,7 +2200,9 @@ export function inspectRuntimeTargetSource(
     if (
       ts.isPropertyAccessExpression(node.expression) &&
       agentNamespaces.has(node.expression.expression.getText(sourceFile)) &&
-      /(?:Agent|Client)/.test(node.expression.name.text)
+      /(?:Agent|Client|Session|Directory|Transport)/.test(
+        node.expression.name.text
+      )
     ) {
       report(
         'direct-agent-construction',
@@ -1678,20 +2211,88 @@ export function inspectRuntimeTargetSource(
     }
     if (
       ts.isPropertyAccessExpression(node.expression) &&
-      node.expression.name.text === 'provideAgent'
+      (node.expression.name.text === 'provideAgent' ||
+        node.expression.name.text === 'provideThreadDirectory')
     ) {
       report(
         'noncanonical-provider-wiring',
-        'provideAgent must be called as its direct imported identifier'
+        `${node.expression.name.text} must be called as its direct imported identifier`
       );
       return;
     }
-    if (
-      !ts.isIdentifier(node.expression) ||
-      node.expression.text !== 'provideAgent'
-    ) {
-      return;
+    if (!ts.isIdentifier(node.expression)) return;
+    if (node.expression.text === 'provideThreadDirectory') {
+      auditThreadDirectoryProvider(node);
+    } else if (node.expression.text === 'provideAgent') {
+      auditAgentProvider(node);
     }
+  });
+
+  /** The connection injector every provider factory must read. */
+  function requireConnectionInjector(
+    factory: ts.ArrowFunction | ts.FunctionExpression
+  ): void {
+    if (!canonicalConnectionImport) {
+      report(
+        'noncanonical-provider-wiring',
+        'provider source requires direct injectCockpitRuntimeConnection import'
+      );
+    }
+    if (
+      !hasExactImportBinding(
+        exactFactoryBinding(factory, 'injectCockpitRuntimeConnection'),
+        '@threadplane/cockpit-telemetry',
+        'injectCockpitRuntimeConnection'
+      )
+    ) {
+      report(
+        'noncanonical-provider-wiring',
+        'provider factory requires the stable telemetry connection injector import'
+      );
+    }
+  }
+
+  /**
+   * Reads the config object a provider factory returns. Only plain, unique,
+   * known members are allowed, so nothing can replace the audited one.
+   */
+  function configMembers(
+    returned: ts.ObjectLiteralExpression,
+    allowed: ReadonlySet<string>,
+    label: string
+  ): Map<string, ts.Expression> {
+    const members = new Map<string, ts.Expression>();
+    for (const property of returned.properties) {
+      if (
+        !ts.isPropertyAssignment(property) ||
+        !ts.isIdentifier(property.name)
+      ) {
+        report(
+          'noncanonical-provider-wiring',
+          `${label} forbids spread, computed, method, and shorthand members`
+        );
+        continue;
+      }
+      const name = property.name.text;
+      if (members.has(name)) {
+        report(
+          'noncanonical-provider-wiring',
+          `${label} member ${name} is given more than once`
+        );
+        continue;
+      }
+      if (!allowed.has(name)) {
+        report(
+          'noncanonical-provider-wiring',
+          `${label} member ${name} is not part of the audited wiring`
+        );
+      }
+      members.set(name, property.initializer);
+    }
+    return members;
+  }
+
+  function auditAgentProvider(node: ts.CallExpression): void {
     const owner = providerRegistrationOwners.get(node);
     if (!owner) {
       report(
@@ -1699,36 +2300,17 @@ export function inspectRuntimeTargetSource(
         'provideAgent must be a direct element of executable appConfig.providers or @Component.providers'
       );
     }
-    if (canonicalProviderAdapters.size !== 1) {
-      report(
-        'noncanonical-provider-wiring',
-        'provideAgent call requires exactly one direct named adapter import'
-      );
-    }
-    const adapter =
-      canonicalProviderAdapters.size === 1
-        ? [...canonicalProviderAdapters][0]
-        : expectedAdapter;
-    if (!adapter) return;
-    const provideAgentBinding = exactBinding(node.expression);
-    const expectedProviderModule =
-      adapter === 'ag-ui' ? '@threadplane/ag-ui' : '@threadplane/langgraph';
+    const provideAgentBinding = exactBinding(node.expression as ts.Identifier);
     if (
       !hasExactImportBinding(
         provideAgentBinding,
-        expectedProviderModule,
+        agentProviderModule,
         'provideAgent'
       )
     ) {
       report(
         'noncanonical-provider-wiring',
-        `provideAgent requires its stable import from ${expectedProviderModule}`
-      );
-    }
-    if (expectedAdapter && adapter !== expectedAdapter) {
-      report(
-        'noncanonical-provider-wiring',
-        `provideAgent adapter ${adapter} does not match ${expectedAdapter}`
+        `provideAgent requires its stable import from ${agentProviderModule}`
       );
     }
     const factory = node.arguments.at(-1);
@@ -1767,44 +2349,49 @@ export function inspectRuntimeTargetSource(
         `typed provider ref ${agentRefArgument.text} requires its stable ./agent-ref import`
       );
     }
-    if (!canonicalConnectionImport) {
-      report(
-        'noncanonical-provider-wiring',
-        'provider source requires direct injectCockpitRuntimeConnection import'
-      );
+    requireConnectionInjector(factory);
+
+    const returned = directReturnedObject(factory);
+    const members = returned
+      ? configMembers(returned, agentConfigKeys, 'agent config')
+      : new Map<string, ts.Expression>();
+    const properties: Record<string, string> = {};
+    for (const [name, value] of members) {
+      properties[name] = value.getText(sourceFile);
     }
-    const connectionInjectorBinding = exactFactoryBinding(
-      factory,
-      'injectCockpitRuntimeConnection'
-    );
-    if (
-      !hasExactImportBinding(
-        connectionInjectorBinding,
-        '@threadplane/cockpit-telemetry',
-        'injectCockpitRuntimeConnection'
-      )
-    ) {
-      report(
-        'noncanonical-provider-wiring',
-        'provider factory requires the stable telemetry connection injector import'
-      );
-    }
+    const sessionMember = members.get('createSession');
+    const shapeOrReason = sessionMember
+      ? sessionFactoryShape(sessionMember, 'createSession')
+      : undefined;
+    const shape =
+      shapeOrReason && typeof shapeOrReason !== 'string'
+        ? shapeOrReason
+        : undefined;
+    const createSessionBinding = shape ? exactBinding(shape.callee) : undefined;
+    const importedAdapter =
+      createSessionBinding?.canonical &&
+      createSessionBinding.importedName === 'createSession' &&
+      createSessionBinding.moduleName
+        ? providerAdapter(createSessionBinding.moduleName)
+        : undefined;
+    const adapter = importedAdapter ?? expectedAdapter;
+
     const connectionMetadata = connectionFactoryMetadata(
       factory,
       sourceFile,
-      adapter
+      expectedAdapter ?? adapter ?? 'langgraph',
+      new Set<ts.Node>(shape ? [shape.options] : [])
     );
     const memoryFactory =
       memoryOwner &&
       fileName === 'src/app/app.config.ts' &&
-      adapter === 'langgraph' &&
+      !!shape &&
+      importedAdapter === 'langgraph' &&
       matchesMemoryFactory(factory) &&
       [
         ['inject', '@angular/core'],
-        ['signal', '@angular/core'],
         ['MemoryScope', './memory-scope'],
         ['MemoryTransport', './memory-transport'],
-        ['ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER', '@threadplane/langgraph'],
       ].every(([name, module]) => {
         const references: ts.Identifier[] = [];
         walk(factory.body, (child) => {
@@ -1824,7 +2411,6 @@ export function inspectRuntimeTargetSource(
         'provider factory must contain only the ordered connection declaration, adapter guard, and sole return'
       );
     }
-    const returned = directReturnedObject(factory);
     if (!returned) {
       report(
         'noncanonical-provider-wiring',
@@ -1832,39 +2418,42 @@ export function inspectRuntimeTargetSource(
       );
       return;
     }
-    const properties: Record<string, string> = {};
-    for (const property of returned.properties) {
-      if (memoryFactory && ts.isShorthandPropertyAssignment(property)) {
-        properties[property.name.text] = property.name.text;
-        continue;
-      }
-      if (
-        !ts.isPropertyAssignment(property) ||
-        !ts.isIdentifier(property.name)
-      ) {
-        report(
-          'noncanonical-provider-wiring',
-          'provider object forbids spread, computed, method, and shorthand members'
-        );
-        continue;
-      }
-      properties[property.name.text] = property.initializer.getText(sourceFile);
+    if (!sessionMember) {
+      report(
+        'noncanonical-provider-wiring',
+        'agent config requires an explicit createSession member'
+      );
+    } else if (typeof shapeOrReason === 'string') {
+      report(
+        'noncanonical-provider-wiring',
+        `agent config createSession ${shapeOrReason}`
+      );
     }
-    const required =
-      adapter === 'ag-ui'
-        ? ['url']
-        : ['apiUrl', 'assistantId', 'clientOptions'];
-    for (const property of required) {
-      if (
-        properties[property] !==
-        (memoryFactory && property === 'clientOptions'
-          ? 'clientOptions'
-          : `connection.${property}`)
-      ) {
-        report(
-          'noncanonical-provider-wiring',
-          `${property} must be an explicit ${property}: connection.${property} assignment`
-        );
+    if (shape && !importedAdapter) {
+      report(
+        'noncanonical-provider-wiring',
+        `createSession requires its stable direct import from ${
+          expectedAdapter
+            ? sessionContract[expectedAdapter].module
+            : '@threadplane/langgraph or @threadplane/ag-ui'
+        }`
+      );
+    }
+    if (expectedAdapter && importedAdapter && importedAdapter !== expectedAdapter) {
+      report(
+        'noncanonical-provider-wiring',
+        `session adapter ${importedAdapter} does not match ${expectedAdapter}`
+      );
+    }
+    if (!adapter) return;
+
+    let sessionProperties: Readonly<Record<string, string>> = {};
+    if (shape) {
+      if (importedAdapter) sanctionedFactoryCalls.add(shape.call);
+      const options = sessionOptionMembers(shape, sourceFile, 'createSession');
+      sessionProperties = options.text;
+      if (!memoryFactory) {
+        auditSessionOptions(shape, options, adapter);
       }
     }
     providerCalls.push({
@@ -1876,10 +2465,318 @@ export function inspectRuntimeTargetSource(
             agentRefBinding: exactBinding(agentRefArgument),
           }
         : {}),
+      ...(createSessionBinding ? { createSessionBinding } : {}),
       properties,
+      sessionProperties,
       ...(owner ? { owner } : {}),
     });
-  });
+  }
+
+  /**
+   * The values a session must be given: the connection's, so the runtime
+   * switcher decides where it talks; the context's thread members, so it
+   * follows thread switches; and the context's reporter under a name this
+   * backend's session accepts, so a refused request reaches the host.
+   */
+  function auditSessionOptions(
+    shape: SessionFactoryShape,
+    options: SessionOptionMembers,
+    adapter: CompatibleRuntimeAdapter
+  ): void {
+    const contract = sessionContract[adapter];
+    for (const problem of options.problems) {
+      report(problem.kind, problem.detail);
+    }
+    for (const stray of strayContextReads(shape, sourceFile)) {
+      report(
+        'session-context-wiring',
+        `the provider context may only be read as the whole value of a createSession option; found ${stray}`
+      );
+    }
+    for (const name of contract.connection) {
+      if (options.text[name] !== `connection.${name}`) {
+        report(
+          'session-connection-wiring',
+          `${name} must be an explicit ${name}: connection.${name} assignment`
+        );
+      }
+    }
+    for (const name of contract.bypass) {
+      if (options.values.has(name)) {
+        report(
+          'session-connection-wiring',
+          `createSession option ${name} replaces the cockpit runtime connection`
+        );
+      }
+    }
+    for (const name of contract.context) {
+      const value = options.values.get(name);
+      if (!value || contextKeyOf(shape, value) !== name) {
+        report(
+          'session-context-wiring',
+          `${name} must be the provider context's ${name}: ${
+            name === 'onThreadId'
+              ? 'a session that does not report the thread it names or creates leaves the agent without a thread id'
+              : "a session that ignores it does not follow the agent's thread"
+          }`
+        );
+      }
+    }
+    const accepted = reporterOptionNames[adapter];
+    // A name declared both ways counts as current: the caller's lists win.
+    const deprecated = deprecatedReporterOptionNames[adapter].filter(
+      (name) => !accepted.includes(name)
+    );
+    let reporterPassed = false;
+    for (const [name, value] of options.values) {
+      const key = contextKeyOf(shape, value);
+      if (key && !providerContextKeys.has(key)) {
+        report(
+          'session-context-wiring',
+          `the provider context has no member ${key}`
+        );
+      }
+      if (accepted.includes(name)) {
+        reporterPassed = true;
+        if (key !== contextReporterKey) {
+          report(
+            'operation-reporter-wiring',
+            `${name} must be the provider context's ${contextReporterKey}`
+          );
+        }
+      } else if (deprecated.includes(name)) {
+        // Delivered today, so the reporter counts as passed; the name does not.
+        reporterPassed = true;
+        report(
+          'operation-reporter-wiring',
+          `the operation reporter is passed as ${name}, a deprecated alias of the ${adapter} session; pass it as ${accepted.join(
+            ' or '
+          )}`
+        );
+      } else if (
+        reporterShapedNames.has(name) ||
+        /OperationFailure$/.test(name) ||
+        key === contextReporterKey
+      ) {
+        report(
+          'operation-reporter-wiring',
+          `the operation reporter is passed as ${name}, which the ${adapter} session does not accept (it takes ${accepted.join(
+            ' or '
+          )}); the reporter is dropped without an error`
+        );
+      }
+    }
+    if (!reporterPassed) {
+      report(
+        'operation-reporter-wiring',
+        `createSession must be given the provider context's ${contextReporterKey} as ${accepted.join(
+          ' or '
+        )}`
+      );
+    }
+    auditDevelopmentRuntimeOption(shape, options, adapter);
+  }
+
+  /**
+   * The context's development-install relay must reach the session under the
+   * one name both sessions take it by. Without it a development build reports
+   * nothing, and no error says so. (The memory application's own
+   * factory is matched whole against a grammar that includes the relay.)
+   */
+  function auditDevelopmentRuntimeOption(
+    shape: SessionFactoryShape,
+    options: SessionOptionMembers,
+    adapter: CompatibleRuntimeAdapter
+  ): void {
+    let relayPassed = false;
+    for (const [name, value] of options.values) {
+      const key = contextKeyOf(shape, value);
+      if (name === contextDevelopmentKey) {
+        relayPassed = true;
+        if (key !== contextDevelopmentKey) {
+          report(
+            'development-runtime-wiring',
+            `${name} must be the provider context's ${contextDevelopmentKey}`
+          );
+        }
+      } else if (key === contextDevelopmentKey) {
+        report(
+          'development-runtime-wiring',
+          `the development runtime is passed as ${name}, which the ${adapter} session does not accept (it takes ${contextDevelopmentKey}); it is dropped without an error`
+        );
+      }
+    }
+    if (!relayPassed) {
+      report(
+        'development-runtime-wiring',
+        `createSession must be given the provider context's ${contextDevelopmentKey} as ${contextDevelopmentKey}: a session without it reports nothing in a development build`
+      );
+    }
+  }
+
+  function auditThreadDirectoryProvider(node: ts.CallExpression): void {
+    let canonical = true;
+    const fail = (detail: string): void => {
+      canonical = false;
+      report('thread-directory-wiring', detail);
+    };
+    const issuesBefore = issues.length;
+    const owner = providerRegistrationOwners.get(node);
+    if (!owner) {
+      fail(
+        'provideThreadDirectory must be a direct element of executable appConfig.providers or @Component.providers'
+      );
+    }
+    const provideBinding = exactBinding(node.expression as ts.Identifier);
+    if (
+      !hasExactImportBinding(
+        provideBinding,
+        agentProviderModule,
+        'provideThreadDirectory'
+      )
+    ) {
+      fail(
+        `provideThreadDirectory requires its stable import from ${agentProviderModule}`
+      );
+    }
+    if (expectedAdapter && expectedAdapter !== 'langgraph') {
+      fail(
+        `a LangGraph thread directory cannot list the threads of an ${expectedAdapter} agent`
+      );
+    }
+    const factory = node.arguments[0];
+    if (
+      node.arguments.length !== 1 ||
+      !factory ||
+      (!ts.isArrowFunction(factory) && !ts.isFunctionExpression(factory))
+    ) {
+      fail('provideThreadDirectory requires one inline factory');
+      threadDirectoryProviders.push({
+        provideBinding,
+        directoryProperties: {},
+        canonical: false,
+        ...(owner ? { owner } : {}),
+      });
+      return;
+    }
+    requireConnectionInjector(factory);
+    const returned = directReturnedObject(factory);
+    const members = returned
+      ? configMembers(returned, directoryConfigKeys, 'thread directory config')
+      : new Map<string, ts.Expression>();
+    if (!returned) fail('directory factory must return a direct object literal');
+    const directoryMember = members.get('createDirectory');
+    const shapeOrReason = directoryMember
+      ? sessionFactoryShape(directoryMember, 'createLangGraphThreadDirectory')
+      : 'is missing';
+    const shape = typeof shapeOrReason === 'string' ? undefined : shapeOrReason;
+    if (typeof shapeOrReason === 'string') {
+      fail(`thread directory config createDirectory ${shapeOrReason}`);
+    }
+    const createDirectoryBinding = shape
+      ? exactBinding(shape.callee)
+      : undefined;
+    const stableFactory = hasExactImportBinding(
+      createDirectoryBinding,
+      '@threadplane/langgraph',
+      'createLangGraphThreadDirectory'
+    );
+    if (shape && !stableFactory) {
+      fail(
+        'createLangGraphThreadDirectory requires its stable direct import from @threadplane/langgraph'
+      );
+    }
+    const metadata = connectionFactoryMetadata(
+      factory,
+      sourceFile,
+      'langgraph',
+      new Set<ts.Node>(shape ? [shape.options] : [])
+    );
+    if (!metadata.canonicalFactory) {
+      fail(
+        'directory factory must contain only the ordered connection declaration, adapter guard, and sole return'
+      );
+    }
+    let directoryProperties: Readonly<Record<string, string>> = {};
+    let clientOptionsSource: 'connection' | 'context' | undefined;
+    if (shape) {
+      if (stableFactory) sanctionedFactoryCalls.add(shape.call);
+      const options = sessionOptionMembers(
+        shape,
+        sourceFile,
+        'createLangGraphThreadDirectory'
+      );
+      directoryProperties = options.text;
+      for (const problem of options.problems) fail(problem.detail);
+      for (const stray of strayContextReads(shape, sourceFile)) {
+        fail(
+          `the provider context may only be read as the whole value of a directory option; found ${stray}`
+        );
+      }
+      if (options.text['apiUrl'] !== 'connection.apiUrl') {
+        fail(
+          'apiUrl must be an explicit apiUrl: connection.apiUrl assignment, so the directory lists the deployment its agent talks to'
+        );
+      }
+      if (options.values.has('client')) {
+        fail(
+          'createLangGraphThreadDirectory option client replaces the cockpit runtime connection'
+        );
+      }
+      const clientOptions = options.values.get('clientOptions');
+      if (options.text['clientOptions'] === 'connection.clientOptions') {
+        clientOptionsSource = 'connection';
+      } else if (
+        clientOptions &&
+        contextKeyOf(shape, clientOptions) === 'clientOptions'
+      ) {
+        clientOptionsSource = 'context';
+      } else {
+        fail(
+          "clientOptions must be connection.clientOptions or the provider context's clientOptions, so the directory sends the deployment key its agent sends"
+        );
+      }
+      // The directory's own requests can be refused too. It is required to
+      // report them as soon as the directory declares an option to do so.
+      let reporterPassed = false;
+      for (const [name, value] of options.values) {
+        const key = contextKeyOf(shape, value);
+        if (directoryReporterOptionNames.includes(name)) {
+          reporterPassed = true;
+          if (key !== contextReporterKey) {
+            fail(`${name} must be the provider context's ${contextReporterKey}`);
+          }
+        } else if (
+          reporterShapedNames.has(name) ||
+          /OperationFailure$/.test(name) ||
+          key === contextReporterKey
+        ) {
+          fail(
+            `the operation reporter is passed as ${name}, which the thread directory does not accept${
+              directoryReporterOptionNames.length
+                ? ` (it takes ${directoryReporterOptionNames.join(' or ')})`
+                : ''
+            }; the reporter is dropped without an error`
+          );
+        }
+      }
+      if (directoryReporterOptionNames.length > 0 && !reporterPassed) {
+        fail(
+          `createLangGraphThreadDirectory must be given the provider context's ${contextReporterKey} as ${directoryReporterOptionNames.join(
+            ' or '
+          )}`
+        );
+      }
+    }
+    threadDirectoryProviders.push({
+      provideBinding,
+      ...(createDirectoryBinding ? { createDirectoryBinding } : {}),
+      directoryProperties,
+      ...(clientOptionsSource ? { clientOptionsSource } : {}),
+      canonical: canonical && issues.length === issuesBefore,
+      ...(owner ? { owner } : {}),
+    });
+  }
 
   for (const providers of appConfigProviderArrays) {
     const seenTokens = new Set<string>();
@@ -1971,6 +2868,28 @@ export function inspectRuntimeTargetSource(
         });
       }
       angularProviders.push(provider);
+      if (
+        hasExactImportBinding(
+          provider.provideTokenBinding,
+          agentProviderModule,
+          'AGENT_CLIENT_OPTIONS'
+        )
+      ) {
+        // The value every `context.clientOptions` reads. It carries the
+        // developer's deployment key, so it has one legitimate source.
+        if (
+          provider.canonicalFactory &&
+          provider.returnExpression === 'connection.clientOptions'
+        ) {
+          canonicalClientOptionsProvider = true;
+          sanctionedTokenReferences.add(provide.initializer as ts.Identifier);
+        } else {
+          report(
+            'session-connection-wiring',
+            'AGENT_CLIENT_OPTIONS must be provided by the canonical connection factory returning connection.clientOptions'
+          );
+        }
+      }
     }
   }
 
@@ -2024,6 +2943,9 @@ export function inspectRuntimeTargetSource(
               ts.isIdentifier(property.initializer)
             ) {
               operationReporterBinding = exactBinding(property.initializer);
+              if (isEntrypoint && bootstrapCallNodes.length === 1) {
+                sanctionedTokenReferences.add(property.initializer);
+              }
             }
             if (
               (propertyName === 'sharedApiUrl' ||
@@ -2055,10 +2977,7 @@ export function inspectRuntimeTargetSource(
           const reporterProperty = directRuntimeProperties.get(
             'operationReporterToken'
           );
-          const expectedReporter =
-            expectedAdapter === 'langgraph'
-              ? 'ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER'
-              : 'ɵAG_UI_RUNTIME_OPERATION_REPORTER';
+          const expectedReporter = operationReporterToken;
           const sharedUrlProperty = directRuntimeProperties.get('sharedUrl');
           const agGlobals = sharedUrlProperty
             ? agSharedUrlGlobalIdentifiers(sharedUrlProperty.initializer)
@@ -2146,6 +3065,85 @@ export function inspectRuntimeTargetSource(
       hasRedactedCatch: hasRedactedCatch(node),
     });
   }
+
+  for (const [index, record] of threadDirectoryProviders.entries()) {
+    if (
+      record.clientOptionsSource === 'context' &&
+      !canonicalClientOptionsProvider
+    ) {
+      report(
+        'thread-directory-wiring',
+        "a directory that reads the provider context's clientOptions requires the canonical AGENT_CLIENT_OPTIONS provider in the same file"
+      );
+      threadDirectoryProviders[index] = { ...record, canonical: false };
+    }
+  }
+
+  // The session and directory factories, and the two host tokens, each have
+  // one sanctioned place. A session built anywhere else never receives the
+  // provider context: it ignores the agent's thread and drops the reporter.
+  const backendFactoryLocals = new Set<string>();
+  const hostTokenLocals = new Map<string, string>();
+  for (const [localName, bindings] of importBindingsByLocalName) {
+    for (const binding of bindings) {
+      if (
+        providerAdapter(binding.moduleName) &&
+        sessionFactoryNames.has(binding.importedName)
+      ) {
+        backendFactoryLocals.add(localName);
+      }
+      if (
+        binding.moduleName === agentProviderModule &&
+        (binding.importedName === 'AGENT_CLIENT_OPTIONS' ||
+          binding.importedName === operationReporterToken)
+      ) {
+        hostTokenLocals.set(localName, binding.importedName);
+      }
+      if (
+        binding.moduleName === agentProviderModule &&
+        binding.importedName === 'provideAgentClientOptions'
+      ) {
+        report(
+          'session-connection-wiring',
+          'provideAgentClientOptions supplies fixed client options; provide AGENT_CLIENT_OPTIONS from connection.clientOptions instead'
+        );
+      }
+    }
+  }
+  walk(sourceFile, (node) => {
+    if (
+      !ts.isIdentifier(node) ||
+      isDeclarationIdentifier(node) ||
+      isTypeOnlyIdentifierReference(node)
+    ) {
+      return;
+    }
+    if (backendFactoryLocals.has(node.text)) {
+      const sanctioned =
+        ts.isCallExpression(node.parent) &&
+        node.parent.expression === node &&
+        sanctionedFactoryCalls.has(node.parent);
+      if (!sanctioned) {
+        report(
+          'session-outside-provider-factory',
+          `${node.text} may only be called as the direct result of its provider factory's ${
+            node.text === 'createSession' ? 'createSession' : 'createDirectory'
+          } member; built anywhere else it never receives the provider context`
+        );
+      }
+    }
+    const hostToken = hostTokenLocals.get(node.text);
+    if (hostToken && !sanctionedTokenReferences.has(node)) {
+      report(
+        hostToken === operationReporterToken
+          ? 'operation-reporter-wiring'
+          : 'session-connection-wiring',
+        hostToken === operationReporterToken
+          ? `${hostToken} may only be handed to the cockpit harness as the entrypoint's operationReporterToken`
+          : `${hostToken} may only be the provide token of the canonical connection factory provider`
+      );
+    }
+  });
 
   if (memoryOwner && fileName === 'src/app/memory-scope.ts') {
     const tokenReferences: ts.Identifier[] = [];
@@ -2419,13 +3417,26 @@ export function inspectRuntimeTargetSource(
     }
   });
 
-  return { issues, providerCalls, bootstrapCalls, angularProviders };
+  return {
+    issues,
+    providerCalls,
+    bootstrapCalls,
+    angularProviders,
+    threadDirectoryProviders,
+  };
 }
 
 export function auditRuntimeTargetSource(
   source: string,
   fileName: string,
-  expectedAdapter?: CompatibleRuntimeAdapter
+  expectedAdapter?: CompatibleRuntimeAdapter,
+  options?: RuntimeWiringAuditOptions
 ): RuntimeWiringAuditIssue[] {
-  return inspectRuntimeTargetSource(source, fileName, expectedAdapter).issues;
+  return inspectRuntimeTargetSource(
+    source,
+    fileName,
+    expectedAdapter,
+    undefined,
+    options
+  ).issues;
 }

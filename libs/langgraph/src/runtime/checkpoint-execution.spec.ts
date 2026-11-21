@@ -272,7 +272,7 @@ describe('checkpoint execution', () => {
     expect(await run).toBe('aborted');
     await expect(session.submit('Wrong')).rejects.toThrow();
     await expect(session.checkStatus?.()).rejects.toThrow();
-    expect(session.getSnapshot().reconnect?.runId).toBe('run-result-1');
+    expect(session.getSnapshot().retainedRun?.runId).toBe('run-result-1');
     expect(await session.reconnect()).toBe('success');
     expect(f.transport.joinStream).toHaveBeenCalledWith(
       'thread',

@@ -5,9 +5,13 @@ import type {
   ToolContract,
 } from '@threadplane/core';
 import type { FunctionToolDefinition } from '@threadplane/core/tools';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 import type { SessionSnapshot } from './agent-session.js';
 
+/**
+ * One call to a client tool the session runs, with its typed arguments and
+ * result, how far it has run and whether the backend has its result.
+ */
 export type ClientToolCall<C extends Record<string, ToolContract>> = {
   [K in keyof C & string]: {
     readonly name: K;
@@ -24,17 +28,25 @@ export type ClientToolCall<C extends Record<string, ToolContract>> = {
   };
 }[keyof C & string];
 
+/** Why a session's client tools stopped before the run could continue. */
 export interface ClientToolBlocker {
+  /** What stopped the calls. */
   readonly reason:
     | 'unsupported'
     | 'conflict'
     | 'cancelled'
     | 'uncertain'
     | 'limit';
+  /** The run that made the blocked calls. */
   readonly sourceRunId: string;
+  /** The blocked calls, by `callId`. */
   readonly callIds: readonly string[];
 }
 
+/**
+ * The snapshot of a session that runs client tools: the session snapshot, with
+ * the tool calls, what blocks them and the outcome of the last tool command.
+ */
 export type ClientToolSessionSnapshot<
   C extends Record<string, ToolContract>,
   TState = unknown

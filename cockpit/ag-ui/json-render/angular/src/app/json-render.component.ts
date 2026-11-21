@@ -1,7 +1,7 @@
 import { exampleToolLabel } from '../../../../../shared/tool-presentation';
 import { Component } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent, views } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 import { signalStateStore } from '@threadplane/render';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { StatCardComponent } from './views/stat-card.component';
@@ -43,7 +43,7 @@ const WELCOME_SUGGESTIONS = [
       description="Ask for an airline dashboard, then filter the disruptions or change its layout. This example uses fixed demo data."
     >
       <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask for an airline dashboard…" [welcomeDisabled]="true" main [agent]="agent" [views]="dashboardViews" [store]="dashStore" class="flex-1 min-w-0">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion [label]="s.label" [value]="s.value" [description]="s.description" (selected)="send($event)" />

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { createSession } from '../../../../../libs/langgraph/src/runtime/create-session';
-import { FetchStreamTransport } from '../../../../../libs/langgraph/src/lib/transport/fetch-stream.transport';
+import { FetchStreamTransport } from '../../../../../libs/langgraph/src/runtime/fetch-stream.transport';
 import {
   backendUrl, client, modelJournal, position as wirePosition, prompt, run,
 } from './checkpoint-protocol.helpers';

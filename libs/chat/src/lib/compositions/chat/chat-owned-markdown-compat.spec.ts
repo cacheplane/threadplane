@@ -16,11 +16,12 @@ import { A2uiSurfaceComponent } from '../../a2ui/surface.component';
 import { a2uiBasicCatalog } from '../../a2ui/catalog';
 import { ChatStreamingMdComponent, STREAMING_MARKDOWN_CONTRACT_VIOLATION_POLICY, type StreamingMarkdownDocument } from '../../streaming/streaming-markdown.component';
 import { createContentClassifier, type ContentClassifier } from '../../streaming/content-classifier';
-import { mockAgent } from '../../testing/mock-agent';
-import { staticDelivery, streamingDelivery, type Message } from '../../agent';
+import { rawMessagesAgent } from '../../../testing/raw-messages-agent';
+import { staticDelivery, streamingDelivery, type AgentInputBlock, type Message } from '../../agent';
 
 const answer = (id = 'answer', content = 'Original **answer**'): Message => ({
-  id, role: 'assistant', content, delivery: streamingDelivery(`${id}-generation`),
+  // A copy: the delivery helpers freeze, and these specs edit the object in place.
+  id, role: 'assistant', content, delivery: { ...streamingDelivery(`${id}-generation`) },
 });
 type ObservedChat = {
   classifiers: Map<string, { classifier: ContentClassifier }>;
@@ -28,8 +29,10 @@ type ObservedChat = {
   reconcileOwnedMarkdownBodies(...args: unknown[]): unknown;
 };
 
+// The messages are held exactly as given: these specs publish the same object
+// again, edit it in place, and compare rows against it by identity.
 async function mount(messages = [answer()]) {
-  const agent = mockAgent({ messages });
+  const agent = rawMessagesAgent({ messages });
   const fixture = TestBed.createComponent(ChatComponent);
   fixture.componentRef.setInput('agent', agent);
   fixture.detectChanges();
@@ -78,7 +81,7 @@ class RegisteredView {}
   </chat>`,
 })
 class ProjectionHost {
-  readonly agent = mockAgent({ messages: [{ ...answer(), toolCallIds: ['call'] }],
+  readonly agent = rawMessagesAgent({ messages: [{ ...answer(), toolCallIds: ['call'] }],
     toolCalls: [{ id: 'call', name: 'search', args: {}, status: 'complete' }] });
   readonly activity = signal(false);
   readonly named = signal(false);
@@ -220,7 +223,7 @@ describe('Chat owned markdown compatibility', () => {
     const raw = view.agent.messages()[0];
     const previous = view.observed.classifiers.get(raw.id)!.classifier;
     const dispose = vi.spyOn(previous, 'dispose');
-    const replacement = mockAgent({ messages: [{ ...raw }] });
+    const replacement = rawMessagesAgent({ messages: [{ ...raw }] });
     view.fixture.componentRef.setInput('agent', replacement);
     await view.settle();
     expect(dispose).toHaveBeenCalledTimes(1);
@@ -296,9 +299,9 @@ describe('Chat owned markdown compatibility', () => {
     await view.settle();
     expect(toolView.views()).toBe(registry); expect(toolView.store()).toBe(store); expect(toolView.handlers()).toBe(handlers);
     expect(body.textContent).toContain('registered view');
-    const blocked = signal(false);
+    const blocked = signal<AgentInputBlock | undefined>(undefined);
     const latest = { ...view.agent.messages()[0], citations: [] };
-    const replacement = { ...view.agent, isInputBlocked: blocked };
+    const replacement = { ...view.agent, inputBlocked: blocked };
     view.fixture.componentRef.setInput('agent', replacement);
     replacement.messages.set([latest]);
     await view.settle();
@@ -306,9 +309,9 @@ describe('Chat owned markdown compatibility', () => {
     const onCopy = vi.spyOn(view.fixture.componentInstance, 'onCopy');
     actions.contentCopied.emit('copied');
     expect(onCopy).toHaveBeenCalledWith(latest, 'copied');
-    blocked.set(true); await view.settle(); expect(actions.disabled()).toBe(true);
-    blocked.set(false); replacement.isLoading.set(true); await view.settle(); expect(actions.disabled()).toBe(true);
-    replacement.isLoading.set(false); await view.settle(); expect(actions.disabled()).toBe(false);
+    blocked.set({ reason: 'interrupt' }); await view.settle(); expect(actions.disabled()).toBe(true);
+    blocked.set(undefined); replacement.status.set('running'); await view.settle(); expect(actions.disabled()).toBe(true);
+    replacement.status.set('idle'); await view.settle(); expect(actions.disabled()).toBe(false);
     expect(view.md()).toBe(markdown); expect(view.body()).toBe(body);
     // Agent swap intentionally rebinds an equal document; within the new agent
     // guards and configuration retain the same document.
@@ -328,7 +331,7 @@ describe('Chat owned markdown compatibility', () => {
     expect(view.body('rich').querySelector('chat-streaming-md')).toBeNull();
     expect(view.body('rich').lastElementChild?.className).toBe('chat-message__caret');
     const handlers = { selected: () => true };
-    view.fixture.componentRef.setInput('handlers', handlers); view.agent.isLoading.set(true);
+    view.fixture.componentRef.setInput('handlers', handlers); view.agent.status.set('running');
     await view.settle();
     expect(rich.handlers()).toBe(handlers); expect(rich.loading()).toBe(true);
     expect(view.md()).toBe(markdown); expect(view.md().document()).toBe(document);
@@ -379,7 +382,7 @@ describe('Chat owned markdown compatibility', () => {
       expect(body.textContent).toContain('Same-row rich answer');
       const handlers = { selected: () => true };
       view.fixture.componentRef.setInput('handlers', handlers);
-      view.agent.isLoading.set(true);
+      view.agent.status.set('running');
       await view.settle();
       if (kind === 'json-render') {
         const rich = view.row().query(By.directive(ChatGenerativeUiComponent)).componentInstance as ChatGenerativeUiComponent;

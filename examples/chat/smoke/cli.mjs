@@ -33,10 +33,19 @@ const DEMO_ENVIRONMENTS_DIR = resolve(
 const CHECKLIST = join(SCRIPT_DIR, 'CHECKLIST.md');
 const DEFAULT_TARGET = join(homedir(), 'tmp', 'threadplane');
 
+// Every @threadplane package the consumer installs, directly or as a peer of
+// another one. With --local-dist-root each is packed and pinned to its
+// tarball: a peer left out would be resolved from the registry instead.
+// @threadplane/angular is the one Angular provider (provideAgent,
+// injectAgent); @threadplane/core is the session contract it and the backend
+// packages share; @threadplane/content is a peer of @threadplane/angular.
 const THREADPLANE_PACKAGES = [
   { name: '@threadplane/a2ui', dist: 'a2ui' },
   { name: '@threadplane/ag-ui', dist: 'ag-ui' },
+  { name: '@threadplane/angular', dist: 'angular' },
   { name: '@threadplane/chat', dist: 'chat' },
+  { name: '@threadplane/content', dist: 'content' },
+  { name: '@threadplane/core', dist: 'core' },
   { name: '@threadplane/langgraph', dist: 'langgraph' },
   { name: '@threadplane/render', dist: 'render' },
   { name: '@threadplane/telemetry', dist: 'telemetry' },
@@ -383,7 +392,7 @@ function runChild(cmd, args, opts = {}) {
   });
 }
 
-export { parseArgs };
+export { parseArgs, THREADPLANE_PACKAGES };
 
 if (
   process.argv[1] &&

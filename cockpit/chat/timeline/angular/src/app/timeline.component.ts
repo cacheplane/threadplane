@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { ChatComponent, ChatTimelineSliderComponent } from '@threadplane/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
 /**
  * TimelineComponent demonstrates conversation timeline navigation
@@ -17,12 +18,12 @@ import { injectAgent } from '@threadplane/langgraph';
       title="Chat timeline"
       description="Select a saved checkpoint to preview it. Send always continues the current conversation. Fork from here uses the message in the composer to continue from the selected checkpoint."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="isLoading()"
         (click)="newConversation(conversation)">New conversation</button>
       <!-- #region chat-surface -->
       <chat placeholder="Write a message…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
       <!-- #endregion -->
       <!-- #region timeline-panel -->
@@ -69,12 +70,14 @@ import { injectAgent } from '@threadplane/langgraph';
 })
 export class TimelineComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.isLoading()) return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
 
   // #region agent
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
+  /** True while a run streams: the agent has no separate loading flag. */
+  protected readonly isLoading = computed(() => this.agent.status() === 'running');
   // #endregion
 }

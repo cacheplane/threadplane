@@ -8,19 +8,12 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import type { Agent } from '../../agent';
-import type { Subagent } from '../../agent/subagent';
+import type { Agent, AgentSubagent } from '../../agent';
 import { ChatSubagentCardComponent } from '../../compositions/chat-subagent-card/chat-subagent-card.component';
 
-export function activeSubagentsFromAgent(agent: Agent): Subagent[] {
-  const map = agent.subagents?.();
-  if (!map) return [];
-  const out: Subagent[] = [];
-  map.forEach((sa) => {
-    const s = sa.status();
-    if (s !== 'complete' && s !== 'error') out.push(sa);
-  });
-  return out;
+/** The child agents that have not ended: pending, running, or of unknown outcome. */
+export function activeSubagentsFromAgent(agent: Agent): AgentSubagent[] {
+  return (agent.subagents() ?? []).filter((child) => child.status !== 'complete' && child.status !== 'error');
 }
 
 /** Renders pending and running subagents using projected templates or default subagent cards. */
@@ -30,7 +23,7 @@ export function activeSubagentsFromAgent(agent: Agent): Subagent[] {
   imports: [NgTemplateOutlet, ChatSubagentCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @for (subagent of activeSubagents(); track subagent.toolCallId) {
+    @for (subagent of activeSubagents(); track subagent.id) {
       @if (templateRef()) {
         <ng-container [ngTemplateOutlet]="templateRef()!" [ngTemplateOutletContext]="{ $implicit: subagent }" />
       } @else {

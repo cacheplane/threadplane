@@ -4,9 +4,9 @@ import type { LangGraphSubgraph } from './langgraph-snapshot.js';
 /**
  * A child graph as a core child agent. `id` is the child's namespace path as
  * JSON, which stays unique whatever a segment contains, and `name` is the node
- * that started it. LangGraph does not
- * relate a child graph to a tool call, so `toolCallId` and `description` are
- * never set.
+ * that started it. A child the session related to a root tool call (see
+ * `LangGraphSubgraph.delegation`) carries that call's `toolCallId`, its task
+ * as `description`, and the requested subagent type as `name`.
  */
 export type LangGraphSubagent = AgentSubagent & {
   /** The child graph's full namespace path, as in `subgraphs`. */
@@ -21,6 +21,8 @@ function nodeOf(segment: string): string {
 
 /**
  * - A child that failed is `error`.
+ * - A child whose starting tool call has a result is `complete`, or `error`
+ *   when the call failed; one restored with its task outstanding is `running`.
  * - While the root run is going, a child is `running`.
  * - After it, the child's last message decides: a successful one is
  *   `complete`, and one a pause stopped is still `running`, because a resume
@@ -31,6 +33,8 @@ function statusOf(
   running: boolean
 ): AgentSubagent['status'] {
   if (child.error) return 'error';
+  // The call's own result is conclusive while the root run is still going.
+  if (child.delegation?.status) return child.delegation.status;
   if (running) return 'running';
   const last = child.messages.at(-1)?.delivery;
   if (last?.phase !== 'complete') return 'unknown';
@@ -63,17 +67,25 @@ export function projectSubagents(
     if (!known) projected.set(child, (known = {}));
     let subagent = known[state];
     if (!subagent) {
-      const { namespace } = child;
+      const { namespace, delegation } = child;
       const message = child.error?.message;
       subagent = Object.freeze({
         id: JSON.stringify(namespace),
-        name: nodeOf(namespace[namespace.length - 1] ?? ''),
+        name: delegation?.name ?? nodeOf(namespace[namespace.length - 1] ?? ''),
+        ...(delegation?.description && {
+          description: delegation.description,
+        }),
+        ...(delegation && { toolCallId: delegation.toolCallId }),
         ...(namespace.length > 1 && {
           parentId: JSON.stringify(namespace.slice(0, -1)),
         }),
         status: state,
         messages: child.messages,
         toolCalls: child.toolCalls,
+        ...(child.streamingToolCalls?.length && {
+          streamingToolCalls: child.streamingToolCalls,
+        }),
+        ...(child.state && { state: child.state }),
         ...(state === 'error' && message && { error: message }),
         namespace,
       });

@@ -48,6 +48,47 @@ type<unknown>();
 type<{ [key: string]: number }>();
 type<Record<string, never>>();
 
+// A field may be left open: `unknown` and `PlainValue` are plain data a
+// snapshot can hold, at any depth, and so is a type that refers to itself.
+interface Outline {
+  title: string;
+  children: Outline[];
+}
+interface Loose {
+  messages: unknown[];
+  files: Record<string, unknown>;
+  rows: PlainValue[];
+  meta: PlainValue;
+  extra?: unknown;
+  outline: Outline;
+  pair: readonly [string, unknown];
+}
+const loose = type<Loose>();
+type<{ messages: readonly unknown[]; values: readonly PlainValue[] }>();
+type<{ nested: { deeper: { rows: PlainValue[]; any: unknown }[] } }>();
+type<{ value: PlainValue | { count: number } }>();
+// @ts-expect-error a function is not plain data, even beside open fields
+type<{ messages: unknown[]; save: () => void }>();
+// @ts-expect-error a class instance is not plain data, even inside an open list
+type<{ rows: (PlainValue | Date)[] }>();
+// @ts-expect-error a function inside a self-referring type is still rejected
+type<{ outline: Outline & { visit: () => void } }>();
+// An open field reads as plain data, readonly like the rest of the snapshot.
+declare const looseSession: AgentSession<Tools, InferState<typeof loose>>;
+const looseState = looseSession.getSnapshot().state;
+const looseMessage: PlainValue = looseState?.messages[0];
+const looseRow: PlainValue = looseState?.rows[0];
+const looseTitle: string | undefined = looseState?.outline.children[0]?.title;
+if (looseState) {
+  // @ts-expect-error open collections are readonly too
+  looseState.messages.push('more');
+  // @ts-expect-error an open field holds plain data, never a function
+  const call: () => void = looseState.meta;
+  void call;
+}
+void looseSession.submit({ message: 'hello', state: { messages: [1, 'two'] } });
+void [loose, looseMessage, looseRow, looseTitle];
+
 // The snapshot reads the declared state, deeply readonly.
 declare const typed: AgentSession<Tools, Board>;
 const state = typed.getSnapshot().state;

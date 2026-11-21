@@ -11,7 +11,9 @@ const DEFAULT_PORT = 4300;
 const SERVER_READY_TIMEOUT_MS = 60_000;
 const COMPATIBILITY_PACKAGES = [
   'ag-ui',
+  'angular',
   'chat',
+  'core',
   'langgraph',
   'render',
   'telemetry',
@@ -319,7 +321,8 @@ function createBackendRouteController() {
           return;
         }
         if (method === 'POST' && pathname.endsWith('/store/items/search')) {
-          // LangGraphThreadsAdapter loads project names after the thread list.
+          // A LangGraph thread directory with its project store on reads
+          // project names after the thread list.
           await route.fulfill({
             status: 200,
             contentType: 'application/json',

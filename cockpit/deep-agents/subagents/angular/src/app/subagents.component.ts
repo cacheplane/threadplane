@@ -1,7 +1,8 @@
 import { Component, computed } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent } from '@threadplane/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
 const SUGGESTIONS = [
   // values match cockpit/deep-agents/subagents/angular/e2e/*.spec.ts prompts.
@@ -21,12 +22,13 @@ const SUGGESTIONS = [
  * SubagentsComponent shows real child agents, not a tool-call log.
  *
  * `SubAgentMiddleware` runs each `task` dispatch as its own graph in its own
- * namespace, and seeds it with the dispatch `description`. The tracker
- * registers the dispatch from the `task` call and attributes the child stream
- * by matching that description — exact match first, then containment either
- * way, then a single remaining candidate. Descriptions that name their airport
- * are what make parallel fan-out render correctly: four children streaming at
- * once land in four separate cards rather than interleaving into one.
+ * namespace, and seeds it with the dispatch `description`. The session relates
+ * each child graph to the `task` call that started it: by the middleware's
+ * binding event when it sends one, else by matching that description — exact
+ * match first, then containment either way, then a single remaining candidate.
+ * Descriptions that name their airport are what make parallel fan-out render
+ * correctly: four children streaming at once land in four separate cards
+ * rather than interleaving into one.
  *
  * The cards are rendered inline by the `<chat>` composition and persist after
  * completion. The sidebar keeps the roster and a live dispatch count so the
@@ -41,11 +43,11 @@ const SUGGESTIONS = [
       title="Deep Agents subagents"
       description="Dispatch sample field research and weather tasks, and inspect separate native child streams. Aviation lookups use fixed sample data, including weather. Stop cancels local delivery; it does not roll back backend work."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="agent.status() === 'running'"
         (click)="newConversation(conversation)">New conversation</button>
       <chat placeholder="Ask about field data or weather…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -121,22 +123,25 @@ const SUGGESTIONS = [
 })
 export class SubagentsComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.agent.status() === 'running') return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 
   protected readonly suggestions = SUGGESTIONS;
 
   // #region dispatch-signals
-  private readonly dispatches = computed(() => [...this.agent.subagents().values()]);
+  /** The children a `task` call started: each carries that call's id. */
+  private readonly dispatches = computed(() =>
+    this.agent.subagents().filter((subagent) => subagent.toolCallId !== undefined),
+  );
 
   protected readonly dispatchCount = computed(() => this.dispatches().length);
 
   protected readonly runningCount = computed(
-    () => this.dispatches().filter((subagent) => subagent.status() === 'running').length,
+    () => this.dispatches().filter((subagent) => subagent.status === 'running').length,
   );
   // #endregion
 

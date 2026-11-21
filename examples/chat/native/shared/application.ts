@@ -908,7 +908,7 @@ function createApplicationOwner<TRow extends MessageContent>(
         snapshot.selection.id !== id ||
         deleting ||
         runtime.status === 'running' ||
-        runtime.reconnect?.runId
+        runtime.retainedRun?.runId
       )
         return false;
     }

@@ -30,7 +30,7 @@ import { ChatInterruptTemplateDirective } from './chat-interrupt-template.direct
 class InterruptHost {
   mode: 'popup' | 'sidebar' = 'popup';
   readonly agent = mockAgent({
-    withInterrupt: true,
+    
     messages: [{ id: 'ask', role: 'user', content: 'Review the plan', delivery: staticDelivery('ask') }],
   });
   approvedAgent: unknown;
@@ -55,7 +55,7 @@ describe.each(['popup', 'sidebar'] as const)('%s interrupt projection', (mode) =
     TestBed.configureTestingModule({ imports: [NoInterruptTemplateHost] });
     const fixture = TestBed.createComponent(NoInterruptTemplateHost);
     fixture.componentInstance.mode = mode;
-    fixture.componentInstance.agent.interrupt!.set({ id: 'pending', value: 'Review needed', resumable: true });
+    fixture.componentInstance.agent.interrupts.set([{ id: 'pending', value: 'Review needed', resumable: true }]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.chat-interrupt-region')).toBeNull();
   });
@@ -68,7 +68,7 @@ describe.each(['popup', 'sidebar'] as const)('%s interrupt projection', (mode) =
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.approval')).toBeNull();
 
-    host.agent.interrupt!.set({ id: 'pending', value: { reason: 'Approve this plan' }, resumable: true });
+    host.agent.interrupts.set([{ id: 'pending', value: { reason: 'Approve this plan' }, resumable: true }]);
     fixture.detectChanges();
     const decisions = fixture.nativeElement.querySelectorAll('.chat-scroll .approval');
     expect(decisions).toHaveLength(1);
@@ -81,7 +81,7 @@ describe.each(['popup', 'sidebar'] as const)('%s interrupt projection', (mode) =
       expect(fixture.nativeElement.querySelector('.chat-sidebar__content .approval')).toBeNull();
     }
 
-    host.agent.interrupt!.set(undefined);
+    host.agent.interrupts.set([]);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.approval')).toBeNull();
   });

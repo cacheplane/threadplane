@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.runtime-tests.json",
+  "compilerOptions": {
+    // The core conformance suites are written against the platform timer
+    // declarations core documents (`lib: ["ES2022", "DOM"]`). Only the spec
+    // that registers them is checked with DOM; every other runtime file is
+    // checked without it by tsconfig.runtime-tests.json.
+    "lib": ["es2022", "dom"]
+  },
+  "include": ["src/runtime/conformance.spec.ts"],
+  "exclude": []
+}

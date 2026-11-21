@@ -458,9 +458,13 @@ describe('website docs bindings', () => {
     const validPackages = new Set([
       '@threadplane/a2ui',
       '@threadplane/ag-ui',
+      '@threadplane/angular',
+      '@threadplane/angular/testing',
       '@threadplane/chat',
       '@threadplane/chat/debug',
       '@threadplane/chat/testing',
+      '@threadplane/core',
+      '@threadplane/core/testing',
       '@threadplane/langgraph',
       '@threadplane/middleware/langgraph',
       '@threadplane/render',

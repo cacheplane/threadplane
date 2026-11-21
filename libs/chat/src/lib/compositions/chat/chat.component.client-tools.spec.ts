@@ -1,18 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { Injector, runInInjectionContext, signal, type WritableSignal } from '@angular/core';
+import { Injector, runInInjectionContext, signal, type Signal, type WritableSignal } from '@angular/core';
+import type { AgentClientTools } from '@threadplane/core';
 import { z } from 'zod/v4';
 import { ChatComponent } from './chat.component';
 import { mockAgent, type MockAgent } from '../../testing/mock-agent';
 import { tools, action, view, ask } from '../../client-tools/tools';
-import type { ClientToolsCapability, ClientToolResult } from '../../client-tools/client-tools-capability';
+import type { ClientToolResult } from '../../client-tools/client-tools-capability';
 import type {
   ClientToolExecutionGuard,
   ClientToolExecutionRecord,
   ClientToolExecutionStore,
 } from '../../client-tools/client-tool-execution-guard';
 import type { ClientToolSpec } from '../../client-tools/to-json-schema';
-import type { ToolCall } from '../../agent/tool-call';
+import type { ToolCall } from '../../agent';
 
 // Write into an InputSignal by reaching its underlying SIGNAL node — same
 // pattern as chat.component.spec.ts (vitest JIT can't process signal-input
@@ -41,14 +42,18 @@ interface FakeCap {
   pending: WritableSignal<readonly ToolCall[]>;
   resolve: ReturnType<typeof vi.fn>;
   setCatalog: ReturnType<typeof vi.fn>;
-  capability: ClientToolsCapability;
+  capability: AgentClientTools;
 }
+
+/** The calls each hand-built capability's agent lists in `pendingClientTools`. */
+const pendingByCapability = new WeakMap<AgentClientTools, Signal<readonly ToolCall[]>>();
 
 function makeFakeCapability(): FakeCap {
   const pending = signal<readonly ToolCall[]>([]);
   const resolve = vi.fn<[string, ClientToolResult], void>();
   const setCatalog = vi.fn<[readonly ClientToolSpec[]], void>();
-  const capability: ClientToolsCapability = { setCatalog, pending, resolve };
+  const capability: AgentClientTools = { setCatalog, resolve };
+  pendingByCapability.set(capability, pending);
   return { pending, resolve, setCatalog, capability };
 }
 
@@ -68,11 +73,16 @@ function makeGuard(store: ClientToolExecutionStore): ClientToolExecutionGuard {
   return { threadId: 'thread-1', store };
 }
 
-/** A mockAgent augmented with a clientTools capability. */
-function agentWithClientTools(cap: ClientToolsCapability): MockAgent {
-  const agent = mockAgent({ messages: [] });
-  (agent as unknown as { clientTools: ClientToolsCapability }).clientTools = cap;
-  return agent;
+/**
+ * A mockAgent with a hand-built clientTools capability in place of the fake
+ * session's, and that capability's pending list as `pendingClientTools`.
+ */
+function agentWithClientTools(cap: AgentClientTools): MockAgent {
+  return {
+    ...mockAgent({ messages: [] }),
+    clientTools: cap,
+    pendingClientTools: pendingByCapability.get(cap) ?? signal<readonly ToolCall[]>([]),
+  } as MockAgent;
 }
 
 interface ScriptedAgent {
@@ -88,7 +98,8 @@ function makeScriptedClientToolAgent(): ScriptedAgent {
     pending.update((calls) => calls.filter((call) => call.id !== id));
   });
   const setCatalog = vi.fn<[readonly ClientToolSpec[]], void>();
-  const capability: ClientToolsCapability = { setCatalog, pending, resolve };
+  const capability: AgentClientTools = { setCatalog, resolve };
+  pendingByCapability.set(capability, pending);
   return {
     agent: agentWithClientTools(capability),
     emitPending(call: ToolCall): void {
@@ -241,12 +252,12 @@ describe('ChatComponent — client-tools wiring', () => {
     await drainMicrotasks();
 
     cap.pending.set([
-      { id: 'first', name: 'get_weather', args: { city: 'SF' }, status: 'complete' },
+      { id: 'first', name: 'get_weather', args: { city: 'SF' }, status: 'pending' },
     ]);
     TestBed.flushEffects();
     await drainMicrotasks();
     cap.pending.set([
-      { id: 'second', name: 'get_weather', args: { city: 'LA' }, status: 'complete' },
+      { id: 'second', name: 'get_weather', args: { city: 'LA' }, status: 'pending' },
     ]);
     TestBed.flushEffects();
     await drainMicrotasks();
@@ -307,7 +318,7 @@ describe('ChatComponent — client-tools wiring', () => {
       id: 'script-action',
       name: 'get_weather',
       args: { city: 'SF' },
-      status: 'complete',
+      status: 'pending',
     });
     TestBed.flushEffects();
     await drainMicrotasks();
@@ -321,7 +332,7 @@ describe('ChatComponent — client-tools wiring', () => {
       id: 'script-view',
       name: 'weather_card',
       args: { city: 'LA' },
-      status: 'complete',
+      status: 'pending',
     });
     TestBed.flushEffects();
 
@@ -334,7 +345,7 @@ describe('ChatComponent — client-tools wiring', () => {
       id: 'script-ask',
       name: 'confirm',
       args: {},
-      status: 'complete',
+      status: 'pending',
     });
     (comp as unknown as { onClientToolEvent: (e: unknown) => void }).onClientToolEvent({
       type: 'result',
@@ -380,7 +391,7 @@ describe('ChatComponent — plan steps while a browser view waits', () => {
       { id: 'u1', role: 'user', content: 'Plan a trip' },
       { id: 'a1', role: 'assistant', content: '', toolCallIds: toolCalls.map((tc) => tc.id) },
     ] as never);
-    Object.assign(agent, { plan: signal(plan) });
+    agent.plan.set(plan as never);
     let trailing!: () => unknown;
     runInInjectionContext(injector, () => {
       const c = new ChatComponent();

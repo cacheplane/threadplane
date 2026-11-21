@@ -320,7 +320,7 @@ describe('owned run reconnect', () => {
     // run is still in flight neither close nor the check reads it.
     expect(f.session.getSnapshot()).toMatchObject({
       status: 'error',
-      reconnect: { runId: 'run-1' },
+      retainedRun: { runId: 'run-1' },
       error: { recovery: 'check', retryable: false },
     });
     expect(f.getRunStatus).toHaveBeenCalledExactlyOnceWith(
@@ -340,7 +340,7 @@ describe('owned run reconnect', () => {
       for (const event of [terminal(), pause()]) {
         const f = fixture({ status, events: [event] });
         expect(await f.session.submit('Question')).toBe('interrupted');
-        expect(f.session.getSnapshot().reconnect).toEqual({ runId: 'run-1' });
+        expect(f.session.getSnapshot().retainedRun).toEqual({ runId: 'run-1' });
         expect(f.getHistory).not.toHaveBeenCalled();
       }
     }
@@ -351,7 +351,7 @@ describe('owned run reconnect', () => {
     async (status) => {
       const f = fixture({ status, events: [pause()] });
       expect(await f.session.submit('Question')).toBe('paused');
-      expect(f.session.getSnapshot().reconnect).toBeUndefined();
+      expect(f.session.getSnapshot().retainedRun).toBeUndefined();
       expect(f.getRunStatus).toHaveBeenCalledTimes(1);
     }
   );
@@ -363,7 +363,7 @@ describe('owned run reconnect', () => {
       expect(await f.session.submit('Question')).toBe(
         status === 'interrupted' ? 'interrupted' : 'error'
       );
-      expect(f.session.getSnapshot().reconnect).toBeUndefined();
+      expect(f.session.getSnapshot().retainedRun).toBeUndefined();
       // 'interrupted' alone cannot tell a lost pause from a cancelled run, so
       // that status (and only that status) is disambiguated through history.
       expect(f.getHistory).toHaveBeenCalledTimes(
@@ -389,7 +389,7 @@ describe('owned run reconnect', () => {
     expect(f.joinStream.mock.calls[0].slice(0, 3)).toEqual(['t', 'run-1', '1']);
     expect(f.joinStream.mock.calls[0][3]).not.toBe(f.stream.mock.calls[0][3]);
     expect(published[0].status).toBe('running');
-    expect(published[0].reconnect).toBeUndefined();
+    expect(published[0].retainedRun).toBeUndefined();
     expect(published[0].messages[1]).toMatchObject({
       content: 'Partial',
       delivery: { phase: 'streaming' },
@@ -431,7 +431,7 @@ describe('owned run reconnect', () => {
     const noTerminal = fixture({ joined: [], status: 'success' });
     expect(await noTerminal.session.submit('Question')).toBe('interrupted');
     expect(await noTerminal.session.reconnect()).toBe('interrupted');
-    expect(noTerminal.session.getSnapshot().reconnect).toBeDefined();
+    expect(noTerminal.session.getSnapshot().retainedRun).toBeDefined();
   });
 
   it('projects repeated-ID payloads, but offers no unsafe repeated/idless boundary until a new ID', async () => {
@@ -439,7 +439,7 @@ describe('owned run reconnect', () => {
       const f = fixture({ events: [chunk('A', '1'), chunk('B', last)] });
       await f.session.submit('Question');
       expect(f.session.getSnapshot().messages[1].content).toBe('AB');
-      expect(f.session.getSnapshot().reconnect).toBeUndefined();
+      expect(f.session.getSnapshot().retainedRun).toBeUndefined();
       expect(f.getHistory).not.toHaveBeenCalled();
     }
     const f = fixture({
@@ -455,20 +455,20 @@ describe('owned run reconnect', () => {
     await f.session.submit('Question');
     expect(await f.session.reconnect()).toBe('interrupted');
     expect(f.session.getSnapshot().messages[1].content).toBe('Partial');
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
   });
 
   it('requires a cursor even for a header-only drop and rejects conflicting/unsafe identities', async () => {
     const header = fixture({ events: [] });
     await header.session.submit('Question');
-    expect(header.session.getSnapshot().reconnect).toBeUndefined();
+    expect(header.session.getSnapshot().retainedRun).toBeUndefined();
     for (const metadata of [
       { run_id: '../bad', thread_id: 't' },
       { run_id: 'run', thread_id: 'other' },
     ]) {
       const f = fixture({ identify: (callback) => callback?.(metadata) });
       await f.session.submit('Question');
-      expect(f.session.getSnapshot().reconnect).toBeUndefined();
+      expect(f.session.getSnapshot().retainedRun).toBeUndefined();
       expect(f.getHistory).not.toHaveBeenCalled();
     }
     const conflict = fixture({
@@ -478,7 +478,7 @@ describe('owned run reconnect', () => {
       },
     });
     await conflict.session.submit('Question');
-    expect(conflict.session.getSnapshot().reconnect).toBeUndefined();
+    expect(conflict.session.getSnapshot().retainedRun).toBeUndefined();
   });
 
   it('keeps the legacy no-identity fallback and requests no capture options without both capabilities', async () => {
@@ -502,7 +502,7 @@ describe('owned run reconnect', () => {
     const f = fixture({ events: [terminal()] });
     f.getRunStatus.mockRejectedValue(new Error('private status error'));
     expect(await f.session.submit('Question')).toBe('interrupted');
-    expect(f.session.getSnapshot().reconnect).toBeDefined();
+    expect(f.session.getSnapshot().retainedRun).toBeDefined();
     const failed = fixture({
       events: [
         chunk('Partial', '1'),
@@ -510,7 +510,7 @@ describe('owned run reconnect', () => {
       ],
     });
     expect(await failed.session.submit('Question')).toBe('error');
-    expect(failed.session.getSnapshot().reconnect).toBeUndefined();
+    expect(failed.session.getSnapshot().retainedRun).toBeUndefined();
     expect(failed.getRunStatus).not.toHaveBeenCalled();
   });
 
@@ -529,7 +529,7 @@ describe('owned run reconnect', () => {
         });
         await f.session.submit('Replacement');
       } else await f.session[command]();
-      expect(f.session.getSnapshot().reconnect).toBeUndefined();
+      expect(f.session.getSnapshot().retainedRun).toBeUndefined();
       if (command === 'dispose')
         expect(await f.session.reconnect()).toBe('aborted');
       else await expect(f.session.reconnect()).rejects.toThrow();
@@ -641,7 +641,7 @@ describe('owned run reconnect', () => {
         command === 'submit' ? 'interrupted' : 'aborted'
       );
       await replacement;
-      expect(f.session.getSnapshot().reconnect).toBeUndefined();
+      expect(f.session.getSnapshot().retainedRun).toBeUndefined();
       expect(f.session.getSnapshot().state?.['stage']).toBeUndefined();
       expect(
         f.session
@@ -681,7 +681,7 @@ describe('owned run reconnect', () => {
       await Promise.resolve();
       await Promise.resolve();
       expect(f.session.getSnapshot()).toBe(snapshot);
-      expect(snapshot.reconnect).toBeUndefined();
+      expect(snapshot.retainedRun).toBeUndefined();
     }
   );
 
@@ -693,7 +693,7 @@ describe('owned run reconnect', () => {
     });
     expect(await f.session.reconnect()).toBe('aborted');
     expect(f.joinStream).not.toHaveBeenCalled();
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
     unsubscribe();
   });
 
@@ -748,7 +748,7 @@ describe('owned run reconnect', () => {
           };
       });
       await f.session.submit('Question');
-      expect(f.session.getSnapshot().reconnect).toBeUndefined();
+      expect(f.session.getSnapshot().retainedRun).toBeUndefined();
       expect(f.getHistory).not.toHaveBeenCalled();
       expect(f.getRunStatus).not.toHaveBeenCalled();
     }
@@ -800,7 +800,7 @@ describe('owned run reconnect', () => {
       'run-1',
       'follow-up',
     ]);
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
   });
 
   it('retains the exact follow-up handoff across two joins, with no repeated acquire or premature acknowledgment', async () => {
@@ -844,7 +844,7 @@ describe('owned run reconnect', () => {
     const earlier = f.session
       .getSnapshot()
       .messages.find((message) => message.id === 'assistant-call');
-    expect(f.session.getSnapshot().reconnect).toEqual({ runId: 'run-2' });
+    expect(f.session.getSnapshot().retainedRun).toEqual({ runId: 'run-2' });
     f.joinStream.mockImplementationOnce(async function* () {
       yield chunk(' more', 'follow-2');
     });
@@ -912,7 +912,7 @@ describe('owned run reconnect', () => {
     });
     f.updateState.mockRejectedValue(new Error('write failed'));
     expect(await f.session.submit('Question')).toBe('error');
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
     await expect(f.session.reconnect()).rejects.toThrow();
   });
 
@@ -1080,7 +1080,7 @@ describe('owned run reconnect', () => {
       'aborted'
     );
     expect(f.joinStream).not.toHaveBeenCalled();
-    expect(f.session.getSnapshot().reconnect).toBeUndefined();
+    expect(f.session.getSnapshot().retainedRun).toBeUndefined();
   });
 
   it('rejects admission during active history reads and legacy checks without mutating their owner', async () => {

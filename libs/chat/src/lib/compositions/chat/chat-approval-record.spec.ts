@@ -30,19 +30,19 @@ const assistant = (id: string): Message => ({ id, role: 'assistant', content: 'S
   `,
 })
 class HostComponent {
-  agent: MockAgent = mockAgent({ messages: [user('u1'), assistant('a1')], withInterrupt: true });
+  agent: MockAgent = mockAgent({ messages: [user('u1'), assistant('a1')], });
   presentation: ChatApprovalPresentation = 'inline';
   approveLabel = 'Save note';
   answer(action: ChatApprovalAction): void {
     // The app resumes the run; a terminal answer clears the interrupt.
-    if (action !== 'edit') this.agent.interrupt!.set(undefined);
+    if (action !== 'edit') this.agent.interrupts.set([]);
   }
 }
 
 function create(configure: (host: HostComponent) => void = () => undefined): ComponentFixture<HostComponent> {
   const fixture = TestBed.createComponent(HostComponent);
   configure(fixture.componentInstance);
-  fixture.componentInstance.agent.interrupt!.set({ id: 'approve-1', value: { tool: 'save_note' }, resumable: true });
+  fixture.componentInstance.agent.interrupts.set([{ id: 'approve-1', value: { tool: 'save_note' }, resumable: true }]);
   fixture.detectChanges();
   return fixture;
 }

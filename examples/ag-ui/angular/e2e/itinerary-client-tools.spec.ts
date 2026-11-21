@@ -75,7 +75,7 @@ test('ask chain: clear_day confirm mutates the panel and resumes the run', async
   await expect(panel).not.toContainText("Musée d'Orsay");
   await expect(page.getByText('Done — day 2 is cleared.')).toBeVisible({ timeout: 30_000 });
 
-  // The confirm card freezes once resolved: the adapter writes the emitted
+  // The confirm card freezes once resolved: the chat library writes the emitted
   // result back onto the local tool call, so the component re-renders into its
   // frozen state — the interactive buttons are gone and a resolved line shows.
   await expect(confirm).toContainText('Day 2 cleared');

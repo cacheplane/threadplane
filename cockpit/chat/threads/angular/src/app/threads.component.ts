@@ -1,7 +1,12 @@
 import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { ChatComponent, ChatThreadSidebarComponent } from '@threadplane/chat';
-import { injectAgent, provideAgent, LangGraphThreadsAdapter } from '@threadplane/langgraph';
+import { injectAgent, injectThreadDirectory, provideAgent } from '@threadplane/angular';
+import {
+  createSession,
+  type LangGraphSession,
+  type LangGraphThreadDirectory,
+} from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 // #region active-thread-signal
@@ -15,15 +20,16 @@ export const activeThreadIdState = signal<string | null>(null);
 
 /**
  * ThreadsComponent demonstrates multi-thread conversation management
- * backed by the real LangGraph SDK. Passes the shared
- * LangGraphThreadsAdapter's `directory` from `@threadplane/langgraph` to
+ * backed by the real LangGraph SDK. Passes the injected thread directory's
+ * `directory` (`injectThreadDirectory<LangGraphThreadDirectory>()` from `@threadplane/angular`, built
+ * by `createLangGraphThreadDirectory` from `@threadplane/langgraph`) to
  * the connected `<chat-thread-sidebar>`, which lists, renames, pins,
  * reorders, archives, deletes and files threads into projects (project names
  * live in the LangGraph Store). Reads `metadata.title` written by this cap's
  * `generate_title` graph node (spec
  * 2026-05-19-llm-generated-labels-design.md, converged on `title`
  * after the original `thread_title` choice). See app.config.ts for
- * the LANGGRAPH_THREADS_CONFIG provider.
+ * the provideThreadDirectory() provider.
  */
 @Component({
   selector: 'app-threads',
@@ -39,13 +45,23 @@ export const activeThreadIdState = signal<string | null>(null);
         throw new Error('incompatible runtime');
       }
       return {
-        apiUrl: connection.apiUrl,
-        assistantId: connection.assistantId,
-        clientOptions: connection.clientOptions,
+        // One session per thread: the agent asks for a new one on each
+        // thread switch and hands it the thread to open.
+        createSession: (context) =>
+          createSession({
+            apiUrl: connection.apiUrl,
+            assistantId: connection.assistantId,
+            clientOptions: connection.clientOptions,
+            threadId: context.threadId,
+            onThreadId: context.onThreadId,
+            reportOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
+            throttle: 16,
+          }),
         threadId: activeThreadIdState,
-        // When the agent auto-creates a thread on first submit, the
-        // adapter calls back with its id; mirror that into our signal so
-        // the sidenav highlights it immediately.
+        // When a session creates its thread on first submit, the agent
+        // calls back with its id; mirror that into our signal so the
+        // sidenav highlights it immediately.
         onThreadId: (id: string) => activeThreadIdState.set(id),
       };
     }),
@@ -57,21 +73,21 @@ export const activeThreadIdState = signal<string | null>(null);
       title="Chat threads"
       description="Conversations are listed from the LangGraph server. Use each row menu to rename, pin, reorder, archive, delete or move a conversation into a project; project names are kept in the LangGraph Store. Select a project to list only its conversations. Titles are optional."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
-        (click)="!agent.isLoading() &amp;&amp; onNewThread(conversation)">New conversation</button>
+      <button headerActions type="button" [disabled]="isLoading()"
+        (click)="!isLoading() &amp;&amp; onNewThread(conversation)">New conversation</button>
       <chat placeholder="Write a message…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
       <!-- The sidebar refreshes on mount and after each run of [agent];
            its row menus write through the directory. -->
       <chat-thread-sidebar sidebar class="panel"
-        [directory]="threadsSvc.directory"
+        [directory]="threads.directory"
         [agent]="agent"
         [activeThreadId]="activeThreadId()"
         [selectedProjectId]="selectedProjectId()"
         (threadSelected)="onThreadSelected($event)"
-        (newChat)="!agent.isLoading() &amp;&amp; onNewThread(conversation)"
+        (newChat)="!isLoading() &amp;&amp; onNewThread(conversation)"
         (projectSelected)="onProjectSelected($event)"
         (activeThreadRemoved)="onActiveThreadRemoved(conversation)" />
     </example-chat-layout>
@@ -86,13 +102,17 @@ export const activeThreadIdState = signal<string | null>(null);
   `],
 })
 export class ThreadsComponent {
-  protected readonly threadsSvc = inject(LangGraphThreadsAdapter);
+  // Naming the directory type types the commands the LangGraph directory
+  // always has as present, so `create` is called without `?.`.
+  protected readonly threads = injectThreadDirectory<LangGraphThreadDirectory>();
 
   /** Writable signal the agent watches — assigning to it switches the
    *  active thread without forcing a full agent rebuild. */
   protected readonly activeThreadId = activeThreadIdState;
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
+  /** True while a run streams: the agent has no separate loading flag. */
+  protected readonly isLoading = computed(() => this.agent.status() === 'running');
 
   /** The project whose conversations the sidebar lists; `null` lists all. */
   protected readonly selectedProjectId = signal<string | null>(null);
@@ -105,7 +125,7 @@ export class ThreadsComponent {
   }
 
   // #region thread-actions
-  /** Row commands go through `threadsSvc.directory`; the sidebar reports
+  /** Row commands go through `threads.directory`; the sidebar reports
    *  when the active thread was deleted so the surface returns to a new chat. */
   protected onActiveThreadRemoved(conversation?: ChatComponent): void {
     this.agent.switchThread(null);
@@ -122,14 +142,14 @@ export class ThreadsComponent {
 
   // #region switch-and-create
   protected onThreadSelected(threadId: string): void {
-    // switchThread is the LangGraph adapter's canonical thread-switch API
-    // (resets derived state + reloads server messages for the new thread).
+    // switchThread is the agent's thread-switch API: it replaces the session
+    // underneath and loads the selected thread's saved messages.
     this.agent.switchThread(threadId);
     this.activeThreadId.set(threadId);
   }
 
   protected async onNewThread(conversation?: ChatComponent): Promise<void> {
-    const id = await this.threadsSvc.create();
+    const id = await this.threads.create();
     if (id) {
       this.agent.switchThread(id);
       this.activeThreadId.set(id);

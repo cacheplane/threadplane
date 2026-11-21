@@ -45,8 +45,13 @@ export class HeroRecordingTransport implements AgentTransport {
     }
     this.publish();
   }
-  joinStream(threadId: string, runId: string, lastEventId: string | undefined, signal: AbortSignal): AsyncIterable<StreamEvent> {
-    return this.inner.joinStream ? this.inner.joinStream(threadId, runId, lastEventId, signal) : EMPTY_STREAM;
+  /** The session creates its thread through the transport before its first run. */
+  createThread(signal: AbortSignal): Promise<string> {
+    if (!this.inner.createThread) throw new Error('inner transport cannot create a thread');
+    return this.inner.createThread(signal);
+  }
+  joinStream(...args: Parameters<NonNullable<AgentTransport['joinStream']>>): AsyncIterable<StreamEvent> {
+    return this.inner.joinStream ? this.inner.joinStream(...args) : EMPTY_STREAM;
   }
   createQueuedRun(assistantId: string, threadId: string, payload: unknown, signal: AbortSignal, options?: LangGraphSubmitOptions): Promise<AgentQueueEntry> {
     if (!this.inner.createQueuedRun) throw new Error('inner transport cannot queue runs');

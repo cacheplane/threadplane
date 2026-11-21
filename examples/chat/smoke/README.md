@@ -64,6 +64,21 @@ The actual app code (`src/app/`) is **not** in the template — it's
 copied from the live demo at generate-time. Result: the generator's
 reviewable surface is just the scaffold; the app body never drifts.
 
+`template/package.json` names every `@threadplane/*` package the consumer
+installs: `@threadplane/angular` (the one Angular provider: `provideAgent`,
+`injectAgent`, the thread directory), `@threadplane/core` (the session
+contract the provider and the backends share), `@threadplane/content` (a peer
+of the Angular package), the backend packages `@threadplane/langgraph` and
+`@threadplane/ag-ui` (each exports `createSession`), and chat, render, a2ui
+and telemetry. `cli.mjs` packs and pins the same list from
+`--local-dist-root`, so a package added to one must be added to the other;
+`consumer-package.spec.mjs` checks that they agree.
+
+`template/src/compatibility-probe.ts` boots a second, tiny application beside
+the demo. It imports one symbol from each package and injects an agent built
+by `provideFakeAgent` from `@threadplane/angular/testing`, so the runtime smoke
+proves the packaged provider works in the consumer without a backend.
+
 The placeholder `"@threadplane/chat": "*"` in `template/package.json` is a
 valid semver range ("any version"); the CLI replaces it with the
 explicit `^X.Y.Z` it resolved before writing. The template supplies a

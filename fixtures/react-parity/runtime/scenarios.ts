@@ -136,7 +136,7 @@ export type FixtureSnapshot = AgentSnapshot<FixtureTools> & {
     readonly interrupts: readonly FixtureInterrupt[];
     readonly error?: AgentError;
   }[];
-  readonly reconnect?: { readonly runId: string };
+  readonly retainedRun?: { readonly runId: string };
   readonly state: Readonly<Record<string, PlainValue>> | undefined;
   readonly interrupts: readonly FixtureInterrupt[];
 };

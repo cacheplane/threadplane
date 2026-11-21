@@ -1,10 +1,9 @@
 import '@angular/compiler';
-import { submitMessage } from '@threadplane/chat';
+import { mockAgent, submitMessage } from '@threadplane/chat';
 import { TestBed } from '@angular/core/testing';
-import { mockLangGraphAgent } from '@threadplane/langgraph';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 const holder = vi.hoisted(() => ({ agent: undefined as any }));
-vi.mock('@threadplane/langgraph', async (importOriginal) => ({
+vi.mock('@threadplane/angular', async (importOriginal) => ({
   ...(await importOriginal<any>()),
   injectAgent: () => holder.agent,
 }));
@@ -12,7 +11,7 @@ import { MemoryComponent } from './memory.component';
 const scope = '12345678-1234-4234-8234-123456789abc';
 describe('MemoryComponent source honesty', () => {
   beforeEach(() => {
-    holder.agent = mockLangGraphAgent();
+    holder.agent = mockAgent();
     localStorage.setItem('threadplane.deep-agents-memory.scope.v1', scope);
   });
   function component(): any {
@@ -20,7 +19,7 @@ describe('MemoryComponent source honesty', () => {
   }
   it('uses an empty live store observation instead of an older checkpoint', () => {
     const c = component();
-    holder.agent.value.set({
+    holder.agent.state.set({
       memory_scope_owner: scope,
       memory_contents: { '/memories/AGENTS.md': 'old' },
     });
@@ -128,12 +127,12 @@ describe('MemoryComponent source honesty', () => {
   });
   it('revokes live evidence on error and avoids checkpoint fallback while a new run loads', () => {
     const c = component();
-    holder.agent.value.set({
+    holder.agent.state.set({
       memory_scope_owner: scope,
       memory_contents: { '/memories/AGENTS.md': 'historical' },
     });
     expect(c.memorySource()).toBe('checkpoint');
-    holder.agent.isLoading.set(true);
+    holder.agent.status.set('running');
     expect(c.memorySource()).toBe('none');
     holder.agent.customEvents.set([
       {
@@ -146,7 +145,11 @@ describe('MemoryComponent source honesty', () => {
       },
     ]);
     expect(c.memorySource()).toBe('live');
-    holder.agent.error.set({ message: 'read failed', kind: 'unknown' });
+    holder.agent.error.set({
+      message: 'read failed',
+      kind: 'server',
+      retryable: false,
+    });
     expect(c.memorySource()).toBe('unavailable');
     expect(c.memoryFiles()).toEqual([]);
   });
@@ -157,7 +160,7 @@ describe('MemoryComponent source honesty', () => {
       { name: 'tool', data: { memory_contents: {} } },
     ]);
     expect(c.memorySource()).toBe('none');
-    holder.agent.value.set({
+    holder.agent.state.set({
       memory_scope_owner: 'wrong',
       memory_contents: {},
     });

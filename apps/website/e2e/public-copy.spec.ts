@@ -33,19 +33,30 @@ test.describe('public copy boundary', () => {
     const routes = await sitemapRoutes(request);
     expect(routes.length, 'the sitemap must not be empty').toBeGreaterThan(50);
 
-    const offenders: string[] = [];
-    for (const route of routes) {
-      const response = await request.get(route);
-      expect(response.ok(), `${route} must be served`).toBe(true);
-      const body = await response.text();
+    // Every route is fetched and checked, a few at a time: the sitemap lists
+    // over a thousand generated API pages, and one request at a time takes
+    // the crawl to the test's time bound. Findings keep sitemap order.
+    const findings: string[][] = routes.map(() => []);
+    let next = 0;
+    const crawl = async () => {
+      for (let index = next++; index < routes.length; index = next++) {
+        const route = routes[index];
+        const response = await request.get(route);
+        expect(response.ok(), `${route} must be served`).toBe(true);
+        const body = await response.text();
 
-      for (const hit of findBarredCopy(body)) offenders.push(`${route} — ${hit}`);
-      if (RETIRED_ROUTE_PATTERN.test(body)) {
-        offenders.push(`${route} — links a retired documentation route`);
+        for (const hit of findBarredCopy(body))
+          findings[index].push(`${route} — ${hit}`);
+        if (RETIRED_ROUTE_PATTERN.test(body)) {
+          findings[index].push(
+            `${route} — links a retired documentation route`
+          );
+        }
       }
-    }
+    };
+    await Promise.all(Array.from({ length: 6 }, crawl));
 
-    expect(offenders).toEqual([]);
+    expect(findings.flat()).toEqual([]);
   });
 
   test('non-indexed public routes are checked too', async ({ request }) => {

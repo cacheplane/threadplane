@@ -77,12 +77,12 @@ The wiring is a fan-out from `route` into the three surface-authoring nodes, eac
 <ExampleCode file="graph.py" region="graph-wiring" title="graph.py — graph wiring" />
 
 <Callout type="info" title="This graph compiles without a checkpointer">
-The graph is served by the LangGraph API server, which supplies persistence, so `_builder.compile()` takes no saver. A graph you serve yourself — behind AG-UI, for instance — has to compile one, because the adapter reads thread state through the graph.
+The graph is served by the LangGraph API server, which supplies persistence, so `_builder.compile()` takes no saver. A graph you serve yourself — behind AG-UI, for instance — has to compile one, because the AG-UI bridge reads thread state through the graph.
 </Callout>
 
-### Registering the LangGraph agent
+### Providing the LangGraph agent
 
-`provideAgent()` from `@threadplane/langgraph` needs the API URL and the assistant id. The example passes a factory because it resolves both at runtime from the host that serves the demo; an application of your own passes `apiUrl` and `assistantId` directly.
+`provideAgent()` from `@threadplane/angular` takes a `createSession` factory, and `createSession()` from `@threadplane/langgraph` needs the API URL and the assistant id. The example wraps the config in a factory because it resolves both at runtime from the host that serves the demo; an application of your own passes `apiUrl` and `assistantId` directly. `transcriptNodeNames` keeps the graph's background title model out of the transcript: only the three listed nodes' streamed messages enter it.
 
 <ExampleCode file="app.config.ts" title="app.config.ts" />
 

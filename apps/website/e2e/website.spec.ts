@@ -282,7 +282,7 @@ test('docs landing page carries the shared workspace toolbar', async ({ page }) 
 });
 
 test('api reference renders in docs', async ({ page }) => {
-  await page.goto('/docs/api/langgraph/injectAgent');
+  await page.goto('/docs/api/angular/injectAgent');
   await expect(page.locator('article').first()).toBeVisible();
 });
 
@@ -556,7 +556,7 @@ test.describe('representative docs pages do not create page-level horizontal ove
   const routes = [
     '/docs',
     '/docs/angular/langgraph/getting-started/introduction',
-    '/docs/api/langgraph/injectAgent',
+    '/docs/api/angular/injectAgent',
     '/docs/angular/chat/components/chat-tool-calls',
     '/docs/angular/chat/a2ui/overview',
     '/docs/telemetry/guides/browser',

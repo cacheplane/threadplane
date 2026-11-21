@@ -1,5 +1,6 @@
 import type { AgentQueueEntry, AgentTransport, LangGraphSubmitOptions, StreamEvent } from '@threadplane/langgraph';
 import type { ThreadState } from '@langchain/langgraph-sdk';
+import { ReplayUserIds } from '../replay-user-ids';
 import { validateHeroRecording, type HeroRecording } from './hero-recording.types';
 
 export interface ReplayClock { sleep(ms: number): Promise<void>; }
@@ -13,6 +14,8 @@ export interface ReplayClock { sleep(ms: number): Promise<void>; }
 export const REPLAY_MIN_GAP_MS = 0;
 export const REPLAY_MAX_GAP_MS = 600;
 export const HERO_RECORDING_URL = '/hero-replay.json';
+/** The thread id the replay agent reports. Nothing is saved under it. */
+export const HERO_REPLAY_THREAD_ID = 'hero-replay';
 
 const realClock: ReplayClock = { sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)) };
 
@@ -31,6 +34,8 @@ export class HeroReplayTransport implements AgentTransport {
   private readonly load: () => Promise<HeroRecording>;
   private recording: Promise<HeroRecording> | null = null;
   private runIndex = 0;
+  /** Renames the recorded prompts to the ids the replaying session sent. */
+  private readonly userIds = new ReplayUserIds();
 
   constructor(clock?: ReplayClock, load?: () => Promise<HeroRecording>) {
     this.clock = clock ?? realClock;
@@ -40,13 +45,20 @@ export class HeroReplayTransport implements AgentTransport {
   /** Resolves once the fixture is loaded; the hero posts `ready` after this. */
   ready(): Promise<void> { return this.getRecording().then(() => undefined); }
 
-  reset(): void { this.runIndex = 0; }
+  reset(): void {
+    this.runIndex = 0;
+    this.userIds.reset();
+  }
 
-  async *stream(_assistantId: string, _threadId: string | null, _payload: unknown, signal: AbortSignal, _options?: LangGraphSubmitOptions): AsyncIterable<StreamEvent> {
+  /** A session creates its thread before its first run; the replay has none to create. */
+  async createThread(): Promise<string> { return HERO_REPLAY_THREAD_ID; }
+
+  async *stream(_assistantId: string, _threadId: string | null, payload: unknown, signal: AbortSignal, _options?: LangGraphSubmitOptions): AsyncIterable<StreamEvent> {
     const rec = await this.getRecording();
     const run = rec.runs[this.runIndex];
     if (!run) return;
     this.runIndex += 1;
+    this.userIds.adopt(payload, run.events);
     let last = 0;
     for (const { tMs, event } of run.events) {
       if (signal.aborted) return;
@@ -54,7 +66,7 @@ export class HeroReplayTransport implements AgentTransport {
       last = tMs;
       await this.clock.sleep(gap);
       if (signal.aborted) return;
-      yield event;
+      yield this.userIds.translate(event);
     }
   }
 

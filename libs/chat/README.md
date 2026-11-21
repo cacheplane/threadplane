@@ -26,8 +26,10 @@ The chat surface of [Threadplane](https://github.com/cacheplane/threadplane), th
 ## Install
 
 ```bash
-npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
 ```
+
+`@threadplane/angular` supplies `provideAgent` and `injectAgent`, and `@threadplane/core` the contract types. `@threadplane/langgraph` and its two `@langchain` peers are the LangGraph backend; with another backend, install that package in their place.
 
 **Peer dependencies:**
 
@@ -36,10 +38,12 @@ npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/
 @angular/common            ^20.0.0 || ^21.0.0 || ^22.0.0
 @angular/platform-browser  ^20.0.0 || ^21.0.0 || ^22.0.0
 @angular/router            ^20.0.0 || ^21.0.0 || ^22.0.0
-@threadplane/render        *
-@threadplane/a2ui          *
+@threadplane/angular       same version as @threadplane/chat
+@threadplane/core          same version as @threadplane/chat
+@threadplane/render        same version as @threadplane/chat
+@threadplane/a2ui          same version as @threadplane/chat
+@threadplane/telemetry     ^0.3.7
 @json-render/core          ^0.16.0
-@langchain/core            ^1.1.33
 rxjs                       ~7.8.0
 marked                     ^15.0.0 || ^16.0.0
 zod                        ^3.25.0 || ^4.0.0
@@ -53,11 +57,15 @@ katex                      ^0.16.0 || ^0.17.0 (optional)
 ```typescript
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
-import { provideAgent } from '@threadplane/langgraph';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideAgent({ apiUrl: '/api/langgraph', assistantId: 'agent' }),
+    provideAgent({
+      createSession: (context) =>
+        createSession({ apiUrl: '/api/langgraph', assistantId: 'agent', ...context }),
+    }),
   ],
 };
 ```
@@ -66,7 +74,7 @@ export const appConfig: ApplicationConfig = {
 // my.component.ts
 import { Component } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   selector: 'app-root',
@@ -94,7 +102,7 @@ Ready-to-use full-feature layouts:
 | `ChatPopupComponent`          | `<chat-popup>`           | Floating popup with a launcher button           |
 | `ChatSidebarComponent`        | `<chat-sidebar>`         | Sidebar-docked layout                           |
 | `ChatSidenavComponent`        | `<chat-sidenav>`         | Sidenav host with project/thread list panel     |
-| `ChatTimelineSliderComponent` | `<chat-timeline-slider>` | Time-travel slider for agent checkpoint history |
+| `ChatTimelineSliderComponent` | `<chat-timeline-slider>` | Time-travel slider for agent checkpoint history, listed newest first |
 | `ChatInterruptPanelComponent` | `<chat-interrupt-panel>` | Full interrupt-handling composition             |
 | `ChatApprovalCardComponent`   | `<chat-approval-card>`   | Approval/rejection dialog for HITL flows        |
 | `ChatToolCallCardComponent`   | `<chat-tool-call-card>`  | Rich card for a single tool call                |
@@ -110,29 +118,33 @@ Custom content templates for message bubbles, tool call rows, and citation cards
 
 ### Human-in-the-loop (interrupts)
 
-`<chat-interrupt-panel>` surfaces the current `AgentInterrupt` and emits `accept`, `edit`, `respond`, or `ignore` through its `action` output. `<chat-approval-card>` emits `approve`, `cancel`, or `edit` (when enabled) for explicit approval workflows. The caller maps these actions to the backend's resume payload.
+`<chat-interrupt-panel>` surfaces the first pending `AgentInterrupt` (`agent.interrupts()` lists them all) and emits `accept`, `edit`, `respond`, or `ignore` through its `action` output. `<chat-approval-card>` emits `approve`, `cancel`, or `edit` (when enabled) for explicit approval workflows. The caller maps these actions to the answer the backend expects and sends it with `agent.resume(responses)`, one response per pending interrupt.
 
 ```html
 <chat-interrupt-panel [agent]="agent" (action)="onAction($event)" />
 ```
 
 ```typescript
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 import type { InterruptAction } from '@threadplane/chat';
 
 // Component members; add ChatInterruptPanelComponent to component imports.
 readonly agent = injectAgent();
 
 async onAction(action: InterruptAction): Promise<void> {
+  const interrupt = this.agent.interrupts()?.[0];
+  if (!interrupt || !this.agent.resume) return;
   if (action === 'accept') {
-    await this.agent.submit({ resume: 'confirm' });
+    await this.agent.resume([{ interruptId: interrupt.id, status: 'resolved', value: 'confirm' }]);
   } else if (action === 'ignore') {
-    await this.agent.submit({ resume: 'cancel' });
+    await this.agent.resume([{ interruptId: interrupt.id, status: 'resolved', value: 'cancel' }]);
   }
 }
 ```
 
 This handler implements only Accept and Ignore; the panel still renders all four buttons. Use a custom template for a two-button UI. The strings above match the flight demo's backend contract. Other tools may expect `{ approved: boolean }`; a button label does not define a universal resume payload.
+
+A LangGraph session accepts only `status: 'resolved'`. LangGraph has no cancelled response, so a refusal is a value the graph reads, as `'cancel'` is above, and `resume` rejects a response with `status: 'cancelled'` without sending it. Whether another backend takes a cancelled response is that backend's rule; see its session reference.
 
 ### Tool calls and subagents
 
@@ -311,24 +323,34 @@ The full token vocabulary (`--a2ui-primary`, `--a2ui-spacing-1..7`, `--a2ui-typo
 
 ---
 
-## Runtime adapters
+## Backends
 
-Chat compositions consume the runtime-neutral `Agent` contract. Two adapters ship today:
+Chat compositions take the `Agent` that `injectAgent()` from `@threadplane/angular` returns: a session's snapshot fields as signals (`messages()`, `status()`, `error()`, `toolCalls()`, `interrupts()`, `subagents()`, `checkpoints()` and the rest) and the session's commands (`submit`, `stop`, and the optional `resume`, `retry`, `regenerate`, `checkStatus`). A control is shown only while the agent has its command. One provider serves every backend; the backend package supplies `createSession`:
 
 - **`@threadplane/langgraph`** — for LangGraph / LangGraph Platform backends.
 - **`@threadplane/ag-ui`** — for AG-UI-compatible backends such as LangGraph, CrewAI, Mastra, Microsoft Agent Framework, AG2, Pydantic AI, and AWS Strands.
 
-Custom backends implement the `Agent` (or `AgentWithHistory`) interface directly with no library dependency.
+A custom backend implements the `AgentSession` contract and is provided the same way.
+
+For tests and stories, `mockAgent()` builds an `Agent` with writable fields and recorded commands. `@threadplane/chat/testing` adds `provideAgentValue(agent)`, which makes `injectAgent()` return that mock in a component under test, `provideFakeAgent()`, which provides the real agent over an in-memory session, and the session conformance suites.
+
+```typescript
+import { mockAgent } from '@threadplane/chat';
+import { provideAgentValue } from '@threadplane/chat/testing';
+
+const agent = mockAgent({ messages: [{ id: 'a1', role: 'assistant', content: 'Hi' }] });
+TestBed.configureTestingModule({ providers: [provideAgentValue(agent)] });
+```
 
 Threadplane does not host agents, conversations, models, or storage. Thread, history, branching, and reload
-surfaces use the connected adapter contracts; durable storage, checkpointing, retention, authorization, and
+surfaces use the connected backend's session; durable storage, checkpointing, retention, authorization, and
 cross-device persistence depend on the backend and infrastructure you operate.
 
 ---
 
 ## Reliability
 
-`@threadplane/chat` follows a patch-only release cadence (`0.0.x`). The runtime-neutral `Agent` contract is a stability boundary: adapter updates do not break chat UI code and vice versa. The package is covered by the monorepo's CI lint, test, and build pipeline on every commit.
+`@threadplane/chat` follows a patch-only release cadence (`0.0.x`). The `Agent` contract is a stability boundary: backend updates do not break chat UI code and vice versa. The package is covered by the monorepo's CI lint, test, and build pipeline on every commit.
 
 ---
 

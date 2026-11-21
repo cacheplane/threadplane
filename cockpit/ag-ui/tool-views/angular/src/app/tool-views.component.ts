@@ -1,7 +1,7 @@
 import { exampleToolLabel } from '../../../../../shared/tool-presentation';
 import { Component } from '@angular/core';
 import { ChatComponent, views } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { WeatherCardComponent } from './weather-card.component';
 
@@ -22,7 +22,7 @@ import { WeatherCardComponent } from './weather-card.component';
       description="Ask for a city’s weather. The agent runs a server tool and the page displays its demo reading alongside the conversation."
     >
       <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask for a city’s weather…" [welcomeDisabled]="true" main [agent]="agent" [views]="views" class="flex-1 min-w-0">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
     </example-chat-layout>
   `,

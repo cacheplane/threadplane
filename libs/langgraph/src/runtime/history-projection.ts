@@ -13,12 +13,18 @@ import {
   sameMessage,
   sameToolCall,
 } from './ownership.js';
-import { record, roleOf, textContent } from './wire-message.js';
+import { record, roleOf } from './wire-message.js';
 import { projectHistoryInterrupts } from './interrupt-projection.js';
 import type { LangGraphWireInterrupt } from './langgraph-snapshot.js';
 import { observeInvocation, type ToolInvocation } from './tool-invocations.js';
 import { projectCitations } from './citation-projection.js';
 import { projectReasoning } from './reasoning-projection.js';
+import { projectExtra, readContent } from './content-blocks.js';
+import {
+  settledCall,
+  toolEvidence,
+  type ToolEvidence,
+} from './stream-projection.js';
 
 export interface HistoryProjectionOptions {
   /** Omit for broad wire observation. A supplied catalog exposes only its
@@ -27,6 +33,8 @@ export interface HistoryProjectionOptions {
   /** An aggregate caller supplies its already-owned candidate to avoid reading
    * transport-owned interrupt getters a second time. */
   readonly interrupts?: readonly LangGraphWireInterrupt[];
+  /** Publish each message's wire extras as `Message.extra`. */
+  readonly extras?: boolean;
 }
 
 function sameEntries(left: readonly unknown[], right: readonly unknown[]) {
@@ -141,6 +149,7 @@ export function projectHistory(
   );
   const projectedMessages: Message[] = [];
   const calls = new Map<string, ToolCall>();
+  const evidence = new Map<string, ToolEvidence>();
 
   raw.forEach((message, index) => {
     if (!message) return;
@@ -160,10 +169,20 @@ export function projectHistory(
     const finalizedCalls = capturedCalls
       ? capturedCalls[index]
       : captureHistoryCalls(message, previous.invocations);
+    const reading = readContent(message['content'], role === 'tool');
+    const blocks = reading.blocks;
+    const extra = options.extras ? projectExtra(message) : undefined;
+    if (role === 'tool' && typeof message['tool_call_id'] === 'string') {
+      const said = toolEvidence(message, reading.parts);
+      if (said) evidence.set(message['tool_call_id'], said);
+      else evidence.delete(message['tool_call_id']);
+    }
     projectedMessages.push({
       id,
       role,
-      content: textContent(message['content']),
+      content: reading.text,
+      ...(blocks ? { blocks } : {}),
+      ...(extra ? { extra } : {}),
       citations: projectCitations(message),
       reasoning: projectReasoning(message),
       delivery: staticDelivery(id),
@@ -217,7 +236,7 @@ export function projectHistory(
     )
       continue;
     const projected: ToolCall = results.has(call.id)
-      ? { ...call, status: 'complete', result: results.get(call.id) }
+      ? settledCall(call, results.get(call.id) as string, evidence.get(call.id))
       : call;
     const prior = previousTools.get(call.id);
     projectedTools.push(

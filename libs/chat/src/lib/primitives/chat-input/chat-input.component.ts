@@ -12,7 +12,8 @@ import {
   DestroyRef,
   inject,
 } from '@angular/core';
-import type { Agent } from '../../agent';
+import { isAgentInputBlocked, isAgentRunning, type Agent } from '../../agent';
+import { stopAgent } from '../../client-tools/stop-agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_INPUT_STYLES } from '../../styles/chat-input.styles';
 
@@ -25,8 +26,9 @@ export function submitMessage(
   text: string,
 ): string | null {
   const trimmed = text.trim();
-  if (!trimmed || agent.isInputBlocked?.()) return null;
-  void agent.submit({ message: trimmed });
+  if (!trimmed || isAgentInputBlocked(agent)) return null;
+  // A refused or failed submission is published as the agent's error.
+  agent.submit({ message: trimmed }).catch(() => undefined);
   return trimmed;
 }
 
@@ -112,14 +114,14 @@ export class ChatInputComponent {
   readonly submitted = output<string>();
   readonly stopped = output<void>();
   readonly messageText = signal<string>('');
-  readonly isLoading = computed(() => this.agent().isLoading());
+  readonly isLoading = computed(() => isAgentRunning(this.agent()));
   /** True while an IME composition (CJK input, accent, autocorrect) is active. */
   protected readonly composing = signal(false);
   readonly focused = signal(false);
 
   /** Submit is allowed only when not loading and there's non-whitespace text. */
   readonly canSubmit = computed(() => {
-    if (this.isLoading() || this.agent().isInputBlocked?.()) return false;
+    if (this.isLoading() || isAgentInputBlocked(this.agent())) return false;
     return this.messageText().trim().length > 0;
   });
 
@@ -261,12 +263,9 @@ export class ChatInputComponent {
     setTimeout(() => { if (button.isConnected) this.stopHadFocus = false; }, 0);
   }
 
-  /** Abort the current streaming response (if the adapter supports it). */
+  /** Stop the current response, and any client tool the browser is running for it. */
   onStop(): void {
-    const a = this.agent() as unknown as { stop?: () => void | Promise<void> };
-    if (typeof a.stop === 'function') {
-      void a.stop();
-    }
+    stopAgent(this.agent()).catch(() => undefined);
     this.stopped.emit();
   }
 

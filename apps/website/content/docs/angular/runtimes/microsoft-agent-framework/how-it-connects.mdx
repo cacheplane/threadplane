@@ -7,7 +7,7 @@ description: Measured AG-UI wire behavior for Microsoft Agent Framework: outcome
 
 The measurements and Angular compatibility details below describe the canonical Angular/provider example. The bounded React expense preview instead uses the native Session and top-level resume against the generated service directly, preserving current pause correlation and requiring a literal tool result plus successful root terminal outcome for confirmation. It does not claim wrapped specialist streaming. The native packages remain private source-build artifacts.
 
-This page records the AG-UI wire behavior measured for the Microsoft Agent Framework bridge on 2026-08-31. It describes what the runtime emitted, not what the protocol permits in general. The captured Server-Sent Events are committed at [`libs/ag-ui/fixtures/runtime-transcripts/`](https://github.com/cacheplane/threadplane/tree/main/libs/ag-ui/fixtures/runtime-transcripts) and replayed by the adapter test suite on every run.
+This page records the AG-UI wire behavior measured for the Microsoft Agent Framework bridge on 2026-08-31. It describes what the runtime emitted, not what the protocol permits in general. The captured Server-Sent Events are committed at [`libs/ag-ui/fixtures/runtime-transcripts/`](https://github.com/cacheplane/threadplane/tree/main/libs/ag-ui/fixtures/runtime-transcripts) and replayed by the package's test suite on every run.
 
 ## Transport
 
@@ -18,7 +18,7 @@ The example serves a single AG-UI endpoint from FastAPI.
 | `/agent` | `POST` | `RunAgentInput` JSON in, Server-Sent Events out. |
 | `/ok` | `GET` | Health check. No route in the local example is authenticated; the token gate belongs to the shared deployment, not to the FastAPI app. |
 
-In your own application that is an ordinary `provideAgent({ url: '/agent' })`. The example in this repository passes a factory instead, only because it resolves its endpoint at runtime. Nothing about the adapter configuration is Microsoft-specific either way.
+In your own application that is an ordinary `createSession({ url: '/agent' })` inside the `provideAgent()` session factory. The example in this repository wraps the config in a factory, only because it resolves its endpoint at runtime. Nothing about the session configuration is Microsoft-specific either way.
 
 ## Interrupts use the outcome convention
 
@@ -34,13 +34,13 @@ A tool declares `approval_mode="always_require"`, and the bridge finishes the ru
 }
 ```
 
-This matches AWS Strands and differs from the LangGraph bridge, which signals interrupts only through a `CUSTOM` event named `on_interrupt`. The adapter retains both conventions in one session; native batches take precedence in `auto` mode regardless of arrival order.
+This matches AWS Strands and differs from the LangGraph bridge, which signals interrupts only through a `CUSTOM` event named `on_interrupt`. The outcome is what a session answers by default, so the example sets no `interruptTransport`; in `auto` mode the outcome takes precedence over a notice in the same run.
 
 ## Resume must address every pending interrupt
 
-Like Strands, this runtime reads the protocol-standard top-level `resume` array of `{ interruptId, status, payload }` entries. The adapter requires an entry for **every** pending interrupt on either native backend. Cancelled entries must omit `payload`.
+Like Strands, this runtime reads the protocol-standard top-level `resume` array of `{ interruptId, status, payload }` entries. The session requires a response for **every** pending interrupt on either native backend. A cancelled response cannot carry a value.
 
-For one pending interrupt, `submit({ resume: decision })` is shorthand for one resolved entry. For a batch, pass a `resume` array with a decision for every observed interrupt ID. The adapter validates correlation; it does not invent answers for outstanding interrupts.
+`resume(responses)` takes one `{ interruptId, status, value }` response for each entry in `interrupts()`, and sends each `value` as that entry's `payload`. There is no shorthand for a single interrupt. The session validates correlation; it does not invent answers for outstanding interrupts.
 
 ## State streams predictively
 

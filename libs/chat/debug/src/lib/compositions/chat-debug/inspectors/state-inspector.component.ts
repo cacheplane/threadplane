@@ -80,7 +80,10 @@ export class StateInspectorComponent {
   readonly agent = input.required<DebugAgent | DebugAgentWithHistory>();
 
   readonly state = computed((): Record<string, unknown> => {
-    return this.agent().state();
+    const state = this.agent().state();
+    return state !== null && typeof state === 'object' && !Array.isArray(state)
+      ? (state as Record<string, unknown>)
+      : {};
   });
 
   protected readonly justCopied = signal<boolean>(false);

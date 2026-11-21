@@ -355,7 +355,7 @@ const failedRead: ToolCall = {
 describe('ChatToolCallsComponent — declared retry and receipts', () => {
   const setup = (toolCalls: ToolCall[], isLoading = false, grouped = true) => {
     const fixture = TestBed.createComponent(CallsHost);
-    const agent = mockAgent({ toolCalls, isLoading });
+    const agent = mockAgent({ toolCalls, status: isLoading ? 'running' : 'idle' });
     fixture.componentInstance.agent = agent;
     fixture.componentInstance.grouped = grouped;
     fixture.detectChanges();
@@ -395,10 +395,10 @@ describe('ChatToolCallsComponent — declared retry and receipts', () => {
   it('stops offering the retry while the agent works and once a later call repeats it', () => {
     const { fixture, agent, el } = setup([failedRead]);
     expect(retries(el)).toHaveLength(1);
-    agent.isLoading.set(true);
+    agent.status.set('running');
     fixture.detectChanges();
     expect(retries(el)).toHaveLength(0);
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     agent.toolCalls.set([
       failedRead,
       {

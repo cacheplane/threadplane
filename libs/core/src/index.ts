@@ -1,10 +1,24 @@
+export {
+  agentStateUpdateFromEvent,
+  onAgentStateUpdate,
+} from './contracts/agent-session.js';
 export type {
+  AgentResumeOptions,
   AgentSession,
   AgentSessionCustomEvent,
   AgentSubmitInput,
   AgentSubmitOptions,
 } from './contracts/agent-session.js';
 export type {
+  AgentClientTools,
+  ClientToolResult,
+  ClientToolSpec,
+} from './contracts/client-tools.js';
+export type { AgentCheckpoint } from './contracts/checkpoint.js';
+export { contentBlocksText } from './contracts/content-block.js';
+export type { ContentBlock } from './contracts/content-block.js';
+export type {
+  AgentInputBlock,
   AgentSnapshot,
   AgentStatus,
   AgentUsage,
@@ -39,15 +53,20 @@ export {
   streamingDelivery,
 } from './contracts/delivery.js';
 export type { CompleteOutcome, MessageDelivery } from './contracts/delivery.js';
-export { projectAgentError } from './contracts/error.js';
+export {
+  projectAgentError,
+  projectErrorDiagnostic,
+} from './contracts/error.js';
 export type {
   AgentError,
+  AgentErrorDiagnostic,
   AgentErrorKind,
   AgentRecovery,
 } from './contracts/error.js';
 export type {
   DeepReadonly,
   PlainValue,
+  StreamingToolCall,
   ToolCall,
   ToolCallStatus,
   ToolContract,

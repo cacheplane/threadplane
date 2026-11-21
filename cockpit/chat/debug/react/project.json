@@ -75,7 +75,7 @@
     "debugProbe": [
       "{workspaceRoot}/scripts/react-cockpit/chat-debug-configuration.spec.mjs",
       "{workspaceRoot}/scripts/react-cockpit/chat-debug-native-session-probe.mjs",
-      "{workspaceRoot}/fixtures/react-parity/langgraph-candidate/chat-debug-native-session.mjs",
+      "{workspaceRoot}/fixtures/react-parity/langgraph-package/chat-debug-native-session.mjs",
       "{workspaceRoot}/cockpit/chat/debug/angular/e2e/fixtures/c-debug.json"
     ]
   }

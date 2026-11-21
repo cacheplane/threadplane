@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { privateScaffoldProjects } from './react-parity/package-policy.mjs';
+import { foundationProjects } from './react-parity/package-policy.mjs';
 import { requiresFullCockpitFleet } from './cockpit-matrix.mjs';
 
 export const SCOPE_KEYS = [
@@ -155,7 +155,7 @@ const PARITY_PREFIXES = [
   'scripts/react-parity/',
   'fixtures/react-parity/',
   `${parityScope.docsRoot}/`,
-  ...[...parityScope.libraries, ...privateScaffoldProjects]
+  ...[...parityScope.libraries, ...foundationProjects]
     .map((name) => `libs/${name}/`),
 ];
 

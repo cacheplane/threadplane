@@ -4,7 +4,7 @@ description: How the time travel example checkpoints every turn, lists them in a
 
 # Time Travel
 
-Time travel is the ability to look at what an agent's state was a few steps ago, and to start a run from there instead of from the end of the conversation. LangGraph writes a checkpoint after every step of a run, and `injectAgent()` exposes that checkpoint history as Angular Signals. The running example is a chat with a checkpoint timeline beside it, and this guide walks the three files that make it work.
+Time travel is the ability to look at what an agent's state was a few steps ago, and to start a run from there instead of from the end of the conversation. LangGraph writes a checkpoint after every step of a run, and a session created with `historyState: true` publishes that checkpoint history, which the injected agent exposes as Angular Signals. The running example is a chat with a checkpoint timeline beside it, and this guide walks the three files that make it work.
 
 <Callout type="info" title="Use cases">
 Debug agent decisions, explore alternate paths, and build undo/redo experiences for your users. Time travel works with any LangGraph agent that persists checkpoints to a thread.
@@ -18,11 +18,11 @@ Send two or three messages so the timeline has entries to move between. Select h
 
 ## How it is built
 
-Three files carry the feature: a graph that leaves checkpointing to the platform, an application config that registers the agent, and a component that renders the checkpoint history. Open the Code tab to read them in place.
+Three files carry the feature: a graph that leaves checkpointing to the platform, an application config that registers the agent and asks its session to keep checkpoint state, and a component that renders the checkpoint history. Open the Code tab to read them in place.
 
 ### A graph the platform checkpoints
 
-The backend is a single streaming node over `MessagesState`, with a system prompt read from the capability's prompt file. No executable line in it concerns time travel, because the checkpoints come from the server that runs it.
+The backend is a single streaming node over a state that extends `MessagesState`, with a system prompt read from the capability's prompt file. The state adds three optional identifiers that the node writes beside each answer; the React version of this example reads them, and the Angular component does not. Nothing in the graph configures checkpointing, because the checkpoints come from the server that runs it.
 
 <ExampleCode file="graph.py" />
 
@@ -30,17 +30,17 @@ The backend is a single streaming node over `MessagesState`, with a system promp
 
 ### The provider
 
-The example resolves its connection details at runtime from the host that serves it, which is why `provideAgent()` takes a factory. Your own application passes `apiUrl` and `assistantId` directly.
+`provideAgent()` from `@threadplane/angular` takes a `createSession` function, and the example builds its session with `createSession()` from `@threadplane/langgraph`. The example resolves its connection details at runtime from the host that serves it, which is why the config is wrapped in a factory. Your own application passes `apiUrl` and `assistantId` as literals and keeps the one option this feature depends on: `historyState: true`. Without it the session keeps only checkpoint metadata, and `checkpoints()` stays `undefined`. You turn it on yourself because a page of checkpoint states can be large.
 
 <ExampleCode file="app.config.ts" />
 
 ### Reading the checkpoint history
 
-The component injects the agent and derives the timeline from it. `langGraphHistory()` is LangGraph's own view of the thread: an array of `ThreadState` snapshots. `selectedCheckpointId` is local interface state, holding the checkpoint the user clicked last. New checkpoints can move existing rows, so selection follows the identifier across history refreshes.
+The component injects the agent as `injectAgent<LangGraphSession>()` and derives the timeline from it. `checkpoints()` is the loaded history page, oldest first: each entry has the checkpoint `id`, a `label`, the `values` saved there, and `saved`, the checkpoint as LangGraph sent it. It is `undefined` until a page has been read, so the component falls back to an empty list, and it reverses the list to put the newest row first. `selectedCheckpointId` is local interface state, holding the checkpoint the user clicked last. New checkpoints can move existing rows, so selection follows the identifier across history refreshes.
 
 <ExampleCode file="time-travel.component.ts" region="history" title="time-travel.component.ts — the history signals" />
 
-Nothing in the component fetches that history: the framework loads it when a thread is selected and refreshes it when a run completes.
+Nothing in the component fetches that history: the agent reads it when a thread is selected, and the session reads the page again after every run that ends in success or a pause.
 
 ### The timeline sidebar
 
@@ -48,62 +48,72 @@ The `<chat>` composition owns the transcript, the input, and the loading and err
 
 <ExampleCode file="time-travel.component.ts" region="timeline" title="time-travel.component.ts — the timeline sidebar" />
 
-`checkpoint_id` is optional on the `Checkpoint` a `ThreadState` carries, which is why the identifier line and both handlers guard on it.
+A checkpoint's `id` is `undefined` when the backend sent none, which is why the identifier line and both handlers guard on it.
 
 ### Selecting a checkpoint
 
-The two handlers do different work. Select records the clicked row and hands the checkpoint identifier to `setBranch()`, which is a pointer and nothing more. Fork records the row and calls `submit()` with `{ checkpointId }`, which is the call that actually runs from a past checkpoint.
+The two handlers do different work. Select records the clicked row and hands the checkpoint identifier to `setBranch()`, which is a pointer and nothing more. Fork records the row and calls `submit()` with `{ run: { checkpointId } }`, which is the call that actually runs from a past checkpoint. Per-run LangGraph settings are grouped under `run`.
 
 <ExampleCode file="time-travel.component.ts" region="branch" title="time-travel.component.ts — select and fork" />
 
 <Callout type="warning" title="setBranch() records a pointer; it does not start a run">
-`setBranch(id)` writes the identifier into the `branch()` signal, and that is all it does. No run starts, and the next `submit()` continues from the tip of the thread as usual. Running from a past checkpoint is a `submit()` option, as [Running from a past checkpoint](#running-from-a-past-checkpoint) shows.
+`setBranch(value)` publishes the value in the `branch()` signal, and that is all it does. No request is made, no run starts, the transcript does not change, and the next `submit()` continues from the tip of the thread as usual. Running from a past checkpoint is a `submit()` option, as [Running from a past checkpoint](#running-from-a-past-checkpoint) shows.
 </Callout>
 
 ## Reading the history two ways
 
-`history()` and `langGraphHistory()` describe the same thread at two levels. The first is the runtime-neutral shape every adapter that keeps checkpoints can produce; the second is LangGraph's own.
+`checkpoints()` and `history()` describe the same loaded page at two levels. The first is the core contract's shape, which any session that keeps checkpoints can produce; the second is LangGraph's own metadata.
 
 ```typescript
-const agent = injectAgent();
+const agent = injectAgent<LangGraphSession>();
 
-// Runtime-neutral: AgentCheckpoint[], each with id, label, and values.
-const checkpoints = computed(() => agent.history());
+// Core contract, oldest first: each entry has id, label, and values.
+// This session adds `saved`, the LangGraph ThreadState. Needs historyState: true.
+const checkpoints = computed(() => agent.checkpoints() ?? []);
 
-// Raw LangGraph: ThreadState[], each with checkpoint, parent_checkpoint,
-// metadata, created_at, next, tasks, and the full values snapshot.
-const rawCheckpoints = computed(() => agent.langGraphHistory());
+// LangGraph metadata only, newest first: checkpoint, parent_checkpoint,
+// created_at, and next. No state, so it is published without the option.
+const history = computed(() => agent.history() ?? []);
 ```
 
-The example reads the raw signal because it renders LangGraph's `checkpoint` object directly; `history()` would hand it the same identifier as an adapter-opaque `id`.
+The example reads `checkpoints()` because the timeline needs only the identifier, and the same list carries each checkpoint's state for a view that wants to show it. With `historyState: true` the session also publishes `messageCheckpoints()`, a record from an assistant message id to the id of a checkpoint that ends with that message.
 
 ## Running from a past checkpoint
 
-`submit()` accepts LangGraph's run options, and two of them address a checkpoint: `checkpoint` takes a `ThreadState.checkpoint` object, and `checkpointId` takes only its identifier. Passing either starts the run from that point in the thread rather than from its tip, which is what creates a second path out of one checkpoint.
+`submit()` accepts LangGraph's run settings under `run`, and two of them address a checkpoint: `checkpoint` takes a LangGraph checkpoint object, and `checkpointId` takes only its identifier. Passing either starts the run from that point in the thread rather than from its tip, which is what creates a second path out of one checkpoint.
 
 ```typescript
-protected forkFrom(index: number, message: string): void {
-  const checkpoint = this.agent.langGraphHistory()[index]?.checkpoint;
-  if (!checkpoint) return;
-  void this.agent.submit({ message }, { checkpoint });
+protected runFrom(checkpoint: LangGraphCheckpoint, message: string): void {
+  if (!checkpoint.id) return;
+  void this.agent.submit({ message }, { run: { checkpointId: checkpoint.id } });
 }
 ```
 
-The original path is left intact, so the earlier checkpoints stay in the history and the new run hangs off the one you named.
+The original path is left intact, so the earlier checkpoints stay in the history and the new run hangs off the one you named. When the session holds that checkpoint's state, the transcript is first set back to what the checkpoint held, so the new turn follows it; otherwise the saved branch replaces the transcript once the run has ended.
+
+Two commands build on the same idea. `fork(checkpoint, input)` is the guarded form: pass the full reference, `checkpoint.saved.checkpoint`, and the session verifies that the checkpoint is a completed one, with no remaining graph work, interrupts, or unanswered tool calls, before it submits. `regenerate(messageId)` takes the `id` of an assistant message, finds the prompt before it, and forks from the newest saved checkpoint that does not hold that prompt yet; the earlier answer stays on its old branch in the thread.
 
 ## Navigating branches
 
-`branch()` holds the identifier the application last set, and `setBranch()` writes it. `experimentalBranchTree()` turns the flat history into a tree by linking each `ThreadState` to its `parent_checkpoint`, so a checkpoint with two children becomes a fork with one sequence per alternate path.
+`branch()` holds the value the application last set, and `setBranch()` writes it. `branchTree()` arranges the loaded page as a tree by linking each checkpoint to its parent, so a checkpoint with two children becomes a fork with one sequence per alternate path. `selectBranch()` reads one path out of that tree.
 
 ```typescript
-// The identifier the application last selected.
+import { selectBranch } from '@threadplane/langgraph';
+
+// The value the application last selected; undefined for the default branch.
 const activeBranch = computed(() => agent.branch());
 
 // A sequence of nodes and forks, for a custom time-travel interface.
-const branchTree = computed(() => agent.experimentalBranchTree());
+const branchTree = computed(() => agent.branchTree());
+
+// The checkpoints the selected branch shows, oldest first.
+const shown = computed(() => {
+  const tree = agent.branchTree();
+  return tree ? selectBranch(tree, agent.branch()) : [];
+});
 ```
 
-An `AgentBranchTree` is a `sequence` whose items are either a `node`, carrying one `ThreadState` and the path that reached it, or a `fork`, carrying a list of alternate sequences. The signal is named `experimental` deliberately: treat its shape as unsettled.
+A `LangGraphBranchTree` is a `sequence` whose items are either a `node`, carrying one checkpoint as `value` and the `path` of fork choices that reached it, or a `fork`, carrying a list of alternate sequences, oldest first. A branch is those fork choices joined with `>`, and at a fork the branch does not name, `selectBranch()` follows the newest continuation. The example stores a single checkpoint identifier in `branch()` and reads it back only as a pointer. Like `checkpoints()`, the tree is published only with `historyState: true`, and it covers the loaded page, not the whole thread.
 
 ## Reading history on the server
 
@@ -129,13 +139,13 @@ past_state = graph.get_state(
 
 ## Comparing checkpoints
 
-Two checkpoints and a diff tell you what a step actually changed, which is often faster than reading the transcript for it. The runtime-neutral `history()` is enough here, because `values` is the whole state snapshot.
+Two checkpoints and a diff tell you what a step actually changed, which is often faster than reading the transcript for it. The core `checkpoints()` list is enough here, because `values` is the whole state snapshot, `messages` included.
 
 ```typescript
 protected compare(indexA: number, indexB: number) {
-  const history = this.agent.history();
-  const before = history[indexA]?.values;
-  const after = history[indexB]?.values;
+  const checkpoints = this.agent.checkpoints() ?? [];
+  const before = checkpoints[indexA]?.values;
+  const after = checkpoints[indexB]?.values;
   if (!before || !after) return null;
 
   const changedKeys = Object.keys({ ...before, ...after }).filter(
@@ -148,7 +158,7 @@ protected compare(indexA: number, indexB: number) {
 Use the result to render a diff view, highlight changed fields, or log what the agent touched during a step.
 
 <Callout type="tip" title="Debugging workflow">
-Time travel is most useful during development. Inspect why an agent chose a particular path by comparing adjacent checkpoints, then fork to test alternatives without restarting the conversation. Combine `history()` with Angular DevTools to watch checkpoint arrays update in real time as the agent streams.
+Time travel is most useful during development. Inspect why an agent chose a particular path by comparing adjacent checkpoints, then fork to test alternatives without restarting the conversation. Combine `checkpoints()` with Angular DevTools to watch the checkpoint list update after each run.
 </Callout>
 
 ## What's Next
@@ -158,12 +168,12 @@ Time travel is most useful during development. Inspect why an agent chose a part
     Configure thread storage so checkpoints survive page reloads and are available across sessions.
   </Card>
   <Card title="Streaming" href="/docs/angular/langgraph/guides/streaming">
-    Understand how `injectAgent()` surfaces incremental updates and how history integrates with live streaming state.
+    Understand how the injected agent surfaces incremental updates and how history integrates with live streaming state.
   </Card>
   <Card title="Subgraphs" href="/docs/angular/langgraph/guides/subgraphs">
     Compose multi-agent systems with orchestrators and track subagent execution.
   </Card>
-  <Card title="API Reference" href="/docs/api/langgraph/injectAgent">
-    Full reference for `injectAgent()` options, signals, and the submit() API including checkpoint parameters.
+  <Card title="API Reference" href="/docs/api/langgraph">
+    The generated reference for `@threadplane/langgraph`, including the run settings that address a checkpoint.
   </Card>
 </CardGroup>

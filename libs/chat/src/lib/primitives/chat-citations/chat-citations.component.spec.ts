@@ -2,10 +2,10 @@
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { ChatCitationsComponent, ChatCitationCardTemplateDirective } from './chat-citations.component';
-import type { Message } from '../../agent/message';
+import { staticDelivery, type Message } from '../../agent';
 
 function msg(citations: Message['citations']): Message {
-  return { id: 'm1', role: 'assistant', content: 'x', citations };
+  return { id: 'm1', role: 'assistant', content: 'x', citations, delivery: staticDelivery('m1') };
 }
 
 /** The Sources panel is collapsed by default; open it to inspect the cards. */

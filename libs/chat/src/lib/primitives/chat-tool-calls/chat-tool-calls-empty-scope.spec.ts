@@ -8,7 +8,8 @@ import { ChatToolViewsComponent } from '../chat-tool-views/chat-tool-views.compo
 import { ChatToolCallsComponent } from './chat-tool-calls.component';
 import { ChatToolCallTemplateDirective } from './chat-tool-call-template.directive';
 import { mockAgent } from '../../testing/mock-agent';
-import { staticDelivery, streamingDelivery, type Message, type Subagent, type ToolCall } from '../../agent';
+import { staticDelivery, streamingDelivery, type ContentBlock, type Message, type ToolCall } from '../../agent';
+import type { FakeSubagentInput } from '@threadplane/core/testing';
 
 @Component({
   standalone: true,
@@ -33,7 +34,7 @@ import { staticDelivery, streamingDelivery, type Message, type Subagent, type To
   `,
 })
 class LiveScopeHost {
-  readonly agent = signal(mockAgent({ withSubagents: true }));
+  readonly agent = signal(mockAgent());
   readonly message = signal<Message | undefined>(undefined);
   readonly grouping = signal<'auto' | 'none'>('auto');
   readonly excluded = signal<readonly string[]>([]);
@@ -44,8 +45,9 @@ class LiveScopeHost {
 }
 
 const call = (id: string, name = 'search_web'): ToolCall => ({ id, name, args: { query: id }, status: 'running' });
-const subagent = (toolCallId: string, name: string): Subagent => ({
-  toolCallId, name, status: signal('running'), messages: signal([]), state: signal({}),
+// The child's own id is the backend's and need not match the spawning call.
+const subagent = (toolCallId: string, name: string): FakeSubagentInput => ({
+  id: 'unrelated-child-id', toolCallId, name, status: 'running',
 });
 
 describe('empty message-scoped tool groups', () => {
@@ -57,7 +59,7 @@ describe('empty message-scoped tool groups', () => {
       delivery: staticDelivery(`g-${i}`),
     }));
     const tail: Message = { id: 'tail', role: 'assistant', content: 'tail', delivery: streamingDelivery('tail') };
-    const agent = mockAgent({ messages: [...history, tail], isLoading: true, withSubagents: true });
+    const agent = mockAgent({ messages: [...history, tail], status: 'running', });
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);
     fixture.detectChanges();
@@ -94,7 +96,10 @@ describe('empty message-scoped tool groups', () => {
     expect(counts.scoped).toBeGreaterThanOrEqual(hosts.length);
     expect(globalCalls).toHaveBeenCalled();
     const nextHosts = fixture.debugElement.queryAll(By.directive(ChatToolCallsComponent));
-    const assistants = fresh.filter(message => message.role === 'assistant');
+    // The agent owns the published wrappers: each row holds the agent's copy.
+    const assistants = agent.messages().filter(message => message.role === 'assistant');
+    expect(assistants.map(message => message.content)).toEqual(
+      fresh.filter(message => message.role === 'assistant').map(message => message.content));
     expect(nextHosts).toHaveLength(hosts.length);
     nextHosts.forEach((host, i) => {
       expect(host.componentInstance).toBe(hosts[i].componentInstance);
@@ -129,8 +134,10 @@ describe('empty message-scoped tool groups', () => {
   it.each(['ids', 'blocks'] as const)('keeps live %s linkage and current configuration across repeated empty transitions', async kind => {
     const fixture = TestBed.createComponent(LiveScopeHost);
     const host = fixture.componentInstance;
-    const message: Message = { id: 'answer', role: 'assistant', content: kind === 'blocks' ? [] : 'answer',
-      toolCallIds: kind === 'ids' ? [] : undefined, delivery: staticDelivery('answer') };
+    const linkedIds: string[] = [];
+    const linkedBlocks: ContentBlock[] = [];
+    const message: Message = { id: 'answer', role: 'assistant', content: kind === 'blocks' ? '' : 'answer',
+      ...(kind === 'ids' ? { toolCallIds: linkedIds } : { blocks: linkedBlocks }), delivery: staticDelivery('answer') };
     host.message.set(message);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -141,7 +148,7 @@ describe('empty message-scoped tool groups', () => {
     const cards = () => fixture.debugElement.queryAll(By.directive(ChatToolActivityComponent));
     const templates = () => [...fixture.nativeElement.querySelectorAll('chat-tool-calls [data-template]')]
       .map((node: Element) => `${node.getAttribute('data-template')}:${node.textContent?.trim()}`);
-    const a = call('a');
+    let a = call('a');
     const b = call('b');
     const other = call('other', 'read_file');
     // Configure while empty, then discover in-place linkage through only a
@@ -153,8 +160,8 @@ describe('empty message-scoped tool groups', () => {
     host.version.set('first');
     await fixture.whenStable();
     expect(child.groups()).toEqual([]);
-    if (kind === 'ids') message.toolCallIds!.push('a', 'b', 'other');
-    else (message.content as Exclude<Message['content'], string>).push(...[a, b, other].map(tc =>
+    if (kind === 'ids') linkedIds.push('a', 'b', 'other');
+    else linkedBlocks.push(...[a, b, other].map(tc =>
       ({ type: 'tool_use' as const, id: tc.id, name: tc.name, args: tc.args })));
     agent.toolCalls.set([a, b, other]);
     await fixture.whenStable();
@@ -176,10 +183,12 @@ describe('empty message-scoped tool groups', () => {
     host.grouping.set('none');
     await fixture.whenStable();
     expect(cards()).toHaveLength(3);
-    a.status = 'complete'; a.args = { query: 'mutated query' }; a.result = 'mutated result';
+    // The same call id, republished complete with other arguments and a result.
+    a = { id: 'a', name: a.name, status: 'complete', args: { query: 'mutated query' }, result: 'mutated result' };
     agent.toolCalls.set([a, b, other]);
     await fixture.whenStable();
-    expect(child.groups()[0].calls[0]).toBe(a);
+    expect(child.groups()[0].calls[0]).toBe(agent.toolCalls()[0]);
+    expect(child.groups()[0].calls[0]).toEqual(a);
     expect(cards()[0].componentInstance.activity()).toMatchObject({ id: a.id, name: a.name,
       phase: 'complete', argumentsText: JSON.stringify(a.args, null, 2), resultText: 'mutated result' });
     // Nonempty, fully excluded scope still takes the configuration-dependent path.
@@ -196,13 +205,13 @@ describe('empty message-scoped tool groups', () => {
     expect(cards()).toHaveLength(0);
     const previousEmpty = child.groups();
     // Replace all relevant configuration while empty. A later live scope must
-    // use these replacements, including a subagent indexed by a different key.
+    // use these replacements, including a subagent whose own id is not the call's.
     const currentSubagent = subagent('a', 'replacement researcher');
     host.grouping.set('auto');
     host.excluded.set(['read_file']);
     host.supplied.set(true);
     host.version.set('second');
-    agent.subagents!.set(new Map([['unrelated-map-key', currentSubagent]]));
+    agent.subagents.set([currentSubagent]);
     await fixture.whenStable();
     expect(child.groups()).toEqual([]);
     agent.toolCalls.set([]);
@@ -212,11 +221,12 @@ describe('empty message-scoped tool groups', () => {
     agent.toolCalls.set([a, b, other]);
     await fixture.whenStable();
     expect(child.groups().map(group => group.calls)).toEqual([[a], [b]]);
-    expect(child.groups()[0].subagent).toBe(currentSubagent);
+    expect(child.groups()[0].subagent).toBe(agent.subagents()![0]);
+    expect(child.groups()[0].subagent).toMatchObject(currentSubagent);
     expect(fixture.nativeElement.querySelectorAll('chat-subagent-card')).toHaveLength(1);
     expect(fixture.nativeElement.textContent).toContain('replacement researcher');
     expect(templates()).toEqual(['named:second:b:running']);
-    agent.subagents!.set(new Map());
+    agent.subagents.set([]);
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelectorAll('chat-subagent-card')).toHaveLength(0);
     expect(templates()).toEqual(['named:second:a:complete', 'named:second:b:running']);
@@ -241,7 +251,8 @@ describe('empty message-scoped tool groups', () => {
       host.message.set(context);
       host.agent().toolCalls.set([global]);
       await fixture.whenStable();
-      expect(child.groups()[0].calls[0]).toBe(global);
+      expect(child.groups()[0].calls[0]).toBe(host.agent().toolCalls()[0]);
+      expect(child.groups()[0].calls[0]).toEqual(global);
       expect(fixture.nativeElement.querySelectorAll('chat-tool-activity')).toHaveLength(1);
       host.agent().toolCalls.set([]);
       await fixture.whenStable();
@@ -253,7 +264,7 @@ describe('empty message-scoped tool groups', () => {
     const replacement = call('replacement', 'lookup');
     host.agent.set(mockAgent({ toolCalls: [replacement] }));
     await fixture.whenStable();
-    expect(child.groups()[0].calls[0]).toBe(replacement);
+    expect(child.groups()[0].calls[0]).toBe(host.agent().toolCalls()[0]);
     expect(child.toolCalls()).toEqual([replacement]);
     host.message.set({ id: 'other', role: 'assistant', content: 'other', delivery: staticDelivery('other') });
     await fixture.whenStable();

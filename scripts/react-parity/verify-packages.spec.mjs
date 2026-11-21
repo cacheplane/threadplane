@@ -819,10 +819,17 @@ test('React chat entry supports the outcome registry and status panel', () => {
   }
 });
 
-test('core testing entry exposes only the fake session factory', () => {
+test('core testing entry exposes only the fake session factory and the session conformance suites', () => {
+  const entry = () => Object.fromEntries(packageVerifier.supportedExportNames('core/testing').map((name) => [name, () => {}]));
   assert.throws(() => packageVerifier.assertSupportedExports('core/testing', {}), /createFakeAgentSession/);
-  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('core/testing', { createFakeAgentSession() {} }));
-  assert.throws(() => packageVerifier.assertSupportedExports('core/testing', { createFakeAgentSession() {}, mockAgent() {} }), /unexpected/);
+  assert.throws(() => packageVerifier.assertSupportedExports('core/testing', { createFakeAgentSession() {} }), /agentSessionConformanceScenarios/);
+  assert.doesNotThrow(() => packageVerifier.assertSupportedExports('core/testing', entry()));
+  assert.throws(() => packageVerifier.assertSupportedExports('core/testing', { ...entry(), mockAgent() {} }), /unexpected/);
+  for (const name of packageVerifier.supportedExportNames('core/testing')) {
+    const partial = entry();
+    delete partial[name];
+    assert.throws(() => packageVerifier.assertSupportedExports('core/testing', partial), new RegExp(name));
+  }
 });
 
 test('JSON feature exposes only its owned factory', () => {
@@ -991,6 +998,13 @@ function fixture(t, change = {}) {
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const manifest = { name: '@threadplane/react', private: true, type: 'module', license: 'MIT', exports: { '.': { types: './src/index.d.ts', import: './src/index.js', default: './src/index.js' }, './markdown': reactMarkdown }, ...change.manifest };
   if (manifest.name === '@threadplane/react' && !Object.hasOwn(change.manifest ?? {}, 'peerDependencies')) manifest.peerDependencies = { 'react-dom': '^19.2.4' };
+  // React is the one private foundation. Every other package is published: public,
+  // at the release version, with its repository directory.
+  if (manifest.name !== '@threadplane/react') {
+    if (!Object.hasOwn(change.manifest ?? {}, 'private')) delete manifest.private;
+    manifest.version ??= '0.3.7';
+    manifest.repository ??= { type: 'git', directory: `libs/${manifest.name.slice('@threadplane/'.length)}` };
+  }
   // Keep unrelated export mutations valid now that Markdown is mandatory.
   if (manifest.name === '@threadplane/react' && !change.omitMarkdown) manifest.exports = { './markdown': reactMarkdown, ...manifest.exports };
   if (manifest.name === '@threadplane/react' && !change.omitDebug) manifest.exports = { './debug': reactDebug, './debug/styles.css': './src/debug/styles.css', ...manifest.exports };
@@ -1021,7 +1035,21 @@ test('package validation rejects final-role manifest dependencies without import
 });
 const angularManifest = { name: '@threadplane/angular', exports: { './package.json': { default: './package.json' }, '.': { types: './types/threadplane-angular.d.ts', default: './fesm2022/threadplane-angular.mjs' } } };
 const angularFiles = { 'types/threadplane-angular.d.ts': 'export {};', 'fesm2022/threadplane-angular.mjs': 'export {};' };
-test('package validation accepts private Angular APF declarations and default ESM exports', (t) => {
+for (const name of ['core', 'content', 'angular']) {
+  const manifest = name === 'angular' ? { name: '@threadplane/angular' } : { name: `@threadplane/${name}` };
+  const files = name === 'angular' ? { 'types/threadplane-angular.d.ts': 'export {};', 'fesm2022/threadplane-angular.mjs': 'export {};' } : {};
+  const exports = name === 'angular' ? { '.': { types: './types/threadplane-angular.d.ts', default: './fesm2022/threadplane-angular.mjs' } } : { '.': { types: './src/index.d.ts', import: './src/index.js', default: './src/index.js' } };
+  test(`${name} is a published package: private, unversioned and unattributed manifests are rejected`, (t) => {
+    assert.deepEqual(validatePackage(fixture(t, { manifest: { ...manifest, exports }, files })), []);
+    assert.ok(validatePackage(fixture(t, { manifest: { ...manifest, exports, private: true }, files })).some((error) => error.includes('cannot be private')));
+    for (const change of [{ version: '0.0.0' }, { repository: { type: 'git' } }, { repository: { type: 'git', directory: 'libs/react' } }])
+      assert.ok(validatePackage(fixture(t, { manifest: { ...manifest, exports, ...change }, files })).some((error) => error.includes('release version and repository directory')), JSON.stringify(change));
+  });
+}
+test('React stays the one private foundation', (t) => {
+  assert.ok(validatePackage(fixture(t, { manifest: { private: false } })).some((error) => error.includes('must remain private')));
+});
+test('package validation accepts published Angular APF declarations and default ESM exports', (t) => {
   const directory = fixture(t, { manifest: angularManifest, files: angularFiles });
   assert.deepEqual(validatePackage(directory), []);
 });
@@ -1132,7 +1160,8 @@ test('APF metadata exports are excluded from executable consumer imports', () =>
   assert.deepEqual(packageVerifier.consumerSpecifiers(angularManifest), ['@threadplane/angular']);
 });
 for (const [label, change] of [
-  ['public Angular manifest', { manifest: { ...angularManifest, private: false }, files: angularFiles }],
+  // Angular is published at the cutover: a private manifest is the mistake now.
+  ['private Angular manifest', { manifest: { ...angularManifest, private: true }, files: angularFiles }],
   ['missing Angular declaration', { manifest: angularManifest, files: { ...angularFiles, 'types/threadplane-angular.d.ts': null } }],
   ['missing Angular executable', { manifest: angularManifest, files: { ...angularFiles, 'fesm2022/threadplane-angular.mjs': null } }],
   ['missing Angular root', { manifest: { ...angularManifest, exports: { './package.json': { default: './package.json' } } }, files: angularFiles }],

@@ -10,7 +10,7 @@ import { ItineraryStore } from './itinerary-store';
  * and then announces the outcome via `injectRenderHost().result(...)`, which
  * becomes the tool result that resumes the run. Cancel never touches the store.
  *
- * Once the ask resolves, the adapter writes the emitted value back onto the
+ * Once the ask resolves, the chat library writes the emitted value back onto the
  * local tool call, so this component re-renders with `cleared`/`removed` as
  * props (chat-tool-views spreads `{...args, ...result, status}` into it). When
  * `cleared()` is defined we render a FROZEN line with no buttons; the live

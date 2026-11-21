@@ -42,9 +42,9 @@ These `busy` and `outcome` fields belong to the recorded example application. Th
 
 ## Connect the lesson to your Angular app
 
-Choose **View example source**. In `streaming.component.ts`, `injectAgent(STREAMING_AGENT)` obtains the agent supplied by `app.config.ts`. The template passes that agent to `<chat>`, and `agent.isLoading()` drives its status text. The chat composition observes messages and provides the input and stop controls.
+Choose **View example source**. In `streaming.component.ts`, `injectAgent(STREAMING_AGENT)` obtains the agent supplied by `app.config.ts`. The template passes that agent to `<chat>`, and `agent.status()` drives its status text. The chat composition observes messages and provides the input and stop controls.
 
-Your Quickstart used the same `<chat [agent]="agent" />` boundary with a fake provider. This streaming example supplies a backend connection instead. The template still observes the agent, while the application initiates actions. The replay's `busy` field is not an Angular signal name; inspect the actual Angular source to see how its observations are captured.
+Your Quickstart used the same `<chat [agent]="agent" />` boundary with a fake provider. This streaming example supplies a LangGraph session instead. The template still observes the agent, while the application initiates actions. The replay's `busy` field is not an Angular signal name; inspect the actual Angular source to see how its observations are captured.
 
 Use **Return to recorded example** to continue at the same observation. Expand the implementation section below the lesson for the source walkthrough and its **See it run** exercise.
 

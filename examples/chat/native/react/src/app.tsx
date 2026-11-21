@@ -531,7 +531,7 @@ function Conversation({
             snapshot.selection.id === thread.id &&
             (snapshot.submission.active ||
               snapshot.runtime?.status === 'running' ||
-              !!snapshot.runtime?.reconnect?.runId)
+              !!snapshot.runtime?.retainedRun?.runId)
               ? 'Resolve the current run before deleting this conversation.'
               : undefined
           }

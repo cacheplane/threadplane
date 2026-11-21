@@ -1,9 +1,23 @@
-import type { AgentSubagent, Message, ToolCall } from '@threadplane/core';
-import { projectMessages, projectToolCalls } from './message-projection.js';
+import {
+  completeDelivery,
+  staticDelivery,
+  streamingDelivery,
+  type AgentSubagent,
+  type Message,
+  type PlainValue,
+  type StreamingToolCall,
+  type ToolCall,
+} from '@threadplane/core';
+import {
+  projectMessages,
+  projectStreamingToolCalls,
+  projectToolCalls,
+} from './message-projection.js';
 import type { Observation } from './session-observation.js';
 import {
   currentFrom,
   earlierSpan,
+  invocationStart,
   suspended,
   type ChildSpan,
   type SubagentObservation,
@@ -21,6 +35,13 @@ export type SessionSubagent = AgentSubagent &
   SubagentObservation & {
     /** Set on a child that settled in an earlier root run or came with the thread. */
     readonly earlier?: true;
+    /**
+     * Set on a child the backend reported as an `ACTIVITY` record with
+     * `activityType: 'subagent'` and not through `SUBAGENT_*` events: the
+     * record's content. `started` is then derived from that content, and
+     * there is no `terminal`. The core `state` is this content's `state`.
+     */
+    readonly activity?: { readonly [key: string]: PlainValue };
   };
 
 /** A child's records read as a root transcript, so the root selectors apply. */
@@ -57,9 +78,142 @@ function status(
   return running ? 'running' : 'unknown';
 }
 
+const isRecord = (value: unknown): value is Record<string, PlainValue> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+const text = (value: unknown): string | undefined =>
+  typeof value === 'string' ? value : undefined;
+
+/** A child's messages as an activity record lists them, or its one text. */
+function activityMessages(
+  id: string,
+  content: Record<string, PlainValue>,
+  state: AgentSubagent['status']
+): readonly Message[] {
+  const delivery = (messageId: string) =>
+    state === 'error'
+      ? completeDelivery(messageId, 'error')
+      : state === 'running'
+      ? streamingDelivery(messageId)
+      : staticDelivery(messageId);
+  const listed = content['messages'];
+  if (!Array.isArray(listed))
+    return Object.freeze([
+      Object.freeze({
+        id,
+        role: 'assistant' as const,
+        content: String(content['text'] ?? ''),
+        delivery: delivery(id),
+      }),
+    ]);
+  return Object.freeze(
+    listed.map((entry: PlainValue, index: number): Message => {
+      const message = isRecord(entry) ? entry : {};
+      const messageId = text(message['id']) ?? `${id}-${index}`;
+      const calls = message['toolCallIds'];
+      const reasoning = text(message['reasoning']);
+      return Object.freeze({
+        id: messageId,
+        // A child's records are shown as its own output, whatever their role.
+        role: 'assistant' as const,
+        content: text(message['content']) ?? '',
+        delivery:
+          message['role'] === 'assistant'
+            ? delivery(messageId)
+            : staticDelivery(messageId),
+        ...(Array.isArray(calls) && {
+          toolCallIds: calls.filter(
+            (call): call is string => typeof call === 'string'
+          ),
+        }),
+        ...(reasoning !== undefined && { reasoning }),
+      });
+    })
+  );
+}
+
+/** Projections of activity children, by the record they were read from. */
+const activityChildren = new WeakMap<
+  object,
+  {
+    readonly state: AgentSubagent['status'];
+    readonly earlier: boolean;
+    readonly child: SessionSubagent;
+  }
+>();
+
+/**
+ * A child the backend reported as an `ACTIVITY` record of type `subagent`,
+ * read the way the Angular adapter read one: `name`, `description`,
+ * `toolCallId`, `status`, `messages` (or one `text`), `toolCalls`, `state`
+ * and `state.error` from the record's content. A record that says `pending`
+ * is `pending`: the root agent asked for the child and it has not started. A
+ * record without a settled status is otherwise `running` in its own run and
+ * `unknown` after it.
+ */
+function projectActivity(
+  record: TranscriptRecord & { readonly role: 'activity' },
+  running: boolean,
+  earlier: boolean
+): SessionSubagent {
+  const content = (isRecord(record.content) ? record.content : {}) as Record<
+    string,
+    PlainValue
+  >;
+  const reported = content['status'];
+  const state: AgentSubagent['status'] =
+    reported === 'complete' || reported === 'error'
+      ? reported
+      : reported === 'pending' && running && !earlier
+      ? 'pending'
+      : running && !earlier
+      ? 'running'
+      : 'unknown';
+  const known = activityChildren.get(record);
+  if (known && known.state === state && known.earlier === earlier)
+    return known.child;
+  const name = text(content['name']);
+  const description = text(content['description']);
+  const toolCallId = text(content['toolCallId']);
+  const childState = isRecord(content['state']) ? content['state'] : undefined;
+  const failure = childState ? text(childState['error']) : undefined;
+  const calls = content['toolCalls'];
+  const child = Object.freeze({
+    id: record.id,
+    ...(name !== undefined && { name }),
+    ...(description !== undefined && { description }),
+    ...(toolCallId !== undefined && { toolCallId }),
+    status: state,
+    messages: activityMessages(record.id, content, state),
+    toolCalls: Object.freeze(
+      Array.isArray(calls)
+        ? calls.filter(
+            (call) =>
+              isRecord(call) &&
+              typeof call['id'] === 'string' &&
+              typeof call['name'] === 'string'
+          )
+        : []
+    ) as unknown as readonly ToolCall[],
+    ...(childState && { state: childState }),
+    ...(state === 'error' && failure !== undefined && { error: failure }),
+    started: Object.freeze({
+      type: 'SUBAGENT_STARTED' as const,
+      subagentRunId: record.id,
+      name: name ?? '',
+      ...(description !== undefined && { description }),
+      ...(toolCallId !== undefined && { parentToolCallId: toolCallId }),
+    }),
+    ...((earlier || undefined) && { earlier: true as const }),
+    activity: content,
+  }) as SessionSubagent;
+  activityChildren.set(record, { state, earlier, child });
+  return child;
+}
+
 const none: readonly SessionSubagent[] = Object.freeze([]);
 const noMessages: readonly Message[] = Object.freeze([]);
 const noCalls: readonly ToolCall[] = Object.freeze([]);
+const noStreaming: readonly StreamingToolCall[] = Object.freeze([]);
 
 /**
  * Every child the session knows as a core child: those of earlier root runs
@@ -83,12 +237,36 @@ export function projectSubagents(
   const earlier = (native.earlierSubagents ?? []).filter(
     (child) => !replaced.has(child.started.subagentRunId)
   );
-  if (!current.length && !earlier.length)
-    return previous.length ? none : previous;
   const running = native.status === 'running';
   const transcript = native.transcript;
+  // Children the backend reported as activity records, in transcript order.
+  // A child with event evidence under the same ID is read from the events.
+  const evident = new Set([
+    ...replaced,
+    ...earlier.map((child) => child.started.subagentRunId),
+  ]);
+  const begins = invocationStart(current);
+  const activities: SessionSubagent[] = [];
+  for (let position = 0; position < transcript.length; position++) {
+    const record = transcript[position];
+    if (
+      record.role !== 'activity' ||
+      record.activityType !== 'subagent' ||
+      typeof record.subagentRunId === 'string' ||
+      evident.has(record.id)
+    )
+      continue;
+    activities.push(projectActivity(record, running, position < begins));
+  }
+  if (!current.length && !earlier.length && !activities.length)
+    return previous.length ? none : previous;
   const prior = new Map(previous.map((child) => [child.id, child]));
-  let changed = previous.length !== earlier.length + current.length;
+  let changed =
+    previous.length !== earlier.length + current.length + activities.length;
+  activities.forEach((child, index) => {
+    if (previous[earlier.length + current.length + index] !== child)
+      changed = true;
+  });
   const project = (
     evidence: SubagentObservation,
     span: ChildSpan,
@@ -105,6 +283,32 @@ export function projectSubagents(
         records.push(asRoot(record));
     }
     const before = prior.get(id);
+    // A finished child's turns are settled. A root MESSAGES_SNAPSHOT that
+    // lists none of them (a backend that routes a child through SUBAGENT
+    // events keeps its turns out of the root history) drops their records,
+    // which would empty the child; it keeps what it held instead.
+    if (
+      !records.length &&
+      terminal &&
+      before?.terminal === terminal &&
+      (before.messages.length || before.toolCalls.length)
+    ) {
+      const state = status(evidence, running, isEarlier);
+      if (
+        before.status === state &&
+        before.earlier === (isEarlier || undefined)
+      ) {
+        if (previous[index] !== before) changed = true;
+        return before;
+      }
+      changed = true;
+      const { earlier: _earlier, ...kept } = before;
+      return Object.freeze({
+        ...kept,
+        status: state,
+        ...(isEarlier && { earlier: true as const }),
+      }) as SessionSubagent;
+    }
     const state = status(evidence, running, isEarlier);
     // Only a child of the run that is going can still be streaming.
     const view = {
@@ -117,8 +321,13 @@ export function projectSubagents(
     };
     const messages = projectMessages(view, before?.messages ?? noMessages);
     const toolCalls = projectToolCalls(view, before?.toolCalls ?? noCalls);
+    const streaming = projectStreamingToolCalls(
+      view,
+      before?.streamingToolCalls ?? noStreaming
+    );
     if (
       before &&
+      (before.streamingToolCalls ?? noStreaming) === streaming &&
       before.started === started &&
       before.terminal === terminal &&
       before.status === state &&
@@ -145,6 +354,7 @@ export function projectSubagents(
       status: state,
       messages,
       toolCalls,
+      ...(streaming.length > 0 && { streamingToolCalls: streaming }),
       ...(terminal?.type === 'SUBAGENT_ERROR' &&
         typeof terminal.message === 'string' && { error: terminal.message }),
       started,
@@ -170,6 +380,7 @@ export function projectSubagents(
         earlier.length + index
       )
     ),
+    ...activities,
   ];
   return changed ? Object.freeze(children) : previous;
 }

@@ -1,0 +1,40 @@
+{
+  // Checks the shipped sources the way an application compiles them.
+  //
+  // The example and cockpit applications resolve `@threadplane/*` to library
+  // SOURCE through the path aliases in tsconfig.base.json and compile it with
+  // their own options, which set `strict: false`. Narrowing that relies on
+  // strict null checks (a truthy discriminant, `??` over `void`, a bare
+  // `return;` where `undefined` is declared) passes this library's own strict
+  // targets and then fails in those applications.
+  //
+  // The compiler options below mirror examples/chat/angular/tsconfig.json and
+  // the cockpit applications' tsconfig.json. The other libraries'
+  // tsconfig.nonstrict.json files extend this one and replace `include` and
+  // `exclude`. Each library's `type-tests` target runs its own file.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "strict": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "experimentalDecorators": true,
+    "module": "preserve",
+    "lib": ["es2022", "dom"],
+    "types": [],
+    "skipLibCheck": true,
+    // Sources of the libraries this one imports are compiled too, through the
+    // path aliases, so the root is the workspace.
+    "rootDir": "../..",
+    "noEmit": true,
+    "emitDeclarationOnly": false,
+    "declarationMap": false,
+    "composite": false,
+    "incremental": false
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/**/*.type-test.ts",
+    "src/test-setup.ts"
+  ]
+}

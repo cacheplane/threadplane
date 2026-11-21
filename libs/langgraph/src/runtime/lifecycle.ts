@@ -18,6 +18,8 @@ export interface LangGraphLifecycle {
   readonly interruptReceivedAt: number | null;
   /** The most recent `resume` the session accepted. */
   readonly interruptResolvedAt: number | null;
+  /** When the session created its thread. Stays null for a session given a `threadId`. */
+  readonly threadCreatedAt: number | null;
   /** The first history read that returned saved checkpoints for the thread. */
   readonly threadPersistedAt: number | null;
   /** The first time the session held a tool call, streamed or saved. */
@@ -32,7 +34,11 @@ export interface LangGraphLifecycleSource {
   subscribe(notify: () => void): () => void;
 }
 
-type Mark = 'streamStartedAt' | 'interruptResolvedAt' | 'threadPersistedAt';
+type Mark =
+  | 'streamStartedAt'
+  | 'interruptResolvedAt'
+  | 'threadCreatedAt'
+  | 'threadPersistedAt';
 
 interface Published {
   readonly error?: AgentError;
@@ -50,6 +56,7 @@ export function createLifecycleRecorder(now: () => number = () => Date.now()) {
     streamErrorAt: null,
     interruptReceivedAt: null,
     interruptResolvedAt: null,
+    threadCreatedAt: null,
     threadPersistedAt: null,
     toolCallStartedAt: null,
     toolCallCompletedAt: null,
@@ -74,7 +81,7 @@ export function createLifecycleRecorder(now: () => number = () => Date.now()) {
         };
       },
     } satisfies LangGraphLifecycleSource,
-    /** `interruptResolvedAt` keeps the latest; the other two keep the first. */
+    /** `interruptResolvedAt` keeps the latest; the others keep the first. */
     mark(milestone: Mark) {
       if (milestone !== 'interruptResolvedAt' && snapshot[milestone] !== null)
         return;

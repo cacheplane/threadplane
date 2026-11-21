@@ -24,6 +24,8 @@
     "@angular/common": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@angular/platform-browser": "^20.0.0 || ^21.0.0 || ^22.0.0",
     "@angular/router": "^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@threadplane/angular": "0.3.7",
+    "@threadplane/core": "0.3.7",
     "@threadplane/render": "0.3.7",
     "@threadplane/a2ui": "0.3.7",
     "@json-render/core": "^0.16.0",
@@ -48,6 +50,7 @@
   },
   "sideEffects": [
     "**/chat-tokens.ts",
+    "**/development-host.ts",
     "./fesm2022/threadplane-chat.mjs",
     "**/*.css"
   ],

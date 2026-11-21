@@ -1,130 +1,226 @@
-import { signal, Signal, WritableSignal } from '@angular/core';
-import { EMPTY, type Observable } from 'rxjs';
+import { computed, signal, untracked, type Signal, type WritableSignal } from '@angular/core';
+import type { Agent, AgentLifecycle } from '../agent/angular-agent';
 import type {
-  Agent,
-  Message,
-  AgentStatus,
-  ToolCall,
+  AgentCheckpoint,
+  AgentError,
+  AgentErrorDiagnostic,
+  AgentInputBlock,
   AgentInterrupt,
-  Subagent,
+  AgentPlanStep,
+  AgentSessionCustomEvent,
+  AgentStatus,
+  AgentSubagent,
   AgentSubmitInput,
   AgentSubmitOptions,
-  AgentEvent,
-  AgentCheckpoint,
-} from '../agent';
-import type { AgentError } from '../agent/agent-error';
+  AgentUsage,
+  Message,
+  PlainValue,
+  StreamingToolCall,
+  ToolCall,
+} from '@threadplane/core';
+import {
+  createFakeAgentSession,
+  type FakeAgentSession,
+  type FakeAgentSessionInit,
+  type FakeCommand,
+  type FakeMessageInput,
+  type FakeSubagentInput,
+} from '@threadplane/core/testing';
 
-/** An in-memory agent with writable test signals, captured submissions, and a stop invocation counter. */
-export interface MockAgent extends Agent {
-  messages:      WritableSignal<Message[]>;
-  status:        WritableSignal<AgentStatus>;
-  isLoading:     WritableSignal<boolean>;
-  error:         WritableSignal<AgentError | undefined>;
-  toolCalls:     WritableSignal<ToolCall[]>;
-  state:         WritableSignal<Record<string, unknown>>;
-  interrupt?:    WritableSignal<AgentInterrupt | undefined>;
-  subagents?:    WritableSignal<Map<string, Subagent>>;
-  history?:      WritableSignal<AgentCheckpoint[]>;
-  events$:       Observable<AgentEvent>;
-  /**
-   * Minimal lifecycle stub the chat lib's effects subscribe to. We only
-   * model the signals the chat composition currently reads; richer adapter
-   * lifecycles (langgraph, AG-UI) extend this contract on their own mocks.
-   * The public `lifecycle` view is a readonly signal; tests drive the
-   * value via `_internal.streamStartedAt.set(...)` below.
-   */
-  lifecycle: {
-    streamStartedAt: Signal<number | null>;
-  };
-  /**
-   * Test-only escape hatch for driving lifecycle signals from a spec. Mirrors
-   * the `_internal` pattern used by CHAT_LIFECYCLE so tests can flip the
-   * underlying writable without going through a full submit/stream cycle.
-   */
-  _internal: {
-    streamStartedAt: WritableSignal<number | null>;
-  };
-  /** Captured calls to submit() in order. */
-  submitCalls: Array<{ input: AgentSubmitInput; opts?: AgentSubmitOptions }>;
-  /** Count of stop() invocations. */
-  stopCount: number;
+/** A snapshot field a test reads like the agent's signal and replaces with `set` or `update`. */
+export interface MockAgentField<T, TInput = T> extends Signal<T> {
+  set(value: TInput): void;
+  update(change: (value: T) => TInput): void;
+  asReadonly(): Signal<T>;
 }
 
-/** Initial mock agent state and opt-in interrupt, subagent, history, and event support. */
-export interface MockAgentOptions {
-  messages?: Message[];
-  status?: AgentStatus;
-  isLoading?: boolean;
-  error?: AgentError;
-  toolCalls?: ToolCall[];
-  state?: Record<string, unknown>;
-  withInterrupt?: boolean;
-  withSubagents?: boolean;
-  history?: AgentCheckpoint[];
-  events$?: Observable<AgentEvent>;
+/** The agent's lifecycle marks, each one writable by a test. */
+export type MockAgentLifecycle = {
+  readonly [K in keyof AgentLifecycle]: AgentLifecycle[K] extends Signal<infer T> ? WritableSignal<T> : never;
+};
+
+/** The members a test replaces on a {@link MockAgent}. */
+interface MockAgentMembers {
+  readonly status: MockAgentField<AgentStatus>;
+  readonly messages: MockAgentField<readonly Message[], readonly FakeMessageInput[]>;
+  readonly toolCalls: MockAgentField<readonly ToolCall[]>;
+  /** Setting an error also sets the status `'error'`, as a session does; clearing it returns to `'idle'`. */
+  readonly error: MockAgentField<AgentError | undefined>;
+  readonly errorDiagnostic: MockAgentField<AgentErrorDiagnostic | undefined>;
+  readonly plan: MockAgentField<readonly AgentPlanStep[] | undefined>;
+  readonly usage: MockAgentField<AgentUsage | undefined>;
+  readonly state: MockAgentField<PlainValue, unknown>;
+  readonly interrupts: MockAgentField<readonly AgentInterrupt[] | undefined>;
+  readonly subagents: MockAgentField<readonly AgentSubagent[] | undefined, readonly FakeSubagentInput[] | undefined>;
+  readonly streamingToolCalls: MockAgentField<readonly StreamingToolCall[] | undefined>;
+  readonly pendingClientTools: MockAgentField<readonly ToolCall[] | undefined>;
+  readonly checkpoints: MockAgentField<readonly AgentCheckpoint[] | undefined>;
+  readonly messageCheckpoints: MockAgentField<Readonly<Record<string, string>> | undefined>;
+  readonly inputBlocked: MockAgentField<AgentInputBlock | undefined>;
+  readonly threadId: WritableSignal<string | null>;
+  readonly isThreadLoading: WritableSignal<boolean>;
+  readonly customEvents: WritableSignal<readonly AgentSessionCustomEvent[]>;
+  readonly lifecycle: MockAgentLifecycle;
 }
 
 /**
- * Build an in-memory {@link Agent} for tests and stories — no transport, no
- * network. Every field is a writable signal so a test can drive UI states
- * (loading, error, interrupts, tool calls, subagents) deterministically.
+ * An in-memory {@link Agent} for tests and stories: the agent's own shape, with
+ * every snapshot field writable and every command recorded. It stands on the
+ * fake session from `@threadplane/core/testing`, reachable as `fake` for its
+ * streaming helper and its full call log.
+ */
+export type MockAgent = Omit<Agent, keyof MockAgentMembers> &
+  MockAgentMembers & {
+    /** The fake session underneath: `stream()`, `push()`, `resumes`, `regenerates`, `catalogs` and the rest. */
+    readonly fake: FakeAgentSession;
+    /** Calls to `submit` in order. */
+    readonly submitCalls: readonly { readonly input: AgentSubmitInput; readonly opts?: AgentSubmitOptions }[];
+    /** Count of `stop` calls. */
+    readonly stopCount: number;
+    /** Every id passed to `switchThread`, in order. */
+    readonly switchThreadCalls: readonly (string | null)[];
+    /** Delivers a custom event to `onCustomEvent` listeners and appends it to `customEvents`. */
+    emitCustomEvent(name: string, data?: PlainValue): void;
+  };
+
+/** Initial values for a {@link MockAgent}, and which optional commands it carries. */
+export interface MockAgentOptions extends Omit<FakeAgentSessionInit, 'commands' | 'stateType'> {
+  /**
+   * The optional commands the agent carries. Defaults to `regenerate`, `retry`
+   * and `onCustomEvent`; `resume` is always present. Pass a list to add
+   * `checkStatus`, `runWithoutMessage` or `clientTools`, or to leave some out
+   * so a view under test offers no control for them.
+   */
+  readonly commands?: readonly FakeCommand[];
+  readonly threadId?: string | null;
+  readonly isThreadLoading?: boolean;
+}
+
+const DEFAULT_COMMANDS: readonly FakeCommand[] = ['regenerate', 'retry', 'onCustomEvent'];
+
+const LIFECYCLE_KEYS = [
+  'streamStartedAt',
+  'streamErrorAt',
+  'interruptReceivedAt',
+  'interruptResolvedAt',
+  'threadCreatedAt',
+  'threadPersistedAt',
+  'toolCallStartedAt',
+  'toolCallCompletedAt',
+] as const satisfies readonly (keyof AgentLifecycle)[];
+
+/**
+ * Builds an in-memory {@link Agent} for tests and stories, with no transport
+ * and no injection context. Read it as a component does (`agent.messages()`,
+ * `agent.status()`), drive it with setters (`agent.messages.set([...])`,
+ * `agent.status.set('running')`, `agent.error.set(...)`), and assert on what
+ * was called (`agent.submitCalls`, `agent.stopCount`, `agent.fake.resumes`).
  *
- * @param opts - Initial values for the mock's signals; all optional.
- * @returns A {@link MockAgent} satisfying the full `Agent` contract.
+ * `submit` appends the user message, as a session does. To stream a reply use
+ * `agent.fake.stream()`.
+ *
  * @example
  * ```ts
- * import { staticDelivery } from '@threadplane/chat';
- *
  * const agent = mockAgent({
- *   messages: [{ id: '1', role: 'assistant', content: 'Hi', delivery: staticDelivery('1') }],
- *   isLoading: true,
+ *   messages: [{ id: '1', role: 'assistant', content: 'Hi' }],
+ *   status: 'running',
  * });
+ * agent.status.set('idle');
  * ```
  */
 export function mockAgent(opts: MockAgentOptions = {}): MockAgent {
-  const messages  = signal<Message[]>(opts.messages ?? []);
-  const status    = signal<AgentStatus>(opts.status ?? 'idle');
-  const isLoading = signal<boolean>(opts.isLoading ?? false);
-  const error     = signal<AgentError | undefined>(opts.error ?? undefined);
-  const toolCalls = signal<ToolCall[]>(opts.toolCalls ?? []);
-  const state     = signal<Record<string, unknown>>(opts.state ?? {});
+  const { commands, threadId: initialThreadId, isThreadLoading: initialLoading, ...init } = opts;
+  const fake = createFakeAgentSession({ ...init, commands: commands ?? DEFAULT_COMMANDS });
+  const session = fake.session;
+  const source = signal(session.getSnapshot());
+  session.subscribe(() => source.set(session.getSnapshot()));
 
-  const interrupt = opts.withInterrupt
-    ? signal<AgentInterrupt | undefined>(undefined)
-    : undefined;
-  const subagents = opts.withSubagents
-    ? signal<Map<string, Subagent>>(new Map())
-    : undefined;
-  const history = opts.history
-    ? signal<AgentCheckpoint[]>(opts.history)
-    : undefined;
+  type Snapshot = ReturnType<typeof session.getSnapshot>;
+  const field = <K extends keyof Snapshot>(key: K, write: (value: never) => void) => {
+    const read = computed(() => source()[key]);
+    return Object.assign(read, {
+      set: (value: never) => write(value),
+      update: (change: (value: Snapshot[K]) => never) => write(change(untracked(read))),
+      asReadonly: () => read,
+    });
+  };
+  const patch = <K extends keyof Snapshot>(key: K) =>
+    field(key, (value) => fake.set({ [key]: value } as never));
 
-  const submitCalls: MockAgent['submitCalls'] = [];
-  let stopCount = 0;
+  const threadId = signal<string | null>(initialThreadId ?? null);
+  const isThreadLoading = signal(initialLoading ?? false);
+  const customEvents = signal<readonly AgentSessionCustomEvent[]>([]);
+  const lifecycle = Object.fromEntries(LIFECYCLE_KEYS.map((key) => [key, signal(null)])) as unknown as MockAgentLifecycle;
+  const switchThreadCalls: (string | null)[] = [];
+  const stopListeners = new Set<() => void>();
+  const sessionEpoch = signal(0);
+  if (session.onCustomEvent) session.onCustomEvent((event) => customEvents.update((events) => [...events, event]));
 
-  const streamStartedAt = signal<number | null>(null);
+  const members: MockAgentMembers = {
+    status: patch('status'),
+    messages: patch('messages'),
+    toolCalls: patch('toolCalls'),
+    error: field('error', (error: AgentError | undefined) => fake.setError(error)),
+    errorDiagnostic: patch('errorDiagnostic'),
+    plan: patch('plan'),
+    usage: patch('usage'),
+    state: patch('state'),
+    interrupts: patch('interrupts'),
+    subagents: patch('subagents'),
+    streamingToolCalls: patch('streamingToolCalls'),
+    pendingClientTools: patch('pendingClientTools'),
+    checkpoints: patch('checkpoints'),
+    messageCheckpoints: patch('messageCheckpoints'),
+    inputBlocked: patch('inputBlocked'),
+    threadId,
+    isThreadLoading,
+    customEvents,
+    lifecycle,
+  } as MockAgentMembers;
 
-  const agent: MockAgent = {
-    messages, status, isLoading, error, toolCalls, state,
-    ...(interrupt ? { interrupt } : {}),
-    ...(subagents ? { subagents } : {}),
-    ...(history   ? { history }   : {}),
-    lifecycle: { streamStartedAt: streamStartedAt.asReadonly() },
-    _internal: { streamStartedAt },
-    events$: opts.events$ ?? EMPTY,
-    submit: async (input, submitOpts) => { submitCalls.push({ input, opts: submitOpts }); },
-    stop: async () => { stopCount++; },
-    retry: async () => { return; },
-    regenerate: async (assistantMessageIndex: number) => {
-      // Truncate messages [N..end] and record the call as a synthetic submit so
-      // tests can assert regenerate behavior via the same submitCalls log.
-      const current = messages();
-      messages.set(current.slice(0, assistantMessageIndex));
-      submitCalls.push({ input: { regenerate: { assistantMessageIndex } } as never, opts: undefined });
-    },
-    submitCalls,
-    get stopCount() { return stopCount; },
+  const bind = <K extends keyof typeof session>(key: K) => {
+    const member = session[key];
+    return typeof member === 'function' ? (member as (...args: never[]) => unknown).bind(session) : member;
   };
 
-  return agent;
+  const agent = {
+    ...members,
+    submit: bind('submit'),
+    stop: (() => {
+      const stop = session.stop.bind(session);
+      return () => {
+        for (const listener of [...stopListeners]) listener();
+        return stop();
+      };
+    })(),
+    sessionEpoch: sessionEpoch.asReadonly(),
+    onStop(listener: () => void): () => void {
+      stopListeners.add(listener);
+      return () => {
+        stopListeners.delete(listener);
+      };
+    },
+    resume: bind('resume'),
+    regenerate: bind('regenerate'),
+    retry: bind('retry'),
+    checkStatus: bind('checkStatus'),
+    runWithoutMessage: bind('runWithoutMessage'),
+    onCustomEvent: bind('onCustomEvent'),
+    clientTools: session.clientTools,
+    switchThread(next: string | null) {
+      switchThreadCalls.push(next);
+      threadId.set(next);
+      customEvents.set([]);
+    },
+    fake,
+    get submitCalls() {
+      return fake.submits.map(({ input, options }) => (options ? { input, opts: options } : { input }));
+    },
+    get stopCount() {
+      return fake.stopCount;
+    },
+    switchThreadCalls,
+    emitCustomEvent: (name: string, data?: PlainValue) => fake.emitCustomEvent(name, data),
+  };
+  return agent as unknown as MockAgent;
 }

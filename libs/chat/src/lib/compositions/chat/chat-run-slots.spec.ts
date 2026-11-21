@@ -47,7 +47,7 @@ const assistant = (id: string, content = ''): Message => ({ id, role: 'assistant
   `,
 })
 class HostComponent {
-  agent: MockAgent = mockAgent({ messages: [user('u1')], withInterrupt: true });
+  agent: MockAgent = mockAgent({ messages: [user('u1')], });
   withRunActivity = true;
   withInterrupt = true;
 }
@@ -67,7 +67,7 @@ describe('ChatComponent — chatRunActivityTemplate', () => {
   });
 
   it('renders while a run is active and has no assistant message, replacing the typing indicator', () => {
-    const fixture = create((h) => h.agent.isLoading.set(true));
+    const fixture = create((h) => h.agent.status.set('running'));
     const activity = el(fixture).querySelector<HTMLElement>('.run-activity');
     expect(activity).not.toBeNull();
     expect(activity!.dataset['sameAgent']).toBe('true');
@@ -87,7 +87,7 @@ describe('ChatComponent — chatRunActivityTemplate', () => {
   });
 
   it('hides when the first assistant message of the run arrives', () => {
-    const fixture = create((h) => h.agent.isLoading.set(true));
+    const fixture = create((h) => h.agent.status.set('running'));
     expect(el(fixture).querySelector('.run-activity')).not.toBeNull();
     fixture.componentInstance.agent.messages.update((m) => [...m, assistant('a1')]);
     fixture.detectChanges();
@@ -99,7 +99,7 @@ describe('ChatComponent — chatRunActivityTemplate', () => {
   it('scopes the run to messages after the last user message', () => {
     const fixture = create((h) => {
       h.agent.messages.set([user('u1'), assistant('a1', 'earlier answer'), user('u2', 'next')]);
-      h.agent.isLoading.set(true);
+      h.agent.status.set('running');
     });
     const activity = el(fixture).querySelector<HTMLElement>('.run-activity');
     expect(activity).not.toBeNull();
@@ -107,8 +107,8 @@ describe('ChatComponent — chatRunActivityTemplate', () => {
   });
 
   it('hides when the run ends', () => {
-    const fixture = create((h) => h.agent.isLoading.set(true));
-    fixture.componentInstance.agent.isLoading.set(false);
+    const fixture = create((h) => h.agent.status.set('running'));
+    fixture.componentInstance.agent.status.set('idle');
     fixture.detectChanges();
     expect(el(fixture).querySelector('.run-activity')).toBeNull();
   });
@@ -116,7 +116,7 @@ describe('ChatComponent — chatRunActivityTemplate', () => {
   it('leaves the default typing indicator unchanged without the template', () => {
     const fixture = create((h) => {
       h.withRunActivity = false;
-      h.agent.isLoading.set(true);
+      h.agent.status.set('running');
     });
     expect(el(fixture).querySelector('.chat-run-activity')).toBeNull();
     const indicator = el(fixture).querySelector('chat-typing-indicator');
@@ -131,7 +131,7 @@ describe('ChatComponent — chatInterruptTemplate', () => {
   });
 
   it('renders the pending interrupt at the end of the transcript', () => {
-    const fixture = create((h) => h.agent.interrupt!.set({ id: 'approve-1', value: {}, resumable: true }));
+    const fixture = create((h) => h.agent.interrupts.set([{ id: 'approve-1', value: {}, resumable: true }]));
     const card = el(fixture).querySelector<HTMLElement>('.interrupt-card');
     expect(card).not.toBeNull();
     expect(card!.dataset['interrupt']).toBe('approve-1');
@@ -145,8 +145,8 @@ describe('ChatComponent — chatInterruptTemplate', () => {
 
   it('renders after the run activity', () => {
     const fixture = create((h) => {
-      h.agent.isLoading.set(true);
-      h.agent.interrupt!.set({ id: 'approve-1', value: {}, resumable: true });
+      h.agent.status.set('running');
+      h.agent.interrupts.set([{ id: 'approve-1', value: {}, resumable: true }]);
     });
     const run = el(fixture).querySelector('.chat-run-activity')!;
     const pending = el(fixture).querySelector('.chat-interrupt-region')!;
@@ -160,8 +160,8 @@ describe('ChatComponent — chatInterruptTemplate', () => {
   });
 
   it('is removed when the interrupt clears', () => {
-    const fixture = create((h) => h.agent.interrupt!.set({ id: 'approve-1', value: {}, resumable: true }));
-    fixture.componentInstance.agent.interrupt!.set(undefined);
+    const fixture = create((h) => h.agent.interrupts.set([{ id: 'approve-1', value: {}, resumable: true }]));
+    fixture.componentInstance.agent.interrupts.set([]);
     fixture.detectChanges();
     expect(el(fixture).querySelector('.interrupt-card')).toBeNull();
   });
@@ -169,7 +169,7 @@ describe('ChatComponent — chatInterruptTemplate', () => {
   it('renders nothing for a pending interrupt without the template', () => {
     const fixture = create((h) => {
       h.withInterrupt = false;
-      h.agent.interrupt!.set({ id: 'approve-1', value: {}, resumable: true });
+      h.agent.interrupts.set([{ id: 'approve-1', value: {}, resumable: true }]);
     });
     expect(el(fixture).querySelector('.chat-interrupt-region')).toBeNull();
   });
@@ -207,8 +207,8 @@ describe('ChatComponent — run-slot scrolling', () => {
 
   it('observes the new regions and follows them to the bottom while pinned', () => {
     const fixture = create((h) => {
-      h.agent.isLoading.set(true);
-      h.agent.interrupt!.set({ id: 'approve-1', value: {}, resumable: true });
+      h.agent.status.set('running');
+      h.agent.interrupts.set([{ id: 'approve-1', value: {}, resumable: true }]);
     });
     fixture.detectChanges();
     const live = observers.find((o) => o.observed.length > 0);
@@ -220,7 +220,7 @@ describe('ChatComponent — run-slot scrolling', () => {
   });
 
   it('does not move the scroller after the user scrolls up', () => {
-    const fixture = create((h) => h.agent.isLoading.set(true));
+    const fixture = create((h) => h.agent.status.set('running'));
     fixture.detectChanges();
     const live = observers.find((o) => o.observed.length > 0)!;
     const scroll = scrollState(fixture);
@@ -235,18 +235,18 @@ describe('ChatComponent — run-slot scrolling', () => {
   });
 
   it('asks the person to answer the approval in the composer while one is pending', () => {
-    const fixture = create((h) => h.agent.interrupt!.set({ id: 'approve-1', value: {}, resumable: true }));
+    const fixture = create((h) => h.agent.interrupts.set([{ id: 'approve-1', value: {}, resumable: true }]));
     const textarea = el(fixture).querySelector('chat-input textarea')!;
     expect(textarea.getAttribute('placeholder')).toBe('Answer the approval to continue');
-    fixture.componentInstance.agent.interrupt!.set(undefined);
+    fixture.componentInstance.agent.interrupts.set([]);
     fixture.detectChanges();
     expect(textarea.getAttribute('placeholder')).toBe('Type a message...');
   });
 
   it('returns focus to the composer after the approval is answered', async () => {
-    const fixture = create((h) => h.agent.interrupt!.set({ id: 'approve-1', value: {}, resumable: true }));
+    const fixture = create((h) => h.agent.interrupts.set([{ id: 'approve-1', value: {}, resumable: true }]));
     document.body.appendChild(fixture.nativeElement);
-    fixture.componentInstance.agent.interrupt!.set(undefined);
+    fixture.componentInstance.agent.interrupts.set([]);
     fixture.detectChanges();
     await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
     expect(document.activeElement).toBe(el(fixture).querySelector('chat-input textarea'));
@@ -275,7 +275,7 @@ describe('ChatComponent — an approval card with an app-supplied request', () =
   function render() {
     const fixture = TestBed.createComponent(RequestCardHost);
     document.body.appendChild(fixture.nativeElement);
-    fixture.componentInstance.agent.isLoading.set(true);
+    fixture.componentInstance.agent.status.set('running');
     fixture.componentInstance.request.set({ summary: 'Fictional trip' });
     fixture.detectChanges();
     TestBed.tick();
@@ -303,7 +303,7 @@ describe('ChatComponent — an approval card with an app-supplied request', () =
     // composer (jsdom can), so model the failed first attempt with a blur.
     (document.activeElement as HTMLElement | null)?.blur();
     expect(document.activeElement).toBe(document.body);
-    fixture.componentInstance.agent.isLoading.set(false);
+    fixture.componentInstance.agent.status.set('idle');
     fixture.detectChanges();
     await frame();
     expect(document.activeElement).toBe(root.querySelector('chat-input textarea'));

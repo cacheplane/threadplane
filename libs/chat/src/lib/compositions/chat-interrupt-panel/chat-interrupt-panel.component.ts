@@ -5,8 +5,7 @@ import {
   output,
   ChangeDetectionStrategy,
 } from '@angular/core';
-import type { Agent } from '../../agent';
-import type { AgentInterrupt } from '../../agent/agent-interrupt';
+import { pendingInterrupt, type Agent, type AgentInterrupt } from '../../agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 
 /** Review actions emitted by the interrupt panel for the host to handle. */
@@ -18,7 +17,7 @@ export type InterruptAction = 'accept' | 'edit' | 'respond' | 'ignore';
  * Exported for unit testing without DOM rendering.
  */
 export function getInterruptFromAgent(agent: Agent): AgentInterrupt | undefined {
-  return agent.interrupt?.();
+  return pendingInterrupt(agent);
 }
 
 /**
@@ -34,6 +33,8 @@ export function interruptReasonText(interrupt: AgentInterrupt | undefined): stri
     return (v as { reason: string }).reason;
   }
   if (typeof v === 'string') return v;
+  // A pause that carries no value is described by the backend's own text.
+  if (v === undefined && (interrupt.message || interrupt.reason)) return interrupt.message ?? interrupt.reason ?? '';
   return JSON.stringify(v ?? '', null, 2);
 }
 

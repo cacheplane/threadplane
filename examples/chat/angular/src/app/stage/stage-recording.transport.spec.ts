@@ -36,9 +36,15 @@ describe('StageRecordingTransport', () => {
     const t = new StageRecordingTransport(inner([]));
     await expect(drain(t.stream('chat', 'thread-1', {}, new AbortController().signal))).rejects.toThrow(/beginRun/);
   });
-  it('captures the thread id the inner transport reports', () => {
+  it('captures the thread id the session reports', () => {
     const t = new StageRecordingTransport(inner([]));
     t.onThreadId('thread-9');
     expect(t.recording().threadId).toBe('thread-9');
+  });
+  it('creates the thread through the inner transport, and says so when it cannot', async () => {
+    const sig = new AbortController().signal;
+    const creating: AgentTransport = { ...inner([]), createThread: async () => 'thread-7' };
+    expect(await new StageRecordingTransport(creating).createThread(sig)).toBe('thread-7');
+    expect(() => new StageRecordingTransport(inner([])).createThread(sig)).toThrow(/cannot create a thread/);
   });
 });

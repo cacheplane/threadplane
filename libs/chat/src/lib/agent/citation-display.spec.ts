@@ -4,7 +4,7 @@ import {
   monogramColor, citationTypeLabel, citationTypeMeta, citationSourceVisual,
 } from './citation-display';
 import type { CitationTypeIcon } from './citation-display';
-import type { Citation } from './citation';
+import type { Citation } from '@threadplane/core';
 
 const c = (over: Partial<Citation>): Citation => ({ id: 'x', index: 1, ...over });
 

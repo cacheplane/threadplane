@@ -78,7 +78,7 @@ describe('ChatLifecycle integration', () => {
     const lc = f.componentRef.injector.get(CHAT_LIFECYCLE);
     expect(lc.firstMessageSent()).toBe(false);
 
-    agent._internal.streamStartedAt.set(Date.now());
+    agent.lifecycle.streamStartedAt.set(Date.now());
     f.detectChanges();
     expect(lc.firstMessageSent()).toBe(true);
   });
@@ -90,15 +90,15 @@ describe('ChatLifecycle integration', () => {
     f.detectChanges();
     const lc = f.componentRef.injector.get(CHAT_LIFECYCLE);
 
-    agent._internal.streamStartedAt.set(Date.now());
+    agent.lifecycle.streamStartedAt.set(Date.now());
     f.detectChanges();
     expect(lc.firstMessageSent()).toBe(true);
 
-    agent._internal.streamStartedAt.set(null);
+    agent.lifecycle.streamStartedAt.set(null);
     f.detectChanges();
     expect(lc.firstMessageSent()).toBe(true);
 
-    agent._internal.streamStartedAt.set(Date.now());
+    agent.lifecycle.streamStartedAt.set(Date.now());
     f.detectChanges();
     expect(lc.firstMessageSent()).toBe(true);
   });

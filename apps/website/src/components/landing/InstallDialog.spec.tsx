@@ -78,16 +78,18 @@ describe('InstallDialog', () => {
     expect(details?.open).toBe(false);
   });
 
-  it('uses the selected adapter for the component injection import too', async () => {
+  it('injects the agent from @threadplane/angular whichever backend is selected', async () => {
     const { InstallDialog } = await import('./InstallDialog');
     render(<InstallDialog open onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('radio', { name: 'AG-UI' }));
-    expect(screen.getByTestId('install-component').textContent).toContain(
-      "from '@threadplane/ag-ui'"
-    );
-    expect(screen.getByTestId('install-component').textContent).not.toContain(
-      "from '@threadplane/langgraph'"
-    );
+    for (const name of ['LangGraph', 'AG-UI']) {
+      fireEvent.click(screen.getByRole('radio', { name }));
+      const component = screen.getByTestId('install-component').textContent;
+      expect(component).toContain(
+        "import { injectAgent } from '@threadplane/angular'"
+      );
+      expect(component).not.toContain("from '@threadplane/ag-ui'");
+      expect(component).not.toContain("from '@threadplane/langgraph'");
+    }
   });
   it('records Growth copy evidence only after clipboard success', async () => {
     const { InstallDialog } = await import('./InstallDialog');

@@ -4,7 +4,7 @@ description: Show an AG-UI agent's delegated child runs as attributed subagent c
 
 # Subagents
 
-AG-UI carries subagent activity as first-class events. When an agent delegates, the child run arrives as a `SUBAGENT_STARTED` event plus message events stamped with a `subagentRunId`, and the adapter keeps that traffic out of the parent transcript: it becomes a card of its own, anchored to the tool call that spawned it. The running example is a trip planner whose orchestrator hands work to three specialists, and this guide walks the four files that make it work.
+AG-UI carries subagent activity as first-class events. When an agent delegates, the child run arrives as a `SUBAGENT_STARTED` event plus message events stamped with a `subagentRunId`, and the session keeps that traffic out of the parent transcript: it becomes a card of its own, anchored to the tool call that spawned it. The running example is a trip planner whose orchestrator hands work to three specialists, and this guide walks the four files that make it work.
 
 ## What the demo does
 
@@ -76,15 +76,22 @@ The AG-UI encoder serializes pydantic `ag_ui.core` event classes, so the subclas
 
 ### The agent provider
 
-`provideAgent()` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. Nothing about it is subagent-specific. The example passes a factory because it resolves its endpoint at runtime from the host that serves the demo. Your own application does not need the factory.
+`provideAgent()` from `@threadplane/angular` registers the agent once for the whole application, and it is the only provider the `<chat>` composition requires. Its `createSession` factory builds the AG-UI session, and nothing about it is subagent-specific. The example wraps the config in a factory because it resolves its endpoint at runtime from the host that serves the demo. Your own application does not need the outer factory.
 
 <ExampleCode file="app.config.ts" />
 
 Pass the URL of your AG-UI endpoint directly:
 
 ```typescript
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
+
 provideAgent({
-  url: 'https://your-backend.example.com/agent',
+  createSession: (context) =>
+    createSession({
+      ...context,
+      url: 'https://your-backend.example.com/agent',
+    }),
 });
 ```
 
@@ -94,15 +101,15 @@ The component is the whole frontend of this example: one field holding the injec
 
 <ExampleCode file="subagents.component.ts" />
 
-There is no subagent wiring in the component at all, because the composition reads the projection the adapter maintains.
+There is no subagent wiring in the component at all, because the composition reads the child agents the session publishes.
 
 ## How a card finds its tool call
 
-The adapter does the attribution before any component sees it. `SUBAGENT_STARTED` creates an entry keyed by `subagentRunId`, recording the event's `name` and storing `parentToolCallId` as the entry's tool call identifier. Any `TEXT_MESSAGE_START`, `TEXT_MESSAGE_CONTENT`, `TEXT_MESSAGE_END`, `TOOL_CALL_START`, `TOOL_CALL_ARGS`, `TOOL_CALL_END`, or `TOOL_CALL_RESULT` event that carries a `subagentRunId` is routed into that entry instead of the parent message list. An attributed event that arrives before its `SUBAGENT_STARTED` creates the entry rather than being dropped, and the later `SUBAGENT_STARTED` fills in the identity.
+The session does the attribution before any component sees it. `SUBAGENT_STARTED` adds a child keyed by `subagentRunId`, recording the event's `name` and storing `parentToolCallId` as the child's `toolCallId`. Any `TEXT_MESSAGE_START`, `TEXT_MESSAGE_CONTENT`, `TEXT_MESSAGE_END`, `TOOL_CALL_START`, `TOOL_CALL_ARGS`, `TOOL_CALL_END`, or `TOOL_CALL_RESULT` event that carries a `subagentRunId` becomes one of that child's own records instead of entering the parent message list. An attributed event that arrives before its `SUBAGENT_STARTED` is kept rather than dropped, still outside the parent transcript, and joins the child once the `SUBAGENT_STARTED` arrives in the same run.
 
-Those entries are projected onto `agent.subagents()`, a `Map` of runtime-neutral `Subagent` wrappers. Each wrapper exposes `toolCallId`, `name`, and signals for `status()`, `messages()`, `toolCalls()`, and `state()`. `SUBAGENT_FINISHED` moves the status to `complete`, `SUBAGENT_ERROR` moves it to `error`, and a finished event whose outcome is `suspended` deliberately leaves the status at `running`, because a suspended run resumes under the same identifier.
+Those children are published as `agent.subagents()`, a plain list of core child agents. Each child has `id`, `name`, `toolCallId`, `status`, and its own `messages` and `toolCalls`. Children of earlier root runs come first, marked `earlier`, then the current run's, each in start order. `SUBAGENT_FINISHED` moves the status to `complete`, `SUBAGENT_ERROR` moves it to `error`, and a finished event whose outcome is `suspended` deliberately leaves the status at `running`, because a suspended run resumes under the same identifier.
 
-The anchoring happens one level lower, in `<chat-tool-calls>`, which the chat composition renders for each message. It indexes `agent.subagents()` by the wrapper's `toolCallId` rather than by the map key, because adapters key their maps differently. When a tool call in the message matches a wrapper, that call renders as a `<chat-subagent-card>` instead of an ordinary tool-call card, and it never merges into a group with the calls next to it.
+The anchoring happens one level lower, in `<chat-tool-calls>`, which the chat composition renders for each message. It indexes `agent.subagents()` by each child's `toolCallId`. When a tool call in the message matches a child, that call renders as a `<chat-subagent-card>` instead of an ordinary tool-call card, and it never merges into a group with the calls next to it.
 
 <Callout type="info" title="A card is not the only view">
 The `<chat-subagents>` primitive renders the same cards as a standalone list, filtered to the subagents that have not reached `complete` or `error`. Use it for a live sidebar; use the inline card, as this example does, when the delegation belongs in the transcript.
@@ -124,18 +131,18 @@ SUBAGENT_FINISHED     subagentRunId: call_CN5…-sub, outcome: { type: success }
 TOOL_CALL_RESULT      toolCallId: call_CN5…, content: "LAX: Central Terminal Area …"
 ```
 
-Two details are worth keeping. The tool call is fully announced — start, arguments, end — before the tool body runs, because `TOOL_CALL_END` marks the end of the argument stream rather than the end of execution; the card therefore always attaches to a call the adapter already knows about. And the delegation window nests between `TOOL_CALL_END` and `TOOL_CALL_RESULT`, so the specialist's text and the tool result that repeats it are separate things on the wire.
+Two details are worth keeping. The tool call is fully announced — start, arguments, end — before the tool body runs, because `TOOL_CALL_END` marks the end of the argument stream rather than the end of execution; the card therefore always attaches to a call the session already knows about. And the delegation window nests between `TOOL_CALL_END` and `TOOL_CALL_RESULT`, so the specialist's text and the tool result that repeats it are separate things on the wire.
 
 ## Cross-adapter parity
 
-The consumer Angular code is the same; moving this component to a LangGraph deployment changes one import.
+The consumer Angular code is the same; moving this component to a LangGraph deployment changes the session factory in `app.config.ts`, not the component.
 
 ```diff
-- import { injectAgent } from '@threadplane/ag-ui';
-+ import { injectAgent } from '@threadplane/langgraph';
+- import { createSession } from '@threadplane/ag-ui';
++ import { createSession } from '@threadplane/langgraph';
 ```
 
-Both adapters project their own delegation traffic onto the same `subagents()` signal of runtime-neutral wrappers, and `<chat>` renders whichever it is given. What differs is how the delegation is identified: this example emits protocol subagent events explicitly from a bridge subclass, while the LangGraph adapter recognizes a dispatch tool by name and matches the child run's own namespace.
+Both sessions publish their own delegation traffic as the same `subagents()` list of core child agents, and `<chat>` renders whichever it is given. What differs is how the delegation is identified: this example emits protocol subagent events explicitly from a bridge subclass, while a LangGraph session publishes the deployment's child graphs and relates one to the tool call that started it when `subagentToolNames` names that tool.
 
 ## What's Next
 
@@ -144,7 +151,7 @@ Both adapters project their own delegation traffic onto the same `subagents()` s
     The card component, its inputs, and how to replace it with your own template.
   </Card>
   <Card title="Event mapping" href="/docs/angular/ag-ui/reference/event-mapping">
-    Every AG-UI event and the adapter state it updates.
+    Every AG-UI event and the session state it updates.
   </Card>
   <Card title="Tool views" href="/docs/angular/ag-ui/guides/tool-views">
     Render a tool call with your own component instead of the default card.

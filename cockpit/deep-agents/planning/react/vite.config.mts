@@ -8,7 +8,7 @@ export default defineConfig({
     alias: {
       '@threadplane/langgraph': fileURLToPath(
         new URL(
-          '../../../../libs/langgraph/src/runtime/create-session.ts',
+          '../../../../libs/langgraph/src/public-api.ts',
           import.meta.url
         )
       ),

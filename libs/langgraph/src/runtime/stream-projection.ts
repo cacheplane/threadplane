@@ -13,9 +13,10 @@ import {
 } from './message-reducer.js';
 import type { StreamEvent } from './transport.types.js';
 import { ownMessage, ownToolCall } from './ownership.js';
-import { record, roleOf, textContent } from './wire-message.js';
+import { record, roleOf } from './wire-message.js';
 import { projectCitations } from './citation-projection.js';
 import { projectReasoning } from './reasoning-projection.js';
+import { projectExtra, readContent } from './content-blocks.js';
 import {
   observeResponseIdentity,
   responseChunkId,
@@ -50,6 +51,50 @@ export interface StreamProjection {
   readonly canonical: readonly CanonicalMessage[];
   readonly toolAssistantIds?: readonly string[];
   readonly toolCallIds?: readonly string[];
+  /** Publish each full message's wire extras as `Message.extra`. */
+  readonly extras?: boolean;
+  /**
+   * What tool messages said beyond their text, by tool call id: a failure
+   * status, and the structured parts of the result. Kept for the run so a
+   * result that arrives before its call still settles it correctly.
+   */
+  readonly toolEvidence?: Readonly<Record<string, ToolEvidence>>;
+}
+
+/** A tool message's failure status and structured result parts. */
+export interface ToolEvidence {
+  readonly error?: true;
+  readonly parts?: readonly PlainValue[];
+}
+
+/** Reads what a wire tool message says beyond its text. */
+export function toolEvidence(
+  raw: Record<string, unknown>,
+  parts: readonly PlainValue[] | undefined
+): ToolEvidence | undefined {
+  const failed = raw['status'] === 'error';
+  if (!failed && !parts) return undefined;
+  return {
+    ...(failed ? { error: true as const } : {}),
+    ...(parts ? { parts } : {}),
+  };
+}
+
+/** A tool call settled by its tool message: an error when the tool failed. */
+export function settledCall(
+  call: {
+    readonly id: string;
+    readonly name: string;
+    readonly args: PlainValue;
+  },
+  content: string,
+  evidence: ToolEvidence | undefined
+) {
+  const base = { id: call.id, name: call.name, args: call.args };
+  const parts = evidence?.parts ? { parts: evidence.parts } : {};
+  return evidence?.error
+    ? { ...base, status: 'error' as const, error: content, ...parts }
+    : { ...base, status: 'complete' as const, result: content, ...parts };
 }
 
 /** Pure projection of text and finalized tool data from root stream events.
@@ -76,11 +121,14 @@ export function projectStream(
   const incoming = Array.isArray(messages)
     ? messages.map(record).filter((m): m is Record<string, unknown> => !!m)
     : [];
+  // The graph task a streamed message came from scopes response identity.
+  const task = record(event.messageMetadata)?.['langgraph_checkpoint_ns'];
   const identity = observeResponseIdentity(
     projection.responseIdentity,
     incoming,
     terminal,
-    projection.baselineIds
+    projection.baselineIds,
+    messageEvent && typeof task === 'string' ? task : undefined
   );
   const canonicalId = (id: string) => responseChunkId(identity.evidence, id);
   const projectedId = (raw: Record<string, unknown>, id: string) =>
@@ -160,8 +208,9 @@ export function projectStream(
     if (!role) continue;
     const wireId =
       typeof raw['id'] === 'string' ? raw['id'] : `${messageIdPrefix}-${role}`;
-    // Only a proven provider item binding can replace a wire ID. Equal text,
-    // node/task metadata and adjacent chunks never establish identity.
+    // Only proven provider evidence can replace a wire ID: a matching set of
+    // output items, or a model run's placeholder id bound to the response
+    // that run opened. Equal text, node names and adjacency never do.
     const id = projectedId(raw, wireId);
     const previous = state.messages.find((m) => m.id === id);
     const baseline = projection.baselineIds.includes(id);
@@ -176,7 +225,23 @@ export function projectStream(
       raw['type'] !== 'AIMessageChunk' &&
       Array.isArray(raw['tool_calls']);
     const position = incoming.indexOf(raw);
-    const content = textContent(raw['content']);
+    const reading = readContent(raw['content'], role === 'tool');
+    const content = reading.text;
+    // Chunks carry fragments; only a full message states its whole content.
+    const full = mode !== 'delta' && raw['type'] !== 'AIMessageChunk';
+    const blocks = full ? reading.blocks : undefined;
+    const extra = full && projection.extras ? projectExtra(raw) : undefined;
+    if (role === 'tool' && typeof raw['tool_call_id'] === 'string') {
+      const evidence = toolEvidence(raw, reading.parts);
+      if (evidence)
+        projection = {
+          ...projection,
+          toolEvidence: {
+            ...projection.toolEvidence,
+            [raw['tool_call_id']]: evidence,
+          },
+        };
+    }
     const executionCandidate =
       (!baseline || projection.resume?.turnIds.includes(id)) &&
       !projection.resume?.excludedIds?.includes(id) &&
@@ -223,6 +288,14 @@ export function projectStream(
       id,
       role,
       content,
+      // An echo of a message from an earlier turn is inert: it keeps what
+      // the transcript already holds, as its delivery does.
+      ...(!current && previous
+        ? {
+            ...(previous.blocks ? { blocks: previous.blocks } : {}),
+            ...(previous.extra ? { extra: previous.extra } : {}),
+          }
+        : { ...(blocks ? { blocks } : {}), ...(extra ? { extra } : {}) }),
       citations: projectCitations(raw),
       reasoning: projectReasoning(raw),
       delivery:
@@ -337,7 +410,11 @@ export function projectStream(
     if (call?.status === 'pending')
       state = reduceMessages(state, {
         type: 'tool',
-        toolCall: { ...call, status: 'complete', result: message.content },
+        toolCall: settledCall(
+          call,
+          message.content,
+          projection.toolEvidence?.[message.toolCallId]
+        ),
       });
   }
   // Settle wire evidence before pruning so ToolMessages later in this same
@@ -379,6 +456,27 @@ export function projectStream(
   return { state, projection };
 }
 
+/**
+ * Whether a root message event may enter the transcript. With no node names,
+ * every event may. A streamed message chunk names its node in
+ * `messageMetadata.langgraph_node`; one from a node outside the list is kept
+ * out. Events that name no node, full-state events and child-graph events are
+ * never filtered here.
+ */
+export function isTranscriptEvent(
+  event: StreamEvent,
+  nodeNames: readonly string[] | undefined
+): boolean {
+  if (!nodeNames?.length) return true;
+  if ((event.namespace?.length ?? 0) > 0 || event.type.includes('|'))
+    return true;
+  if (event.type !== 'messages' && !event.type.startsWith('messages/'))
+    return true;
+  if (event.type !== 'messages/partial' && !event.messageMetadata) return true;
+  const node = record(event.messageMetadata)?.['langgraph_node'];
+  return typeof node !== 'string' || nodeNames.includes(node);
+}
+
 export function finalizeProjection(
   state: MessageState,
   projection: StreamProjection
@@ -391,8 +489,9 @@ export function finalizeProjection(
 /** The shared interruption vocabulary, keyed by recovery value. The neutral
  * runtime cannot import `@threadplane/chat`, so this is a copy of that
  * package's `AGENT_RECOVERY_MESSAGES` / `AGENT_RECOVERY_DETAILS`; a parity
- * spec under the Angular test target fails when the two drift. The runtime
- * never emits `retry`: it cannot prove a request was undispatched. */
+ * spec under the Angular test target fails when the two drift. An interruption
+ * is never published with `retry`: a creation request that got no response at
+ * all is a `connection` error instead, see `unansweredError`. */
 export const RECOVERY_COPY = Object.freeze({
   messages: Object.freeze({
     retry: 'The response was interrupted before it started. Try again.',
@@ -421,17 +520,33 @@ export function interruptionError(canCheck: boolean): AgentError {
   };
 }
 
+/** Shown when the run-creation request got no response from anything. */
+export const CONNECTION_COPY =
+  "Can't reach the server. Check your connection and try again.";
+
+/** The default transport's creation request was rejected by `fetch` before
+ * any response: nothing answered, so no run id exists and the same command can
+ * be sent again. `retry()` first reads the thread for this turn's message. */
+export function unansweredError(): AgentError {
+  return {
+    kind: 'connection',
+    message: CONNECTION_COPY,
+    retryable: true,
+    recovery: 'retry',
+  };
+}
+
 /** Classifies a raw stream failure into the plain display projection.
  *
- * A failure before any response (an offline `fetch`, DNS, a refused or reset
- * connection) is deliberately an `interrupted` error, never a retryable
- * `connection` one. The legacy Angular bridge and the AG-UI adapter report
- * `connection` there because their transports observe the connect phase; this
- * runtime only sees a thrown iterator. A browser `TypeError: fetch failed`
- * carries no cause, and a reset after the server accepted the request looks
- * identical to one that never left, so dispatch cannot be ruled out and Retry
- * could replay a run. Protected SDK errors (including raw SSE error payloads)
- * stay generic. */
+ * What a thrown value says about itself never makes a failure retryable. A
+ * `TypeError: fetch failed` from a custom transport, or a stream that dropped
+ * after its response began, is an `interrupted` error: a reset after the
+ * server accepted the request looks identical to one that never left, so
+ * dispatch cannot be ruled out and Retry could replay a run. Only the default
+ * transport's own fetch seam can say that a creation request got no response,
+ * and the session publishes that case with `unansweredError` instead of
+ * calling this. Protected SDK errors (including raw SSE error payloads) stay
+ * generic. */
 export function failureProjection(
   raw: unknown,
   protectedTransport: boolean,

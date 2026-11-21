@@ -1,7 +1,8 @@
 import { Component, computed } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent } from '@threadplane/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import type { LangGraphSession } from '@threadplane/langgraph';
 
 // #region todo-shape
 /**
@@ -33,7 +34,7 @@ const SUGGESTIONS = [
  * graph state.
  *
  * The agent's `write_todos` tool replaces the whole list on every call, and the
- * graph streams each replacement as a `values` update. `injectAgent().value()`
+ * graph streams each replacement as a `values` update. `injectAgent().state()`
  * exposes that state, so the panel is a pure projection of `todos` — no local
  * copy, no reconciliation. Watching it during a run is the point of this
  * capability: rows move from pending to in progress to completed, and the agent
@@ -49,11 +50,11 @@ const SUGGESTIONS = [
       title="A plan for the flight ahead."
       description="Build a dispatch brief using fixed aviation lookup data. Watch the assistant build and revise its plan alongside the conversation."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="agent.status() === 'running'"
         (click)="newConversation(conversation)">New conversation</button>
       <chat placeholder="Ask for a dispatch brief…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -175,19 +176,19 @@ const SUGGESTIONS = [
 })
 export class PlanningComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.agent.status() === 'running') return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 
   protected readonly suggestions = SUGGESTIONS;
 
   // #region todos-signal
   /** Live projection of `state.todos`, normalized against unknown statuses. */
   protected readonly todos = computed<Todo[]>(() => {
-    const todos = (this.agent.value() as Record<string, unknown> | undefined)?.['todos'];
+    const todos = this.agent.state()?.['todos'];
     if (!Array.isArray(todos)) return [];
     return todos.map((todo) => {
       const entry = todo as Record<string, unknown>;

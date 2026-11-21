@@ -1,41 +1,52 @@
 import { HighlightedCode } from '../HighlightedCode';
 
 const SNIPPET_1 = `// app.config.ts
-import { provideAgent } from '@threadplane/langgraph';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
 providers: [
   provideAgent({
-    assistantId: 'my-agent',
-    apiUrl: 'https://my-langgraph.cloud',
+    createSession: (context) =>
+      createSession({
+        assistantId: 'my-agent',
+        apiUrl: 'https://my-langgraph.cloud',
+        threadId: context.threadId,
+        onThreadId: context.onThreadId,
+      }),
   }),
 ];
 
 // component
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 const chat = injectAgent();
 
 // Reactive signals — OnPush compatible
-chat.messages();    // Signal<Message[]>
-chat.isLoading();   // Signal<boolean>
-chat.interrupt();   // Signal<AgentInterrupt | undefined>`;
+chat.messages();    // Signal<readonly Message[]>
+chat.status();      // Signal<'idle' | 'running' | 'error'>
+chat.interrupts();  // Signal<readonly AgentInterrupt[] | undefined>`;
 
 const SNIPPET_2 = `// app.config.ts
-import { provideAgent, MockAgentTransport, FetchStreamTransport } from '@threadplane/langgraph';
+import { provideAgent } from '@threadplane/angular';
+import { createSession, MockAgentTransport } from '@threadplane/langgraph';
 
 providers: [
   provideAgent({
-    apiUrl: environment.langgraphUrl,
-    assistantId: 'my-agent',
     threadId: savedThreadId,
     onThreadId: (id) => localStorage.setItem('threadId', id),
-    transport: isTest
-      ? new MockAgentTransport(fixtures)
-      : new FetchStreamTransport(),
+    createSession: (context) =>
+      createSession({
+        apiUrl: environment.langgraphUrl,
+        assistantId: 'my-agent',
+        threadId: context.threadId,
+        onThreadId: context.onThreadId,
+        // Omit transport to use the default HTTP and SSE transport.
+        transport: isTest ? new MockAgentTransport(fixtures) : undefined,
+      }),
   }),
 ];
 
 // component
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 const chat = injectAgent();`;
 
 const SNIPPETS = [

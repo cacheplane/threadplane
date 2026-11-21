@@ -8,20 +8,35 @@ describe('generated API Markdown route', () => {
       segments: ['react', 'useAgent'],
       imported: '@threadplane/react',
       declaration: 'function useAgent',
+      published: false,
     },
     {
       segments: ['angular', 'observeAgent'],
       imported: '@threadplane/angular',
       declaration: 'function observeAgent',
+      published: true,
+    },
+    {
+      segments: ['angular', 'testing', 'provideFakeAgent'],
+      imported: '@threadplane/angular/testing',
+      declaration: 'function provideFakeAgent',
+      published: true,
+    },
+    {
+      segments: ['langgraph', 'createSession'],
+      imported: '@threadplane/langgraph',
+      declaration: 'function createSession',
+      published: true,
     },
     {
       segments: ['react', 'chat', 'ChatInput'],
       imported: '@threadplane/react/chat',
       declaration: 'ForwardRefExoticComponent',
+      published: false,
     },
   ])(
     'serves extracted $imported declarations',
-    async ({ segments, imported, declaration }) => {
+    async ({ segments, imported, declaration, published }) => {
       const response = await GET(
         new Request('https://threadplane.ai/api/markdown/api'),
         { params: Promise.resolve({ segments }) }
@@ -31,7 +46,10 @@ describe('generated API Markdown route', () => {
       const body = await response.text();
       expect(body).toContain(imported);
       expect(body).toContain(declaration);
-      expect(body).toContain('Unpublished development API');
+      // Only a private package is labelled; the Angular binding and the
+      // backend session packages are published.
+      if (published) expect(body).not.toContain('Unpublished development API');
+      else expect(body).toContain('Unpublished development API');
     }
   );
 

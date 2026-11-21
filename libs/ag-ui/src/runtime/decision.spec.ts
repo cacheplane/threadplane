@@ -1,7 +1,7 @@
 import { EventType as E } from '@ag-ui/client';
 import type { DeepReadonly } from '@threadplane/core';
 import { describe, expect, it, vi } from 'vitest';
-import { copyData } from '../lib/internal/copy-data';
+import { copyData } from './copy-data';
 import {
   assertResumeEligible,
   captureResponses,

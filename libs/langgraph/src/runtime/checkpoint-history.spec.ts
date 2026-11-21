@@ -4,6 +4,7 @@ import { createSession } from './create-session';
 import type { AgentTransport } from './transport.types';
 import { deferred } from './testing/deferred';
 import { answerPending } from './testing/answer-pending';
+import { expectFailedLoad } from './testing/failed-load';
 
 function checkpoint(id: string | null = 'latest'): ThreadState {
   return {
@@ -173,7 +174,7 @@ describe('explicit checkpoint history observation', () => {
       name: 'LangGraphRequestError',
       message: 'The LangGraph request failed.',
     });
-    expect(f.session.getSnapshot()).toBe(before);
+    expectFailedLoad(f.session.getSnapshot(), before);
     await f.session.dispose();
   });
 

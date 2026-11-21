@@ -645,16 +645,6 @@
       "status": "planned"
     },
     {
-      "id": "asset:libs/ag-ui/ng-package.json",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
       "id": "asset:libs/ag-ui/package.json",
       "taskIds": [
         "T02",
@@ -695,16 +685,6 @@
       "status": "planned"
     },
     {
-      "id": "asset:libs/ag-ui/tsconfig.lib.prod.json",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
       "id": "asset:libs/ag-ui/tsconfig.runtime-tests.json",
       "taskIds": [
         "T36"
@@ -714,14 +694,13 @@
       "note": "Isolated Node verification for the private AG-UI request owner; broader CI and release migration remain open."
     },
     {
-      "id": "asset:libs/ag-ui/tsconfig.type-tests.json",
+      "id": "asset:libs/ag-ui/tsconfig.runtime-conformance.json",
       "taskIds": [
-        "T02",
-        "T36",
-        "T37"
+        "T36"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "in-progress",
+      "note": "Type-checks the one runtime spec that registers the core conformance suites, with the platform timer declarations core documents; every other runtime file stays checked without them by tsconfig.runtime-tests.json."
     },
     {
       "id": "asset:libs/chat/CHANGELOG.md",
@@ -1286,16 +1265,6 @@
       "status": "planned"
     },
     {
-      "id": "asset:libs/langgraph/ng-package.json",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
       "id": "asset:libs/langgraph/package.json",
       "taskIds": [
         "T02",
@@ -1328,21 +1297,49 @@
       "note": "Contributor guidance for private checkpoint authority, transport obligations and consumed-task limits; no public package migration or release claim."
     },
     {
-      "id": "asset:libs/langgraph/test/fixtures/reloaded-subagent-thread.json",
+      "id": "asset:libs/langgraph/src/runtime/testing/responses-replay.json",
       "taskIds": [
-        "T10"
+        "T09"
       ],
-      "treatment": "infrastructure",
-      "status": "planned"
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Test-only recording of one OpenAI Responses run, read by the response identity regression spec; excluded from production imports and the package."
     },
     {
-      "id": "asset:libs/langgraph/test/fixtures/streaming-reasoning-puzzle.json",
+      "id": "asset:libs/ag-ui/tsconfig.nonstrict.json",
       "taskIds": [
-        "T05",
         "T36"
       ],
       "treatment": "infrastructure",
-      "status": "planned"
+      "status": "complete",
+      "note": "Type-checks the library's shipped sources with strict mode off, as example and cockpit apps compile them through path aliases. Run by the library's type-tests target."
+    },
+    {
+      "id": "asset:libs/angular/tsconfig.nonstrict.json",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "complete",
+      "note": "Type-checks the library's shipped sources with strict mode off, as example and cockpit apps compile them through path aliases. Run by the library's type-tests target."
+    },
+    {
+      "id": "asset:libs/chat/tsconfig.nonstrict.json",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "complete",
+      "note": "Type-checks the library's shipped sources with strict mode off, as example and cockpit apps compile them through path aliases. Run by the library's type-tests target."
+    },
+    {
+      "id": "asset:libs/langgraph/tsconfig.nonstrict.json",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "complete",
+      "note": "Type-checks the library's shipped sources with strict mode off, as example and cockpit apps compile them through path aliases. Run by the library's type-tests target."
     },
     {
       "id": "asset:libs/langgraph/tsconfig.json",
@@ -1366,17 +1363,6 @@
       "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
     },
     {
-      "id": "asset:libs/langgraph/tsconfig.lib.prod.json",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "in-progress",
-      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
-    },
-    {
       "id": "asset:libs/langgraph/tsconfig.runtime-tests.json",
       "taskIds": [
         "T36"
@@ -1384,16 +1370,6 @@
       "treatment": "infrastructure",
       "status": "in-progress",
       "note": "Isolated Node runtime verification only; the wider CI/release migration remains open."
-    },
-    {
-      "id": "asset:libs/langgraph/tsconfig.type-tests.json",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
     },
     {
       "id": "asset:libs/middleware/CHANGELOG.md",
@@ -4622,55 +4598,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiAgent",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiFakeAgentConfig",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiInterruptPersistence",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiSubmitOptions",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiThreadRecord",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgUiReplaySource",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/ag-ui/src/public-api.ts#HttpReplayOptions",
       "taskIds": [
         "T13"
@@ -4682,23 +4609,6 @@
       "id": "export:libs/ag-ui/src/public-api.ts#httpReplay",
       "taskIds": [
         "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#AgentConfig",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#CustomStreamEvent",
-      "taskIds": [
-        "T12"
       ],
       "treatment": "shared",
       "status": "planned"
@@ -4720,49 +4630,9 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/ag-ui/src/public-api.ts#InterruptSessionPhase",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#InterruptSessionSnapshot",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/ag-ui/src/public-api.ts#InterruptTransport",
       "taskIds": [
         "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#ResumeAttempt",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#ThreadSnapshot",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#ToAgentOptions",
-      "taskIds": [
-        "T14"
       ],
       "treatment": "shared",
       "status": "planned"
@@ -4774,59 +4644,6 @@
       ],
       "treatment": "shared",
       "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#injectAgent",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#provideAgent",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#provideFakeAgent",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#toAgent",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#\u0275AG_UI_RUNTIME_OPERATION_REPORTER",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Existing \u0275-prefixed implementation seam; retain required behavior without promising a new public React API."
-    },
-    {
-      "id": "export:libs/ag-ui/src/public-api.ts#\u0275AgUiRuntimeOperationFailureReporter",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Existing \u0275-prefixed implementation seam; retain required behavior without promising a new public React API."
     },
     {
       "id": "export:libs/chat/debug/public-api.ts#ChatDebugComponent",
@@ -5234,39 +5051,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#AGENT_ERROR_MESSAGES",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AGENT_RECOVERY_DETAILS",
-      "taskIds": [
-        "T03",
-        "T21",
-        "T23",
-        "T35"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "reason": "Public v0.2.0 recovery contract; preserve safe retry/check/none behavior and user-facing error details across framework bindings."
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AGENT_RECOVERY_MESSAGES",
-      "taskIds": [
-        "T03",
-        "T21",
-        "T23",
-        "T35"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "reason": "Public v0.2.0 recovery contract; preserve safe retry/check/none behavior and user-facing error details across framework bindings."
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#Agent",
       "taskIds": [
         "T03",
@@ -5293,16 +5077,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#AgentCustomEvent",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Both framework-neutral runtime sessions expose custom events through the optional core AgentSession.onCustomEvent listener as owned plain { name, data } payloads, read the way the Angular adapters read them. A React state_update variant and the a2ui-partial bridge remain open."
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#AgentError",
       "taskIds": [
         "T03",
@@ -5325,16 +5099,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#AgentEvent",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Both framework-neutral runtime sessions expose custom events through the optional core AgentSession.onCustomEvent listener as owned plain { name, data } payloads, read the way the Angular adapters read them. A React state_update variant and the a2ui-partial bridge remain open."
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#AgentInterrupt",
       "taskIds": [
         "T28"
@@ -5355,60 +5119,6 @@
       "reason": "Public v0.2.0 recovery contract; preserve safe retry/check/none behavior and user-facing error details across framework bindings."
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#AgentRef",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentRuntimeTelemetryEvent",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentRuntimeTelemetryPayload",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentRuntimeTelemetryProperties",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentRuntimeTelemetrySink",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentStateUpdateEvent",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#AgentStatus",
       "taskIds": [
         "T03",
@@ -5427,25 +5137,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#AgentPlan",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#AgentPlanStep",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#agentPlan",
       "taskIds": [
         "T03",
         "T04"
@@ -5485,14 +5177,6 @@
       "taskIds": [
         "T03",
         "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#AgentWithHistory",
-      "taskIds": [
-        "T29"
       ],
       "treatment": "shared",
       "status": "planned"
@@ -6325,14 +6009,6 @@
       "reason": "Retain tool declaration/coordination capability without a schema DSL, automatic argument validation/transformation or JSON Schema derivation. Optional JSON Schema metadata is caller-supplied; current Angular behavior is unchanged and future view/ask presentation remains deferred."
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#ClientToolsCapability",
-      "taskIds": [
-        "T15"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#ClientToolsCoordinator",
       "taskIds": [
         "T16"
@@ -6859,14 +6535,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#SelectPendingClientToolCallsInput",
-      "taskIds": [
-        "T15"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#StandardSchemaInferInput",
       "taskIds": [
         "T07",
@@ -6910,22 +6578,6 @@
         "T26"
       ],
       "treatment": "react",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#Subagent",
-      "taskIds": [
-        "T28"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#SubagentStatus",
-      "taskIds": [
-        "T28"
-      ],
-      "treatment": "shared",
       "status": "planned"
     },
     {
@@ -7147,15 +6799,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#createAgentRef",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#createContentClassifier",
       "taskIds": [
         "T19"
@@ -7302,15 +6945,6 @@
       "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#isAbortError",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#isAssistantMessage",
       "taskIds": [
         "T03",
@@ -7447,14 +7081,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/chat/src/public-api.ts#selectPendingClientToolCalls",
-      "taskIds": [
-        "T15"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/src/public-api.ts#shouldClaimBeforeExecute",
       "taskIds": [
         "T15"
@@ -7502,15 +7128,6 @@
         "T23"
       ],
       "treatment": "react",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/src/public-api.ts#toAgentError",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
       "status": "planned"
     },
     {
@@ -7696,25 +7313,7 @@
       "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
     },
     {
-      "id": "export:libs/chat/testing/public-api.ts#AbstractEvent",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/chat/testing/public-api.ts#FakeAgentConfig",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/testing/public-api.ts#INTERRUPT_CONFORMANCE_BATCH",
       "taskIds": [
         "T05",
         "T31"
@@ -7733,42 +7332,6 @@
     },
     {
       "id": "export:libs/chat/testing/public-api.ts#InterruptConformanceRequest",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/testing/public-api.ts#REASONING_FIXTURE_EVENTS",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/testing/public-api.ts#REASONING_FIXTURE_MESSAGE_ID",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/testing/public-api.ts#REASONING_FIXTURE_REASONING",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/chat/testing/public-api.ts#REASONING_FIXTURE_RESPONSE",
       "taskIds": [
         "T05",
         "T31"
@@ -7813,70 +7376,6 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/langgraph/src/public-api.ts#AGENT_LIFECYCLE",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentBranchTree",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentBranchTreeFork",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentBranchTreeNode",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentConfig",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentLifecycle",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentLifecycleRegistry",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#AgentOptions",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/langgraph/src/public-api.ts#AgentQueue",
       "taskIds": [
         "T08"
@@ -7904,23 +7403,6 @@
       "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
-      "id": "export:libs/langgraph/src/public-api.ts#BagTemplate",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#CustomStreamEvent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/langgraph/src/public-api.ts#FakeStreamTransport",
       "taskIds": [
         "T08"
@@ -7936,56 +7418,6 @@
       "treatment": "shared",
       "status": "planned",
       "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#InferBag",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#Interrupt",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#LANGGRAPH_CLIENT",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#LANGGRAPH_CLIENT_OPTIONS",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#LANGGRAPH_THREADS_CONFIG",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#LangGraphAgent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
     },
     {
       "id": "export:libs/langgraph/src/public-api.ts#LangGraphClientOptions",
@@ -8015,22 +7447,6 @@
       "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
-      "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadsAdapter",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadsConfig",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/langgraph/src/public-api.ts#MockAgentTransport",
       "taskIds": [
         "T08"
@@ -8039,48 +7455,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/langgraph/src/public-api.ts#MockLangGraphAgent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#ResourceStatus",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/langgraph/src/public-api.ts#StreamEvent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#SubagentStreamRef",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#SubmitOptions",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#ThreadState",
       "taskIds": [
         "T08"
       ],
@@ -8105,81 +7480,12 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/langgraph/src/public-api.ts#injectAgent",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#mockLangGraphAgent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#provideAgent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#provideFakeAgent",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#refreshOnRunEnd",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#refreshOnTransition",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "export:libs/langgraph/src/public-api.ts#toAbsoluteApiUrl",
       "taskIds": [
         "T08"
       ],
       "treatment": "shared",
       "status": "planned",
-      "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#\u0275LANGGRAPH_RUNTIME_OPERATION_REPORTER",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Existing \u0275-prefixed implementation seam; retain required behavior without promising a new public React API."
-    },
-    {
-      "id": "export:libs/langgraph/src/public-api.ts#\u0275LangGraphRuntimeOperationFailureReporter",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Existing \u0275-prefixed implementation seam; retain required behavior without promising a new public React API.",
       "note": "Reviewed declaration/import text drift from private runtime extraction; legacy export name and Angular root remain unchanged. This is not completion of the assigned migration task."
     },
     {
@@ -9305,7 +8611,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/ag-ui/src/lib/bridge-citations-state.ts",
+      "id": "source:libs/ag-ui/src/runtime/bridge-citations-state.ts",
       "taskIds": [
         "T12"
       ],
@@ -9313,15 +8619,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/ag-ui/src/lib/client-tools.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/internal/apply-patch.ts",
+      "id": "source:libs/ag-ui/src/runtime/apply-patch.ts",
       "taskIds": [
         "T12"
       ],
@@ -9330,7 +8628,7 @@
       "note": "Shared six-operation path-copy helper preserves portable payload and ancestor shape, own array keys and atomic failure. Private state ownership composes it without exposing a public state or session API."
     },
     {
-      "id": "source:libs/ag-ui/src/lib/internal/copy-data.ts",
+      "id": "source:libs/ag-ui/src/runtime/copy-data.ts",
       "taskIds": [
         "T12",
         "T13"
@@ -9341,126 +8639,12 @@
       "note": "Extracted unchanged capture algorithm from transcript ownership. Preserves own enumerable plain data, undefined, sparse arrays and null prototypes, and rejects nonportable values or cycles."
     },
     {
-      "id": "source:libs/ag-ui/src/lib/internal/devtools.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Development-only devtools seam: signal instrumentation (names only) and the scripted-run substitution of source.run."
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/internal/content-parts.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Adapter-private normalization of AG-UI 1.0 tool-result content parts into neutral ToolCall fields for the legacy reducer; no public export."
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/interrupt-persistence.ts",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/replay.ts",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/interrupt-session.ts",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/interrupt-session.types.ts",
-      "taskIds": [
-        "T13"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/package-version.ts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/provide-agent.ts",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/reducer.ts",
+      "id": "source:libs/ag-ui/src/runtime/fake-agent.ts",
       "taskIds": [
         "T12"
       ],
       "treatment": "shared",
       "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/run-state-transaction.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/runtime-operation-reporter.ts",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/testing/fake-agent.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/testing/provide-fake-agent.ts",
-      "taskIds": [
-        "T14"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "source:libs/ag-ui/src/lib/to-agent.ts",
-      "taskIds": [
-        "T12",
-        "T13",
-        "T14",
-        "T38"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "reason": "Preserve v0.2.0 terminal/abort/read-error distinctions and safe interrupted-run reconciliation before extraction."
     },
     {
       "id": "source:libs/ag-ui/src/public-api.ts",
@@ -9656,34 +8840,6 @@
       "status": "in-progress",
       "reason": "Private immutable AG-UI transcript ownership and explicit mutable request projection; excluded from public exports and legacy Angular reachability.",
       "note": "Preserves complete observed portable protocol data using the shared internal copier; selects request messages by own array indices without consulting payload methods or constructor. Excludes activity and null top-level child attribution only at request egress. Session integration, provider normalization and public parity remain separate migration work."
-    },
-    {
-      "id": "source:libs/ag-ui/src/test-setup.ts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/src/testing/type-assert.ts",
-      "taskIds": [
-        "T12"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/ag-ui/vite.config.mts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
     },
     {
       "id": "source:libs/ag-ui/vite.runtime.config.mts",
@@ -10126,103 +9282,6 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/chat/src/lib/agent/agent-checkpoint.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-error.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-event.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-interrupt.ts",
-      "taskIds": [
-        "T28"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-ref.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-status.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-submit.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-with-history.ts",
-      "taskIds": [
-        "T29"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-plan.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/agent-usage.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "source:libs/chat/src/lib/agent/citation-display.ts",
       "taskIds": [
         "T18",
@@ -10234,34 +9293,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "source:libs/chat/src/lib/agent/citation.ts",
-      "taskIds": [
-        "T18",
-        "T26"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/content-block.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "source:libs/chat/src/lib/agent/index.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/message-delivery.ts",
       "taskIds": [
         "T03",
         "T04"
@@ -10274,40 +9306,6 @@
       "taskIds": [
         "T03",
         "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/runtime-telemetry.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/subagent.ts",
-      "taskIds": [
-        "T28"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/to-agent-error.ts",
-      "taskIds": [
-        "T03",
-        "T04"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/agent/tool-call.ts",
-      "taskIds": [
-        "T28"
       ],
       "treatment": "shared",
       "status": "planned"
@@ -10373,14 +9371,6 @@
     },
     {
       "id": "source:libs/chat/src/lib/client-tools/index.ts",
-      "taskIds": [
-        "T15"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/src/lib/client-tools/select-pending-client-tool-calls.ts",
       "taskIds": [
         "T15"
       ],
@@ -11548,52 +10538,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/chat/testing/agent-conformance.ts",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/testing/agent-with-history-conformance.ts",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/testing/fake-agent-config.ts",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/testing/interrupt-conformance.ts",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
       "id": "source:libs/chat/testing/public-api.ts",
-      "taskIds": [
-        "T05",
-        "T31"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/chat/testing/reasoning-fixture.ts",
       "taskIds": [
         "T05",
         "T31"
@@ -12274,6 +11219,174 @@
       "status": "planned"
     },
     {
+      "id": "source:libs/ag-ui/.install-collector/development-install.d.mts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/langgraph/.install-collector/development-install.d.mts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/package-version.ts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/package-version.ts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/development-install.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private description of the package's own installation (version and install-bridge token) handed to a host's development collector factory. The session builds no collector and sends nothing; the token is read only in an Angular development build."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/development-install.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private description of the package's own installation (version and install-bridge token) handed to a host's development collector factory. The session builds no collector and sends nothing; the token is read only in an Angular development build."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionDevelopmentInstall",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionDevelopmentRuntime",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionDevelopmentRuntimeFactory",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDevelopmentInstall",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDevelopmentRuntimeFactory",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "source:libs/angular/src/development-host.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Seam between the injected Agent and the development-install collector, which depends on Angular's development mode. The chat package registers the collector; a session is handed a relay through the provider context. React sessions are given no collector, as before. Verified with source specs."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentDevelopmentInstall",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Seam between the injected Agent and the development-install collector, which depends on Angular's development mode. The chat package registers the collector; a session is handed a relay through the provider context. React sessions are given no collector, as before. Verified with source specs."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentDevelopmentRuntime",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Seam between the injected Agent and the development-install collector, which depends on Angular's development mode. The chat package registers the collector; a session is handed a relay through the provider context. React sessions are given no collector, as before. Verified with source specs."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentDevelopmentRuntimeFactory",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Seam between the injected Agent and the development-install collector, which depends on Angular's development mode. The chat package registers the collector; a session is handed a relay through the provider context. React sessions are given no collector, as before. Verified with source specs."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵAgentDevelopmentHost",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Seam between the injected Agent and the development-install collector, which depends on Angular's development mode. The chat package registers the collector; a session is handed a relay through the provider context. React sessions are given no collector, as before. Verified with source specs."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵsetAgentDevelopmentHost",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Seam between the injected Agent and the development-install collector, which depends on Angular's development mode. The chat package registers the collector; a session is handed a relay through the provider context. React sessions are given no collector, as before. Verified with source specs."
+    },
+    {
+      "id": "source:libs/chat/src/lib/agent/development-host.ts",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "The module where the chat library connects @threadplane/angular agents to the development-install collector; both depend on Angular and have no React counterpart.",
+      "note": "Registers the telemetry package's development collector with the agent layer when the chat package loads, so an app needs no provider for it. Verified with a chat spec and the built-package check in libs/telemetry/scripts."
+    },
+    {
       "id": "source:libs/langgraph/.install-collector/development-install.d.ts",
       "taskIds": [
         "T02",
@@ -12315,31 +11428,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/langgraph/src/lib/agent-lifecycle-registry.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/agent.fn.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/agent.provider.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/agent.types.ts",
+      "id": "source:libs/langgraph/src/runtime/create-langgraph-client.ts",
       "taskIds": [
         "T08"
       ],
@@ -12348,7 +11437,7 @@
       "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
     },
     {
-      "id": "source:libs/langgraph/src/lib/client-tools.ts",
+      "id": "source:libs/langgraph/src/runtime/fake-stream.transport.ts",
       "taskIds": [
         "T08"
       ],
@@ -12356,155 +11445,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/langgraph/src/lib/client/client-options.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/client/create-langgraph-client.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/inject-agent.ts",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/branch-tree.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/devtools.ts",
-      "taskIds": [
-        "T09"
-      ],
-      "treatment": "internal",
-      "status": "planned",
-      "reason": "Development-only subject instrumentation for the devtools emitter; carries names only."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/extract-citations.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "note": "Private runtime citation projection now stages the aliases with owned plain metadata. Consolidation/removal at backend cutover remains planned; legacy arbitrary-extra and Date semantics are not claimed equivalent."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/stream-manager.bridge.ts",
-      "taskIds": [
-        "T09",
-        "T10",
-        "T11",
-        "T38"
-      ],
-      "treatment": "shared",
-      "status": "planned",
-      "reason": "Carry forward terminal-event versus unexpected-close handling, dispatch uncertainty, status checks, and stale-completion suppression from v0.2.0."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/history-restore.ts",
-      "taskIds": [
-        "T10"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/internals/subagent-tracker.ts",
-      "taskIds": [
-        "T10"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/lifecycle.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/package-version.ts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/runtime-operation-reporter.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/testing/fake-stream.transport.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/testing/mock-langgraph-agent.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/testing/provide-fake-agent.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "angular-only",
-      "status": "planned",
-      "reason": "Retain the Angular DI/router facade for compatibility; assigned task supplies the neutral seam and React counterpart separately."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/threads/refresh-on.ts",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/threads/threads-adapter.ts",
-      "taskIds": [
-        "T11"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/transport/checkpoint-position.ts",
+      "id": "source:libs/langgraph/src/runtime/checkpoint-position.ts",
       "taskIds": [
         "T08"
       ],
@@ -12513,7 +11454,7 @@
       "note": "Shared SDK routing capture owns root checkpoint identity and string map entries without importing private session or core implementation."
     },
     {
-      "id": "source:libs/langgraph/src/lib/transport/fetch-stream.transport.ts",
+      "id": "source:libs/langgraph/src/runtime/fetch-stream.transport.ts",
       "taskIds": [
         "T08"
       ],
@@ -12522,21 +11463,12 @@
       "note": "SDK event normalization protects protocol type and namespace. Exact checkpoint reads, routed writes with returned positions, and checkpoint delivery on join retain legacy transport ownership; broader T08 migration remains open."
     },
     {
-      "id": "source:libs/langgraph/src/lib/transport/mock-stream.transport.ts",
+      "id": "source:libs/langgraph/src/runtime/mock-stream.transport.ts",
       "taskIds": [
         "T08"
       ],
       "treatment": "shared",
       "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/transport/transport.interface.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "note": "Only framework-free transport/error dependencies were extracted for the private runtime proof; existing Angular behavior and the remaining assigned migration work are retained."
     },
     {
       "id": "source:libs/langgraph/src/public-api.ts",
@@ -12743,7 +11675,7 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private LangGraph runtime response identity reconciliation; no public API or package cutover.",
-      "note": "Exact complete OpenAI text/function output-item evidence within one physical run and namespace; ambiguous, incomplete and unsupported evidence cannot merge messages. Broader T09 migration remains open."
+      "note": "Exact complete OpenAI text/reasoning/function output-item evidence within one physical run and namespace, and a model run's placeholder id bound to the single response that run opened in one graph task; ambiguous, incomplete and unsupported evidence cannot merge messages. Broader T09 migration remains open."
     },
     {
       "id": "source:libs/langgraph/src/runtime/run-recovery.ts",
@@ -12776,7 +11708,131 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Private projection of the session's child graphs into the core contract's child agents: an id, the starting node's name, a status and the child's own messages and tool calls.",
-      "note": "Covered by runtime specs. LangGraph does not relate a child graph to a tool call, so toolCallId and description are never set."
+      "note": "Covered by runtime specs. A child the session related to a root tool call carries that call's toolCallId, description and subagent type."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/delegation-projection.ts",
+      "taskIds": [
+        "T09",
+        "T10"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private relation of a tool-started child graph to the root tool call that started it, from the middleware's binding event, the task text or the single outstanding call, and the mapping of saved tasks to tool calls used to restore children from history.",
+      "note": "Covered by runtime specs. Plain subgraph nodes and nested delegations are never related."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/checkpoint-tree.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of a loaded history page with each checkpoint's state: the checkpoint list, the assistant message to checkpoint record, the branch tree and the selection of one branch's checkpoints.",
+      "note": "Covered by runtime specs. Opt-in through historyState; a session otherwise keeps only checkpoint metadata."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/session-hooks.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private host seams of the session: the telemetry sink, development collector, devtools sink and scripted-run source types, listener throttling, and the message deserializer applied to stream events and saved checkpoints.",
+      "note": "Covered by runtime specs. The development collector and the devtools emitter are created by the host; the neutral runtime only calls them."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/raw-data.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of what LangGraph sent beside the transcript: the wire record of each message, stream metadata by message, tool progress from the tools stream mode, token usage for a settled command, and tool calls paired with their results.",
+      "note": "Covered by runtime specs. Raw messages and metadata are opt-in through rawMessages; usage and tool progress appear when the backend reports them."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/content-blocks.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private projection of a wire message's content into the core contract's content blocks, of its remaining wire fields into Message.extra, of a tool message's content array into tool result parts, and of submitted blocks into the wire content of a human message.",
+      "note": "Covered by runtime specs and the live suite. Blocks are published when a message holds more than text; extras are opt-in through rawMessages."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/streaming-tool-calls.ts",
+      "taskIds": [
+        "T08",
+        "T15"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private observation of tool call chunks on the message stream, for the root graph and each child graph, published as the core contract's streamingToolCalls until a call is finalized; includes the tolerant reader for partial argument JSON.",
+      "note": "Covered by runtime specs and the live suite. Fragments belong to a live run and are dropped when it settles."
+    },
+    {
+      "id": "source:libs/langgraph/src/runtime/testing/failed-load.ts",
+      "taskIds": [
+        "T05",
+        "T06"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private runtime test helper asserting what a failed history read publishes; excluded from public exports and production packages.",
+      "note": "Bounded runtime proof only; broader task capabilities and final public package cutover remain open."
+    },
+    {
+      "id": "source:libs/langgraph/live/backend.ts",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Live-backend test harness: starts the model replay and a real langgraph dev process for one cockpit graph and creates sessions on the owned SDK transport. Test only; not part of any package."
+    },
+    {
+      "id": "source:libs/langgraph/vite.live.config.mts",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Vitest configuration of the live-backend suite, run with nx run langgraph:runtime-live. Needs uv, Python 3.12 and the langgraph CLI."
+    },
+    {
+      "id": "asset:libs/langgraph/tsconfig.live.json",
+      "taskIds": [
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Type-checks the live-backend suite before it runs."
+    },
+    {
+      "id": "asset:libs/langgraph/live/fixtures/time-travel-live.json",
+      "taskIds": [
+        "T05",
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Recorded model replies for the live-backend suite's prompts on the time-travel graph, including one slow reply that keeps a run open while another is queued."
+    },
+    {
+      "id": "asset:libs/langgraph/live/fixtures/c-subagents-live.json",
+      "taskIds": [
+        "T05",
+        "T36"
+      ],
+      "treatment": "infrastructure",
+      "status": "in-progress",
+      "note": "Recorded model replies for the live-backend suite's failed delegation on the chat subagents graph."
     },
     {
       "id": "source:libs/langgraph/src/runtime/subgraph-projection.ts",
@@ -12919,43 +11975,6 @@
       "status": "in-progress",
       "reason": "Private staged LangGraph runtime subset; fixture-only and not a neutral public LangGraph root or tarball.",
       "note": "Private wire role/text decoding remains shared; pause extraction now belongs to the dedicated interrupt projector. Broader T09/T10 capabilities remain open."
-    },
-    {
-      "id": "source:libs/langgraph/src/test-setup.ts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/src/testing/type-assert.ts",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/test/fixtures/capture-streaming-reasoning-puzzle.mjs",
-      "taskIds": [
-        "T08"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/langgraph/vite.config.mts",
-      "taskIds": [
-        "T02",
-        "T36",
-        "T37"
-      ],
-      "treatment": "infrastructure",
-      "status": "in-progress",
-      "note": "Bounded runtime verification/configuration subset updated; broader assigned migration and release work remain open."
     },
     {
       "id": "source:libs/langgraph/vite.runtime.config.mts",
@@ -15108,6 +14127,76 @@
       "treatment": "internal",
       "status": "in-progress",
       "reason": "Documents private per-submit application state ownership and local retention; no public backend, resume or persistence capability is claimed."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/thread-store.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private application-owned thread storage for the session: record shape, validation, compare-and-swap writes and reconciliation. Excluded from public exports and legacy Angular reachability."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/replay.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private replay sources and the fold that rebuilds a session thread from stored protocol events through the live pipeline. Excluded from public exports and legacy Angular reachability."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/durability.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private hydration, saving and status-check controller shared by both session owners. The owners keep every run decision; excluded from public exports and legacy Angular reachability."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/lifecycle.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private recorder of a session's lifecycle milestones, in the field shape the LangGraph session publishes, shared by both session owners. Nothing is stored or sent; excluded from public exports and legacy Angular reachability."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/testing/memory-store.ts",
+      "taskIds": [
+        "T05",
+        "T06"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private in-memory compare-and-swap store for runtime specs. No public export or production dependency."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/session-instruments.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private observation and protection hooks of the session: raw event listeners, advertised A2UI capabilities, a telemetry sink, failure redaction and devtools reports. Excluded from public exports and legacy Angular reachability."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/protected-fetch.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private fetch boundary of a session with an operation-failure reporter; reports credential and network failures and drops failed response bodies. Excluded from public exports and legacy Angular reachability."
     },
     {
       "id": "source:libs/ag-ui/src/runtime/submit-input.ts",
@@ -19619,24 +18708,6 @@
       "reason": "Private test fixture: in-memory LangGraph threads/store client and the shared ThreadDirectory conformance suite run against both the runtime directory and the Angular adapter."
     },
     {
-      "id": "source:libs/langgraph/src/lib/threads/thread-entries.ts",
-      "taskIds": [
-        "T29"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Phase 1 Angular-side copy of the runtime thread metadata projection and publication helpers behind LangGraphThreadsAdapter.directory; deleted when the adapter is rebuilt on the shared directory in phase 2."
-    },
-    {
-      "id": "source:libs/langgraph/src/lib/threads/thread-projects.ts",
-      "taskIds": [
-        "T29"
-      ],
-      "treatment": "shared",
-      "status": "in-progress",
-      "reason": "Phase 1 Angular-side copy of the runtime LangGraph Store project store behind LangGraphThreadsAdapter.directory; deleted when the adapter is rebuilt on the shared directory in phase 2."
-    },
-    {
       "id": "source:libs/react/src/chat/thread-sidebar.tsx",
       "taskIds": [
         "T30"
@@ -19842,7 +18913,7 @@
       "treatment": "shared",
       "status": "in-progress",
       "reason": "Framework-neutral lifecycle timestamps for a session: first stream event, latest failure with its kind, first interrupt, latest resume, first saved-history read, and first tool call start and finish, as an observable beside the snapshot.",
-      "note": "Staged in the private session. The Angular AgentLifecycle signals and registry are unchanged and not built on it. No threadCreatedAt, since a session never creates its thread; nothing resets, since a session serves one thread."
+      "note": "Staged in the private session. The Angular AgentLifecycle signals and registry are unchanged and not built on it. threadCreatedAt is set when the session creates its own thread; nothing resets, since a session serves one thread."
     },
     {
       "id": "export:libs/react/src/chat/index.ts#useThreadRouting",
@@ -19940,6 +19011,366 @@
       "note": "State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
     },
     {
+      "id": "export:libs/angular/src/public-api.ts#AGENT_CLIENT_OPTIONS",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AGENT_LIFECYCLE",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#Agent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentConfig",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentConfigInput",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentControls",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentFieldSignals",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentLifecycle",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentLifecycleRegistry",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentOperationFailureReporter",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentRef",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentSessionContext",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentSessionLike",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentSnapshotOf",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#createAgent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#createAgentRef",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#withAgentOverrides",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Derives an agent with some members replaced, forwarding every other read to the original at the time of the read, because a spread of the injected Agent copies only the members present at that moment. React has no such proxy to copy: a component wraps the session's commands in its own functions. Verified with source specs and type tests."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentOverrides",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "The typed set of members withAgentOverrides accepts: each replacement has the type of the agent member it replaces. Verified with type tests."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#injectAgent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#provideAgent",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#provideAgentClientOptions",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵAGENT_OPERATION_FAILURE_REPORTER",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/agent-lifecycle.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/agent-overrides.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "withAgentOverrides: a forwarding view over the injected Agent with some members replaced, which resolves to the original's config and development-install policy. Verified with source specs and type tests."
+    },
+    {
+      "id": "source:libs/angular/src/agent-ref.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/agent-tokens.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/agent.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/provide-agent.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/testing/src/provide-fake-agent.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/testing/scripted-session.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Test-only scripted session used by the Angular Agent layer specs; it is not exported and ships in no package.",
+      "note": "Drives publications, custom events, lifecycle marks and history reads by hand so thread-switch races are deterministic."
+    },
+    {
       "id": "source:libs/react/src/use-agent-state.ts",
       "taskIds": [
         "T06",
@@ -19970,6 +19401,1381 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "RenderPendingFallback: the default readiness placeholder for every registered component, mirroring Angular defineAngularRegistry's DefaultFallbackComponent."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentErrorDiagnostic",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentInputBlock",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentInterruptResponse",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentSessionCustomEvent",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentSubagent",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#AgentSubagentStatus",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#MockAgentField",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#MockAgentLifecycle",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#PlainValue",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#StreamingToolCall",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#agentToolCalls",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Readers over the injected Agent signals for Angular components and templates: the merged list of finished and still-streaming tool calls, and a call result or error across the core union. React reads the snapshot directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#contentBlocksText",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of the @threadplane/core contract member the chat components read, so an Angular app that only renders a conversation needs one import. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#stopAgent",
+      "taskIds": [
+        "T16"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Stops an injected Agent together with the client tools the Angular executor is running for it, without changing the agent; replaces the executor wrapping agent.stop. In React the session owns client tool execution and its stop.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#toolCallError",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Readers over the injected Agent signals for Angular components and templates: the merged list of finished and still-streaming tool calls, and a call result or error across the core union. React reads the snapshot directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/src/public-api.ts#toolCallResult",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Readers over the injected Agent signals for Angular components and templates: the merged list of finished and still-streaming tool calls, and a call result or error across the core union. React reads the snapshot directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeAgentSession",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeAgentSessionInit",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeAgentSnapshotPatch",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeAssistantStream",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeCommand",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeMessageInput",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#FakeSubagentInput",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#HistoryConformanceFactory",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#InterruptConformanceOptions",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#MockAgent",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#MockAgentField",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#MockAgentLifecycle",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#MockAgentOptions",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#ReasoningFixture",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#ReasoningFixtureEvent",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#createFakeAgentSession",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#historyConformanceCheckpoints",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#injectFakeAgentSession",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Re-export of the Angular fake-agent provider from @threadplane/angular for tests that go through injectAgent(); React has no provider.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#interruptConformanceBatch",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#mockAgent",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular test double: the injected Agent shape with writable signals, standing on the core fake session. React tests use createFakeAgentSession directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#provideFakeAgent",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Re-export of the Angular fake-agent provider from @threadplane/angular for tests that go through injectAgent(); React has no provider.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#provideAgentValue",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "angular-only",
+      "status": "complete",
+      "reason": "Re-export of provideAgentValue from @threadplane/angular/testing, which makes injectAgent() return a mockAgent() in a component under test; React has no provider.",
+      "note": "Verified with libs/chat/src/lib/testing/provide-agent-value.spec.ts, which renders <chat> from a mock provided this way."
+    },
+    {
+      "id": "export:libs/chat/testing/public-api.ts#reasoningFixture",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "Re-export of @threadplane/core/testing, which replaced the chat-owned fake and conformance fixtures. The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "source:libs/chat/src/lib/agent/angular-agent.ts",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "The one module where the chat library names @threadplane/angular for the Agent type; Angular dependency injection has no React counterpart.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "source:libs/chat/src/lib/agent/read-agent.ts",
+      "taskIds": [
+        "T03",
+        "T04"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Readers over the injected Agent signals for Angular components and templates: the merged list of finished and still-streaming tool calls, and a call result or error across the core union. React reads the snapshot directly.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "source:libs/chat/src/lib/client-tools/stop-agent.ts",
+      "taskIds": [
+        "T16"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Stops an injected Agent together with the client tools the Angular executor is running for it, without changing the agent; replaces the executor wrapping agent.stop. In React the session owns client tool execution and its stop.",
+      "note": "The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "source:libs/chat/src/testing/raw-messages-agent.ts",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Spec support only, not exported: a mock agent whose messages are neither copied nor frozen, for the specs that measure how the chat composition treats message object identity."
+    },
+    {
+      "id": "source:libs/chat/testing/conformance.ts",
+      "taskIds": [
+        "T05",
+        "T31"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "note": "The core session conformance suites bound to Vitest under the names Angular test authors used (runAgentConformance, runAgentWithHistoryConformance, runInterruptConformance). The chat library now renders from the injected Agent of @threadplane/angular, whose data types are the core contract. Verified with the chat specs, type tests and build; example and cockpit apps are not converted yet."
+    },
+    {
+      "id": "asset:libs/angular/testing/ng-package.json",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "The fake agent provider lives in the @threadplane/angular/testing entry so the root entry imports no testing code; React tests use the core fake session directly.",
+      "note": "provideFakeAgent and injectFakeAgentSession are verified with a source spec and a type test in the testing entry. Importers outside libs/angular still name the root entry and are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/testing/src/public-api.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "The fake agent provider lives in the @threadplane/angular/testing entry so the root entry imports no testing code; React tests use the core fake session directly.",
+      "note": "provideFakeAgent and injectFakeAgentSession are verified with a source spec and a type test in the testing entry. Importers outside libs/angular still name the root entry and are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵagentConfig",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "The fake agent provider lives in the @threadplane/angular/testing entry so the root entry imports no testing code; React tests use the core fake session directly.",
+      "note": "provideFakeAgent and injectFakeAgentSession are verified with a source spec and a type test in the testing entry. Importers outside libs/angular still name the root entry and are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵisAgentRef",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "The fake agent provider lives in the @threadplane/angular/testing entry so the root entry imports no testing code; React tests use the core fake session directly.",
+      "note": "provideFakeAgent and injectFakeAgentSession are verified with a source spec and a type test in the testing entry. Importers outside libs/angular still name the root entry and are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵAGENT",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "complete",
+      "reason": "Internal injection token of the ref-less injectAgent(), exported so the @threadplane/angular/testing entry can provide an existing agent under it; React has no injector and passes a session or mock directly.",
+      "note": "Used only by provideAgentValue in the testing entry, which is verified with a source spec, a type test and a chat spec over mockAgent()."
+    },
+    {
+      "id": "source:libs/angular/testing/src/provide-agent-value.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "complete",
+      "reason": "provideAgentValue makes injectAgent() return an agent a test already holds, such as mockAgent(); it exists because Angular components receive their agent through the injector. A React test passes its session or mock as a prop or hook argument.",
+      "note": "Verified with libs/angular/testing/src/provide-agent-value.spec.ts and its type test, and with libs/chat/src/lib/testing/provide-agent-value.spec.ts over mockAgent()."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentDevelopmentRuntimeRegistrar",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: hooks that let a library observe a stop and a replaced session, and let a host register the agent for development collection, exist only in Angular; React consumes the session directly.",
+      "note": "The stop listeners, the session epoch and the development-runtime registrar are verified with source specs and type tests. The chat library and the runtimes do not use them yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ɵAGENT_DEVELOPMENT_RUNTIME_REGISTRAR",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: hooks that let a library observe a stop and a replaced session, and let a host register the agent for development collection, exist only in Angular; React consumes the session directly.",
+      "note": "The stop listeners, the session epoch and the development-runtime registrar are verified with source specs and type tests. The chat library and the runtimes do not use them yet."
+    },
+    {
+      "id": "source:libs/angular/src/thread-directory.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/refresh-on.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "source:libs/angular/src/testing/scripted-directory.ts",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Test-only scripted thread directory used by the Angular thread directory specs; it is not exported and ships in no package.",
+      "note": "Drives publications, refresh results and command failures by hand so the view's signals and commands are deterministic."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ThreadDirectoryConfig",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ThreadDirectoryConfigInput",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ThreadDirectoryContext",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ThreadDirectoryView",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ThreadDirectoryCommand",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Type of each ThreadDirectoryView command, exported so the generated API reference resolves it. Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#RefreshTarget",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Parameter type of refreshOnRunEnd and refreshOnTransition, exported so the generated API reference resolves it. Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentStateSession",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Typed application-state observer over an app-owned session; scoped source proof, not full chat parity.",
+      "note": "Parameter type of observeAgentState, exported so the generated API reference resolves it. State typing, change-only notification, once-per-state selection and subscription release are verified with source specs and type tests. Publication remains incomplete."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#AgentSessionPlumbing",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular Agent layer over the session contract: the injected signal view, its providers and thread switching exist only in Angular; React consumes the session directly.",
+      "note": "Names the session members the Agent type omits, exported so the generated API reference resolves it. Field signals, command pass-through, typed refs, thread switching, retained custom events, the lifecycle registry and the fake provider are verified with source specs, type tests and integration specs over the LangGraph and AG-UI sessions. Chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#ThreadListItem",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#createThreadDirectoryView",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#injectThreadDirectory",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#provideThreadDirectory",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#refreshOnRunEnd",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/angular/src/public-api.ts#refreshOnTransition",
+      "taskIds": [
+        "T06",
+        "T22",
+        "T23"
+      ],
+      "treatment": "angular-only",
+      "status": "in-progress",
+      "reason": "Angular thread directory layer over the core ThreadDirectory contract: the injected signal view, its provider and the run-end helpers exist only in Angular; React reads the directory with useSyncExternalStore inside its thread sidebar.",
+      "note": "Snapshot signals, row commands under the thread list's action names, optional commands, single-thread reads, ownership and the run-end helpers are verified with source specs, type tests and an integration spec over the LangGraph thread directory. The legacy LangGraph threads adapter, chat components and examples are not converted yet."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#AgentSessionSource",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ApplicationState",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ClientToolBlocker",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ClientToolCall",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ClientToolSession",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ClientToolSessionSnapshot",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#Decision",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#DecisionRun",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#DecisionState",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#HttpSessionSource",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#InputBlock",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#InterruptMode",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#InterruptResponse",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#InterruptSession",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#NativeDecision",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#NativeResponse",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#Observation",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#OwnedInterrupt",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#PauseId",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#Projectable",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ReconcileAnswer",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ReplaySource",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ReplaySubscribable",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ResumeOptions",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SavedPause",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ScriptedRun",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#Session",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ChildError",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ChildFinish",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ChildStart",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#CommandProps",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#DeclaredSessionOptions",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#DurabilityOptions",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#InstrumentOptions",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#OperationFailureCode",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#OperationFailureReporter",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#OwnedLegacyInterrupt",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#OwnedRootTerminal",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionAgent",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionSubagent",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SubagentObservation",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#Subagents",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionCommonOptions",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionDevtools",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionInputBlock",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionInterrupt",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionLifecycle",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionLifecycleSource",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionOptions",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionPersistence",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionRequestType",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionSnapshot",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionTelemetryEvent",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionTelemetryProperties",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SessionTelemetrySink",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SubmitInput",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#SubmitState",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#TextTranscriptRow",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ThreadContent",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#ThreadRecord",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#Transcript",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#createSession",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#decisionState",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#interruptSession",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#projectMessages",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#projectStreamingToolCalls",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#projectTextTranscript",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/ag-ui/src/public-api.ts#projectToolCalls",
+      "taskIds": ["T12", "T13"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/ag-ui root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#A2uiClientCapabilities",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#CheckpointReference",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#FakeStreamTransportConfig",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#MockAgentRun",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root: the record MockAgentTransport keeps for each run it started, with the status its getRunStatus reports. Verified with mock-stream.transport.spec.ts."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphBranchFork",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphBranchNode",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphBranchTree",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphCheckpoint",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDelegation",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDevelopmentRuntime",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDevtoolsSignal",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDevtoolsSink",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphDurability",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphHistoryEntry",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphInputState",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphInterrupt",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphLifecycle",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphLifecycleSource",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphMessageMetadata",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphOnCompletion",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphOnDisconnect",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphQueuedRun",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphResumeOptions",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphRunConfigurable",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadCommand",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphProjectCommand",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphRunOptions",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphRunSettings",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphScriptedRun",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphScriptedRuns",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSession",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSnapshot",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSnapshotState",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphState",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSubagent",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSubgraph",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSubmitInput",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphSubmitState",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphTelemetryEvent",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphTelemetryPayload",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphTelemetrySink",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadDirectory",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root: the return type of createLangGraphThreadDirectory, the core ThreadDirectory with the commands it always has typed as present."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadDirectoryOptions",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphThreadsClient",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphToolCallWithResult",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphToolProgress",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphWireInterrupt",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#LangGraphWireMessage",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#OwnedCheckpointPosition",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#ProjectStore",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#RuntimeOperationFailureReporter",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#SessionOptions",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#createLangGraphProjectStore",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#createLangGraphThreadDirectory",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#createSession",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#getToolCalls",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#langGraphToolCalls",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "export:libs/langgraph/src/public-api.ts#selectBranch",
+      "taskIds": ["T08"], "treatment": "shared", "status": "complete",
+      "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
     }
   ]
 }

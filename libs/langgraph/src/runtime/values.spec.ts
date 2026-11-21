@@ -4,6 +4,7 @@ import { createSession } from './create-session';
 import type { LangGraphSnapshot } from './langgraph-snapshot';
 import { controlledTransport } from './testing/controlled-transport';
 import { deferred } from './testing/deferred';
+import { expectFailedLoad } from './testing/failed-load';
 import type { AgentTransport, StreamEvent } from './transport.types';
 
 const ai = (content: string, id = 'answer') => ({ id, type: 'ai', content });
@@ -354,12 +355,15 @@ describe('session application values', () => {
     expect(changed).not.toHaveBeenCalled();
     f.history.mockRejectedValueOnce(new Error('PRIVATE'));
     await expect(f.session.load?.()).rejects.toThrow();
-    expect(f.snapshot()).toBe(before);
+    // A failed read is published as an error and replaces nothing else.
+    expectFailedLoad(f.snapshot(), before);
+    expect(JSON.stringify(f.snapshot())).not.toContain('PRIVATE');
+    const failed = f.snapshot();
     f.history.mockResolvedValueOnce([
       checkpoint({ count: new Map(), messages: [ai('Invalid load')] }),
     ]);
     await expect(f.session.load?.()).rejects.toThrow();
-    expect(f.snapshot()).toBe(before);
+    expect(f.snapshot()).toBe(failed);
     const pending = deferred<ThreadState[]>();
     f.history.mockReturnValueOnce(pending.promise);
     const stale = f.session.load?.();
@@ -369,11 +373,12 @@ describe('session application values', () => {
     pending.resolve([checkpoint({ count: 99, messages: [ai('Stale load')] })]);
     await Promise.resolve();
     await Promise.resolve();
-    expect(f.snapshot()).toBe(before);
+    expect(f.snapshot()).toBe(failed);
     await f.session.load?.();
     expect(f.snapshot().state).toBeUndefined();
     expect(f.snapshot().messages).toEqual([]);
-    expect(changed).toHaveBeenCalledTimes(1);
+    // Once for the failed read's error, once for the empty history.
+    expect(changed).toHaveBeenCalledTimes(2);
   });
 
   it('guards load candidates after a values getter submits a new request', async () => {

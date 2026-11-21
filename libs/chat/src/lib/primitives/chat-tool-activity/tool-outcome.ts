@@ -1,4 +1,4 @@
-import type { Citation } from '../../agent/citation';
+import type { Citation } from '../../agent';
 import type { ToolActivityInfo } from './chat-tool-activity.component';
 
 /**

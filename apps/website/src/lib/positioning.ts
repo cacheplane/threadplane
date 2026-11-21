@@ -58,7 +58,7 @@ export interface InstallOption {
 }
 
 export const COMPONENT_SNIPPET = `import { Component } from '@angular/core';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 import { ChatComponent } from '@threadplane/chat';
 
 @Component({
@@ -93,11 +93,11 @@ export const INSTALL_OPTIONS: readonly InstallOption[] = [
   {
     key: 'fake',
     label: 'Try without a backend',
-    description: 'Runs a fake agent in the browser. Swap in a real adapter when the UI works.',
-    command: 'npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked',
-    peersNote: `${formatAngularRange(WEBSITE_SUPPORTED_ANGULAR_MAJORS)} · the LangGraph SDK is a peer of the adapter, marked a peer of the chat package`,
+    description: 'Runs a fake agent in the browser. Swap in a real backend session when the UI works.',
+    command: 'npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked',
+    peersNote: `${formatAngularRange(WEBSITE_SUPPORTED_ANGULAR_MAJORS)} · the fake agent needs no backend package; the LangGraph package and its SDK peers are here for the swap to a real session`,
     providerSnippet: `import { ApplicationConfig } from '@angular/core';
-import { provideFakeAgent } from '@threadplane/langgraph';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -110,14 +110,23 @@ export const appConfig: ApplicationConfig = {
     key: 'langgraph',
     label: 'LangGraph',
     description: 'Connect a LangGraph Platform or langgraph dev server.',
-    command: 'npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked',
-    peersNote: `${formatAngularRange(WEBSITE_SUPPORTED_ANGULAR_MAJORS)} · the LangGraph SDK is a peer of the adapter, marked a peer of the chat package`,
+    command: 'npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked',
+    peersNote: `${formatAngularRange(WEBSITE_SUPPORTED_ANGULAR_MAJORS)} · the LangGraph SDK is a peer of the LangGraph package, marked a peer of the chat package`,
     providerSnippet: `import { ApplicationConfig } from '@angular/core';
-import { provideAgent } from '@threadplane/langgraph';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'agent' }),
+    provideAgent({
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'http://localhost:2024',
+          assistantId: 'agent',
+          threadId: context.threadId,
+          onThreadId: context.onThreadId,
+        }),
+    }),
   ],
 };`,
     quickstartHref: '/docs/angular/langgraph/getting-started/quickstart',
@@ -126,14 +135,21 @@ export const appConfig: ApplicationConfig = {
     key: 'ag_ui',
     label: 'AG-UI',
     description: 'Connect any AG-UI-compatible endpoint.',
-    command: 'npm install @threadplane/chat @threadplane/ag-ui @ag-ui/client @ag-ui/core marked',
-    peersNote: `${formatAngularRange(WEBSITE_SUPPORTED_ANGULAR_MAJORS)} · the AG-UI client is a peer of the adapter, marked a peer of the chat package`,
+    command: 'npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked',
+    peersNote: `${formatAngularRange(WEBSITE_SUPPORTED_ANGULAR_MAJORS)} · the AG-UI client is a peer of the AG-UI package, marked a peer of the chat package`,
     providerSnippet: `import { ApplicationConfig } from '@angular/core';
-import { provideAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideAgent({ url: 'http://localhost:8000/agent' }),
+    provideAgent({
+      createSession: (context) =>
+        createSession({
+          url: 'http://localhost:8000/agent',
+          threadId: context.threadId ?? undefined,
+        }),
+    }),
   ],
 };`,
     quickstartHref: '/docs/angular/ag-ui/getting-started/quickstart',

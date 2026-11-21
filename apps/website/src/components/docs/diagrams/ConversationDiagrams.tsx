@@ -7,7 +7,7 @@ export function ConversationArchitecture() {
       kind="architecture"
       label="Who owns each part of a conversation"
       caption="Your application owns the experience. Threadplane connects it to the agent runtime."
-      description="The application renders messages, input and tools. Angular observes agent signals; React observes an application-owned session through useAgent. The Threadplane adapter sends commands and translates streamed events. LangGraph runs the model and server tools. A checkpointer stores thread state on the server. Keeping a thread ID in the browser lets the application find that state again; it does not store the conversation itself."
+      description="The application renders messages, input and tools. Angular reads the injected agent's signals; React observes an application-owned session through useAgent. In both, a Threadplane session sends commands and translates streamed events. LangGraph runs the model and server tools. A checkpointer stores thread state on the server. Keeping a thread ID in the browser lets the application find that state again; it does not store the conversation itself."
     >
       <div className="tp-lesson-diagram">
         <div className="tp-architecture-tier">
@@ -23,7 +23,7 @@ export function ConversationArchitecture() {
         <div className="tp-architecture-tier">
           <span>Threadplane</span>
           <div className="tp-diagram-card" data-accent>
-            <strong>Agent adapter / session</strong>
+            <strong>Agent session</strong>
             <small>Angular signals · React snapshots</small>
           </div>
         </div>
@@ -61,7 +61,7 @@ const turnEvents = [
   [
     'Application → Runtime',
     'Submit a message on a confirmed thread.',
-    'The adapter starts an agent run.',
+    'The session starts an agent run.',
   ],
   [
     'Runtime → Model / tools',
