@@ -24,7 +24,7 @@ const STYLESHEETS = {
 
 const ANGULAR_TOKENS = new Set(
   [
-    ...read('../../../chat/src/lib/styles/chat-tokens.ts').matchAll(
+    ...read('../../../angular/chat/src/lib/styles/chat-tokens.ts').matchAll(
       /(--tplane-chat-[a-z0-9-]+)\s*:/g,
     ),
   ].map((match) => match[1]),

@@ -4,11 +4,11 @@ description: json-render renders a fixed spec. A2UI is an agent-to-UI protocol f
 
 # json-render vs A2UI
 
-`@threadplane/render` and `@threadplane/a2ui` both render structured UI, but they solve different problems.
+`@threadplane/angular/render` and `@threadplane/a2ui` both render structured UI, but they solve different problems.
 
-`@threadplane/render` renders a fixed json-render spec into Angular components.
+`@threadplane/angular/render` renders a fixed json-render spec into Angular components.
 
-`@threadplane/a2ui` defines an agent-to-UI protocol: surfaces, components, dynamic values, data model updates, and actions. In `@threadplane/chat`, A2UI surfaces are rendered through the same render infrastructure where possible.
+`@threadplane/a2ui` defines an agent-to-UI protocol: surfaces, components, dynamic values, data model updates, and actions. In `@threadplane/angular/chat`, A2UI surfaces are rendered through the same render infrastructure where possible.
 
 This matters because the tradeoff is not "which renderer is better." The tradeoff is contract shape. A fixed spec is easier to validate and reason about. A2UI is better when the agent needs to update a UI over time or receive structured user actions back.
 
@@ -16,9 +16,9 @@ This matters because the tradeoff is not "which renderer is better." The tradeof
 
 <RenderVsA2ui />
 
-Use `@threadplane/render` directly when your application already has a spec.
+Use `@threadplane/angular/render` directly when your application already has a spec.
 
-Use A2UI through `@threadplane/chat` when the agent is producing UI as part of a conversation.
+Use A2UI through `@threadplane/angular/chat` when the agent is producing UI as part of a conversation.
 
 ## json-render
 
@@ -35,7 +35,7 @@ import {
   RenderSpecComponent,
   defineAngularRegistry,
   signalStateStore,
-} from '@threadplane/render';
+} from '@threadplane/angular/render';
 
 const registry = defineAngularRegistry({
   OrderSummary: OrderSummaryComponent,
@@ -119,17 +119,17 @@ For A2UI, chat parses newline-delimited A2UI messages, applies them to an `A2uiS
 The same `views` input is used by both paths. For A2UI, `a2uiBasicCatalog()` provides the built-in catalog:
 
 ```ts
-import { a2uiBasicCatalog } from '@threadplane/chat';
+import { a2uiBasicCatalog } from '@threadplane/angular/chat';
 
 catalog = a2uiBasicCatalog();
 ```
 
 ## Registries And Catalogs
 
-`@threadplane/render` uses a view registry:
+`@threadplane/angular/render` uses a view registry:
 
 ```ts
-import { views, withViews } from '@threadplane/render';
+import { views, withViews } from '@threadplane/angular/render';
 
 const registry = views({
   OrderSummary: OrderSummaryComponent,
@@ -195,7 +195,7 @@ This matters because rendering JSON should not mean executing arbitrary model in
 
 ## Fallbacks
 
-`@threadplane/render` has a default fallback for registered views that are not ready and supports per-view fallback entries.
+`@threadplane/angular/render` has a default fallback for registered views that are not ready and supports per-view fallback entries.
 
 A2UI uses the same idea at the catalog level. A catalog entry can be a component type or an object with a component and fallback. While data-bound props are unresolved, the fallback renders. Once the real component mounts, readiness is monotonic for that element.
 

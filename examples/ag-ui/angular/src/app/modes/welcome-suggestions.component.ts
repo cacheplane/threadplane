@@ -3,7 +3,7 @@ import {
   ChatWelcomeSuggestionComponent,
   ChatSelectComponent,
   type ChatSelectOption,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 import { suggestionsForAppMode } from './welcome-suggestions';
 
 /**

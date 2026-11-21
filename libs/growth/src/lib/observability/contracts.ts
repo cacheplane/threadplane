@@ -101,7 +101,10 @@ function oneOf<const T extends string>(
 export function collectionSource(value: unknown): CollectionSource {
   return oneOf(value, COLLECTION_SOURCES);
 }
+// `@threadplane/chat` and `@threadplane/render` moved into `@threadplane/angular`;
+// installs of earlier releases still report under their names.
 const packages = [
+  '@threadplane/angular',
   '@threadplane/chat',
   '@threadplane/langgraph',
   '@threadplane/ag-ui',

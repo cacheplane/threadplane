@@ -19,6 +19,6 @@
   "include": [
     "shared/**/*.ts",
     "*/angular/src/**/*.ts",
-    "../../libs/render/src/**/*.ts"
+    "../../libs/angular/render/src/**/*.ts"
   ]
 }

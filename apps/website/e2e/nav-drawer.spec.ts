@@ -94,8 +94,8 @@ test.describe('mobile nav drawer', () => {
     await expect(drawer.getByRole('button', { name: 'Back to menu' })).toBeVisible();
     await expect(drawer.getByRole('link', { name: /@threadplane\/langgraph/ })).toBeVisible();
     await expect(drawer.getByRole('link', { name: /@threadplane\/ag-ui/ })).toBeVisible();
-    await expect(drawer.getByRole('link', { name: /@threadplane\/chat/ })).toBeVisible();
-    await expect(drawer.getByRole('link', { name: /@threadplane\/render/ })).toBeVisible();
+    await expect(drawer.getByRole('link', { name: /@threadplane\/angular\/chat/ })).toBeVisible();
+    await expect(drawer.getByRole('link', { name: /@threadplane\/angular\/render/ })).toBeVisible();
     await expect(drawer.getByText('Not sure which one?')).toBeVisible();
     await expect(drawer.getByRole('link', { name: /Choosing an adapter/ })).toBeVisible();
   });

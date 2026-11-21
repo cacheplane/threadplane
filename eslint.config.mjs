@@ -50,7 +50,8 @@ export default [
             },
             {
               sourceTag: 'layer:angular',
-              onlyDependOnLibsWithTags: ['layer:core', 'layer:content', 'layer:render', 'layer:a2ui', 'layer:angular'],
+              // Its chat UI hands the development collector to the agent layer.
+              onlyDependOnLibsWithTags: ['layer:core', 'layer:content', 'layer:render', 'layer:a2ui', 'layer:telemetry', 'layer:angular'],
               bannedExternalImports: ['react', 'react/*', 'react-dom', 'react-dom/*', '@types/react', '@types/react-dom', '@langchain/*', '@ag-ui/*'],
             },
             {

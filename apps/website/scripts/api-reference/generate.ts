@@ -22,6 +22,7 @@ import {
 import { assertPublicDocOutput } from '../public-doc-projection';
 import {
   SDK_ENTRYPOINTS,
+  reexportedEntries,
   validateRegistry,
   type SdkEntrypoint,
 } from './registry';
@@ -129,9 +130,26 @@ function extract(
 ): RawMember[] {
   const declarationPath = (source: string) =>
     path.join(staging, 'declarations', source.replace(/\.tsx?$/, '.d.ts'));
-  const paths = Object.fromEntries(
-    entries.map((item) => [item.importPath, [declarationPath(item.source)]])
-  );
+  // An entry point another entry re-exports in full resolves to its own
+  // declarations, inside the re-exporting package, so its symbols are modeled
+  // under that entry instead of as an external package's.
+  const reexported = reexportedEntries();
+  const paths = Object.fromEntries([
+    ...entries.map((item) => [item.importPath, [declarationPath(item.source)]]),
+    ...Object.entries(reexported).map(([importPath, source]) => [
+      importPath,
+      [declarationPath(source)],
+    ]),
+  ]);
+  const entrySource = fs.readFileSync(path.join(root, entry.source), 'utf8');
+  if (
+    Object.keys(reexported).some((importPath) =>
+      [`'${importPath}'`, `"${importPath}"`].some((quoted) =>
+        entrySource.includes(quoted)
+      )
+    )
+  )
+    bundledPackages = [...bundledPackages, entry.packageName];
   let mainEntryPointFilePath = declarationPath(entry.source);
   if (exportName) {
     mainEntryPointFilePath = path.join(
@@ -181,7 +199,10 @@ function extract(
             types: ['node', 'react'],
             lib: ['ES2022', 'DOM', 'DOM.Iterable'],
           },
-          files: entries.map((item) => declarationPath(item.source)),
+          files: [
+            ...entries.map((item) => declarationPath(item.source)),
+            ...Object.values(reexported).map(declarationPath),
+          ],
         },
       },
       apiReport: { enabled: false },

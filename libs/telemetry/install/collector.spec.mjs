@@ -51,7 +51,7 @@ describe('install collector', () => {
     await mkdir(packageRoot);
     await writeFile(
       join(packageRoot, 'package.json'),
-      JSON.stringify({ name: '@threadplane/chat', version: '0.0.65' })
+      JSON.stringify({ name: '@threadplane/angular', version: '0.0.65' })
     );
   });
   afterEach(async () => rm(root, { recursive: true, force: true }));
@@ -231,7 +231,7 @@ describe('install collector', () => {
       kind: 'package.installed',
       subject: { namespace: 'installation', scope: 'persistent' },
       properties: {
-        packageName: '@threadplane/chat',
+        packageName: '@threadplane/angular',
         packageVersion: '0.0.65',
         environment: 'ci',
         ciProvider: 'generic_ci',

@@ -11,7 +11,7 @@ description: The ChatToolCallTemplateDirective that registers a per-tool-name te
 **Import:**
 
 ```typescript
-import { ChatToolCallTemplateDirective, type ChatToolCallTemplateContext } from '@threadplane/chat';
+import { ChatToolCallTemplateDirective, type ChatToolCallTemplateContext } from '@threadplane/angular/chat';
 ```
 
 ## Template context
@@ -23,7 +23,7 @@ Each registered template receives:
 | `let-call` (`$implicit`) | `ToolCall` | The full tool call: `id`, `name`, `args` and `status`, with `result` on a `complete` call and `error` (a string) on an `error` call |
 | `let-status="status"` | `ToolCallStatus` | `'pending' \| 'running' \| 'complete' \| 'error'` |
 
-`args` and `result` are plain data whose shape belongs to the tool, and `result` exists only on a `complete` call. The examples below read the result through `resultOf`, a component field set to `toolCallResult` from `@threadplane/chat`, which returns `undefined` for a call that has none. Narrow `args` in the component class the same way when your templates are type-checked strictly.
+`args` and `result` are plain data whose shape belongs to the tool, and `result` exists only on a `complete` call. The examples below read the result through `resultOf`, a component field set to `toolCallResult` from `@threadplane/angular/chat`, which returns `undefined` for a call that has none. Narrow `args` in the component class the same way when your templates are type-checked strictly.
 
 ## Examples
 

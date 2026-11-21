@@ -1,6 +1,6 @@
 import { HighlightedCode } from '../HighlightedCode';
 
-const SNIPPET_1 = `import { defineAngularRegistry } from '@threadplane/render';
+const SNIPPET_1 = `import { defineAngularRegistry } from '@threadplane/angular/render';
 import { TableComponent } from './table.component';
 import { ChartComponent } from './chart.component';
 

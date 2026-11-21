@@ -9,7 +9,7 @@ test('c-tool-calls: parent dispatches lookup_flight tool, continuation surfaces 
   // The chat-tool-calls primitive mounts as the wrapper for tool-call UI.
   // Tightened from a generic getByRole('button') (which would match any
   // unrelated button on the page) to the specific custom-element selectors
-  // — proves the parent's tool_call routed through the actual @threadplane/chat
+  // — proves the parent's tool_call routed through the actual @threadplane/angular/chat
   // primitive, not just any DOM button that happens to mention the tool.
   await expect(page.locator('chat-tool-calls').first()).toBeVisible({ timeout: 30_000 });
 

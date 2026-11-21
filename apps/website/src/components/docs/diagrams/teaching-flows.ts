@@ -64,7 +64,7 @@ export const toolViewFlow: NetworkDefinition = {
   ],
 };
 
-// Render Events guide and libs/render/src/lib/render-element.component.ts dispatch/follow-up handling.
+// Render Events guide and libs/angular/render/src/lib/render-element.component.ts dispatch/follow-up handling.
 export const renderEventFlow: NetworkDefinition = {
   kind: 'flow',
   title: 'An event becomes an application action',

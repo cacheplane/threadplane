@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { ChatComponent, ChatInterruptPanelComponent, type Agent } from '@threadplane/chat';
+import { ChatComponent, ChatInterruptPanelComponent, type Agent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 import { provideFakeAgent } from '@threadplane/angular/testing';
 import { beforeEach, describe, expect, it } from 'vitest';

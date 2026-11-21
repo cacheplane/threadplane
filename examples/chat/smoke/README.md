@@ -44,7 +44,7 @@ Install its browser locally first when needed with `npx playwright install chrom
 
 1. Prompts for target directory (default: `~/tmp/threadplane`).
 2. If the target exists, asks: refresh / update in place / cancel.
-3. Resolves the latest `@threadplane/chat` version from npm; prompts to override.
+3. Resolves the latest `@threadplane/angular/chat` version from npm; prompts to override.
 4. Copies `template/` (Angular CLI scaffold sans `src/app/`) into the target.
 5. Copies `examples/chat/angular/src/app/` into the target's `src/app/`.
 6. Selects an exact Angular compatibility lane with `--angular-major 20|21|22` (default: `21`) and rewrites all Angular, Angular CLI, and TypeScript pins from the registry.
@@ -79,7 +79,7 @@ the demo. It imports one symbol from each package and injects an agent built
 by `provideFakeAgent` from `@threadplane/angular/testing`, so the runtime smoke
 proves the packaged provider works in the consumer without a backend.
 
-The placeholder `"@threadplane/chat": "*"` in `template/package.json` is a
+The placeholder `"@threadplane/angular/chat": "*"` in `template/package.json` is a
 valid semver range ("any version"); the CLI replaces it with the
 explicit `^X.Y.Z` it resolved before writing. The template supplies a
 direct dependency closure for the default Angular 21 scaffold, while the

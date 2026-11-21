@@ -19,7 +19,7 @@ def build_spec_rendering_graph():
     Constructs a graph that generates JSON render specs.
 
     The agent responds with JSON UI specifications that the Angular frontend
-    renders using RenderSpecComponent from @threadplane/render.
+    renders using RenderSpecComponent from @threadplane/angular/render.
     """
     llm = ChatOpenAI(model="gpt-5-mini", streaming=True)
 

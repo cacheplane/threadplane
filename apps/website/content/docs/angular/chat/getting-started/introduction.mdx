@@ -1,10 +1,10 @@
 ---
-description: How @threadplane/chat is organized — headless primitives, styled compositions, and where the library sits between your Angular app and a backend session.
+description: How @threadplane/angular/chat is organized: headless primitives, styled compositions, and where it sits between your Angular app and a backend session.
 ---
 
 # Introduction
 
-`@threadplane/chat` is the Angular UI component library for building chat interfaces on top of one backend-neutral `Agent`. It is a set of composable, Signal-driven components that render messages, handle user input, display tool calls, manage interrupts, and support generative UI -- all styled with CSS custom properties and built for Angular 20–22.
+`@threadplane/angular/chat` is the Angular UI component library for building chat interfaces on top of one backend-neutral `Agent`. It is a set of composable, Signal-driven components that render messages, handle user input, display tool calls, manage interrupts, and support generative UI -- all styled with CSS custom properties and built for Angular 20–22.
 
 <Callout type="info" title="What this guide covers">
 This guide explains the library's two-tier architecture, how it relates to the rest of the Threadplane stack, and when to reach for the all-in-one composition versus assembling primitives yourself.
@@ -54,18 +54,18 @@ Compositions are opinionated, styled components that combine primitives into rea
 | `ChatInterruptPanelComponent` | `chat-interrupt-panel` | Styled interrupt card with accept/edit/respond/ignore actions |
 | `ChatToolCallCardComponent` | `chat-tool-call-card` | Expandable card showing tool name, inputs, and output |
 | `ChatSubagentCardComponent` | `chat-subagent-card` | Expandable card showing subagent status and messages |
-| `ChatDebugComponent` | `chat-debug` | Debug panel from `@threadplane/chat/debug` with timeline, state inspector, and diff viewer |
+| `ChatDebugComponent` | `chat-debug` | Debug panel from `@threadplane/angular/chat/debug` with timeline, state inspector, and diff viewer |
 | `ChatTimelineSliderComponent` | `chat-timeline-slider` | Slider-based timeline navigation |
 
 ## How the Stack Fits Together
 
-`@threadplane/chat` sits between your application and the backend session below the `Agent` seam shown above; alongside it, `@threadplane/render` turns specs in assistant messages into your components.
+`@threadplane/angular/chat` sits between your application and the backend session below the `Agent` seam shown above; alongside it, `@threadplane/angular/render` turns specs in assistant messages into your components.
 
 - **`@threadplane/angular`** provides `provideAgent()` and `injectAgent()`. The injected `Agent` is a session's snapshot fields as Signals (`messages()`, `status()`, `error()`, `toolCalls()` and `state()`, plus the optional `interrupts()`, `subagents()`, `plan()` and `checkpoints()`) and the session's commands (`submit`, `stop`, and the optional `resume`, `retry` and `regenerate`). A field the backend does not report reads as `undefined`, and a command it does not offer is `undefined`.
 
 - **`@threadplane/langgraph`** and **`@threadplane/ag-ui`** each export `createSession()`, which runs a backend behind the framework-neutral `AgentSession` contract from `@threadplane/core`. You hand that factory to `provideAgent({ createSession })`. A backend can publish more than the core contract: a LangGraph session adds `history()`, `fork()` and branch data for checkpoint time-travel.
 
-- **`@threadplane/render`** provides `RenderSpecComponent` and view registries for rendering JSON UI specs as Angular components. The `ChatComponent` auto-detects JSON specs in AI messages and renders them through `@threadplane/render` - pass a view registry via the `[views]` input. The same `[views]` input enables A2UI rendering with `a2uiBasicCatalog()`, which currently maps 18 component types.
+- **`@threadplane/angular/render`** provides `RenderSpecComponent` and view registries for rendering JSON UI specs as Angular components. The `ChatComponent` auto-detects JSON specs in AI messages and renders them through `@threadplane/angular/render` - pass a view registry via the `[views]` input. The same `[views]` input enables A2UI rendering with `a2uiBasicCatalog()`, which currently maps 18 component types.
 
 ## When to Use `ChatComponent` vs. Custom Assembly
 

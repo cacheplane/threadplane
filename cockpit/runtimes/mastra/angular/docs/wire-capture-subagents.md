@@ -309,7 +309,7 @@ Findings:
   plus `tool-call` / `tool-result`) are present under `tool-output` and are
   ignored by this PR (out of scope).
 
-### Card-mount check (`libs/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts`)
+### Card-mount check (`libs/angular/chat/src/lib/primitives/chat-tool-calls/chat-tool-calls.component.ts`)
 
 `groups()` iterates the parent message's `toolCalls()` list and mounts
 `chat-subagent-card` only when `subs.has(tc.id)` for an existing tool-call

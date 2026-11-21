@@ -7,7 +7,7 @@ description: Render a JSON spec as a live Angular component tree: build a compon
 Render a JSON spec as a live Angular component tree in 5 minutes.
 
 <Callout type="info" title="Prerequisites">
-Angular 20–22 project with `@threadplane/render` installed. See the [Installation](/docs/angular/render/getting-started/installation) guide if you need setup help.
+Angular 20–22 project with `@threadplane/angular/render` installed. See the [Installation](/docs/angular/render/getting-started/installation) guide if you need setup help.
 </Callout>
 
 <Steps>
@@ -40,7 +40,7 @@ Map element type names to Angular component classes using `defineAngularRegistry
 
 ```typescript
 // ui-registry.ts
-import { defineAngularRegistry } from '@threadplane/render';
+import { defineAngularRegistry } from '@threadplane/angular/render';
 import { TextComponent } from './text.component';
 
 export const uiRegistry = defineAngularRegistry({
@@ -56,7 +56,7 @@ Now describe the UI tree itself. A spec is a flat map of elements, and the `root
 ```typescript
 // app.component.ts
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { RenderSpecComponent } from '@threadplane/render';
+import { RenderSpecComponent } from '@threadplane/angular/render';
 import type { Spec } from '@json-render/core';
 import { uiRegistry } from './ui-registry';
 
@@ -77,7 +77,7 @@ export class AppComponent {
     elements: {
       greeting: {
         type: 'Text',
-        props: { label: 'Hello from @threadplane/render!' },
+        props: { label: 'Hello from @threadplane/angular/render!' },
       },
     },
   };
@@ -91,7 +91,7 @@ export class AppComponent {
 ng serve
 ```
 
-Open `http://localhost:4200`. You should see "Hello from @threadplane/render!" rendered by your `TextComponent`.
+Open `http://localhost:4200`. You should see "Hello from @threadplane/angular/render!" rendered by your `TextComponent`.
 
 </Step>
 </Steps>
@@ -102,7 +102,7 @@ Specs get a lot more interesting once you connect them to a state store. Props w
 
 ```typescript
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { RenderSpecComponent, signalStateStore } from '@threadplane/render';
+import { RenderSpecComponent, signalStateStore } from '@threadplane/angular/render';
 import type { Spec } from '@json-render/core';
 import { uiRegistry } from './ui-registry';
 

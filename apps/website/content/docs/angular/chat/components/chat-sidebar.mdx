@@ -11,7 +11,7 @@ description: The ChatSidebarComponent docked chat panel - overlay and push-conte
 **Import:**
 
 ```typescript
-import { ChatSidebarComponent } from '@threadplane/chat';
+import { ChatSidebarComponent } from '@threadplane/angular/chat';
 ```
 
 ## When to Use It
@@ -27,7 +27,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
-import { ChatSidebarComponent } from '@threadplane/chat';
+import { ChatSidebarComponent } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-shell',
@@ -123,7 +123,7 @@ import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
-import { ChatSidebarComponent } from '@threadplane/chat';
+import { ChatSidebarComponent } from '@threadplane/angular/chat';
 
 @Component({
   imports: [ChatSidebarComponent, RouterOutlet],

@@ -4,7 +4,7 @@ description: How the messages example renders one template per role, plus the ba
 
 # Message model
 
-`@threadplane/chat` renders the backend-neutral message model `@threadplane/core` defines. A session translates backend-specific messages into this shape, and components render from that shape alone.
+`@threadplane/angular/chat` renders the backend-neutral message model `@threadplane/core` defines. A session translates backend-specific messages into this shape, and components render from that shape alone.
 
 This matters because provider message formats are not stable enough to build product UI against directly. LangGraph, AG-UI, OpenAI, Anthropic, and custom backends all carry different event and content shapes, and the chat layer needs one model. The running example is the smallest thing that shows it whole: a message list with no default templates, so every role in the model is a template you can read.
 
@@ -124,7 +124,7 @@ import {
   completeDelivery,
   staticDelivery,
   streamingDelivery,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 
 const partial = streamingDelivery('attempt-7');
 const finished = completeDelivery('attempt-7', 'success');
@@ -222,9 +222,9 @@ type ToolCall = {
 );
 ```
 
-Use `toolCalls()` when rendering cross-message tool status, and `tool` messages when rendering tool output inside the transcript. Pair the two through `toolCallId`. `result` exists only on a `complete` call and `error` only on an `error` call; `toolCallResult(call)` and `toolCallError(call)` from `@threadplane/chat` read them without narrowing first.
+Use `toolCalls()` when rendering cross-message tool status, and `tool` messages when rendering tool output inside the transcript. Pair the two through `toolCallId`. `result` exists only on a `complete` call and `error` only on an `error` call; `toolCallResult(call)` and `toolCallError(call)` from `@threadplane/angular/chat` read them without narrowing first.
 
-This matters because tool calls stream. A call in `toolCalls()` already has decoded, final arguments. A call the model is still writing is listed apart, in `agent.streamingToolCalls()`, with the argument text so far in `argsText` and a best-effort `args`. `agentToolCalls(agent)` from `@threadplane/chat` merges the two lists, showing a streaming call as a `running` call until its finished form arrives under the same `id`.
+This matters because tool calls stream. A call in `toolCalls()` already has decoded, final arguments. A call the model is still writing is listed apart, in `agent.streamingToolCalls()`, with the argument text so far in `argsText` and a best-effort `args`. `agentToolCalls(agent)` from `@threadplane/angular/chat` merges the two lists, showing a streaming call as a `running` call until its finished form arrives under the same `id`.
 
 ## Citations
 
@@ -256,12 +256,12 @@ Citation display derives a type badge from `sourceType`; when it is absent and `
 
 The demo passes `role`, the streaming flag read from `delivery`, and a `current` flag computed from the index, but not `message`, so no citation strip appears under its answers.
 
-The resolve path from a `[^id]` marker to a rendered citation runs through `CitationsResolverService`, exported from `@threadplane/chat`. A custom citation renderer provides the service, sets the current message, then calls `lookup(refId)`, which returns a `Signal<ResolvedCitation | null>` matching the marker id against `message.citations` and falling back to inline markdown definitions:
+The resolve path from a `[^id]` marker to a rendered citation runs through `CitationsResolverService`, exported from `@threadplane/angular/chat`. A custom citation renderer provides the service, sets the current message, then calls `lookup(refId)`, which returns a `Signal<ResolvedCitation | null>` matching the marker id against `message.citations` and falling back to inline markdown definitions:
 
 ```ts
 import { Component, computed, inject, input } from '@angular/core';
-import { CitationsResolverService } from '@threadplane/chat';
-import type { Message } from '@threadplane/chat';
+import { CitationsResolverService } from '@threadplane/angular/chat';
+import type { Message } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-citation-ref',
@@ -344,7 +344,7 @@ import {
   isAssistantMessage,
   isToolMessage,
   isSystemMessage,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 ```
 
 Put backend-specific fields in `extra`, and document them with your session. Portable UI should survive when `extra` is absent.

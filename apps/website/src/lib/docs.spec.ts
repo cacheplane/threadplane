@@ -460,14 +460,15 @@ describe('website docs bindings', () => {
       '@threadplane/ag-ui',
       '@threadplane/angular',
       '@threadplane/angular/testing',
-      '@threadplane/chat',
-      '@threadplane/chat/debug',
-      '@threadplane/chat/testing',
+      '@threadplane/angular/chat',
+      '@threadplane/angular/chat/debug',
+      '@threadplane/angular/chat/math',
+      '@threadplane/angular/chat/testing',
       '@threadplane/core',
       '@threadplane/core/testing',
       '@threadplane/langgraph',
       '@threadplane/middleware/langgraph',
-      '@threadplane/render',
+      '@threadplane/angular/render',
       '@threadplane/telemetry',
       '@threadplane/telemetry/browser',
       '@threadplane/telemetry/node',
@@ -551,8 +552,8 @@ describe('website docs bindings', () => {
     expect(computed.title).toBe('Computed Functions');
     expect(elements.body.match(/<ExampleCode/g)).toHaveLength(5);
     expect(computed.body.match(/<ExampleCode/g)).toHaveLength(5);
-    expect(elements.body).toContain('/docs/api/render/RenderSpecComponent');
-    expect(computed.body).toContain('/docs/api/render/RenderConfig');
+    expect(elements.body).toContain('/docs/api/angular/render/RenderSpecComponent');
+    expect(computed.body).toContain('/docs/api/angular/render/RenderConfig');
     expect(elements.body).not.toMatch(/## (Inputs|Outputs)/u);
     expect(computed.body).not.toMatch(/## (Signature|RenderConfig)/u);
   });

@@ -1,6 +1,6 @@
 # examples/chat/python
 
-Tiny LangGraph backend for the canonical `@threadplane/chat` demo. Single-node
+Tiny LangGraph backend for the canonical `@threadplane/angular/chat` demo. Single-node
 graph that streams from a `ChatOpenAI` model selected by the client.
 
 ## Setup

@@ -185,20 +185,6 @@
       "value": "0.3.7"
     },
     {
-      "file": "libs/chat/package.json",
-      "pointer": [
-        "version"
-      ],
-      "value": "0.3.7"
-    },
-    {
-      "file": "libs/render/package.json",
-      "pointer": [
-        "version"
-      ],
-      "value": "0.3.7"
-    },
-    {
       "file": "libs/a2ui/package.json",
       "pointer": [
         "version"

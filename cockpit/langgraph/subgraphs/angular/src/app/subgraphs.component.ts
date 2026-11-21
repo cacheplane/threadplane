@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed } from '@angular/core';
-import { ChatComponent, ChatWelcomeSuggestionComponent } from '@threadplane/chat';
+import { ChatComponent, ChatWelcomeSuggestionComponent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { SUBGRAPHS_AGENT } from './agent-ref';

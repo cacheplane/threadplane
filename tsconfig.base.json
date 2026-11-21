@@ -28,7 +28,11 @@
     "paths": {
       "@threadplane/angular": ["libs/angular/src/public-api.ts"],
       "@threadplane/angular/chat": ["libs/angular/chat/src/public-api.ts"],
+      "@threadplane/angular/chat/debug": ["libs/angular/chat/debug/public-api.ts"],
+      "@threadplane/angular/chat/math": ["libs/angular/chat/math/public-api.ts"],
+      "@threadplane/angular/chat/testing": ["libs/angular/chat/testing/public-api.ts"],
       "@threadplane/angular/markdown": ["libs/angular/markdown/src/public-api.ts"],
+      "@threadplane/angular/render": ["libs/angular/render/src/public-api.ts"],
       "@threadplane/angular/testing": ["libs/angular/testing/src/public-api.ts"],
       "@threadplane/core": ["libs/core/src/index.ts"],
       "@threadplane/core/tools": ["libs/core/src/tools/index.ts"],
@@ -48,9 +52,6 @@
       "@threadplane/design-tokens": ["libs/design-tokens/src/index.ts"],
       "@threadplane/ag-ui": ["libs/ag-ui/src/public-api.ts"],
       "@threadplane/a2ui": ["libs/a2ui/src/index.ts"],
-      "@threadplane/chat": ["libs/chat/src/public-api.ts"],
-      "@threadplane/chat/debug": ["libs/chat/debug/public-api.ts"],
-      "@threadplane/chat/testing": ["libs/chat/testing/public-api.ts"],
       "@threadplane/cockpit-langgraph-streaming-python": [
         "cockpit/langgraph/streaming/python/src/index.ts"
       ],
@@ -68,9 +69,9 @@
       "@threadplane-internal/marketing-assets": ["marketing/assets/src/index.ts"],
       "@threadplane-internal/marketing-channels": ["marketing/channels/src/index.ts"],
       "@threadplane-internal/marketing-queue": ["marketing/queue/src/index.ts"],
-      "@threadplane/render": ["libs/render/src/public-api.ts"],
       "@threadplane/telemetry": ["libs/telemetry/src/index.ts"],
       "@threadplane/telemetry/browser": ["libs/telemetry/src/browser/public-api.ts"],
+      "@threadplane/telemetry/browser/development": ["libs/telemetry/src/browser/development/public-api.ts"],
       "@threadplane/telemetry/node": ["libs/telemetry/src/node/index.ts"],
       "@threadplane/telemetry/shared": ["libs/telemetry/src/shared/public-api.ts"],
       "@threadplane-internal/growth-capture": ["libs/growth-capture/src/index.ts"],

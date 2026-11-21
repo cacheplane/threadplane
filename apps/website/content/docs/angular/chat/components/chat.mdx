@@ -15,7 +15,7 @@ description: Reference for the chat composition — inputs, outputs, projection 
 **Import:**
 
 ```typescript
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 ```
 
 ## When to Use It
@@ -56,7 +56,7 @@ export const appConfig: ApplicationConfig = {
 // chat-page.component.ts
 import { Component } from '@angular/core';
 import { injectAgent } from '@threadplane/angular';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-chat-page',
@@ -86,7 +86,7 @@ Every input, output, and projection slot below is declared on `ChatComponent` it
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
 | `agent` | `Agent` | **Required** | The agent providing streaming state: the instance `injectAgent()` from `@threadplane/angular` returns, over any backend session. |
-| `views` | `ViewRegistry \| undefined` | `undefined` | View registry for generative UI and A2UI surfaces. Maps spec type names to Angular components. Created with `views()` from `@threadplane/render`, or `a2uiBasicCatalog()` from `@threadplane/chat`. |
+| `views` | `ViewRegistry \| undefined` | `undefined` | View registry for generative UI and A2UI surfaces. Maps spec type names to Angular components. Created with `views()` from `@threadplane/angular/render`, or `a2uiBasicCatalog()` from `@threadplane/angular/chat`. |
 | `clientTools` | `ClientToolRegistry \| undefined` | `undefined` | Client-declared `view` / `ask` / `function` tools the model may call. When set, the composition ships their catalog to the agent, runs `function` tools in the browser, and renders `view` / `ask` tools through the tool-views pipeline. See [Client Tools](/docs/angular/chat/guides/client-tools). |
 | `clientToolExecutionGuard` | `ClientToolExecutionGuard \| undefined` | `undefined` | Opt-in claim-before-execute guard. Takes a `threadId` and a `ClientToolExecutionStore` so a non-idempotent tool is not executed twice across reloads. |
 | `clientToolContinuationPolicy` | `ClientToolContinuationPolicy \| undefined` | `undefined` | Caps automatic client-tool continuations per user turn (`maxTurns`, default 10; `0` for unlimited) and supplies an `onLimit` callback. |
@@ -235,7 +235,7 @@ When you pass a `[views]` registry, the component auto-detects JSON specs in AI 
 ```
 
 ```typescript
-import { views } from '@threadplane/chat';
+import { views } from '@threadplane/angular/chat';
 import { WeatherCardComponent } from './weather-card.component';
 
 const myViews = views({
@@ -247,13 +247,13 @@ AI messages containing JSON are parsed character-by-character as tokens stream. 
 
 ### Interactive specs and `[store]`
 
-A **`StateStore`** is the shared reactive state that interactive generative-UI specs read from and write to. When a spec uses `$state` / `$bindState` prop expressions — for forms, selections, toggles — those bindings resolve against the store you pass via `[store]`. Read-only specs (a weather card, a chart) do not need one; reach for `[store]` only when a spec is interactive, or when several surfaces must share live values. Create it with `signalStateStore()` from `@threadplane/render`:
+A **`StateStore`** is the shared reactive state that interactive generative-UI specs read from and write to. When a spec uses `$state` / `$bindState` prop expressions — for forms, selections, toggles — those bindings resolve against the store you pass via `[store]`. Read-only specs (a weather card, a chart) do not need one; reach for `[store]` only when a spec is interactive, or when several surfaces must share live values. Create it with `signalStateStore()` from `@threadplane/angular/render`:
 
 ```typescript
 import { Component } from '@angular/core';
 import { injectAgent } from '@threadplane/angular';
-import { ChatComponent } from '@threadplane/chat';
-import { signalStateStore } from '@threadplane/render';
+import { ChatComponent } from '@threadplane/angular/chat';
+import { signalStateStore } from '@threadplane/angular/render';
 
 @Component({
   selector: 'app-interactive-chat',
@@ -275,7 +275,7 @@ export class InteractiveChatComponent {
 When AI messages contain A2UI content (prefixed with `---a2ui_JSON---`), the component auto-detects A2UI mode. Pass `a2uiBasicCatalog()` to `[views]` to render the built-in catalog:
 
 ```typescript
-import { ChatComponent, a2uiBasicCatalog } from '@threadplane/chat';
+import { ChatComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
 
 views = a2uiBasicCatalog();
 ```
@@ -351,7 +351,7 @@ Project a `<ng-template chatToolCallTemplate="…">` directly into `<chat>` to r
 </chat>
 ```
 
-`resultOf` is a component field set to `toolCallResult` from `@threadplane/chat`: a `ToolCall` has `result` only once it is `complete`. A `chatToolCallTemplate="*"` wildcard catches any unmapped tool name. See [chatToolCallTemplate](/docs/angular/chat/components/chat-tool-call-template) for the directive reference.
+`resultOf` is a component field set to `toolCallResult` from `@threadplane/angular/chat`: a `ToolCall` has `result` only once it is `complete`. A `chatToolCallTemplate="*"` wildcard catches any unmapped tool name. See [chatToolCallTemplate](/docs/angular/chat/components/chat-tool-call-template) for the directive reference.
 
 ## Activity template
 

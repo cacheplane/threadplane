@@ -13,7 +13,7 @@ For the experimental native React first slice, select **React** in the example U
 **Import:**
 
 ```typescript
-import { ChatDebugComponent } from '@threadplane/chat/debug';
+import { ChatDebugComponent } from '@threadplane/angular/chat/debug';
 ```
 
 ## What the demo does
@@ -124,7 +124,7 @@ The footer button appears only when an agent is bound and the debug entry point 
 
 ## Production bundles
 
-The implementation lives under `@threadplane/chat/debug`; the main `@threadplane/chat` entry point does not export it. Importing it yourself, as the example does, always puts it in the bundle. The sidenav's lazy import is different: it is gated on an internal flag that is true whenever `ngDevMode` is true, and otherwise only when a `THREADPLANE_CHAT_DEBUG` compile-time constant is defined as `true`. The canonical Angular demo defines that constant per build configuration — `false` for `production`, and `true` for a separate `production-debug` configuration.
+The implementation lives under `@threadplane/angular/chat/debug`; the main `@threadplane/angular/chat` entry point does not export it. Importing it yourself, as the example does, always puts it in the bundle. The sidenav's lazy import is different: it is gated on an internal flag that is true whenever `ngDevMode` is true, and otherwise only when a `THREADPLANE_CHAT_DEBUG` compile-time constant is defined as `true`. The canonical Angular demo defines that constant per build configuration — `false` for `production`, and `true` for a separate `production-debug` configuration.
 
 Keep debug controls of your own outside the panel. The panel intentionally exposes a small fixed surface, so consumers do not expect application-specific controls to appear in it.
 

@@ -175,7 +175,7 @@
 /* Dark section scope (homepage proof band + FinalCTA dark variant).
  * The ACCENTS mirror libs/design-tokens/src/lib/dark.ts. The SURFACES
  * deliberately do not: this band is website-only and takes the ATC scope
- * navy, while dark.ts stays neutral because @threadplane/chat and the cockpit
+ * navy, while dark.ts stays neutral because @threadplane/angular/chat and the cockpit
  * consume it and a navy ground there would seam against embedded chat.
  * 2026-09-08: the surfaces moved to the navy family as well. The proof cards
  * that first exposed this are gone, but --color-surface still dresses the

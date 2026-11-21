@@ -2,7 +2,7 @@
 
 This capability demonstrates LangGraph subgraph composition — a compiled child
 graph added to a parent graph as a plain node — rendered with the
-`@threadplane/chat` Angular component library.
+`@threadplane/angular/chat` Angular component library.
 
 The parent orchestrator routes conditionally: requests that need a factual
 deep dive enter the `research` child graph first, everything else answers

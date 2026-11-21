@@ -48,15 +48,15 @@ Experimental React examples are available at https://threadplane.ai/docs/react/l
 ## Install
 ```bash
 # LangGraph backend
-npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
 
 # AG-UI backend
-npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked
+npm install @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked
 ```
 
 Keep every `@threadplane/*` package on the same version. `@threadplane/angular` holds `provideAgent()`, `injectAgent()` and the `Agent` type. `@threadplane/core` holds the `AgentSession` contract. `@threadplane/langgraph` and `@threadplane/ag-ui` hold `createSession()` for their backend; neither exports `provideAgent`, `injectAgent`, `toAgent`, `provideFakeAgent`, `LangGraphAgent`, `AgUiAgent` or `LangGraphThreadsAdapter`. `@ag-ui/core` is not a peer of `@threadplane/ag-ui`.
 
-The chat, LangGraph, AG-UI, and render packages include automatic install collection
+The `@threadplane/angular`, `@threadplane/langgraph`, and `@threadplane/ag-ui` packages include automatic install collection
 for local and CI execution: package/environment details, a random installation ID,
 configured Git name/full email, and repository provider/owner hints when available.
 Set `DO_NOT_TRACK=1` or `TPLANE_TELEMETRY_DISABLED=1` before installation to disable
@@ -109,7 +109,7 @@ export const appConfig: ApplicationConfig = {
 // chat.component.ts
 import { Component } from '@angular/core';
 import { injectAgent } from '@threadplane/angular';
-import { ChatComponent as ThreadplaneChatComponent } from '@threadplane/chat';
+import { ChatComponent as ThreadplaneChatComponent } from '@threadplane/angular/chat';
 
 @Component({
   imports: [ThreadplaneChatComponent],
@@ -155,7 +155,7 @@ provideAgent({
 
 ## Testing
 - `provideFakeAgent({ tokens: ['Hello', ' world'], delayMs: 0 })` from `@threadplane/angular/testing`: the same injected `Agent` over an in-memory session that streams a canned reply. No server or model. `injectFakeAgentSession()` from the same entry returns a signal of the fake session's controls (`push`, `stream`, `setInterrupts`, `setError`).
-- `mockAgent()` from `@threadplane/chat`: an agent with writable fields and recorded commands, for a component test that needs no injector, such as `agent.status.set('running')` and `agent.submitCalls`.
+- `mockAgent()` from `@threadplane/angular/chat`: an agent with writable fields and recorded commands, for a component test that needs no injector, such as `agent.status.set('running')` and `agent.submitCalls`.
 - `MockAgentTransport` from `@threadplane/langgraph`, passed as `createSession({ transport, assistantId, threadId })`, scripts LangGraph stream events through the real session. Configure a `threadId`, end a run with a `values` event, and `await` every `emit()`, `emitError()` and `close()`.
 - `FakeAgent` from `@threadplane/ag-ui`, passed as `createSession({ agent: new FakeAgent() })`, does the same for AG-UI events.
 - Never mock `injectAgent()` itself.

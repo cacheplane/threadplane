@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "peerDependencies": {
-    "@threadplane/render": "*"
+    "@threadplane/angular": "*"
   },
   "license": "MIT",
   "sideEffects": false

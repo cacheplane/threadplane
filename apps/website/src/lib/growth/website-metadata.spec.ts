@@ -54,5 +54,8 @@ describe('website metadata minimization', () => {
     ).toEqual([]);
     expect(installedPackages('echo npm install @threadplane/chat')).toEqual([]);
     expect(installedPackages('npm install @threadplane/chat-fake')).toEqual([]);
+    expect(
+      installedPackages('npm i @threadplane/angular @threadplane/core marked')
+    ).toEqual(['@threadplane/angular']);
   });
 });

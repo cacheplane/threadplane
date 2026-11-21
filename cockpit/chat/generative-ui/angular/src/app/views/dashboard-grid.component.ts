@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import type { Spec } from '@json-render/core';
-import { RenderElementComponent } from '@threadplane/render';
+import { RenderElementComponent } from '@threadplane/angular/render';
 
 @Component({
   selector: 'app-dashboard-grid',

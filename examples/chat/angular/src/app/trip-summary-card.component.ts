@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import type { ViewProps } from '@threadplane/chat';
+import type { ViewProps } from '@threadplane/angular/chat';
 import { z } from 'zod/v4';
 
 /**

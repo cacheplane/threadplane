@@ -11,7 +11,7 @@ description: The ChatPopupComponent launcher and overlay window - inputs, output
 **Import:**
 
 ```typescript
-import { ChatPopupComponent } from '@threadplane/chat';
+import { ChatPopupComponent } from '@threadplane/angular/chat';
 ```
 
 ## When to Use It
@@ -26,7 +26,7 @@ If you need the chat to always be visible, use [`<chat>`](/docs/angular/chat/com
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
-import { ChatPopupComponent } from '@threadplane/chat';
+import { ChatPopupComponent } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'app-root',

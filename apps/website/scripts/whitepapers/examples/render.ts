@@ -3,7 +3,7 @@ import type { Spec } from '@json-render/core';
 import {
   defineAngularRegistry,
   RenderSpecComponent,
-} from '@threadplane/render';
+} from '@threadplane/angular/render';
 
 @Component({
   selector: 'app-label',

@@ -30,15 +30,50 @@ export function angularBuildCommand(consumer) {
   return [join(consumer, 'node_modules/@angular/cli/bin/ng.js'), 'build', '--configuration=production', '--stats-json'];
 }
 
+/**
+ * `/chat` holds the whole chat UI, beside the two plain-text views the native
+ * observer uses. Those two must stay, and an app that uses only them must
+ * bundle none of the rest, which the production build below proves.
+ */
 export function assertAngularChatExports(names) {
-  const expected = ['TextTranscriptComponent', 'ToolObservationComponent'];
-  for (const name of expected)
+  for (const name of ['TextTranscriptComponent', 'ToolObservationComponent', 'ChatComponent'])
     assert.ok(names.includes(name), `Angular chat missing ${name}`);
-  assert.deepEqual(
-    [...names].sort(),
-    expected,
-    'Angular chat has unexpected exports'
+}
+
+/**
+ * The chat UI renders A2UI inline, so the `/chat` entry reaches it in source.
+ * An app that uses only the plain-text views must still ship none of it.
+ */
+export function assertA2uiFreeInputs(inputs) {
+  if (!inputs || !Object.keys(inputs).length) throw new Error('Missing bundler inputs evidence');
+  const found = Object.keys(inputs).filter((path) =>
+    /(?:^|\/)node_modules\/(?:@threadplane\/a2ui|@json-render\/core)(?:\/|$)/.test(path.replaceAll('\\', '/'))
   );
+  if (found.length) throw new Error(`Angular app includes A2UI or generative UI inputs: ${found.join(', ')}`);
+}
+
+/**
+ * The inputs an app can load: those that put bytes into an output reachable
+ * from its main entry, through static or dynamic imports. esbuild also writes
+ * a chunk, with its own `entryPoint`, for each dynamic import it parses in code
+ * it then drops; nothing loads those chunks, so their inputs are not shipped.
+ */
+export function shippedInputs(stats, main = /(?:^|\/)main\.ts$/) {
+  const outputs = stats?.outputs ?? {};
+  const reachable = new Set();
+  const visit = (path) => {
+    if (reachable.has(path) || !outputs[path]) return;
+    reachable.add(path);
+    for (const edge of outputs[path].imports ?? []) visit(edge.path);
+  };
+  for (const [path, output] of Object.entries(outputs))
+    if (main.test(output.entryPoint ?? '')) visit(path);
+  if (!reachable.size) throw new Error('Missing main entry in bundler outputs');
+  const shipped = {};
+  for (const path of reachable)
+    for (const [input, info] of Object.entries(outputs[path].inputs ?? {}))
+      if (info.bytesInOutput > 0) shipped[input] = info;
+  return shipped;
 }
 
 export function assertAngularMarkdownExports(names) {
@@ -121,7 +156,11 @@ export async function verifyAngularPackage(root = process.cwd()) {
       format: 'esm',
       write: false,
       metafile: true,
-      external: ['@angular/core'],
+      // Only the entry's export names matter here; its dependencies stay out.
+      external: [
+        ...Object.keys(installed.dependencies ?? {}),
+        ...Object.keys(installed.peerDependencies ?? {}),
+      ].flatMap((name) => [name, `${name}/*`]),
     });
     assertAngularChatExports(
       Object.values(chatProbe.metafile.outputs)[0].exports
@@ -145,7 +184,9 @@ export async function verifyAngularPackage(root = process.cwd()) {
     runConsumer(process.execPath, [join(consumer, 'node_modules/typescript/bin/tsc'), '-p', 'tsconfig.contracts.json'], consumer);
     console.log(runConsumer(process.execPath, angularBuildCommand(consumer), consumer));
     const stats = JSON.parse(readFileSync(join(consumer, 'dist/consumer/stats.json'), 'utf8'));
-    assertParserFreeInputs(stats.inputs);
+    const shipped = shippedInputs(stats);
+    assertParserFreeInputs(shipped);
+    assertA2uiFreeInputs(shipped);
     if (!Object.keys(stats.inputs).some((path) => path.includes('node_modules/@threadplane/angular/'))) throw new Error('Angular stats did not include the installed APF artifact');
     if (!Object.keys(stats.inputs).some((path) => path.includes('node_modules/@threadplane/angular/fesm2022/threadplane-angular-chat.mjs'))) throw new Error('Angular app did not include the installed chat component');
     console.log(`Angular runtime consumer bundle (app, binding and staged SDK): ${Object.keys(stats.inputs).length} inputs, no content parsers. Threadplane inputs: ${Object.keys(stats.inputs).filter((path) => path.includes('node_modules/@threadplane/')).join(', ')}.`);

@@ -446,7 +446,7 @@ describe('canonical A2UI native regression CI ownership', () => {
     const foundations = library.indexOf('npx nx run-many -t build --projects=$FOUNDATIONS');
     assert.ok(foundations >= 0, 'foundation build prerequisite is present');
     assert.match(library, /FOUNDATIONS: core,content,angular,react/);
-    assert.match(library, /LIBS: chat,langgraph,ag-ui,render,a2ui,telemetry,middleware/);
+    assert.match(library, /LIBS: langgraph,ag-ui,a2ui,telemetry,middleware/);
     const builds = library.indexOf('npx nx run-many -t build --projects=$LIBS --configuration=production');
     assert.ok(builds >= 0, 'all-library production build prerequisite is present');
     const marker = '      - name: Verify canonical A2UI native graph';
@@ -773,10 +773,9 @@ function listedOperatorCliTestFiles() {
 
 describe('Angular compatibility project tags', () => {
   for (const projectFile of [
-    'libs/chat/project.json',
+    'libs/angular/project.json',
     'libs/langgraph/project.json',
     'libs/ag-ui/project.json',
-    'libs/render/project.json',
     'libs/a2ui/project.json',
     'libs/telemetry/project.json',
     'examples/chat/angular/project.json',
@@ -793,7 +792,7 @@ describe('Angular compatibility project tags', () => {
 describe('classifyFromAffected — short-circuit', () => {
   it('detects global CI files before affected project lookup is needed', () => {
     assert.equal(hasGlobalCiFileChange(['nx.json']), true);
-    assert.equal(hasGlobalCiFileChange(['libs/chat/src/foo.ts']), false);
+    assert.equal(hasGlobalCiFileChange(['libs/angular/chat/src/foo.ts']), false);
   });
 
   it('returns full scope when a global CI file changes', () => {
@@ -1010,7 +1009,7 @@ describe('classifyFromAffected — rootless cockpit specs', () => {
 describe('classifyFromAffected — publishable lib broadcast', () => {
   it('publishable lib triggers its existing scopes plus angular compatibility', () => {
     const scope = classifyFromAffected(
-      ['libs/chat/src/foo.ts'],
+      ['libs/angular/chat/src/foo.ts'],
       [{ name: 'chat', tags: PUBLISHABLE_LIB_TAGS }]
     );
     assert.equal(scope.library, true);
@@ -1093,10 +1092,9 @@ describe('isAngularCompatibilityChange', () => {
   const exactFiles = [
     'scripts/verify-angular-support.mjs',
     'scripts/verify-angular-support.spec.mjs',
-    'libs/chat/package.json',
+    'libs/angular/package.json',
     'libs/langgraph/package.json',
     'libs/ag-ui/package.json',
-    'libs/render/package.json',
     'libs/telemetry/package.json',
     'libs/cockpit-telemetry/package.json',
     'libs/example-layouts/package.json',
@@ -1104,10 +1102,10 @@ describe('isAngularCompatibilityChange', () => {
     'apps/website/src/components/pricing/CompatibilityMatrix.tsx',
     'apps/website/src/components/pricing/PricingDetails.tsx',
     'README.md',
-    'libs/chat/README.md',
+    'libs/angular/chat/README.md',
     'libs/langgraph/README.md',
     'libs/ag-ui/README.md',
-    'libs/render/README.md',
+    'libs/angular/render/README.md',
     'libs/telemetry/README.md',
     'apps/website/content/docs/angular/chat/getting-started/installation.mdx',
     'apps/website/content/docs/angular/langgraph/getting-started/installation.mdx',

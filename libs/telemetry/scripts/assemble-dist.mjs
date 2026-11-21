@@ -10,7 +10,8 @@
  *  1. Flattens dist/libs/telemetry/src/* → dist/libs/telemetry/*
  *  2. Removes the conflicting browser/package.json from ng-packagr.
  *  3. Re-emits a canonical package.json with the corrected exports map.
- *  4. Adds a browser/index.d.ts that re-exports from fesm2022 types.
+ *  4. Adds browser/index.d.ts and browser/development/index.d.ts, which
+ *     re-export from the fesm2022 types.
  *
  * Idempotent — re-running on an assembled dist is a no-op.
  */
@@ -66,21 +67,31 @@ async function removeNgPackagrManifest() {
   }
   const ngIgnore = join(DIST, 'browser', '.npmignore');
   if (await exists(ngIgnore)) await rm(ngIgnore);
+  // ng-packagr writes a resolution stub for each secondary entry point; the
+  // canonical exports map replaces them.
+  const secondaries = join(DIST, 'browser', 'browser');
+  if (await exists(secondaries)) await rm(secondaries, { recursive: true, force: true });
 }
 
-async function writeBrowserIndexReexport() {
-  // Make `./browser` resolve a clean type entry path.
-  const fesmTypes = join(DIST, 'browser', 'types', 'threadplane-telemetry.d.ts');
-  const indexDts = join(DIST, 'browser', 'index.d.ts');
+async function writeBrowserIndexReexport(
+  // Make `./browser` resolve a clean type entry path. Nx's buildable-library
+  // builds resolve `@threadplane/telemetry/browser[/development]` to these
+  // directories, so each needs its own index.
+  typesFile = 'threadplane-telemetry.d.ts',
+  directory = 'browser'
+) {
+  const fesmTypes = join(DIST, 'browser', 'types', typesFile);
+  const indexDts = join(DIST, directory, 'index.d.ts');
   if (!(await exists(fesmTypes))) {
-    console.warn('[assemble-dist] no browser/types/threadplane-telemetry.d.ts — skipping browser/index.d.ts');
+    console.warn(`[assemble-dist] no browser/types/${typesFile} — skipping ${directory}/index.d.ts`);
     return;
   }
   if (await exists(indexDts)) return;  // idempotent
+  await mkdir(dirname(indexDts), { recursive: true });
   const rel = relative(dirname(indexDts), fesmTypes).replace(/\\/g, '/').replace(/\.d\.ts$/, '');
   const content = `export * from '${rel.startsWith('.') ? rel : './' + rel}';\n`;
   await writeFile(indexDts, content, 'utf8');
-  console.log('[assemble-dist] wrote browser/index.d.ts re-exporting from fesm2022 types');
+  console.log(`[assemble-dist] wrote ${directory}/index.d.ts re-exporting from fesm2022 types`);
 }
 
 export function createCanonicalPackageJson(srcPkg) {
@@ -114,6 +125,11 @@ export function createCanonicalPackageJson(srcPkg) {
       './browser': {
         types: './browser/index.d.ts',
         default: './browser/fesm2022/threadplane-telemetry.mjs',
+      },
+      // The development runtime without the opt-in PostHog service.
+      './browser/development': {
+        types: './browser/development/index.d.ts',
+        default: './browser/fesm2022/threadplane-telemetry-browser-development.mjs',
       },
       './README.md': './README.md',
     },
@@ -160,6 +176,10 @@ async function main() {
   await flattenSrc();
   await removeNgPackagrManifest();
   await writeBrowserIndexReexport();
+  await writeBrowserIndexReexport(
+    'threadplane-telemetry-browser-development.d.ts',
+    'browser/development'
+  );
   await writeCanonicalPackageJson();
   await verifyExports();
 }

@@ -418,7 +418,7 @@ export async function verifyA2uiSurfaces({ retain, launch } = {}) {
     const tarballs = packLocalArtifacts(
       root,
       temporary,
-      ['core', 'content', 'react', 'angular', 'a2ui'],
+      ['core', 'content', 'react', 'angular', 'a2ui', 'telemetry'],
       { optionalPeers: ['a2ui'] }
     );
     assert.deepEqual(

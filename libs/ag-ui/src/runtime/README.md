@@ -732,7 +732,7 @@ const session = createSession({
   `telemetry` option, `false` included. The session builds no collector and
   sends nothing itself: without the option nothing is collected, which is what
   a React app gets. In Angular, `provideAgent` supplies the factory as
-  `context.developmentRuntime` and `@threadplane/chat` supplies the collector.
+  `context.developmentRuntime` and `@threadplane/angular/chat` supplies the collector.
 - `reportOperationFailure(code)` is told `unauthorized` for a 401 or 403 and
   `network_blocked` for a request that got no response. A request the session
   itself cancelled is not reported, and a reporter that throws changes

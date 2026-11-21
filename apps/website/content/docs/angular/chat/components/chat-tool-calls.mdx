@@ -57,7 +57,7 @@ By default the row stays complete, because the library does not guess what a pay
 Decode the tool's declared schema in `toolOutcome` and return `status: 'failed'` only for its declared error shape.
 
 ```typescript
-import type { ToolActivityInfo, ToolActivityOutcome } from '@threadplane/chat';
+import type { ToolActivityInfo, ToolActivityOutcome } from '@threadplane/angular/chat';
 
 const toolOutcome = (activity: ToolActivityInfo): ToolActivityOutcome | undefined => {
   if (activity.name !== 'lookup_flight' || !activity.resultText) return undefined;
@@ -114,7 +114,7 @@ You declare what each tool's result means, and the library does the rest of the 
 The example tools are `read_reference`, which declares a recoverable `{"error": string, "recoverable": true}` result, and `save_note`, which returns `{"saved": true, "id": string}` only after an approved save.
 
 ```typescript
-import { toolOutcomes } from '@threadplane/chat';
+import { toolOutcomes } from '@threadplane/angular/chat';
 
 const toolOutcome = toolOutcomes({
   read_reference: ({ args, result }) => {
@@ -256,7 +256,7 @@ The component injects the agent and submits the suggestion text when the chip is
 ## Import
 
 ```typescript
-import { ChatToolCallsComponent } from '@threadplane/chat';
+import { ChatToolCallsComponent } from '@threadplane/angular/chat';
 ```
 
 The component is standalone, so add it to a component's `imports` array.

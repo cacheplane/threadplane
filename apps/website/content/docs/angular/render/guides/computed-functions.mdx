@@ -83,12 +83,12 @@ The example also carries a LangGraph graph. It plays no part in the render pipel
 ## Import
 
 ```typescript
-import { provideRender, RENDER_CONFIG } from '@threadplane/render';
+import { provideRender, RENDER_CONFIG } from '@threadplane/angular/render';
 ```
 
 ## API reference
 
-See the generated [provideRender](/docs/api/render/provideRender), [RenderConfig](/docs/api/render/RenderConfig), and [RENDER_CONFIG](/docs/api/render/RENDER_CONFIG) reference for declarations and configuration fields. Supply only the application defaults you need.
+See the generated [provideRender](/docs/api/angular/render/provideRender), [RenderConfig](/docs/api/angular/render/RenderConfig), and [RENDER_CONFIG](/docs/api/angular/render/RENDER_CONFIG) reference for declarations and configuration fields. Supply only the application defaults you need.
 
 ## The RENDER_CONFIG token
 
@@ -96,7 +96,7 @@ The configuration object is stored under the `RENDER_CONFIG` injection token, wh
 
 ```typescript
 import { inject } from '@angular/core';
-import { RENDER_CONFIG } from '@threadplane/render';
+import { RENDER_CONFIG } from '@threadplane/angular/render';
 
 const config = inject(RENDER_CONFIG, { optional: true });
 // null when provideRender() was not called
@@ -143,10 +143,10 @@ provideRender({
   <Card title="RenderSpecComponent" href="/docs/angular/render/guides/element-rendering">
     The inputs and outputs of the element that mounts a spec.
   </Card>
-  <Card title="defineAngularRegistry()" href="/docs/api/render/defineAngularRegistry">
+  <Card title="defineAngularRegistry()" href="/docs/api/angular/render/defineAngularRegistry">
     Build the registry you pass to the config or to an input.
   </Card>
-  <Card title="signalStateStore()" href="/docs/api/render/signalStateStore">
+  <Card title="signalStateStore()" href="/docs/api/angular/render/signalStateStore">
     Create the signal-backed store that `$bindState` paths read and write.
   </Card>
   <Card title="Specs and elements" href="/docs/angular/render/guides/specs">

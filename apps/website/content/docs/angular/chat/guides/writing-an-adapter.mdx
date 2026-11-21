@@ -4,7 +4,7 @@ description: Implement the framework-neutral AgentSession contract for a custom 
 
 # Writing an Adapter
 
-Learn how to implement a custom `AgentSession` so `@threadplane/chat` components work with any backend — a custom RPC service, an in-process mock, or an exotic streaming protocol.
+Learn how to implement a custom `AgentSession` so `@threadplane/angular/chat` components work with any backend — a custom RPC service, an in-process mock, or an exotic streaming protocol.
 
 ## When to Write Your Own Adapter
 
@@ -199,7 +199,7 @@ export const appConfig: ApplicationConfig = {
 ```typescript
 // app.ts
 import { Component } from '@angular/core';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 
 @Component({
@@ -221,11 +221,11 @@ export class App {
 
 ## Validating with the Conformance Suite
 
-`@threadplane/core/testing` ships conformance suites that check the required members and a handful of semantic invariants (for example, `getSnapshot()` must return the same object until something changes). `@threadplane/chat/testing` binds them to Vitest, so a spec is one call:
+`@threadplane/core/testing` ships conformance suites that check the required members and a handful of semantic invariants (for example, `getSnapshot()` must return the same object until something changes). `@threadplane/angular/chat/testing` binds them to Vitest, so a spec is one call:
 
 ```typescript
 // echo-session.conformance.spec.ts
-import { runAgentConformance } from '@threadplane/chat/testing';
+import { runAgentConformance } from '@threadplane/angular/chat/testing';
 import { createEchoSession } from './echo-session';
 
 runAgentConformance('createEchoSession', () => createEchoSession());
@@ -251,7 +251,7 @@ import type { AgentCheckpoint } from '@threadplane/core';
 
 `snapshot.checkpoints` lists the saved history the session last loaded, oldest first. Each `AgentCheckpoint` has the backend's `id`, a display `label`, and the state `values` at that point. `snapshot.messageCheckpoints` maps an assistant message `id` to the `id` of the checkpoint that first held it. The timeline components and the debug panel read both.
 
-Use `runAgentWithHistoryConformance` from `@threadplane/chat/testing` in your spec instead of `runAgentConformance` to cover the additional fields. Its factory receives a `seed` with the checkpoints the session must publish.
+Use `runAgentWithHistoryConformance` from `@threadplane/angular/chat/testing` in your spec instead of `runAgentConformance` to cover the additional fields. Its factory receives a `seed` with the checkpoints the session must publish.
 
 ### Hydrating from a server-stored thread
 
@@ -328,7 +328,7 @@ Implement `checkStatus` on exactly the condition under which you report `recover
 
 A run that pauses for a person resolves with the `'paused'` outcome and lists what it waits on in `snapshot.interrupts`. Each `AgentInterrupt` has an `id` and may carry the backend's `value`, a `reason`, a display `message` and the `toolCallId` it is about. `resume(responses)` answers them: each response names one pending interrupt and is `resolved`, optionally with a `value`, or `cancelled`. Reject a response that names an interrupt that is not pending, names one twice, or uses a status your backend cannot express.
 
-`runInterruptConformance` from `@threadplane/chat/testing` checks this behaviour through a small harness that drives the pause and a failed request through your real session.
+`runInterruptConformance` from `@threadplane/angular/chat/testing` checks this behaviour through a small harness that drives the pause and a failed request through your real session.
 
 ## Publishing Your Adapter
 
@@ -359,7 +359,7 @@ A session imports only `@threadplane/core`, so the package needs no Angular peer
 }
 ```
 
-The conformance suites live in `@threadplane/core/testing`, part of the same package, so there is nothing extra to install for them; add `@threadplane/chat` as a development dependency only if you want its Vitest-bound runners.
+The conformance suites live in `@threadplane/core/testing`, part of the same package, so there is nothing extra to install for them; add `@threadplane/angular/chat` as a development dependency only if you want its Vitest-bound runners.
 
 While `@threadplane/core` is pre-1.0, every minor release can carry a breaking change. Use an explicit range that stops before the next minor, and widen it as you verify newer releases. The backend packages in this repository pin the exact version they were built against.
 

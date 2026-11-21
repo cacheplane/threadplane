@@ -16,8 +16,6 @@ export { ANGULAR_PEER_RANGE };
 // framework-neutral and declare no Angular peer; verify-boundaries rejects one.
 export const ANGULAR_MANIFESTS = [
   'libs/angular/package.json',
-  'libs/chat/package.json',
-  'libs/render/package.json',
   'libs/telemetry/package.json',
   'libs/cockpit-telemetry/package.json',
   'libs/example-layouts/package.json',
@@ -25,8 +23,8 @@ export const ANGULAR_MANIFESTS = [
 
 export const ANGULAR_SUPPORT_README_BLOCKS = [
   { path: 'README.md', marker: '**Peer dependencies:**' },
-  { path: 'libs/chat/README.md', marker: '**Peer dependencies:**' },
-  { path: 'libs/render/README.md', marker: '**Peer dependencies:**' },
+  { path: 'libs/angular/chat/README.md', marker: '**Peer dependencies:**' },
+  { path: 'libs/angular/render/README.md', marker: '**Peer dependencies:**' },
   {
     path: 'libs/telemetry/README.md',
     marker: 'Both peer dependencies are optional:',

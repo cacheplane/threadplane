@@ -17,6 +17,8 @@ type RuntimePackageBatch = {
 const catalog: readonly RuntimeAnnouncement[] = [
   {
     id: 'runtime-documentation-2026-09',
+    // Installed clients of earlier releases accept only these names; an
+    // announcement that names another package is dropped by them.
     packageNames: [
       '@threadplane/chat',
       '@threadplane/langgraph',

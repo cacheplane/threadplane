@@ -215,7 +215,7 @@ function checkPath(path, selected) {
   );
   assert.doesNotMatch(
     path,
-    /(?:^|\/)(?:libs|fixtures|runtime-entry)\/|node_modules\/@threadplane\/(?:chat|telemetry|render|ag-ui)\/|node_modules\/@threadplane\/langgraph\/(?:fesm\d*|esm\d*|types)\//,
+    /(?:^|\/)(?:libs|fixtures|runtime-entry)\/|node_modules\/@threadplane\/(?:chat|render|ag-ui)\/|node_modules\/@threadplane\/langgraph\/(?:fesm\d*|esm\d*|types)\//,
     'Forbidden view input'
   );
   const local = path.match(/^node_modules\/@threadplane\/([^/]+)\//);
@@ -226,14 +226,16 @@ function checkPath(path, selected) {
         'content',
         'langgraph',
         selected.framework,
-        ...(!selected.angular ? ['a2ui'] : []),
+        'a2ui',
+        // `@threadplane/angular/chat` declarations name telemetry types.
+        ...(selected.angular ? ['telemetry'] : []),
       ].includes(local[1]),
       'Unknown view local package'
     );
-  if (local?.[1] === 'a2ui')
+  if (local?.[1] === 'a2ui' || local?.[1] === 'telemetry')
     assert.ok(
-      path.endsWith('.d.ts') ||
-        path === 'node_modules/@threadplane/a2ui/package.json',
+      /\.d\.[cm]?ts$/.test(path) ||
+        path === 'node_modules/@threadplane/' + local[1] + '/package.json',
       'Only protocol declarations allowed'
     );
   assert.notEqual(
@@ -390,7 +392,9 @@ export default defineConfig({root:import.meta.dirname,envDir:false,esbuild:{jsx:
         execute(selected.bundler, ['build', 'native-view-proof'])
       );
       const stats = angularStatsInputs(
-        JSON.parse(file(consumer, 'view-proof/output/stats.json'))
+        JSON.parse(file(consumer, 'view-proof/output/stats.json')),
+        // Stats paths are relative to this workspace, rooted at view-proof/.
+        /^entry\.ts$/
       );
       runtimePaths = keys(angularInputHashes(consumer, cwd, stats.files));
       virtualInputs = stats.virtual;

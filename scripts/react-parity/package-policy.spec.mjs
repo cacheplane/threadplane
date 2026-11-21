@@ -32,7 +32,7 @@ for (const root of ['/repo', '/repo/', 'C:\\repo', 'C:/repo/']) {
 }
 
 test('final internal dependencies follow the approved package roles', () => {
-  const expected = { core: [], langgraph: ['core'], 'ag-ui': ['core'], render: ['core'], a2ui: [], content: ['core', 'render', 'a2ui'], angular: ['core', 'content', 'render', 'a2ui'], react: ['core', 'content', 'render', 'a2ui'], telemetry: ['core'], chat: ['core', 'angular', 'content', 'render', 'a2ui', 'telemetry'] };
+  const expected = { core: [], langgraph: ['core'], 'ag-ui': ['core'], a2ui: [], content: ['core', 'a2ui'], angular: ['core', 'content', 'a2ui', 'telemetry'], react: ['core', 'content', 'a2ui'], telemetry: ['core'] };
   for (const [project, allowed] of Object.entries(expected)) {
     for (const dependency of Object.keys(expected).filter((name) => name !== project)) {
       assert.equal(policy.forbiddenDependency(project, `@threadplane/${dependency}`), !allowed.includes(dependency), `${project} -> ${dependency}`);
@@ -47,7 +47,7 @@ for (const project of ['langgraph', 'ag-ui']) {
     for (const allowed of [sdk, `@threadplane/${project}`, '@threadplane/core', './local', ...(project === 'ag-ui' ? ['rxjs'] : [])]) {
       assert.equal(policy.forbiddenDependency(project, allowed, policyOptions), false, allowed);
     }
-    for (const denied of ['@angular/core', '@threadplane/chat', '@threadplane/angular', 'zod', 'unreviewed', `${sdk}/private`,
+    for (const denied of ['@angular/core', '@threadplane/angular/chat', '@threadplane/angular', 'zod', 'unreviewed', `${sdk}/private`,
       ...(project === 'ag-ui' ? ['@threadplane/langgraph', '@langchain/langgraph-sdk', '@ag-ui/core', 'rxjs/operators'] : ['@threadplane/ag-ui', '@ag-ui/client', 'rxjs'])]) {
       assert.equal(policy.forbiddenDependency(project, denied, policyOptions), true, denied);
     }
@@ -67,14 +67,17 @@ test('AG-UI runtime has no shared source exceptions', () => {
 test('foundations, published packages and the remaining Angular exception are separate inventories', () => {
   assert.deepEqual(policy.foundationProjects, ['core', 'content', 'angular', 'react']);
   for (const retired of ['langgraph-core', 'ag-ui-core', 'react-render']) assert.ok(!policy.scanProjects.includes(retired));
-  // The backend packages and chat left the transition list at the cutover.
-  assert.deepEqual(policy.angularTransitionProjects, ['render']);
+  // The backend packages left the transition list at the cutover, and the
+  // render engine when it became an entry point of `angular`.
+  assert.deepEqual(policy.angularTransitionProjects, []);
   assert.deepEqual(policy.backendProjects, ['langgraph', 'ag-ui']);
-  assert.deepEqual(policy.angularProjects, ['angular', 'chat']);
+  // Chat and render are entry points of the one Angular package.
+  assert.deepEqual(policy.angularProjects, ['angular']);
   assert.deepEqual(policy.privateProjects, ['react']);
-  assert.deepEqual(policy.publishableProjects, ['core', 'content', 'angular', 'chat', 'langgraph', 'ag-ui', 'render', 'a2ui', 'telemetry']);
+  assert.deepEqual(policy.publishableProjects, ['core', 'content', 'angular', 'langgraph', 'ag-ui', 'a2ui', 'telemetry']);
+  for (const retired of ['chat', 'render']) assert.ok(!policy.scanProjects.includes(retired), retired);
   for (const project of [...policy.publishableProjects, ...policy.privateProjects]) assert.ok(policy.scanProjects.includes(project), project);
-  assert.equal(policy.sourceEntry('chat'), 'src/public-api.ts');
+  assert.equal(policy.sourceEntry('angular'), 'src/public-api.ts');
   assert.equal(policy.sourceEntry('langgraph'), 'src/public-api.ts');
   assert.equal(policy.sourceEntry('ag-ui'), 'src/public-api.ts');
   assert.ok(policy.scanProjects.includes('telemetry'));
@@ -84,9 +87,11 @@ test('foundations, published packages and the remaining Angular exception are se
 
 test('Angular facade allows Angular peers without a transition exception', () => {
   assert.deepEqual(policy.manifestViolations('angular', { peerDependencies: { '@angular/core': '*', '@angular/common': '*' } }), []);
-  for (const dependency of ['react', 'react-dom', '@langchain/core', '@ag-ui/client', '@threadplane/langgraph', '@threadplane/ag-ui', '@threadplane/telemetry']) {
+  for (const dependency of ['react', 'react-dom', '@langchain/core', '@ag-ui/client', '@threadplane/langgraph', '@threadplane/ag-ui', '@threadplane/react']) {
     assert.equal(policy.forbiddenDependency('angular', dependency, { angularTransitions: ['angular'] }), true, dependency);
   }
+  // The chat UI hands the development collector to the agent layer.
+  assert.equal(policy.forbiddenDependency('angular', '@threadplane/telemetry'), false);
 });
 
 test('retired backend scaffolds do not inherit final backend roles', () => {
@@ -109,7 +114,7 @@ test('final release rejects retained transition packages and exceptions', () => 
 
 test('manifest policy rejects dependency edges without needing imports', () => {
   for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
-    for (const [project, dependency] of [['render', 'content'], ['angular', 'telemetry'], ['react', 'telemetry'], ['langgraph', 'angular'], ['ag-ui', 'render'], ['content', 'langgraph'], ['core', 'content']]) {
+    for (const [project, dependency] of [['telemetry', 'angular'], ['content', 'telemetry'], ['react', 'telemetry'], ['langgraph', 'angular'], ['ag-ui', 'content'], ['content', 'langgraph'], ['core', 'content']]) {
       assert.ok(policy.manifestViolations(project, { [field]: { [`@threadplane/${dependency}`]: '*' } }).length > 0, `${project} ${field} ${dependency}`);
     }
   }
@@ -138,7 +143,7 @@ test('telemetry optional Angular peer requires the browser transition', () => {
 
 test('backend packages reject Angular and chat in source and in their manifests', () => {
   for (const project of ['langgraph', 'ag-ui']) {
-    for (const dependency of ['@angular/core', '@threadplane/chat', '@threadplane/angular', '@threadplane/react', 'react']) {
+    for (const dependency of ['@angular/core', '@threadplane/angular/chat', '@threadplane/angular', '@threadplane/react', 'react']) {
       assert.equal(policy.forbiddenDependency(project, dependency), true, `${project} ${dependency}`);
       assert.ok(policy.manifestViolations(project, { peerDependencies: { [dependency]: '*' } }).length > 0, `${project} manifest ${dependency}`);
     }
@@ -146,10 +151,10 @@ test('backend packages reject Angular and chat in source and in their manifests'
   }
 });
 
-test('chat is an Angular package that may not reach React or a backend', () => {
-  assert.deepEqual(policy.manifestViolations('chat', { peerDependencies: { '@angular/core': '*', '@threadplane/angular': '*', '@threadplane/core': '*', rxjs: '*', zod: '*' } }), []);
+test('angular, with its chat UI, may use telemetry and parsers but not React or a backend', () => {
+  assert.deepEqual(policy.manifestViolations('angular', { dependencies: { '@cacheplane/partial-markdown': '*' }, peerDependencies: { '@angular/core': '*', '@angular/router': '*', '@threadplane/core': '*', '@threadplane/telemetry': '*', '@json-render/core': '*', rxjs: '*', zod: '*', marked: '*' } }), []);
   for (const dependency of ['react', '@threadplane/react', '@threadplane/langgraph', '@threadplane/ag-ui', '@langchain/core', '@ag-ui/client']) {
-    assert.equal(policy.forbiddenDependency('chat', dependency), true, dependency);
+    assert.equal(policy.forbiddenDependency('angular', dependency), true, dependency);
   }
-  assert.ok(!policy.assertFinalRelease({ projects: ['chat'], angularTransitions: [], telemetryBrowserTransition: false }).length);
+  assert.ok(!policy.assertFinalRelease({ projects: ['angular'], angularTransitions: [], telemetryBrowserTransition: false }).length);
 });

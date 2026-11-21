@@ -12,10 +12,10 @@ When a run fails, the agent's `error` signal holds a structured `AgentError` ins
 
 ## The `AgentError` shape
 
-`agent.error()` returns an `AgentError | undefined`. `AgentError` is a plain, frozen object from `@threadplane/core`, re-exported by `@threadplane/chat`. It is not an `Error` instance, so read `.message` and do not test it with `instanceof Error`:
+`agent.error()` returns an `AgentError | undefined`. `AgentError` is a plain, frozen object from `@threadplane/core`, re-exported by `@threadplane/angular/chat`. It is not an `Error` instance, so read `.message` and do not test it with `instanceof Error`:
 
 ```typescript
-import type { AgentError, AgentErrorKind, AgentRecovery } from '@threadplane/chat';
+import type { AgentError, AgentErrorKind, AgentRecovery } from '@threadplane/angular/chat';
 
 interface AgentError {
   readonly kind: AgentErrorKind;   // 'connection' | 'auth' | 'server' | 'interrupted' | 'aborted'
@@ -89,7 +89,7 @@ Read `agent.error()` directly to render your own surface. The session has alread
 ```typescript
 import { Component } from '@angular/core';
 import { injectAgent } from '@threadplane/angular';
-import type { AgentErrorKind } from '@threadplane/chat';
+import type { AgentErrorKind } from '@threadplane/angular/chat';
 
 const COPY: Partial<Record<AgentErrorKind, string>> = {
   auth: 'Your API key looks wrong — update it in Settings.',
@@ -159,7 +159,7 @@ import {
   type AgentRecovery,
   ChatErrorComponent,
   extractErrorMessage,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 import { projectAgentError, projectErrorDiagnostic } from '@threadplane/core';
 ```
 

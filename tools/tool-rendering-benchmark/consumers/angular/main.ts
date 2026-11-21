@@ -16,9 +16,9 @@ import {
   ChatInterruptTemplateDirective,
   ChatToolResultTemplateDirective,
   toolOutcomes,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 import { provideAgent, injectAgent, httpReplay } from '@threadplane/ag-ui';
-import '@threadplane/chat/chat.css';
+import '@threadplane/angular/chat/styles.css';
 import './shell.css';
 import {
   benchmarkThread,

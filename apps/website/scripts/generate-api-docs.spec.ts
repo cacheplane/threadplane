@@ -333,9 +333,9 @@ describe('real API Extractor declaration generation', () => {
     expect(() => readFileSync(path.join(output, 'obsolete.json'))).toThrow();
   }, 120000);
 });
-it('reconciles all 11 SDK projects and 32 typed import entrypoints', () => {
+it('reconciles all 9 SDK projects and 32 typed import entrypoints', () => {
   expect(SDK_ENTRYPOINTS).toHaveLength(32);
-  expect(new Set(SDK_ENTRYPOINTS.map((entry) => entry.project)).size).toBe(11);
+  expect(new Set(SDK_ENTRYPOINTS.map((entry) => entry.project)).size).toBe(9);
   expect(() => validateRegistry(root, SDK_ENTRYPOINTS)).not.toThrow();
   expect(() =>
     validateRegistry(
@@ -357,7 +357,7 @@ it('classifies the session packages as framework-neutral and the bindings by fra
   // The backend packages export createSession() and contain no framework code.
   for (const id of ['langgraph', 'ag-ui', 'core', 'core/testing', 'content'])
     expect(framework(id), id).toBe('shared');
-  for (const id of ['angular', 'angular/testing', 'chat'])
+  for (const id of ['angular', 'angular/testing', 'angular/chat', 'angular/chat/debug', 'angular/render'])
     expect(framework(id), id).toBe('angular');
   expect(framework('react')).toBe('react');
   // Every package an Angular application installs is published.

@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { ChatSidebarComponent, a2uiBasicCatalog } from '@threadplane/chat';
+import { ChatSidebarComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
 import { AgUiShell } from '../shell/ag-ui-shell.component';
 import { MapCanvasComponent } from '../map-canvas.component';
 import { AppModePromoComponent } from './app-mode-promo.component';

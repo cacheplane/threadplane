@@ -21,32 +21,32 @@
   },
   {
     "source": "/docs/render/api/define-angular-registry",
-    "destination": "/docs/api/render/defineAngularRegistry",
+    "destination": "/docs/api/angular/render/defineAngularRegistry",
     "permanent": true
   },
   {
     "source": "/api/markdown/render/api/define-angular-registry",
-    "destination": "/api/markdown/api/render/defineAngularRegistry",
+    "destination": "/api/markdown/api/angular/render/defineAngularRegistry",
     "permanent": true
   },
   {
     "source": "/docs/render/api/signal-state-store",
-    "destination": "/docs/api/render/signalStateStore",
+    "destination": "/docs/api/angular/render/signalStateStore",
     "permanent": true
   },
   {
     "source": "/api/markdown/render/api/signal-state-store",
-    "destination": "/api/markdown/api/render/signalStateStore",
+    "destination": "/api/markdown/api/angular/render/signalStateStore",
     "permanent": true
   },
   {
     "source": "/docs/render/api/views",
-    "destination": "/docs/api/render/views",
+    "destination": "/docs/api/angular/render/views",
     "permanent": true
   },
   {
     "source": "/api/markdown/render/api/views",
-    "destination": "/api/markdown/api/render/views",
+    "destination": "/api/markdown/api/angular/render/views",
     "permanent": true
   },
   {
@@ -141,32 +141,32 @@
   },
   {
     "source": "/docs/chat/api/content-classifier",
-    "destination": "/docs/api/chat/createContentClassifier",
+    "destination": "/docs/api/angular/chat/createContentClassifier",
     "permanent": true
   },
   {
     "source": "/api/markdown/chat/api/content-classifier",
-    "destination": "/api/markdown/api/chat/createContentClassifier",
+    "destination": "/api/markdown/api/angular/chat/createContentClassifier",
     "permanent": true
   },
   {
     "source": "/docs/chat/api/parse-tree-store",
-    "destination": "/docs/api/chat/createParseTreeStore",
+    "destination": "/docs/api/angular/chat/createParseTreeStore",
     "permanent": true
   },
   {
     "source": "/api/markdown/chat/api/parse-tree-store",
-    "destination": "/api/markdown/api/chat/createParseTreeStore",
+    "destination": "/api/markdown/api/angular/chat/createParseTreeStore",
     "permanent": true
   },
   {
     "source": "/docs/chat/api/mock-agent",
-    "destination": "/docs/api/chat/mockAgent",
+    "destination": "/docs/api/angular/chat/mockAgent",
     "permanent": true
   },
   {
     "source": "/api/markdown/chat/api/mock-agent",
-    "destination": "/api/markdown/api/chat/mockAgent",
+    "destination": "/api/markdown/api/angular/chat/mockAgent",
     "permanent": true
   },
   {

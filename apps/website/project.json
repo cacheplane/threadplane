@@ -403,13 +403,11 @@
       "{workspaceRoot}/libs/a2ui/**/*",
       "{workspaceRoot}/libs/ag-ui/**/*",
       "{workspaceRoot}/libs/angular/**/*",
-      "{workspaceRoot}/libs/chat/**/*",
       "{workspaceRoot}/libs/content/**/*",
       "{workspaceRoot}/libs/core/**/*",
       "{workspaceRoot}/libs/langgraph/**/*",
       "{workspaceRoot}/libs/middleware/**/*",
       "{workspaceRoot}/libs/react/**/*",
-      "{workspaceRoot}/libs/render/**/*",
       "{workspaceRoot}/libs/telemetry/**/*"
     ],
     "deploymentConfig": ["{workspaceRoot}/vercel.json"]

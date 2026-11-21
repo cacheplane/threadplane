@@ -28,7 +28,7 @@ test('shared dependency setup changes qualify every existing cockpit browser tar
     }), caps);
   }
   for (const paths of [[], ['scripts/cockpit-dependencies-other.mjs'], ['cockpit/chat/messages/react/src/app.tsx'],
-    ['fixtures/react-parity/native-ag-ui/package.json'], ['libs/chat/src/package.json']]) {
+    ['fixtures/react-parity/native-ag-ui/package.json'], ['libs/angular/chat/src/package.json']]) {
     assert.equal(matrixPolicy.requiresFullCockpitFleet(paths), false);
   }
 });

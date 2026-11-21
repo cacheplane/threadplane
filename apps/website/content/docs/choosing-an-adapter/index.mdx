@@ -5,7 +5,7 @@ description: Decide between @threadplane/langgraph and @threadplane/ag-ui for yo
 
 # Choosing an adapter
 
-Threadplane ships two adapters that connect a backend agent runtime to `<chat>` in `@threadplane/chat`. Each is a framework-neutral package whose `createSession()` implements the same session contract from `@threadplane/core`, and `@threadplane/angular` turns either session into the `Agent` your components inject; pick one based on what your backend speaks.
+Threadplane ships two adapters that connect a backend agent runtime to `<chat>` in `@threadplane/angular/chat`. Each is a framework-neutral package whose `createSession()` implements the same session contract from `@threadplane/core`, and `@threadplane/angular` turns either session into the `Agent` your components inject; pick one based on what your backend speaks.
 
 ## At a glance
 
@@ -22,7 +22,7 @@ The two adapters share the same Angular surface: one `provideAgent` and one `inj
 
 ```ts
 import { provideAgent, injectAgent } from '@threadplane/angular';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { createSession } from '@threadplane/langgraph';
 
 // app.config.ts
@@ -52,7 +52,7 @@ export class App {
 ```ts
 import { provideAgent, injectAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/ag-ui';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 
 // app.config.ts
 export const appConfig: ApplicationConfig = {
@@ -97,7 +97,7 @@ Four layers of test doubles, smallest scope first:
 
 | Layer | Use | What is real | When |
 |---|---|---|---|
-| **Contract mock** | `mockAgent()` from `@threadplane/chat/testing` | nothing — you set `messages`, `status` directly | component/unit tests |
+| **Contract mock** | `mockAgent()` from `@threadplane/angular/chat/testing` | nothing — you set `messages`, `status` directly | component/unit tests |
 | **Fake agent** | `provideFakeAgent({ tokens })` from `@threadplane/angular/testing` | the real injected agent over an in-memory session; a canned reply | tests that go through `injectAgent()`, in-browser, no server |
 | **Scripted backend** | `MockAgentTransport` (langgraph) / `FakeAgent` (ag-ui), passed to `createSession()` | the real session projection; scripted wire events | session-integration tests, no server |
 | **LLM fixture replay** | aimock (workspace examples e2e) | the whole stack incl. a real graph; only the LLM is replayed | full end-to-end |
