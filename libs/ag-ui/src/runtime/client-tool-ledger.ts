@@ -547,7 +547,13 @@ export function createClientToolLedger<C extends Record<string, ToolContract>>(
       }
       physical.transcript = overlayHistory(physical.transcript, false);
     },
-    admitSuccess(token: object, allowGroup = true): readonly string[] {
+    admitSuccess(
+      token: object,
+      allowGroup = true,
+      onLimit?: (
+        calls: readonly { readonly id: string; readonly name: string }[]
+      ) => void
+    ): readonly string[] {
       const physical = physicalFor(token);
       if (
         physical.processed ||
@@ -622,6 +628,7 @@ export function createClientToolLedger<C extends Record<string, ToolContract>>(
           selected.map((call) => call.id),
           physical.runId
         );
+        onLimit?.(selected.map(({ id, name }) => ({ id, name })));
         return Object.freeze([]);
       }
       for (const call of selected) {

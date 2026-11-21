@@ -18669,7 +18669,7 @@
       ],
       "treatment": "internal",
       "status": "in-progress",
-      "reason": "Private staged LangGraph runtime subset: framework-neutral thread directory and LangGraph Store project names behind the React ThreadSidebar."
+      "reason": "Private LangGraph runtime LangGraph Store project store, shared by the runtime thread directory behind the React ThreadSidebar and the Angular LangGraphThreadsAdapter."
     },
     {
       "id": "source:libs/langgraph/src/runtime/thread-directory.ts",
@@ -18687,7 +18687,7 @@
       ],
       "treatment": "internal",
       "status": "in-progress",
-      "reason": "Private staged LangGraph runtime subset: framework-neutral thread directory and LangGraph Store project names behind the React ThreadSidebar."
+      "reason": "Private LangGraph runtime module holding the one copy of the thread metadata rules, shared by the runtime thread directory behind the React ThreadSidebar and the Angular LangGraphThreadsAdapter."
     },
     {
       "id": "source:libs/langgraph/src/runtime/testing/fake-threads-client.ts",

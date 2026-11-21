@@ -23,6 +23,8 @@ import {
 } from '@threadplane/core';
 import type {
   CheckedTools,
+  ClientToolContinuationLimitEvent,
+  ClientToolContinuationPolicy,
   FunctionToolDefinition,
   ToolContracts,
 } from '@threadplane/core/tools';
@@ -164,6 +166,12 @@ export interface SessionCommonOptions
    * `CUSTOM on_interrupt` notice, through `forwardedProps.command`.
    */
   readonly interruptTransport?: InterruptTransport;
+  /**
+   * How many consecutive client-tool groups one submit runs automatically
+   * (default 10; 0 removes the limit). A blocked group raises the `limit`
+   * blocker and the submit ends `interrupted`. Used only with tools.
+   */
+  readonly continuationPolicy?: ClientToolContinuationPolicy;
 }
 /** A session that posts each run to an HTTP endpoint. */
 export interface HttpSessionSource
@@ -721,6 +729,7 @@ export function createSession(
     interruptMode = 'native',
     interruptTransport,
     persistence,
+    continuationPolicy,
   } = options;
   // `null` is a binding's "no thread selected": the same as absent.
   const given = options.threadId ?? undefined;
@@ -739,6 +748,7 @@ export function createSession(
   const agentId = options.agentId ?? agent?.agentId;
   // A new conversation has nothing to replay.
   const replay = stable === undefined ? undefined : options.replay;
+  const continuation = captureContinuationPolicy(continuationPolicy);
   const catalog = tools === undefined ? undefined : captureClientTools(tools);
   /** Reports a thread the caller did not name, once the session exists. */
   const created = <S extends Session>(session: S): S => {
@@ -773,7 +783,8 @@ export function createSession(
         reportOperationFailure: options.reportOperationFailure,
         devtools: options.devtools,
       },
-      catalog
+      catalog,
+      continuation
     );
     return created(owner);
   }
@@ -1567,7 +1578,8 @@ export function createSession(
  * to a superseding submit. The legacy no-catalog owner above remains separate. */
 function createToolsOwner(
   options: CapturedOptions,
-  catalog: ReturnType<typeof captureClientTools>
+  catalog: ReturnType<typeof captureClientTools>,
+  continuation: ReturnType<typeof captureContinuationPolicy>
 ): Session {
   const { threadId, interruptMode = 'native', interruptTransport } = options;
   const instruments = createInstruments(options);
@@ -2036,9 +2048,27 @@ function createToolsOwner(
         return;
       }
       // The ledger consumes the whole group before observers can issue commands.
-      const group = ledger.admitSuccess(physical.token, command.groups < 10);
+      const attemptedTurn = command.groups + 1;
+      let limited:
+        | readonly { readonly id: string; readonly name: string }[]
+        | undefined;
+      const group = ledger.admitSuccess(
+        physical.token,
+        !continuation.blocks(command.groups),
+        (calls) => {
+          limited = calls;
+        }
+      );
       if (ledger.snapshot().blocker) {
         finish(command, 'interrupted');
+        // App code runs only after the submit has settled.
+        if (limited)
+          continuation.report({
+            maxTurns: continuation.maxTurns,
+            attemptedTurn,
+            toolCallIds: limited.map((call) => call.id),
+            toolNames: limited.map((call) => call.name),
+          });
         return;
       }
       if (!group.length) {
@@ -2725,4 +2755,36 @@ function createToolsOwner(
       }),
   };
   return durableSession(session, durability, options.persistence !== undefined);
+}
+
+/** Reads a continuation policy once; maxTurns 0 removes the limit. */
+function captureContinuationPolicy(
+  policy: ClientToolContinuationPolicy | undefined
+) {
+  const maxTurns = policy?.maxTurns ?? 10;
+  if (!Number.isInteger(maxTurns) || maxTurns < 0)
+    throw new TypeError(
+      'continuationPolicy.maxTurns must be a non-negative integer.'
+    );
+  const onLimit = policy?.onLimit;
+  if (onLimit !== undefined && typeof onLimit !== 'function')
+    throw new TypeError('continuationPolicy.onLimit must be a function.');
+  return {
+    maxTurns,
+    /** Whether the group after `groups` completed ones is blocked. */
+    blocks: (groups: number) => maxTurns !== 0 && groups >= maxTurns,
+    report(event: ClientToolContinuationLimitEvent) {
+      try {
+        onLimit?.(
+          Object.freeze({
+            ...event,
+            toolCallIds: Object.freeze([...event.toolCallIds]),
+            toolNames: Object.freeze([...event.toolNames]),
+          })
+        );
+      } catch {
+        // An app callback cannot change how the submit ends.
+      }
+    },
+  };
 }
