@@ -38,6 +38,7 @@ export default defineConfig({
           include: [
             'chat/src/lib/**/*.spec.ts',
             'chat/src/packaging/**/*.spec.ts',
+            'chat/math/src/**/*.spec.ts',
           ],
         },
       },

@@ -1,4 +1,4 @@
-// libs/angular/chat/src/lib/markdown/katex-loader.ts
+// libs/angular/chat/math/src/chat-math.ts
 import {
   Injectable,
   InjectionToken,
@@ -36,8 +36,13 @@ const CHAT_MATH_LOADER = new InjectionToken<ChatMathLoader>('CHAT_MATH_LOADER');
  * do download nothing. The KaTeX stylesheet is the application's to include
  * (`katex/dist/katex.min.css`); math renders without it, unstyled.
  *
+ * @example
  * ```ts
- * provideChatMath(() => import('katex'))
+ * import { provideChatMath } from '@threadplane/angular/chat/math';
+ *
+ * export const appConfig: ApplicationConfig = {
+ *   providers: [provideChatMath(() => import('katex'))],
+ * };
  * ```
  */
 export function provideChatMath(load: ChatMathLoader): EnvironmentProviders {

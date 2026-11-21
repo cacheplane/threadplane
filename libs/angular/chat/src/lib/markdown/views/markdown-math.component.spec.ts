@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { MarkdownMathComponent } from './markdown-math.component';
-import { ChatMathRenderer, provideChatMath } from '../katex-loader';
+import {
+  ChatMathRenderer,
+  provideChatMath,
+} from '@threadplane/angular/chat/math';
 import type {
   MarkdownMathInlineNode,
   MarkdownMathDisplayNode,

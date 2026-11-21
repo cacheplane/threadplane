@@ -743,6 +743,16 @@
       "status": "planned"
     },
     {
+      "id": "asset:libs/angular/chat/math/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "asset:libs/angular/chat/src/styles.css",
       "taskIds": [
         "T22"
@@ -3881,6 +3891,16 @@
       "status": "planned"
     },
     {
+      "id": "entry:libs/angular/chat/math/public-api.ts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "entry:libs/angular/chat/src/public-api.ts",
       "taskIds": ["T02", "T06", "T22", "T23", "T36", "T37"],
       "treatment": "infrastructure",
@@ -6159,7 +6179,7 @@
       "reason": "Native component. Native semantic Markdown node and recursive children through the typed registry; preserve streaming identity and custom overrides."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatMathLoader",
+      "id": "export:libs/angular/chat/math/public-api.ts#ChatMathLoader",
       "taskIds": [
         "T26"
       ],
@@ -6168,7 +6188,7 @@
       "reason": "Angular DI seam for the application's KaTeX. React takes the same application-supplied renderer through the Markdown renderMath prop."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatMathModule",
+      "id": "export:libs/angular/chat/math/public-api.ts#ChatMathModule",
       "taskIds": [
         "T26"
       ],
@@ -6177,7 +6197,7 @@
       "reason": "Angular DI seam for the application's KaTeX. React takes the same application-supplied renderer through the Markdown renderMath prop."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatMathRenderer",
+      "id": "export:libs/angular/chat/math/public-api.ts#ChatMathRenderer",
       "taskIds": [
         "T26"
       ],
@@ -6186,7 +6206,7 @@
       "reason": "Angular DI seam for the application's KaTeX. React takes the same application-supplied renderer through the Markdown renderMath prop."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#provideChatMath",
+      "id": "export:libs/angular/chat/math/public-api.ts#provideChatMath",
       "taskIds": [
         "T26"
       ],
@@ -8870,6 +8890,24 @@
       "note": "React compares only complete bounded JSON projections and refuses oversized results; the existing Angular raw-state comparator remains unchanged."
     },
     {
+      "id": "source:libs/angular/chat/math/public-api.ts",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/angular/chat/math/src/chat-math.ts",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "source:libs/angular/eslint.config.mjs",
       "taskIds": [
         "T02",
@@ -9488,15 +9526,6 @@
       "target": "libs/react/src/markdown/markdown.tsx",
       "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
       "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open."
-    },
-    {
-      "id": "source:libs/angular/chat/src/lib/markdown/katex-loader.ts",
-      "taskIds": [
-        "T18",
-        "T26"
-      ],
-      "treatment": "shared",
-      "status": "planned"
     },
     {
       "id": "source:libs/angular/chat/src/lib/markdown/markdown-children.component.ts",

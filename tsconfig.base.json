@@ -29,6 +29,7 @@
       "@threadplane/angular": ["libs/angular/src/public-api.ts"],
       "@threadplane/angular/chat": ["libs/angular/chat/src/public-api.ts"],
       "@threadplane/angular/chat/debug": ["libs/angular/chat/debug/public-api.ts"],
+      "@threadplane/angular/chat/math": ["libs/angular/chat/math/public-api.ts"],
       "@threadplane/angular/chat/testing": ["libs/angular/chat/testing/public-api.ts"],
       "@threadplane/angular/markdown": ["libs/angular/markdown/src/public-api.ts"],
       "@threadplane/angular/render": ["libs/angular/render/src/public-api.ts"],

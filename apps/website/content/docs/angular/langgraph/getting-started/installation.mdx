@@ -50,7 +50,7 @@ npm install @threadplane/angular @threadplane/core @threadplane/langgraph @langc
 
 The pins on the `@threadplane` packages are exact, because the packages are released together; the other ranges are ordinary semver.
 
-npm 7 and newer install peer dependencies automatically, so the command above is enough. It is worth knowing what arrives with it: `@threadplane/angular/chat` declares its own peers — `@threadplane/angular`, `@threadplane/core`, `@threadplane/telemetry`, `@threadplane/angular/render`, `@threadplane/a2ui`, `zod`, `@json-render/core`, `marked`, `rxjs`, and the `@angular/common`, `@angular/platform-browser`, and `@angular/router` packages. Math rendering uses KaTeX only when your application installs it and passes it to `provideChatMath()`.
+npm 7 and newer install peer dependencies automatically, so the command above is enough. It is worth knowing what arrives with it: `@threadplane/angular/chat` declares its own peers — `@threadplane/angular`, `@threadplane/core`, `@threadplane/telemetry`, `@threadplane/angular/render`, `@threadplane/a2ui`, `zod`, `@json-render/core`, `marked`, `rxjs`, and the `@angular/common`, `@angular/platform-browser`, and `@angular/router` packages. Math rendering uses KaTeX only when your application installs it and passes it to `provideChatMath()` from `@threadplane/angular/chat/math`.
 
 ## Configure the provider
 

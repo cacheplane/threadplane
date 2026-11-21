@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideThreadplaneTelemetry } from '@threadplane/telemetry/browser';
-import { provideChatMath } from '@threadplane/angular/chat';
+import { provideChatMath } from '@threadplane/angular/chat/math';
 import { AGENT_CLIENT_OPTIONS, provideThreadDirectory } from '@threadplane/angular';
 import { e2eClientOptions } from './shell/e2e-overrides';
 import { demoThreadDirectoryConfig } from './shell/demo-threads';

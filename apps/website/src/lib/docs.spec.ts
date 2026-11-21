@@ -462,6 +462,7 @@ describe('website docs bindings', () => {
       '@threadplane/angular/testing',
       '@threadplane/angular/chat',
       '@threadplane/angular/chat/debug',
+      '@threadplane/angular/chat/math',
       '@threadplane/angular/chat/testing',
       '@threadplane/core',
       '@threadplane/core/testing',

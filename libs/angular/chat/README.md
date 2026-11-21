@@ -251,7 +251,7 @@ The `renderMarkdown(md, options?)` function produces a parse tree for use outsid
 LaTeX math — inline `$…$` / `\(…\)` and display `$$…$$` / `\[…\]` — renders via [KaTeX](https://katex.org) when your application turns it on. Install `katex`, give chat its loader, and include its stylesheet once:
 
 ```typescript
-import { provideChatMath } from '@threadplane/angular/chat';
+import { provideChatMath } from '@threadplane/angular/chat/math';
 
 export const appConfig: ApplicationConfig = {
   providers: [provideChatMath(() => import('katex'))],

@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideThreadplaneTelemetry } from '@threadplane/telemetry/browser';
-import { provideChatMath } from '@threadplane/angular/chat';
+import { provideChatMath } from '@threadplane/angular/chat/math';
 import { provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/ag-ui';
 import { type } from '@threadplane/core';

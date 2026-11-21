@@ -13,6 +13,7 @@
     "src/**/*.ts",
     "chat/src/**/*.ts",
     "chat/debug/**/*.ts",
+    "chat/math/**/*.ts",
     "chat/testing/**/*.ts",
     "markdown/src/**/*.ts",
     "render/src/**/*.ts",

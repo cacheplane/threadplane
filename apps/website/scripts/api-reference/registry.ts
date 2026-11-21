@@ -17,6 +17,7 @@ const definitions: [string, ApiFramework, string, string?][] = [
   ['angular', 'angular', 'src/public-api.ts'],
   ['angular/chat', 'angular', 'chat/src/public-api.ts'],
   ['angular/chat/debug', 'angular', 'chat/debug/public-api.ts'],
+  ['angular/chat/math', 'angular', 'chat/math/public-api.ts'],
   ['angular/chat/testing', 'angular', 'chat/testing/public-api.ts'],
   ['angular/markdown', 'angular', 'markdown/src/public-api.ts'],
   ['angular/render', 'angular', 'render/src/public-api.ts'],
@@ -65,6 +66,7 @@ export const SDK_ENTRYPOINTS: SdkEntrypoint[] = definitions.map(
     const docLibrary = [
       'angular/chat',
       'angular/chat/debug',
+      'angular/chat/math',
       'angular/chat/testing',
       'angular/markdown',
       'react/chat',

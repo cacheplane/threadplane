@@ -70,6 +70,7 @@
     "LICENSE.md",
     "README.md",
     "chat/debug/package.json",
+    "chat/math/package.json",
     "chat/testing/package.json",
     "render/package.json",
     "chat/styles.css",

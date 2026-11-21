@@ -6,7 +6,7 @@ description: How chat renders assistant markdown — the streaming node renderer
 
 AI messages in `@threadplane/angular/chat` can render full markdown -- headings, code blocks, tables, lists, blockquotes, math, HTML nodes, and inline formatting. Use `<chat-streaming-md>` for the live node-based renderer. Use `renderMarkdown()` only when you need a small sanitized-HTML helper in a custom template.
 
-Math renders through KaTeX when your application turns it on with `provideChatMath(() => import('katex'))` from `@threadplane/angular/chat` and includes `katex/dist/katex.min.css`. Without it, math shows as its raw `$…$` source.
+Math renders through KaTeX when your application turns it on with `provideChatMath(() => import('katex'))` from `@threadplane/angular/chat/math` and includes `katex/dist/katex.min.css`. Without it, math shows as its raw `$…$` source.
 
 ## How It Works
 

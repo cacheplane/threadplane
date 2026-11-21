@@ -9,7 +9,7 @@ import {
 import {
   ChatMathRenderer,
   provideChatMath,
-} from '../markdown/katex-loader';
+} from '@threadplane/angular/chat/math';
 
 @Component({
   standalone: true,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { ChatMathRenderer, provideChatMath } from './katex-loader';
+import { ChatMathRenderer, provideChatMath } from './chat-math';
 
 describe('ChatMathRenderer', () => {
   it('renders nothing and loads nothing without provideChatMath', async () => {

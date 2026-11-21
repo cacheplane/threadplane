@@ -12,7 +12,7 @@ import type {
   MarkdownMathInlineNode,
   MarkdownMathDisplayNode,
 } from '@cacheplane/partial-markdown';
-import { ChatMathRenderer } from '../katex-loader';
+import { ChatMathRenderer } from '@threadplane/angular/chat/math';
 
 type MathNode = MarkdownMathInlineNode | MarkdownMathDisplayNode;
 
