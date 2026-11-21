@@ -95,7 +95,14 @@ export const SDK_ENTRYPOINTS: SdkEntrypoint[] = definitions.map(
 );
 
 /** Assets and install implementation exports are intentionally outside TypeScript reference. */
+// Angular entry points whose symbols another documented entry re-exports.
+const EXCLUDED_ENTRY_SOURCES = new Set([
+  'libs/telemetry/src/browser/development/public-api.ts',
+]);
 export const EXCLUDED_EXPORTS = new Set([
+  // The development runtime alone; `telemetry/browser` re-exports and
+  // documents every symbol it has.
+  'telemetry/browser/development',
   'ag-ui/development-install',
   'angular/development-install',
   'langgraph/development-install',
@@ -169,7 +176,10 @@ export function validateRegistry(
           root,
           path.resolve(dir, config.lib.entryFile)
         );
-        if (!entries.some((entry) => entry.source === source))
+        if (
+          !EXCLUDED_ENTRY_SOURCES.has(source) &&
+          !entries.some((entry) => entry.source === source)
+        )
           throw new Error(`Unregistered Angular entrypoint: ${source}`);
       }
     };
@@ -180,7 +190,8 @@ export function validateRegistry(
     ][]) {
       if (
         (alias === manifest.name || alias.startsWith(`${manifest.name}/`)) &&
-        !imports.has(alias)
+        !imports.has(alias) &&
+        !EXCLUDED_EXPORTS.has(alias.slice('@threadplane/'.length))
       )
         throw new Error(
           `Unregistered SDK path alias: ${alias} (${paths.join(', ')})`

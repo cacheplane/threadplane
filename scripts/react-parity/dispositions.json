@@ -1403,6 +1403,16 @@
       "status": "planned"
     },
     {
+      "id": "asset:libs/telemetry/browser/development/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "asset:libs/telemetry/ng-package.json",
       "taskIds": [
         "T02",
@@ -12231,6 +12241,14 @@
     },
     {
       "id": "source:libs/telemetry/src/browser/development/collector.ts",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/telemetry/src/browser/development/public-api.ts",
       "taskIds": [
         "T17"
       ],
