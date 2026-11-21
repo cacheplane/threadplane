@@ -46,7 +46,7 @@ import {
   type ThreadActionAdapter,
   type Thread,
   type ProjectActionAdapter,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 import { PalettePersistence } from './palette-persistence.service';
 import { ProjectsService } from './projects.service';
 import { MapCanvasComponent } from '../map-canvas.component';

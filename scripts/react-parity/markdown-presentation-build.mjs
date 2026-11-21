@@ -472,9 +472,16 @@ export const reactRenderPresentationSeeds = reactLanggraphPresentationSeeds.map(
   (name) =>
     name === '@langchain/langgraph-sdk' ? '@cacheplane/partial-json' : name
 );
+// `@threadplane/angular` holds the chat UI, whose required peers and
+// dependencies install with it.
 export const angularLanggraphPresentationSeeds = [
   '@cacheplane/json-stream',
+  '@cacheplane/partial-json',
   '@cacheplane/partial-markdown',
+  '@angular/router',
+  '@json-render/core',
+  'marked',
+  'zod',
   '@angular/core',
   '@angular/common',
   '@angular/compiler',
@@ -528,14 +535,17 @@ function presentationLocals(profile) {
     );
   if (profile === 'react-render')
     return localNames.filter((name) => name !== '@threadplane/angular');
+  // `@threadplane/angular` requires a2ui and telemetry for its chat UI.
+  const angularChatLocals = ['@threadplane/a2ui', '@threadplane/telemetry'];
   if (profile === 'angular-foundation')
-    return localNames.filter((name) => name !== '@threadplane/react');
+    return [...localNames.filter((name) => name !== '@threadplane/react'), ...angularChatLocals];
   const excluded =
     profile === 'react-langgraph' || isReactAgUiProfile(profile)
       ? '@threadplane/angular'
       : '@threadplane/react';
   return [
     ...localNames.filter((name) => name !== excluded),
+    ...(excluded === '@threadplane/react' ? angularChatLocals : []),
     isReactAgUiProfile(profile) ? '@threadplane/ag-ui' : '@threadplane/langgraph',
   ];
 }
@@ -718,12 +728,12 @@ export function derivePresentationConsumer(
       : profile === 'react-render'
       ? 'Exactly React, core and content static tarballs required'
       : profile === 'angular-foundation'
-      ? 'Exactly Angular, core and content foundation tarballs required'
+      ? 'Exactly Angular, core, content, a2ui and telemetry tarballs required'
       : `Exactly ${
           profile === 'react-langgraph' || isReactAgUiProfile(profile)
-            ? 'React'
-            : 'Angular'
-        }, core, content and ${
+            ? 'React, core, content'
+            : 'Angular, core, content, a2ui, telemetry'
+        } and ${
           isReactAgUiProfile(profile) ? 'AG-UI' : 'LangGraph'
         } candidate tarballs required`
   );
@@ -770,7 +780,7 @@ export function derivePresentationConsumer(
       [...seeds].sort(),
       [...selectedSeeds].sort(),
       `Exactly ${
-        profile === 'a2ui-surfaces' || profile === 'render-state' ? 'eighteen' : react ? 'eleven' : profile === 'angular-foundation' ? 'thirteen' : 'fourteen'
+        profile === 'a2ui-surfaces' || profile === 'render-state' ? 'eighteen' : react ? 'eleven' : profile === 'angular-foundation' ? 'eighteen' : 'nineteen'
       } selected ${framework} seeds required`
     );
   }

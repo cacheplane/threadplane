@@ -22,10 +22,10 @@ const AUTHORING_EXACT = new Set([
 const isAuthoringSurface = (name) => /^(provide|inject|mock)/.test(name) || AUTHORING_EXACT.has(name);
 
 const LIBRARIES = [
-  { slug: 'chat', entryPoints: ['libs/chat/src/public-api.ts'] },
+  { slug: 'chat', entryPoints: ['libs/angular/chat/src/public-api.ts'] },
   { slug: 'ag-ui', entryPoints: ['libs/ag-ui/src/public-api.ts'] },
   { slug: 'langgraph', entryPoints: ['libs/langgraph/src/public-api.ts'] },
-  { slug: 'render', entryPoints: ['libs/render/src/public-api.ts'] },
+  { slug: 'render', entryPoints: ['libs/angular/render/src/public-api.ts'] },
 ];
 
 function summaryText(comment) {

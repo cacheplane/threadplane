@@ -33,7 +33,8 @@ test('uses production configuration when starting the generated consumer', () =>
   ]);
 });
 
-test('defines visible compatibility probes for every public package', async () => {
+// `chat` and `render` probe those entry points of `@threadplane/angular`.
+test('defines visible compatibility probes for every public package and Angular entry point', async () => {
   assert.deepEqual(COMPATIBILITY_PACKAGES, [
     'ag-ui',
     'angular',

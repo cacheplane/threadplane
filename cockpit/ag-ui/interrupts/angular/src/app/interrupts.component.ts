@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
-import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
+import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 import type { Session } from '@threadplane/ag-ui';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';

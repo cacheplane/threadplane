@@ -7,7 +7,7 @@ const SLUG = 'middleware-how-it-fits';
 
 /**
  * The middleware intro's runtime flow, condensed to three stages: the
- * browser declares client tools through `@threadplane/chat`, the
+ * browser declares client tools through `@threadplane/angular/chat`, the
  * `threadplane-middleware` package binds those tool stubs onto the model —
  * runtime-neutral, since it ships both a Python `bind_client_tools()`
  * (`packages/threadplane-middleware`) and a TypeScript `bindClientTools()`
@@ -23,7 +23,7 @@ export function MiddlewareHowItFits() {
       slug={SLUG}
       viewWidth={640}
       viewHeight={276}
-      label="How threadplane-middleware fits: the browser declares client tools through @threadplane/chat, threadplane-middleware binds them onto the model with bind_client_tools(), and the bound model runs inside your LangGraph graph."
+      label="How threadplane-middleware fits: the browser declares client tools through @threadplane/angular/chat, threadplane-middleware binds them onto the model with bind_client_tools(), and the bound model runs inside your LangGraph graph."
     >
       <DiagramNode
         x={170}
@@ -31,7 +31,7 @@ export function MiddlewareHowItFits() {
         w={300}
         h={64}
         eyebrow="Frontend"
-        title="@threadplane/chat"
+        title="@threadplane/angular/chat"
         meta="<chat [clientTools]>"
         tone="neutral"
       />

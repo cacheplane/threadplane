@@ -1,7 +1,7 @@
 /**
  * The page side of the Threadplane DevTools wire protocol, shared by the React
  * signals reporter (`@threadplane/react/debug`) and the render report
- * (`@threadplane/react/render`). It mirrors `@threadplane/chat`'s
+ * (`@threadplane/react/render`). It mirrors `@threadplane/angular/chat`'s
  * `devtools-emitter.ts` and `devtools-render-report.ts`: the same
  * `threadplane:devtools` `CustomEvent` on `window`, the same report shapes and
  * bounds, and the same `window.__THREADPLANE_DEVTOOLS_DISABLED__` opt-out.

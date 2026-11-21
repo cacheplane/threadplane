@@ -232,7 +232,7 @@ test('reports website support data that advertises Angular 23', async () => {
 
 test('reports a peer range that omits Angular 22', async (t) => {
   const root = await createFixture(t, async (fixtureRoot) => {
-    await writeJson(join(fixtureRoot, 'libs/chat/package.json'), {
+    await writeJson(join(fixtureRoot, 'libs/example-layouts/package.json'), {
       peerDependencies: {
         '@angular/core': '^20.0.0 || ^21.0.0',
       },
@@ -241,7 +241,7 @@ test('reports a peer range that omits Angular 22', async (t) => {
 
   await assert.rejects(
     verifyPeerRanges({ root }),
-    /libs\/chat\/package\.json peerDependencies\["@angular\/core"\] expected "\^20\.0\.0 \|\| \^21\.0\.0 \|\| \^22\.0\.0" but found "\^20\.0\.0 \|\| \^21\.0\.0"/
+    /libs\/example-layouts\/package\.json peerDependencies\["@angular\/core"\] expected "\^20\.0\.0 \|\| \^21\.0\.0 \|\| \^22\.0\.0" but found "\^20\.0\.0 \|\| \^21\.0\.0"/
   );
 });
 
@@ -282,7 +282,7 @@ test('checks optional Angular peers', async (t) => {
 
 test('aggregates every incorrect Angular peer field in a manifest', async (t) => {
   const root = await createFixture(t, async (fixtureRoot) => {
-    await writeJson(join(fixtureRoot, 'libs/chat/package.json'), {
+    await writeJson(join(fixtureRoot, 'libs/example-layouts/package.json'), {
       peerDependencies: {
         '@angular/core': '^20.0.0 || ^21.0.0',
         '@angular/common': '^20.0.0 || ^21.0.0 || ^22.0.0 || ^23.0.0',
@@ -293,11 +293,11 @@ test('aggregates every incorrect Angular peer field in a manifest', async (t) =>
   await assert.rejects(verifyPeerRanges({ root }), (error) => {
     assert.match(
       error.message,
-      /libs\/chat\/package\.json peerDependencies\["@angular\/core"\]/
+      /libs\/example-layouts\/package\.json peerDependencies\["@angular\/core"\]/
     );
     assert.match(
       error.message,
-      /libs\/chat\/package\.json peerDependencies\["@angular\/common"\]/
+      /libs\/example-layouts\/package\.json peerDependencies\["@angular\/common"\]/
     );
     return true;
   });
@@ -305,7 +305,7 @@ test('aggregates every incorrect Angular peer field in a manifest', async (t) =>
 
 test('aggregates peer errors and unreadable manifests', async (t) => {
   const root = await createFixture(t, async (fixtureRoot) => {
-    await writeJson(join(fixtureRoot, 'libs/chat/package.json'), {
+    await writeJson(join(fixtureRoot, 'libs/example-layouts/package.json'), {
       peerDependencies: {
         '@angular/core': '^20.0.0 || ^21.0.0',
       },
@@ -315,13 +315,13 @@ test('aggregates peer errors and unreadable manifests', async (t) => {
         '@angular/core': '^20.0.0 || ^21.0.0 || ^22.0.0 || ^23.0.0',
       },
     });
-    await rm(join(fixtureRoot, 'libs/render/package.json'));
+    await rm(join(fixtureRoot, 'libs/cockpit-telemetry/package.json'));
   });
 
   await assert.rejects(verifyPeerRanges({ root }), (error) => {
     assert.match(
       error.message,
-      /libs\/chat\/package\.json peerDependencies\["@angular\/core"\]/
+      /libs\/example-layouts\/package\.json peerDependencies\["@angular\/core"\]/
     );
     assert.match(
       error.message,
@@ -329,7 +329,7 @@ test('aggregates peer errors and unreadable manifests', async (t) => {
     );
     assert.match(
       error.message,
-      /libs\/render\/package\.json could not be read:/
+      /libs\/cockpit-telemetry\/package\.json could not be read:/
     );
     return true;
   });

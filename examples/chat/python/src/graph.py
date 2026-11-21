@@ -535,7 +535,7 @@ async def generate(state: State, config: RunnableConfig) -> dict:
     # Typing the inner shapes would over-couple this example to the A2UI v0.9
     # spec; instead we leave strict OFF and rely on the envelope-args
     # normalizer (Python: src/streaming/envelope_normalizer.py; TS:
-    # libs/chat/src/lib/a2ui/envelope-normalizer.ts) to canonicalize the
+    # libs/angular/chat/src/lib/a2ui/envelope-normalizer.ts) to canonicalize the
     # four observed argument shapes (envelopes / envelope / positional /
     # flat). The spike showed 80-93% canonical even without strict.
     # bind_client_tools appends the frontend client-tool catalog stubs (read

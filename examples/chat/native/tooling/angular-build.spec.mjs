@@ -89,6 +89,18 @@ test('only the exact Angular global style entry is classified as synthetic metad
   );
 });
 
+test('Angular stats leave out code the application never loads', () => {
+  const stats = {
+    inputs: { 'src/main.ts': {}, 'node_modules/a/used.mjs': {}, 'node_modules/b/dropped.mjs': {}, 'node_modules/c/orphan.mjs': {}, 'src/styles.css': {} },
+    outputs: {
+      'main.js': { entryPoint: 'src/main.ts', imports: [{ path: 'lazy.js', kind: 'dynamic-import' }], inputs: { 'src/main.ts': { bytesInOutput: 9 }, 'node_modules/b/dropped.mjs': { bytesInOutput: 0 } } },
+      'lazy.js': { imports: [], inputs: { 'node_modules/a/used.mjs': { bytesInOutput: 4 } } },
+      'orphan.js': { entryPoint: 'node_modules/c/orphan.mjs', imports: [], inputs: { 'node_modules/c/orphan.mjs': { bytesInOutput: 7 } } },
+    },
+  };
+  assert.deepEqual(angular.angularStatsInputs(stats).files, ['src/main.ts', 'node_modules/a/used.mjs', 'src/styles.css']);
+});
+
 test('Angular stats normalize workspace-relative inputs within the physical consumer', (t) => {
   assert.equal(typeof angular.angularInputHashes, 'function');
   const consumer = mkdtempSync(join(tmpdir(), 'angular-inputs-'));
@@ -133,6 +145,7 @@ test('Angular stats normalize workspace-relative inputs within the physical cons
     'node_modules/react/index.js',
     'node_modules/@threadplane/chat/index.js',
     'node_modules/@threadplane/telemetry/index.js',
+    'node_modules/@threadplane/a2ui/src/index.js',
     'node_modules/@threadplane/render/index.js',
     'node_modules/@threadplane/langgraph/fesm2022/threadplane-langgraph.mjs',
     'node_modules/@threadplane/langgraph/types/threadplane-langgraph.d.ts',

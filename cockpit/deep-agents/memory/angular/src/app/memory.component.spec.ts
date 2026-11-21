@@ -1,5 +1,5 @@
 import '@angular/compiler';
-import { mockAgent, submitMessage } from '@threadplane/chat';
+import { mockAgent, submitMessage } from '@threadplane/angular/chat';
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 const holder = vi.hoisted(() => ({ agent: undefined as any }));

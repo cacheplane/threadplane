@@ -35,7 +35,7 @@ Rules:
 - `on` maps DOM event names to action descriptors. Most components only emit `click`. The `action` string is a free-form intent name; `params` is a flat object passed to the handler.
 - `state` is the initial state model. Keys are paths (e.g. `name`, `email`); values are initial values.
 
-## Component Catalog (matches @threadplane/chat's a2uiBasicCatalog)
+## Component Catalog (matches @threadplane/angular/chat's a2uiBasicCatalog)
 
 The renderer consumes the same component catalog as A2UI, so component
 names match: `Card`, `Column`, `Row`, `List`, `Tabs`, `Modal`,

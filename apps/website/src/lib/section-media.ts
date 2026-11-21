@@ -144,7 +144,7 @@ export class ChatComponent {
         language: 'typescript',
         source: `import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/ag-ui';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 
 // app.config.ts
 export const appConfig: ApplicationConfig = {

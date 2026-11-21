@@ -59,7 +59,7 @@ export interface InstallOption {
 
 export const COMPONENT_SNIPPET = `import { Component } from '@angular/core';
 import { injectAgent } from '@threadplane/angular';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 
 @Component({
   imports: [ChatComponent],
@@ -72,10 +72,10 @@ export class SupportAgentComponent {
 /**
  * Step 3 of the mechanism section: registering your own design-system
  * components so generated UI can only render what you already own.
- * Mirrors the real API — `provideViews(views({ … }))` from @threadplane/render.
+ * Mirrors the real API — `provideViews(views({ … }))` from @threadplane/angular/render.
  */
 export const RENDER_SNIPPET = `import { ApplicationConfig } from '@angular/core';
-import { provideViews, views } from '@threadplane/render';
+import { provideViews, views } from '@threadplane/angular/render';
 import { KpiCardComponent } from './kpi-card.component';
 import { DisruptionsTableComponent } from './disruptions-table.component';
 
@@ -94,7 +94,7 @@ export const INSTALL_OPTIONS: readonly InstallOption[] = [
     key: 'fake',
     label: 'Try without a backend',
     description: 'Runs a fake agent in the browser. Swap in a real backend session when the UI works.',
-    command: 'npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked',
+    command: 'npm install @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked',
     peersNote: `${formatAngularRange(WEBSITE_SUPPORTED_ANGULAR_MAJORS)} · the fake agent needs no backend package; the LangGraph package and its SDK peers are here for the swap to a real session`,
     providerSnippet: `import { ApplicationConfig } from '@angular/core';
 import { provideFakeAgent } from '@threadplane/angular/testing';
@@ -110,7 +110,7 @@ export const appConfig: ApplicationConfig = {
     key: 'langgraph',
     label: 'LangGraph',
     description: 'Connect a LangGraph Platform or langgraph dev server.',
-    command: 'npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked',
+    command: 'npm install @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked',
     peersNote: `${formatAngularRange(WEBSITE_SUPPORTED_ANGULAR_MAJORS)} · the LangGraph SDK is a peer of the LangGraph package, marked a peer of the chat package`,
     providerSnippet: `import { ApplicationConfig } from '@angular/core';
 import { provideAgent } from '@threadplane/angular';
@@ -135,7 +135,7 @@ export const appConfig: ApplicationConfig = {
     key: 'ag_ui',
     label: 'AG-UI',
     description: 'Connect any AG-UI-compatible endpoint.',
-    command: 'npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked',
+    command: 'npm install @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked',
     peersNote: `${formatAngularRange(WEBSITE_SUPPORTED_ANGULAR_MAJORS)} · the AG-UI client is a peer of the AG-UI package, marked a peer of the chat package`,
     providerSnippet: `import { ApplicationConfig } from '@angular/core';
 import { provideAgent } from '@threadplane/angular';

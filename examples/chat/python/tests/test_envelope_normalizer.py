@@ -1,4 +1,4 @@
-"""Parity tests with libs/chat/src/lib/a2ui/envelope-normalizer.spec.ts."""
+"""Parity tests with libs/angular/chat/src/lib/a2ui/envelope-normalizer.spec.ts."""
 import pytest
 
 from src.streaming.envelope_normalizer import normalize_envelope_args

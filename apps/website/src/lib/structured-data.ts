@@ -42,7 +42,7 @@ export function organizationJsonLd() {
     // 1200x630 marketing image, not a mark.
     description:
       'Threadplane builds the Angular UI layer for production agent applications on LangGraph and AG-UI-compatible runtimes.',
-    sameAs: [REPOSITORY_URL, 'https://www.npmjs.com/package/@threadplane/chat'],
+    sameAs: [REPOSITORY_URL, 'https://www.npmjs.com/package/@threadplane/angular/chat'],
   };
 }
 
@@ -63,7 +63,7 @@ export function softwareSourceCodeJsonLd() {
   return {
     '@context': SCHEMA_CONTEXT,
     '@type': 'SoftwareSourceCode',
-    name: '@threadplane/chat',
+    name: '@threadplane/angular/chat',
     description:
       'Signal-native Angular chat UI primitives bound to a runtime-neutral Agent contract, with adapters for LangGraph and AG-UI.',
     programmingLanguage: 'TypeScript',

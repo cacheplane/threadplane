@@ -1,5 +1,15 @@
 import type { RuntimeEvent } from './types';
 
+// `@threadplane/chat` and `@threadplane/render` moved into `@threadplane/angular`;
+// an announcement may still name them for installs of earlier releases.
+const ANNOUNCED_PACKAGES = [
+  '@threadplane/angular',
+  '@threadplane/chat',
+  '@threadplane/langgraph',
+  '@threadplane/ag-ui',
+  '@threadplane/render',
+];
+
 const ID = /^[a-z0-9][a-z0-9_-]{0,79}$/u;
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/u;
 function version(value: unknown): number[] | undefined {
@@ -75,14 +85,9 @@ export class DevelopmentAnnouncements {
         continue;
       if (
         !Array.isArray(item.packageNames) ||
-        item.packageNames.length > 4 ||
+        item.packageNames.length > ANNOUNCED_PACKAGES.length ||
         !item.packageNames.every((p: unknown) =>
-          [
-            '@threadplane/chat',
-            '@threadplane/langgraph',
-            '@threadplane/ag-ui',
-            '@threadplane/render',
-          ].includes(p as string)
+          ANNOUNCED_PACKAGES.includes(p as string)
         )
       )
         continue;

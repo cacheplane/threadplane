@@ -5,9 +5,9 @@ import { DiagramEdge } from './DiagramEdge';
 const SLUG = 'render-vs-a2ui';
 
 /**
- * The layering from the json-render-vs-A2UI concept page: `@threadplane/render`
+ * The layering from the json-render-vs-A2UI concept page: `@threadplane/angular/render`
  * is usable directly from your own app (no chat required), while
- * `@threadplane/chat` also detects assistant content and streams it into
+ * `@threadplane/angular/chat` also detects assistant content and streams it into
  * whichever surface applies — a json-render spec on one side, an A2UI
  * surface on the other.
  */
@@ -18,7 +18,7 @@ export function RenderVsA2ui() {
       slug={SLUG}
       viewWidth={640}
       viewHeight={204}
-      label="json-render versus A2UI: your Angular app renders json-render specs directly through @threadplane/render; @threadplane/chat also detects assistant content and mounts either a json-render spec or an A2UI surface. @threadplane/a2ui defines the A2UI v0.9 message and component types."
+      label="json-render versus A2UI: your Angular app renders json-render specs directly through @threadplane/angular/render; @threadplane/angular/chat also detects assistant content and mounts either a json-render spec or an A2UI surface. @threadplane/a2ui defines the A2UI v0.9 message and component types."
     >
       <DiagramNode
         x={20}
@@ -37,7 +37,7 @@ export function RenderVsA2ui() {
         w={260}
         h={64}
         eyebrow="Chat UI"
-        title="@threadplane/chat"
+        title="@threadplane/angular/chat"
         meta="detects content, streams, mounts surfaces"
         tone="neutral"
       />
@@ -50,7 +50,7 @@ export function RenderVsA2ui() {
         w={260}
         h={64}
         eyebrow="json-render"
-        title="@threadplane/render"
+        title="@threadplane/angular/render"
         meta="registry · state · functions · handlers"
         tone="accent"
       />

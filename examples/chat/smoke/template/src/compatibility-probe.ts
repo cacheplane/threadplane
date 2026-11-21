@@ -7,10 +7,10 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { createSession as createAgUiSession } from '@threadplane/ag-ui';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { provideFakeAgent } from '@threadplane/angular/testing';
-import { ChatComponent } from '@threadplane/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { type as stateType } from '@threadplane/core';
 import { createSession as createLangGraphSession } from '@threadplane/langgraph';
-import { RenderSpecComponent } from '@threadplane/render';
+import { RenderSpecComponent } from '@threadplane/angular/render';
 import { provideThreadplaneTelemetry } from '@threadplane/telemetry/browser';
 
 const PACKAGE_REFS = [

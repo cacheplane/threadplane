@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { a2uiBasicCatalog } from '@threadplane/chat';
+import { a2uiBasicCatalog } from '@threadplane/angular/chat';
 import { BackupTableComponent } from './backup-table.component';
 import { demoViews } from './demo-views';
 

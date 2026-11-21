@@ -2,7 +2,7 @@ import { Component, DestroyRef, effect, inject } from '@angular/core';
 import {
   ChatComponent,
   ChatWelcomeSuggestionComponent,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 import { injectAgent, withAgentOverrides } from '@threadplane/angular';
 import { STREAMING_AGENT } from './agent-ref';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
@@ -14,7 +14,7 @@ const WELCOME_SUGGESTIONS = [
     label: 'Stream a long answer',
     value: 'Explain LangGraph checkpointing in 200 words.',
     description:
-      'Watch tokens arrive incrementally — the simplest @threadplane/chat integration.',
+      'Watch tokens arrive incrementally — the simplest @threadplane/angular/chat integration.',
   },
   {
     label: 'How agents pick tools',
@@ -25,7 +25,7 @@ const WELCOME_SUGGESTIONS = [
 ] as const;
 
 /**
- * Streaming demo — simplest possible @threadplane/chat integration.
+ * Streaming demo — simplest possible @threadplane/angular/chat integration.
  *
  * Injects the singleton agent (configured in app.config.ts) and passes it
  * to the prebuilt <chat> composition. The composition handles message

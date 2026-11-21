@@ -35,7 +35,7 @@ html[data-color-scheme="light"] {
 /*
  * A2UI theme presets — switched at runtime via the palette "Theme"
  * dropdown by toggling `data-theme` on the document root. Mirrors the
- * preset CSS files shipped from `@threadplane/chat/themes/*.css`; we inline
+ * preset CSS files shipped from `@threadplane/angular/chat/themes/*.css`; we inline
  * them here to avoid the workspace-vs-published-path resolution
  * complexity of importing them dynamically. Default ('default-dark')
  * uses the lib's :host defaults, so no override block is needed.

@@ -15,8 +15,8 @@ import {
   ChatComponent,
   ChatInterruptPanelComponent,
   type InterruptAction,
-} from '@threadplane/chat';
-import { ChatDebugComponent } from '@threadplane/chat/debug';
+} from '@threadplane/angular/chat';
+import { ChatDebugComponent } from '@threadplane/angular/chat/debug';
 import { stagePresentationAgent } from './stage-interaction';
 import { stageWheelOwnership } from './stage-wheel';
 import { createAgentRef, injectAgent, provideAgent } from '@threadplane/angular';
@@ -204,7 +204,7 @@ function stageProviders(replay?: StageReplayTransport): Provider[] {
       .stage__open { margin-left: auto; color: inherit; opacity: .7; }
       .stage__surface { position: relative; flex: 1; min-height: 0; display: flex; }
       /* chat-debug's right dock is position: fixed at width: var(--panel-size, 420px)
-         (libs/chat/debug/.../chat-debug.component.ts, .panel--right), so it is out of
+         (libs/angular/chat/debug/.../chat-debug.component.ts, .panel--right), so it is out of
          flow and would sit ON TOP of the transcript. 420 + 16 gutter = 436px. */
       .stage__column { flex: 1; min-width: 0; display: flex; flex-direction: column; }
       .stage[data-dock='right'][data-debug-open='true'] .stage__column { padding-right: var(--stage-devtools-width, 436px); }

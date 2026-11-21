@@ -71,7 +71,7 @@ describe('automatic development runtime', () => {
     api
       .createDevelopmentRuntime({
         integration: 'render',
-        packageName: '@threadplane/render',
+        packageName: '@threadplane/angular',
         packageVersion: config.packageVersion,
         installationToken: renderToken,
       })
@@ -127,7 +127,7 @@ describe('automatic development runtime', () => {
     api
       .createDevelopmentRuntime({
         integration: 'render',
-        packageName: '@threadplane/render',
+        packageName: '@threadplane/angular',
         packageVersion: config.packageVersion,
         installationToken: 'invalid',
       })
@@ -286,6 +286,25 @@ describe('automatic development runtime', () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
+  it('collects nothing for an integration reported under another package', async () => {
+    // The renderer ships in `@threadplane/angular`; the retired
+    // `@threadplane/render` name, a backend's name under another integration,
+    // and an inherited key are all mismatches.
+    for (const mismatch of [
+      { integration: 'render', packageName: '@threadplane/render' },
+      { integration: 'langgraph', packageName: '@threadplane/angular' },
+      { integration: 'constructor', packageName: '@threadplane/angular' },
+    ])
+      api
+        .createDevelopmentRuntime({
+          ...config,
+          ...(mismatch as Pick<typeof config, 'integration' | 'packageName'>),
+        })
+        .touch();
+    await advance(300000);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it('inherits runtime policy without changing custom agents or emitting events', () => {
     const agent = {};
     expect(api.isDevelopmentRuntimeEnabled(agent)).toBe(false);
@@ -393,7 +412,7 @@ describe('automatic development runtime', () => {
       .createDevelopmentRuntime({
         ...config,
         integration: 'render',
-        packageName: '@threadplane/render',
+        packageName: '@threadplane/angular',
       })
       .touch();
     await advance(10000);

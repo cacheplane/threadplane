@@ -7,7 +7,7 @@ import {
   MessageTemplateDirective,
   markdownDocument,
   messageContent,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 import { ExampleChatLayoutComponent, ExampleTranscriptDirective } from '@threadplane/example-layouts';
 import { injectAgent } from '@threadplane/angular';
 import type { LangGraphSession } from '@threadplane/langgraph';

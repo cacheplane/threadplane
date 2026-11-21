@@ -13,13 +13,7 @@
       "path": "../../../../libs/cockpit-telemetry"
     },
     {
-      "path": "../../../../libs/render"
-    },
-    {
       "path": "../../../../libs/example-layouts"
-    },
-    {
-      "path": "../../../../libs/chat"
     },
     {
       "path": "../../../../libs/angular"

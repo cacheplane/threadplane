@@ -170,9 +170,14 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
     }
     for (const path of allFiles) visit(path, false, [], browserPath(path), false, angularSource && runtimeSourceKind(path) === undefined);
     if (['content', 'react', 'angular'].includes(project)) {
+      // Angular's chat UI still renders A2UI inline, so its `/chat` entry is not
+      // guarded here; an app that uses only its plain-text views is proven
+      // A2UI-free at the bundle by verify-angular-package. Splitting A2UI out
+      // to `@threadplane/angular/a2ui`, as React has, restores this guard.
+      const guardedFeatures = project === 'angular' ? ['markdown'] : ['chat', 'markdown'];
       const features = mode === 'built'
-        ? ['./chat', './markdown'].flatMap(entry => emittedEntries(manifest, entry).map(value => join(directory, value)))
-        : ['chat', 'markdown'].map(entry => join(directory, project === 'angular' ? `${entry}/src/public-api.ts` : `src/${entry}/index.ts`));
+        ? guardedFeatures.flatMap(entry => emittedEntries(manifest, `./${entry}`).map(value => join(directory, value)))
+        : guardedFeatures.map(entry => join(directory, project === 'angular' ? `${entry}/src/public-api.ts` : `src/${entry}/index.ts`));
       for (const path of [...roots, ...features.filter(existsSync)]) visit(path, false, [], false, false, false, true);
     }
     // The optional state owner is neutral in both implementation and declarations.
@@ -189,7 +194,7 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
       for (const path of filesIn(join(directory, 'src')).filter((path) => !optional.test(relative(directory, path)))) visit(path, false, [], false, true);
     }
     // The headless-root rule holds for every package but the Angular UI packages.
-    if (!angularTransitions.includes(project) && project !== 'chat') {
+    if (!angularTransitions.includes(project)) {
       if (!roots.length) errors.add(`${project}: missing root exports`);
       for (const path of roots) visit(path, true);
     }

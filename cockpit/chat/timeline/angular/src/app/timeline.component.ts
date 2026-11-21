@@ -1,5 +1,5 @@
 import { Component, computed } from '@angular/core';
-import { ChatComponent, ChatTimelineSliderComponent } from '@threadplane/chat';
+import { ChatComponent, ChatTimelineSliderComponent } from '@threadplane/angular/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { injectAgent } from '@threadplane/angular';
 import type { LangGraphSession } from '@threadplane/langgraph';

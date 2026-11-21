@@ -7,7 +7,7 @@ Build an Angular chat UI over the neutral `Agent` contract:
   `createSession({ url, interruptTransport: 'mastra-command' })` from
   `@threadplane/ag-ui`, and retrieve it with `injectAgent()`.
 - Render the conversation with `<chat [agent]="agent">` from
-  `@threadplane/chat`.
+  `@threadplane/angular/chat`.
 - Mirror the backend's shared `packing_list` state (`agent.state()`) into a
   side panel. Mastra bridges its working memory to AG-UI shared state:
   a `STATE_SNAPSHOT` plus real JSON-Patch `STATE_DELTA` events stream while

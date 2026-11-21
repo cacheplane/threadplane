@@ -67,14 +67,14 @@ const LIBRARIES: NavPanel = {
           ctaId: 'libraries_ag_ui',
         },
         {
-          label: '@threadplane/chat',
+          label: '@threadplane/angular/chat',
           description: 'Chat, timeline, and thread primitives',
           href: '/chat',
           library: 'chat',
           ctaId: 'libraries_chat',
         },
         {
-          label: '@threadplane/render',
+          label: '@threadplane/angular/render',
           description: 'Generative UI from agent output',
           href: '/render',
           library: 'render',

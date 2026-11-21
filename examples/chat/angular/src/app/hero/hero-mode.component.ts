@@ -15,7 +15,7 @@ import {
   ChatComponent,
   ChatInterruptPanelComponent,
   type InterruptAction,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { FetchStreamTransport, type LangGraphClientOptions } from '@threadplane/langgraph';
 import { environment } from '../../environments/environment';

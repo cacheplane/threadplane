@@ -7,13 +7,13 @@ import {
   MessageTemplateDirective,
   markdownDocument,
   messageContent,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 import { ExampleChatLayoutComponent, ExampleTranscriptDirective } from '@threadplane/example-layouts';
 import { injectAgent } from '@threadplane/angular';
 import { MESSAGES_AGENT, type MessagesState } from './agent-ref';
 
 /**
- * MessagesComponent demonstrates the chat message primitives from @threadplane/chat.
+ * MessagesComponent demonstrates the chat message primitives from @threadplane/angular/chat.
  *
  * Uses ChatMessageListComponent and ChatInputComponent individually rather
  * than the composed ChatComponent, with an application-owned response status,

@@ -1,0 +1,75 @@
+// libs/angular/chat/src/lib/primitives/chat-error/chat-error.component.ts
+import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import type { Agent } from '../../agent';
+import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { CHAT_ERROR_STYLES } from '../../styles/chat-error.styles';
+import { injectChatRuntime } from '../../styles/chat-runtime';
+
+/**
+ * Coerce an unknown error value into a human-readable message string — reads
+ * `.message` from `Error`s, returns strings as-is, and `String()`-casts the
+ * rest. Useful when rendering an agent's `error` outside the built-in
+ * `chat-error` component.
+ *
+ * @param error - Any caught/agent error value.
+ * @returns The message text, or `null` when `error` is nullish.
+ * @example
+ * ```ts
+ * const msg = extractErrorMessage(agent.error());
+ * ```
+ */
+export function extractErrorMessage(error: unknown): string | null {
+  if (!error) return null;
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return String(error);
+}
+
+/** Displays the agent error and offers Retry or Check status when the error allows it and the agent has the command. */
+@Component({
+  selector: 'chat-error',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: [CHAT_HOST_TOKENS, CHAT_ERROR_STYLES],
+  template: `
+    @if (agent().error(); as err) {
+      <div class="chat-error" role="alert">
+        <svg class="chat-error__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span class="chat-error__msg">{{ err.message }}</span>
+        <!-- The action comes before the detail in source order so it shares the
+             first row with the message, the way Retry always has. The detail
+             claims a full row of its own, so a button after it would be pushed
+             to a third row and the two actions would sit differently. -->
+        @if (err.recovery === 'check') {
+          @if (agent().checkStatus) {
+            <button type="button" class="chat-error__check" (click)="checkStatus()">Check status</button>
+          }
+        } @else if (err.retryable && !retryHidden() && agent().retry) {
+          <button type="button" class="chat-error__retry" (click)="retry()">Retry response</button>
+        }
+        @if (err.detail) {
+          <span class="chat-error__detail">{{ err.detail }}</span>
+        }
+      </div>
+    }
+  `,
+})
+export class ChatErrorComponent {
+  protected readonly chatRuntime = injectChatRuntime();
+  readonly agent = input.required<Agent>();
+  /** Hide the generic Retry, which re-sends the whole request, when a narrower retry is already offered elsewhere. */
+  readonly retryHidden = input(false);
+
+  // `retry` and `checkStatus` are optional commands: each control is offered
+  // only while the agent has the command. A rejection is already published as
+  // the agent's error, so it is not left unhandled here.
+  protected retry(): void {
+    this.agent().retry?.().catch(() => undefined);
+  }
+
+  protected checkStatus(): void {
+    this.agent().checkStatus?.().catch(() => undefined);
+  }
+}

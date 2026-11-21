@@ -148,7 +148,6 @@ test('installs the Angular provider and the session contract beside the backend 
     '@threadplane/core',
     '@threadplane/langgraph',
     '@threadplane/ag-ui',
-    '@threadplane/chat',
   ]) {
     assert.equal(packageJson.dependencies[name], '*', name);
   }

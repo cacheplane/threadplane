@@ -27,8 +27,8 @@ const index: ApiIndex = {
     },
     {
       id: 'chat',
-      importPath: '@threadplane/chat',
-      packageName: '@threadplane/chat',
+      importPath: '@threadplane/angular/chat',
+      packageName: '@threadplane/angular/chat',
       project: 'chat',
       framework: 'angular',
       docLibrary: 'chat',
@@ -50,7 +50,7 @@ const index: ApiIndex = {
       name: 'ChatComponent',
       entrypointId: 'chat',
       kind: 'Class',
-      href: '/docs/api/chat/ChatComponent',
+      href: '/docs/api/angular/chat/ChatComponent',
       canonicalReference: 'chat!ChatComponent:class',
       isDeprecated: false,
       summary: 'Angular conversation.',
@@ -91,7 +91,7 @@ describe('API reference UI', () => {
     render(<ApiIndexView index={index} />);
     choose('Framework', 'React');
     expect(
-      screen.queryByRole('link', { name: '@threadplane/chat' })
+      screen.queryByRole('link', { name: '@threadplane/angular/chat' })
     ).toBeNull();
     expect(screen.queryByRole('link', { name: 'Chat' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Find an API'), {
@@ -139,14 +139,14 @@ describe('API reference UI', () => {
   });
   it('clears an incompatible import when the framework changes', () => {
     render(<ApiIndexView index={index} />);
-    choose('Import path', '@threadplane/chat');
+    choose('Import path', '@threadplane/angular/chat');
     choose('Framework', 'React');
     expect(
       screen.getByRole('link', { name: '@threadplane/react/chat' })
     ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Import path' }));
     expect(
-      screen.queryByRole('menuitemradio', { name: '@threadplane/chat' })
+      screen.queryByRole('menuitemradio', { name: '@threadplane/angular/chat' })
     ).toBeNull();
   });
 
@@ -164,7 +164,7 @@ describe('API reference UI', () => {
       screen.getByRole('link', { name: '@threadplane/react/chat' })
     ).toBeTruthy();
     expect(
-      screen.getByRole('link', { name: '@threadplane/chat' })
+      screen.getByRole('link', { name: '@threadplane/angular/chat' })
     ).toBeTruthy();
   });
 
@@ -191,7 +191,7 @@ describe('API reference UI', () => {
       screen.getByRole('link', { name: 'Chat (deprecated)' })
     ).toBeTruthy();
     expect(
-      screen.queryByRole('button', { name: '@threadplane/chat', exact: true })
+      screen.queryByRole('button', { name: '@threadplane/angular/chat', exact: true })
     ).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Back to Chat' }));
     expect(document.activeElement).toBe(
@@ -267,7 +267,7 @@ describe('API reference UI', () => {
     const heading = screen.getByRole('heading', { name: 'Chat', exact: true });
     fireEvent.keyDown(heading, { key: 'End' });
     expect(document.activeElement).toBe(
-      screen.getByRole('button', { name: '@threadplane/chat', exact: true })
+      screen.getByRole('button', { name: '@threadplane/angular/chat', exact: true })
     );
     fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Home' });
     expect(document.activeElement).toBe(

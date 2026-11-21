@@ -241,7 +241,7 @@ const CONTRACTS: StyleContract[] = [
   {
     file: 'landing.css',
     selector: '.install-dialog-command',
-    why: 'The install command is the primary CTA\'s entire payload — 774px of shell in a 470px pane, so the reader saw `npm install @threadplane/chat @threadplane/langgraph @langcha…`. It is one line with no meaningful breaks, so it must wrap rather than scroll. Losing this silently truncates the one string the page exists to hand over.',
+    why: 'The install command is the primary CTA\'s entire payload — 774px of shell in a 470px pane, so the reader saw `npm install @threadplane/angular @threadplane/langgraph @langcha…`. It is one line with no meaningful breaks, so it must wrap rather than scroll. Losing this silently truncates the one string the page exists to hand over.',
     requires: {
       'white-space': /white-space:\s*pre-wrap/,
       'overflow-wrap': /overflow-wrap:\s*anywhere/,

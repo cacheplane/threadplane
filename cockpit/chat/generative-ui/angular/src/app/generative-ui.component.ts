@@ -1,9 +1,9 @@
 import { exampleToolLabel } from '../../../../../shared/tool-presentation';
 import { Component, computed, viewChild } from '@angular/core';
-import { ChatComponent, ChatWelcomeSuggestionComponent, views } from '@threadplane/chat';
+import { ChatComponent, ChatWelcomeSuggestionComponent, views } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 import type { LangGraphSession } from '@threadplane/langgraph';
-import { signalStateStore } from '@threadplane/render';
+import { signalStateStore } from '@threadplane/angular/render';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 import { StatCardComponent } from './views/stat-card.component';

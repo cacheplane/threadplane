@@ -5,7 +5,7 @@ import {
   ChatComponent,
   ChatWelcomeSuggestionComponent,
   mockAgent,
-} from '@threadplane/chat';
+} from '@threadplane/angular/chat';
 import { COCKPIT_INSPECTION_PUBLISHER } from '@threadplane/cockpit-telemetry';
 import type { InspectionFrame } from '@threadplane/cockpit-runtime-bridge';
 import { StreamingComponent } from './streaming.component';

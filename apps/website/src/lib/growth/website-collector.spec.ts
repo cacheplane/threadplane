@@ -80,8 +80,8 @@ describe('bounded website collection', () => {
     const { collector, send, session } = setup();
     collector.view('/page-0');
     collector.view('/page-0');
-    collector.copied('npm i @threadplane/chat');
-    collector.copied('npm i @threadplane/chat');
+    collector.copied('npm i @threadplane/angular');
+    collector.copied('npm i @threadplane/angular');
     await collector.flush();
     const events = send.mock.calls[0][0];
     expect(events.map((event) => event.kind)).toEqual([
@@ -116,7 +116,7 @@ describe('bounded website collection', () => {
   it('does nothing while disabled', async () => {
     const { collector, send, schedule } = setup(false);
     collector.view('/page-1');
-    collector.copied('npm i @threadplane/chat');
+    collector.copied('npm i @threadplane/angular');
     await collector.flush();
     expect(send).not.toHaveBeenCalled();
     expect(schedule).not.toHaveBeenCalled();

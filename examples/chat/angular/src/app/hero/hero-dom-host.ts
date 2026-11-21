@@ -6,7 +6,7 @@
  *
  * Every selector matches an accessible name that the chat primitives commit to
  * publicly (`aria-label`, visible button text), so a DOM refactor inside
- * `@threadplane/chat` fails these tests rather than silently freezing the hero.
+ * `@threadplane/angular/chat` fails these tests rather than silently freezing the hero.
  */
 
 export interface CursorPoint {

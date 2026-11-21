@@ -5,12 +5,17 @@
     "declaration": false,
     "declarationMap": false,
     "inlineSources": false,
-    "types": ["vitest/globals"]
+    "types": [
+      "vitest/globals"
+    ]
   },
   "include": [
     "src/**/*.ts",
     "chat/src/**/*.ts",
+    "chat/debug/**/*.ts",
+    "chat/testing/**/*.ts",
     "markdown/src/**/*.ts",
+    "render/src/**/*.ts",
     "testing/src/**/*.ts"
   ],
   "exclude": []

@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed } from '@angular/core';
-import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
+import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 import type { Session } from '@threadplane/ag-ui';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
@@ -32,7 +32,7 @@ interface ExpenseDraft {
  * The whole point of this example: this component is byte-for-byte the same
  * kind of UI code every LangGraph-backed AG-UI example uses — `provideAgent`
  * + `injectAgent()` from `@threadplane/angular` over `createSession` from
- * `@threadplane/ag-ui`, the `@threadplane/chat`
+ * `@threadplane/ag-ui`, the `@threadplane/angular/chat`
  * primitives — while the backend is a genuinely non-LangGraph runtime
  * (agent-framework behind the agent-framework-ag-ui bridge).
  *

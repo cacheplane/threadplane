@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { inputFingerprint } from './consumer.mjs';
 import { frozenInputFingerprint } from './source-mirror.mjs';
+import { excludedSourcePath } from './source-policy.mjs';
 
 function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'native-inputs-'));
@@ -52,6 +53,12 @@ test('selected input hashes exclude private, generated and unrelated files', (t)
     'libs/core/src/index.ts',
     'libs/telemetry/project.json',
   ]);
+});
+
+test('the telemetry environment reader is an input and env files are not', () => {
+  assert.equal(excludedSourcePath('libs/telemetry/src/shared/env.ts'), false);
+  for (const path of ['libs/telemetry/.env', 'libs/telemetry/src/shared/.env.local', 'libs/core/src/env.ts', 'libs/telemetry/src/shared/env.js'])
+    assert.equal(excludedSourcePath(path), true, path);
 });
 
 test('a backend install-bridge stub is an input and the rest of its collector is not', (t) => {

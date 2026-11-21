@@ -1229,8 +1229,8 @@ describe('CI workflow', () => {
   // so these cases cannot pass against a separately maintained test regex.
   for (const [path, changed] of [
     ['libs/ag-ui/src/public-api.ts', true],
-    ['libs/chat/src/lib/compositions/chat/chat.component.ts', true],
-    ['libs/render/src/public-api.ts', true],
+    ['libs/angular/chat/src/lib/compositions/chat/chat.component.ts', true],
+    ['libs/angular/render/src/public-api.ts', true],
     ['libs/telemetry/src/browser/public-api.ts', true],
     ['libs/langgraph/src/public-api.ts', true],
     ['libs/core/src/index.ts', true],
@@ -1362,7 +1362,7 @@ describe('CI workflow', () => {
     const pattern = deployJob.match(/grep -E '([^']+)' >\/dev\/null/);
 
     assert.match(
-      'libs/chat/src/lib/styles/chat-sidenav.styles.ts',
+      'libs/angular/chat/src/lib/styles/chat-sidenav.styles.ts',
       new RegExp(pattern?.[1] ?? '')
     );
   });

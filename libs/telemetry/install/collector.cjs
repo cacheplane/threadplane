@@ -10,10 +10,9 @@ const { discoverGit } = require('./git-context.cjs');
 const { writeBridge } = require('./bridge.cjs');
 const ENDPOINT = 'https://threadplane.ai/api/growth/collect/v1/install';
 const PACKAGES = new Set([
-  '@threadplane/chat',
+  '@threadplane/angular',
   '@threadplane/langgraph',
   '@threadplane/ag-ui',
-  '@threadplane/render',
 ]);
 function sendBatch(batch, { timeoutMs = 2500 } = {}) {
   return new Promise((resolve) => {

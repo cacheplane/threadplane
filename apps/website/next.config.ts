@@ -104,8 +104,23 @@ export const nextConfig: WithNxOptions = {
       destination: '/privacy',
       permanent: true,
     },
+    // `@threadplane/chat` and `@threadplane/render` became the `chat` and
+    // `render` entry points of `@threadplane/angular`; their reference moved
+    // with them.
+    ...['chat', 'render'].flatMap((entry) => [
+      {
+        source: `/docs/api/${entry}/:path*`,
+        destination: `/docs/api/angular/${entry}/:path*`,
+        permanent: true,
+      },
+      {
+        source: `/api/markdown/api/${entry}/:path*`,
+        destination: `/api/markdown/api/angular/${entry}/:path*`,
+        permanent: true,
+      },
+    ]),
     // `provideChat()`, `ChatConfig`, and `CHAT_CONFIG` were removed from
-    // `@threadplane/chat`: no component ever read the token, so the API and its
+    // `@threadplane/angular/chat`: no component ever read the token, so the API and its
     // configuration guide documented a no-op. The pages are gone; delivered
     // links land on installation, which is where the real providers are.
     {

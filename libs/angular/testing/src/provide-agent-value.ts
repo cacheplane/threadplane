@@ -40,7 +40,7 @@ function lifecycleOf(agent: object): AgentLifecycle {
 /**
  * Provides an agent a test already holds, so the component under test receives
  * that exact object from `injectAgent()`. Use it to hand a component a mock,
- * such as `mockAgent()` from `@threadplane/chat`, or any hand-built agent.
+ * such as `mockAgent()` from `@threadplane/angular/chat`, or any hand-built agent.
  * Where the test wants the real agent over an in-memory session instead, use
  * `provideFakeAgent`.
  *

@@ -121,12 +121,12 @@ export const SOLUTIONS: SolutionConfig[] = [
       },
       {
         library: 'json-render',
-        pkg: '@threadplane/render',
+        pkg: '@threadplane/angular/render',
         role: 'Approval workflows rendered as structured UI — not chat messages. The agent proposes an action, renders a confirmation card, and waits for the human gate before proceeding.',
       },
       {
         library: 'Chat',
-        pkg: '@threadplane/chat',
+        pkg: '@threadplane/angular/chat',
         role: 'Debug overlay shows every tool call, interrupt, and state transition. Your compliance team can review exactly what happened, when, and why — in a UI they can understand.',
       },
     ],
@@ -212,12 +212,12 @@ export const SOLUTIONS: SolutionConfig[] = [
       },
       {
         library: 'json-render',
-        pkg: '@threadplane/render',
+        pkg: '@threadplane/angular/render',
         role: 'The agent emits chart specs, data tables, and KPI cards as structured render specs. Your Angular components render them with streaming JSON patches — live-updating visualizations as data arrives.',
       },
       {
         library: 'Chat',
-        pkg: '@threadplane/chat',
+        pkg: '@threadplane/angular/chat',
         role: 'Generative UI surfaces render charts and tables inline with the conversation. Users ask follow-up questions and see updated visualizations without leaving the chat.',
       },
     ],
@@ -230,7 +230,7 @@ export const SOLUTIONS: SolutionConfig[] = [
       {
         label: 'dashboard.component.ts — the view catalog',
         language: 'typescript',
-        source: `import { ChatComponent, views } from '@threadplane/chat';
+        source: `import { ChatComponent, views } from '@threadplane/angular/chat';
 import { injectAgent } from '@threadplane/angular';
 
 // Your components, keyed by the name the agent uses in its spec.
@@ -288,12 +288,12 @@ export class DashboardComponent {
       },
       {
         library: 'json-render',
-        pkg: '@threadplane/render',
+        pkg: '@threadplane/angular/render',
         role: 'The agent renders structured UI — order summaries, refund confirmations, knowledge base cards — instead of dumping text. Customers see clean, actionable information.',
       },
       {
         library: 'Chat',
-        pkg: '@threadplane/chat',
+        pkg: '@threadplane/angular/chat',
         role: 'Production-ready chat UI with streaming messages, tool call visibility, and interrupt panels. When the agent escalates, the human agent sees the full debug overlay with every step the AI took.',
       },
     ],
