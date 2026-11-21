@@ -283,6 +283,32 @@ export function projectSubagents(
         records.push(asRoot(record));
     }
     const before = prior.get(id);
+    // A finished child's turns are settled. A root MESSAGES_SNAPSHOT that
+    // lists none of them (a backend that routes a child through SUBAGENT
+    // events keeps its turns out of the root history) drops their records,
+    // which would empty the child; it keeps what it held instead.
+    if (
+      !records.length &&
+      terminal &&
+      before?.terminal === terminal &&
+      (before.messages.length || before.toolCalls.length)
+    ) {
+      const state = status(evidence, running, isEarlier);
+      if (
+        before.status === state &&
+        before.earlier === (isEarlier || undefined)
+      ) {
+        if (previous[index] !== before) changed = true;
+        return before;
+      }
+      changed = true;
+      const { earlier: _earlier, ...kept } = before;
+      return Object.freeze({
+        ...kept,
+        status: state,
+        ...(isEarlier && { earlier: true as const }),
+      }) as SessionSubagent;
+    }
     const state = status(evidence, running, isEarlier);
     // Only a child of the run that is going can still be streaming.
     const view = {
