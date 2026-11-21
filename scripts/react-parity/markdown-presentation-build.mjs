@@ -426,10 +426,16 @@ export function readPresentation(directory, provenance, { profile = 'markdown' }
   };
 }
 
+// `@threadplane/angular` holds the chat UI, whose required peers and
+// dependencies install with it in every consumer that installs Angular.
 export const presentationSeeds = [
   '@json-render/core',
   '@cacheplane/json-stream',
+  '@cacheplane/partial-json',
   '@cacheplane/partial-markdown',
+  '@angular/router',
+  'marked',
+  'zod',
   '@angular/core',
   '@angular/common',
   '@angular/compiler',
@@ -523,8 +529,14 @@ function presentationLocals(profile) {
     ].includes(profile),
     `Unknown presentation profile: ${profile}`
   );
-  if (profile === 'markdown' || profile === 'render-state') return localNames;
-  if (profile === 'a2ui-surfaces') return [...localNames, '@threadplane/a2ui'];
+  // `@threadplane/angular` requires a2ui and telemetry for its chat UI.
+  const angularChatLocals = ['@threadplane/a2ui', '@threadplane/telemetry'];
+  if (
+    profile === 'markdown' ||
+    profile === 'render-state' ||
+    profile === 'a2ui-surfaces'
+  )
+    return [...localNames, ...angularChatLocals];
   if (profile === 'react-native-a2ui-langgraph')
     return ['core', 'content', 'a2ui', 'react', 'langgraph'].map(
       (name) => '@threadplane/' + name
@@ -535,8 +547,6 @@ function presentationLocals(profile) {
     );
   if (profile === 'react-render')
     return localNames.filter((name) => name !== '@threadplane/angular');
-  // `@threadplane/angular` requires a2ui and telemetry for its chat UI.
-  const angularChatLocals = ['@threadplane/a2ui', '@threadplane/telemetry'];
   if (profile === 'angular-foundation')
     return [...localNames.filter((name) => name !== '@threadplane/react'), ...angularChatLocals];
   const excluded =
@@ -716,11 +726,11 @@ export function derivePresentationConsumer(
     Object.keys(tarballs).sort(),
     [...locals].sort(),
     profile === 'markdown'
-      ? 'Exactly four Markdown foundation tarballs required'
+      ? 'Exactly six Markdown foundation tarballs required'
       : profile === 'a2ui-surfaces'
-      ? 'Exactly five A2UI surfaces tarballs required'
+      ? 'Exactly six A2UI surfaces tarballs required'
       : profile === 'render-state'
-      ? 'Exactly four render-state tarballs required'
+      ? 'Exactly six render-state tarballs required'
       : profile === 'react-native-a2ui-langgraph'
       ? 'Exactly five native React A2UI LangGraph tarballs required'
       : profile === 'react-native-a2ui-ag-ui'
@@ -780,7 +790,7 @@ export function derivePresentationConsumer(
       [...seeds].sort(),
       [...selectedSeeds].sort(),
       `Exactly ${
-        profile === 'a2ui-surfaces' || profile === 'render-state' ? 'eighteen' : react ? 'eleven' : profile === 'angular-foundation' ? 'eighteen' : 'nineteen'
+        profile === 'a2ui-surfaces' || profile === 'render-state' ? 'twenty-two' : react ? 'eleven' : profile === 'angular-foundation' ? 'eighteen' : 'nineteen'
       } selected ${framework} seeds required`
     );
   }

@@ -246,8 +246,8 @@ export async function verifyRenderState({retain,launch}={}) {
   if (retain) {assert.equal(existsSync(temporary),false,'Retain requires NEW_DIRECTORY');mkdirSync(temporary);}
   const cleanup={retainedConsumer:Boolean(retain)};
   try {
-    const tarballs=packLocalArtifacts(root,temporary,['core','content','react','angular']);
-    assert.equal(Object.keys(tarballs).length,4,'Exactly four mixed borrower artifacts');
+    const tarballs=packLocalArtifacts(root,temporary,['core','content','react','angular','a2ui','telemetry']);
+    assert.equal(Object.keys(tarballs).length,6,'Exactly six mixed borrower artifacts');
     const expected=Object.fromEntries(Object.keys(tarballs).map(name=>[name,fileHashes(join(temporary,'packed-'+name.split('/')[1],'package'))]));
     const consumer=join(temporary,'consumer');mkdirSync(consumer);
     const rootLockSha256=sha256(readFileSync(join(root,'package-lock.json')));

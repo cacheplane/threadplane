@@ -43,7 +43,7 @@ const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
 const writeJson = (path, value) =>
   writeFileSync(path, JSON.stringify(value, null, 2) + '\n');
 export const buildCommand =
-  'NX_DAEMON=false NX_TUI=false npx nx run-many -t build -p content,core,react,angular --skip-nx-cache --outputStyle=stream';
+  'NX_DAEMON=false NX_TUI=false npx nx run-many -t build -p content,core,react,angular,a2ui,telemetry --skip-nx-cache --outputStyle=stream';
 export const sequence = [
   'Append',
   'Remove React',
@@ -493,7 +493,7 @@ export async function verifyBrowser(browser, url) {
 }
 
 export async function verifyMarkdown({ retain } = {}) {
-  for (const project of ['content', 'core', 'react', 'angular'])
+  for (const project of ['content', 'core', 'react', 'angular', 'a2ui', 'telemetry'])
     assert.ok(
       existsSync(join(root, 'dist/libs', project, 'package.json')),
       `Missing prerequisites. Run: ${buildCommand}`
@@ -513,6 +513,8 @@ export async function verifyMarkdown({ retain } = {}) {
       'core',
       'react',
       'angular',
+      'a2ui',
+      'telemetry',
     ]);
     const expected = Object.fromEntries(
       Object.keys(tarballs).map((name) => [
