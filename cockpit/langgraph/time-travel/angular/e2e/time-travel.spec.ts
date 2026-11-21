@@ -48,6 +48,9 @@ test('time-travel: fork starts at the selected checkpoint, not the thread tip', 
   await expect
     .poll(async () => (await readState()).values.messages.length)
     .toBe(4);
+  const originalTipId = (await readState()).checkpoint.checkpoint_id;
+  if (!originalTipId)
+    throw new Error('Completed second turn did not produce a checkpoint');
 
   const forkRun = page.waitForRequest(
     (request) =>
@@ -84,4 +87,50 @@ test('time-travel: fork starts at the selected checkpoint, not the thread tip', 
       'This reply belongs to the checkpoint fork.',
     ]);
   await expect(page.locator('.row--active .id')).toHaveText(checkpointId);
+
+  // The thread now has two branches from that checkpoint. Selecting a
+  // checkpoint must select the branch it is on: a branch is the fork choices
+  // that lead to a checkpoint, not the checkpoint's own id, and a value that
+  // names no branch silently shows the newest one instead.
+  const forkTipId = (await readState()).checkpoint.checkpoint_id;
+  if (!forkTipId) throw new Error('The fork did not produce a checkpoint');
+  expect(forkTipId).not.toBe(originalTipId);
+  const row = (id: string) => page.locator('.row').filter({ hasText: id });
+  const branch = page.getByTestId('selected-branch');
+  // With no selection the timeline marks the latest path: the fork.
+  await expect(row(forkTipId)).toHaveAttribute('data-on-branch', 'true');
+  await expect(row(originalTipId)).toHaveAttribute('data-on-branch', 'false');
+  await expect(row(checkpointId)).toHaveAttribute('data-on-branch', 'true');
+  await expect(branch).toHaveText('Branch: latest');
+
+  await row(originalTipId)
+    .getByRole('button', { name: 'Select', exact: true })
+    .click();
+  await expect(page.locator('.row--active .id')).toHaveText(originalTipId);
+  // The original path is now the one shown, and the fork is not.
+  await expect(row(originalTipId)).toHaveAttribute('data-on-branch', 'true');
+  await expect(row(forkTipId)).toHaveAttribute('data-on-branch', 'false');
+  // The checkpoint both branches grew from is on either.
+  await expect(row(checkpointId)).toHaveAttribute('data-on-branch', 'true');
+  await expect(branch).not.toHaveText('Branch: latest');
+  // The branch is named by the first checkpoint of the chosen alternative,
+  // which is one the timeline lists on that branch.
+  const selected = ((await branch.textContent()) ?? '').replace('Branch: ', '').trim();
+  expect(selected).not.toBe('');
+  await expect(row(selected)).toHaveAttribute('data-on-branch', 'true');
+
+  // Selecting is a view selection: the transcript still shows the fork, and
+  // an ordinary Send continues that conversation, not the selected branch.
+  await expect(
+    page
+      .locator('chat-message[data-role="assistant"][data-streaming="false"]')
+      .last()
+  ).toContainText('This reply belongs to the checkpoint fork.');
+
+  // Selecting a checkpoint on the fork returns the timeline to it.
+  await row(forkTipId)
+    .getByRole('button', { name: 'Select', exact: true })
+    .click();
+  await expect(row(forkTipId)).toHaveAttribute('data-on-branch', 'true');
+  await expect(row(originalTipId)).toHaveAttribute('data-on-branch', 'false');
 });
