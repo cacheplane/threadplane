@@ -6159,6 +6159,42 @@
       "reason": "Native component. Native semantic Markdown node and recursive children through the typed registry; preserve streaming identity and custom overrides."
     },
     {
+      "id": "export:libs/angular/chat/src/public-api.ts#ChatMathLoader",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "planned",
+      "reason": "Angular DI seam for the application's KaTeX. React takes the same application-supplied renderer through the Markdown renderMath prop."
+    },
+    {
+      "id": "export:libs/angular/chat/src/public-api.ts#ChatMathModule",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "planned",
+      "reason": "Angular DI seam for the application's KaTeX. React takes the same application-supplied renderer through the Markdown renderMath prop."
+    },
+    {
+      "id": "export:libs/angular/chat/src/public-api.ts#ChatMathRenderer",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "planned",
+      "reason": "Angular DI seam for the application's KaTeX. React takes the same application-supplied renderer through the Markdown renderMath prop."
+    },
+    {
+      "id": "export:libs/angular/chat/src/public-api.ts#provideChatMath",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "angular-only",
+      "status": "planned",
+      "reason": "Angular DI seam for the application's KaTeX. React takes the same application-supplied renderer through the Markdown renderMath prop."
+    },
+    {
       "id": "export:libs/angular/chat/src/public-api.ts#MarkdownMathComponent",
       "taskIds": [
         "T26"
