@@ -94,11 +94,18 @@ export const SDK_ENTRYPOINTS: SdkEntrypoint[] = definitions.map(
   }
 );
 
+// Entry points another documented entry re-exports in full, by import path
+// and source. Their symbols are documented once, under the re-exporting entry.
+const REEXPORTED_ENTRIES: Readonly<Record<string, string>> = {
+  '@threadplane/telemetry/browser/development':
+    'libs/telemetry/src/browser/development/public-api.ts',
+};
+const EXCLUDED_ENTRY_SOURCES = new Set(Object.values(REEXPORTED_ENTRIES));
+/** The re-exported entry points, which the API generator resolves to source. */
+export function reexportedEntries(): Readonly<Record<string, string>> {
+  return REEXPORTED_ENTRIES;
+}
 /** Assets and install implementation exports are intentionally outside TypeScript reference. */
-// Angular entry points whose symbols another documented entry re-exports.
-const EXCLUDED_ENTRY_SOURCES = new Set([
-  'libs/telemetry/src/browser/development/public-api.ts',
-]);
 export const EXCLUDED_EXPORTS = new Set([
   // The development runtime alone; `telemetry/browser` re-exports and
   // documents every symbol it has.
