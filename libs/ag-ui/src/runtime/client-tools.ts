@@ -50,6 +50,8 @@ interface CapturedClientTool {
   readonly description: string;
   readonly parameters: unknown;
   readonly followUp: boolean;
+  /** Skips the execution store: running the call twice is harmless. */
+  readonly idempotent: boolean;
   readonly handler: FunctionToolDefinition['handler'];
 }
 
@@ -60,7 +62,13 @@ export function captureClientTools(
   const captured = new Map<string, CapturedClientTool>();
   for (const name of Object.keys(tools)) {
     const definition = tools[name];
-    const { description, parameters, followUp = true, handler } = definition;
+    const {
+      description,
+      parameters,
+      followUp = true,
+      idempotent,
+      handler,
+    } = definition;
     if (
       typeof description !== 'string' ||
       typeof followUp !== 'boolean' ||
@@ -73,6 +81,7 @@ export function captureClientTools(
         description,
         parameters: copyData(parameters, true),
         followUp,
+        idempotent: idempotent === true,
         handler,
       })
     );

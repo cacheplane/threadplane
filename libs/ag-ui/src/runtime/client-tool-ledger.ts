@@ -157,6 +157,25 @@ function ownResult(value: unknown, ancestors = new Set<object>()): unknown {
   }
 }
 
+/** The result `complete` would retain for a handler value, captured once so an
+ * execution store records exactly what the session then publishes. */
+export function captureClientToolResult(
+  value: unknown
+):
+  | { readonly ok: true; readonly value: unknown }
+  | { readonly ok: false; readonly error: string } {
+  try {
+    const captured = ownResult(value);
+    assertEncodable(captured);
+    return Object.freeze({ ok: true, value: captured });
+  } catch {
+    return Object.freeze({
+      ok: false,
+      error: 'Client tool result is not portable or encodable',
+    });
+  }
+}
+
 /** Session-lifetime facts only. The command owner executes handlers, decides
  * cancellation/continuation and invokes the fetch guard; this module does not. */
 export function createClientToolLedger<C extends Record<string, ToolContract>>(

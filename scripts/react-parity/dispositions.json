@@ -19970,6 +19970,17 @@
       "treatment": "react",
       "status": "in-progress",
       "note": "RenderPendingFallback: the default readiness placeholder for every registered component, mirroring Angular defineAngularRegistry's DefaultFallbackComponent."
+    },
+    {
+      "id": "source:libs/ag-ui/src/runtime/tool-provenance.ts",
+      "taskIds": [
+        "T12",
+        "T13"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Private copy of the LangGraph runtime's client-tool invocation and result encoding for the AG-UI execution store; excluded from public exports and legacy Angular reachability.",
+      "note": "Writes the same canonical invocation string and result envelope as libs/langgraph/src/runtime/tool-provenance.ts so one ToolExecutionStore can serve both runtimes; tool-provenance.spec.ts pins the two copies to identical output."
     }
   ]
 }
