@@ -137,6 +137,7 @@
       "executor": "@nx/playwright:playwright",
       "cache": false,
       "dependsOn": [
+        "generate-api-docs",
         {
           "target": "build",
           "projects": [
@@ -160,6 +161,7 @@
       "executor": "@nx/playwright:playwright",
       "cache": false,
       "dependsOn": [
+        "generate-api-docs",
         {
           "target": "build",
           "projects": [
@@ -189,6 +191,7 @@
       "executor": "@nx/playwright:playwright",
       "cache": false,
       "dependsOn": [
+        "generate-api-docs",
         {
           "target": "prepare-fixture",
           "projects": [
@@ -217,6 +220,7 @@
       "executor": "@nx/playwright:playwright",
       "cache": false,
       "dependsOn": [
+        "generate-api-docs",
         {
           "target": "fixture-test",
           "projects": [
@@ -256,6 +260,7 @@
       "executor": "@nx/playwright:playwright",
       "cache": false,
       "dependsOn": [
+        "generate-api-docs",
         {
           "target": "prepare-fixture",
           "projects": [
@@ -317,6 +322,7 @@
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "dependsOn": [
+        "generate-api-docs",
         {
           "target": "fixture-test",
           "projects": ["cockpit-chat-a2ui-react"]
