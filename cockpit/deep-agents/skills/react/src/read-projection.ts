@@ -133,10 +133,11 @@ export function projectReads(
       if (!skill) continue;
       // A duplicate call is one unavailable row, never two successful reads.
       if (output.some((r) => r.id === call.id)) continue;
+      // A failed call holds its tool text as `error`, a finished one as `result`.
+      const text = call.status === 'error' ? call.error : call.result;
       const result =
-        typeof call.result === 'string' &&
-        call.result.length <= LIMITS.fieldText
-          ? call.result
+        typeof text === 'string' && text.length <= LIMITS.fieldText
+          ? text
           : undefined;
       const row = {
         id: call.id,
@@ -155,7 +156,7 @@ export function projectReads(
         offset = Object.hasOwn(call.args, 'offset') ? call.args.offset : 0;
       if (
         ids.get(call.id) !== 1 ||
-        (call.result !== undefined && result === undefined) ||
+        (text !== undefined && result === undefined) ||
         !Number.isSafeInteger(limit) ||
         !Number.isSafeInteger(offset)
       )
@@ -183,7 +184,7 @@ export function projectReads(
           rawCall.name !== call.name ||
           !sameData(rawCall.args, call.args) ||
           rawResult.content !== result ||
-          call.status !== 'complete'
+          call.status !== (rawResult.status === 'error' ? 'error' : 'complete')
         )
           kind = 'unavailable';
         else if (rawResult.status !== ownedAuthority.rawToolStatuses[call.id])
