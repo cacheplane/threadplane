@@ -19,7 +19,8 @@ export const appConfig: ApplicationConfig = {
             clientOptions: connection.clientOptions,
             threadId: context.threadId,
             onThreadId: context.onThreadId,
-            onOperationFailure: context.reportOperationFailure,
+            reportOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
             // Keep each checkpoint's state, and read the history page again
             // after every run: the timeline lists `agent.checkpoints()`.
             historyState: true,

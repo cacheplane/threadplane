@@ -389,7 +389,7 @@ function canonicalMatches(
       typeof t.id !== 'string' ||
       !t.id ||
       catalog.has(t.id) ||
-      !['complete', 'pending'].includes(t.status as string)
+      !['complete', 'pending', 'error'].includes(t.status as string)
     )
       return false;
     catalog.set(t.id, t);
@@ -481,9 +481,10 @@ function canonicalMatches(
       if (
         !t ||
         !pending.delete(wire.tool_call_id as string) ||
-        t.status !== 'complete' ||
-        t.result !== wire.content ||
         !['success', 'error'].includes(wire.status as string) ||
+        // A failed tool call must be held as failed, never as a result.
+        t.status !== (wire.status === 'error' ? 'error' : 'complete') ||
+        (wire.status === 'error' ? t.error : t.result) !== wire.content ||
         (wire.name !== t.name &&
           !(
             wire.status === 'error' &&

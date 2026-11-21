@@ -6,6 +6,9 @@ import {
 import {
   agentProviderModule,
   auditRuntimeTargetSource,
+  contextDevelopmentKey,
+  defaultDeprecatedReporterOptionNames,
+  defaultDirectoryReporterOptionNames,
   defaultReporterOptionNames,
   hasExactImportBinding,
   inspectRuntimeTargetSource,
@@ -43,7 +46,11 @@ const libsRoot = fileURLToPath(new URL('../../libs/', import.meta.url));
  * source by syntax: the named interface or alias, what it extends, and the
  * types an alias is built from. Read-only; the audit never edits a library.
  */
-function declaredOptionMembers(directory: string, rootName: string): string[] {
+function declaredOptionMembers(
+  directory: string,
+  rootName: string,
+  include: 'all' | 'current' | 'deprecated' = 'all'
+): string[] {
   const interfaces = new Map<string, ts.InterfaceDeclaration[]>();
   const aliases = new Map<string, ts.TypeAliasDeclaration>();
   const visitDirectory = (current: string): void => {
@@ -81,7 +88,14 @@ function declaredOptionMembers(directory: string, rootName: string): string[] {
   const seen = new Set<string>();
   const addMembers = (members: ts.NodeArray<ts.TypeElement>): void => {
     for (const member of members) {
-      if (member.name && ts.isIdentifier(member.name)) {
+      if (!member.name || !ts.isIdentifier(member.name)) continue;
+      // A member marked `@deprecated` is still declared, and still read by
+      // the library, but it is not a name new wiring may use.
+      const deprecated = ts.getJSDocDeprecatedTag(member) !== undefined;
+      if (
+        include === 'all' ||
+        (include === 'deprecated') === deprecated
+      ) {
         names.add(member.name.text);
       }
     }
@@ -126,35 +140,54 @@ const sessionOptionMembers: Record<CompatibleRuntimeAdapter, string[]> = {
   ),
 };
 
+const sessionOptionSources: Record<CompatibleRuntimeAdapter, string> = {
+  langgraph: resolve(libsRoot, 'langgraph/src/runtime'),
+  'ag-ui': resolve(libsRoot, 'ag-ui/src/runtime'),
+};
+const reporterNamesOf = (
+  adapter: CompatibleRuntimeAdapter,
+  include: 'current' | 'deprecated'
+): string[] =>
+  declaredOptionMembers(
+    sessionOptionSources[adapter],
+    'SessionOptions',
+    include
+  ).filter((name) => /OperationFailure$/.test(name));
+
 /**
  * The option each backend's session takes the operation-failure reporter
- * under, read from the session option interfaces rather than assumed. The two
- * sessions name it differently today (2026-11-20) and a library change is
- * making them agree; reading the declared names lets the audit follow that
- * change, in either direction and through a period where both names exist,
- * without an edit here.
+ * under, read from the session option interfaces rather than assumed, so a
+ * rename in a library is followed without an edit here. Both sessions take it
+ * as `reportOperationFailure`. A name the interface still declares but marks
+ * `@deprecated` (the LangGraph session's `onOperationFailure`) is read apart:
+ * it works, and the audit rejects it so no application is left on a name that
+ * is going away.
  */
 const reporterOptionNames: ReporterOptionNames = {
-  langgraph: sessionOptionMembers.langgraph.filter((name) =>
-    /OperationFailure$/.test(name)
-  ),
-  'ag-ui': sessionOptionMembers['ag-ui'].filter((name) =>
-    /OperationFailure$/.test(name)
-  ),
+  langgraph: reporterNamesOf('langgraph', 'current'),
+  'ag-ui': reporterNamesOf('ag-ui', 'current'),
+};
+const deprecatedReporterOptionNames: ReporterOptionNames = {
+  langgraph: reporterNamesOf('langgraph', 'deprecated'),
+  'ag-ui': reporterNamesOf('ag-ui', 'deprecated'),
 };
 const directoryOptionMembers = declaredOptionMembers(
   resolve(libsRoot, 'langgraph/src/runtime'),
   'LangGraphThreadDirectoryOptions'
 );
 /**
- * The same for the thread directory. It declares no reporter option today, so
- * a refused thread-list request is not reported and no wiring can change
- * that; the audit starts requiring the reporter when the option appears.
+ * The same for the thread directory, which takes the reporter as
+ * `reportOperationFailure`. The audit requires it because this list is not
+ * empty; were the option removed, the requirement would go with it.
  */
 const directoryReporterOptionNames = directoryOptionMembers.filter((name) =>
   /OperationFailure$/.test(name)
 );
-const auditOptions = { reporterOptionNames, directoryReporterOptionNames };
+const auditOptions = {
+  reporterOptionNames,
+  deprecatedReporterOptionNames,
+  directoryReporterOptionNames,
+};
 
 /** Fixture source in the canonical wiring, for the positive and negative cases. */
 const fixtureImports: Record<CompatibleRuntimeAdapter, string> = {
@@ -175,10 +208,13 @@ const fixtureSessionOptions: Record<CompatibleRuntimeAdapter, string> = {
         clientOptions: connection.clientOptions,
         threadId: context.threadId,
         onThreadId: context.onThreadId,
-        ${defaultReporterOptionNames.langgraph[0]}: context.reportOperationFailure,`,
+        ${defaultReporterOptionNames.langgraph[0]}: context.reportOperationFailure,
+        developmentRuntime: context.developmentRuntime,`,
   'ag-ui': `url: connection.url,
-        threadId: context.threadId ?? undefined,
-        ${defaultReporterOptionNames['ag-ui'][0]}: context.reportOperationFailure,`,
+        threadId: context.threadId,
+        onThreadId: context.onThreadId,
+        ${defaultReporterOptionNames['ag-ui'][0]}: context.reportOperationFailure,
+        developmentRuntime: context.developmentRuntime,`,
 };
 const fixtureSessionMember = (
   adapter: CompatibleRuntimeAdapter,
@@ -1136,6 +1172,8 @@ describe('cockpit capability wiring', () => {
       changed(provider, 'transport: new', '...unsafeOverrides, transport: new'),
       // The transport is what reports a refused request for this session.
       changed(provider, 'context.reportOperationFailure', 'undefined'),
+      // The transport replaces the connection, not the development relay.
+      changed(provider, 'developmentRuntime: context.developmentRuntime,', ''),
       changed(provider, /clientOptions,(\s+)context\./, '{},$1context.'),
       changed(provider, 'threadId: context.threadId,', "threadId: 'fixed',"),
       changed(provider, 'onThreadId: context.onThreadId,', ''),
@@ -1930,10 +1968,10 @@ describe('cockpit capability wiring', () => {
       import { AGENT_CLIENT_OPTIONS, provideThreadDirectory } from '@threadplane/angular';
       import { createLangGraphThreadDirectory, type LangGraphClientOptions } from '@threadplane/langgraph';
     `;
-    const contextOptions =
-      'apiUrl: connection.apiUrl, clientOptions: context.clientOptions as LangGraphClientOptions | undefined,';
-    const connectionOptions =
-      'apiUrl: connection.apiUrl, clientOptions: connection.clientOptions,';
+    const reporterOption =
+      'reportOperationFailure: context.reportOperationFailure,';
+    const contextOptions = `apiUrl: connection.apiUrl, clientOptions: context.clientOptions as LangGraphClientOptions | undefined, ${reporterOption}`;
+    const connectionOptions = `apiUrl: connection.apiUrl, clientOptions: connection.clientOptions, ${reporterOption}`;
     const directoryReturn = (options: string) =>
       `return { createDirectory: (context) => createLangGraphThreadDirectory({ ${options} }) };`;
     const directoryProvider = (options: string) =>
@@ -2152,9 +2190,9 @@ describe('cockpit capability wiring', () => {
         .join('\n')
     ).toMatch(/a LangGraph thread directory cannot list the threads of an ag-ui agent/);
 
-    // The directory's own refused requests. Today it has no option for the
-    // reporter, so one passed anyway is dropped; once it declares an option,
-    // a directory wired without it is the mistake.
+    // The directory's own refused requests. The directory takes the host's
+    // reporter as `reportOperationFailure`, so a directory wired without it
+    // is the mistake: its refused requests would never reach the cockpit.
     const withDirectoryReporter = (source: string, names: string[]) =>
       inspectRuntimeTargetSource(
         source,
@@ -2163,46 +2201,56 @@ describe('cockpit capability wiring', () => {
         undefined,
         { directoryReporterOptionNames: names }
       );
-    const reportingSource = appConfig(
-      directoryProvider(
-        `${connectionOptions} reportOperationFailure: context.reportOperationFailure,`
+    expect(inspect(directSource).issues).toEqual([]);
+    expect(
+      inspect(directSource).threadDirectoryProviders.map(
+        ({ canonical }) => canonical
       )
-    );
-    expect(details(reportingSource)).toMatch(
-      /passed as reportOperationFailure, which the thread directory does not accept; the reporter is dropped/
-    );
-    expect(
-      withDirectoryReporter(reportingSource, ['reportOperationFailure']).issues
-    ).toEqual([]);
-    expect(
-      withDirectoryReporter(
-        reportingSource,
-        ['reportOperationFailure']
-      ).threadDirectoryProviders.map(({ canonical }) => canonical)
     ).toEqual([true]);
-    const silent = withDirectoryReporter(directSource, [
-      'reportOperationFailure',
-    ]);
-    expect(silent.threadDirectoryProviders[0].canonical).toBe(false);
-    expect(silent.issues).toEqual([
-      {
-        kind: 'thread-directory-wiring',
-        detail:
-          "createLangGraphThreadDirectory must be given the provider context's reportOperationFailure as reportOperationFailure",
-      },
-    ]);
+    const silentSource = changed(directSource, reporterOption, '');
+    for (const silent of [
+      // The audit's default, and the name read from the directory's options.
+      inspect(silentSource),
+      withDirectoryReporter(silentSource, directoryReporterOptionNames),
+    ]) {
+      expect(silent.threadDirectoryProviders[0].canonical).toBe(false);
+      expect(silent.issues).toEqual([
+        {
+          kind: 'thread-directory-wiring',
+          detail:
+            "createLangGraphThreadDirectory must be given the provider context's reportOperationFailure as reportOperationFailure",
+        },
+      ]);
+    }
+    expect(mismatches(silentSource)).toContain(directoryMismatch);
     expect(
-      withDirectoryReporter(
+      inspect(
         changed(
-          reportingSource,
+          directSource,
           'reportOperationFailure: context.reportOperationFailure',
           'reportOperationFailure: () => undefined'
-        ),
-        ['reportOperationFailure']
+        )
       ).issues.map(({ detail }) => detail)
     ).toEqual([
       "reportOperationFailure must be the provider context's reportOperationFailure",
     ]);
+    expect(
+      details(
+        changed(directSource, 'reportOperationFailure:', 'onOperationFailure:')
+      )
+    ).toMatch(
+      /passed as onOperationFailure, which the thread directory does not accept \(it takes reportOperationFailure\); the reporter is dropped/
+    );
+    // The audit follows the names it is told: a directory that declared no
+    // reporter option could not be given one.
+    expect(
+      withDirectoryReporter(directSource, [])
+        .issues.map(({ detail }) => detail)
+        .join('\n')
+    ).toMatch(
+      /passed as reportOperationFailure, which the thread directory does not accept; the reporter is dropped/
+    );
+    expect(withDirectoryReporter(silentSource, []).issues).toEqual([]);
 
     // The registration array itself must stay explicit.
     const trailingSpread = changed(
@@ -2239,8 +2287,14 @@ describe('cockpit capability wiring', () => {
     // The session rules stand on these facts. They are read from the library
     // sources so that a rename is followed, and a removal is named here
     // rather than surfacing as 35 unexplained application failures.
-    expect(reporterOptionNames.langgraph).not.toEqual([]);
-    expect(reporterOptionNames['ag-ui']).not.toEqual([]);
+    expect(reporterOptionNames.langgraph).toEqual(['reportOperationFailure']);
+    expect(reporterOptionNames['ag-ui']).toEqual(['reportOperationFailure']);
+    // Still declared, marked `@deprecated`: read apart so it is rejected.
+    expect(deprecatedReporterOptionNames.langgraph).toEqual([
+      'onOperationFailure',
+    ]);
+    expect(deprecatedReporterOptionNames['ag-ui']).toEqual([]);
+    expect(sessionOptionMembers.langgraph).toContain('onOperationFailure');
     expect(sessionOptionMembers.langgraph).toEqual(
       expect.arrayContaining([
         'apiUrl',
@@ -2254,9 +2308,14 @@ describe('cockpit capability wiring', () => {
     expect(sessionOptionMembers['ag-ui']).toEqual(
       expect.arrayContaining(['url', 'threadId', 'agent', 'fetch'])
     );
-    // The AG-UI session names its own thread and takes no callback for it.
-    // If it gains one, the audit's AG-UI contract must start requiring it.
-    expect(sessionOptionMembers['ag-ui']).not.toContain('onThreadId');
+    // Both sessions take the context's development-install relay under the
+    // context's own name, which is the one name the audit requires.
+    expect(providerContextKeys.has(contextDevelopmentKey)).toBe(true);
+    expect(sessionOptionMembers.langgraph).toContain(contextDevelopmentKey);
+    expect(sessionOptionMembers['ag-ui']).toContain(contextDevelopmentKey);
+    // The AG-UI session names a new conversation's thread and reports it
+    // through `onThreadId`, which the audit's AG-UI contract requires.
+    expect(sessionOptionMembers['ag-ui']).toContain('onThreadId');
     expect(
       declaredOptionMembers(
         resolve(libsRoot, 'angular/src'),
@@ -2266,9 +2325,11 @@ describe('cockpit capability wiring', () => {
     expect(directoryOptionMembers).toEqual(
       expect.arrayContaining(['apiUrl', 'clientOptions', 'client'])
     );
-    // The directory factory is offered the reporter too. Whether the
-    // directory can take it is read from its options (today it cannot), and
-    // the audit requires it from the day the options declare it.
+    // The directory factory is offered the reporter too, and the directory
+    // takes it: the name is read from its options, and the audit requires it.
+    expect(directoryReporterOptionNames).toEqual(
+      defaultDirectoryReporterOptionNames
+    );
     expect(
       declaredOptionMembers(
         resolve(libsRoot, 'angular/src'),
@@ -2309,9 +2370,18 @@ describe('cockpit capability wiring', () => {
   it('accepts every correct form of the session wiring', () => {
     expect(sessionIssues('langgraph', langGraphOptions)).toEqual([]);
     expect(sessionIssues('ag-ui', agUiOptions)).toEqual([]);
-    // The AG-UI session's thread option needs no `?? undefined` to be wired.
+    // The AG-UI session takes `threadId: null` for a new conversation, so the
+    // applications pass the context's value as it is. The `?? undefined` they
+    // needed before that still reads as the context's thread.
     expect(
-      sessionIssues('ag-ui', changed(agUiOptions, ' ?? undefined', ''))
+      sessionIssues(
+        'ag-ui',
+        changed(
+          agUiOptions,
+          'threadId: context.threadId,',
+          'threadId: context.threadId ?? undefined,'
+        )
+      )
     ).toEqual([]);
     // Options that belong to the application, not to the connection.
     expect(
@@ -2334,13 +2404,14 @@ describe('cockpit capability wiring', () => {
       inspect(
         `provideAgent(${fixtureFactory(
           'langgraph',
-          `return { createSession: ({ threadId, onThreadId, reportOperationFailure }) => createSession({
+          `return { createSession: ({ threadId, onThreadId, reportOperationFailure, developmentRuntime }) => createSession({
             apiUrl: connection.apiUrl,
             assistantId: connection.assistantId,
             clientOptions: connection.clientOptions,
             threadId,
             onThreadId,
             ${langGraphReporter}: reportOperationFailure,
+            developmentRuntime,
           }) };`
         )})`
       )
@@ -2349,13 +2420,14 @@ describe('cockpit capability wiring', () => {
       inspect(
         `provideAgent(${fixtureFactory(
           'langgraph',
-          `return { createSession: ({ threadId: thread, onThreadId: created, reportOperationFailure: report }) => createSession({
+          `return { createSession: ({ threadId: thread, onThreadId: created, reportOperationFailure: report, developmentRuntime: relay }) => createSession({
             apiUrl: connection.apiUrl,
             assistantId: connection.assistantId,
             clientOptions: connection.clientOptions,
             threadId: thread,
             onThreadId: created,
             ${langGraphReporter}: report,
+            developmentRuntime: relay,
           }) };`
         )})`
       )
@@ -2510,9 +2582,28 @@ describe('cockpit capability wiring', () => {
     [
       'a session that ignores the thread it is asked to open',
       'ag-ui',
-      () => changed(agUiOptions, 'threadId: context.threadId ?? undefined,', ''),
+      () => changed(agUiOptions, 'threadId: context.threadId,', ''),
       ['session-context-wiring'],
       /threadId must be the provider context's threadId/,
+    ],
+    [
+      'an AG-UI session whose own thread id is never reported to the agent',
+      'ag-ui',
+      () => changed(agUiOptions, 'onThreadId: context.onThreadId,', ''),
+      ['session-context-wiring'],
+      /onThreadId must be the provider context's onThreadId: a session that does not report the thread it names or creates leaves the agent without a thread id/,
+    ],
+    [
+      'an AG-UI thread callback that bypasses the agent',
+      'ag-ui',
+      () =>
+        changed(
+          agUiOptions,
+          'onThreadId: context.onThreadId',
+          'onThreadId: (id: string) => remember(id)'
+        ),
+      ['session-context-wiring'],
+      /onThreadId must be the provider context's onThreadId/,
     ],
     [
       'a created thread that is never reported to the agent',
@@ -2576,8 +2667,63 @@ describe('cockpit capability wiring', () => {
       'langgraph',
       () =>
         `apiUrl: connection.apiUrl, assistantId: connection.assistantId, clientOptions: connection.clientOptions, ...context,`,
-      ['operation-reporter-wiring', 'session-context-wiring'],
+      [
+        'development-runtime-wiring',
+        'operation-reporter-wiring',
+        'session-context-wiring',
+      ],
       /options may not spread the provider context/,
+    ],
+    [
+      'a dropped development runtime',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'developmentRuntime: context.developmentRuntime,',
+          ''
+        ),
+      ['development-runtime-wiring'],
+      /createSession must be given the provider context's developmentRuntime as developmentRuntime/,
+    ],
+    [
+      'a dropped AG-UI development runtime',
+      'ag-ui',
+      () =>
+        changed(agUiOptions, 'developmentRuntime: context.developmentRuntime,', ''),
+      ['development-runtime-wiring'],
+      /createSession must be given the provider context's developmentRuntime as developmentRuntime/,
+    ],
+    [
+      'the development runtime under an invented name',
+      'langgraph',
+      () => changed(langGraphOptions, 'developmentRuntime:', 'telemetryRuntime:'),
+      ['development-runtime-wiring'],
+      /passed as telemetryRuntime, which the langgraph session does not accept \(it takes developmentRuntime\); it is dropped/,
+    ],
+    [
+      'a development runtime the host never sees',
+      'ag-ui',
+      () =>
+        changed(
+          agUiOptions,
+          'context.developmentRuntime',
+          '() => undefined'
+        ),
+      ['development-runtime-wiring'],
+      /developmentRuntime must be the provider context's developmentRuntime/,
+    ],
+    [
+      'the development runtime option given another context member',
+      'langgraph',
+      () =>
+        changed(
+          langGraphOptions,
+          'context.developmentRuntime',
+          'context.onThreadId'
+        ),
+      ['development-runtime-wiring'],
+      /developmentRuntime must be the provider context's developmentRuntime/,
     ],
     [
       'a dropped operation reporter',
@@ -2589,7 +2735,7 @@ describe('cockpit capability wiring', () => {
           ''
         ),
       ['operation-reporter-wiring'],
-      /createSession must be given the provider context's reportOperationFailure as onOperationFailure/,
+      /createSession must be given the provider context's reportOperationFailure as reportOperationFailure/,
     ],
     [
       'a dropped AG-UI operation reporter',
@@ -2604,16 +2750,17 @@ describe('cockpit capability wiring', () => {
       /createSession must be given the provider context's reportOperationFailure as reportOperationFailure/,
     ],
     [
-      "the reporter under the AG-UI session's name on a LangGraph session",
+      "the reporter under the LangGraph session's deprecated alias",
       'langgraph',
-      () => changed(langGraphOptions, `${langGraphReporter}:`, `${agUiReporter}:`),
+      () =>
+        changed(langGraphOptions, `${langGraphReporter}:`, 'onOperationFailure:'),
       ['operation-reporter-wiring'],
-      /passed as reportOperationFailure, which the langgraph session does not accept \(it takes onOperationFailure\); the reporter is dropped/,
+      /passed as onOperationFailure, a deprecated alias of the langgraph session; pass it as reportOperationFailure/,
     ],
     [
-      "the reporter under the LangGraph session's name on an AG-UI session",
+      "the reporter under the LangGraph session's old name on an AG-UI session",
       'ag-ui',
-      () => changed(agUiOptions, `${agUiReporter}:`, `${langGraphReporter}:`),
+      () => changed(agUiOptions, `${agUiReporter}:`, 'onOperationFailure:'),
       ['operation-reporter-wiring'],
       /passed as onOperationFailure, which the ag-ui session does not accept \(it takes reportOperationFailure\); the reporter is dropped/,
     ],
@@ -2634,7 +2781,7 @@ describe('cockpit capability wiring', () => {
           '() => undefined'
         ),
       ['operation-reporter-wiring'],
-      /onOperationFailure must be the provider context's reportOperationFailure/,
+      /reportOperationFailure must be the provider context's reportOperationFailure/,
     ],
     [
       'the reporter option given another context member',
@@ -2659,46 +2806,65 @@ describe('cockpit capability wiring', () => {
     }
   );
 
-  it('accepts whichever reporter option name the session interface declares', () => {
-    const unified: ReporterOptionNames = {
-      langgraph: ['reportOperationFailure'],
-      'ag-ui': ['reportOperationFailure'],
-    };
-    const renamed = changed(
+  it('accepts the reporter option name the session interface declares and rejects a deprecated alias', () => {
+    const alias = changed(
       langGraphOptions,
       `${langGraphReporter}:`,
-      'reportOperationFailure:'
+      'onOperationFailure:'
     );
-    // Today the LangGraph session takes the reporter under its own name.
-    expect(kindsOf(sessionIssues('langgraph', renamed))).toEqual([
-      'operation-reporter-wiring',
-    ]);
-    // Once both sessions declare one name, that name is the accepted one and
-    // the old one is the reporter that gets dropped.
-    expect(sessionIssues('langgraph', renamed, unified)).toEqual([]);
-    expect(sessionIssues('ag-ui', agUiOptions, unified)).toEqual([]);
+    const aliasIssue = {
+      kind: 'operation-reporter-wiring',
+      detail:
+        'the operation reporter is passed as onOperationFailure, a deprecated alias of the langgraph session; pass it as reportOperationFailure',
+    };
+    // The audit's defaults are the libraries' names today: one current name
+    // for both sessions, and the LangGraph session's old name as an alias it
+    // still reads. The alias is delivered, so the only issue is its name.
+    expect(sessionIssues('langgraph', langGraphOptions)).toEqual([]);
+    expect(sessionIssues('langgraph', alias)).toEqual([aliasIssue]);
+    // The names the applications are audited with are read from the session
+    // option interfaces, `@deprecated` tags included, and give the same result.
+    expect(reporterOptionNames).toEqual(defaultReporterOptionNames);
+    expect(deprecatedReporterOptionNames).toEqual(
+      defaultDeprecatedReporterOptionNames
+    );
+    const withLibraryNames = (options: string) =>
+      inspectRuntimeTargetSource(
+        fixtureAppConfig('langgraph', fixtureProvider('langgraph', options)),
+        'src/app/app.config.ts',
+        'langgraph',
+        undefined,
+        auditOptions
+      ).issues;
+    expect(withLibraryNames(langGraphOptions)).toEqual([]);
+    expect(withLibraryNames(alias)).toEqual([aliasIssue]);
+    // The AG-UI session never had the alias: there the reporter is dropped.
     expect(
-      kindsOf(sessionIssues('langgraph', langGraphOptions, unified))
+      sessionIssues(
+        'ag-ui',
+        changed(agUiOptions, `${agUiReporter}:`, 'onOperationFailure:')
+      ).map(({ detail }) => detail)
+    ).toEqual([
+      'the operation reporter is passed as onOperationFailure, which the ag-ui session does not accept (it takes reportOperationFailure); the reporter is dropped without an error',
+      "createSession must be given the provider context's reportOperationFailure as reportOperationFailure",
+    ]);
+    // The audit follows whatever names it is told. A session that declared
+    // only the old name would take it, and the new one would be dropped.
+    const old: ReporterOptionNames = {
+      langgraph: ['onOperationFailure'],
+      'ag-ui': ['reportOperationFailure'],
+    };
+    expect(sessionIssues('langgraph', alias, old)).toEqual([]);
+    expect(
+      kindsOf(sessionIssues('langgraph', langGraphOptions, old))
     ).toEqual(['operation-reporter-wiring']);
-    // While a session declares both, either is wired.
+    // A session that declared both as current would take either.
     const both: ReporterOptionNames = {
       langgraph: ['onOperationFailure', 'reportOperationFailure'],
       'ag-ui': ['reportOperationFailure'],
     };
-    expect(sessionIssues('langgraph', renamed, both)).toEqual([]);
+    expect(sessionIssues('langgraph', alias, both)).toEqual([]);
     expect(sessionIssues('langgraph', langGraphOptions, both)).toEqual([]);
-    // The applications are audited with the names read from the libraries.
-    expect(
-      sessionIssues(
-        'langgraph',
-        // Not `changed`: today the declared name is the fixture's own.
-        langGraphOptions.replace(
-          `${langGraphReporter}:`,
-          `${reporterOptionNames.langgraph[0]}:`
-        ),
-        reporterOptionNames
-      )
-    ).toEqual([]);
   });
 
   it('requires the agent config to build its session inline from the provider context', () => {
@@ -4140,7 +4306,8 @@ describe('cockpit capability wiring', () => {
     ).toContain('context.reportOperationFailure');
     expect(agUi[0].sessionProperties).toMatchObject({
       url: 'connection.url',
-      threadId: 'context.threadId ?? undefined',
+      threadId: 'context.threadId',
+      onThreadId: 'context.onThreadId',
     });
     expect(
       reporterOptionNames['ag-ui'].map((name) => agUi[0].sessionProperties[name])

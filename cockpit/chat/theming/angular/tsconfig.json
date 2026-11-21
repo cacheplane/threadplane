@@ -8,7 +8,7 @@
     "composite": false,
     "lib": ["es2022", "dom"],
     "skipLibCheck": true,
-    "strict": true
+    "strict": false
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

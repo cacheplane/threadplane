@@ -3,7 +3,7 @@ import {
   ChatComponent,
   ChatWelcomeSuggestionComponent,
 } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/angular';
+import { injectAgent, withAgentOverrides } from '@threadplane/angular';
 import { STREAMING_AGENT } from './agent-ref';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { COCKPIT_INSPECTION_PUBLISHER } from '@threadplane/cockpit-telemetry';
@@ -97,7 +97,7 @@ export class StreamingComponent {
     this.publisher?.(frame)
   );
   // Chat and welcome suggestions share the same actual submission boundary.
-  protected readonly agent = withOverrides(this.sourceAgent, {
+  protected readonly agent = withAgentOverrides(this.sourceAgent, {
     submit: async (input, options) => {
       const text = typeof input === 'string' ? input : input?.message ?? '';
       const id = this.inspection.startCall(text);
@@ -160,21 +160,4 @@ export class StreamingComponent {
   protected send(text: string): void {
     void this.agent.submit({ message: text });
   }
-}
-
-/**
- * A view of the agent with some members replaced.
- *
- * The injected agent reads every member from its current session at the moment
- * it is asked, so a spread copy (`{ ...agent, submit }`) would keep only the
- * members that exist when it is taken and miss a field the session publishes
- * later, such as `error`. This forwards every read instead.
- */
-function withOverrides<T extends object>(agent: T, overrides: Partial<T>): T {
-  return new Proxy(agent, {
-    get: (target, key) =>
-      Object.hasOwn(overrides, key)
-        ? overrides[key as keyof T]
-        : Reflect.get(target, key),
-  });
 }

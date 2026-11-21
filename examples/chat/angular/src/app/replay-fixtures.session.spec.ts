@@ -38,6 +38,26 @@ const prompts = (agent: DemoAgent): string[] =>
     .filter((message) => message.role === 'user')
     .map((message) => message.content);
 
+/**
+ * What is wrong with the assistant rows a replay left: a row with no text and
+ * no tool call (one model response split in two shows as an empty bubble), and
+ * an answer that appears twice. Empty when the transcript is sound.
+ */
+const assistantRowDefects = (agent: DemoAgent): string[] => {
+  const rows = agent.messages().filter((message) => message.role === 'assistant');
+  const defects: string[] = [];
+  const texts = new Map<string, string>();
+  for (const row of rows) {
+    const text = row.content.trim();
+    if (!text && !(row.toolCallIds?.length ?? 0)) defects.push(`empty assistant row ${row.id}`);
+    if (!text) continue;
+    const earlier = texts.get(text);
+    if (earlier) defects.push(`answer of ${earlier} repeated by ${row.id}`);
+    else texts.set(text, row.id);
+  }
+  return defects;
+};
+
 /** Every recorded prompt, in the order the runs submit them. */
 const recordedPrompts = (runs: readonly { events: readonly { event: unknown }[] }[]): string[] => {
   const seen = new Map<string, string>();
@@ -83,6 +103,7 @@ describe('hero-replay.json replayed through the hero session', () => {
     expect(agent.error()).toBeUndefined();
     expect(agent.status()).toBe('idle');
     expect(JSON.stringify(agent.messages())).toMatch(/a2ui/i);
+    expect(assistantRowDefects(agent)).toEqual([]);
   });
 });
 
@@ -122,6 +143,7 @@ describe('stage-replay.json replayed through the stage session', () => {
     expect(child?.toolCallId).toBeTruthy();
     expect(child?.messages.length).toBeGreaterThan(0);
     expect(agent.toolCalls().some((call) => call.id === child?.toolCallId && call.name === 'research')).toBe(true);
+    expect(assistantRowDefects(agent)).toEqual([]);
   }, 30_000);
 
   it('restores the conversation after the reload and keeps its checkpoints', async () => {
@@ -168,6 +190,7 @@ describe('stage-replay.json replayed through the stage session', () => {
       STAGE_PROMPTS.render,
     ]);
     expect(JSON.stringify(agent.messages())).toContain('a2ui_JSON');
+    expect(assistantRowDefects(agent)).toEqual([]);
     expect(agent.checkpoints()?.length).toBeGreaterThan(0);
   }, 60_000);
 

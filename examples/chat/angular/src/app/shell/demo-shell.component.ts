@@ -21,6 +21,7 @@ import {
   injectThreadDirectory,
   provideAgent,
   refreshOnRunEnd,
+  withAgentOverrides,
 } from '@threadplane/angular';
 import {
   createLangGraphClient,
@@ -30,7 +31,6 @@ import {
 import { DEMO_AGENT_REF, type DemoAgent, type DemoState } from './agent-ref';
 import { createDemoSession, SUBAGENT_TOOL_NAMES } from './demo-session';
 import type { DemoThreadDirectory } from './demo-threads';
-import { regenerateFromCheckpoint } from './regenerate';
 import { ItineraryStore, type ItineraryStop } from '../itinerary-store';
 import { itineraryClientTools } from '../client-tools';
 import { ThreadplaneTelemetryService } from '@threadplane/telemetry/browser';
@@ -76,12 +76,15 @@ let telemetrySink: LangGraphTelemetrySink | undefined;
 /**
  * The agent the shell hands out: the injected agent, with `submit` adding the
  * shell's live selections to the run's input state. The injected `Agent`
- * cannot be patched in place, so this is a view of it; every other member is
- * the injected agent's own. A run with no message (`submit(null)`) is passed
+ * cannot be patched in place, so this is derived from it with
+ * `withAgentOverrides`; every other member is the injected agent's own. Chat
+ * keys its per-agent state on the agent object, so the shell hands this one
+ * derived agent (`DEMO_AGENT`) to every surface. A run with no message (`submit(null)`) is passed
  * through untouched: it continues the thread from its saved state.
  *
- * `regenerate` is the demo's own (see `regenerateFromCheckpoint`): it answers
- * a prompt again through that same submit, from the checkpoint before it.
+ * `regenerate` is the session's own command: it answers a prompt again from
+ * the checkpoint saved before it. Only the prompt's text is sent again, so a
+ * regenerated run does not carry the selections this submit adds.
  */
 export function withSubmitState(
   agent: DemoAgent,
@@ -92,15 +95,7 @@ export function withSubmitState(
     const given = typeof input === 'string' ? { message: input } : input;
     return agent.submit({ ...given, state: { ...given.state, ...readState() } }, options);
   };
-  const regenerate = regenerateFromCheckpoint(agent, submit);
-  return new Proxy(agent, {
-    get: (target, key, receiver) =>
-      key === 'submit'
-        ? submit
-        : key === 'regenerate'
-          ? regenerate
-          : Reflect.get(target, key, receiver),
-  });
+  return withAgentOverrides(agent, { submit });
 }
 
 /** Parse `/embed`, `/embed/<threadId>`, `/popup/<threadId>` etc. into

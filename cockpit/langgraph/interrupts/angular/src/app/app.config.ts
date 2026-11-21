@@ -19,7 +19,8 @@ export const appConfig: ApplicationConfig = {
             clientOptions: connection.clientOptions,
             threadId: context.threadId,
             onThreadId: context.onThreadId,
-            onOperationFailure: context.reportOperationFailure,
+            reportOperationFailure: context.reportOperationFailure,
+            developmentRuntime: context.developmentRuntime,
           }),
       };
     }),

@@ -127,7 +127,7 @@ for (const scenario of ['parallel', 'schema'])
       f.app
         .getSnapshot()
         .toolCalls.some(
-          (call) => call.status === 'complete' && call.name === 'write_todos'
+          (call) => call.status === 'error' && call.name === 'write_todos'
         )
     ).toBe(true);
     await f.configure('recovery');

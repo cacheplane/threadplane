@@ -28,6 +28,8 @@ export const appConfig: ApplicationConfig = {
             clientOptions: context.clientOptions as
               | LangGraphClientOptions
               | undefined,
+            // A refused thread-list request reaches the cockpit too.
+            reportOperationFailure: context.reportOperationFailure,
           }),
       };
     }),

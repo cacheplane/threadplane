@@ -4,7 +4,8 @@ import * as ts from 'typescript';
  * Syntax-tree audit of how a configurable cockpit Angular application wires
  * its agent to the cockpit's runtime connection.
  *
- * The wiring it pins (LangGraph; AG-UI passes `url` and its own names):
+ * The wiring it pins (LangGraph; AG-UI passes `url` in place of the three
+ * connection members, and the same context members):
  *
  *   provideAgent(() => {
  *     const connection = injectCockpitRuntimeConnection();
@@ -13,7 +14,8 @@ import * as ts from 'typescript';
  *       apiUrl: connection.apiUrl, assistantId: connection.assistantId,
  *       clientOptions: connection.clientOptions,
  *       threadId: context.threadId, onThreadId: context.onThreadId,
- *       onOperationFailure: context.reportOperationFailure }) };
+ *       reportOperationFailure: context.reportOperationFailure,
+ *       developmentRuntime: context.developmentRuntime }) };
  *   })
  *
  * What each issue kind catches:
@@ -32,12 +34,17 @@ import * as ts from 'typescript';
  *   the provider context, or does not report the thread it creates; the
  *   context spread, copied or handed away.
  * - `operation-reporter-wiring`: the host's failure reporter dropped, passed
- *   under a name the session does not accept, or its token used anywhere but
+ *   under a name the session does not accept or under a deprecated alias
+ *   (`onOperationFailure` on a LangGraph session), or its token used anywhere but
  *   the entrypoint, so a refused request never reaches the cockpit.
+ * - `development-runtime-wiring`: the context's development-install relay
+ *   dropped or passed under another name, so a development build of the
+ *   application reports nothing where it used to report a session start.
  * - `session-outside-provider-factory`: a session or directory built anywhere
  *   but its provider factory, where there is no provider context at all.
  * - `thread-directory-wiring`: a thread list read from another deployment
- *   than the agent's, or without the agent's client options.
+ *   than the agent's, without the agent's client options, or without the
+ *   host's failure reporter.
  * - `direct-agent-construction`: a client, transport or agent built by hand.
  * - `environment-config-outside-entrypoint`, `browser-state-read`,
  *   `global-runtime-secret-read`, `imported-runtime-secret`,
@@ -59,6 +66,7 @@ export type RuntimeWiringAuditKind =
   | 'session-connection-wiring'
   | 'session-context-wiring'
   | 'operation-reporter-wiring'
+  | 'development-runtime-wiring'
   | 'thread-directory-wiring'
   | 'runtime-secret-log';
 
@@ -95,9 +103,10 @@ export interface ThreadDirectoryProviderRecord {
 
 /**
  * The option a backend's session takes the host's operation-failure reporter
- * under. The provider context always names it `reportOperationFailure`; the
- * sessions do not agree, so a reporter passed under the other backend's name
- * is silently dropped. The audit is told the accepted names rather than
+ * under. The provider context names it `reportOperationFailure` and so do
+ * both sessions; a reporter passed under any other name is silently dropped,
+ * except a deprecated alias, which is rejected for being deprecated. The
+ * audit is told the accepted names rather than
  * assuming them: `capability-wiring.spec.ts` reads them from the session
  * option interfaces, so a rename in a library needs no edit here.
  */
@@ -105,19 +114,34 @@ export type ReporterOptionNames = Readonly<
   Record<CompatibleRuntimeAdapter, readonly string[]>
 >;
 
-/** The names in the libraries when this audit was written (2026-11-20). */
+/** The names in the libraries (2026-11-20): one name for both sessions. */
 export const defaultReporterOptionNames: ReporterOptionNames = {
-  langgraph: ['onOperationFailure'],
+  langgraph: ['reportOperationFailure'],
   'ag-ui': ['reportOperationFailure'],
 };
 
+/**
+ * Names a session still reads but marks `@deprecated`. A reporter passed
+ * under one is delivered, so it is not "dropped"; it is rejected so that no
+ * application depends on a name the library is removing.
+ */
+export const defaultDeprecatedReporterOptionNames: ReporterOptionNames = {
+  langgraph: ['onOperationFailure'],
+  'ag-ui': [],
+};
+
+/** The option the thread directory takes the reporter under (2026-11-20). */
+export const defaultDirectoryReporterOptionNames: readonly string[] = [
+  'reportOperationFailure',
+];
+
 export interface RuntimeWiringAuditOptions {
   readonly reporterOptionNames?: ReporterOptionNames;
+  readonly deprecatedReporterOptionNames?: ReporterOptionNames;
   /**
-   * The option `createLangGraphThreadDirectory` takes the reporter under.
-   * Empty while the directory declares none (2026-11-20): its refused
-   * requests then go unreported, and no application wiring can change that.
-   * Once the directory declares one, the audit requires it.
+   * The option `createLangGraphThreadDirectory` takes the reporter under,
+   * which the audit requires. An empty list says the directory declares none:
+   * its refused requests then go unreported and no wiring can change that.
    */
   readonly directoryReporterOptionNames?: readonly string[];
 }
@@ -221,8 +245,15 @@ export const providerContextKeys = new Set([
   'onThreadId',
   'clientOptions',
   'reportOperationFailure',
+  'developmentRuntime',
 ]);
 const contextReporterKey = 'reportOperationFailure';
+/**
+ * The context member that relays a session to the development-install
+ * collector, and the option both backends' sessions take it under. A factory
+ * that picks fields from the context drops it unless it names it.
+ */
+export const contextDevelopmentKey = 'developmentRuntime';
 /**
  * What each backend's session must be given, and from where. `bypass` names
  * the options that replace the connection outright: a session handed one
@@ -248,7 +279,10 @@ const sessionContract: Readonly<
   'ag-ui': {
     module: '@threadplane/ag-ui',
     connection: ['url'],
-    context: ['threadId'],
+    // The AG-UI session names a new conversation's thread itself and reports
+    // it through `onThreadId`, as the LangGraph session reports the thread it
+    // creates. Without it `agent.threadId()` stays null after the first run.
+    context: ['threadId', 'onThreadId'],
     bypass: ['agent', 'fetch'],
   },
 };
@@ -1055,6 +1089,7 @@ const memoryFactoryGrammar = `const factory = () => {
         assistantId: connection.assistantId,
         threadId: context.threadId,
         onThreadId: context.onThreadId,
+        developmentRuntime: context.developmentRuntime,
         transport: new MemoryTransport(connection.apiUrl, scope, undefined,
           clientOptions, context.reportOperationFailure),
       }),
@@ -1518,10 +1553,17 @@ export function inspectRuntimeTargetSource(
     options.reporterOptionNames ?? defaultReporterOptionNames;
   // Every name any backend takes the reporter under, plus the context's own.
   const directoryReporterOptionNames =
-    options.directoryReporterOptionNames ?? [];
+    options.directoryReporterOptionNames ??
+    defaultDirectoryReporterOptionNames;
+  const deprecatedReporterOptionNames =
+    options.deprecatedReporterOptionNames ??
+    (options.reporterOptionNames
+      ? { langgraph: [], 'ag-ui': [] }
+      : defaultDeprecatedReporterOptionNames);
   const reporterShapedNames = new Set([
     contextReporterKey,
     ...Object.values(reporterOptionNames).flat(),
+    ...Object.values(deprecatedReporterOptionNames).flat(),
     ...directoryReporterOptionNames,
   ]);
   const sourceFile = ts.createSourceFile(
@@ -2472,11 +2514,19 @@ export function inspectRuntimeTargetSource(
       if (!value || contextKeyOf(shape, value) !== name) {
         report(
           'session-context-wiring',
-          `${name} must be the provider context's ${name}: a session that ignores it does not follow the agent's thread`
+          `${name} must be the provider context's ${name}: ${
+            name === 'onThreadId'
+              ? 'a session that does not report the thread it names or creates leaves the agent without a thread id'
+              : "a session that ignores it does not follow the agent's thread"
+          }`
         );
       }
     }
     const accepted = reporterOptionNames[adapter];
+    // A name declared both ways counts as current: the caller's lists win.
+    const deprecated = deprecatedReporterOptionNames[adapter].filter(
+      (name) => !accepted.includes(name)
+    );
     let reporterPassed = false;
     for (const [name, value] of options.values) {
       const key = contextKeyOf(shape, value);
@@ -2494,6 +2544,15 @@ export function inspectRuntimeTargetSource(
             `${name} must be the provider context's ${contextReporterKey}`
           );
         }
+      } else if (deprecated.includes(name)) {
+        // Delivered today, so the reporter counts as passed; the name does not.
+        reporterPassed = true;
+        report(
+          'operation-reporter-wiring',
+          `the operation reporter is passed as ${name}, a deprecated alias of the ${adapter} session; pass it as ${accepted.join(
+            ' or '
+          )}`
+        );
       } else if (
         reporterShapedNames.has(name) ||
         /OperationFailure$/.test(name) ||
@@ -2513,6 +2572,44 @@ export function inspectRuntimeTargetSource(
         `createSession must be given the provider context's ${contextReporterKey} as ${accepted.join(
           ' or '
         )}`
+      );
+    }
+    auditDevelopmentRuntimeOption(shape, options, adapter);
+  }
+
+  /**
+   * The context's development-install relay must reach the session under the
+   * one name both sessions take it by. Without it a development build reports
+   * nothing, and no error says so. (The memory application's own
+   * factory is matched whole against a grammar that includes the relay.)
+   */
+  function auditDevelopmentRuntimeOption(
+    shape: SessionFactoryShape,
+    options: SessionOptionMembers,
+    adapter: CompatibleRuntimeAdapter
+  ): void {
+    let relayPassed = false;
+    for (const [name, value] of options.values) {
+      const key = contextKeyOf(shape, value);
+      if (name === contextDevelopmentKey) {
+        relayPassed = true;
+        if (key !== contextDevelopmentKey) {
+          report(
+            'development-runtime-wiring',
+            `${name} must be the provider context's ${contextDevelopmentKey}`
+          );
+        }
+      } else if (key === contextDevelopmentKey) {
+        report(
+          'development-runtime-wiring',
+          `the development runtime is passed as ${name}, which the ${adapter} session does not accept (it takes ${contextDevelopmentKey}); it is dropped without an error`
+        );
+      }
+    }
+    if (!relayPassed) {
+      report(
+        'development-runtime-wiring',
+        `createSession must be given the provider context's ${contextDevelopmentKey} as ${contextDevelopmentKey}: a session without it reports nothing in a development build`
       );
     }
   }
