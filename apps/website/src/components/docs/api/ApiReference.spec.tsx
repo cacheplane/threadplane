@@ -26,10 +26,10 @@ const index: ApiIndex = {
       status: 'development',
     },
     {
-      id: 'chat',
+      id: 'angular/chat',
       importPath: '@threadplane/angular/chat',
-      packageName: '@threadplane/angular/chat',
-      project: 'chat',
+      packageName: '@threadplane/angular',
+      project: 'angular',
       framework: 'angular',
       docLibrary: 'chat',
       version: '0.3.3',
@@ -48,10 +48,10 @@ const index: ApiIndex = {
     },
     {
       name: 'ChatComponent',
-      entrypointId: 'chat',
+      entrypointId: 'angular/chat',
       kind: 'Class',
       href: '/docs/api/angular/chat/ChatComponent',
-      canonicalReference: 'chat!ChatComponent:class',
+      canonicalReference: 'angular/chat!ChatComponent:class',
       isDeprecated: false,
       summary: 'Angular conversation.',
     },
@@ -104,7 +104,7 @@ describe('API reference UI', () => {
   });
 
   it('keeps package routes as symbol lists and preserves the package when clearing', () => {
-    render(<ApiIndexView index={index} entrypointId="chat" />);
+    render(<ApiIndexView index={index} entrypointId="angular/chat" />);
     expect(screen.getByRole('link', { name: 'ChatComponent' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Chat' })).toBeNull();
     fireEvent.change(screen.getByLabelText('Find an API'), {
