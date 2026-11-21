@@ -326,6 +326,104 @@ describe('native client tools over physical HTTP', () => {
       }
     }
   );
+  it('honors continuationPolicy.maxTurns and reports the blocked group once', async () => {
+    const server = await serve();
+    const handler = vi.fn(
+      async (args: { value: number }, _context: { signal: AbortSignal }) =>
+        args.value
+    );
+    const onLimit = vi.fn();
+    const owner = createSession(
+      {
+        threadId: 't',
+        url: server.url,
+        continuationPolicy: { maxTurns: 1, onLimit },
+      },
+      definition(handler)
+    );
+    const done = owner.submit('one');
+    try {
+      for (let index = 0; index < 2; index++) {
+        const exchange = await server.next(index);
+        exchange.send(
+          lifecycle(exchange),
+          {
+            type: 'MESSAGES_SNAPSHOT',
+            messages: [...exchange.body.messages, assistant(index)],
+          },
+          lifecycle(exchange, 'RUN_FINISHED')
+        );
+      }
+      expect(await bounded(done)).toBe('interrupted');
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(server.exchanges).toHaveLength(2);
+      expect(owner.getSnapshot().clientTools.blocker).toMatchObject({
+        reason: 'limit',
+        callIds: ['c1'],
+      });
+      expect(onLimit).toHaveBeenCalledTimes(1);
+      expect(onLimit).toHaveBeenCalledWith({
+        maxTurns: 1,
+        attemptedTurn: 2,
+        toolCallIds: ['c1'],
+        toolNames: ['f'],
+      });
+    } finally {
+      await owner.dispose();
+      await done;
+      await server.close();
+    }
+  });
+  it('runs past ten groups when maxTurns is 0', async () => {
+    const server = await serve();
+    const handler = vi.fn(
+      async (args: { value: number }, _context: { signal: AbortSignal }) =>
+        args.value
+    );
+    const onLimit = vi.fn();
+    const owner = createSession(
+      {
+        threadId: 't',
+        url: server.url,
+        continuationPolicy: { maxTurns: 0, onLimit },
+      },
+      definition(handler)
+    );
+    const done = owner.submit('one');
+    try {
+      for (let index = 0; index < 13; index++) {
+        const exchange = await server.next(index);
+        exchange.send(
+          lifecycle(exchange),
+          {
+            type: 'MESSAGES_SNAPSHOT',
+            messages: [
+              ...exchange.body.messages,
+              index < 12
+                ? assistant(index)
+                : { id: 'done', role: 'assistant', content: 'Done' },
+            ],
+          },
+          lifecycle(exchange, 'RUN_FINISHED')
+        );
+      }
+      expect(await bounded(done)).toBe('success');
+      expect(handler).toHaveBeenCalledTimes(12);
+      expect(onLimit).not.toHaveBeenCalled();
+    } finally {
+      await owner.dispose();
+      await done;
+      await server.close();
+    }
+  });
+  it.each([-1, 1.5, Number.NaN])('rejects maxTurns %s', (maxTurns) => {
+    expect(() =>
+      createSession(
+        { threadId: 't', url: 'http://localhost', continuationPolicy: { maxTurns } },
+        definition()
+      )
+    ).toThrow(TypeError);
+  });
   it('resumes a native continuation pause with exact retained results and physical correlation', async () => {
     const server = await serve();
     const handler = vi.fn(

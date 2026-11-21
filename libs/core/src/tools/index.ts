@@ -1,4 +1,6 @@
 export type {
+  ClientToolContinuationLimitEvent,
+  ClientToolContinuationPolicy,
   ExecutionContext,
   ToolExecutionKey,
   ToolExecutionAcquisition,

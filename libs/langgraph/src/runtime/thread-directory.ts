@@ -20,9 +20,15 @@ import {
   type ProjectStore,
 } from './project-store.js';
 import {
+  applyPatch,
   orderThreads,
   projectThread,
+  sameEntry,
+  sameList,
+  sameProjects,
+  stripOrder,
   type ProjectedThread,
+  type ThreadPatchFields as Fields,
 } from './thread-metadata.js';
 import type { LangGraphClientOptions } from './transport.types.js';
 
@@ -95,13 +101,6 @@ export type LangGraphThreadDirectory<TProjects extends boolean = true> =
 
 /** The saved pin rank of each entry a directory produced. */
 const pinnedOrders = new WeakMap<ThreadEntry, number>();
-
-type Fields = Partial<
-  Pick<ProjectedThread, 'title' | 'archived' | 'pinned' | 'projectId'> & {
-    pinnedOrder: number;
-    removed: true;
-  }
->;
 
 interface Patch {
   readonly id: string;
@@ -182,7 +181,7 @@ export function createLangGraphThreadDirectory(
       const entry =
         kept && sameEntry(kept.source, source)
           ? kept.entry
-          : (stripOrder(source) as ThreadEntry);
+          : publishEntry(source);
       nextPublished.set(source.id, {
         source: kept && entry === kept.entry ? kept.source : source,
         entry,
@@ -372,7 +371,7 @@ export function createLangGraphThreadDirectory(
         const kept = published.get(source.id);
         return kept && sameEntry(kept.source, source)
           ? kept.entry
-          : stripOrder(source);
+          : publishEntry(source);
       } catch (failure) {
         // 404 says there is no such thread and 422 that the id is not one a
         // thread could have; both are "missing". Anything else is unknown.
@@ -500,29 +499,15 @@ async function settle(
   }
 }
 
-/** The published entry: no rank on it; `pinnedOrderOf` answers for it. */
-function stripOrder(source: ProjectedThread): ThreadEntry {
-  const entry: ThreadEntry = Object.freeze({
-    id: source.id,
-    title: source.title,
-    ...(source.updatedAt === undefined ? {} : { updatedAt: source.updatedAt }),
-    pinned: source.pinned,
-    archived: source.archived,
-    projectId: source.projectId,
-  });
+/**
+ * The published entry: no rank on it; `pinnedOrderOf` answers for it. Built by
+ * the shared `stripOrder`, with the rank recorded beside it.
+ */
+function publishEntry(source: ProjectedThread): ThreadEntry {
+  const entry = stripOrder(source);
   if (source.pinnedOrder !== undefined)
     pinnedOrders.set(entry, source.pinnedOrder);
   return entry;
-}
-
-function sameProjects(
-  a: readonly ProjectEntry[],
-  b: readonly ProjectEntry[]
-): boolean {
-  return (
-    a.length === b.length &&
-    a.every((project, i) => project.id === b[i]?.id && project.name === b[i]?.name)
-  );
 }
 
 function ownedClient(
@@ -628,31 +613,4 @@ function linkSignal(
       caller.removeEventListener('abort', abort);
     },
   };
-}
-
-function applyPatch(
-  entry: ProjectedThread,
-  fields: Fields
-): ProjectedThread | undefined {
-  if (fields.removed) return undefined;
-  return Object.freeze({ ...entry, ...fields });
-}
-
-function sameEntry(a: ProjectedThread, b: ProjectedThread): boolean {
-  return (
-    a.id === b.id &&
-    a.title === b.title &&
-    a.updatedAt === b.updatedAt &&
-    a.pinned === b.pinned &&
-    a.archived === b.archived &&
-    a.projectId === b.projectId &&
-    a.pinnedOrder === b.pinnedOrder
-  );
-}
-
-function sameList(
-  a: readonly ThreadEntry[],
-  b: readonly ThreadEntry[]
-): boolean {
-  return a.length === b.length && a.every((entry, index) => entry === b[index]);
 }
