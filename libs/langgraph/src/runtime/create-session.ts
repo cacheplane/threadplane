@@ -323,11 +323,13 @@ export interface SessionOptions {
    * transport report generic errors only. A supplied transport ignores it.
    * It has the name a framework binding's session context uses, so spreading
    * that context into the options passes the host's reporter on.
+   * @internal Host plumbing: a framework binding passes it through its session context. Not part of the consumer API reference.
    */
   readonly reportOperationFailure?: RuntimeOperationFailureReporter;
   /**
    * @deprecated Use `reportOperationFailure`. Read only when
    * `reportOperationFailure` is not a function.
+   * @internal Host plumbing: a framework binding passes it through its session context. Not part of the consumer API reference.
    */
   readonly onOperationFailure?: RuntimeOperationFailureReporter;
   /**

@@ -131,6 +131,7 @@ export interface InstrumentOptions {
    * what a failure shows: the backend's `RUN_ERROR` text and code, a failed
    * response's body and its status are replaced by a fixed message, in the
    * snapshot, in its evidence and on the raw event stream.
+   * @internal Host plumbing: a framework binding passes it through its session context. Not part of the consumer API reference.
    */
   readonly reportOperationFailure?: OperationFailureReporter | undefined;
   /** Development hooks that follow each publication or script a run. */

@@ -53,6 +53,7 @@ export interface LangGraphThreadDirectoryOptions {
    * `'network_blocked'` when a request never reached the server. Used only by
    * the client built from `apiUrl`; a supplied `client` reports nothing. A
    * reporter that throws does not affect the request.
+   * @internal Host plumbing: a framework binding passes it through its session context. Not part of the consumer API reference.
    */
   readonly reportOperationFailure?: RuntimeOperationFailureReporter;
 }
