@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideThreadplaneTelemetry } from '@threadplane/telemetry/browser';
+import { provideChatMath } from '@threadplane/angular/chat';
 import { provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/ag-ui';
 import { type } from '@threadplane/core';
@@ -27,6 +28,9 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes),
     provideThreadplaneTelemetry(environment.telemetry),
+    // LaTeX math in chat messages. KaTeX loads the first time one has math;
+    // its stylesheet is in project.json.
+    provideChatMath(() => import('katex')),
     // Thread persistence intentionally omitted: the itinerary AG-UI server
     // uses an in-process MemorySaver (examples/ag-ui/python/src/server.py)
     // that is wiped on every server restart, so restoring by threadId would

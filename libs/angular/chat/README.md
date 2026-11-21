@@ -48,7 +48,6 @@ npm install @threadplane/angular @threadplane/core @threadplane/langgraph @langc
 rxjs                       ~7.8.0
 marked                     ^15.0.0 || ^16.0.0
 zod                        ^3.25.0 || ^4.0.0
-katex                      ^0.16.0 || ^0.17.0 (optional)
 ```
 
 ---
@@ -249,14 +248,22 @@ The `renderMarkdown(md, options?)` function produces a parse tree for use outsid
 
 #### Math (KaTeX)
 
-LaTeX math — inline `$…$` / `\(…\)` and display `$$…$$` / `\[…\]` — renders via [KaTeX](https://katex.org), an **optional** peer dependency loaded lazily only when a message actually contains math (so non-math chats carry zero extra bundle weight). To enable styled math, install `katex` and import its stylesheet once in your app:
+LaTeX math — inline `$…$` / `\(…\)` and display `$$…$$` / `\[…\]` — renders via [KaTeX](https://katex.org) when your application turns it on. Install `katex`, give chat its loader, and include its stylesheet once:
 
 ```typescript
-// e.g. in your global styles or app bootstrap
-import 'katex/dist/katex.min.css';
+import { provideChatMath } from '@threadplane/angular/chat';
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideChatMath(() => import('katex'))],
+};
 ```
 
-Without `katex` installed, or without the stylesheet, math degrades gracefully — the raw `$…$` source is shown rather than breaking. Currency like `$5` is not treated as math.
+```css
+/* e.g. in your global styles */
+@import 'katex/dist/katex.min.css';
+```
+
+The loader runs the first time a message contains math, so chats without math download nothing. The library never imports `katex` itself, so an application without it installs, bundles, and serves nothing for math. Without `provideChatMath()`, or while KaTeX loads, math shows as its raw `$…$` source rather than breaking; without the stylesheet it renders unstyled. Currency like `$5` is not treated as math.
 
 ### Theming
 

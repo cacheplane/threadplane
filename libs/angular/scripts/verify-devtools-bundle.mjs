@@ -12,7 +12,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { build } from 'esbuild';
+import { build, transform } from 'esbuild';
 
 const dist = (path) => resolve('dist/libs', path);
 const local = {
@@ -99,11 +99,16 @@ assert(
 // entry point also holds the opt-in PostHog service, whose lazy `posthog-js`
 // import an application's development server must resolve, so they must never
 // import it.
+// Likewise KaTeX: the application passes its own loader to provideChatMath(),
+// so chat never imports `katex` and serves without it installed.
 for (const name of ['chat', 'render']) {
   const source = readFileSync(local['@threadplane/angular/' + name], 'utf8');
-  assert.match(source, /from '@threadplane\/telemetry\/browser\/development'/, `${name} positive control: no development runtime import`);
-  assert.doesNotMatch(source, /from '@threadplane\/telemetry\/browser'/, `${name} imports @threadplane/telemetry/browser, which brings posthog-js`);
-  assert.doesNotMatch(source, /posthog/i, `${name} references posthog`);
+  // Comments may name the packages in examples; only code counts.
+  const { code } = await transform(source, { loader: 'js', format: 'esm', minifyWhitespace: true, legalComments: 'none' });
+  assert.match(code, /from"@threadplane\/telemetry\/browser\/development"/, `${name} positive control: no development runtime import`);
+  assert.doesNotMatch(code, /from"@threadplane\/telemetry\/browser"/, `${name} imports @threadplane/telemetry/browser, which brings posthog-js`);
+  assert.doesNotMatch(code, /posthog/i, `${name} references posthog`);
+  assert.doesNotMatch(code, /(?:import\(|from)\s*"katex/, `${name} imports katex itself`);
 }
 
 console.log(

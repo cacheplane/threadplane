@@ -176,6 +176,9 @@ export type {
 export { MARKDOWN_VIEW_REGISTRY } from './lib/markdown/markdown-view-registry';
 export { MarkdownChildrenComponent } from './lib/markdown/markdown-children.component';
 export { cacheplaneMarkdownViews } from './lib/markdown/cacheplane-markdown-views';
+// LaTeX math in markdown, with the application's KaTeX.
+export { provideChatMath, ChatMathRenderer } from './lib/markdown/katex-loader';
+export type { ChatMathLoader, ChatMathModule } from './lib/markdown/katex-loader';
 
 // Per-node-type markdown view components (consumers use these to override
 // individual nodes via withViews(cacheplaneMarkdownViews, { … })).

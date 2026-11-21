@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideThreadplaneTelemetry } from '@threadplane/telemetry/browser';
+import { provideChatMath } from '@threadplane/angular/chat';
 import { AGENT_CLIENT_OPTIONS, provideThreadDirectory } from '@threadplane/angular';
 import { e2eClientOptions } from './shell/e2e-overrides';
 import { demoThreadDirectoryConfig } from './shell/demo-threads';
@@ -21,6 +22,9 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideRouter(routes, withComponentInputBinding()),
     provideThreadplaneTelemetry(environment.telemetry),
+    // LaTeX math in chat messages. KaTeX loads the first time one has math;
+    // its stylesheet is in project.json.
+    provideChatMath(() => import('katex')),
     // Single source of truth for the SDK client options — every agent's session
     // and the thread directory receive this as `context.clientOptions`.
     // Production: e2eClientOptions() returns undefined → the session's own

@@ -19,6 +19,11 @@ This changelog tracks selected highlight releases, not every release. The publis
 - Chat components keep their selectors and take the new `Agent`. `<chat-subagent-card>` and `<chat-subagents>` read the core `AgentSubagent` list.
 - LangGraph `throttle`, `historyState`, `restoreSubagents`, `rawMessages`, `transcriptNodeNames`, `subagentToolNames` and `autoLoad` are opt-in `createSession()` options, and per-run settings go under `options.run`. AG-UI `interruptTransport` defaults to `'protocol'` instead of `'auto'`.
 
+### Math is opt in
+
+- Breaking change for applications that render math: chat no longer imports `katex` itself, and `katex` is no longer a peer dependency. Add `provideChatMath(() => import('katex'))` from `@threadplane/angular/chat` to turn math on. Without it, math shows as its raw source. An application without KaTeX no longer fails under `ng serve`, where the development server had to resolve the import.
+- The chat and render entry points use `@threadplane/telemetry/browser/development`, which holds the development runtime without the opt-in PostHog service, so `posthog-js` no longer needs to resolve in applications that do not use it.
+
 ## 0.3.7
 
 - Chat adds a configurable composer `placeholder`, public `clearDraft()` methods on `ChatComponent` and `ChatInputComponent`, and projected composer footer/status content.

@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { MarkdownMathComponent } from './markdown-math.component';
-import { loadKatex } from '../katex-loader';
+import { ChatMathRenderer, provideChatMath } from '../katex-loader';
 import type {
   MarkdownMathInlineNode,
   MarkdownMathDisplayNode,
@@ -20,8 +20,11 @@ function render(node: MarkdownMathInlineNode | MarkdownMathDisplayNode): HTMLEle
 }
 
 describe('MarkdownMathComponent', () => {
-  beforeAll(async () => {
-    await loadKatex();
+  beforeEach(async () => {
+    TestBed.configureTestingModule({
+      providers: [provideChatMath(() => import('katex'))],
+    });
+    await TestBed.inject(ChatMathRenderer).loaded();
   });
 
   it('renders inline math as KaTeX', () => {
@@ -39,5 +42,13 @@ describe('MarkdownMathComponent', () => {
     const el = render(inline('\\frac{'));
     expect(el.querySelector('.katex')).toBeFalsy();
     expect(el.textContent).toContain('$\\frac{$');
+  });
+});
+
+describe('MarkdownMathComponent without provideChatMath', () => {
+  it('shows the raw source with its delimiters', () => {
+    const el = render(display('x^2'));
+    expect(el.querySelector('.katex')).toBeFalsy();
+    expect(el.textContent).toContain('$$x^2$$');
   });
 });

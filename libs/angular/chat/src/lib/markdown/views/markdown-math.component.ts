@@ -12,7 +12,7 @@ import type {
   MarkdownMathInlineNode,
   MarkdownMathDisplayNode,
 } from '@cacheplane/partial-markdown';
-import { renderMath, katexReady } from '../katex-loader';
+import { ChatMathRenderer } from '../katex-loader';
 
 type MathNode = MarkdownMathInlineNode | MarkdownMathDisplayNode;
 
@@ -25,9 +25,10 @@ const DELIMITERS: Record<MathNode['delimiter'], readonly [string, string]> = {
 };
 
 /**
- * Renders a `math-inline` / `math-display` markdown node as KaTeX. KaTeX is
- * lazy-loaded (see katex-loader); until it resolves, or if the LaTeX is
- * invalid, the raw `$…$` source is shown — never blank, never a crash.
+ * Renders a `math-inline` / `math-display` markdown node as KaTeX, when the
+ * application provides it with `provideChatMath()`. Without it, until KaTeX
+ * loads, or if the LaTeX is invalid, the raw `$…$` source is shown — never
+ * blank, never a crash.
  */
 @Component({
   selector: 'chat-md-math',
@@ -49,6 +50,7 @@ const DELIMITERS: Record<MathNode['delimiter'], readonly [string, string]> = {
 export class MarkdownMathComponent {
   readonly node = input.required<MathNode>();
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly math = inject(ChatMathRenderer);
 
   protected readonly display = computed(() => this.node().type === 'math-display');
 
@@ -59,9 +61,9 @@ export class MarkdownMathComponent {
   });
 
   protected readonly html = computed<SafeHtml | null>(() => {
-    katexReady(); // re-render once KaTeX finishes loading
+    this.math.ready(); // re-render once KaTeX finishes loading
     const n = this.node();
-    const out = renderMath(n.text, n.type === 'math-display');
+    const out = this.math.render(n.text, n.type === 'math-display');
     if (out == null) return null;
     // Trust KaTeX output directly: with KaTeX's default `trust:false` it emits
     // only safe presentational markup (no scripts/event handlers/links), and

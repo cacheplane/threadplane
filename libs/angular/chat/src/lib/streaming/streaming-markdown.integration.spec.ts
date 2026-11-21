@@ -6,7 +6,10 @@ import {
   ChatStreamingMdComponent,
   type StreamingMarkdownDocument,
 } from './streaming-markdown.component';
-import { loadKatex } from '../markdown/katex-loader';
+import {
+  ChatMathRenderer,
+  provideChatMath,
+} from '../markdown/katex-loader';
 
 @Component({
   standalone: true,
@@ -125,7 +128,10 @@ describe('chat-streaming-md integration', () => {
   }
 
   it('renders inline math as KaTeX instead of leaking raw $ delimiters', async () => {
-    await loadKatex();
+    TestBed.configureTestingModule({
+      providers: [provideChatMath(() => import('katex'))],
+    });
+    await TestBed.inject(ChatMathRenderer).loaded();
     const fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.document.set({
       generation: 'test',
