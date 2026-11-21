@@ -9,6 +9,7 @@ import {
   type ToolCall,
 } from '@threadplane/core';
 import type {
+  LangGraphDelegation,
   LangGraphInterrupt,
   LangGraphPublication,
   LangGraphWireInterrupt,
@@ -74,6 +75,22 @@ export function ownValueWithSharing(
   previous?: PlainValue
 ): PlainValue {
   return shareOwnedValue(ownValue(value), ownValue(previous));
+}
+
+/**
+ * `ownValueWithSharing` for a field whose declared type is an interface. An
+ * interface has no index signature, so it is not written as `PlainValue`, and
+ * without strict null checks it cannot be asserted to be one either. The value
+ * passes the same ownership boundary, which rejects anything but plain data.
+ */
+function ownDeclaredWithSharing<T>(value: T, previous: T | undefined): T {
+  const next: unknown = value;
+  const prior: unknown = previous;
+  const owned: unknown = ownValueWithSharing(
+    next as PlainValue,
+    prior as PlainValue
+  );
+  return owned as T;
 }
 
 function shareOwnedValue(next: PlainValue, previous: PlainValue): PlainValue {
@@ -143,7 +160,7 @@ export function sameToolInvocation(
   return a.name === b.name && sameOwnedValue(a.args, b.args);
 }
 
-function sameError(
+export function sameError(
   a: AgentError | undefined,
   b: AgentError | undefined
 ): boolean {
@@ -179,6 +196,11 @@ export function sameMessage(a: Message, b: Message): boolean {
         a.citations as unknown as PlainValue,
         b.citations as unknown as PlainValue
       ) &&
+      sameOwnedValue(
+        a.blocks as unknown as PlainValue,
+        b.blocks as unknown as PlainValue
+      ) &&
+      sameOwnedValue(a.extra, b.extra) &&
       a.name === b.name &&
       a.toolCallId === b.toolCallId &&
       sameOwnedValue(a.toolCallIds, b.toolCallIds) &&
@@ -195,11 +217,27 @@ export function ownMessage(message: Message, previous?: Message): Message {
     message.citations as unknown as PlainValue,
     previous?.citations as unknown as PlainValue
   ) as unknown as Message['citations'];
-  if (owned.has(message) && citations === message.citations) return message;
+  const blocks = ownValueWithSharing(
+    message.blocks as unknown as PlainValue,
+    previous?.blocks as unknown as PlainValue
+  ) as unknown as Message['blocks'];
+  const extra = ownValueWithSharing(
+    message.extra,
+    previous?.extra
+  ) as Message['extra'];
+  if (
+    owned.has(message) &&
+    citations === message.citations &&
+    blocks === message.blocks &&
+    extra === message.extra
+  )
+    return message;
   return freeze({
     id: message.id,
     role: message.role,
     content: message.content,
+    // Present only when the message held more than text.
+    ...(blocks !== undefined ? { blocks } : {}),
     reasoning: message.reasoning,
     // Present only when measured, so unmeasured messages keep their shape.
     ...(typeof message.reasoningDurationMs === 'number' &&
@@ -221,6 +259,7 @@ export function ownMessage(message: Message, previous?: Message): Message {
       message.toolCallIds === undefined
         ? undefined
         : freeze([...message.toolCallIds]),
+    ...(extra !== undefined ? { extra } : {}),
   });
 }
 
@@ -233,21 +272,40 @@ export function sameToolCall(a: ToolCall, b: ToolCall): boolean {
       sameOwnedValue(a.args, b.args) &&
       (a.status !== 'complete' ||
         (b.status === 'complete' && sameOwnedValue(a.result, b.result))) &&
-      (a.status !== 'error' || (b.status === 'error' && a.error === b.error)))
+      (a.status !== 'error' || (b.status === 'error' && a.error === b.error)) &&
+      sameOwnedValue(partsOf(a), partsOf(b)))
   );
+}
+
+/** The structured result parts of a settled call; absent while it runs. */
+function partsOf(call: ToolCall): readonly PlainValue[] | undefined {
+  return call.status === 'complete' || call.status === 'error'
+    ? call.parts
+    : undefined;
 }
 
 export function ownToolCall(call: ToolCall): ToolCall {
   if (owned.has(call)) return call;
   const base = { id: call.id, name: call.name, args: ownValue(call.args) };
+  const parts = partsOf(call);
+  const structured =
+    parts === undefined
+      ? {}
+      : { parts: ownValue(parts) as readonly PlainValue[] };
   if (call.status === 'complete')
     return freeze({
       ...base,
       status: call.status,
       result: ownValue(call.result),
+      ...structured,
     });
   if (call.status === 'error')
-    return freeze({ ...base, status: call.status, error: call.error });
+    return freeze({
+      ...base,
+      status: call.status,
+      error: call.error,
+      ...structured,
+    });
   return freeze({ ...base, status: call.status });
 }
 
@@ -302,10 +360,10 @@ export function ownSnapshot(
   const error = sameError(input.error, previous?.error)
     ? previous?.error
     : input.error && ownError(input.error);
-  const plan = ownValueWithSharing(
-    input.plan as PlainValue,
-    previous?.plan as PlainValue
-  ) as AgentSnapshot['plan'];
+  const plan = ownDeclaredWithSharing<AgentSnapshot['plan']>(
+    input.plan,
+    previous?.plan
+  );
   if (
     previous &&
     input.status === previous.status &&
@@ -323,6 +381,24 @@ export function ownSnapshot(
     ...(plan ? { plan } : {}),
   });
 }
+
+/** Optional backend fields that are plain data and present only when set. */
+const plainExtras = [
+  'checkpoints',
+  'messageCheckpoints',
+  'branchTree',
+  'branch',
+  'queue',
+  'loading',
+  'toolProgress',
+  'langGraphMessages',
+  'messageMetadata',
+  'usage',
+  'errorDiagnostic',
+  'streamingToolCalls',
+  'pendingClientTools',
+  'inputBlocked',
+] as const satisfies readonly (keyof LangGraphSnapshot)[];
 
 /** One backend aggregate, composing the core fields and owned application data. */
 export function ownLangGraphSnapshot(
@@ -348,23 +424,34 @@ export function ownLangGraphSnapshot(
     input.interrupts as unknown as PlainValue,
     previous?.interrupts as unknown as PlainValue
   ) as unknown as readonly LangGraphInterrupt[];
-  const reconnect = ownValueWithSharing(
-    input.reconnect,
-    previous?.reconnect
-  ) as LangGraphSnapshot['reconnect'];
+  const retainedRun = ownValueWithSharing(
+    input.retainedRun,
+    previous?.retainedRun
+  ) as LangGraphSnapshot['retainedRun'];
   const stateIssues = ownValueWithSharing(
     input.stateIssues,
     previous?.stateIssues
   ) as LangGraphSnapshot['stateIssues'];
+  const extras: Record<string, PlainValue> = {};
+  let sameExtras = true;
+  for (const key of plainExtras) {
+    const value = ownValueWithSharing(
+      input[key] as PlainValue,
+      previous?.[key] as PlainValue
+    );
+    if (value !== previous?.[key]) sameExtras = false;
+    if (value !== undefined) extras[key] = value;
+  }
   if (
     core === previous &&
+    sameExtras &&
     history === previous?.history &&
     state === previous?.state &&
     stateIssues === previous?.stateIssues &&
     interrupts === previous?.interrupts &&
     subgraphs === previous?.subgraphs &&
     subagents === previous?.subagents &&
-    reconnect === previous?.reconnect
+    retainedRun === previous?.retainedRun
   )
     return previous;
   // core may be the previous backend aggregate when its core fields are equal.
@@ -381,7 +468,8 @@ export function ownLangGraphSnapshot(
     interrupts,
     subgraphs,
     subagents,
-    ...(reconnect ? { reconnect } : {}),
+    ...(retainedRun ? { retainedRun } : {}),
+    ...extras,
   });
 }
 
@@ -417,8 +505,20 @@ export function ownSubgraph(
   const error = sameError(input.error, previous?.error)
     ? previous?.error
     : input.error && ownError(input.error);
+  const delegation = ownDeclaredWithSharing<LangGraphDelegation | undefined>(
+    input.delegation,
+    previous?.delegation
+  );
+  const streamingToolCalls = input.streamingToolCalls?.length
+    ? (ownValueWithSharing(
+        input.streamingToolCalls as unknown as PlainValue,
+        previous?.streamingToolCalls as unknown as PlainValue
+      ) as unknown as LangGraphSubgraph['streamingToolCalls'])
+    : undefined;
   if (
     previous &&
+    delegation === previous.delegation &&
+    streamingToolCalls === previous.streamingToolCalls &&
     namespace === previous.namespace &&
     messages === previous.messages &&
     toolCalls === previous.toolCalls &&
@@ -434,6 +534,8 @@ export function ownSubgraph(
     state,
     interrupts,
     ...(error ? { error } : {}),
+    ...(delegation ? { delegation } : {}),
+    ...(streamingToolCalls ? { streamingToolCalls } : {}),
   });
 }
 
@@ -452,6 +554,8 @@ export function ownSubgraphs(
         a.toolCalls === b.toolCalls &&
         a.state === b.state &&
         a.interrupts === b.interrupts &&
+        a.delegation === b.delegation &&
+        a.streamingToolCalls === b.streamingToolCalls &&
         sameError(a.error, b.error))
   );
 }

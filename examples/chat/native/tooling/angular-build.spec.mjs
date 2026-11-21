@@ -20,7 +20,7 @@ test('Angular composition requires real shared owner and selected installed type
     'shared/message-content.ts',
   ];
   const modules = [
-    '@threadplane/langgraph/runtime/create-session',
+    '@threadplane/langgraph/src/runtime/create-session',
     '@threadplane/content/src/markdown/create-markdown',
     '@threadplane/content/src/messages/create-message-content',
   ];

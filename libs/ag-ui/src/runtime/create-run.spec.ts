@@ -15,6 +15,7 @@ import {
   type RunAgentInput,
 } from '@ag-ui/client';
 import { Observable } from 'rxjs';
+import { LEAVE_MS } from './create-http-request';
 import { createRun } from './create-run';
 
 function deferred<T>() {
@@ -264,18 +265,24 @@ describe('private run authority', () => {
           return teardown;
         });
       });
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     try {
       const handle = createRun({ url: 'http://unused.invalid' }).start(
         input(),
         () => undefined
       );
-      expect(await bounded(handle.done)).toEqual({
+      expect(await handle.done).toEqual({
         outcome: 'success',
         fetchInvoked: false,
       });
+      // The stream never ends, so it is left for its bound and then closed.
+      expect(teardown).not.toHaveBeenCalled();
+      expect(source?.abortController.signal.aborted).toBe(false);
+      vi.advanceTimersByTime(LEAVE_MS);
       expect(teardown).toHaveBeenCalledOnce();
       expect(source?.abortController.signal.aborted).toBe(true);
     } finally {
+      vi.useRealTimers();
       source?.abortController.abort();
       run.mockRestore();
     }
@@ -497,9 +504,13 @@ describe('private run authority', () => {
     code: 'provider',
   };
 
+  // `left` says what the server does once the run's terminal event settled the
+  // result: `open` holds the response open and sends nothing more, `trailing`
+  // sends another event. Without it the stream itself failed the run.
   for (const scenario of [
     {
       name: 'snapshot then finish',
+      left: 'open',
       wire: [
         started,
         {
@@ -513,42 +524,49 @@ describe('private run authority', () => {
     },
     {
       name: 'explicit success',
+      left: 'open',
       wire: [started, { ...finished, outcome: { type: 'success' } }],
       outcome: 'success',
       types: ['RUN_STARTED', 'RUN_FINISHED'],
     },
     {
       name: 'null success',
+      left: 'open',
       wire: [started, { ...finished, outcome: null }],
       outcome: 'success',
       types: ['RUN_STARTED', 'RUN_FINISHED'],
     },
     {
       name: 'parentRunId alone is an explicitly requested root',
+      left: 'open',
       wire: [{ ...started, parentRunId: 'outer' }, finished],
       outcome: 'success',
       types: ['RUN_STARTED', 'RUN_FINISHED'],
     },
     {
       name: 'error before start',
+      left: 'open',
       wire: [failure],
       outcome: 'error',
       types: ['RUN_ERROR'],
     },
     {
       name: 'error after start',
+      left: 'open',
       wire: [started, failure],
       outcome: 'error',
       types: ['RUN_STARTED', 'RUN_ERROR'],
     },
     {
       name: 'success then error',
+      left: 'trailing',
       wire: [started, finished, failure],
       outcome: 'success',
       types: ['RUN_STARTED', 'RUN_FINISHED'],
     },
     {
       name: 'native pause then finish',
+      left: 'trailing',
       wire: [started, pause, finished],
       outcome: 'paused',
       types: ['RUN_STARTED', 'RUN_FINISHED'],
@@ -569,6 +587,7 @@ describe('private run authority', () => {
     // adapter's aborted status rather than an unsupported-outcome error.
     {
       name: 'cancelled outcome settles as aborted',
+      left: 'open',
       wire: [started, { ...finished, outcome: { type: 'cancelled' } }],
       outcome: 'aborted',
       types: ['RUN_STARTED', 'RUN_FINISHED'],
@@ -577,10 +596,19 @@ describe('private run authority', () => {
     // warning; the absent outcome then reads as success.
     {
       name: 'unknown finished outcome',
+      left: 'open',
       wire: [started, { ...finished, outcome: { type: 'future' } }],
       outcome: 'success',
       types: ['RUN_STARTED', 'RUN_FINISHED'],
       warns: true,
+    },
+    // Only an object can be stripped. An outcome that is not one is malformed:
+    // the run fails, as the Angular adapter's "Invalid run outcome" did.
+    {
+      name: 'malformed finished outcome',
+      wire: [started, { ...finished, outcome: 'future' }],
+      outcome: 'error',
+      types: ['RUN_STARTED'],
     },
     {
       name: 'empty native interrupts rejected by SDK',
@@ -630,6 +658,9 @@ describe('private run authority', () => {
         'warns' in scenario
           ? vi.spyOn(console, 'warn').mockImplementation(() => undefined)
           : undefined;
+      const left = 'left' in scenario ? scenario.left : undefined;
+      // Only the bound on a response left open is timed by hand.
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
       const handle = createRun({
         url: server.url,
         fetch: (url, init) => {
@@ -643,7 +674,20 @@ describe('private run authority', () => {
         const result = await bounded(handle.done);
         expect(result.outcome).toBe(scenario.outcome);
         expect(events.map((event) => event.type)).toEqual(scenario.types);
+        if (left === 'open') {
+          // The result is settled, and the response has its bound to end by
+          // itself. This server holds it open, so the bound closes it.
+          expect(physicalSignal?.aborted).toBe(false);
+          vi.advanceTimersByTime(LEAVE_MS - 1);
+          expect(physicalSignal?.aborted).toBe(false);
+          vi.advanceTimersByTime(1);
+        } else if (left === 'trailing') {
+          // An event after the terminal one is not delivered. It may fail the
+          // stream, which closes the response; the bound closes it otherwise.
+          vi.advanceTimersByTime(LEAVE_MS);
+        }
         expect(physicalSignal?.aborted).toBe(true);
+        vi.useRealTimers();
         await bounded(exchange.closed);
         expect(exchange.response.destroyed).toBe(true);
         expect(server.exchanges).toHaveLength(1);
@@ -671,6 +715,7 @@ describe('private run authority', () => {
         handle.abort();
         expect(await handle.done).toBe(result);
       } finally {
+        vi.useRealTimers();
         warn?.mockRestore();
         handle.abort();
         await server.close();

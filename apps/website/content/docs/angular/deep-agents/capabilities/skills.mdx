@@ -104,21 +104,21 @@ This is an application-side visibility event rather than a framework feature. Th
 
 ### Providing the agent
 
-`provideAgent()` from `@threadplane/langgraph` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. The example resolves its connection at runtime because the host that serves the demo decides which runtime is attached; your own application passes `apiUrl` and `assistantId` directly.
+`provideAgent()` from `@threadplane/angular` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. Its `createSession` function calls `createSession()` from `@threadplane/langgraph`, once at start and again for each thread switch. The example resolves its connection at runtime because the host that serves the demo decides which runtime is attached; your own application passes `apiUrl` and `assistantId` to `createSession()` directly.
 
 <ExampleCode file="app.config.ts" />
 
 ### Two sources for one index
 
-A custom event is a live signal and is not replayed when a thread is reopened. Root values can also carry the index during a run, and the saved checkpoint carries it for hydration. The Angular panel prefers the named custom event and otherwise reads `agent.value()`. Its `checkpoint` label identifies that fallback, without proving the value came only from a reopened thread.
+A custom event is a live signal and is not replayed when a thread is reopened. Root values can also carry the index during a run, and the saved checkpoint carries it for hydration. The Angular panel prefers the named custom event and otherwise reads `agent.state()`. Its `checkpoint` label identifies that fallback, without proving the value came only from a reopened thread.
 
 <ExampleCode file="skills.component.ts" region="skills-sources" title="skills.component.ts — the two readers" />
 
-`agent.customEvents()` holds the custom events of the current run, cleared when a new run starts, so the live reader walks it newest first and takes the most recent payload under the event name the graph emits, while `agent.value()` is the agent state the adapter projects from the latest checkpoint, which may include the key from root values or a checkpoint.
+`agent.customEvents()` holds the custom events of the current run, cleared when a new run starts and when the agent switches threads, so the live reader walks it newest first and takes the most recent payload under the event name the graph emits, while `agent.state()` is the root graph state the backend last reported, which may include the key from root values or a checkpoint.
 
 ### Requested paths and successfully inspected reads
 
-The Angular `live` label means the visibility middleware announced the index; `checkpoint` means the value fallback supplied it. Its path projection reads `read_file` arguments from the runtime-neutral `agent.toolCalls()` Signal. These are requested paths: a failed read can still appear, and the panel does not inspect the result or establish successful body disclosure. The React preview separates requests from successfully inspected matching tool results and exposes failed or unavailable evidence explicitly.
+The Angular `live` label means the visibility middleware announced the index; `checkpoint` means the state fallback supplied it. Its path projection reads `read_file` arguments from the `agent.toolCalls()` Signal, which every backend's session publishes. These are requested paths: a failed read can still appear, and the panel does not inspect the result or establish successful body disclosure. The React preview separates requests from successfully inspected matching tool results and exposes failed or unavailable evidence explicitly.
 
 <ExampleCode file="skills.component.ts" region="opened-paths" title="skills.component.ts — the opened paths" />
 

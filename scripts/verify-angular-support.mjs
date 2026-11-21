@@ -12,10 +12,11 @@ import { WEBSITE_SUPPORTED_ANGULAR_MAJORS } from '../apps/website/src/components
 
 export { ANGULAR_PEER_RANGE };
 
+// The Angular packages. The backend packages (langgraph, ag-ui) are
+// framework-neutral and declare no Angular peer; verify-boundaries rejects one.
 export const ANGULAR_MANIFESTS = [
+  'libs/angular/package.json',
   'libs/chat/package.json',
-  'libs/langgraph/package.json',
-  'libs/ag-ui/package.json',
   'libs/render/package.json',
   'libs/telemetry/package.json',
   'libs/cockpit-telemetry/package.json',
@@ -25,8 +26,6 @@ export const ANGULAR_MANIFESTS = [
 export const ANGULAR_SUPPORT_README_BLOCKS = [
   { path: 'README.md', marker: '**Peer dependencies:**' },
   { path: 'libs/chat/README.md', marker: '**Peer dependencies:**' },
-  { path: 'libs/langgraph/README.md', marker: '**Peer dependencies:**' },
-  { path: 'libs/ag-ui/README.md', marker: '**Peer dependencies:**' },
   { path: 'libs/render/README.md', marker: '**Peer dependencies:**' },
   {
     path: 'libs/telemetry/README.md',

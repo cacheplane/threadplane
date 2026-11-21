@@ -1,6 +1,6 @@
 // Pure, DOM-free display helpers over Citation. Shared by the inline marker,
 // the preview card, and the sources panel so provenance rendering stays DRY.
-import type { Citation } from './citation';
+import type { Citation } from '@threadplane/core';
 
 /** Supported source categories used for citation icons and visual tones. */
 export type CitationTypeIcon = 'web' | 'file' | 'app' | 'memory' | 'generic';

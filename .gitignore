@@ -93,6 +93,7 @@ keys/
 libs/*/.install-collector/*
 !libs/*/.install-collector/development-install.mjs
 !libs/*/.install-collector/development-install.d.ts
+!libs/*/.install-collector/development-install.d.mts
 
 # Growth research generated deployment artifacts
 apps/growth-research/.dawn/

@@ -56,9 +56,41 @@ describe('StageReplayTransport', () => {
     await take(t.stream('chat', 'thread-1', {}, sig), 9); // run 0 → runIndex 1
     expect(await t.getHistory('thread-1', sig)).toHaveLength(1);
     await take(t.stream('chat', 'thread-1', {}, sig), 9); // run 2 → runIndex 3
-    // The bridge projects history over the transcript at every run close, so a
+    // A session reads the history page again at every run close, so a
     // snapshot from an earlier position must not be answered.
     expect(await t.getHistory('thread-1', sig)).toEqual([]);
+  });
+  it('creates no thread of its own: a session that asks is given the recorded one', async () => {
+    const t = new StageReplayTransport(async () => MINIMAL);
+    expect(await t.createThread()).toBe(MINIMAL.threadId);
+  });
+  it('renames each recorded prompt to the id the session sent, in events and in history', async () => {
+    const human = (id: string, content: string) => ({ id, type: 'human', content });
+    const first = MINIMAL.runs[0];
+    const prompted = {
+      ...MINIMAL,
+      runs: [
+        { ...first, events: [{ tMs: 0, event: { type: 'values', messages: [human('recorded', 'Q1')] } as never }] },
+        ...MINIMAL.runs.slice(1),
+      ],
+      histories: [{ afterRun: 1, states: [{ values: { messages: [human('recorded', 'Q1')] } } as never] }],
+    };
+    const t = new StageReplayTransport(async () => prompted);
+    await t.ready();
+    t.seek(buildTimeline(prompted).totalMs);
+    const sig = new AbortController().signal;
+    const [event] = await take(t.stream('chat', 'thread-1', { messages: [human('live', 'Q1')] }, sig), 9);
+    expect((event as unknown as { messages: { id: string }[] }).messages[0].id).toBe('live');
+    const [state] = await t.getHistory('thread-1', sig);
+    expect((state.values as { messages: { id: string }[] }).messages[0].id).toBe('live');
+    // The recording itself is never rewritten.
+    expect(JSON.stringify(prompted)).not.toContain('"live"');
+
+    // After a rewind the next session's id is the one that applies.
+    t.reset();
+    t.seek(buildTimeline(prompted).totalMs);
+    const [again] = await take(t.stream('chat', 'thread-1', { messages: [human('live-2', 'Q1')] }, sig), 9);
+    expect((again as unknown as { messages: { id: string }[] }).messages[0].id).toBe('live-2');
   });
   it('never seeds the transcript from a pre-run snapshot', async () => {
     const one = { values: { messages: [] } } as never;

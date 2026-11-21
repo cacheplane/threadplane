@@ -45,7 +45,7 @@ export default [
             },
             {
               sourceTag: 'layer:backend',
-              onlyDependOnLibsWithTags: ['layer:core', 'layer:content', 'layer:backend'],
+              onlyDependOnLibsWithTags: ['layer:core', 'layer:backend'],
               bannedExternalImports: ['@angular/*', 'react', 'react-dom'],
             },
             {

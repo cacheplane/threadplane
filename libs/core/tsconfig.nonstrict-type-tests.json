@@ -1,0 +1,8 @@
+{
+  // Runs the `*.nonstrict.type-test.ts` files with the applications' options
+  // from tsconfig.nonstrict.json. That config skips type tests, because most
+  // of them assert errors that only strict null checks report.
+  "extends": "./tsconfig.nonstrict.json",
+  "include": ["src/**/*.nonstrict.type-test.ts"],
+  "exclude": []
+}

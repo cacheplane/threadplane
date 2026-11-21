@@ -146,7 +146,7 @@ describe('retry', () => {
     }
   });
 
-  it('is absent over the client-tool owner, which treats every sent failure as uncertain', () => {
+  it('is present over the client-tool owner (see client-tools-retry.spec.ts)', () => {
     const native = createSession(
       { url: 'https://native-fixture.invalid/run', threadId: 't' },
       {
@@ -156,6 +156,6 @@ describe('retry', () => {
         },
       }
     );
-    expect('retry' in native).toBe(false);
+    expect(typeof native.retry).toBe('function');
   });
 });

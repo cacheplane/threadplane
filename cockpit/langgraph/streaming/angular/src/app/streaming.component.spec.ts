@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ChatComponent,
   ChatWelcomeSuggestionComponent,
+  mockAgent,
 } from '@threadplane/chat';
-import { mockLangGraphAgent } from '@threadplane/langgraph';
 import { COCKPIT_INSPECTION_PUBLISHER } from '@threadplane/cockpit-telemetry';
 import type { InspectionFrame } from '@threadplane/cockpit-runtime-bridge';
 import { StreamingComponent } from './streaming.component';
@@ -15,7 +15,7 @@ describe('streaming live inspection', () => {
   afterEach(() => TestBed.resetTestingModule());
 
   function setup() {
-    const agent = mockLangGraphAgent();
+    const agent = mockAgent();
     const switchThread = vi.spyOn(agent, 'switchThread');
     const frames: InspectionFrame[] = [];
     TestBed.configureTestingModule({
@@ -35,22 +35,27 @@ describe('streaming live inspection', () => {
 
   it('publishes actual signals and text-only messages, never raw state or failures', () => {
     const { agent, frames, fixture } = setup();
-    agent.value.set({ privateValue: 'private state' });
+    agent.state.set({ privateValue: 'private state' });
     agent.messages.set([
       {
         id: 'a',
         role: 'assistant',
         delivery: { generation: 'a', phase: 'complete', outcome: 'success' },
-        content: [
+        content: 'Hello',
+        blocks: [
           { type: 'text', text: 'Hello' },
           { type: 'image', url: 'private image' },
         ],
         extra: { secret: 'private extra' },
       },
     ]);
-    agent.isLoading.set(true);
-    agent.hasValue.set(true);
-    agent.error.set({ kind: 'unknown', message: 'private failure' });
+    agent.error.set({
+      kind: 'server',
+      message: 'private failure',
+      retryable: false,
+    });
+    // The agent has one status: `busy` is `status() === 'running'`.
+    agent.status.set('running');
     fixture.detectChanges();
     expect(frames.at(-1)?.messages).toEqual([
       { id: 'a', role: 'assistant', text: 'Hello' },
@@ -58,7 +63,7 @@ describe('streaming live inspection', () => {
     expect(frames.at(-1)?.state).toEqual({
       busy: true,
       hasValue: true,
-      status: 'idle',
+      status: 'running',
       hasFailure: true,
       messageCount: 1,
       deliveryPhase: 'complete',
@@ -67,7 +72,7 @@ describe('streaming live inspection', () => {
     expect(JSON.stringify(frames)).not.toContain('private');
     const count = frames.length;
     fixture.destroy();
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     TestBed.tick();
     expect(frames).toHaveLength(count);
   });
@@ -149,12 +154,16 @@ describe('streaming live inspection', () => {
         delivery: { generation: 'new', phase: 'complete', outcome: 'success' },
       },
     ]);
-    agent.isLoading.set(true);
+    agent.status.set('running');
     fixture.detectChanges();
     expect(frames.at(-1)?.state?.outcome).toBe(null);
     expect(frames.at(-1)?.state?.deliveryPhase).toBe(null);
-    agent.isLoading.set(false);
-    agent.error.set({ kind: 'unknown', message: 'Failed before a response' });
+    // Setting an error also ends the run, as a session does.
+    agent.error.set({
+      kind: 'server',
+      message: 'Failed before a response',
+      retryable: false,
+    });
     fixture.detectChanges();
     expect(frames.at(-1)?.state?.outcome).toBe(null);
     expect(frames.at(-1)?.state?.hasFailure).toBe(true);
@@ -184,8 +193,8 @@ describe('streaming live inspection', () => {
     let resolve!: () => void;
     vi.mocked(agent.submit).mockImplementationOnce(
       () =>
-        new Promise<void>((done) => {
-          resolve = done;
+        new Promise((done) => {
+          resolve = () => done('success');
         })
     );
     const pending = chat.agent()!.submit({ message: 'pending' });

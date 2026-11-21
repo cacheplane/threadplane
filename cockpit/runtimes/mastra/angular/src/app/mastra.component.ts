@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, computed } from '@angular/core';
 import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
+import type { Session } from '@threadplane/ag-ui';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { CurrencyPipe } from '@angular/common';
 
@@ -39,7 +40,8 @@ interface PackingList {
  *
  * The whole point of this example: this component is the same kind of UI
  * code every other AG-UI example uses — `provideAgent` + `injectAgent()`
- * from `@threadplane/ag-ui`, the `@threadplane/chat` primitives — while the
+ * from `@threadplane/angular` over `createSession` from `@threadplane/ag-ui`,
+ * the `@threadplane/chat` primitives — while the
  * backend is a genuinely non-LangGraph, non-Python runtime: Mastra agents
  * served over plain AG-UI SSE by the hand-written Node service
  * `deployments/ag-ui-mastra` (upstream ships no HTTP endpoint of its own).
@@ -53,7 +55,7 @@ interface PackingList {
  *   and the protocol-standard RUN_FINISHED interrupt outcome. The session
  *   retains the Mastra payload alongside the native batch. The explicit
  *   `mastra-command` transport in app.config.ts ensures
- *   `submit({ resume })` goes out as
+ *   `agent.resume(responses)` goes out as
  *   `forwardedProps.command = { resume, interruptEvent: { toolCallId, runId } }`
  *   — exactly what the Mastra bridge requires to resume the suspended run.
  * - Sub-agent delegation (weather_forecaster) reaches the wire as a
@@ -81,7 +83,7 @@ interface PackingList {
     >
       <div main class="mastra-shell">
       <chat placeholder="Ask for a fictional campsite reservation…" [welcomeDisabled]="true" [agent]="agent" class="mastra-chat">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
           <div chatWelcomeSuggestions>
             @for (s of suggestions; track s.value) {
               <chat-welcome-suggestion
@@ -245,12 +247,12 @@ interface PackingList {
 export class MastraComponent {
   protected readonly suggestions = WELCOME_SUGGESTIONS;
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<Session>();
 
   // #region packing-list-state
   /** Mastra working memory, bridged into AG-UI shared state. */
   protected readonly packingList = computed(() => {
-    // Example apps compile lib source with strict:false — cast at the read site.
+    // The session declares no state type, so the document is cast at the read site.
     const state = this.agent.state() as { packing_list?: PackingList } | undefined;
     const list = state?.packing_list;
     return list && list.title ? list : undefined;
@@ -259,13 +261,14 @@ export class MastraComponent {
 
   // #region approval-actions
   /**
-   * The pending Mastra suspend. The session retains the parsed CUSTOM
-   * `on_interrupt` payload: `{ type: 'mastra_suspend', toolCallId, toolName,
-   * suspendPayload, args, resumeSchema, runId }` alongside the native
-   * RUN_FINISHED outcome that follows it on the wire.
+   * The pending Mastra suspend. Under the `mastra-command` transport the
+   * pending interrupt's `value` is the parsed CUSTOM `on_interrupt` payload:
+   * `{ type: 'mastra_suspend', toolCallId, toolName, suspendPayload, args,
+   * resumeSchema, runId }`. The native RUN_FINISHED outcome that follows it
+   * on the wire does not replace it.
    */
   private readonly suspendValue = computed(() => {
-    return this.agent.interruptSession().legacy?.value as
+    return this.agent.interrupts()?.[0]?.value as
       | { toolName?: string; suspendPayload?: { site?: string; nights?: number; total_usd?: number } }
       | undefined;
   });
@@ -280,12 +283,19 @@ export class MastraComponent {
 
   protected onAction(action: ChatApprovalAction): void {
     if (action === 'approve') {
-      // The adapter turns this into forwardedProps.command
+      // The session turns this into forwardedProps.command
       // { resume: { approved: true }, interruptEvent: { toolCallId, runId } }.
-      void this.agent.submit({ resume: { approved: true } });
+      this.answer({ approved: true });
     } else if (action === 'cancel') {
-      void this.agent.submit({ resume: { approved: false } });
+      this.answer({ approved: false });
     }
+  }
+
+  /** Answers the pending interrupt with `value`. */
+  private answer(value: { approved: boolean }): void {
+    const interrupt = this.agent.interrupts()?.[0];
+    if (!interrupt) return;
+    void this.agent.resume([{ interruptId: interrupt.id, status: 'resolved', value }]);
   }
   // #endregion
 }

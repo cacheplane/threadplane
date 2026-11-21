@@ -1,33 +1,49 @@
-export type { Agent } from './agent';
-export { AgentError, AGENT_ERROR_MESSAGES, AGENT_RECOVERY_MESSAGES, AGENT_RECOVERY_DETAILS } from './agent-error';
-export type { AgentErrorKind, AgentRecovery } from './agent-error';
-export { toAgentError, isAbortError } from './to-agent-error';
-export type { Citation } from './citation';
-export type { Message, Role } from './message';
+// The agent contract the chat library renders from. The injected `Agent` is
+// defined by `@threadplane/angular`, and the data it publishes by
+// `@threadplane/core`; this module only gathers the names the library uses.
+export type { Agent, AgentLifecycle } from './angular-agent';
+export type {
+  AgentCheckpoint,
+  AgentError,
+  AgentErrorDiagnostic,
+  AgentErrorKind,
+  AgentInputBlock,
+  AgentInterrupt,
+  AgentInterruptResponse,
+  AgentPlanStep,
+  AgentRecovery,
+  AgentSessionCustomEvent,
+  AgentStatus,
+  AgentSubagent,
+  AgentSubagentStatus,
+  AgentSubmitInput,
+  AgentSubmitOptions,
+  AgentUsage,
+  AgentUsageEntry,
+  Citation,
+  CompleteOutcome,
+  ContentBlock,
+  Message,
+  MessageDelivery,
+  PlainValue,
+  Role,
+  StreamingToolCall,
+  ToolCall,
+  ToolCallStatus,
+} from '@threadplane/core';
+export {
+  agentPlanFromState,
+  completeDelivery,
+  contentBlocksText,
+  staticDelivery,
+  streamingDelivery,
+} from '@threadplane/core';
 export { isUserMessage, isAssistantMessage, isToolMessage, isSystemMessage } from './message';
-export type { CompleteOutcome, MessageDelivery } from './message-delivery';
-export { streamingDelivery, completeDelivery, staticDelivery } from './message-delivery';
-export type { ContentBlock } from './content-block';
-export type { ToolCall, ToolCallStatus } from './tool-call';
-export type { AgentStatus } from './agent-status';
-export type { AgentInterrupt } from './agent-interrupt';
-export type { Subagent, SubagentStatus } from './subagent';
-export type { AgentSubmitInput, AgentSubmitOptions } from './agent-submit';
-export type {
-  AgentEvent,
-  AgentStateUpdateEvent,
-  AgentCustomEvent,
-} from './agent-event';
-export type { AgentCheckpoint } from './agent-checkpoint';
-export type { AgentUsage, AgentUsageEntry } from './agent-usage';
-export type { AgentPlan, AgentPlanStep } from './agent-plan';
-export { agentPlan, agentPlanFromState } from './agent-plan';
-export type { AgentWithHistory } from './agent-with-history';
-export type { AgentRef } from './agent-ref';
-export { createAgentRef } from './agent-ref';
-export type {
-  AgentRuntimeTelemetryEvent,
-  AgentRuntimeTelemetryPayload,
-  AgentRuntimeTelemetryProperties,
-  AgentRuntimeTelemetrySink,
-} from './runtime-telemetry';
+export {
+  agentToolCalls,
+  isAgentInputBlocked,
+  isAgentRunning,
+  pendingInterrupt,
+  toolCallError,
+  toolCallResult,
+} from './read-agent';

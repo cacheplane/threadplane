@@ -35,7 +35,7 @@ The `todos` channel holds a plan. When one response requests two or more browser
 `bind_client_tools(llm, [], state)` converts each catalog entry into an OpenAI function-tool dict and calls `llm.bind_tools` with it; the empty list is where your own server tools would go.
 
 <Callout type="info" title="Why the turn ends on a tool call">
-The browser, not the graph, produces the result. Ending the run is the signal the adapter waits for: it treats a tool call with no result as pending only once the run is no longer loading. A graph that looped back to a tools node would leave the browser nothing to do.
+The browser, not the graph, produces the result. Ending the run is the signal the session waits for: it lists a tool call with no result as pending only once the run is no longer going. A graph that looped back to a tools node would leave the browser nothing to do.
 </Callout>
 
 ### Serving the graph over AG-UI
@@ -46,7 +46,7 @@ The server is a FastAPI application. `LangGraphAgent` wraps the compiled graph a
 
 ### Providing the agent
 
-`provideAgent()` from `@threadplane/ag-ui` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. The example resolves its URL at runtime because the host that serves the demo decides which runtime is attached; your own application passes a `url` directly.
+`provideAgent()` from `@threadplane/angular` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. Its `createSession` factory calls `createSession()` from `@threadplane/ag-ui`. The example resolves its URL at runtime because the host that serves the demo decides which runtime is attached; your own application passes a `url` to `createSession()` directly.
 
 <ExampleCode file="app.config.ts" />
 
@@ -80,11 +80,11 @@ The catalog the model sees is derived by `deriveJsonSchema`, which calls `toJSON
 
 ### Passing the registry to chat
 
-The registry reaches the UI through one input. `<chat [clientTools]="clientTools">` builds a coordinator for that registry, which ships the catalog to the agent, runs function tools, mounts view and ask components, and settles each call.
+The registry reaches the UI through one input. `<chat [clientTools]="clientTools">` builds a coordinator for that registry, which declares the catalog on the agent's `clientTools` capability, runs function tools, mounts view and ask components, and settles each call.
 
 <ExampleCode file="client-tools.component.ts" region="chat-wiring" title="client-tools.component.ts — the chat wiring" />
 
-The catalog is attached to every run the adapter starts, as the `tools` field of the AG-UI run input, so the model sees the browser's tools on the initial run and on every continuation.
+Once declared, the catalog is attached to every request the session sends, as the `tools` field of the AG-UI run input, so the model sees the browser's tools on the initial run and on every continuation.
 
 ### The view component the model fills
 
@@ -112,33 +112,33 @@ A function handler receives a context object as its second argument, carrying an
 
 <ExampleCode file="client-tools.component.ts" region="abortable-delay" title="client-tools.component.ts — the abortable delay" />
 
-The executor wraps the agent's `stop`, so pressing stop aborts every in-flight handler, and a cancelled call is recorded without starting a new run.
+The executor registers with the agent's `onStop`, so pressing stop aborts every in-flight handler, and a cancelled call is recorded without starting a new run.
 
 ## The round trip in one pass
 
 <Steps>
 <Step title="The catalog ships with the run">
-The coordinator converts the registry into specs, each with a name, a description and a JSON Schema, and the adapter attaches them to every run it starts.
+The coordinator converts the registry into specs, each with a name, a description and a JSON Schema, and the session attaches them to every request it sends.
 </Step>
 <Step title="The model calls a tool and the graph ends the run">
 Because the tool has no server implementation, the run finishes with a tool call that carries no result.
 </Step>
 <Step title="The browser sees the call as pending">
-Pending calls are those whose name is in the catalog, whose result is undefined, and which this client has not resolved yet, and only while the agent is not loading.
+`agent.pendingClientTools()` lists the calls whose name is in the catalog and which have no result yet, and only while no run is going. When the run's `RUN_FINISHED` names `pendingToolCallIds`, only those calls are listed.
 </Step>
 <Step title="The browser produces the result">
 A function handler runs, a view is acknowledged on mount, and an ask waits for the user's value.
 </Step>
 <Step title="The result is submitted and the run continues">
-The adapter records the result on the local tool call, adds a tool message addressed to the call id, and starts the next run, which the model answers.
+The session records the result as a tool message addressed to the call id, which completes the local tool call, and starts the next run, which the model answers.
 </Step>
 </Steps>
 
 ## Settle, flush, and resolve
 
-The adapter implements three operations for a produced result, and the coordinator picks between them.
+The session's `clientTools` capability has three operations for a produced result, and the coordinator picks between them.
 
-`settle(id, result)` records the result: the value is written onto the local tool call so the transcript freezes, and a tool message is added to the agent's outgoing messages. `resolve(id, result)` settles and then asks the adapter to continue the run, which is the normal path. `flush()` is where an adapter makes settled results durable without continuing; in `@threadplane/ag-ui` it is a deliberate no-op, because `settle` already placed the tool message in the message list that the next run carries.
+`settle(id, result)` records the result as the tool message the next request sends, so the local tool call completes and the transcript freezes; it throws for an id that is not pending. `resolve(id, result)` settles and then continues with a run that adds no user message, which is the normal path. `flush()` is where a session makes settled results durable without continuing; in `@threadplane/ag-ui` it saves the thread when the session has `persistence` and otherwise does nothing, because `settle` already placed the tool message in the history that the next run carries.
 
 The choice matters at the edges. A tool declared with `followUp: false`, like `weather_snapshot` in this example, is settled and flushed instead of resolved, so the rendered card is the final answer and no summary follows. A cancelled call takes the same path, because continuing the run is exactly what the user asked not to happen.
 
@@ -175,6 +175,6 @@ Nothing about this design is exclusive. Pass your server tools as the second arg
     The runtime-neutral contract behind action, view, and ask.
   </Card>
   <Card title="Event Mapping" href="/docs/angular/ag-ui/reference/event-mapping">
-    How AG-UI protocol events become the Agent contract the chat UI reads.
+    How AG-UI protocol events become the Agent the chat UI reads.
   </Card>
 </CardGroup>

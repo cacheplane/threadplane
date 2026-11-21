@@ -91,7 +91,7 @@ test('installed harness imports pure policy without installer guard', () => {
   assert.match(source, /from '.\/ag-ui-a2ui-proof-policy.mjs'/);
   assert.doesNotMatch(
     source,
-    /verify-ag-ui-a2ui|ag-ui-candidate-package|emitCandidate|packCandidate|installCandidate|import\.meta\.url/
+    /verify-ag-ui-a2ui|ag-ui-package|emitCandidate|packCandidate|installCandidate|import\.meta\.url/
   );
   const helper = readFileSync(
     new URL('./ag-ui-a2ui-proof-policy.mjs', import.meta.url),

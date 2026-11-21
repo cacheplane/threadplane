@@ -1,11 +1,11 @@
 ---
 title: Try without a backend
-description: Render a real Threadplane chat with provideFakeAgent() — no server, no LLM, no account — then swap in a real adapter.
+description: Render a real Threadplane chat with provideFakeAgent() — no server, no LLM, no account — then swap in a real backend session.
 ---
 
 # Try without a backend
 
-Render a real `<chat>` in your Angular app with no server, no LLM and no account. `provideFakeAgent()` streams a canned reply in-process through the same components you will ship. When the UI looks right, swap the provider for a real adapter.
+Render a real `<chat>` in your Angular app with no server, no LLM and no account. `provideFakeAgent()` streams a canned reply in-process through the same components you will ship. When the UI looks right, swap the provider for `provideAgent()` and a real session.
 
 <Callout type="info" title="What you need">
 An Angular 20–22 application. Nothing else.
@@ -15,13 +15,13 @@ An Angular 20–22 application. Nothing else.
 <Step title="Install">
 
 ```bash
-npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
 ```
 
-`provideFakeAgent()` ships inside the adapter packages, so install the adapter you expect to use later. The LangChain packages are peers of `@threadplane/langgraph`; `marked` renders assistant markdown.
+`provideFakeAgent()` ships in the `@threadplane/angular/testing` entry and runs on the in-memory session from `@threadplane/core/testing`. Both packages are also peers of `@threadplane/chat`; the command names them because your application imports from them directly. The fake needs no backend package: `@threadplane/langgraph` and its LangChain peers are here so the last step can swap in a real session, and you can install the backend you expect to use instead. `marked` renders assistant markdown.
 
 <Callout type="tip" title="Bundle budget">
-A default Angular application caps the initial bundle at 1 MB, and a chat UI plus the LangGraph SDK exceeds it. Raise `budgets[].maximumError` for the `initial` bundle in `angular.json` if `ng build` reports a budget error.
+A default Angular application caps the initial bundle at 1 MB. If `ng build` reports a budget error after you add the chat UI and a backend package, raise `budgets[].maximumError` for the `initial` bundle in `angular.json`.
 </Callout>
 
 </Step>
@@ -30,7 +30,7 @@ A default Angular application caps the initial bundle at 1 MB, and a chat UI plu
 ```ts
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
-import { provideFakeAgent } from '@threadplane/langgraph';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -39,7 +39,7 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-`FakeAgentConfig` accepts `tokens`, `reasoningTokens` and `delayMs`. Leave them out and the fake agent streams a default reply.
+`FakeAgentConfig` accepts `tokens`, `reasoningTokens` and `delayMs` (60 milliseconds between entries by default; `0` streams without timers), plus `threadId`, `onThreadId` and a `session` object that seeds the fake session's snapshot. Leave them out and the fake agent streams a default reply. `@threadplane/chat/testing` re-exports `provideFakeAgent()` if you would rather import it from the chat package.
 
 </Step>
 <Step title="Render the chat">
@@ -47,7 +47,7 @@ export const appConfig: ApplicationConfig = {
 ```ts
 // app.component.ts
 import { Component } from '@angular/core';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 import { ChatComponent } from '@threadplane/chat';
 
 @Component({
@@ -68,7 +68,7 @@ Run `ng serve`, type anything, and watch the reply stream in.
 ```ts
 // app.component.spec.ts
 import { TestBed } from '@angular/core/testing';
-import { provideFakeAgent } from '@threadplane/langgraph';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 import { AppComponent } from './app.component';
 
 it('streams the fake reply', async () => {
@@ -96,13 +96,41 @@ The `detectChanges()` call after the input event matters: the send button stays 
 
 ## Testing without a model
 
-`provideFakeAgent()` streams canned tokens in-process, and the mock transports script tool calls and interrupts, so component specs stay deterministic and fast. See the [testing guide](/docs/angular/langgraph/guides/testing).
+`provideFakeAgent()` streams canned tokens in-process, so component specs stay deterministic and fast. Three more helpers cover the rest:
 
-## Connect a real adapter
+- `injectFakeAgentSession()` from `@threadplane/angular/testing` returns a signal of the current fake session's controls, so a spec can push messages, set an error, or publish interrupts and tool calls.
+- `mockAgent()` from `@threadplane/chat` builds an `Agent` with writable fields and recorded commands for a component test that needs no injector: `agent.messages.set([...])`, `agent.status.set('running')`, then assert on `agent.submitCalls`.
+- `MockAgentTransport` from `@threadplane/langgraph` and `FakeAgent` from `@threadplane/ag-ui` script backend events through the real session when a spec has to cover the projection too.
 
-Replace `provideFakeAgent(...)` with one line and keep every component as it is:
+See the [testing guide](/docs/angular/langgraph/guides/testing).
 
-- **LangGraph**: `provideAgent({ apiUrl: 'http://localhost:2024', assistantId: 'agent' })` — [LangGraph quickstart](/docs/angular/langgraph/getting-started/quickstart)
-- **AG-UI**: `provideAgent({ url: 'http://localhost:8000/agent' })` from `@threadplane/ag-ui` — [AG-UI quickstart](/docs/angular/ag-ui/getting-started/quickstart)
+## Connect a real backend
+
+Replace `provideFakeAgent(...)` with `provideAgent({ createSession })` from `@threadplane/angular`, and keep every component as it is:
+
+- **LangGraph**: `createSession` from `@threadplane/langgraph` — [LangGraph quickstart](/docs/angular/langgraph/getting-started/quickstart)
+
+  ```ts
+  provideAgent({
+    createSession: (context) =>
+      createSession({
+        ...context,
+        apiUrl: 'http://localhost:2024',
+        assistantId: 'agent',
+      }),
+  })
+  ```
+
+- **AG-UI**: install `@threadplane/ag-ui @ag-ui/client rxjs`, then use `createSession` from `@threadplane/ag-ui` — [AG-UI quickstart](/docs/angular/ag-ui/getting-started/quickstart)
+
+  ```ts
+  provideAgent({
+    createSession: (context) =>
+      createSession({
+        ...context,
+        url: 'http://localhost:8000/agent',
+      }),
+  })
+  ```
 
 Not every backend emits every capability; see [Choosing an adapter](/docs/choosing-an-adapter).

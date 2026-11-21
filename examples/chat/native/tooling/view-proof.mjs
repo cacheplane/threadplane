@@ -90,7 +90,7 @@ function composition(selected, types, runtime) {
     assert.ok(runtime.includes(p), 'View runtime composition missing: ' + p);
   }
   for (const p of [
-    '@threadplane/langgraph/runtime/create-session',
+    '@threadplane/langgraph/src/runtime/create-session',
     '@threadplane/content/src/markdown/create-markdown',
     '@threadplane/content/src/messages/create-message-content',
     ...(!selected.angular

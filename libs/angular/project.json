@@ -18,6 +18,9 @@
       },
       "defaultConfiguration": "production"
     },
+    "nx-release-publish": {
+      "options": { "packageRoot": "dist/{projectRoot}" }
+    },
     "lint": { "executor": "@nx/eslint:lint" },
     "test": {
       "executor": "@nx/vitest:test",
@@ -28,7 +31,7 @@
       "cache": true,
       "inputs": ["default", "^production"],
       "options": {
-        "command": "node node_modules/typescript/bin/tsc --project libs/angular/tsconfig.spec.json --noEmit --emitDeclarationOnly false --composite false --incremental false"
+        "command": "node node_modules/typescript/bin/tsc --project libs/angular/tsconfig.spec.json --noEmit --emitDeclarationOnly false --composite false --incremental false && node node_modules/typescript/bin/tsc --project libs/angular/tsconfig.nonstrict.json"
       }
     }
   }

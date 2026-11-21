@@ -21,6 +21,9 @@
       "path": "../../../../libs/chat"
     },
     {
+      "path": "../../../../libs/angular"
+    },
+    {
       "path": "../../../../libs/langgraph"
     }
   ]

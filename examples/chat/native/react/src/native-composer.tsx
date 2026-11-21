@@ -62,7 +62,7 @@ function suggestionMode(snapshot: ApplicationSnapshot) {
       snapshot.selection.id !== null &&
       runtime?.status === 'idle' &&
       !runtime.error &&
-      !runtime.reconnect &&
+      !runtime.retainedRun &&
       !snapshot.submission.active &&
       !deletionBlocked(snapshot)
     )

@@ -4,8 +4,9 @@ import type {
   SubagentErrorEvent,
 } from '@ag-ui/client';
 import type { DeepReadonly } from '@threadplane/core';
-import { copyData } from '../lib/internal/copy-data.js';
+import { copyData } from './copy-data.js';
 
+/** The fields of a `SUBAGENT_STARTED` event a session keeps. */
 export type ChildStart = Pick<
   SubagentStartedEvent,
   | 'type'
@@ -18,18 +19,24 @@ export type ChildStart = Pick<
   | 'timestamp'
   | 'metadata'
 >;
+/** The fields of a `SUBAGENT_FINISHED` event a session keeps. */
 export type ChildFinish = Pick<
   SubagentFinishedEvent,
   'type' | 'subagentRunId' | 'result' | 'outcome' | 'timestamp' | 'metadata'
 >;
+/** The fields of a `SUBAGENT_ERROR` event a session keeps. */
 export type ChildError = Pick<
   SubagentErrorEvent,
   'type' | 'subagentRunId' | 'message' | 'code' | 'timestamp' | 'metadata'
 >;
+/** The protocol evidence of one child agent: how it started and how it ended. */
 export interface SubagentObservation {
+  /** The `SUBAGENT_STARTED` event's fields. */
   readonly started: DeepReadonly<ChildStart>;
+  /** The `SUBAGENT_FINISHED` or `SUBAGENT_ERROR` event's fields, once the child ended. */
   readonly terminal?: DeepReadonly<ChildFinish | ChildError>;
 }
+/** The evidence of each child agent, in the order they started. */
 export type Subagents = readonly SubagentObservation[];
 
 /** Where in the transcript a child's own records lie: from `from`, up to but

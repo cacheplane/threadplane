@@ -88,9 +88,9 @@ for (const width of [768, 1024, 1440]) {
 test('long generated API names stay inside their article on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 900 });
   for (const path of [
-    '/docs/api/langgraph/provideAgent',
+    '/docs/api/angular/provideAgentClientOptions',
     '/docs/api/render/defineAngularRegistry',
-    '/docs/api/langgraph/LangGraphThreadsAdapter',
+    '/docs/api/langgraph/createLangGraphThreadDirectory',
   ]) {
     await page.goto(path);
     const name = page.locator('.api-reference-detail > h1').first();
@@ -111,7 +111,7 @@ test('long generated API names stay inside their article on a phone', async ({ p
   }
 });
 
-for (const route of ['/docs/angular/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent']) {
+for (const route of ['/docs/angular/chat/getting-started/quickstart', '/docs/api/angular/injectAgent']) {
   test(`code copy buttons sit inside their code block on ${route}`, async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 900 });
     await page.goto(route);
@@ -136,7 +136,7 @@ const ROUTES = [
   '/', '/docs', '/chat', '/langgraph', '/ag-ui', '/render', '/pricing',
   '/solutions', '/solutions/compliance', '/solutions/analytics', '/solutions/customer-support', '/about', '/contact', '/privacy',
   '/pilot-to-prod', '/blog', '/blog/threadplane-0-3-0',
-  '/docs/angular/chat/getting-started/quickstart', '/docs/api/langgraph/injectAgent', '/docs/api', '/docs/api/react',
+  '/docs/angular/chat/getting-started/quickstart', '/docs/api/angular/injectAgent', '/docs/api', '/docs/api/react',
   '/docs/angular/langgraph/guides/streaming?mode=api',
   '/docs/angular/langgraph/guides/streaming?mode=code',
   '/docs/react/langgraph/guides/streaming',

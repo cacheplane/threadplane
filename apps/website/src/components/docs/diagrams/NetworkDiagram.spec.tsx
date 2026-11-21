@@ -30,8 +30,8 @@ test('network rendering distinguishes request and returned-data paths without SV
   expect(container.querySelectorAll('svg [data-return="true"]')).toHaveLength(
     4
   );
-  expect(container.textContent).toContain('@threadplane/chat');
-  expect(container.textContent).toContain('AbstractAgent');
+  expect(container.textContent).toContain('@threadplane/angular');
+  expect(container.textContent).toContain('createSession()');
 });
 test('sequences draw participant lifelines and delegation makes ordered dispatch explicit', () => {
   const sequence = render(<NetworkDiagram definition={agUiInterrupts} />);
@@ -43,7 +43,7 @@ test('sequences draw participant lifelines and delegation makes ordered dispatch
   ].map((label) =>
     [...label.querySelectorAll('tspan')].map((line) => line.textContent).join(' ')
   );
-  expect(messageLabels).toContain('4. Submit the decision');
+  expect(messageLabels).toContain('4. Resume with the decision');
   sequence.unmount();
   const flow = render(<NetworkDiagram definition={agUiSubagents} />);
   for (const label of [

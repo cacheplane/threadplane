@@ -1,7 +1,7 @@
 import type { StateDeltaEvent, StateSnapshotEvent } from '@ag-ui/client';
 import type { PlainValue } from '@threadplane/core';
-import { copyData } from '../lib/internal/copy-data.js';
-import { applyPatch, type JsonPatchOp } from '../lib/internal/apply-patch.js';
+import { copyData } from './copy-data.js';
+import { applyPatch, type JsonPatchOp } from './apply-patch.js';
 
 /**
  * The document of a session created without a state. It is still sent with

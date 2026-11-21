@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed } from '@angular/core';
 import { ChatComponent, ChatWelcomeSuggestionComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { SUBGRAPHS_AGENT } from './agent-ref';
 
@@ -28,17 +28,17 @@ const WELCOME_SUGGESTIONS = [
  *
  * **The sidebar shows the boundary twice, from two angles.**
  *
- * `agent.value()` reads the parent graph's own state: `research_topic` and
+ * `agent.state()` reads the parent graph's own state: `research_topic` and
  * `research_brief` are the only two keys the parent shares with the child,
  * so watching them is watching the state boundary itself.
  *
  * `agent.subagents()` shows the child as a *stream*: every namespaced child
- * run appears in that map — plain subgraph nodes under their namespace key
- * (named by node, here `research`), tool-dispatched children under their
- * tool-call id (see the Chat Subagents capability for that shape). The
- * child's tokens live on its stream and never merge into the transcript;
+ * run appears in that list — a plain subgraph node named by its node (here
+ * `research`), a tool-dispatched child also carrying its `toolCallId` (see
+ * the Chat Subagents capability for that shape). The child's tokens live on
+ * its stream and never merge into the transcript;
  * `transcriptNodeNames: ['answer']` additionally keeps the *top-level*
- * router node's structured-output chunks out of the chat.
+ * router node's output out of the chat.
  */
 @Component({
   selector: 'app-subgraphs',
@@ -111,10 +111,10 @@ const WELCOME_SUGGESTIONS = [
       title="LangGraph subgraphs"
       description="A factual question enters a research child graph. A greeting answers directly. The child receives a topic, not the parent conversation."
     >
-      <button headerActions type="button" [disabled]="agent.isLoading()"
+      <button headerActions type="button" [disabled]="agent.status() === 'running'"
         (click)="newConversation(conversation)">New conversation</button>
       <chat placeholder="Ask a factual question or say hello…" #conversation [welcomeDisabled]="true" main [agent]="agent" class="flex-1 min-w-0">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
           @for (s of suggestions; track s.value) {
             <chat-welcome-suggestion
@@ -185,7 +185,7 @@ const WELCOME_SUGGESTIONS = [
 })
 export class SubgraphsComponent {
   protected newConversation(conversation: ChatComponent): void {
-    if (this.agent.isLoading()) return;
+    if (this.agent.status() === 'running') return;
     this.agent.switchThread(null);
     conversation.clearDraft();
   }
@@ -194,16 +194,17 @@ export class SubgraphsComponent {
 
   // #region agent
   /**
-   * Typed agent — `agent.value()` is `Signal<SubgraphsState>`, the parent
-   * graph's live state as LangGraph streams `values` events.
+   * Typed agent — `agent.state()` is a signal of `SubgraphsState`, the parent
+   * graph's live state as LangGraph streams `values` events. It is undefined
+   * until the graph reports a state.
    */
   protected readonly agent = injectAgent(SUBGRAPHS_AGENT);
 
   /** The topic the parent handed to the child graph this turn, if any. */
-  protected readonly topic = computed(() => this.agent.value()?.research_topic ?? '');
+  protected readonly topic = computed(() => this.agent.state()?.research_topic ?? '');
 
   /** The brief the child graph handed back. */
-  protected readonly brief = computed(() => this.agent.value()?.research_brief ?? '');
+  protected readonly brief = computed(() => this.agent.state()?.research_brief ?? '');
 
   /**
    * A non-empty topic is exactly what the parent's conditional edge routes on,
@@ -215,14 +216,14 @@ export class SubgraphsComponent {
   // #region child-streams
   /**
    * The same child, seen as a stream. Plain subgraph children appear in
-   * `subagents()` keyed by their namespace segment; `name` is the node name
-   * and `status` settles with the run.
+   * `subagents()` with an `id` made from their namespace; `name` is the node
+   * name and `status` settles with the run.
    */
   protected readonly childStreams = computed(() =>
-    [...this.agent.subagents().entries()].map(([id, ref]) => ({
-      id,
-      name: ref.name,
-      status: ref.status(),
+    this.agent.subagents().map((child) => ({
+      id: child.id,
+      name: child.name,
+      status: child.status,
     })),
   );
   // #endregion

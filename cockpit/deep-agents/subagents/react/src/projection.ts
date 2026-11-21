@@ -169,7 +169,14 @@ export function projectParentObservations(
             throw new Error('Unavailable resolved result');
           resultText = t.result;
         } else if (t.status === 'error') {
-          if (typeof t.error !== 'string' || result)
+          // A tool that failed has a tool message whose raw status is
+          // `error` and whose text is the error; one that never answered has
+          // no message.
+          if (
+            typeof t.error !== 'string' ||
+            (result &&
+              (rawStatus !== 'error' || result.message.content !== t.error))
+          )
             throw new Error('Unavailable tool error');
           resultText = t.error;
         } else if (

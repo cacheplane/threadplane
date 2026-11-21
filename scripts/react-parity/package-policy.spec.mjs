@@ -18,14 +18,13 @@ for (const root of ['/repo', '/repo/', 'C:\\repo', 'C:/repo/']) {
       `${prefix}src/runtime/create-session.ts`,
       `${prefix}src/runtime/transport.types.ts`,
       `${prefix}src/runtime/operation-errors.ts`,
-      `${prefix}src/runtime/thread-metadata.ts`,
-      `${prefix}src/runtime/project-store.ts`,
-      `${prefix}src/runtime/thread-directory.ts`,
       `${prefix}src/runtime/transport.types.ts/bridge.ts`,
-      `${prefix}src/runtime-copy/create-session.ts`,
+      `${prefix}src/public-api.ts`,
+      `${prefix}live/backend.ts`,
+      `${prefix}package.json`,
     ]) {
-      const shared = ['/transport.types.ts', '/operation-errors.ts', '/thread-metadata.ts', '/project-store.ts'];
-      const expected = shared.some((name) => path.endsWith(name)) ? 'shared' : path.includes('/runtime/') ? 'private' : undefined;
+      // Every source file of a backend package is backend source: no file is shared with an Angular package.
+      const expected = path.includes('/src/') ? 'private' : undefined;
       assert.equal(policy.backendRuntimeSourceKind(root, path), expected);
       assert.equal(policy.backendRuntimeSourceKind(root, path.replaceAll('/', '\\')), expected);
     }
@@ -33,7 +32,7 @@ for (const root of ['/repo', '/repo/', 'C:\\repo', 'C:/repo/']) {
 }
 
 test('final internal dependencies follow the approved package roles', () => {
-  const expected = { core: [], langgraph: ['core'], 'ag-ui': ['core'], render: ['core'], a2ui: [], content: ['core', 'render', 'a2ui'], angular: ['core', 'content', 'render', 'a2ui'], react: ['core', 'content', 'render', 'a2ui'], telemetry: ['core'] };
+  const expected = { core: [], langgraph: ['core'], 'ag-ui': ['core'], render: ['core'], a2ui: [], content: ['core', 'render', 'a2ui'], angular: ['core', 'content', 'render', 'a2ui'], react: ['core', 'content', 'render', 'a2ui'], telemetry: ['core'], chat: ['core', 'angular', 'content', 'render', 'a2ui', 'telemetry'] };
   for (const [project, allowed] of Object.entries(expected)) {
     for (const dependency of Object.keys(expected).filter((name) => name !== project)) {
       assert.equal(policy.forbiddenDependency(project, `@threadplane/${dependency}`), !allowed.includes(dependency), `${project} -> ${dependency}`);
@@ -44,12 +43,12 @@ test('final internal dependencies follow the approved package roles', () => {
 for (const project of ['langgraph', 'ag-ui']) {
   test(`${project} neutral dependency policy admits only its own backend and exact SDK`, () => {
     const sdk = project === 'langgraph' ? '@langchain/langgraph-sdk' : '@ag-ui/client';
-    const policyOptions = { neutralRuntime: true, angularTransitions: [project] };
-    for (const allowed of [sdk, `@threadplane/${project}`, '@threadplane/core', './local']) {
+    const policyOptions = { neutralRuntime: true };
+    for (const allowed of [sdk, `@threadplane/${project}`, '@threadplane/core', './local', ...(project === 'ag-ui' ? ['rxjs'] : [])]) {
       assert.equal(policy.forbiddenDependency(project, allowed, policyOptions), false, allowed);
     }
-    for (const denied of ['@angular/core', '@threadplane/chat', '@threadplane/angular', 'rxjs', 'zod', 'unreviewed', `${sdk}/private`,
-      ...(project === 'ag-ui' ? ['@threadplane/langgraph', '@langchain/langgraph-sdk', '@ag-ui/core'] : ['@threadplane/ag-ui', '@ag-ui/client'])]) {
+    for (const denied of ['@angular/core', '@threadplane/chat', '@threadplane/angular', 'zod', 'unreviewed', `${sdk}/private`,
+      ...(project === 'ag-ui' ? ['@threadplane/langgraph', '@langchain/langgraph-sdk', '@ag-ui/core', 'rxjs/operators'] : ['@threadplane/ag-ui', '@ag-ui/client', 'rxjs'])]) {
       assert.equal(policy.forbiddenDependency(project, denied, policyOptions), true, denied);
     }
   });
@@ -60,13 +59,24 @@ test('AG-UI runtime has no shared source exceptions', () => {
     assert.equal(policy.backendRuntimeSourceKind('/repo', `/repo/libs/ag-ui/src/runtime/${filename}`), 'private');
     assert.equal(policy.backendRuntimeSourceKind('C:\\repo', `C:\\repo\\libs\\ag-ui\\src\\runtime\\${filename}`), 'private');
   }
-  assert.equal(policy.backendRuntimeSourceKind('/repo', '/repo/libs/ag-ui/src/runtime-copy/owner.ts'), undefined);
+  assert.equal(policy.backendRuntimeSourceKind('/repo', '/repo/libs/ag-ui/src/public-api.ts'), 'private');
+  assert.equal(policy.backendRuntimeSourceKind('/repo', '/repo/libs/ag-ui/fixtures/owner.ts'), undefined);
+  assert.equal(policy.backendRuntimeSourceKind('/repo', '/repo/libs/chat/src/runtime/owner.ts'), undefined);
 });
 
-test('private scaffolds and temporary Angular exceptions are separate inventories', () => {
-  assert.deepEqual(policy.privateScaffoldProjects, ['core', 'content', 'angular', 'react']);
+test('foundations, published packages and the remaining Angular exception are separate inventories', () => {
+  assert.deepEqual(policy.foundationProjects, ['core', 'content', 'angular', 'react']);
   for (const retired of ['langgraph-core', 'ag-ui-core', 'react-render']) assert.ok(!policy.scanProjects.includes(retired));
-  assert.deepEqual(policy.angularTransitionProjects, ['chat', 'langgraph', 'ag-ui', 'render']);
+  // The backend packages and chat left the transition list at the cutover.
+  assert.deepEqual(policy.angularTransitionProjects, ['render']);
+  assert.deepEqual(policy.backendProjects, ['langgraph', 'ag-ui']);
+  assert.deepEqual(policy.angularProjects, ['angular', 'chat']);
+  assert.deepEqual(policy.privateProjects, ['react']);
+  assert.deepEqual(policy.publishableProjects, ['core', 'content', 'angular', 'chat', 'langgraph', 'ag-ui', 'render', 'a2ui', 'telemetry']);
+  for (const project of [...policy.publishableProjects, ...policy.privateProjects]) assert.ok(policy.scanProjects.includes(project), project);
+  assert.equal(policy.sourceEntry('chat'), 'src/public-api.ts');
+  assert.equal(policy.sourceEntry('langgraph'), 'src/public-api.ts');
+  assert.equal(policy.sourceEntry('ag-ui'), 'src/public-api.ts');
   assert.ok(policy.scanProjects.includes('telemetry'));
   assert.equal(policy.sourceEntry('angular'), 'src/public-api.ts');
   assert.equal(policy.sourceEntry('react'), 'src/index.ts');
@@ -124,4 +134,22 @@ test('telemetry optional Angular peer requires the browser transition', () => {
   assert.ok(policy.manifestViolations('telemetry', manifest).length > 0);
   assert.ok(policy.manifestViolations('telemetry', { peerDependencies: manifest.peerDependencies }, { telemetryBrowserTransition: true }).length > 0);
   assert.ok(policy.manifestViolations('telemetry', { ...manifest, dependencies: { '@angular/core': '*' } }, { telemetryBrowserTransition: true }).length > 0);
+});
+
+test('backend packages reject Angular and chat in source and in their manifests', () => {
+  for (const project of ['langgraph', 'ag-ui']) {
+    for (const dependency of ['@angular/core', '@threadplane/chat', '@threadplane/angular', '@threadplane/react', 'react']) {
+      assert.equal(policy.forbiddenDependency(project, dependency), true, `${project} ${dependency}`);
+      assert.ok(policy.manifestViolations(project, { peerDependencies: { [dependency]: '*' } }).length > 0, `${project} manifest ${dependency}`);
+    }
+    assert.deepEqual(policy.manifestViolations(project, { peerDependencies: { '@threadplane/core': '*' } }), []);
+  }
+});
+
+test('chat is an Angular package that may not reach React or a backend', () => {
+  assert.deepEqual(policy.manifestViolations('chat', { peerDependencies: { '@angular/core': '*', '@threadplane/angular': '*', '@threadplane/core': '*', rxjs: '*', zod: '*' } }), []);
+  for (const dependency of ['react', '@threadplane/react', '@threadplane/langgraph', '@threadplane/ag-ui', '@langchain/core', '@ag-ui/client']) {
+    assert.equal(policy.forbiddenDependency('chat', dependency), true, dependency);
+  }
+  assert.ok(!policy.assertFinalRelease({ projects: ['chat'], angularTransitions: [], telemetryBrowserTransition: false }).length);
 });

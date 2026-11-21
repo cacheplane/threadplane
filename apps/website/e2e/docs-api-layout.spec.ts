@@ -264,7 +264,7 @@ for (const width of [320, 390, 768, 1024, 1440, 1920]) {
     const docsLeft = await page
       .locator('.docs-prose')
       .evaluate((el) => el.getBoundingClientRect().left);
-    for (const route of ['/docs/api', '/docs/api/langgraph/injectAgent']) {
+    for (const route of ['/docs/api', '/docs/api/angular/injectAgent']) {
       await page.goto(route);
       await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
         'data-hydrated',

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { Client, type Checkpoint } from '@langchain/langgraph-sdk';
 import { createSession } from '../../../../../libs/langgraph/src/runtime/create-session';
-import { FetchStreamTransport } from '../../../../../libs/langgraph/src/lib/transport/fetch-stream.transport';
+import { FetchStreamTransport } from '../../../../../libs/langgraph/src/runtime/fetch-stream.transport';
 
 const seedPrompt = 'Refund $129.00 to customer cus_z19fp for an unrecognized charge.';
 const prompt = 'Refund $47.50 to customer cus_a8x2k — they were charged twice for the same order.';

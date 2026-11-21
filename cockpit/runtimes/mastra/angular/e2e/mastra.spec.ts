@@ -6,7 +6,7 @@ import { submitAndWaitForResponse } from '@threadplane-internal/e2e-harness';
 // (Mastra agents behind the hand-written AG-UI SSE endpoint). Interrupts
 // surface as CUSTOM on_interrupt (Mastra-shaped payload with toolCallId +
 // runId) plus the protocol-standard RUN_FINISHED outcome, and resume rides
-// forwardedProps.command.interruptEvent — the adapter path shipped in
+// forwardedProps.command.interruptEvent — the session's `mastra-command` path, shipped in
 // #888/#889/#891, proven live here for the first time.
 test.describe('cockpit runtimes/mastra: camping trip planner', () => {
   test('backend tool result streams into the reply', async ({ page }) => {
@@ -46,21 +46,35 @@ test.describe('cockpit runtimes/mastra: camping trip planner', () => {
       await expect(panel).toContainText('North Pines');
       await expect(panel).toContainText('$90.00');
 
-      const resumed = page.waitForResponse(response => {
-        if (response.request().method() !== 'POST' || !response.url().endsWith('/agent')) return false;
-        return response.request().postDataJSON()?.forwardedProps?.command?.resume?.approved === approved;
+      // The session leaves a response at its run's terminal event, so the
+      // browser does not keep the body for `response.text()`. The answering
+      // request is read where it passes through instead.
+      type ResumeCommand = {
+        resume?: { approved?: boolean };
+        interruptEvent?: { toolCallId?: string; runId?: string };
+      };
+      let resumed: { status: number; command: ResumeCommand; body: string } | undefined;
+      await page.route(url => url.pathname.endsWith('/agent'), async route => {
+        const request = route.request();
+        const command: ResumeCommand | undefined =
+          request.method() === 'POST' ? request.postDataJSON()?.forwardedProps?.command : undefined;
+        if (command?.resume?.approved !== approved) return route.fallback();
+        const response = await route.fetch();
+        const body = await response.text();
+        resumed = { status: response.status(), command, body };
+        await route.fulfill({ response, body });
       });
       await panel.getByRole('button', { name: action, exact: true }).click();
-      const response = await resumed;
-      expect(response.status()).toBe(200);
-      const command = response.request().postDataJSON().forwardedProps.command;
-      expect(command.interruptEvent.toolCallId).toEqual(expect.any(String));
-      expect(command.interruptEvent.runId).toEqual(expect.any(String));
-      const events = (await response.text()).split('\n')
+      await expect.poll(() => resumed?.status, { timeout: 30_000 }).toBe(200);
+      const command = resumed?.command;
+      const body = resumed?.body ?? '';
+      expect(command?.interruptEvent?.toolCallId).toEqual(expect.any(String));
+      expect(command?.interruptEvent?.runId).toEqual(expect.any(String));
+      const events = body.split('\n')
         .filter(line => line.startsWith('data: '))
         .map(line => JSON.parse(line.slice(6)));
       const result = events.find(event => event.type === 'TOOL_CALL_RESULT');
-      expect(result?.toolCallId).toBe(command.interruptEvent.toolCallId);
+      expect(result?.toolCallId).toBe(command?.interruptEvent?.toolCallId);
       expect(result?.content).toContain(approved ? 'Reserved North Pines' : 'Nothing was booked.');
       await expect(panel).not.toBeVisible();
       const reply = page.locator('chat-message[data-role="assistant"]').last();
@@ -79,7 +93,7 @@ test.describe('cockpit runtimes/mastra: camping trip planner', () => {
   // sub-agent (wire tool `agent-weather_forecaster`); the server-side
   // emitter (deployments/ag-ui-mastra/subagent-emitter.mjs) injects
   // SUBAGENT_STARTED + attributed TEXT_MESSAGE_* + SUBAGENT_FINISHED, which
-  // the adapter reduces into a subagent card on the tool-call group.
+  // the session projects into a subagent card on the tool-call group.
   test('rt-mastra: delegated forecast renders a subagent card with the final text', async ({ page }) => {
     const bubble = await submitAndWaitForResponse(page, 'Plan a trip to Bear Lake this weekend — what will the weather be?');
     await expect(page.locator('chat-subagent-card')).toHaveCount(1);

@@ -4,7 +4,7 @@ import {
   type StreamEvent,
 } from '@threadplane/langgraph';
 import type { MemoryScope } from './memory-scope';
-/** Admission precedes even thread creation. The inherited adapter owns all SDK
+/** Admission precedes even thread creation. The inherited transport owns all SDK
  * operation boundaries and read/join/cancel behavior. Context extras are retained,
  * but the Memory graph intentionally accepts exactly memory_scope. */
 export class MemoryTransport extends FetchStreamTransport {
@@ -34,6 +34,11 @@ export class MemoryTransport extends FetchStreamTransport {
       ...options,
       context: { ...(options?.context as Record<string, unknown>), ...context },
     };
+  }
+  /** A session creates its thread before its first run: refuse that too. */
+  override async createThread(signal: AbortSignal): Promise<string> {
+    this.scoped();
+    return super.createThread(signal);
   }
   override async *stream(
     assistantId: string,

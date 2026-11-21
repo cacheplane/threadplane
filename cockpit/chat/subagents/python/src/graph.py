@@ -124,7 +124,7 @@ async def _subagent_node(state: SubagentState) -> dict:
     calling is exercised by the dedicated tool-calls cap; here the focus is
     subagent orchestration + the inline subagent card. The returned message
     streams under this subgraph's `tools:<call_id>` namespace, which the
-    @threadplane/langgraph SubagentTracker matches to surface the card."""
+    @threadplane/langgraph session matches to surface the card."""
     subagent_type = state["subagent_type"]
     task_description = state["task_description"]
     system_prompt = _SUBAGENT_PROMPTS.get(subagent_type, _ITINERARY_PROMPT)
@@ -140,7 +140,7 @@ async def _subagent_node(state: SubagentState) -> dict:
 # Compiled child graph. Invoking it from inside the `task` tool makes LangGraph
 # nest its run under a `tools:<uuid>` namespace, where the uuid is a checkpoint
 # id assigned independently — nothing on the wire links it to the `call_*`
-# tool-call id. The @threadplane/langgraph SubagentTracker matches this
+# tool-call id. The @threadplane/langgraph session matches this
 # namespace to the registered `task` dispatch to surface a card.
 _subagent_builder = StateGraph(SubagentState)
 _subagent_builder.add_node("subagent", _subagent_node)

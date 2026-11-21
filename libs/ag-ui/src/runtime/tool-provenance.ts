@@ -128,9 +128,10 @@ function tagged(value: PlainValue): unknown {
 
 export function ownResult(result: ToolExecutionResult): ToolExecutionResult {
   return Object.freeze(
-    result.ok
-      ? { ok: true, value: ownValue(result.value) }
-      : { ok: false, error: result.error }
+    // `in` narrows the result without strictNullChecks too.
+    'error' in result
+      ? { ok: false, error: result.error }
+      : { ok: true, value: ownValue(result.value) }
   );
 }
 

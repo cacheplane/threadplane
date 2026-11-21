@@ -223,11 +223,11 @@ describe('regenerate', () => {
     }
   });
 
-  it('is absent on the client-tool session', () => {
+  it('is present on the client-tool session (see client-tools-retry.spec.ts)', () => {
     const owner = createSession(
       { threadId: 't', url: 'https://native-fixture.invalid/run' },
       { f: { description: 'f', handler: () => 'ok' } }
     );
-    expect('regenerate' in owner).toBe(false);
+    expect(typeof owner.regenerate).toBe('function');
   });
 });

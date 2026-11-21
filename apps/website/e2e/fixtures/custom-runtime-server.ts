@@ -116,11 +116,29 @@ function writePoisonFailure(response: ServerResponse, status: 401 | 403): void {
   writeJson(response, status, { error: POISON, authorization: POISON });
 }
 
-function writeAgUiSuccess(response: ServerResponse): void {
-  const runId = 'fixture-run';
+/**
+ * The run identity an AG-UI request names. A conforming server echoes the
+ * request's `threadId` and `runId` in RUN_STARTED and RUN_FINISHED, and the
+ * session rejects a run that names another one.
+ */
+function agUiRunIdentity(body: string): { threadId: string; runId: string } {
+  try {
+    const input = JSON.parse(body) as { threadId?: unknown; runId?: unknown };
+    if (typeof input.threadId === 'string' && typeof input.runId === 'string')
+      return { threadId: input.threadId, runId: input.runId };
+  } catch {
+    // Not a run request; fall back to the fixture's own identity.
+  }
+  return { threadId: 'fixture-thread', runId: 'fixture-run' };
+}
+
+function writeAgUiSuccess(
+  response: ServerResponse,
+  { threadId, runId }: { threadId: string; runId: string }
+): void {
   const messageId = 'fixture-assistant';
   const events = [
-    { type: 'RUN_STARTED', threadId: 'fixture-thread', runId },
+    { type: 'RUN_STARTED', threadId, runId },
     {
       type: 'TEXT_MESSAGE_START',
       messageId,
@@ -132,7 +150,7 @@ function writeAgUiSuccess(response: ServerResponse): void {
       delta: 'Custom AG-UI success',
     },
     { type: 'TEXT_MESSAGE_END', messageId },
-    { type: 'RUN_FINISHED', threadId: 'fixture-thread', runId },
+    { type: 'RUN_FINISHED', threadId, runId },
   ];
   response.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -244,7 +262,11 @@ const server = createServer((request, response) => {
     return response.end();
   }
   if (selectedBehavior !== 'cors') applyCors(request, response);
-  request.resume();
+  const chunks: Buffer[] = [];
+  request.on('data', (chunk: Buffer) => chunks.push(chunk));
+  const body = new Promise<string>((resolve) =>
+    request.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+  );
 
   if (
     selectedCase.pathname.startsWith('/langgraph/') &&
@@ -264,7 +286,9 @@ const server = createServer((request, response) => {
       return writePoisonFailure(response, 403);
     if (selectedBehavior === 'cors') return writePoisonFailure(response, 403);
     if (selectedCase.pathname.startsWith('/ag-ui/'))
-      return writeAgUiSuccess(response);
+      return void body.then((text) =>
+        writeAgUiSuccess(response, agUiRunIdentity(text))
+      );
     if (selectedCase.pathname.endsWith('/threads')) {
       return writeJson(response, 200, { thread_id: 'fixture-thread' });
     }

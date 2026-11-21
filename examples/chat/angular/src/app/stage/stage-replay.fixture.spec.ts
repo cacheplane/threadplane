@@ -68,8 +68,9 @@ describe.skipIf(!FIXTURE_EXISTS)('stage-replay.json', () => {
   it('every completed run close recorded a history snapshot, so the devtools timeline is never empty at a beat', () => {
     rec.runs.forEach((_, i) => {
       if (rec.runs[i].action.kind === 'reload') return;
-      // The bridge skips its closing refresh for a run that ends in an
-      // interrupt (the next run is the resume), in replay as in record.
+      // The recording host does not wait for a snapshot after a run that
+      // ends in an interrupt (the next run is the resume), and the replay
+      // serves none there.
       if (rec.runs[i + 1]?.action.kind === 'resume') return;
       expect(rec.histories.some((h) => h.afterRun === i + 1), `run ${i}`).toBe(true);
     });

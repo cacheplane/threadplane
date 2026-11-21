@@ -14,10 +14,12 @@ import {
   effect,
   DestroyRef,
   isDevMode,
+  type Signal,
   type TemplateRef,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import type { Agent, Message, ToolCall, Subagent } from '../../agent';
+import { isAgentRunning, toolCallError, toolCallResult, type Agent, type AgentSubagent, type Message, type ToolCall } from '../../agent';
+import { stopAgent } from '../../client-tools/stop-agent';
 import type { ToolCallInfo } from '../../compositions/chat-tool-call-card/chat-tool-call-card.component';
 import { ChatSubagentCardComponent } from '../../compositions/chat-subagent-card/chat-subagent-card.component';
 import { ChatToolCallTemplateDirective } from './chat-tool-call-template.directive';
@@ -51,10 +53,53 @@ interface Group {
   calls: ToolCall[];
   templateRef?: ChatToolCallTemplateDirective;
   /** Present when this group anchors a subagent spawned by its (single) task call. */
-  subagent?: Subagent;
+  subagent?: AgentSubagent;
 }
 
 const NONE: ReadonlySet<string> = new Set();
+const NO_SUBAGENTS: readonly AgentSubagent[] = [];
+
+/** Where the child agents that name no spawning call are shown. */
+interface LoosePlacement {
+  /** The first assistant message of the latest turn; undefined when there is none or nothing to place. */
+  readonly homeId: string | undefined;
+  readonly loose: readonly AgentSubagent[];
+}
+const NO_PLACEMENT: LoosePlacement = { homeId: undefined, loose: NO_SUBAGENTS };
+const placements = new WeakMap<object, Signal<LoosePlacement>>();
+
+/**
+ * One computation per agent, shared by every message's tool-call view: a
+ * transcript holds a view per assistant message, and each would otherwise read
+ * the agent's child agents itself. It reads the messages only while some child
+ * names no call, so an ordinary transcript does not follow them at all.
+ */
+function loosePlacement(agent: Agent): Signal<LoosePlacement> {
+  let placement = placements.get(agent);
+  if (!placement) {
+    placement = computed(
+      (): LoosePlacement => {
+        const loose = (agent.subagents() ?? []).filter(
+          (child) => child.toolCallId === undefined && child.parentId === undefined,
+        );
+        if (loose.length === 0) return NO_PLACEMENT;
+        const messages = agent.messages();
+        let homeId: string | undefined;
+        for (let i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].role === 'user') break;
+          if (messages[i].role === 'assistant') homeId = messages[i].id;
+        }
+        return { homeId, loose };
+      },
+      {
+        equal: (a, b) =>
+          a.homeId === b.homeId && a.loose.length === b.loose.length && a.loose.every((child, i) => child === b.loose[i]),
+      },
+    );
+    placements.set(agent, placement);
+  }
+  return placement;
+}
 const stableText = (value: unknown): string => {
   try {
     return typeof value === 'string' ? value : JSON.stringify(value) ?? '';
@@ -241,7 +286,7 @@ let nextChatToolCallsId = 0;
         </button>
         @if (grouped && summary.active) {
         <span class="ctc__group-elapsed">{{ elapsedFor(group.key) }}</span>
-        @if (agent().isLoading()) {
+        @if (running()) {
         <button type="button" class="ctc__group-stop" (click)="stop()">Stop</button>
         } }
       </div>
@@ -315,6 +360,8 @@ let nextChatToolCallsId = 0;
 })
 export class ChatToolCallsComponent {
   readonly agent = input.required<Agent>();
+  /** True while the agent is running a request. */
+  protected readonly running = computed(() => isAgentRunning(this.agent()));
   readonly message = input<Message | undefined>(undefined);
   readonly grouping = input<'auto' | 'none'>('auto');
   readonly groupSummary = input<
@@ -383,9 +430,21 @@ export class ChatToolCallsComponent {
     return map;
   });
 
-  readonly toolCalls = computed((): ToolCall[] =>
+  readonly toolCalls = computed((): readonly ToolCall[] =>
     resolveMessageToolCalls(this.agent(), this.message())
   );
+
+  /**
+   * Child agents that name no spawning call, when this is the message they
+   * belong to: the first assistant message of the latest turn, so their cards
+   * keep their place as the turn goes on. Empty for every other message.
+   */
+  private readonly looseSubagents = computed((): readonly AgentSubagent[] => {
+    const message = this.message();
+    if (!message || message.role !== 'assistant') return NO_SUBAGENTS;
+    const placement = loosePlacement(this.agent())();
+    return placement.homeId === message.id ? placement.loose : NO_SUBAGENTS;
+  });
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
@@ -394,18 +453,16 @@ export class ChatToolCallsComponent {
 
   readonly groups = computed((): Group[] => {
     const scopedCalls = this.toolCalls();
-    if (scopedCalls.length === 0) { this.previousGroups = []; return []; }
+    const loose = this.looseSubagents();
+    if (scopedCalls.length === 0 && loose.length === 0) { this.previousGroups = []; return []; }
     const excludeSet = new Set(this.excludeToolNames());
     const calls = scopedCalls.filter((tc) => !excludeSet.has(tc.name));
-    // Anchor subagents by the contract field `Subagent.toolCallId` (the tool
-    // call that spawned them), NOT by the adapter's map key. Adapters key the
-    // map differently — LangGraph by toolCallId, AG-UI activities by
-    // messageId, AG-UI native SUBAGENT_* by subagentRunId (e.g.
-    // `<toolCallId>-sub`) — and only the wrapper's toolCallId is guaranteed
-    // to match the spawning call.
-    const rawSubs = this.agent().subagents?.() ?? new Map<string, Subagent>();
-    const subs = new Map<string, Subagent>();
-    rawSubs.forEach((sa) => subs.set(sa.toolCallId, sa));
+    // Anchor a child agent by `AgentSubagent.toolCallId`, the tool call that
+    // started it. Its `id` is the backend's own and need not match any call.
+    const subs = new Map<string, AgentSubagent>();
+    for (const child of this.agent().subagents() ?? []) {
+      if (child.toolCallId !== undefined) subs.set(child.toolCallId, child);
+    }
     const groupingMode = this.grouping();
     const registry = this.templateRegistry();
     const wildcard = registry.get('*');
@@ -436,9 +493,13 @@ export class ChatToolCallsComponent {
         out.push({ key: '', name: tc.name, calls: [tc], templateRef: tpl });
       }
     }
+    // A child that names no call follows the message's own calls.
+    const looseGroups = loose.map((child): Group => ({
+      key: `subagent-${child.id}`, name: child.name ?? 'subagent', calls: [], subagent: child,
+    }));
     // Reconcile presentation identity by member overlap, rather than the first
     // position. Reordering a batch or appending its second call keeps its DOM.
-    const used = new Set<string>();
+    const used = new Set<string>(looseGroups.map((group) => group.key));
     for (const group of out) {
       const ids = new Set(group.calls.map(call => call.id));
       let best: Group | undefined, score = 0;
@@ -462,6 +523,7 @@ export class ChatToolCallsComponent {
         if (focused.isConnected && document.activeElement === document.body) focused.focus({ preventScroll: true });
       }, { injector: this.injector });
     }
+    out.push(...looseGroups);
     this.previousGroups = out;
     return out;
   });
@@ -494,7 +556,7 @@ export class ChatToolCallsComponent {
 
   /** Stops the run from the activity group; the same action as the composer's Stop. */
   protected stop(): void {
-    void this.agent().stop();
+    stopAgent(this.agent()).catch(() => undefined);
   }
 
   /** Client-observed start of each group's running stretch, and a clock that ticks only while one runs. */
@@ -543,9 +605,9 @@ export class ChatToolCallsComponent {
       id: tc.id,
       name: tc.name,
       args: tc.args,
-      result: tc.result,
+      result: toolCallResult(tc),
       status: tc.status,
-      error: tc.error,
+      error: toolCallError(tc),
     };
   }
   /** Each call with the app's outcome applied, before a stale retry is withdrawn. */
@@ -569,7 +631,7 @@ export class ChatToolCallsComponent {
     // Read the agent's loading state only for a call still running after its message completed,
     // such as a browser client tool, so ordinary rows stay isolated from agent-wide state.
     const outlivesMessage = tc.status === 'running' && delivery?.phase === 'complete';
-    const phase = toolActivityPhase(tc.status, delivery, outlivesMessage && this.agent().isLoading());
+    const phase = toolActivityPhase(tc.status, delivery, outlivesMessage && isAgentRunning(this.agent()));
     const literal = (value: unknown): string => {
       if (typeof value === 'string') return value;
       try {
@@ -585,17 +647,17 @@ export class ChatToolCallsComponent {
       phase,
       argumentsText: literal(tc.args),
       resultText: tc.status === 'complete' ? literal(tc.result) : undefined,
-      errorText: tc.error === undefined ? undefined : literal(tc.error),
+      errorText: toolCallError(tc),
     };
     return resolveToolOutcome(activity, this.safeOutcome(activity));
   }
   /** Calls whose declared retry is no longer offered: all while the agent works, else those a later call repeats. */
   /** Pending steps of the plan the agent declared; empty without a plan. */
-  protected readonly upcomingSteps = computed(() => this.agent().plan?.()?.filter((step) => step.status === 'pending') ?? []);
+  protected readonly upcomingSteps = computed(() => this.agent().plan()?.filter((step) => step.status === 'pending') ?? []);
   private readonly staleRetryIds = computed((): ReadonlySet<string> => {
     const agent = this.agent();
     const all = agent.toolCalls();
-    if (agent.isLoading()) return new Set(all.map((call) => call.id));
+    if (isAgentRunning(agent)) return new Set(all.map((call) => call.id));
     const last = new Map<string, string>();
     for (const call of all) last.set(repeatKey(call), call.id);
     return new Set(all.filter((call) => last.get(repeatKey(call)) !== call.id).map((call) => call.id));

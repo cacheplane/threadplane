@@ -10,9 +10,17 @@ describe('generated API mode', () => {
     render(
       GeneratedApiMode({ docsPath: '/docs/angular/ag-ui/guides/interrupts' })
     );
+    // The backend package is framework-neutral, so the Angular page lists it
+    // together with the Angular binding that observes its session.
+    expect(
+      screen.getByRole('link', { name: 'createSession' }).getAttribute('href')
+    ).toBe('/docs/api/ag-ui/createSession');
     expect(
       screen.getByRole('link', { name: 'injectAgent' }).getAttribute('href')
-    ).toBe('/docs/api/ag-ui/injectAgent');
+    ).toBe('/docs/api/angular/injectAgent');
+    expect(
+      screen.getByRole('link', { name: 'provideFakeAgent' }).getAttribute('href')
+    ).toBe('/docs/api/angular/testing/provideFakeAgent');
     expect(screen.queryByRole('link', { name: 'useAgent' })).toBeNull();
     expect(screen.queryByText('InterruptsComponent')).toBeNull();
   });
@@ -24,6 +32,9 @@ describe('generated API mode', () => {
     expect(
       screen.getByRole('link', { name: 'useAgent' }).getAttribute('href')
     ).toBe('/docs/api/react/useAgent');
+    expect(
+      screen.getByRole('link', { name: 'createSession' }).getAttribute('href')
+    ).toBe('/docs/api/ag-ui/createSession');
     expect(screen.queryByRole('link', { name: 'injectAgent' })).toBeNull();
   });
 

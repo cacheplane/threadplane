@@ -1,28 +1,29 @@
 ---
-description: Test AG-UI components with provideFakeAgent() and its event script, the neutral mockAgent(), or a hand-written AbstractAgent, and which double fits where.
+description: Test AG-UI components with provideFakeAgent(), a scripted FakeAgent behind the real session, mockAgent(), or a hand-written AbstractAgent.
 ---
 
 # Testing
 
-`@threadplane/ag-ui` gives you two test doubles, smallest scope first:
+Three test doubles cover an AG-UI application, smallest scope first:
 
-- **`provideFakeAgent()`** — a one-call fake backend that runs the real adapter pipeline and streams canned tokens. No server, no LLM.
-- **`mockAgent()`** (from `@threadplane/chat`) — a writable-signal mock for component/unit tests. It covers the neutral `Agent` surface; a component that reads the AG-UI extensions needs one of the doubles above instead.
+- **`mockAgent()`** (from `@threadplane/chat/testing`) — an `Agent` with writable fields and recorded commands, for component and unit tests that need no injector.
+- **`provideFakeAgent()`** (from `@threadplane/angular/testing`, re-exported by `@threadplane/chat/testing`) — the real injected `Agent` over an in-memory session that streams canned tokens. No server, no LLM, no AG-UI event.
+- **`FakeAgent`** (from `@threadplane/ag-ui`) — an in-process AG-UI source. Hand it to `createSession({ agent })` and the real AG-UI session runs its whole event pipeline over a canned or scripted stream.
 
 See [Choosing an adapter → Testing](/docs/choosing-an-adapter#testing) for when to use each test double.
 
 ## Fake backend: `provideFakeAgent()`
 
-`provideFakeAgent({ tokens, reasoningTokens, delayMs })` wires a fake backend into Angular DI in one call. It exercises the **real adapter pipeline** — `injectAgent()`, status transitions, message accumulation — but the wire events are canned, so there is no server and no LLM. Use it for adapter-integration tests, in-browser demos, and offline development.
+`provideFakeAgent({ tokens, reasoningTokens, delayMs })` wires a fake backend into Angular DI in one call. It exercises the **real injected agent** — `injectAgent()`, status transitions, message accumulation, thread switching — over an in-memory session, so there is no server and no LLM. Use it for component-integration tests, in-browser demos, and offline development.
 
-It drops in exactly where `provideAgent()` would go — the call shape matches the LangGraph adapter:
+It drops in exactly where `provideAgent()` would go — the call shape is the same whichever backend the application uses:
 
 <Tabs>
 <Tab label="app.config.ts">
 
 ```typescript
 import { ApplicationConfig } from '@angular/core';
-import { provideFakeAgent } from '@threadplane/ag-ui';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -37,7 +38,7 @@ export const appConfig: ApplicationConfig = {
 ```typescript
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   selector: 'app-chat',
@@ -53,25 +54,27 @@ export class ChatHost {
 </Tab>
 </Tabs>
 
-The component is byte-identical to production — only the provider changes. `provideFakeAgent()` accepts `AgUiFakeAgentConfig`: the shared `FakeAgentConfig` from `@threadplane/chat/testing` plus the AG-UI-only `script`.
+The component is byte-identical to production — only the provider changes. `provideFakeAgent()` accepts `FakeAgentConfig`:
 
 | Option | Type | Notes |
 | --- | --- | --- |
-| `tokens` | `string[]` | Emitted as streamed text deltas, in order. |
-| `reasoningTokens` | `string[]` | Emitted before text deltas to exercise reasoning UI. |
-| `delayMs` | `number` | Delay between streamed events. |
-| `script` | `FakeAgentScript` | Raw AG-UI event branches that replace the canned reply. See [Testing tool calls, state, and custom events](#testing-tool-calls-state-and-custom-events). |
+| `tokens` | `string[]` | The assistant reply, streamed one entry at a time. |
+| `reasoningTokens` | `string[]` | Reasoning text streamed before the reply, to exercise reasoning UI. |
+| `delayMs` | `number` | Delay between entries. `0` streams without timers. |
+| `threadId` | `string \| null \| Signal` | The thread to start on. |
+| `session` | `FakeAgentSessionInit` | Initial snapshot fields and handlers for every fake session. See [Testing tool calls, state, and custom events](#testing-tool-calls-state-and-custom-events). |
 
-For the underlying `FakeAgent` class and its canned event sequence, see [Fake Agent](/docs/angular/ag-ui/guides/fake-agent).
+For the `FakeAgent` class and its canned event sequence, see [Fake Agent](/docs/angular/ag-ui/guides/fake-agent).
 
 ### A runnable spec
 
-Set `delayMs: 0` to collapse the inter-token delay, drive `submit()`, then assert the streamed assistant content shows up on `agent.messages()`. Awaiting `submit()` is what guarantees the run finished — `runAgent()` resolves once the canned stream completes:
+Set `delayMs: 0` to stream without timers, drive `submit()`, then assert the streamed assistant content shows up on `agent.messages()`. Awaiting `submit()` is what guarantees the run finished — it resolves with the run's outcome once the canned stream completes:
 
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { provideFakeAgent, injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 
 describe('chat via provideFakeAgent', () => {
   it('streams the canned tokens onto the agent', async () => {
@@ -88,21 +91,19 @@ describe('chat via provideFakeAgent', () => {
 });
 ```
 
-`injectAgent()` needs an injection context, so resolve it through `TestBed.runInInjectionContext()`. The `RUN_FINISHED` event has reduced by the time the awaited `submit()` resolves, so no fake-timer flushing is required.
+`injectAgent()` needs an injection context, so resolve it through `TestBed.runInInjectionContext()`. With `delayMs: 0` the reply is complete by the time the awaited `submit()` resolves, so no fake-timer flushing is required. `injectFakeAgentSession()`, from the same entry, returns a signal of the current fake session's controls (`push`, `stream`, `setError`, `submits` and the rest) for a test to drive.
 
 ## Contract mock: `mockAgent()`
 
-For component and unit tests where you do not need a streaming pipeline at all, use the neutral `mockAgent(initial)` from `@threadplane/chat`. It returns an `Agent` whose state surface is exposed as **writable signals** — set state directly and assert your component reacts. Nothing is real.
+For component and unit tests where you do not need a streaming pipeline at all, use `mockAgent(options)` from `@threadplane/chat/testing`. It returns the agent's own shape with every snapshot field **writable** — set state directly and assert your component reacts. It needs no transport and no injection context.
 
-`mockAgent()` covers the neutral `Agent` surface. A component that reads the AG-UI extensions (`customEvents`, `clientTools`, `subagents`) needs `provideFakeAgent()` or a scripted `AbstractAgent` instead, because `mockAgent()` implements only `Agent`.
+`mockAgent()` covers the core `Agent` surface, including `customEvents`, `subagents` and `interrupts`. A component that reads the fields only an AG-UI session has (`decision`, `run`, `transcript`) needs a scripted `FakeAgent` instead.
 
 ```typescript
-import { mockAgent, staticDelivery } from '@threadplane/chat';
+import { mockAgent } from '@threadplane/chat/testing';
 
 const m = mockAgent({ status: 'running' });
-m.messages.set([
-  { id: '1', role: 'assistant', content: 'Hello!', delivery: staticDelivery('1') },
-]);
+m.messages.set([{ id: '1', role: 'assistant', content: 'Hello!' }]);
 
 expect(m.messages()[0].content).toBe('Hello!');
 expect(m.status()).toBe('running');
@@ -120,67 +121,69 @@ await agent.stop();
 expect(agent.stopCount).toBe(1);
 ```
 
-`regenerate(index)` truncates messages at the index and records a synthetic submission with `input.regenerate.assistantMessageIndex`. `retry()` is a no-op in this mock; use a scripted adapter when the test needs transport retry behavior.
+`submit` appends the user message, as a session does. The fake session underneath is reachable as `agent.fake`: `agent.fake.stream()` streams a reply, and `agent.fake.resumes`, `agent.fake.regenerates` and `agent.fake.retryCount` record the other commands. The mock carries `regenerate`, `retry` and `onCustomEvent` by default, and `resume` always; pass `commands` to add `checkStatus`, `runWithoutMessage` or `clientTools`, or to leave some out so a view under test offers no control for them.
 
-Drive the lifecycle stub through `agent._internal.streamStartedAt.set(Date.now())`; its public `lifecycle.streamStartedAt` view is read-only. Interrupt, subagent, and history signals must be enabled when creating the mock:
+The lifecycle marks are writable signals, so drive them directly with `agent.lifecycle.streamStartedAt.set(Date.now())`. Interrupts, child agents and custom events are set the same way as any other field:
 
 ```typescript
-const agent = mockAgent({
-  withInterrupt: true,
-  withSubagents: true,
-  history: [],
-});
+const agent = mockAgent();
 
-agent.interrupt?.set({ id: 'approval-1', value: { question: 'Continue?' }, resumable: true });
-agent.subagents?.set(new Map());
-agent.history?.set([]);
+agent.interrupts.set([{ id: 'approval-1', value: { question: 'Continue?' } }]);
+agent.subagents.set([]);
+agent.emitCustomEvent('analysis_progress', { pct: 100 });
 ```
 
-These neutral subagent signals do not model AG-UI protocol events or adapter-specific capabilities. See [`MockAgent`](/docs/api/chat/MockAgent) and [`MockAgentOptions`](/docs/api/chat/MockAgentOptions) for their types.
+These fields do not model AG-UI protocol events or session-specific behavior.
 
 ## Testing tool calls, state, and custom events
 
-By default `provideFakeAgent()` produces only `RUN_*`, `REASONING_MESSAGE_*`, and `TEXT_MESSAGE_*` events. To exercise the reducer's headline non-text features — tool-call rendering, shared state, citations, custom events, interrupts — pass a `script` of raw events. It is part of the config `provideFakeAgent()` accepts, so the whole surface stays reachable through DI:
+`provideFakeAgent()` streams text and reasoning only. To exercise what the AG-UI session does with the rest of the protocol — tool-call rendering, shared state, citations, custom events, interrupts — give the real session a `FakeAgent` with a `script` of raw events. `provideAgent()` takes the session factory, so the whole surface stays reachable through DI:
 
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { EventType, type BaseEvent } from '@ag-ui/client';
-import { provideFakeAgent, injectAgent } from '@threadplane/ag-ui';
+import { injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession, FakeAgent } from '@threadplane/ag-ui';
 
-describe('scripted provideFakeAgent()', () => {
-  it('reduces tool calls, state, and custom events', async () => {
+describe('scripted FakeAgent', () => {
+  it('projects tool calls, state, and custom events', async () => {
     TestBed.configureTestingModule({
       providers: [
-        provideFakeAgent({
-          delayMs: 0,
-          script: [
-            {
-              when: 'initial',
-              events: [
-                {
-                  type: EventType.TOOL_CALL_START,
-                  toolCallId: 'search-1',
-                  toolCallName: 'search',
-                } as BaseEvent,
-                {
-                  type: EventType.TOOL_CALL_ARGS,
-                  toolCallId: 'search-1',
-                  delta: '{"q":"Angular"}',
-                } as BaseEvent,
-                { type: EventType.TOOL_CALL_END, toolCallId: 'search-1' } as BaseEvent,
-                {
-                  type: EventType.STATE_SNAPSHOT,
-                  snapshot: { topic: 'billing' },
-                } as BaseEvent,
-                {
-                  type: EventType.CUSTOM,
-                  name: 'analysis_progress',
-                  value: { pct: 100 },
-                } as BaseEvent,
-              ],
-            },
-          ],
+        provideAgent({
+          createSession: () =>
+            createSession({
+              agent: new FakeAgent({
+                delayMs: 0,
+                script: [
+                  {
+                    when: 'initial',
+                    events: [
+                      {
+                        type: EventType.TOOL_CALL_START,
+                        toolCallId: 'search-1',
+                        toolCallName: 'search',
+                      } as BaseEvent,
+                      {
+                        type: EventType.TOOL_CALL_ARGS,
+                        toolCallId: 'search-1',
+                        delta: '{"q":"Angular"}',
+                      } as BaseEvent,
+                      { type: EventType.TOOL_CALL_END, toolCallId: 'search-1' } as BaseEvent,
+                      {
+                        type: EventType.STATE_SNAPSHOT,
+                        snapshot: { topic: 'billing' },
+                      } as BaseEvent,
+                      {
+                        type: EventType.CUSTOM,
+                        name: 'analysis_progress',
+                        value: { pct: 100 },
+                      } as BaseEvent,
+                    ],
+                  },
+                ],
+              }),
+            }),
         }),
       ],
     });
@@ -195,11 +198,11 @@ describe('scripted provideFakeAgent()', () => {
 });
 ```
 
-A `CUSTOM` event named `on_interrupt` populates `agent.interrupt()` instead of `customEvents()`; see the [Interrupts guide](/docs/angular/ag-ui/guides/interrupts). A second branch keyed `{ toolMessageFor: 'search-1' }` plays on the follow-up run that resolving a client tool starts, so an approve-then-continue turn is scriptable end to end.
+The tool call ends this run without a result, so its status is `pending`. A `CUSTOM` event named `on_interrupt` populates `agent.interrupts()` instead of `customEvents()`, provided the session is created with an `interruptTransport` that answers notices, such as `'auto'`; see the [Interrupts guide](/docs/angular/ag-ui/guides/interrupts). A second branch keyed `{ toolMessageFor: 'search-1' }` plays on the follow-up run that resolving a client tool starts, so an approve-then-continue turn is scriptable end to end.
 
-A host that folds the protocol stream itself can assert against the same script: subscribe to `agent.rawEvents$` before `submit()` and it emits `RUN_STARTED`, each scripted event, then `RUN_FINISHED`, in order. It completes when the injector is destroyed.
+A host that folds the protocol stream itself can assert against the same script: name the session type with `injectAgent<Session>()`, register `agent.onRawEvent(listener)` before `submit()`, and it receives `RUN_STARTED`, each scripted event, then `RUN_FINISHED`, in order.
 
-When you need control the script does not give you — per-event timing, mid-stream errors, an observable you drive by hand — script your own `AbstractAgent` and feed it through `toAgent()`. The adapter reduces those events the same way.
+When you need control the script does not give you — per-event timing, mid-stream errors, an observable you drive by hand — script your own `AbstractAgent` and pass it to `createSession({ agent })`. The session applies those events the same way.
 
 ```typescript
 import { describe, it, expect } from 'vitest';
@@ -210,7 +213,7 @@ import {
   type RunAgentInput,
 } from '@ag-ui/client';
 import { Observable } from 'rxjs';
-import { toAgent } from '@threadplane/ag-ui';
+import { createSession } from '@threadplane/ag-ui';
 
 /** Emits a scripted tool-call + custom-event sequence, no backend. */
 class ScriptedAgent extends AbstractAgent {
@@ -232,18 +235,23 @@ class ScriptedAgent extends AbstractAgent {
 }
 
 describe('scripted AG-UI events', () => {
-  it('reduces tool calls, state, and custom events', async () => {
-    const agent = toAgent(new ScriptedAgent());
-    await agent.submit({ message: 'find docs' });
+  it('projects tool calls, state, and custom events', async () => {
+    const session = createSession({ agent: new ScriptedAgent() });
+    const custom: { name: string; data: unknown }[] = [];
+    session.onCustomEvent?.((event) => custom.push(event));
 
-    expect(agent.toolCalls()[0]).toMatchObject({ name: 'search', args: { q: 'Angular' } });
-    expect(agent.state()).toMatchObject({ topic: 'billing' });
-    expect(agent.customEvents()).toContainEqual({ name: 'analysis_progress', data: { pct: 100 } });
+    await session.submit({ message: 'find docs' });
+
+    const snapshot = session.getSnapshot();
+    expect(snapshot.toolCalls[0]).toMatchObject({ name: 'search', args: { q: 'Angular' } });
+    expect(snapshot.state).toMatchObject({ topic: 'billing' });
+    expect(custom).toContainEqual({ name: 'analysis_progress', data: { pct: 100 } });
+    await session.dispose();
   });
 });
 ```
 
-`customEvents()` is the AG-UI-specific signal — `toAgent()` returns an `AgUiAgent`, so it is reachable directly here without a cast, exactly as it is through `injectAgent()`.
+A session is framework-neutral, so this spec needs no `TestBed`. The retained `customEvents()` list is something the injected Angular agent adds; a bare session delivers each event to `onCustomEvent` listeners and keeps none.
 
 ## Verify Mastra approval and cancellation with aimock
 
@@ -255,7 +263,7 @@ Run the six scenarios from the repository root with deterministic aimock replay:
 npx nx e2e cockpit-runtimes-mastra-angular
 ```
 
-The application uses `provideAgent({ url: '/agent', interruptTransport: 'mastra-command' })`. Approval sends `command.resume: { approved: true }`; cancellation sends `{ approved: false }`. Both carry `command.interruptEvent: { toolCallId, runId }` under `forwardedProps`, using the suspended run's observed identifiers.
+The application creates its session with `createSession({ url, interruptTransport: 'mastra-command' })`, and both buttons answer with `agent.resume(responses)`. Approval sends `command.resume: { approved: true }`; cancellation sends `{ approved: false }`. Both carry `command.interruptEvent: { toolCallId, runId }` under `forwardedProps`, using the suspended run's observed identifiers.
 
 Keep these continuation entries separate inside an aimock fixture's `fixtures` array:
 

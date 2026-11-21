@@ -22,6 +22,9 @@
       "path": "../../../../libs/chat"
     },
     {
+      "path": "../../../../libs/angular"
+    },
+    {
       "path": "../../../../libs/ag-ui"
     }
   ]

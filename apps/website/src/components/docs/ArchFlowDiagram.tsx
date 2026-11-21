@@ -8,17 +8,17 @@ interface LogEntry {
 }
 
 const SCENARIO: { delay: number; chatBubble?: { role: 'user' | 'assistant'; text: string; streaming?: boolean }; log: LogEntry }[] = [
-  { delay: 0, chatBubble: { role: 'user', text: 'How do Angular Signals work with streaming?' }, log: { time: '0.00s', source: 'angular', message: 'chat.submit({ message: userText })' } },
+  { delay: 0, chatBubble: { role: 'user', text: 'How do Angular Signals work with streaming?' }, log: { time: '0.00s', source: 'angular', message: 'chat.submit(userText)' } },
   { delay: 800, log: { time: '0.02s', source: 'transport', message: 'POST /threads/t_8f3a/runs/stream → 200' } },
   { delay: 1200, log: { time: '0.04s', source: 'langgraph', message: 'Executing node: call_model (gpt-5-mini)' } },
   { delay: 2200, log: { time: '0.82s', source: 'langgraph', message: 'SSE event: { type: "values", messages: [...] }' } },
-  { delay: 2600, log: { time: '0.84s', source: 'transport', message: 'Received chunk → messages$.next([...])' } },
+  { delay: 2600, log: { time: '0.84s', source: 'transport', message: 'Received chunk → session publishes a snapshot' } },
   { delay: 2800, log: { time: '0.85s', source: 'signal', message: 'messages() updated → 2 messages' } },
-  { delay: 3000, chatBubble: { role: 'assistant', text: 'Angular Signals', streaming: true }, log: { time: '0.86s', source: 'signal', message: 'status() → "loading"' } },
+  { delay: 3000, chatBubble: { role: 'assistant', text: 'Angular Signals', streaming: true }, log: { time: '0.86s', source: 'signal', message: 'status() → "running"' } },
   { delay: 3400, chatBubble: { role: 'assistant', text: 'Angular Signals provide a synchronous', streaming: true }, log: { time: '1.12s', source: 'transport', message: 'Received chunk → values event' } },
   { delay: 3900, chatBubble: { role: 'assistant', text: 'Angular Signals provide a synchronous, reactive way to', streaming: true }, log: { time: '1.45s', source: 'signal', message: 'messages() updated → streaming token' } },
   { delay: 4500, chatBubble: { role: 'assistant', text: 'Angular Signals provide a synchronous, reactive way to track streaming state.', streaming: true }, log: { time: '1.82s', source: 'langgraph', message: 'SSE event: { type: "values", status: "done" }' } },
-  { delay: 5200, chatBubble: { role: 'assistant', text: 'Angular Signals provide a synchronous, reactive way to track streaming state. Each token updates the Signal, and OnPush change detection re-renders automatically.' }, log: { time: '2.10s', source: 'signal', message: 'status() → "resolved" ✓' } },
+  { delay: 5200, chatBubble: { role: 'assistant', text: 'Angular Signals provide a synchronous, reactive way to track streaming state. Each token updates the Signal, and OnPush change detection re-renders automatically.' }, log: { time: '2.10s', source: 'signal', message: 'status() → "idle" ✓' } },
   { delay: 6000, log: { time: '2.12s', source: 'angular', message: 'Template re-rendered (OnPush) — 1 component' } },
 ];
 

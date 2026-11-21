@@ -1,7 +1,12 @@
 import { Component, computed, signal } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
-import type { ThreadState } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import {
+  selectBranch,
+  type LangGraphBranchTree,
+  type LangGraphCheckpoint,
+  type LangGraphSession,
+} from '@threadplane/langgraph';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 /**
@@ -10,10 +15,14 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
  * Layout: chat panel (flex-1) + checkpoint timeline sidebar (w-72).
  *
  * Key integration points:
- * - `agent.langGraphHistory()` -- array of ThreadState snapshots
- * - `agent.branch()` -- current branch identifier
- * - `agent.setBranch(id)` -- record a checkpoint as the active branch
- * - `agent.submit(input, { checkpointId })` -- run from a past checkpoint
+ * - `historyState: true` on the session (app.config.ts) -- keeps checkpoints
+ * - `agent.checkpoints()` -- the saved checkpoints, oldest first
+ * - `agent.branchTree()` -- the checkpoints arranged by parent, with each
+ *   checkpoint's `path`: the fork choices that lead to it
+ * - `agent.setBranch(path.join('>'))` -- select the branch a checkpoint is on
+ * - `agent.branch()` + `selectBranch(tree, branch)` -- the selected branch and
+ *   the checkpoints on it, which the timeline marks
+ * - `agent.submit(input, { run: { checkpointId } })` -- run from a past checkpoint
  */
 @Component({
   selector: 'app-time-travel',
@@ -91,6 +100,9 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
       background: var(--ds-surface-tinted, rgba(255, 255, 255, 0.06));
       color: var(--ds-text-muted, #a0a0a0);
     }
+    .row--off-branch {
+      opacity: 0.45;
+    }
     .badge--active {
       background: var(--ds-accent, #64c3fd);
       color: #08243a;
@@ -144,7 +156,7 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
     >
       <!-- Chat panel -->
       <chat placeholder="Write a message to send or fork…" [welcomeDisabled]="true" main [agent]="agent" class="block flex-1">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
       </chat>
 
       <!-- #region timeline -->
@@ -153,6 +165,7 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
         <div class="head">
           <h2 class="cap">Timeline</h2>
           <p class="sub">{{ checkpoints().length }} checkpoint(s)</p>
+          <p class="sub" data-testid="selected-branch">Branch: {{ agent.branch() || 'latest' }}</p>
         </div>
 
         <div class="list">
@@ -160,15 +173,17 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
             <p class="empty">No checkpoints yet. Send a message to begin.</p>
           }
 
-          @for (state of checkpoints(); track state.checkpoint?.checkpoint_id ?? $index; let i = $index) {
+          @for (state of checkpoints(); track state.id ?? $index; let i = $index) {
             <div
               class="row"
-              [class.row--active]="state.checkpoint?.checkpoint_id === selectedCheckpointId()"
+              [class.row--active]="state.id === selectedCheckpointId()"
+              [class.row--off-branch]="!onSelectedBranch(state)"
+              [attr.data-on-branch]="onSelectedBranch(state)"
             >
               <!-- Numbered badge -->
               <span
                 class="badge"
-                [class.badge--active]="state.checkpoint?.checkpoint_id === selectedCheckpointId()"
+                [class.badge--active]="state.id === selectedCheckpointId()"
               >
                 {{ i + 1 }}
               </span>
@@ -176,8 +191,8 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
               <!-- Checkpoint info -->
               <div class="info">
                 <p class="label">{{ checkpointLabel(state, i) }}</p>
-                @if (state.checkpoint?.checkpoint_id) {
-                  <p class="id">{{ state.checkpoint.checkpoint_id }}</p>
+                @if (state.id) {
+                  <p class="id">{{ state.id }}</p>
                 }
               </div>
 
@@ -208,23 +223,27 @@ import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 })
 export class TimeTravelComponent {
   // #region history
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<LangGraphSession>();
 
   /** Selection survives new checkpoints being prepended to the history. */
   protected readonly selectedCheckpointId = signal<string | null>(null);
 
-  /** Checkpoint history derived from the agent. */
-  protected readonly checkpoints = computed(
-    (): ThreadState<any>[] => this.agent.langGraphHistory(),
+  /**
+   * Checkpoint history derived from the agent, newest first as the timeline
+   * lists it. `checkpoints()` is oldest first, and absent until a history page
+   * has been read: the session reads one after every run.
+   */
+  protected readonly checkpoints = computed((): LangGraphCheckpoint[] =>
+    [...(this.agent.checkpoints() ?? [])].reverse(),
   );
   // #endregion
 
   /** Display label for a checkpoint entry. */
   protected checkpointLabel(
-    state: ThreadState<any>,
+    state: LangGraphCheckpoint,
     index: number,
   ): string {
-    if (state.checkpoint?.checkpoint_id) {
+    if (state.id) {
       return `Checkpoint ${index + 1}`;
     }
     return `State ${index + 1}`;
@@ -232,33 +251,78 @@ export class TimeTravelComponent {
 
   // #region branch
   /**
-   * Mark a checkpoint as the active branch.
-   *
-   * `setBranch()` records the identifier in the agent's `branch()` signal.
-   * It starts no run: it is a pointer the interface can read back.
+   * The ids of the checkpoints on the selected branch. `selectBranch` follows
+   * the fork choices in `agent.branch()` and, at a fork the branch does not
+   * name, the newest continuation; with no branch selected that is the
+   * thread's latest path.
    */
-  protected select(state: ThreadState<any>): void {
-    if (state.checkpoint?.checkpoint_id) {
-      this.selectedCheckpointId.set(state.checkpoint.checkpoint_id);
-      this.agent.setBranch(state.checkpoint.checkpoint_id);
+  private readonly selectedBranchIds = computed((): ReadonlySet<string> => {
+    const tree = this.agent.branchTree();
+    if (!tree) return new Set();
+    const ids = new Set<string>();
+    for (const checkpoint of selectBranch(tree, this.agent.branch() ?? '')) {
+      if (checkpoint.id) ids.add(checkpoint.id);
     }
+    return ids;
+  });
+
+  /** Whether the timeline row's checkpoint is on the selected branch. */
+  protected onSelectedBranch(state: LangGraphCheckpoint): boolean {
+    return state.id !== undefined && this.selectedBranchIds().has(state.id);
+  }
+
+  /**
+   * Select the branch a checkpoint is on.
+   *
+   * A branch is not a checkpoint id: it is the fork choices that lead to a
+   * checkpoint, joined with `>`, which the branch tree gives as the node's
+   * `path`. `setBranch()` publishes it as `agent.branch()`, and the timeline
+   * marks the checkpoints on it. It is a view selection: it starts no run and
+   * the transcript does not change. Send still continues the conversation
+   * shown; Fork starts a run from a checkpoint.
+   */
+  protected select(state: LangGraphCheckpoint): void {
+    if (!state.id) return;
+    this.selectedCheckpointId.set(state.id);
+    const tree = this.agent.branchTree();
+    const path = tree ? branchPathOf(tree, state.id) : undefined;
+    void this.agent.setBranch((path ?? []).join('>'));
   }
 
   /**
    * Start a new run from the given checkpoint.
    *
-   * Passing `checkpointId` to `submit()` resumes the thread at that point
+   * Passing `run.checkpointId` to `submit()` resumes the thread at that point
    * rather than at its tip, so the new run hangs off the chosen checkpoint
-   * and the original path stays intact.
+   * and the original path stays intact. Per-run LangGraph settings are
+   * grouped under `run`.
    */
-  protected fork(state: ThreadState<any>): void {
-    const checkpointId = state.checkpoint?.checkpoint_id;
+  protected fork(state: LangGraphCheckpoint): void {
+    const checkpointId = state.id;
     if (!checkpointId) return;
     this.selectedCheckpointId.set(checkpointId);
     void this.agent.submit(
       { message: 'Try a different approach from here.' },
-      { checkpointId },
+      { run: { checkpointId } },
     );
   }
   // #endregion
+}
+
+/** The fork choices that lead to a checkpoint, or undefined when it is not in the tree. */
+function branchPathOf(
+  tree: LangGraphBranchTree,
+  checkpointId: string,
+): readonly string[] | undefined {
+  for (const item of tree.items) {
+    if (item.type === 'node') {
+      if (item.value.id === checkpointId) return item.path;
+      continue;
+    }
+    for (const alternative of item.items) {
+      const path = branchPathOf(alternative, checkpointId);
+      if (path) return path;
+    }
+  }
+  return undefined;
 }

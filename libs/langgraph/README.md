@@ -1,292 +1,149 @@
 # @threadplane/langgraph
 
-The LangGraph adapter for [Threadplane](https://github.com/cacheplane/threadplane), the open-source thread-plane for agents. Wraps a LangGraph agent into the runtime-neutral `Agent` contract that `@threadplane/chat` consumes — the Angular counterpart to LangGraph's React `useStream()` hook, with signal-driven access to messages, status, tool calls, interrupts, subagents, branch history, and thread persistence.
+The LangGraph backend for [Threadplane](https://github.com/cacheplane/threadplane), the open-source thread-plane for agents. `createSession()` runs a LangGraph deployment behind the framework-neutral `AgentSession` contract from `@threadplane/core`: messages, status, tool calls, interrupts, child agents, checkpoints and thread persistence, published as owned, frozen snapshots.
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@threadplane/langgraph">
     <img alt="npm version" src="https://img.shields.io/npm/v/@threadplane%2Flanggraph?color=15253E&labelColor=0A0A0A&style=flat-square" />
-  </a>
-  <a href="https://angular.dev">
-    <img alt="Angular 20 | 21 | 22" src="https://img.shields.io/badge/Angular-20%20%7C%2021%20%7C%2022-15253E?labelColor=0A0A0A&style=flat-square" />
   </a>
   <a href="https://opensource.org/licenses/MIT">
     <img alt="MIT" src="https://img.shields.io/badge/License-MIT-15253E?labelColor=0A0A0A&style=flat-square" />
   </a>
 </p>
 
-> Talking to a non-LangGraph backend? See [`@threadplane/ag-ui`](https://www.npmjs.com/package/@threadplane/ag-ui) — same API shape, AG-UI protocol underneath.
+This package contains no UI framework code. A binding observes the session it creates: `@threadplane/angular` for Angular, `@threadplane/react` for React.
 
-## What it does
-
-- **`provideAgent()`** — wire the LangGraph adapter into Angular DI. Provided at the root injector or at any component subtree (multi-thread UIs work via Angular's hierarchical DI).
-- **`injectAgent()`** — retrieve the configured `LangGraphAgent` in any component. Returns a `LangGraphAgent` whose entire state surface (`messages`, `status`, `isLoading`, `error`, `interrupt`, `toolCalls`, `subagents`, `queue`, `branch`, `history`, and more) is exposed as Angular Signals. No subscriptions, no `async` pipe, no zone.js required.
-- **Human-in-the-loop** — `interrupt()` delivers a runtime-neutral interrupt value; `langGraphInterrupts()` exposes the raw LangGraph interrupt list when you need it.
-- **Subagent streaming** — `subagents()` + `getSubagent(toolCallId)`, `getSubagentsByType(type)`, `getSubagentsByMessage(msg)`, and `activeSubagents()` surface streaming subgraph state without extra bookkeeping.
-- **Time-travel and thread persistence** — `branch()` / `history()` / `experimentalBranchTree()` enable checkpoint navigation; `LangGraphThreadsAdapter` provides SDK-backed thread CRUD so you never have to hand-roll thread management.
+> Talking to a backend that is not LangGraph? See [`@threadplane/ag-ui`](https://www.npmjs.com/package/@threadplane/ag-ui): the same session contract over the AG-UI protocol.
 
 ## Install
 
 ```bash
-npm install @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked
+npm install @threadplane/langgraph @threadplane/core @langchain/core @langchain/langgraph-sdk
 ```
 
 **Peer dependencies:**
 
 ```
-@threadplane/chat          *
-@angular/core              ^20.0.0 || ^21.0.0 || ^22.0.0
+@threadplane/core          same version as this package
 @langchain/core            ^1.1.33
 @langchain/langgraph-sdk   ^1.7.4
-rxjs                       ~7.8.0
 ```
-
-`marked` is the markdown parser peer that `@threadplane/chat` requires when assistant messages are rendered through `<chat>`.
 
 ## Quick start
 
-Configure the LangGraph endpoint once in `app.config.ts`:
+A session is a plain object with `getSnapshot()`, `subscribe()` and commands. It makes no request until a command is called.
+
+```ts
+import { createSession } from '@threadplane/langgraph';
+
+const session = createSession({
+  apiUrl: 'https://your-langgraph-platform.com',
+  assistantId: 'my-agent',
+});
+
+const release = session.subscribe(() => {
+  console.log(session.getSnapshot().messages);
+});
+await session.submit('Plan a visit');
+release();
+await session.dispose();
+```
+
+In Angular, hand the factory to the one provider and inject the agent. Its snapshot fields are Signals:
 
 ```ts
 // app.config.ts
-import { provideAgent } from '@threadplane/langgraph';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      apiUrl: 'https://your-langgraph-platform.com',
-      assistantId: 'my-agent',
+      createSession: (context) =>
+        createSession({
+          apiUrl: 'https://your-langgraph-platform.com',
+          assistantId: 'my-agent',
+          ...context,
+        }),
     }),
   ],
 };
 ```
 
-Then call `injectAgent()` in any component and pass the result to `<chat />`:
+Spread the whole `context`. It carries `threadId`, `onThreadId`, the app-wide `clientOptions`, the host's `reportOperationFailure` and `developmentRuntime`, each under the name `createSession` reads, so nothing is dropped and no cast is needed. An unset field arrives as `undefined` or `null`, which `createSession` treats as omitted.
+
+In React, create the session and pass it to `useAgent(session)` from `@threadplane/react`.
+
+## Exports
+
+The package root is the whole public surface. Everything is exported from `@threadplane/langgraph`; the session behaviour behind each name is described in the [session reference](./src/runtime/README.md).
+
+**The session**
+
+- `createSession(options, tools?)` and its types `SessionOptions`, `LangGraphSession`, `LangGraphResumeOptions`.
+- What a submit and a run accept: `LangGraphSubmitInput`, `LangGraphSubmitState`, `LangGraphInputState`, `LangGraphRunOptions`, `LangGraphRunSettings`, `LangGraphRunConfigurable`.
+- Host hooks a binding or a development tool supplies: `LangGraphTelemetrySink`, `LangGraphTelemetryEvent`, `LangGraphTelemetryPayload`, `LangGraphDevelopmentRuntime`, `LangGraphDevtoolsSink`, `LangGraphDevtoolsSignal`, `LangGraphScriptedRun`, `LangGraphScriptedRuns`, `A2uiClientCapabilities`, `RuntimeOperationFailureReporter`.
+
+**The snapshot**
+
+- `LangGraphSnapshot`, `LangGraphSnapshotState`, `LangGraphState`, `LangGraphInterrupt`, `LangGraphWireInterrupt`, `LangGraphHistoryEntry`, `LangGraphSubagent`, `LangGraphDelegation`, `LangGraphSubgraph`, `LangGraphQueuedRun`, `LangGraphToolProgress`, `LangGraphWireMessage`, `LangGraphMessageMetadata`, `LangGraphLifecycle`, `LangGraphLifecycleSource`.
+
+**Derived from a snapshot**
+
+- Checkpoints and branches: `selectBranch`, `LangGraphCheckpoint`, `LangGraphBranchTree`, `LangGraphBranchNode`, `LangGraphBranchFork`.
+- Raw LangGraph data: `langGraphToolCalls`, `getToolCalls`, `LangGraphToolCallWithResult`.
+- `extractCitations(message)`: the citations in a wire message's `additional_kwargs`, as core `Citation` values.
+
+**Saved conversations**
+
+- `createLangGraphThreadDirectory(options)`: the core `ThreadDirectory` for a deployment's threads, with `LangGraphThreadDirectoryOptions` and `LangGraphThreadsClient`. It returns a `LangGraphThreadDirectory`, which types the commands it always has as present, `get(id)` for reading one thread among them, so none needs `?.`; `LangGraphThreadCommand` and `LangGraphProjectCommand` name those commands. `reportOperationFailure` in the options receives rejected credentials and refused requests. The [session reference](./src/runtime/README.md#thread-directory) lists how it differs from the removed `LangGraphThreadsAdapter`.
+- `createLangGraphProjectStore(client)` and `ProjectStore`: project names in the LangGraph Store.
+
+**Transports and the SDK client**
+
+- `FetchStreamTransport`: the HTTP and SSE transport a session owns by default.
+- `createLangGraphClient(apiUrl, clientOptions?)` and `toAbsoluteApiUrl(apiUrl)`: an SDK client that accepts a relative `/api` path in a browser.
+- The transport contract for a custom transport: `AgentTransport`, `StreamEvent`, `LangGraphSubmitOptions`, `LangGraphClientOptions`, `AgentQueue`, `AgentQueueEntry`, `LangGraphMultitaskStrategy`, `LangGraphDurability`, `LangGraphOnCompletion`, `LangGraphOnDisconnect`, `CheckpointReference`, `OwnedCheckpointPosition`.
+
+**Testing**
+
+- `MockAgentTransport` and `MockAgentRun`: a transport a spec drives by hand. `emit(events)` sends events into the open run and `close()` ends it; the real session projects them. One instance serves any number of runs in sequence, each recorded in `runs` and `streams`. `fail()` ends a run as one the backend reports failed, which `session.retry()` then sends again; `emitError(error)` throws from the stream, as a broken connection does. A session over it has `load`, `checkStatus` and `retry`, and no `regenerate`.
+- `FakeStreamTransport` and `FakeStreamTransportConfig`: a transport that streams a canned reply by itself, for offline demos. Each run ends with the thread's saved messages, so a submit settles `success`. A session over it has `load` and `checkStatus`, and no `retry` or `regenerate`.
 
 ```ts
-// chat.component.ts
-import { Component } from '@angular/core';
-import { injectAgent } from '@threadplane/langgraph';
-import { ChatComponent } from '@threadplane/chat';
+const transport = new MockAgentTransport();
+const session = createSession({ assistantId: 'agent', transport });
 
-@Component({
-  imports: [ChatComponent],
-  template: `<chat [agent]="chat" />`,
-})
-export class ChatComponentHost {
-  protected readonly chat = injectAgent();
-}
-```
-
-> `injectAgent()` must be called within an Angular injection context — a component field initializer or constructor. Calling it in `ngOnInit` or any async context throws `NG0203: inject() must be called from an injection context`.
-
-> Need a different agent for a specific component subtree (e.g., a sidebar showing a separate conversation)? Re-provide `provideAgent({...})` in that component's `providers: []` array — Angular's hierarchical DI takes care of the rest.
-
-## Capabilities
-
-### Messages, status, and errors
-
-| Signal | Type | Description |
-|---|---|---|
-| `messages()` | `Message[]` | Accumulated chat messages from the stream |
-| `status()` | `'idle' \| 'running' \| 'error'` | Runtime-neutral run status |
-| `isLoading()` | `boolean` | `true` while a run is streaming |
-| `error()` | `unknown \| null` | Last error, if any |
-
-### Human-in-the-loop (interrupts)
-
-```ts
-const pending = chat.interrupt();       // runtime-neutral interrupt value
-const raw = chat.langGraphInterrupts(); // raw LangGraph Interrupt[]
-```
-
-Resume with `await chat.submit({ resume: response })`, where `response` matches the suspended tool's contract. LangGraph restores execution from its server checkpoint on the same thread. The shared `Agent` interface does not include AG-UI's browser persistence, interrupt session, or reconciliation extensions.
-
-### Tool calls
-
-`toolCalls()` is a Signal of all tool call entries observed in the current run, updated incrementally as the stream progresses.
-
-### Subagents
-
-```ts
-chat.subagents()                       // Signal<Map<string, Subagent>> of all subagents
-chat.activeSubagents()                 // currently streaming subagents (SubagentStreamRef[])
-chat.getSubagent(toolCallId)           // look up by tool call ID
-chat.getSubagentsByType(type)          // filter by subagent type
-chat.getSubagentsByMessage(msg)        // filter by parent message
-```
-
-### Queue
-
-`queue()` exposes pending run entries when the agent is configured with a multitask strategy that queues concurrent submissions.
-
-### Branch, history, and time-travel
-
-```ts
-chat.branch()                   // current branch identifier Signal
-chat.setBranch(b)               // switch to a checkpoint branch
-chat.history()                  // runtime-neutral history entries
-chat.langGraphHistory()         // raw LangGraph ThreadState[]
-chat.experimentalBranchTree()   // full branching tree for time-travel UI
-```
-
-### Actions
-
-```ts
-chat.submit(input, opts?)                   // send a new message
-chat.stop()                                 // cancel the active run
-chat.regenerate(assistantMessageIndex)      // re-run from a prior assistant turn
-chat.reload()                               // re-run the last submission
-chat.switchThread(threadId)                 // load a different thread
-chat.joinStream(runId, lastEventId?)        // reconnect to an in-flight run
-```
-
-### Thread persistence
-
-`LangGraphThreadsAdapter` is a drop-in, SDK-backed thread store. Provide it alongside the agent config:
-
-```ts
-import { provideAgent, LangGraphThreadsAdapter, LANGGRAPH_THREADS_CONFIG } from '@threadplane/langgraph';
-
-export const appConfig: ApplicationConfig = {
-  providers: [
-    provideAgent({ apiUrl: 'https://your-langgraph-platform.com', assistantId: 'my-agent' }),
-    { provide: LANGGRAPH_THREADS_CONFIG, useValue: { apiUrl: 'https://your-langgraph-platform.com' } },
-    LangGraphThreadsAdapter,
-  ],
-};
-```
-
-Pair it with the lifecycle helpers to keep your thread list fresh:
-
-```ts
-import { refreshOnRunEnd, refreshOnTransition } from '@threadplane/langgraph';
-
-refreshOnRunEnd(chat, () => threadsAdapter.refresh());
-```
-
-### Citations
-
-`extractCitations(msg)` reads citation metadata from a LangGraph message's `additional_kwargs`, returning `Citation[] | undefined` (`undefined` when no citation metadata is present). It checks `additional_kwargs.citations` first, falling back to `additional_kwargs.sources`.
-
-```ts
-import { extractCitations } from '@threadplane/langgraph';
-
-const citations = extractCitations(message);
-```
-
-`Citation` is a type from `@threadplane/chat`; `CitationsResolverService` also lives there.
-
-## Testing
-
-```ts
-// Fake backend — streams canned tokens, no server:
-import { provideFakeAgent } from '@threadplane/langgraph';
-providers: [provideFakeAgent({ tokens: ['Hello', ' world'] })];
-```
-
-For component/unit tests, use the writable-signal mock `mockLangGraphAgent()`
-(it extends the neutral `mockAgent` from `@threadplane/chat`). See
-[Choosing an adapter → Testing](https://threadplane.ai/docs/choosing-an-adapter#testing).
-
-Need to hand-script exact wire events (tool calls, interrupts, multi-batch
-lifecycles)? `MockAgentTransport` is the advanced escape hatch — swap the
-transport, never mock `injectAgent()` itself.
-
-## DevTools signals (development only)
-
-In Angular development mode, each agent reports which of its signals every
-event wrote, so the AG-UI DevTools Chrome extension's Signals tab can show
-them beside the wire traffic. After handling an event, the agent dispatches
-
-```ts
-window.dispatchEvent(new CustomEvent('threadplane:devtools', {
-  detail: { v: 1, agent, adapter: 'langgraph', seq, eventType, wrote, tMs },
-}));
-```
-
-- `agent` is a random id per agent instance and `seq` counts its reports from 1.
-- `eventType` is the protocol event type, or for writes no event caused one of
-  `run:start`, `run:end`, `history`, `reset`, `submit`, `queue`, `branch`.
-- `wrote` lists the signals written, in order, by name only: `status`, `values`, `messages`, `error`, `interrupt`, `interrupts`, `branch`, `history`, `isThreadLoading`, `toolProgress`, `toolCalls`, `messageMetadata`, `subagents`, `queue`, `custom`.
-- `tMs` is `performance.now()` when the event began.
-
-Signal values are never read or sent: the report carries names and timing,
-nothing from the conversation. Dispatch is fire-and-forget, so the page cannot
-tell whether anything listens, and an event that wrote nothing is not reported.
-Production builds remove the hook entirely (CI verifies the bundle). To turn it
-off in development, set `window.__THREADPLANE_DEVTOOLS_DISABLED__ = true`
-before creating agents.
-
-## Scripted runs (development only)
-
-The AG-UI DevTools run simulator can make the next runs of an agent come
-from a script instead of the network, to exercise an interrupt, a subagent
-handoff or a malformed event without a model call:
-
-```ts
-window.dispatchEvent(new CustomEvent('threadplane:devtools:arm', {
-  detail: {
-    v: 1,
-    armId: 'any-id',
-    adapter: 'langgraph',
-    runs: [
-      { frames: [{ event: 'values', data: { messages: [/* … */], __interrupt__: [/* … */] } }] },
-      { frames: [{ event: 'values', data: { messages: [/* … */] } }] },
-    ],
+const turn = session.submit('Hello');
+await transport.emit([
+  {
+    type: 'values',
+    data: {
+      messages: [
+        { id: 'u1', type: 'human', content: 'Hello' },
+        { id: 'a1', type: 'ai', content: 'Hi' },
+      ],
+    },
   },
-}));
+]);
+await transport.close();
+await turn; // 'success'
 ```
 
-- The next run any LangGraph agent on the page streams — `submit()`,
-  `retry()`, `regenerate()` — takes `runs[0]`; the one after, `runs[1]`, for
-  instance the `submit({ resume })` that answers the interrupt.
-- Each frame is `{ event, data }` exactly as the LangGraph SDK yields it. It
-  goes through the same normalization as `FetchStreamTransport`, then the
-  agent's real event handling. `transport.stream()` is not called, and the
-  thread-history read that normally follows a run is skipped: the server
-  never saw this run. Joining an existing run (`joinStream`, queued runs) is
-  never scripted.
+A session reads the graph state from a `values` event's `data`, messages included. A run settles `success` only when it ends with such an event; one that closes without it settles `interrupted`, as a dropped connection does. Script the next turn the same way after the first has settled.
 
-- `runs` holds 1 to 8 runs of at most 5,000 frames each, and the whole arm
-  serializes to at most 2 MB. An arm breaking a limit, or of the wrong shape,
-  is ignored and acknowledged `rejected` with a short `reason`.
-- Each adapter has at most one pending arm. A new arm replaces it (the old
-  one is acknowledged `disarmed`), and
-  `window.dispatchEvent(new CustomEvent('threadplane:devtools:disarm', { detail: { v: 1, armId } }))`
-  cancels it. An arm not fully used within 10 minutes is dropped and
-  acknowledged `expired`.
-- Every step is answered with a `threadplane:devtools:ack` `CustomEvent`
-  whose detail is `{ v: 1, armId, state, run?, reason? }`, `state` one of
-  `armed`, `consumed` (with `run`, the 0-based index served), `expired`,
-  `disarmed` or `rejected` (with `reason`). An arm without a usable `armId`
-  (a string of 1 to 128 characters) is ignored without an answer.
+Pass either as `createSession({ transport })`, with or without a `threadId`: both name a new thread on the first submit. Neither is for production use. For a session with no transport at all, use `createFakeAgentSession` from `@threadplane/core/testing`.
 
-The listeners exist only where the signals report does — development mode,
-not opted out, once an agent has been created — and production builds
-contain none of these event names (the same CI bundle check). The extension
-adds its own lock, a per-site Developer mode switch, but the page cannot
-tell who dispatched an arm: any script already running on a development
-page can script your agent's next run, just as it could already drive your
-agent directly. The locks guard against accidents, not against code already
-in the page.
+`@threadplane/langgraph/development-install` is the one secondary entry. It exports `installationToken`, described under "Installation collection" below.
 
-## Reliability
+## Removed in this release
 
-**Runtime-neutral contract.** `LangGraphAgent` implements the `Agent` contract from `@threadplane/chat`. Components that depend only on that contract are portable across adapters (`@threadplane/ag-ui`, future adapters) without modification.
-
-**Release policy.** Patch-only `0.0.x` releases — every change, including breaking ones, increments the patch version until the library reaches `1.0.0`.
-
-**CI.** The "Library — lint / test / build" job runs lint, tests, and build on every pull request.
+The Angular adapter this package used to contain is gone: `provideAgent` and `injectAgent` (now in `@threadplane/angular`, taking `createSession`), `LangGraphAgent` and its option types, `AGENT_LIFECYCLE` and `AgentLifecycleRegistry`, `LANGGRAPH_CLIENT_OPTIONS`, `mockLangGraphAgent`, `provideFakeAgent`, and `LangGraphThreadsAdapter` with `LANGGRAPH_THREADS_CONFIG`, `LANGGRAPH_CLIENT`, `refreshOnRunEnd` and `refreshOnTransition`. Angular thread helpers live in `@threadplane/angular`; the neutral `createLangGraphThreadDirectory` stays here.
 
 ## Documentation
 
-- [Quickstart](https://threadplane.ai/docs/angular/langgraph/getting-started/quickstart)
-- [`injectAgent()` API reference](https://threadplane.ai/docs/api/langgraph/injectAgent)
-- [`provideAgent()` API reference](https://threadplane.ai/docs/api/langgraph/provideAgent)
-- [Human-in-the-loop / interrupts](https://threadplane.ai/docs/angular/langgraph/guides/interrupts)
-- [Thread persistence](https://threadplane.ai/docs/angular/langgraph/guides/persistence)
-- [Testing with `MockAgentTransport`](https://threadplane.ai/docs/angular/langgraph/guides/testing)
-- [Choosing an adapter (LangGraph vs AG-UI)](https://threadplane.ai/docs/choosing-an-adapter)
+- [Session reference](./src/runtime/README.md)
+- [Threadplane documentation](https://threadplane.ai/docs)
 
 ## Installation collection
 
@@ -329,31 +186,6 @@ MIT. See [LICENSE](../../LICENSE).
 
 ## Development browser collection
 
-Supported LangGraph/AG-UI runtime use and real JSON-render component mounts automatically
-report development progress to Threadplane. Angular development mode and browser APIs are
-required. Production builds, SSR, imports, and automated browsers reporting
-`navigator.webdriver` are inert. Creating an agent (or a render element) in a
-development-mode browser reports one session start per integration per session; milestones
-are reported only when the runtime is actually used.
-Reports contain package/version, integration, closed milestones, timestamps, a random
-browser-origin ID, and a session with a 30-minute inactivity boundary. They exclude
-prompts, messages, application state, private URLs, thread/run IDs, and credentials.
-The IDs describe an origin/session, not a verified person or repository.
-
-Set adapter `telemetry: false` to disable automatic collection; a custom sink replaces
-the automatic destination while preserving its existing callbacks. Chat carries that
-choice into nested JSON renderers. Standalone render supports
-`provideRender({ telemetry: false })` or `<render-spec [telemetry]="false" ... />`.
-
-For a page-wide control, call `setDevelopmentCollectionEnabled(false)` from
-`@threadplane/telemetry/browser` before creating runtimes. From the browser console,
-run `localStorage.setItem('THREADPLANE_TELEMETRY_DISABLED', '1')` and reload.
-Node environment variables do not configure a compiled browser app.
-
-The credential-free announcement exchange records progress before returning optional
-plain-text console announcements. No click or registration is required. It has bounded
-queues/retries and a three-second request deadline; collection failures do not affect
-application use. A linked eligible install email can receive the generic founder hello;
-runtime evidence alone does not approve a contact. See the
+A session reports nothing by itself. It calls the `telemetry` sink and the `developmentRuntime` collector a host passes to `createSession`, and is inert when neither is given. See the
 [telemetry controls and collection details](https://github.com/cacheplane/threadplane/tree/main/libs/telemetry#automatic-development-runtime-collection)
 and [Privacy](https://threadplane.ai/privacy).

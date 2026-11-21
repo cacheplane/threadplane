@@ -5,7 +5,7 @@ description: Measured AG-UI wire behavior for Mastra: both interrupt conventions
 
 # How Mastra Connects
 
-This page records the AG-UI wire behavior measured for Mastra on 2026-08-31. It describes what the runtime emitted, not what the protocol permits in general. The captured Server-Sent Events are committed at [`libs/ag-ui/fixtures/runtime-transcripts/`](https://github.com/cacheplane/threadplane/tree/main/libs/ag-ui/fixtures/runtime-transcripts) and replayed by the adapter test suite on every run.
+This page records the AG-UI wire behavior measured for Mastra on 2026-08-31. It describes what the runtime emitted, not what the protocol permits in general. The captured Server-Sent Events are committed at [`libs/ag-ui/fixtures/runtime-transcripts/`](https://github.com/cacheplane/threadplane/tree/main/libs/ag-ui/fixtures/runtime-transcripts) and replayed by the package's test suite on every run.
 
 ## Transport is Threadplane's, not upstream's
 
@@ -18,17 +18,17 @@ This page records the AG-UI wire behavior measured for Mastra on 2026-08-31. It 
 
 The service refuses to boot without `AG_UI_INTERNAL_TOKEN`, rejects any non-health route without a matching header, and maps an error from the underlying observable to a `RUN_ERROR` frame rather than dropping the socket. Any route other than `/ok` that arrives without a matching header returns `401 {"detail":"unauthorized"}`; with a valid token, an unknown path or method returns `404 {"detail":"not found"}` and an unregistered topic returns `404 {"detail":"no such topic: <topic>"}`.
 
-In an Angular compatibility application this is an ordinary `provideAgent({ url: '/agent', interruptTransport: 'mastra-command' })`; the Angular example in this repository passes a factory only because it resolves its endpoint at runtime. The token is injected by the dev proxy in front of the app, never by the browser.
+In an Angular compatibility application this is an ordinary `createSession({ url: '/agent', interruptTransport: 'mastra-command' })` inside the `provideAgent()` session factory; the Angular example in this repository wraps the config in a factory only because it resolves its endpoint at runtime. The token is injected by the dev proxy in front of the app, never by the browser.
 
 ## Interrupts arrive by both conventions
 
 Mastra is the only measured runtime that signals an interrupt twice: it emits a `CUSTOM` event named `on_interrupt` **and** finishes the run with the protocol-standard interrupt outcome.
 
-AWS Strands and Microsoft Agent Framework emit only the outcome. The LangGraph bridge emits only `on_interrupt`. The adapter retains both forms in one session. With the explicit `mastra-command` profile, `interrupt()` projects the compatibility interrupt; `interruptSession().legacy?.value` also preserves its suspend details for the approval card. In `auto` or `protocol`, a native batch drives the display projection instead.
+AWS Strands and Microsoft Agent Framework emit only the outcome. The LangGraph bridge emits only `on_interrupt`. The session observes both forms. With the explicit `mastra-command` profile, `interrupts()` lists the compatibility notice as one entry, and that entry's `value` carries the suspend details for the approval card. In `auto` or `protocol`, the native batch is what `interrupts()` lists instead.
 
 ## Resume carries a decision and correlation
 
-The Angular compatibility example sends the decision through `forwardedProps.command.resume`. The adjacent `interruptEvent` identifies the suspended work by tool-call ID and run ID. These partial request bodies show both decisions; the identifiers are illustrative, and the adapter copies actual identifiers from the observed interrupt. The [native React reservation preview](/docs/angular/runtimes/mastra/overview?frontend=react) uses the same actual service with an opaque native pause ID and a top-level `resume` array containing the exact interrupt ID, `status: 'resolved'`, and `payload: { approved }`.
+The Angular compatibility example sends the decision through `forwardedProps.command.resume`. The adjacent `interruptEvent` identifies the suspended work by tool-call ID and run ID. These partial request bodies show both decisions; the identifiers are illustrative, and the session copies actual identifiers from the observed interrupt. The [native React reservation preview](/docs/angular/runtimes/mastra/overview?frontend=react) uses the same actual service with an opaque native pause ID and a top-level `resume` array containing the exact interrupt ID, `status: 'resolved'`, and `payload: { approved }`.
 
 Approval:
 
@@ -65,13 +65,22 @@ Cancellation:
 Application code submits the decision without constructing correlation fields:
 
 ```typescript
-import { provideAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 
-provideAgent({ url: '/agent', interruptTransport: 'mastra-command' });
+provideAgent({
+  createSession: (context) =>
+    createSession({
+      ...context,
+      url: '/agent',
+      interruptTransport: 'mastra-command',
+    }),
+});
 // From the injected agent after the approval is pending:
-// await agent.submit({ resume: { approved: true } });
+// const [interrupt] = agent.interrupts() ?? [];
+// await agent.resume([{ interruptId: interrupt.id, status: 'resolved', value: { approved: true } }]);
 // Or, for cancellation:
-// await agent.submit({ resume: { approved: false } });
+// await agent.resume([{ interruptId: interrupt.id, status: 'resolved', value: { approved: false } }]);
 ```
 
 Strands and Microsoft Agent Framework read a top-level `resume` array; the LangGraph AG-UI bridge reads `forwardedProps.command.resume`. In the Angular compatibility example, select `mastra-command` explicitly to use the illustrated command and correlation fields. The native React reservation preview uses top-level native resume with the current opaque pause correlation; compatibility notices alone do not authorize a decision. Mastra's `{ approved: false }` is an application decision, distinct from a native protocol entry with `status: 'cancelled'` and no payload.
@@ -82,11 +91,11 @@ Approval and cancellation verification on 2026-09-09 covered the synthetic North
 
 `reserve_campsite` calls Mastra's `suspend()` on its first invocation and reads `resumeData` on the second. Mastra writes the suspended-run snapshot to LibSQL file storage, and resume loads it back.
 
-Because those two invocations are separate HTTP requests, an in-memory store cannot round-trip them. On a deployment with an ephemeral filesystem, every redeploy orphans pending interrupts. This is a property of the runtime, not of the adapter, and it is the single most consequential operational difference between Mastra and the two Python runtimes.
+Because those two invocations are separate HTTP requests, an in-memory store cannot round-trip them. On a deployment with an ephemeral filesystem, every redeploy orphans pending interrupts. This is a property of the runtime, not of the session, and it is the single most consequential operational difference between Mastra and the two Python runtimes.
 
 ## State is working memory, with real deltas
 
-Shared state is a Mastra working-memory object under a Zod schema. The bridge emits `STATE_SNAPSHOT` followed by real JSON-Patch `STATE_DELTA` events as the model revises it, so the adapter applies ordinary deltas with no reassembly.
+Shared state is a Mastra working-memory object under a Zod schema. The bridge emits `STATE_SNAPSHOT` followed by real JSON-Patch `STATE_DELTA` events as the model revises it, so the session applies ordinary deltas with no reassembly.
 
 That places Mastra alongside Microsoft Agent Framework and apart from AWS Strands, whose bridge emits snapshots only.
 

@@ -36,7 +36,9 @@ test('uses production configuration when starting the generated consumer', () =>
 test('defines visible compatibility probes for every public package', async () => {
   assert.deepEqual(COMPATIBILITY_PACKAGES, [
     'ag-ui',
+    'angular',
     'chat',
+    'core',
     'langgraph',
     'render',
     'telemetry',

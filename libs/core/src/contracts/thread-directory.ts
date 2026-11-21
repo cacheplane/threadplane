@@ -41,6 +41,22 @@ export interface ThreadDirectory {
   /** Changes only. Read the initial aggregate through getSnapshot. */
   subscribe(notify: () => void): () => void;
   refresh(options?: { readonly signal?: AbortSignal }): Promise<void>;
+  /**
+   * Reads one thread from the backend, listed or not: the entry, or null when
+   * the backend says there is no such thread. Rejects when the backend could
+   * not be asked, so a caller can tell "missing" from "unknown". It does not
+   * change the snapshot.
+   */
+  get?(
+    id: string,
+    options?: { readonly signal?: AbortSignal }
+  ): Promise<ThreadEntry | null>;
+  /**
+   * The saved rank of an entry among pinned threads, for an entry this
+   * directory published or answered from `get`; undefined when it has none.
+   * Entries themselves carry no rank: `threads` is already in pinned order.
+   */
+  pinnedOrderOf?(entry: ThreadEntry): number | undefined;
   create?(options?: {
     readonly metadata?: { readonly [key: string]: PlainValue };
     readonly signal?: AbortSignal;

@@ -1,22 +1,19 @@
 {
   "name": "@threadplane/langgraph",
   "version": "0.3.7",
-  "description": "LangGraph adapter for the Angular AI agent UI — provideAgent()/injectAgent() expose a run as Angular Signals.",
+  "description": "Framework-neutral LangGraph agent sessions: createSession() runs a LangGraph deployment behind the Threadplane AgentSession contract.",
   "keywords": [
-    "angular",
     "langgraph",
     "langchain",
     "agent",
-    "adapter",
+    "session",
     "threadplane"
   ],
+  "type": "module",
   "peerDependencies": {
-    "@threadplane/chat": "0.3.7",
-    "@threadplane/telemetry": "^0.3.7",
-    "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@threadplane/core": "0.3.7",
     "@langchain/core": "^1.1.33",
-    "@langchain/langgraph-sdk": "^1.7.4",
-    "rxjs": "~7.8.0"
+    "@langchain/langgraph-sdk": "^1.7.4"
   },
   "license": "MIT",
   "repository": {
@@ -29,16 +26,26 @@
     "url": "https://github.com/cacheplane/threadplane/issues"
   },
   "sideEffects": false,
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.d.ts.map",
+    ".install-collector/development-install.mjs",
+    ".install-collector/development-install.d.ts",
+    ".install-collector/development-install.d.mts",
+    "install/*.cjs",
+    "LICENSE.md",
+    "README.md"
+  ],
   "exports": {
+    ".": {
+      "types": "./src/public-api.d.ts",
+      "import": "./src/public-api.js",
+      "default": "./src/public-api.js"
+    },
     "./development-install": {
       "types": "./.install-collector/development-install.d.ts",
       "default": "./.install-collector/development-install.mjs"
-    }
-  },
-  "imports": {
-    "#development-install": {
-      "types": "./.install-collector/development-install.d.ts",
-      "default": "@threadplane/langgraph/development-install"
     }
   },
   "scripts": {

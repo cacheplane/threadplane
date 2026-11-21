@@ -1,50 +1,59 @@
 ---
-description: How the AG-UI adapter reduces protocol events into Angular signals, which providers register an agent, and what the adapter deliberately leaves out.
+description: How the AG-UI session turns protocol events into Angular signals, how provideAgent() registers an agent, and what the session deliberately leaves out.
 ---
 
 # Architecture
 
-`@threadplane/ag-ui` is an adapter. It does not replace `@threadplane/chat`, and it does not define a new chat runtime.
+`@threadplane/ag-ui` is a backend package. It does not replace `@threadplane/chat`, and it contains no UI framework code.
 
-The package takes an AG-UI `AbstractAgent`, listens to its protocol events, and exposes the runtime-neutral `Agent` contract that the chat components already understand.
+The package posts each run to an AG-UI endpoint (or calls an AG-UI `AbstractAgent` you built), reads the protocol events, and publishes them as a framework-neutral session. `@threadplane/angular` puts that session behind the injected `Agent` that the chat components already understand.
 
 <AgUiArchitecturePipeline />
 
 ## The boundary
 
-The important boundary is the `Agent` contract from `@threadplane/chat`.
+The important boundary is the injected `Agent` from `@threadplane/angular`.
 
-Your components should depend on `Agent`, not on AG-UI transport details. That keeps the UI portable across AG-UI, LangGraph, and custom adapters.
+Your components should depend on `Agent`, not on AG-UI transport details. That keeps the UI portable across AG-UI, LangGraph, and sessions of your own.
 
-`toAgent(source)` is the low-level boundary. It accepts any AG-UI `AbstractAgent` implementation:
+`createSession(options)` is the low-level boundary. It takes an AG-UI HTTP endpoint, or any AG-UI `AbstractAgent` implementation:
 
 ```ts
-import { toAgent } from '@threadplane/ag-ui';
+import { createSession } from '@threadplane/ag-ui';
 import { HttpAgent } from '@ag-ui/client';
 
-const source = new HttpAgent({ url: '/api/agent' });
-const agent = toAgent(source);
+const overHttp = createSession({ url: '/api/agent' });
+const overAgent = createSession({ agent: new HttpAgent({ url: '/api/agent' }) });
 ```
 
-Most Angular apps should use DI instead:
+A session is a plain object with `getSnapshot()`, `subscribe()` and commands. It starts no run until a command is called.
+
+Angular apps hand that factory to DI:
 
 ```ts
 import { ApplicationConfig } from '@angular/core';
-import { provideAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideAgent({ url: '/api/agent' }),
+    provideAgent({
+      createSession: (context) =>
+        createSession({
+          ...context,
+          url: '/api/agent',
+        }),
+    }),
   ],
 };
 ```
 
-`provideAgent()` creates an AG-UI `HttpAgent` and registers the wrapped `Agent` under an internal DI token. Retrieve it with `injectAgent()`.
+`provideAgent()` builds one `Agent` from the sessions the factory creates and registers it under an internal DI token. Retrieve it with `injectAgent()`.
 
 ```ts
 import { Component } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   standalone: true,
@@ -56,126 +65,164 @@ export class ChatPage {
 }
 ```
 
-You can also inject the token directly:
+Without a type argument the agent is typed by the core contract. Name the AG-UI session type to reach the fields and commands only this backend has, such as `decision()`, `run()`, `onRawEvent` and `ready`:
 
 ```ts
-import { inject } from '@angular/core';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
+import type { Session } from '@threadplane/ag-ui';
 
-const agent = injectAgent();
+const agent = injectAgent<Session>();
 ```
 
 ## Runtime data flow
 
-`toAgent()` subscribes to `source.subscribe({ onRunInitialized, onEvent, onRunFailed })`.
+Each request goes through the same stages the AG-UI client's own `runAgent` applies: retired event shapes are translated, unknown events are dropped, chunk events are expanded, and the sequence is verified. The session then applies each event to its snapshot.
 
-Every AG-UI event is passed through the reducer. The reducer updates Angular signals:
+Every snapshot field is a read-only signal on the injected agent:
 
-- `messages` for user, assistant, and reasoning content.
-- `status`, `isLoading`, and `error` for run lifecycle.
-- `toolCalls` for tool call starts, arguments, results, and completion.
-- `state` for AG-UI state snapshots and JSON Patch deltas.
-- `interrupt` cleared on `RUN_STARTED`, and set by the `CUSTOM` `on_interrupt` event or by a `RUN_FINISHED` carrying `outcome: { type: 'interrupt' }`.
-- `events$` for runtime-neutral custom-event side effects.
-- `customEvents` for accumulated non-`on_interrupt` `CUSTOM` events used by live a2ui and app-specific reactive UI.
-- `subagents` for `SUBAGENT_*` events and for `ACTIVITY_*` events with `activityType: 'subagent'`.
+- `messages` for user, assistant, tool and system messages, with reasoning attached to the assistant message it precedes.
+- `status` and `error` for run lifecycle. `status()` is `'idle'`, `'running'` or `'error'`.
+- `toolCalls` for tool calls whose arguments are final, and `streamingToolCalls` for calls whose arguments are still arriving.
+- `state` for AG-UI state snapshots and JSON Patch deltas, and `plan` for a `todos` list in that state.
+- `interrupts` for what a paused run waits on: a `RUN_FINISHED` carrying `outcome: { type: 'interrupt' }`, or a `CUSTOM` `on_interrupt` notice when `interruptTransport` selects a profile that answers notices.
+- `inputBlocked` for why an ordinary submission is refused right now.
+- `subagents` for `SUBAGENT_*` events and for `ACTIVITY_*` records with `activityType: 'subagent'`.
 
-When the user submits input, the adapter builds a user message, appends it locally, adds it to the AG-UI source with `source.addMessage()`, then calls `source.runAgent()`.
+Custom events are not state. `agent.onCustomEvent(listener)` delivers each non-`on_interrupt` `CUSTOM` event as it arrives, and `agent.customEvents()` retains the current run's events for live a2ui and app-specific reactive UI.
 
-This is optimistic on purpose. The user message appears immediately while the backend starts the run.
+When the user submits input, the session builds a user message, merges any state patch, and publishes the message, the state and the new run together before it sends the request. The request carries the complete history and state.
+
+The user message therefore appears immediately while the backend starts the run.
 
 ## Live a2ui streaming via `customEvents`
 
-The adapter exposes a `customEvents` signal on the agent returned by
-`toAgent` / `injectAgent`, accumulating every non-`on_interrupt` `CUSTOM`
-AG-UI event for the current run (reset on each `RUN_STARTED`). The chat
-composition feature-detects this signal to drive **progressive** a2ui
-surface rendering — token-by-token, as the backend streams `a2ui-partial`
-events — matching the LangGraph adapter. Without it, a2ui still renders from
-the final tool-call surface; with it, surfaces build up live.
+The injected agent exposes a `customEvents` signal, accumulating every
+non-`on_interrupt` `CUSTOM` AG-UI event for the current run (empty again when
+the next run starts and when the agent switches threads). The chat
+composition reads this signal to drive **progressive** a2ui surface
+rendering — token-by-token, as the backend streams `a2ui-partial` events —
+matching the LangGraph session. Without those events, a2ui still renders from
+the final tool-call surface; with them, surfaces build up live.
 
 The consuming side — how the chat composition turns these events into rendered surfaces — lives in chat's [A2UI overview](/docs/angular/chat/a2ui/overview).
 
 ## Browser client tools
 
-`AgUiAgent.clientTools` is the browser-tool bridge consumed by `<chat [clientTools]>`. The chat composition registers the browser catalog on the agent; the adapter threads that catalog into every `source.runAgent({ tools })` call, exposes unresolved browser-owned tool calls through `clientTools.pending()`, and sends the browser result back as a tool message before continuing the run.
+`agent.clientTools` is the core client-tool capability consumed by `<chat [clientTools]>`. The chat composition declares the browser catalog with `setCatalog()`; the session sends that catalog as the `tools` of every later request, lists unresolved browser-owned tool calls in `agent.pendingClientTools()` once the run has ended, and sends the browser result back as a tool message before continuing the run.
 
 See chat's [Client Tools guide](/docs/angular/chat/guides/client-tools) for declaring `action()`, `view()`, and `ask()` tools. With AG-UI, the backend must bind the supplied AG-UI tool specs and finish the turn without emitting `TOOL_CALL_RESULT` for browser-owned tools so the client can resolve them.
 
 ## Provider choices
 
-Use `provideAgent()` when you have a real AG-UI HTTP endpoint.
+Use `provideAgent()` with `createSession({ url })` when you have a real AG-UI HTTP endpoint.
 
 ```ts
 provideAgent({
-  url: '/api/agent',
-  agentId: 'support-agent',
-  threadId: 'thread-123',
-  headers: { Authorization: `Bearer ${token}` },
+  createSession: (context) =>
+    createSession({
+      ...context,
+      url: '/api/agent',
+      agentId: 'support-agent',
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 });
 ```
 
-The config maps to the AG-UI `HttpAgent` options exposed by this package, plus an optional lifecycle event sink:
+`url`, `headers` and `fetch` are the AG-UI `HttpAgent` options the session sends with. The rest belong to the session:
 
 | Option | Type | Description |
 |---|---|---|
-| `url` | `string` | **Required.** AG-UI backend HTTP/SSE endpoint. |
-| `agentId` | `string` | Optional. Identifies a specific agent on the backend. |
-| `threadId` | `string` | Optional. Resume an existing conversation thread. |
+| `url` | `string` | AG-UI backend HTTP/SSE endpoint. Required unless `agent` is given. |
+| `agent` | `AbstractAgent` | An AG-UI client agent you built, in place of `url`. Passing both throws. |
+| `agentId` | `string` | Optional. Names the agent when an endpoint serves more than one. The protocol does not put it on the wire. |
+| `threadId` | `string` | Optional. The thread this session owns. Absent, the session uses the handed agent's own `threadId`, or else generates one. |
 | `headers` | `Record<string, string>` | Optional. Custom request headers (auth, tracing). |
-| `telemetry` | `AgentRuntimeTelemetrySink \| false` | Optional. App-owned sink for runtime lifecycle events. |
+| `interruptTransport` | `'protocol' \| 'auto' \| 'legacy-command' \| 'mastra-command'` | Optional. How a pause is answered. Defaults to `'protocol'`. |
+| `replay` | `ReplaySource` | Optional. Loads the thread's events from your server when the session is created. |
+| `persistence` | `SessionPersistence` | Optional. Application-owned storage for the thread. Needs a `threadId` the application chose. |
+| `a2uiClientCapabilities` | `{ supportedCatalogIds, inlineCatalogs? }` | Optional. Advertises A2UI catalog support to the agent in every request's state. |
+| `telemetry` | `SessionTelemetrySink \| false` | Optional. App-owned sink for session lifecycle events. |
 
 ### Factory config for route params and DI
 
-`provideAgent()` also accepts a `() => AgentConfig` factory. The factory runs inside an Angular injection context, so it can call `inject()` to read services or route params when it builds the config:
+`provideAgent()` also accepts a `() => AgentConfig` factory. The factory runs once inside an Angular injection context, so it can call `inject()` to read services when it builds the config:
 
 ```ts
 import { inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { provideAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
+import { SessionService } from './session.service';
 
 providers: [
-  provideAgent(() => ({
-    url: '/api/agent',
-    threadId: inject(ActivatedRoute).snapshot.params['threadId'],
-  })),
+  provideAgent(() => {
+    const session = inject(SessionService);
+    return {
+      createSession: (context) =>
+        createSession({
+          ...context,
+          url: '/api/agent',
+          headers: { Authorization: `Bearer ${session.accessToken()}` },
+        }),
+    };
+  }),
 ];
 ```
 
-This is the cleanest way to derive `threadId` (or auth headers) from runtime state at construction time — see the threadId-recreation note below.
+`createSession` itself also runs in the agent's injection context, each time the agent needs a session.
 
-`threadId` here is a plain string consumed once at construction — the provider does not accept an Angular Signal, and the adapter does not observe changes to it at runtime. The AG-UI protocol carries events, not snapshots, and defines no server-side endpoint for "fetch the messages of thread X". To move a user between threads with their prior conversation restored, you have two options:
+A session belongs to one thread. The `threadId` in the provider config is where the agent starts: a string, `null`, or a signal the agent follows. `agent.switchThread(id)`, or a change of that signal to a different id, asks the factory for a new session with `context.threadId` set, stops and disposes the old one, and keeps every signal and command on the agent the same reference. `agent.threadId()` is the thread the agent is on, and `agent.isThreadLoading()` is true while the selected thread's history is read.
 
-- **Recreate the provider.** Inject `provideAgent({ ..., threadId: newId })` from a fresh injector when the active thread changes. When your server can return a thread's recorded events, configure `replay` (for example `httpReplay({ url })`) and the new adapter rebuilds the thread from them, as the live view showed it; disposing the old injector aborts its replay. Otherwise prior history comes from your application-owned `persistence` store, which restores messages, state and pending interrupts but not reasoning or subagent detail, or from your own host service. See [Restoring a thread from the server](/docs/angular/ag-ui/guides/deployment#restoring-a-thread-from-the-server).
-- **Use the LangGraph adapter instead.** `@threadplane/langgraph` accepts `threadId: Signal<string | null>` and hydrates messages from the latest checkpoint on every change. See its [Persistence guide](/docs/angular/langgraph/guides/persistence). Use AG-UI when your runtime publishes events without checkpoint storage; use LangGraph when the server owns durable thread state.
+A session that is given no `threadId` names the new conversation's thread itself, publishes it as `session.threadId`, and reports it through `context.onThreadId`, so `agent.threadId()` is set from the first run. A factory that spreads the context passes that callback on; one that names fields must pass `onThreadId` itself.
+
+The AG-UI protocol carries events, not snapshots, and defines no server-side endpoint for "fetch the messages of thread X". A new session for an existing thread therefore starts empty unless you give it a source to restore from:
+
+- **Configure `replay`.** When your server can return a thread's recorded events, pass `replay` (for example `httpReplay({ url })`) and each new session rebuilds the thread from them, as the live view showed it; disposing a session aborts its replay. Otherwise prior history comes from your application-owned `persistence` store, which restores the transcript, state, ended child agents and a pending pause, or from your own host service. See [Restoring a thread from the server](/docs/angular/ag-ui/guides/deployment#restoring-a-thread-from-the-server).
+- **Use the LangGraph backend instead.** A `@threadplane/langgraph` session reads a thread's saved history from the server that owns it. See its [Persistence guide](/docs/angular/langgraph/guides/persistence). Use AG-UI when your runtime publishes events without checkpoint storage; use LangGraph when the server owns durable thread state.
 
 ### Typed state and several agents at one level
 
-`provideAgent()` has a second overload that takes an `AgentRef` first. The ref carries the state shape from the provider to `injectAgent(ref)`, and it registers the agent under the ref's own token, so more than one agent can be provided at a single injector level:
+`provideAgent()` has a second overload that takes an `AgentRef` first. The ref carries the session type, and with it the state shape, from the provider to `injectAgent(ref)`, and it registers the agent under the ref's own token, so more than one agent can be provided at a single injector level:
 
 ```ts
-import { createAgentRef } from '@threadplane/chat';
-import { provideAgent, injectAgent } from '@threadplane/ag-ui';
+import { createAgentRef, injectAgent, provideAgent } from '@threadplane/angular';
+import { createSession, type Session } from '@threadplane/ag-ui';
+import { type } from '@threadplane/core';
 
-export const TRIP = createAgentRef<TripState>('trip');
-export const SUPPORT = createAgentRef<SupportState>('support');
+export const TRIP = createAgentRef<Session<TripState>>('trip');
+export const SUPPORT = createAgentRef<Session<SupportState>>('support');
 
 providers: [
-  provideAgent(TRIP, { url: '/api/trip' }),
-  provideAgent(SUPPORT, { url: '/api/support' }),
+  provideAgent(TRIP, {
+    createSession: (context) =>
+      createSession({
+        ...context,
+        url: '/api/trip',
+        stateType: type<TripState>(),
+      }),
+  }),
+  provideAgent(SUPPORT, {
+    createSession: (context) =>
+      createSession({
+        ...context,
+        url: '/api/support',
+        stateType: type<SupportState>(),
+      }),
+  }),
 ];
 
 // component
-const trip = injectAgent(TRIP);       // AgUiAgent<TripState>
-const support = injectAgent(SUPPORT); // AgUiAgent<SupportState>
+const trip = injectAgent(TRIP);       // Agent<Session<TripState>>
+const support = injectAgent(SUPPORT); // Agent<Session<SupportState>>
 ```
 
-The ref form also aliases the shared token that the no-argument `injectAgent()` reads. That token can only point at one agent, so when several refs are provided at the same level the **last** `provideAgent(ref, …)` call wins — inject by ref whenever an injector provides more than one agent. Development builds emit a one-time `console.warn` naming the refs involved when an injector level registers more than one, so the aliasing is visible while you build. See [provideAgent()](/docs/api/ag-ui/provideAgent) for the full rule.
+`type<T>()` declares the state type and checks nothing. Pass a Standard Schema, such as a Zod object, as `stateType` to check each state document as well.
+
+The ref form also aliases the shared token that the no-argument `injectAgent()` reads. That token can only point at one agent, so when several refs are provided at the same level the **last** `provideAgent(ref, …)` call wins — inject by ref whenever an injector provides more than one agent. In development mode, resolving the ref-less `injectAgent()` logs a `console.warn` naming the refs involved, so the aliasing is visible while you build.
 
 Use `provideFakeAgent()` when you need the UI to run without a backend:
 
 ```ts
-import { provideFakeAgent } from '@threadplane/ag-ui';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 
 providers: [
   provideFakeAgent({
@@ -185,23 +232,25 @@ providers: [
 ];
 ```
 
-Use `toAgent()` directly when you own a custom `AbstractAgent` subclass or need to test a specific event stream.
+Use `createSession({ agent })` when you own a custom `AbstractAgent` subclass or need to test a specific event stream.
 
 ## Lifecycle gotchas
 
-The wrapped `Agent` does not own the AG-UI source lifecycle. `toAgent()` subscribes to the source and expects the source instance to live for the same lifetime as the adapter.
+The injected `Agent` owns its sessions. It disposes the old session on a thread switch and the last one with its injector, so `getSnapshot`, `subscribe` and `dispose` are not exposed on it.
 
-In Angular apps, prefer the provider API so the agent instance is scoped by DI. If you construct agents manually, create one adapter per source instance and keep that pairing stable.
+In Angular apps, prefer the provider API so the agent instance is scoped by DI. If you create a session yourself, call `session.dispose()` when you are finished with it.
 
-`stop()` calls `source.abortRun()`. The actual cancellation behavior depends on the AG-UI source. `HttpAgent` implements abort behavior; a custom source may treat it as a no-op unless you implement cancellation.
+A session does not take over an `AbstractAgent` it is handed. It calls the agent's `run(input)` with each request's full input, and neither reads nor changes the agent's own `messages` and `state`.
 
-`retry()` re-runs the last submitted input without re-appending it to the message history. It clears `error` and sets loading, and it silently does nothing while a run is already in flight or when no input has been submitted yet.
+`stop()` ends the current run locally. For the `url` form it aborts the request. For a handed agent it unsubscribes from the stream and calls the agent's `abortRun()`; the actual cancellation behavior then depends on that agent.
 
-`regenerate(index)` is supported by the shared `Agent` contract. It requires the target message to be an assistant message, finds the preceding user message, trims later messages, syncs the trimmed list back to the AG-UI source with `setMessages()`, and runs again. It throws if another run is loading.
+`retry()` sends the last submission again after its run failed with a backend `RUN_ERROR`, without adding a second user message. It resolves `'aborted'` without sending while a run is active, when nothing failed, or when the last run was not a failed submission, and it rejects when the failure leaves open whether the backend did the work.
+
+`regenerate(messageId)` takes the `id` of an assistant message. It keeps the history up to and including the user message before that message, drops everything after it, and runs again with the current state. It rejects while a run is active, while a decision is waiting, for an id that is not an assistant message, and when no user message precedes it.
 
 ## Current scope
 
-The AG-UI adapter currently covers:
+The AG-UI session currently covers:
 
 - Streaming assistant messages from `TEXT_MESSAGE_*`.
 - Reasoning messages from `REASONING_MESSAGE_*`.
@@ -209,17 +258,17 @@ The AG-UI adapter currently covers:
 - Tool calls from `TOOL_CALL_*`.
 - Shared state from `STATE_SNAPSHOT` and `STATE_DELTA`.
 - Message replacement from `MESSAGES_SNAPSHOT`.
-- Custom events from non-`on_interrupt` `CUSTOM` events, surfaced through both `events$` and `customEvents`.
-- Interrupts from `CUSTOM` events named `on_interrupt`, or from a `RUN_FINISHED` carrying `outcome: { type: 'interrupt' }`.
-- Browser client tools via `AgUiAgent.clientTools`.
-- Subagent progress from `SUBAGENT_STARTED`/`SUBAGENT_FINISHED`/`SUBAGENT_ERROR` events with `subagentRunId`-attributed content, and from `ACTIVITY_SNAPSHOT`/`ACTIVITY_DELTA` events whose `activityType` is `subagent`.
+- Custom events from non-`on_interrupt` `CUSTOM` events, surfaced through both `onCustomEvent` and `customEvents`.
+- Interrupts from a `RUN_FINISHED` carrying `outcome: { type: 'interrupt' }`, and from `CUSTOM` events named `on_interrupt` under an `interruptTransport` that answers them.
+- Browser client tools via `agent.clientTools`.
+- Child agents from `SUBAGENT_STARTED`/`SUBAGENT_FINISHED`/`SUBAGENT_ERROR` events with `subagentRunId`-attributed content, and from `ACTIVITY_SNAPSHOT`/`ACTIVITY_DELTA` records whose `activityType` is `subagent`.
 - Citations stored under `state.citations`.
 
-These features are intentionally out of scope for the AG-UI adapter today:
+These features are intentionally out of scope for the AG-UI session today:
 
-- **History and time-travel.** AG-UI is an event-stream protocol — it does not define a server-side "fetch state of thread X" endpoint, so the adapter cannot hydrate prior messages on a `threadId` change the way a checkpoint-aware runtime can. The [Provider choices](#provider-choices) section above describes the two patterns AG-UI consumers use to work around this.
+- **Checkpoints and time-travel.** AG-UI names runs and threads, and nothing in it lists saved points of a thread with the state at each, so the session publishes no `checkpoints`. It also defines no server-side "fetch state of thread X" endpoint, so a session cannot read prior messages for a `threadId` the way a checkpoint-aware runtime can. The [Provider choices](#provider-choices) section above describes the two patterns AG-UI consumers use to work around this.
 
-If server-side history or time-travel is central to your product, use the LangGraph adapter for that surface or build a custom adapter against the `@threadplane/chat` `Agent` contract. The [Writing an Adapter guide](/docs/angular/chat/guides/writing-an-adapter#hydrating-from-a-server-stored-thread) walks through the thread-loading design choice in detail.
+If server-side history or time-travel is central to your product, use the LangGraph backend for that surface or write a session of your own against the `AgentSession` contract. The [Writing an Adapter guide](/docs/angular/chat/guides/writing-an-adapter) walks through that design choice in detail.
 
 ## Next steps
 

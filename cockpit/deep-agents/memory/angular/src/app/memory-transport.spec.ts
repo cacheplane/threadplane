@@ -140,6 +140,10 @@ it('denies transport bypass and queued authorship before any actual SDK HTTP req
   await expect(
     collect(t.stream('da-memory', null, {}, signal()))
   ).rejects.toThrow('Browser memory identity');
+  // A session creates its thread before its first run.
+  await expect(t.createThread(signal())).rejects.toThrow(
+    'Browser memory identity'
+  );
   expect(() =>
     t.createQueuedRun('da-memory', 'fixture-thread', {}, signal())
   ).toThrow('Browser memory identity');

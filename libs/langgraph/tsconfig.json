@@ -1,20 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "experimentalDecorators": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "module": "preserve",
-    "emitDeclarationOnly": false,
-    "composite": false
-  },
-  "angularCompilerOptions": {
-    "enableI18nLegacyMessageIdFormat": false,
-    "strictInjectionParameters": true,
-    "strictInputAccessModifiers": true,
-    "strictTemplates": true
+    "types": [],
+    "lib": ["ES2022", "DOM", "ESNext.Disposable"],
+    "strict": true
   },
   "files": [],
-  "include": [],
   "references": [
     {
       "path": "./tsconfig.lib.json"

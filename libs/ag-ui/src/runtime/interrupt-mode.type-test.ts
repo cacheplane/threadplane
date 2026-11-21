@@ -22,3 +22,25 @@ if (snapshot.run?.legacyInterrupt) {
   // @ts-expect-error selected notice evidence is readonly
   snapshot.run.legacyInterrupt.name = name;
 }
+
+// Resume profiles are a session option with the legacy adapter's four values.
+import type { InterruptTransport } from './interrupt-mode';
+const profiles: InterruptTransport[] = [
+  'auto',
+  'protocol',
+  'legacy-command',
+  'mastra-command',
+];
+for (const interruptTransport of profiles)
+  createSession({ threadId: 't', url: 'unused', interruptTransport });
+// @ts-expect-error a provider name is not a resume profile
+createSession({ threadId: 't', url: 'unused', interruptTransport: 'mastra' });
+// @ts-expect-error a run observes; only a session answers
+createRun({ url: 'unused', interruptTransport: 'auto' });
+// A notice the session can answer publishes its value on the interrupt.
+const [pending] =
+  createSession({ threadId: 't', url: 'unused' }).getSnapshot().interrupts ??
+  [];
+const reason: string | undefined = pending?.reason;
+void reason;
+void pending?.value;

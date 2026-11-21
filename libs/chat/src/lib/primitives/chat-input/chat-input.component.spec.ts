@@ -3,6 +3,7 @@ import { signal, computed } from '@angular/core';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { ChatInputComponent, submitMessage } from './chat-input.component';
 import { mockAgent } from '../../testing/mock-agent';
+import { registerClientToolAbort } from '../../client-tools/stop-agent';
 
 function setSignalInput<T>(sig: unknown, value: T): void {
   const obj = sig as Record<symbol, unknown>;
@@ -23,9 +24,8 @@ function setSignalInput<T>(sig: unknown, value: T): void {
 
 describe('submitMessage()', () => {
   it('does not dispatch ordinary input when the adapter blocks it', () => {
-    const agent = mockAgent();
-    const blocked = { ...agent, isInputBlocked: signal(true) };
-    expect(submitMessage(blocked, 'keep my draft')).toBeNull();
+    const agent = mockAgent({ inputBlocked: { reason: 'interrupt' } });
+    expect(submitMessage(agent, 'keep my draft')).toBeNull();
     expect(agent.submitCalls).toHaveLength(0);
   });
   it('calls agent.submit with { message: trimmed text }', async () => {
@@ -66,35 +66,33 @@ describe('submitMessage()', () => {
   });
 });
 
-describe('ChatInputComponent — isDisabled computed', () => {
-  it('isDisabled is false when agent.isLoading is false', () => {
-    const agent = mockAgent({ isLoading: false });
-    const agent$ = signal(agent);
+describe('ChatInputComponent — isLoading computed', () => {
+  function inputFor(agent: ReturnType<typeof mockAgent>) {
+    const fixture = TestBed.createComponent(ChatInputComponent);
+    setSignalInput(fixture.componentInstance.agent, agent);
+    return fixture.componentInstance;
+  }
 
-    const isDisabled = computed(() => agent$().isLoading());
-
-    expect(isDisabled()).toBe(false);
+  it('isLoading is false when the agent is not running', () => {
+    expect(inputFor(mockAgent({ status: 'idle' })).isLoading()).toBe(false);
+    expect(inputFor(mockAgent({ status: 'error' })).isLoading()).toBe(false);
   });
 
-  it('isDisabled is true when agent.isLoading is true', () => {
-    const agent = mockAgent({ isLoading: true });
-    const agent$ = signal(agent);
-
-    const isDisabled = computed(() => agent$().isLoading());
-
-    expect(isDisabled()).toBe(true);
+  it('isLoading is true when the agent is running', () => {
+    expect(inputFor(mockAgent({ status: 'running' })).isLoading()).toBe(true);
   });
 
-  it('isDisabled updates reactively when agent changes', () => {
-    const idleAgent = mockAgent({ isLoading: false });
-    const loadingAgent = mockAgent({ isLoading: true });
+  it('isLoading updates reactively when agent changes', () => {
+    const idleAgent = mockAgent({ status: 'idle' });
+    const loadingAgent = mockAgent({ status: 'running' });
     const agent$ = signal(idleAgent);
+    const isLoading = computed(() => agent$().status() === 'running');
 
-    const isDisabled = computed(() => agent$().isLoading());
-
-    expect(isDisabled()).toBe(false);
+    expect(isLoading()).toBe(false);
     agent$.set(loadingAgent);
-    expect(isDisabled()).toBe(true);
+    expect(isLoading()).toBe(true);
+    loadingAgent.status.set('idle');
+    expect(isLoading()).toBe(false);
   });
 });
 
@@ -104,7 +102,7 @@ describe('ChatInputComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({});
     fixture = TestBed.createComponent(ChatInputComponent);
-    setSignalInput(fixture.componentInstance.agent, mockAgent({ isLoading: false }));
+    setSignalInput(fixture.componentInstance.agent, mockAgent({ status: 'idle' }));
     fixture.detectChanges();
   });
 
@@ -156,9 +154,8 @@ describe('ChatInputComponent', () => {
   });
 
   it('disables Send and preserves the draft on Enter until the adapter releases input', () => {
-    const agent = mockAgent();
-    const blocked = signal(true);
-    setSignalInput(fixture.componentInstance.agent, { ...agent, isInputBlocked: blocked });
+    const agent = mockAgent({ inputBlocked: { reason: 'interrupt' } });
+    setSignalInput(fixture.componentInstance.agent, agent);
     fixture.componentInstance.messageText.set('keep my draft');
     fixture.detectChanges();
     const button = fixture.nativeElement.querySelector('button[aria-label="Send message"]') as HTMLButtonElement;
@@ -166,13 +163,13 @@ describe('ChatInputComponent', () => {
     fixture.componentInstance.onKeydown(new KeyboardEvent('keydown', { key: 'Enter' }));
     expect(agent.submitCalls).toHaveLength(0);
     expect(fixture.componentInstance.messageText()).toBe('keep my draft');
-    blocked.set(false);
+    agent.inputBlocked.set(undefined);
     fixture.detectChanges();
     expect(button.disabled).toBe(false);
   });
 
   it('keeps the draft and starts no second run when Enter is pressed while a reply is running', () => {
-    const agent = mockAgent({ isLoading: true });
+    const agent = mockAgent({ status: 'running' });
     setSignalInput(fixture.componentInstance.agent, agent);
     fixture.componentInstance.messageText.set('follow-up for later');
     fixture.detectChanges();
@@ -186,7 +183,7 @@ describe('ChatInputComponent', () => {
     const spy = vi.spyOn(Element.prototype, 'matches').mockImplementation(function (this: Element, selector: string) {
       return selector === ':focus-visible' ? fromKeyboard && this === document.activeElement : original.call(this, selector);
     });
-    const agent = mockAgent({ isLoading: true });
+    const agent = mockAgent({ status: 'running' });
     setSignalInput(fixture.componentInstance.agent, agent);
     fixture.detectChanges();
     document.body.appendChild(fixture.nativeElement);
@@ -194,7 +191,7 @@ describe('ChatInputComponent', () => {
       const stop = fixture.nativeElement.querySelector('button[aria-label="Stop generating"]') as HTMLButtonElement;
       stop.focus();
       expect(document.activeElement).toBe(stop);
-      agent.isLoading.set(false);
+      agent.status.set('idle');
       fixture.detectChanges();
       await new Promise((r) => requestAnimationFrame(() => r(undefined)));
       expect(document.activeElement).toBe(fromKeyboard ? fixture.nativeElement.querySelector('textarea') : document.body);
@@ -204,8 +201,35 @@ describe('ChatInputComponent', () => {
     }
   });
 
+  it('Stop cancels the client tools running for the agent, then calls agent.stop() once, and emits stopped', () => {
+    const agent = mockAgent({ status: 'running' });
+    const order: string[] = [];
+    const release = registerClientToolAbort(agent, () => order.push('abort'));
+    const stop = vi.spyOn(agent, 'stop').mockImplementation(async () => { order.push('stop'); });
+    let stopped = 0;
+    fixture.componentInstance.stopped.subscribe(() => stopped++);
+    setSignalInput(fixture.componentInstance.agent, agent);
+    fixture.detectChanges();
+    try {
+      (fixture.nativeElement.querySelector('button[aria-label="Stop generating"]') as HTMLButtonElement).click();
+      expect(order).toEqual(['abort', 'stop']);
+      expect(stop).toHaveBeenCalledTimes(1);
+      expect(stopped).toBe(1);
+    } finally {
+      release();
+    }
+  });
+
+  it('Stop calls agent.stop() once when no client tool is running', () => {
+    const agent = mockAgent({ status: 'running' });
+    setSignalInput(fixture.componentInstance.agent, agent);
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('button[aria-label="Stop generating"]') as HTMLButtonElement).click();
+    expect(agent.stopCount).toBe(1);
+  });
+
   it('says why Enter did nothing while a reply runs, and clears that when the reply ends', () => {
-    const agent = mockAgent({ isLoading: true });
+    const agent = mockAgent({ status: 'running' });
     setSignalInput(fixture.componentInstance.agent, agent);
     fixture.componentInstance.messageText.set('next question');
     fixture.detectChanges();
@@ -215,7 +239,7 @@ describe('ChatInputComponent', () => {
     fixture.detectChanges();
     expect(hint()?.getAttribute('role')).toBe('status');
     expect(hint()?.textContent?.trim()).toBe('A response is still running. Stop it to send now, or send when it finishes.');
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fixture.detectChanges();
     expect(hint()?.textContent?.trim() ?? '').toBe('');
     expect(fixture.componentInstance.messageText()).toBe('next question');

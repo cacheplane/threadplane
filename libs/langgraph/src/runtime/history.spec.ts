@@ -6,6 +6,7 @@ import { createSession } from './create-session';
 import type { AgentTransport, StreamEvent } from './transport.types';
 import { deferred, type Deferred } from './testing/deferred';
 import { controlledTransport } from './testing/controlled-transport';
+import { expectFailedLoad } from './testing/failed-load';
 
 type Loadable = AgentSession & {
   load?(options?: { signal?: AbortSignal }): Promise<void>;
@@ -168,8 +169,11 @@ describe('explicit owned history loading', () => {
     });
     await rejected;
     expect(f.reads[1].signal.aborted).toBe(true);
-    expect(f.session.getSnapshot()).toBe(before);
-    expect(notify).not.toHaveBeenCalled();
+    // The failure is published as an error; nothing loaded is replaced and
+    // nothing of what was thrown is read or kept.
+    expectFailedLoad(f.session.getSnapshot(), before);
+    expect(JSON.stringify(f.session.getSnapshot())).not.toContain('secret');
+    expect(notify).toHaveBeenCalledTimes(1);
     const retry = load(f.session);
     await f.started(2);
     f.reads[2].result.resolve(history('Retried'));
@@ -379,7 +383,8 @@ describe('explicit owned history loading', () => {
     });
     f.reads[0].result.resolve([checkpoint]);
     await rejected;
-    expect(f.session.getSnapshot()).toBe(before);
+    expectFailedLoad(f.session.getSnapshot(), before);
+    expect(JSON.stringify(f.session.getSnapshot())).not.toContain('Private');
     await f.session.dispose();
   });
 

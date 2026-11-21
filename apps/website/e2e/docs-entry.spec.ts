@@ -64,7 +64,7 @@ test('copying an Angular install command keeps the docs hub open', async ({
   await expect(copy).toHaveAttribute('aria-label', 'Copied');
   await expect(install).toHaveAttribute('open', '');
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
-    'npm i @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked'
+    'npm i @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked'
   );
 });
 
@@ -93,7 +93,7 @@ test('an install disclosure opened before hydration stays open and can copy', as
     await copy.click();
     await expect(copy).toHaveAttribute('aria-label', 'Copied');
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
-      'npm i @threadplane/chat @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked'
+      'npm i @threadplane/chat @threadplane/angular @threadplane/core @threadplane/langgraph @langchain/core @langchain/langgraph-sdk marked'
     );
     await expect(install).toHaveAttribute('open', '');
   } finally {

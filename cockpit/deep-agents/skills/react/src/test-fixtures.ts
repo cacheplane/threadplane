@@ -75,8 +75,17 @@ export function authorityInput(
         delivery,
       },
     ],
+    // The session holds a failed tool call as failed, with its text as `error`.
     toolCalls: [
-      { id: 'read', name: 'read_file', args, status: 'complete', result },
+      status === 'error'
+        ? {
+            id: 'read',
+            name: 'read_file',
+            args,
+            status: 'error',
+            error: result,
+          }
+        : { id: 'read', name: 'read_file', args, status: 'complete', result },
     ],
     state: { skills_metadata: values.skills_metadata, files: {} },
     interrupts: [],

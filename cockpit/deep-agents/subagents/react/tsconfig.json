@@ -42,7 +42,7 @@
         "libs/react/src/markdown/index.ts"
       ],
       "@threadplane/langgraph": [
-        "libs/langgraph/src/runtime/create-session.ts"
+        "libs/langgraph/src/public-api.ts"
       ]
     }
   },

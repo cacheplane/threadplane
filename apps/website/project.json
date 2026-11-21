@@ -138,6 +138,10 @@
       "cache": false,
       "dependsOn": [
         {
+          "target": "generate-api-docs",
+          "projects": ["website"]
+        },
+        {
           "target": "build",
           "projects": [
             "cockpit-langgraph-streaming-react",
@@ -160,6 +164,10 @@
       "executor": "@nx/playwright:playwright",
       "cache": false,
       "dependsOn": [
+        {
+          "target": "generate-api-docs",
+          "projects": ["website"]
+        },
         {
           "target": "build",
           "projects": [
@@ -190,6 +198,10 @@
       "cache": false,
       "dependsOn": [
         {
+          "target": "generate-api-docs",
+          "projects": ["website"]
+        },
+        {
           "target": "prepare-fixture",
           "projects": [
             "cockpit-ag-ui-a2ui-react"
@@ -217,6 +229,10 @@
       "executor": "@nx/playwright:playwright",
       "cache": false,
       "dependsOn": [
+        {
+          "target": "generate-api-docs",
+          "projects": ["website"]
+        },
         {
           "target": "fixture-test",
           "projects": [
@@ -256,6 +272,10 @@
       "executor": "@nx/playwright:playwright",
       "cache": false,
       "dependsOn": [
+        {
+          "target": "generate-api-docs",
+          "projects": ["website"]
+        },
         {
           "target": "build",
           "projects": [
@@ -309,6 +329,10 @@
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "dependsOn": [
+        {
+          "target": "generate-api-docs",
+          "projects": ["website"]
+        },
         {
           "target": "fixture-test",
           "projects": ["cockpit-chat-a2ui-react"]

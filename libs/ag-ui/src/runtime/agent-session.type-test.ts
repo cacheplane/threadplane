@@ -35,6 +35,18 @@ void evidence.messages;
 void evidence.decision;
 // @ts-expect-error A core observer sees the core snapshot only.
 void anySession.getSnapshot().transcript;
+// Why submit is refused, for a view that disables its input.
+const blocked:
+  | 'hydrating'
+  | 'checking'
+  | 'storage'
+  | 'decision'
+  | 'client-tools'
+  | undefined = evidence.inputBlocked?.reason;
+void blocked;
+// @ts-expect-error A run in progress is read from status, not from this field.
+const running: 'running' | undefined = evidence.inputBlocked?.reason;
+void running;
 
 // type<T>() declares the state.
 const typed = createSession({ ...options, stateType: type<Draft>() });
@@ -79,3 +91,96 @@ void tools.getSnapshot().clientTools.calls;
 void tools.submit({ message: 'Go', state: { tags: [] } });
 // @ts-expect-error A submitted state holds declared keys only.
 void tools.submit({ message: 'Go', state: { unknownKey: 1 } });
+
+// A session runs over an HTTP endpoint or over a client agent, never both.
+import { HttpAgent, type AbstractAgent } from '@ag-ui/client';
+declare const custom: AbstractAgent;
+const overAgent = createSession({ agent: custom });
+const overHttpAgent = createSession({
+  agent: new HttpAgent({ url: 'https://agent.invalid' }),
+  threadId: 't',
+  agentId: 'planner',
+  stateType: type<Draft>(),
+});
+const agentCore: AgentSession<
+  Record<string, ToolContract>,
+  Draft
+> = overHttpAgent;
+void agentCore;
+const thread: string | undefined = overAgent.threadId;
+const agentName: string | undefined = overAgent.agentId;
+void thread;
+void agentName;
+// The thread is optional over HTTP too.
+createSession({ url: 'https://agent.invalid' });
+// @ts-expect-error a url and an agent are two sources
+createSession({ url: 'https://agent.invalid', agent: custom });
+// @ts-expect-error a handed agent brings its own transport
+createSession({ agent: custom, fetch: globalThis.fetch });
+// @ts-expect-error a session needs somewhere to send its requests
+createSession({ threadId: 't' });
+// @ts-expect-error an agent has the protocol's run
+createSession({ agent: { runAgent: () => undefined } });
+createSession({ agent: custom }, { f: { description: 'f', handler: () => 1 } });
+
+// A child reported as an activity record keeps that record's content.
+const [childAgent] = untyped.getSnapshot().subagents;
+const childName: string = childAgent.started.name;
+void childName;
+void childAgent.activity?.['status'];
+// @ts-expect-error the record's content is readonly
+if (childAgent.activity) childAgent.activity['status'] = 'complete';
+
+// The optional members of the core contract, in the core types.
+import type {
+  AgentClientTools,
+  AgentErrorDiagnostic,
+  ContentBlock,
+  StreamingToolCall,
+  ToolCall,
+} from '@threadplane/core';
+import type { SessionLifecycle } from './lifecycle';
+const published = untyped.getSnapshot();
+const streaming: readonly StreamingToolCall[] | undefined =
+  published.streamingToolCalls;
+const waiting: readonly ToolCall[] | undefined = published.pendingClientTools;
+const diagnostic: AgentErrorDiagnostic | undefined = published.errorDiagnostic;
+const blocks: readonly ContentBlock[] | undefined =
+  published.messages[0].blocks;
+const childState = published.subagents[0].state?.['step'];
+const pendingChild: 'pending' | 'running' | 'complete' | 'error' | 'unknown' =
+  published.subagents[0].status;
+void [streaming, waiting, diagnostic, blocks, childState, pendingChild];
+// AG-UI has no checkpoint, so the snapshot type carries the core field unset.
+const checkpoints: undefined | readonly unknown[] = published.checkpoints;
+void checkpoints;
+const capability: AgentClientTools | undefined = untyped.clientTools;
+capability?.setCatalog([{ name: 'ask', description: 'Asks.', parameters: {} }]);
+capability?.resolve('call', { ok: true, value: { seat: '4A' } });
+capability?.settle?.('call', { ok: false, error: 'Dismissed' });
+// @ts-expect-error a failed result says why
+capability?.resolve('call', { ok: false });
+// A session that runs its own handlers has no such capability.
+// @ts-expect-error the handler-map session leaves clientTools out
+void tools.clientTools;
+void untyped.submit({
+  message: 'Look',
+  blocks: [{ type: 'image', url: 'https://example.invalid/a.png' }],
+});
+// @ts-expect-error a block has a known type
+void untyped.submit({ message: 'Look', blocks: [{ type: 'video' }] });
+void untyped.runWithoutMessage?.({ state: { anything: 1 } });
+void typed.runWithoutMessage?.({ state: { title: 'New' } });
+// @ts-expect-error a run's state holds declared keys only
+void typed.runWithoutMessage?.({ state: { unknownKey: 1 } });
+void typed.resume([], { message: 'Go on', state: { title: 'New' } });
+// @ts-expect-error a resume's state holds declared keys only
+void typed.resume([], { state: { unknownKey: 1 } });
+const milestones: SessionLifecycle | undefined =
+  untyped.lifecycle?.getSnapshot();
+const startedAt: number | null | undefined = milestones?.streamStartedAt;
+void startedAt;
+// @ts-expect-error a lifecycle is read, never written
+if (milestones) milestones.streamStartedAt = 1;
+const loading: Promise<void> | undefined = untyped.load?.();
+void loading;

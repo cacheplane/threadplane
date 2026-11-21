@@ -26,6 +26,7 @@ describe('lifecycle recorder', () => {
       streamErrorAt: null,
       interruptReceivedAt: null,
       interruptResolvedAt: null,
+      threadCreatedAt: null,
       threadPersistedAt: null,
       toolCallStartedAt: null,
       toolCallCompletedAt: null,

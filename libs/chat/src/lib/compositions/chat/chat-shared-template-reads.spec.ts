@@ -9,7 +9,7 @@ import { ChatToolCallTemplateDirective } from '../../primitives/chat-tool-calls/
 import { ChatToolCallsComponent } from '../../primitives/chat-tool-calls/chat-tool-calls.component';
 import { ChatToolViewsComponent } from '../../primitives/chat-tool-views/chat-tool-views.component';
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
-import { mockAgent } from '../../testing/mock-agent';
+import { rawMessagesAgent } from '../../../testing/raw-messages-agent';
 import { staticDelivery, streamingDelivery, type Message } from '../../agent';
 
 @Component({ standalone: true, template: '<span>registered view</span>' })
@@ -33,7 +33,7 @@ class SharedReadViewComponent {}
   `,
 })
 class SharedReadProjectionHost {
-  readonly agent = mockAgent({
+  readonly agent = rawMessagesAgent({
     messages: [{ id: 'answer', role: 'assistant', content: 'answer', toolCallIds: ['call'], delivery: staticDelivery('answer') }],
     toolCalls: [{ id: 'call', name: 'search', args: {}, status: 'complete' }],
   });
@@ -55,7 +55,7 @@ describe('Chat shared transcript reads', () => {
         })),
         { id: 'response', role: 'assistant', content: 'tail', delivery: streamingDelivery('response-generation') },
       ];
-      const agent = mockAgent({ messages: initial, isLoading: true });
+      const agent = rawMessagesAgent({ messages: initial, status: 'running' });
       TestBed.configureTestingModule({});
       const fixture = TestBed.createComponent(ChatComponent);
       fixture.componentRef.setInput('agent', agent);
@@ -111,7 +111,7 @@ describe('Chat shared transcript reads', () => {
     const answer: Message = {
       id: 'answer', role: 'assistant', content: 'answer', toolCallIds: ['call'], delivery: staticDelivery('answer'),
     };
-    const agent = mockAgent({
+    const agent = rawMessagesAgent({
       messages: [answer], toolCalls: [{ id: 'call', name: 'search', args: {}, status: 'complete' }],
     });
     TestBed.configureTestingModule({});
@@ -216,12 +216,12 @@ describe('Chat shared transcript reads', () => {
     expect(host.agent.messages()).toBe(messages);
   });
 
-  it('keeps guarded action state reactive and accepts an agent without optional blocking', async () => {
-    const blocked = signal(false);
-    const agent = { ...mockAgent({ messages: [
+  it('keeps guarded action state reactive and accepts an agent that reports no input block', async () => {
+    const blocked = signal<{ reason: string } | undefined>(undefined);
+    const agent = { ...rawMessagesAgent({ messages: [
       { id: 'empty', role: 'assistant', content: '', delivery: staticDelivery('empty') },
       { id: 'answer', role: 'assistant', content: 'answer', delivery: staticDelivery('answer') },
-    ] }), isInputBlocked: blocked };
+    ] }), inputBlocked: blocked };
     TestBed.configureTestingModule({});
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);
@@ -231,20 +231,20 @@ describe('Chat shared transcript reads', () => {
     const actions = fixture.debugElement.queryAll(By.directive(ChatMessageActionsComponent));
     expect(actions).toHaveLength(1);
     expect(actions[0].componentInstance.disabled()).toBe(false);
-    blocked.set(true);
+    blocked.set({ reason: 'interrupt' });
     await fixture.whenStable();
     expect(actions[0].componentInstance.disabled()).toBe(true);
-    agent.isLoading.set(true);
-    blocked.set(false);
+    agent.status.set('running');
+    blocked.set(undefined);
     await fixture.whenStable();
     expect(actions[0].componentInstance.disabled()).toBe(true);
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     await fixture.whenStable();
     expect(actions[0].componentInstance.disabled()).toBe(false);
     expect(agent.messages()).toBe(messages);
 
-    const replacement = mockAgent({ messages });
-    expect(replacement.isInputBlocked).toBeUndefined();
+    const replacement = rawMessagesAgent({ messages });
+    expect(replacement.inputBlocked()).toBeUndefined();
     fixture.componentRef.setInput('agent', replacement);
     await fixture.whenStable();
     expect(fixture.debugElement.query(By.directive(ChatMessageActionsComponent)).componentInstance).toBe(actions[0].componentInstance);
@@ -257,7 +257,7 @@ describe('Chat shared transcript reads', () => {
     const messages: Message[] = kind === 'empty' ? [] : [{
       id: kind, role: kind, content: kind, delivery: staticDelivery(kind),
     }];
-    const agent = mockAgent({ messages });
+    const agent = rawMessagesAgent({ messages });
     TestBed.configureTestingModule({});
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);
@@ -285,7 +285,7 @@ describe('Chat shared transcript reads', () => {
       id: 'response', role: 'assistant', content: 'tail',
       delivery: streamingDelivery('response-generation'),
     };
-    const agent = mockAgent({ messages: [...history, tail], isLoading: true });
+    const agent = rawMessagesAgent({ messages: [...history, tail], status: 'running' });
     const originalMessages = agent.messages;
     const messagesReads = vi.spyOn(agent, 'messages');
     TestBed.configureTestingModule({});
@@ -321,7 +321,7 @@ describe('Chat shared transcript reads', () => {
     });
     const preceding = message('preceding', 'user');
     const answer = message('answer', 'assistant');
-    const agent = mockAgent({ messages: [preceding, answer] });
+    const agent = rawMessagesAgent({ messages: [preceding, answer] });
     TestBed.configureTestingModule({});
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);
@@ -341,7 +341,7 @@ describe('Chat shared transcript reads', () => {
     expect(answerRow().getAttribute('data-prev-role')).toBeNull();
     expect(answerRow().getAttribute('data-current')).toBe('false');
 
-    const replacement = mockAgent({ messages: [message('replacement-user', 'user'), {
+    const replacement = rawMessagesAgent({ messages: [message('replacement-user', 'user'), {
       ...answer, content: 'replacement answer', delivery: staticDelivery('replacement-generation'),
     }] });
     fixture.componentRef.setInput('agent', replacement);
@@ -355,7 +355,7 @@ describe('Chat shared transcript reads', () => {
     const history = ['user', 'assistant', 'system', 'tool', 'unknown', undefined].map((role, index) => ({
       id: 'duplicate', role, content: String(index), delivery: staticDelivery(String(index)),
     })) as Message[];
-    const agent = mockAgent({ messages: history });
+    const agent = rawMessagesAgent({ messages: history });
     TestBed.configureTestingModule({});
     const fixture = TestBed.createComponent(ChatComponent);
     fixture.componentRef.setInput('agent', agent);

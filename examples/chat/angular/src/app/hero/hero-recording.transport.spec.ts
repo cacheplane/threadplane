@@ -49,6 +49,14 @@ describe('HeroRecordingTransport', () => {
     expect(t.recording().runs).toHaveLength(1);
     expect(t.recording().runs[0].events).toHaveLength(1);
   });
+  it('creates the thread through the inner transport, and says so when it cannot', async () => {
+    const sig = new AbortController().signal;
+    const creating: AgentTransport = { ...innerWith([]), createThread: async () => 'thread-7' };
+    expect(await new HeroRecordingTransport(creating, () => 0).createThread(sig)).toBe('thread-7');
+    expect(() => new HeroRecordingTransport(innerWith([]), () => 0).createThread(sig)).toThrow(
+      /cannot create a thread/,
+    );
+  });
   it('recordedAt is stable across recording() calls', async () => {
     const t = new HeroRecordingTransport(innerWith([{ type: 'values' }]), () => 0);
     const sig = new AbortController().signal;

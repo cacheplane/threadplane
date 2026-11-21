@@ -1,20 +1,17 @@
 {
   "name": "@threadplane/ag-ui",
   "version": "0.3.7",
-  "description": "AG-UI adapter for the Angular AI agent UI — connect any AG-UI-compatible backend to the same chat surface.",
+  "description": "Framework-neutral AG-UI agent sessions: createSession() runs any AG-UI-compatible backend behind the Threadplane AgentSession contract.",
   "keywords": [
-    "angular",
     "ag-ui",
     "agent",
-    "adapter",
+    "session",
     "threadplane"
   ],
+  "type": "module",
   "peerDependencies": {
-    "@threadplane/chat": "0.3.7",
-    "@threadplane/telemetry": "^0.3.7",
-    "@angular/core": "^20.0.0 || ^21.0.0 || ^22.0.0",
+    "@threadplane/core": "0.3.7",
     "@ag-ui/client": "^1.0.1",
-    "@ag-ui/core": "^1.0.1",
     "rxjs": "~7.8.0"
   },
   "license": "MIT",
@@ -28,16 +25,26 @@
     "url": "https://github.com/cacheplane/threadplane/issues"
   },
   "sideEffects": false,
+  "files": [
+    "src/**/*.js",
+    "src/**/*.d.ts",
+    "src/**/*.d.ts.map",
+    ".install-collector/development-install.mjs",
+    ".install-collector/development-install.d.ts",
+    ".install-collector/development-install.d.mts",
+    "install/*.cjs",
+    "LICENSE.md",
+    "README.md"
+  ],
   "exports": {
+    ".": {
+      "types": "./src/public-api.d.ts",
+      "import": "./src/public-api.js",
+      "default": "./src/public-api.js"
+    },
     "./development-install": {
       "types": "./.install-collector/development-install.d.ts",
       "default": "./.install-collector/development-install.mjs"
-    }
-  },
-  "imports": {
-    "#development-install": {
-      "types": "./.install-collector/development-install.d.ts",
-      "default": "@threadplane/ag-ui/development-install"
     }
   },
   "scripts": {

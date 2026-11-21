@@ -110,10 +110,12 @@ function example(paused = true, rejected = false): any {
         id: c.id,
         name: c.name,
         args: c.args,
-        status: paused ? 'pending' : 'complete',
-        ...(!paused
-          ? { result: rejected ? 'User rejected' : 'Updated file' }
-          : {}),
+        status: paused ? 'pending' : rejected ? 'error' : 'complete',
+        ...(paused
+          ? {}
+          : rejected
+            ? { error: 'User rejected' }
+            : { result: 'Updated file' }),
       })),
     },
   };

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { signal, computed, Component, viewChildren } from '@angular/core';
+import { Component, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { mockAgent } from '../../testing/mock-agent';
-import type { Agent, AgentPlan, Message, ToolCall } from '../../agent';
+import type { Agent, AgentPlanStep, Message, PlainValue, ToolCall } from '../../agent';
 import { completeDelivery, staticDelivery } from '../../agent';
 import { ChatToolCallsComponent } from './chat-tool-calls.component';
 import { ChatToolCallTemplateDirective } from './chat-tool-call-template.directive';
@@ -10,17 +10,23 @@ import { ChatToolResultTemplateDirective } from './chat-tool-result-template.dir
 import type { ToolActivityInfo, ToolActivityOutcome } from '../chat-tool-activity/chat-tool-activity.component';
 
 describe('ToolCallsComponent — toolCalls computed', () => {
+  function component(agent: Agent, message?: Message) {
+    const fixture = TestBed.createComponent(ChatToolCallsComponent);
+    fixture.componentRef.setInput('agent', agent);
+    fixture.componentRef.setInput('message', message);
+    return { fixture, instance: fixture.componentInstance };
+  }
+
   it('returns agent.toolCalls() when no message is provided', () => {
     const mockToolCalls: ToolCall[] = [
       { id: 'call_1', name: 'get_weather', args: { city: 'NYC' }, status: 'complete', result: 'sunny' },
     ];
     const agent = mockAgent({ toolCalls: mockToolCalls });
+    const { instance } = component(agent);
 
-    const agent$ = signal(agent);
-    const toolCalls = computed(() => agent$().toolCalls());
-
-    expect(toolCalls()).toHaveLength(1);
-    expect(toolCalls()[0].id).toBe('call_1');
+    expect(instance.toolCalls()).toHaveLength(1);
+    expect(instance.toolCalls()[0].id).toBe('call_1');
+    expect(instance.toolCalls()).toBe(agent.toolCalls());
   });
 
   it('returns agent.toolCalls() when message is a user message (no tool_use blocks)', () => {
@@ -31,29 +37,16 @@ describe('ToolCallsComponent — toolCalls computed', () => {
       content: 'hello',
       delivery: staticDelivery('1'),
     };
+    const { instance } = component(agent, msg);
 
-    const agent$ = signal(agent);
-    const message$ = signal<Message | undefined>(msg);
-
-    const toolCalls = computed((): ToolCall[] => {
-      const m = message$();
-      if (m && m.role === 'assistant' && Array.isArray(m.content)) {
-        const blocks = m.content.filter((b: any) => b.type === 'tool_use') as Array<{
-          type: 'tool_use'; id: string; name: string; args: unknown;
-        }>;
-        const all = agent$().toolCalls();
-        return blocks
-          .map(b => all.find(tc => tc.id === b.id))
-          .filter((x): x is ToolCall => !!x);
-      }
-      return agent$().toolCalls();
-    });
-
-    expect(toolCalls()).toHaveLength(0);
+    expect(instance.toolCalls()).toHaveLength(0);
+    agent.toolCalls.set([{ id: 'call_1', name: 'get_weather', args: {}, status: 'pending' }]);
+    expect(instance.toolCalls()).toBe(agent.toolCalls());
   });
 
   it('returns matched ToolCalls when message has tool_use content blocks', () => {
     const mockToolCalls: ToolCall[] = [
+      { id: 'call_other', name: 'lookup', args: {}, status: 'complete', result: 'other' },
       { id: 'call_2', name: 'search', args: { query: 'test' }, status: 'complete', result: 'results' },
     ];
     const agent = mockAgent({ toolCalls: mockToolCalls });
@@ -61,44 +54,39 @@ describe('ToolCallsComponent — toolCalls computed', () => {
     const msg: Message = {
       id: '2',
       role: 'assistant',
-      content: [{ type: 'tool_use', id: 'call_2', name: 'search', args: { query: 'test' } }],
+      content: '',
+      blocks: [{ type: 'tool_use', id: 'call_2', name: 'search', args: { query: 'test' } }],
       delivery: staticDelivery('2'),
     };
+    const { instance } = component(agent, msg);
 
-    const agent$ = signal(agent);
-    const message$ = signal<Message | undefined>(msg);
-
-    const toolCalls = computed((): ToolCall[] => {
-      const m = message$();
-      if (m && m.role === 'assistant' && Array.isArray(m.content)) {
-        const blocks = m.content.filter((b: any) => b.type === 'tool_use') as Array<{
-          type: 'tool_use'; id: string; name: string; args: unknown;
-        }>;
-        const all = agent$().toolCalls();
-        return blocks
-          .map(b => all.find(tc => tc.id === b.id))
-          .filter((x): x is ToolCall => !!x);
-      }
-      return agent$().toolCalls();
-    });
-
-    expect(toolCalls()).toHaveLength(1);
-    expect(toolCalls()[0].id).toBe('call_2');
-    expect(toolCalls()[0].name).toBe('search');
+    expect(instance.toolCalls()).toHaveLength(1);
+    expect(instance.toolCalls()[0].id).toBe('call_2');
+    expect(instance.toolCalls()[0].name).toBe('search');
   });
 
   it('toolCalls updates reactively when agent changes', () => {
     const emptyAgent = mockAgent();
     const loadedAgent = mockAgent({
-      toolCalls: [{ id: 'call_3', name: 'calculator', args: {}, status: 'complete' }],
+      toolCalls: [{ id: 'call_3', name: 'calculator', args: {}, status: 'pending' }],
     });
+    const { fixture, instance } = component(emptyAgent);
 
-    const agent$ = signal(emptyAgent);
-    const toolCalls = computed(() => agent$().toolCalls());
+    expect(instance.toolCalls()).toHaveLength(0);
+    fixture.componentRef.setInput('agent', loadedAgent);
+    expect(instance.toolCalls()).toHaveLength(1);
+  });
 
-    expect(toolCalls()).toHaveLength(0);
-    agent$.set(loadedAgent);
-    expect(toolCalls()).toHaveLength(1);
+  it('lists a call the model is still writing as running, and renders it', () => {
+    const agent = mockAgent({
+      status: 'running',
+      streamingToolCalls: [{ id: 'call_4', name: 'search', argsText: '{"query":"te', args: { query: 'te' } }],
+    });
+    const { fixture, instance } = component(agent);
+    fixture.detectChanges();
+
+    expect(instance.toolCalls()).toEqual([{ id: 'call_4', name: 'search', args: { query: 'te' }, status: 'running' }]);
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('chat-tool-activity')).toHaveLength(1);
   });
 });
 
@@ -152,9 +140,9 @@ describe('ChatToolCallsComponent — grouping + per-tool templates', () => {
     const fixture = TestBed.createComponent(GroupingHost);
     fixture.componentInstance.agent = mockAgent({
       toolCalls: [
-        { id: 'a', name: 'search_web', args: {}, status: 'complete' },
-        { id: 'b', name: 'read_file', args: {}, status: 'complete' },
-        { id: 'c', name: 'search_web', args: {}, status: 'complete' },
+        { id: 'a', name: 'search_web', args: {}, status: 'complete', result: null },
+        { id: 'b', name: 'read_file', args: {}, status: 'complete', result: null },
+        { id: 'c', name: 'search_web', args: {}, status: 'complete', result: null },
       ],
     });
     fixture.detectChanges();
@@ -185,8 +173,8 @@ describe('ChatToolCallsComponent — grouping + per-tool templates', () => {
     fixture.componentInstance.grouping = 'none';
     fixture.componentInstance.agent = mockAgent({
       toolCalls: [
-        { id: 'a', name: 'search_web', args: {}, status: 'complete' },
-        { id: 'b', name: 'search_web', args: {}, status: 'complete' },
+        { id: 'a', name: 'search_web', args: {}, status: 'complete', result: null },
+        { id: 'b', name: 'search_web', args: {}, status: 'complete', result: null },
       ],
     });
     fixture.detectChanges();
@@ -199,8 +187,8 @@ describe('ChatToolCallsComponent — grouping + per-tool templates', () => {
     fixture.componentInstance.registerSearchWeb = true;
     fixture.componentInstance.agent = mockAgent({
       toolCalls: [
-        { id: 'a', name: 'search_web', args: {}, status: 'complete' },
-        { id: 'b', name: 'search_web', args: {}, status: 'complete' },
+        { id: 'a', name: 'search_web', args: {}, status: 'complete', result: null },
+        { id: 'b', name: 'search_web', args: {}, status: 'complete', result: null },
       ],
     });
     fixture.detectChanges();
@@ -215,7 +203,7 @@ describe('ChatToolCallsComponent — grouping + per-tool templates', () => {
     fixture.componentInstance.registerWildcard = true;
     fixture.componentInstance.agent = mockAgent({
       toolCalls: [
-        { id: 'a', name: 'read_file', args: {}, status: 'complete' },
+        { id: 'a', name: 'read_file', args: {}, status: 'complete', result: null },
       ],
     });
     fixture.detectChanges();
@@ -229,8 +217,8 @@ describe('ChatToolCallsComponent — grouping + per-tool templates', () => {
     fixture.componentInstance.registerWildcard = true;
     fixture.componentInstance.agent = mockAgent({
       toolCalls: [
-        { id: 'a', name: 'search_web', args: {}, status: 'complete' },
-        { id: 'b', name: 'read_file', args: {}, status: 'complete' },
+        { id: 'a', name: 'search_web', args: {}, status: 'complete', result: null },
+        { id: 'b', name: 'read_file', args: {}, status: 'complete', result: null },
       ],
     });
     fixture.detectChanges();
@@ -260,24 +248,12 @@ describe('summarize-group label registry', () => {
 });
 
 import { TestBed } from '@angular/core/testing';
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import type { Agent, ToolCall } from '../../agent';
 import { ChatToolCallsComponent } from './chat-tool-calls.component';
 
 function makeStubAgent(toolCalls: ToolCall[]): Agent {
-  return {
-    messages: signal([]),
-    status: signal('idle'),
-    isLoading: signal(false),
-    error: signal(undefined),
-    toolCalls: signal(toolCalls),
-    state: signal({}),
-    interrupt: signal(undefined),
-    subagents: signal(new Map()),
-    events$: { subscribe: () => ({ unsubscribe: () => undefined }) },
-    submit: () => Promise.resolve(),
-    stop: () => undefined,
-  } as unknown as Agent;
+  return mockAgent({ toolCalls });
 }
 
 const mkCall = (name: string, id: string): ToolCall => ({
@@ -285,6 +261,7 @@ const mkCall = (name: string, id: string): ToolCall => ({
   name,
   args: {},
   status: 'complete',
+  result: null,
 });
 
 @Component({
@@ -353,7 +330,7 @@ describe('ChatToolCallsComponent — breathing room before downstream content', 
 });
 
 import type { Message as ChatMessage } from '../../agent';
-import type { Subagent } from '../../agent/subagent';
+import type { AgentSubagent } from '../../agent';
 
 @Component({
   standalone: true,
@@ -372,25 +349,27 @@ describe('ChatToolCallsComponent — subagent cards anchored to spawning task ca
 
   it('renders a subagent card for the spawning task call and a tool-call card for the sibling', () => {
     const agent = mockAgent({
-      withSubagents: true,
+      
       toolCalls: [
         { id: 'call_t', name: 'task', args: {}, status: 'success' as never },
         { id: 'call_s', name: 'search', args: {}, status: 'success' as never },
       ],
     });
-    const sub: Subagent = {
+    const sub: AgentSubagent = {
+      id: 'sub-child',
       toolCallId: 'call_t',
       name: 'research',
-      status: signal('running'),
-      messages: signal([{
+      status: 'running',
+      messages: [{
         id: 'm1',
         role: 'assistant',
         content: 'hello from research',
         delivery: staticDelivery('m1'),
-      }]),
-      state: signal({}),
+      }],
+      toolCalls: [],
+      state: {},
     };
-    agent.subagents!.set(new Map([['call_t', sub]]));
+    agent.subagents.set([sub]);
 
     const fixture = TestBed.createComponent(SubagentHost);
     fixture.componentInstance.agent = agent;
@@ -416,29 +395,31 @@ describe('ChatToolCallsComponent — subagent cards anchored to spawning task ca
     expect(fullText).toContain('search');
   });
 
-  it('anchors the card by the Subagent.toolCallId FIELD even when the map key differs', () => {
-    // The AG-UI adapter keys subagents() by subagentRunId (e.g. `<toolCallId>-sub`
-    // for Strands' native SUBAGENT_* events) — only the wrapper's toolCallId
-    // field is guaranteed to match the spawning call.
+  it('anchors the card by the AgentSubagent.toolCallId FIELD even when the child id differs', () => {
+    // A backend names a child with its own id (e.g. `<toolCallId>-sub` for a
+    // native subagent run) — only the child's toolCallId field is guaranteed
+    // to match the spawning call.
     const agent = mockAgent({
-      withSubagents: true,
+      
       toolCalls: [
         { id: 'call_t', name: 'research_availability', args: {}, status: 'success' as never },
       ],
     });
-    const sub: Subagent = {
+    const sub: AgentSubagent = {
+      id: 'sub-child',
       toolCallId: 'call_t',
       name: 'availability_researcher',
-      status: signal('running'),
-      messages: signal([{
+      status: 'running',
+      messages: [{
         id: 'm1',
         role: 'assistant',
         content: 'checking calendars',
         delivery: staticDelivery('m1'),
-      }]),
-      state: signal({}),
+      }],
+      toolCalls: [],
+      state: {},
     };
-    agent.subagents!.set(new Map([['call_t-sub', sub]]));
+    agent.subagents.set([sub]);
 
     const fixture = TestBed.createComponent(SubagentHost);
     fixture.componentInstance.agent = agent;
@@ -460,40 +441,41 @@ describe('ChatToolCallsComponent — subagent cards anchored to spawning task ca
 
   it('renders two separate subagent cards for two task calls (not collapsed into one strip)', () => {
     const agent = mockAgent({
-      withSubagents: true,
+      
       toolCalls: [
         { id: 'call_t1', name: 'task', args: {}, status: 'success' as never },
         { id: 'call_t2', name: 'task', args: {}, status: 'success' as never },
       ],
     });
-    const sub1: Subagent = {
+    const sub1: AgentSubagent = {
+      id: 'sub1-child',
       toolCallId: 'call_t1',
       name: 'research_one',
-      status: signal('running'),
-      messages: signal([{
+      status: 'running',
+      messages: [{
         id: 'm1',
         role: 'assistant',
         content: 'one',
         delivery: staticDelivery('m1'),
-      }]),
-      state: signal({}),
+      }],
+      toolCalls: [],
+      state: {},
     };
-    const sub2: Subagent = {
+    const sub2: AgentSubagent = {
+      id: 'sub2-child',
       toolCallId: 'call_t2',
       name: 'research_two',
-      status: signal('running'),
-      messages: signal([{
+      status: 'running',
+      messages: [{
         id: 'm2',
         role: 'assistant',
         content: 'two',
         delivery: staticDelivery('m2'),
-      }]),
-      state: signal({}),
+      }],
+      toolCalls: [],
+      state: {},
     };
-    agent.subagents!.set(new Map([
-      ['call_t1', sub1],
-      ['call_t2', sub2],
-    ]));
+    agent.subagents.set([sub1, sub2]);
 
     const fixture = TestBed.createComponent(SubagentHost);
     fixture.componentInstance.agent = agent;
@@ -604,8 +586,8 @@ describe('ChatToolCallsComponent — group header disclosure semantics', () => {
 class SuppliedTemplatesHost {
   agent: Agent = mockAgent({
     toolCalls: [
-      { id: 'a', name: 'search_web', args: {}, status: 'complete' },
-      { id: 'b', name: 'read_file', args: {}, status: 'complete' },
+      { id: 'a', name: 'search_web', args: {}, status: 'complete', result: null },
+      { id: 'b', name: 'read_file', args: {}, status: 'complete', result: null },
     ],
   });
   registerOwnSearchWeb = false;
@@ -776,7 +758,7 @@ describe('ChatToolCallsComponent — readable activity evidence', () => {
       'agent',
       mockAgent({
         toolCalls: [
-          { id: 'a', name: 'read', status: 'complete', args: {} },
+          { id: 'a', name: 'read', status: 'complete', args: {}, result: null },
           { id: 'b', name: 'save', status: 'error', args: {}, error: 'private' },
         ],
       })
@@ -846,7 +828,7 @@ describe('ChatToolCallsComponent — readable activity evidence', () => {
     inner.open = true;
     agent.toolCalls.update((calls) => [
       ...calls,
-      { id: 'c', name: 'other', status: 'complete', args: {} },
+      { id: 'c', name: 'other', status: 'complete', args: {}, result: null },
     ]);
     fixture.detectChanges();
     expect(
@@ -910,7 +892,7 @@ class ResultSlotHost {
 }
 
 describe('ChatToolCallsComponent — app-declared tool failures and result slot', () => {
-  const calls = (results: readonly unknown[]): ToolCall[] =>
+  const calls = (results: readonly PlainValue[]): ToolCall[] =>
     results.map((result, i) => ({
       id: `c${i}`,
       name: 'read_reference',
@@ -921,7 +903,7 @@ describe('ChatToolCallsComponent — app-declared tool failures and result slot'
   const failB = (activity: ToolActivityInfo): ToolActivityOutcome | undefined =>
     activity.id === 'c1' ? { status: 'failed', text: 'Reference B is unavailable.' } : undefined;
   function setup(
-    results: readonly unknown[],
+    results: readonly PlainValue[],
     configure: (host: ResultSlotHost) => void = () => undefined
   ) {
     TestBed.configureTestingModule({ imports: [ResultSlotHost] });
@@ -1151,7 +1133,7 @@ describe('ChatToolCallsComponent — progress view', () => {
   function render(calls: ToolCall[], isLoading = true) {
     TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
     const fixture = TestBed.createComponent(ChatToolCallsComponent);
-    const agent = mockAgent({ toolCalls: calls, isLoading });
+    const agent = mockAgent({ toolCalls: calls, status: isLoading ? 'running' : 'idle' });
     fixture.componentRef.setInput('agent', agent);
     fixture.componentRef.setInput('toolLabel', (name: string, args?: unknown) =>
       name === 'read' ? `Reading ${(args as { ref: string }).ref}` : 'Saving note'
@@ -1271,21 +1253,22 @@ describe('ChatToolCallsComponent — upcoming steps from a declared plan', () =>
     { id: 'a', name: 'read', args: { ref: 'toSorted' }, status: 'complete', result: 'ok' },
     { id: 'b', name: 'read', args: { ref: 'toReversed' }, status: 'running' },
   ];
-  const plan = signal<AgentPlan | undefined>([
+  const declared: readonly AgentPlanStep[] = [
     { label: 'Read toSorted', status: 'completed' },
     { label: 'Read toReversed', status: 'in_progress' },
     { label: 'Compare the two', status: 'pending' },
     { label: 'Write the note', status: 'pending' },
-  ]);
-  function render(toolCalls = calls, isLoading = true) {
+  ];
+  function render(plan: readonly AgentPlanStep[] | null = declared, toolCalls = calls, isLoading = true) {
     TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
     const fixture = TestBed.createComponent(ChatToolCallsComponent);
-    fixture.componentRef.setInput('agent', Object.assign(mockAgent({ toolCalls, isLoading }), { plan }));
+    const agent = mockAgent({ toolCalls, status: isLoading ? 'running' : 'idle', plan: plan ?? undefined });
+    fixture.componentRef.setInput('agent', agent);
     fixture.detectChanges();
     const root: HTMLElement = fixture.nativeElement;
     (root.querySelector('.ctc__group-header') as HTMLButtonElement).click();
     fixture.detectChanges();
-    return { fixture, root };
+    return { fixture, root, agent };
   }
   const steps = (root: HTMLElement) => [...root.querySelectorAll('.ctc__plan-step')].map((p) => p.textContent!.trim());
 
@@ -1298,23 +1281,21 @@ describe('ChatToolCallsComponent — upcoming steps from a declared plan', () =>
   });
 
   it('follows the plan as steps finish', () => {
-    const { fixture, root } = render();
-    plan.update((p) => p!.map((s) => (s.label === 'Compare the two' ? { ...s, status: 'in_progress' as const } : s)));
+    const { fixture, root, agent } = render();
+    agent.plan.update((p) => p!.map((s) => (s.label === 'Compare the two' ? { ...s, status: 'in_progress' as const } : s)));
     fixture.detectChanges();
     expect(steps(root)).toEqual(['Write the note']);
-    plan.set(undefined);
   });
 
   it('shows no upcoming steps without a plan', () => {
-    plan.set(undefined);
-    const { root } = render();
+    const { root, agent } = render(null);
+    expect(agent.plan()).toBeUndefined();
     expect(steps(root)).toEqual([]);
   });
 
   it('shows no upcoming steps once the group has finished', () => {
-    plan.set([{ label: 'Compare the two', status: 'pending' }]);
     const done: ToolCall[] = calls.map((c) => ({ ...c, status: 'complete' as const, result: 'ok' }));
-    const { root } = render(done, false);
+    const { root } = render([{ label: 'Compare the two', status: 'pending' }], done, false);
     expect(steps(root)).toEqual([]);
   });
 });
@@ -1335,7 +1316,7 @@ describe('ChatToolCallsComponent — a client tool after its message completed',
   function render(isLoading: boolean) {
     TestBed.configureTestingModule({ imports: [ChatToolCallsComponent] });
     const fixture = TestBed.createComponent(ChatToolCallsComponent);
-    const agent = mockAgent({ toolCalls: calls(), isLoading });
+    const agent = mockAgent({ toolCalls: calls(), status: isLoading ? 'running' : 'idle' });
     fixture.componentRef.setInput('agent', agent);
     fixture.componentRef.setInput('message', message);
     fixture.detectChanges();
@@ -1352,9 +1333,79 @@ describe('ChatToolCallsComponent — a client tool after its message completed',
 
   it('reads Status unavailable once the agent settles with the call still running', () => {
     const { fixture, agent, root } = render(true);
-    agent.isLoading.set(false);
+    agent.status.set('idle');
     fixture.detectChanges();
     expect(root.textContent).toContain('status unavailable');
     expect(root.querySelector('.ctc__group-elapsed')).toBeNull();
+  });
+});
+
+describe('ChatToolCallsComponent — a child agent that names no spawning call', () => {
+  const user = (id: string): Message => ({ id, role: 'user', content: 'go', delivery: staticDelivery(id) });
+  const assistant = (id: string, toolCallIds: string[] = []): Message => ({
+    id, role: 'assistant', content: '', toolCallIds, delivery: staticDelivery(id),
+  });
+  const first = assistant('first', ['call_s']);
+  const second = assistant('second');
+  const earlier = assistant('earlier');
+
+  function render(message: Message | undefined, subagents: readonly AgentSubagent[]) {
+    TestBed.configureTestingModule({ imports: [SubagentHost] });
+    const agent = mockAgent({
+      messages: [user('u0'), earlier, user('u1'), first, second],
+      toolCalls: [{ id: 'call_s', name: 'search', args: {}, status: 'complete', result: 'ok' }],
+      subagents,
+    });
+    const fixture = TestBed.createComponent(SubagentHost);
+    fixture.componentInstance.agent = agent;
+    fixture.componentInstance.message = message;
+    fixture.detectChanges();
+    return { fixture, agent, root: fixture.nativeElement as HTMLElement };
+  }
+  const loose: AgentSubagent = { id: 'loose', name: 'unrelated_researcher', status: 'running', messages: [], toolCalls: [] };
+
+  it('follows the calls of the first assistant message of the latest turn', () => {
+    const { root } = render(first, [loose]);
+    const cards = root.querySelectorAll('chat-subagent-card');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].textContent).toContain('unrelated_researcher');
+    const activity = root.querySelector('chat-tool-activity')!;
+    expect(activity).not.toBeNull();
+    // After the message's own call, not before it.
+    expect(activity.compareDocumentPosition(cards[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it.each([
+    ['a later assistant message of the same turn', second],
+    ['an assistant message of an earlier turn', earlier],
+  ])('is not shown under %s', (_label, message) => {
+    const { root } = render(message, [loose]);
+    expect(root.querySelectorAll('chat-subagent-card')).toHaveLength(0);
+  });
+
+  it('is not shown without a message, where the view lists the agent-wide calls', () => {
+    const { root } = render(undefined, [loose]);
+    expect(root.querySelectorAll('chat-subagent-card')).toHaveLength(0);
+    expect(root.querySelectorAll('chat-tool-activity')).toHaveLength(1);
+  });
+
+  it('keeps an anchored child on its call and leaves a nested child to its parent', () => {
+    const anchored: AgentSubagent = { id: 'anchored', toolCallId: 'call_s', name: 'anchored_one', status: 'running', messages: [], toolCalls: [] };
+    const nested: AgentSubagent = { id: 'nested', parentId: 'anchored', name: 'nested_one', status: 'running', messages: [], toolCalls: [] };
+    const { root } = render(first, [anchored, nested, loose]);
+    const names = Array.from(root.querySelectorAll('chat-subagent-card .sac__name')).map((n) => n.textContent);
+    expect(names).toEqual(['anchored_one', 'unrelated_researcher']);
+    expect(root.querySelectorAll('chat-tool-activity')).toHaveLength(0);
+  });
+
+  it('appears on a message with no calls of its own, and leaves when the child is gone', () => {
+    const { fixture, agent, root } = render(first, []);
+    agent.toolCalls.set([]);
+    agent.subagents.set([loose]);
+    fixture.detectChanges();
+    expect(root.querySelectorAll('chat-subagent-card')).toHaveLength(1);
+    agent.subagents.set([]);
+    fixture.detectChanges();
+    expect(root.querySelectorAll('chat-subagent-card')).toHaveLength(0);
   });
 });

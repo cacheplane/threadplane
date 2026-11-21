@@ -44,7 +44,7 @@ The server is a FastAPI application. `add_langgraph_fastapi_endpoint` mounts the
 
 ### Providing the agent
 
-`provideAgent()` from `@threadplane/ag-ui` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. The example resolves its URL at runtime because the host that serves the demo decides which runtime is attached; your own application passes a `url` directly.
+`provideAgent()` from `@threadplane/angular` registers the agent at the application root, and it is the only provider the `<chat>` composition requires. Its `createSession` factory calls `createSession()` from `@threadplane/ag-ui`. The example resolves its URL at runtime because the host that serves the demo decides which runtime is attached; your own application passes a `url` to `createSession()` directly.
 
 <ExampleCode file="app.config.ts" />
 
@@ -64,18 +64,18 @@ The card declares one signal input per field it renders, plus a `status` of `'ru
 
 <ExampleCode file="weather-card.component.ts" />
 
-<Callout type="warning" title="Status turns complete before the result arrives">
-The adapter marks a call `complete` on `TOOL_CALL_END`, which is the end of the argument stream, and the result lands afterwards on `TOOL_CALL_RESULT`. That is why `pending` also checks that `temperatureF()` is defined. A card that trusted `status` alone would flash an empty reading between the two events.
+<Callout type="info" title="Status follows the result, not the argument stream">
+`TOOL_CALL_END` marks the end of the argument stream, and the session does not treat it as completion. A call stays `running` until its `TOOL_CALL_RESULT` arrives, and only then turns `complete`. `pending` also checks that `temperatureF()` is defined, which covers a result that carries no reading.
 </Callout>
 
 ## How a tool call becomes a component
 
 <Steps>
-<Step title="The adapter reduces the events into a tool call">
-`TOOL_CALL_START` appends a call with the tool's name, empty arguments, and a status of `running`. Each `TOOL_CALL_ARGS` delta is appended to a per-call buffer and the whole buffer is parsed, so a half-arrived JSON fragment leaves the last good arguments in place. `TOOL_CALL_END` marks the call complete and `TOOL_CALL_RESULT` parses the serialized content onto it.
+<Step title="The session turns the events into a tool call">
+`TOOL_CALL_START` adds a call with the tool's name. Each `TOOL_CALL_ARGS` delta is appended to the call's argument text, and while the text is still arriving the call is listed in `agent.streamingToolCalls()` with a best-effort reading of the arguments so far, which `<chat>` shows as a running call. Once the arguments are final the call moves to `agent.toolCalls()`, and `TOOL_CALL_RESULT` marks it `complete` and parses the serialized content onto it as `result`.
 </Step>
 <Step title="The call is scoped to its assistant message">
-When `TOOL_CALL_START` carries a `parentMessageId`, the adapter links the call to that assistant message, creating the message when the turn produced no text at all. A server may also stream a tool call with no parent message; the adapter then creates an assistant message keyed by the tool call id, matching the message the protocol client records for the call. Either way the message lists the call in `toolCallIds`, so each bubble renders only its own calls.
+When `TOOL_CALL_START` carries a `parentMessageId`, the session links the call to that assistant message, creating the message when the turn produced no text at all. A server may also stream a tool call with no parent message; the session then creates an assistant message keyed by the tool call id. Either way the message lists the call in `toolCallIds`, so each bubble renders only its own calls.
 </Step>
 <Step title="A registered name is bridged into a one-element spec">
 `<chat-tool-views>` keeps the calls whose name is a key in the registry and wraps each one into a synthetic render spec holding a single element of that type. Its props are the live arguments merged with the parsed result, plus `status` and a `clientTool` lifecycle object.
@@ -101,7 +101,7 @@ The two coexist. `<chat>` merges the coordinator's view and ask components into 
     Declare a tool in the browser and let the model call it.
   </Card>
   <Card title="Event Mapping" href="/docs/angular/ag-ui/reference/event-mapping">
-    How AG-UI protocol events become the Agent contract the chat UI reads.
+    How AG-UI protocol events become the Agent the chat UI reads.
   </Card>
   <Card title="ChatToolCalls" href="/docs/angular/chat/components/chat-tool-calls">
     The default tool-call surface a registered view replaces.

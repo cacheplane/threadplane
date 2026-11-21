@@ -28,7 +28,7 @@ The compiled graph is exported as `graph`, which is the symbol `langgraph.json` 
 
 ### The application configuration
 
-`provideAgent()` registers the agent for the whole application, and it is the only provider the chat components require. This example resolves its connection details at runtime from the host that serves the demo, which is why its factory reads them rather than hard-coding them. There is no theme provider at all: theming is CSS, not configuration.
+`provideAgent()` from `@threadplane/angular` provides the agent for the whole application, and it is the only provider the chat components require. Its `createSession` factory returns a LangGraph session for the thread the agent asks for. This example resolves its connection details at runtime from the host that serves the demo, which is why the config is itself a factory that reads them rather than hard-coding them. There is no theme provider at all: theming is CSS, not configuration.
 
 <ExampleCode file="app.config.ts" />
 

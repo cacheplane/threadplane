@@ -25,30 +25,35 @@ These pages document what a Deep Agents graph exposes and how an Angular applica
 
 ## The setup story, once
 
-A Deep Agents agent is a LangGraph graph. `create_deep_agent` returns a compiled graph, LangGraph Server serves it like any other, and the browser talks to it over the same protocol. There is no Deep Agents adapter, because none is needed: `@threadplane/langgraph` is the whole client wiring.
+A Deep Agents agent is a LangGraph graph. `create_deep_agent` returns a compiled graph, LangGraph Server serves it like any other, and the browser talks to it over the same protocol. There is no Deep Agents adapter, because none is needed: a `@threadplane/langgraph` session, provided through `@threadplane/angular`, is the whole client wiring.
 
-The shared protocol and basic provider setup are documented under the LangGraph adapter. Work through the [LangGraph quickstart](/docs/angular/langgraph/getting-started/quickstart) once. Memory additionally requires its captured browser scope, context transport and authoring gate; use the complete source on the [Memory guide](/docs/angular/deep-agents/capabilities/memory) rather than this basic provider alone.
+The shared protocol and basic provider setup are documented under the LangGraph section. Work through the [LangGraph quickstart](/docs/angular/langgraph/getting-started/quickstart) once. Memory additionally requires its captured browser scope, context transport and authoring gate; use the complete source on the [Memory guide](/docs/angular/deep-agents/capabilities/memory) rather than this basic provider alone.
 
 ```ts
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
-import { provideAgent } from '@threadplane/langgraph';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      apiUrl: 'http://localhost:2024',
-      // the key this graph is registered under in langgraph.json
-      assistantId: 'agent',
+      createSession: (context) =>
+        createSession({
+          ...context,
+          apiUrl: 'http://localhost:2024',
+          // the key this graph is registered under in langgraph.json
+          assistantId: 'agent',
+        }),
     }),
   ],
 };
 ```
 
 ```ts
-import { Component, computed } from '@angular/core';
+import { Component } from '@angular/core';
+import { injectAgent } from '@threadplane/angular';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/langgraph';
 
 @Component({
   selector: 'app-root',
@@ -60,15 +65,15 @@ export class App {
 }
 ```
 
-Each panel reads the relevant part of the agent handle: `value()` for state keys, `subagents()` for dispatches, `customEvents()` for application visibility signals, and `toolCalls()` for read requests and their results. Memory also supplies its validated scope through the provider's transport and guards every author action.
+Each panel reads the relevant part of the injected agent: `state()` for state keys, `subagents()` for dispatches, `customEvents()` for application visibility signals, and `toolCalls()` for read requests and their results. Memory also supplies its validated scope through the session's transport and guards every author action.
 
 ## Three ways a capability reaches the browser
 
 Deep Agents does not publish all five capabilities the same way, and the difference decides how much work a panel is.
 
-**Public state keys stream on their own.** `todos` and `files` are ordinary keys on the graph state. LangGraph streams them in the `values` channel, `@threadplane/langgraph` projects the latest snapshot into `agent.value()`, and a panel is a `computed()` over that. No configuration, no custom events, no server-side shim.
+**Public state keys stream on their own.** `todos` and `files` are ordinary keys on the graph state. LangGraph streams them in the `values` channel, the session publishes the latest graph state as `agent.state()`, and a panel is a `computed()` over that. No configuration, no custom events, no server-side shim.
 
-**Tool calls are already structured.** The subagent `task` tool and the filesystem `read_file` tool arrive as normal tool calls. The subagent tracker recognizes `task` by default, so child agents render as cards with no client configuration at all.
+**Tool calls are already structured.** The subagent `task` tool and the filesystem `read_file` tool arrive as normal tool calls. The session treats `task` as the tool that starts a child agent by default, so child agents render as cards with no client configuration at all.
 
 **Private schema annotations need a capability-specific contract.** `PrivateStateAttr` excludes annotated keys from declared input and output schemas. The local compiled Skills graph exposes metadata in root values and saved checkpoints; observed deployed API root values omit private Skills keys while checkpoints retain metadata, consistent with output-schema filtering. Optional `skills_load_errors` can appear when errors are produced, and successful loads can omit it. The named custom event includes both keys, with an empty-list error fallback, for Angular's live index. React reads native root values and, when the public stream omits metadata, the confirmed saved checkpoint. The event does not supply React index authority or prove a confirmed read; saved checkpoints remain authoritative, with native messages, tools and ordinary values checked separately. Memory is a separate capability: Skills observations do not establish its `memory_contents` visibility.
 
@@ -80,7 +85,7 @@ All five share one scenario — an aviation dispatch desk with a handful of airp
 
 ## Further reading
 
-- [LangGraph adapter introduction](/docs/angular/langgraph/getting-started/introduction) — the adapter every Deep Agents graph binds through.
+- [LangGraph introduction](/docs/angular/langgraph/getting-started/introduction) — the session every Deep Agents graph binds through.
 - [Chat subagent card](/docs/angular/chat/components/chat-subagent-card) — the component the `task` dispatches render into.
 - [Chat interrupt panel](/docs/angular/chat/components/chat-interrupt-panel) — the component a filesystem write approval renders into.
 - [Persistence](/docs/angular/langgraph/guides/persistence) — checkpoints and the store, which the memory capability depends on.

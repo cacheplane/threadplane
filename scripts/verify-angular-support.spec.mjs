@@ -247,7 +247,7 @@ test('reports a peer range that omits Angular 22', async (t) => {
 
 test('reports a peer range that unexpectedly includes Angular 23', async (t) => {
   const root = await createFixture(t, async (fixtureRoot) => {
-    await writeJson(join(fixtureRoot, 'libs/langgraph/package.json'), {
+    await writeJson(join(fixtureRoot, 'libs/angular/package.json'), {
       peerDependencies: {
         '@angular/core': '^20.0.0 || ^21.0.0 || ^22.0.0 || ^23.0.0',
       },
@@ -256,7 +256,7 @@ test('reports a peer range that unexpectedly includes Angular 23', async (t) => 
 
   await assert.rejects(
     verifyPeerRanges({ root }),
-    /libs\/langgraph\/package\.json peerDependencies\["@angular\/core"\] expected "\^20\.0\.0 \|\| \^21\.0\.0 \|\| \^22\.0\.0" but found "\^20\.0\.0 \|\| \^21\.0\.0 \|\| \^22\.0\.0 \|\| \^23\.0\.0"/
+    /libs\/angular\/package\.json peerDependencies\["@angular\/core"\] expected "\^20\.0\.0 \|\| \^21\.0\.0 \|\| \^22\.0\.0" but found "\^20\.0\.0 \|\| \^21\.0\.0 \|\| \^22\.0\.0 \|\| \^23\.0\.0"/
   );
 });
 
@@ -310,7 +310,7 @@ test('aggregates peer errors and unreadable manifests', async (t) => {
         '@angular/core': '^20.0.0 || ^21.0.0',
       },
     });
-    await writeJson(join(fixtureRoot, 'libs/langgraph/package.json'), {
+    await writeJson(join(fixtureRoot, 'libs/angular/package.json'), {
       peerDependencies: {
         '@angular/core': '^20.0.0 || ^21.0.0 || ^22.0.0 || ^23.0.0',
       },
@@ -325,7 +325,7 @@ test('aggregates peer errors and unreadable manifests', async (t) => {
     );
     assert.match(
       error.message,
-      /libs\/langgraph\/package\.json peerDependencies\["@angular\/core"\]/
+      /libs\/angular\/package\.json peerDependencies\["@angular\/core"\]/
     );
     assert.match(
       error.message,

@@ -1,79 +1,108 @@
-// Provider
-export { provideAgent } from './lib/agent.provider';
-export type { AgentConfig } from './lib/agent.provider';
+// The public surface of @threadplane/langgraph. Framework-neutral: no module
+// in this graph imports a UI framework. The README lists every name below.
 
-// Symmetric inject helper — matches @threadplane/ag-ui's injectAgent()
-export { injectAgent } from './lib/inject-agent';
-
-// Lifecycle monitoring
-export { AGENT_LIFECYCLE } from './lib/lifecycle';
-export type { AgentLifecycle } from './lib/lifecycle';
-export { AgentLifecycleRegistry } from './lib/agent-lifecycle-registry';
-
-// Public types
+// The session factory and its options, commands and host hooks.
+export { createSession } from './runtime/create-session.js';
 export type {
-  AgentOptions,
-  LangGraphClientOptions,
-  AgentBranchTree,
-  AgentBranchTreeFork,
-  AgentBranchTreeNode,
+  A2uiClientCapabilities,
+  LangGraphDevelopmentInstall,
+  LangGraphDevelopmentRuntime,
+  LangGraphDevelopmentRuntimeFactory,
+  LangGraphDevtoolsSignal,
+  LangGraphDevtoolsSink,
+  LangGraphResumeOptions,
+  LangGraphScriptedRun,
+  LangGraphScriptedRuns,
+  LangGraphSession,
+  LangGraphTelemetryEvent,
+  LangGraphTelemetryPayload,
+  LangGraphTelemetrySink,
+  SessionOptions,
+} from './runtime/create-session.js';
+
+// What a submit, a resume and a run accept.
+export type {
+  LangGraphInputState,
+  LangGraphSubmitInput,
+  LangGraphSubmitState,
+} from './runtime/submit-input.js';
+export type {
+  LangGraphRunConfigurable,
+  LangGraphRunOptions,
+  LangGraphRunSettings,
+} from './runtime/run-options.js';
+
+// The snapshot a session publishes.
+export type {
+  LangGraphDelegation,
+  LangGraphHistoryEntry,
+  LangGraphInterrupt,
+  LangGraphMessageMetadata,
+  LangGraphQueuedRun,
+  LangGraphSnapshot,
+  LangGraphSnapshotState,
+  LangGraphState,
+  LangGraphSubgraph,
+  LangGraphToolProgress,
+  LangGraphWireInterrupt,
+  LangGraphWireMessage,
+} from './runtime/langgraph-snapshot.js';
+export type { LangGraphSubagent } from './runtime/subagent-projection.js';
+export type {
+  LangGraphLifecycle,
+  LangGraphLifecycleSource,
+} from './runtime/lifecycle.js';
+
+// Checkpoints, branches and raw LangGraph data, derived from a snapshot.
+export { selectBranch } from './runtime/checkpoint-tree.js';
+export type {
+  LangGraphBranchFork,
+  LangGraphBranchNode,
+  LangGraphBranchTree,
+  LangGraphCheckpoint,
+} from './runtime/checkpoint-tree.js';
+export { getToolCalls, langGraphToolCalls } from './runtime/raw-data.js';
+export type { LangGraphToolCallWithResult } from './runtime/raw-data.js';
+export { extractCitations } from './runtime/citation-projection.js';
+
+// Saved conversations and project names.
+export { createLangGraphThreadDirectory } from './runtime/thread-directory.js';
+export type {
+  LangGraphProjectCommand,
+  LangGraphThreadCommand,
+  LangGraphThreadDirectory,
+  LangGraphThreadDirectoryOptions,
+  LangGraphThreadsClient,
+} from './runtime/thread-directory.js';
+export { createLangGraphProjectStore } from './runtime/project-store.js';
+export type { ProjectStore } from './runtime/project-store.js';
+
+// Transports and the SDK client helpers.
+export { FetchStreamTransport } from './runtime/fetch-stream.transport.js';
+export {
+  createLangGraphClient,
+  toAbsoluteApiUrl,
+} from './runtime/create-langgraph-client.js';
+export type {
+  CheckpointReference,
+  OwnedCheckpointPosition,
+} from './runtime/checkpoint-position.js';
+export type {
   AgentQueue,
   AgentQueueEntry,
-  LangGraphAgent,
-  LangGraphMultitaskStrategy,
-  LangGraphSubmitOptions,
   AgentTransport,
-  CustomStreamEvent,
+  LangGraphClientOptions,
+  LangGraphDurability,
+  LangGraphMultitaskStrategy,
+  LangGraphOnCompletion,
+  LangGraphOnDisconnect,
+  LangGraphSubmitOptions,
   StreamEvent,
-  SubagentStreamRef,
-} from './lib/agent.types';
+} from './runtime/transport.types.js';
+export type { RuntimeOperationFailureReporter } from './runtime/operation-errors.js';
 
-// Re-export from SDK (consumers import from angular, not langgraph-sdk)
-export type {
-  BagTemplate,
-  InferBag,
-  Interrupt,
-  /** LangGraph SDK checkpoint snapshot containing state values, next nodes, metadata, parent checkpoint, and pending tasks. */
-  ThreadState,
-  /** LangGraph SDK run-submission options, including configuration, context, checkpoint, commands, streaming, and optimistic state. */
-  SubmitOptions
-}
-  from './lib/agent.types';
-
-// Re-export ResourceStatus shim for convenience
-export { ResourceStatus } from './lib/agent.types';
-
-// Test utilities (always exported — tree-shaken in prod builds)
-export { MockAgentTransport } from './lib/transport/mock-stream.transport';
-export { FetchStreamTransport } from './lib/transport/fetch-stream.transport';
-
-// Mock test utility for LangGraph agent
-export { mockLangGraphAgent } from './lib/testing/mock-langgraph-agent';
-export type { MockLangGraphAgent } from './lib/testing/mock-langgraph-agent';
-export { provideFakeAgent } from './lib/testing/provide-fake-agent';
-// Low-level auto-emitting fake transport backing provideFakeAgent — exported
-// for advanced manual wiring (parity with @threadplane/ag-ui's FakeAgent).
-export { FakeStreamTransport } from './lib/testing/fake-stream.transport';
-
-// Citation normalizer — useful for advanced consumers building custom adapters
-// or bridging non-LangGraph message shapes into tplane Citation[].
-export { extractCitations } from './lib/internals/extract-citations';
-
-// SDK Client helper — handles the SDK's absolute-URL requirement so
-// `/api`-style relative paths work in browser contexts.
-export { createLangGraphClient, toAbsoluteApiUrl } from './lib/client/create-langgraph-client';
-export { LANGGRAPH_CLIENT_OPTIONS } from './lib/client/client-options';
-export { ɵLANGGRAPH_RUNTIME_OPERATION_REPORTER } from './lib/runtime-operation-reporter';
-export type { RuntimeOperationFailureReporter as ɵLangGraphRuntimeOperationFailureReporter } from './lib/runtime-operation-reporter';
-
-// SDK-backed thread store — drop-in replacement for the
-// hand-rolled ThreadsService that consumers used to duplicate.
-export {
-  LangGraphThreadsAdapter,
-  LANGGRAPH_THREADS_CONFIG,
-  LANGGRAPH_CLIENT,
-} from './lib/threads/threads-adapter';
-export type { LangGraphThreadsConfig } from './lib/threads/threads-adapter';
-
-// Lifecycle helper for hooking refreshes onto agent state transitions.
-export { refreshOnRunEnd, refreshOnTransition } from './lib/threads/refresh-on';
+// Transports for tests and offline demos. Not for production use.
+export { MockAgentTransport } from './runtime/mock-stream.transport.js';
+export type { MockAgentRun } from './runtime/mock-stream.transport.js';
+export { FakeStreamTransport } from './runtime/fake-stream.transport.js';
+export type { FakeStreamTransportConfig } from './runtime/fake-stream.transport.js';

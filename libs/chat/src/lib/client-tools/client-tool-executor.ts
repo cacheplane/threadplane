@@ -1,8 +1,9 @@
-import { DestroyRef, effect, inject } from '@angular/core';
+import { DestroyRef, effect, inject, untracked } from '@angular/core';
 import type { Agent } from '../agent';
-import type { ToolCall } from '../agent/tool-call';
+import type { ToolCall } from '../agent';
 import type { ClientToolRegistry, AnyFunctionToolDef } from './tool-def';
-import type { ClientToolResult } from './client-tools-capability';
+import { isPendingClientTool, toSessionResult, type ClientToolResult } from './client-tools-capability';
+import { registerClientToolAbort } from './stop-agent';
 import { executeFunctionTool } from './execute';
 import {
   cancelledClientToolResult,
@@ -23,29 +24,22 @@ export interface ClientToolExecutorOptions {
   readonly shouldExecuteToolCall?: (toolCall: ToolCall) => boolean;
 }
 
-/** Live stop() patch per agent: every executor's abort, plus the original stop. */
-interface AgentStopPatch {
-  readonly aborts: Set<() => void>;
-  readonly originalStop: Agent['stop'];
-  readonly wrapper: Agent['stop'];
-}
-
-/** Agents whose stop() this module has already wrapped. */
-const patchedAgents = new WeakMap<Agent, AgentStopPatch>();
-
 /**
- * Watches the agent's pending client tool calls and auto-runs FUNCTION tools,
- * resolving each with its result. View/ask (component) tools are handled by the
- * rendering layer, not here. No-op if the agent lacks the clientTools
- * capability. MUST be called in an injection context (sets up an effect).
+ * Watches the agent's pending client tool calls (`agent.pendingClientTools()`)
+ * and auto-runs FUNCTION tools, answering each through `agent.clientTools`.
+ * View/ask (component) tools are handled by the rendering layer, not here.
+ * No-op if the agent lacks the clientTools capability. MUST be called in an
+ * injection context (sets up an effect).
+ *
+ * The agent is never changed. A stop reaches the running handlers through
+ * `stopAgent(agent)`, which the chat's own Stop controls call.
  */
 export function startClientToolExecutor(
   agent: Agent,
   registry: ClientToolRegistry,
   options: ClientToolExecutorOptions = {},
 ): void {
-  const cap = agent.clientTools;
-  if (!cap) return;
+  if (!agent.clientTools) return;
   const destroyRef = inject(DestroyRef);
   const inFlight = new Map<string, AbortController>();
   const abortAll = (): void => {
@@ -54,42 +48,32 @@ export function startClientToolExecutor(
     }
   };
 
-  // The stop button lives in chat-input, which has no coordinator reference, so
-  // wrapping agent.stop is the only interception seam. Wrap at most once per
-  // agent, fan the stop out to EVERY live executor, and restore the original
-  // once the last one is destroyed — agents often outlive the components that
-  // start executors, so an unbounded stack of wrappers would leak.
-  let patch = patchedAgents.get(agent);
-  if (!patch) {
-    const originalStop = agent.stop;
-    const boundStop = originalStop.bind(agent);
-    const aborts = new Set<() => void>();
-    const wrapper = async (): Promise<void> => {
-      for (const abort of aborts) abort();
-      await boundStop();
-    };
-    patch = { aborts, originalStop, wrapper };
-    patchedAgents.set(agent, patch);
-    agent.stop = wrapper;
-  }
-  const registration = patch;
-  registration.aborts.add(abortAll);
+  // The stop button lives in chat-input, which has no coordinator reference.
+  // The injected agent cannot be wrapped, so every live executor registers its
+  // abort beside the agent and `stopAgent(agent)` fans the stop out to all of
+  // them. The registration is released with the executor: agents often outlive
+  // the components that start executors.
+  const release = registerClientToolAbort(agent, abortAll);
+  // A plain `agent.stop()` cancels the handlers too: the agent tells us.
+  const releaseStop = agent.onStop(abortAll);
   destroyRef.onDestroy(() => {
-    registration.aborts.delete(abortAll);
-    if (registration.aborts.size === 0 && patchedAgents.get(agent) === registration) {
-      // Only un-patch if OUR wrapper is still installed; something else may
-      // have replaced agent.stop since, and clobbering it would be worse.
-      if (agent.stop === registration.wrapper) agent.stop = registration.originalStop;
-      patchedAgents.delete(agent);
-    }
+    release();
+    releaseStop();
+    abortAll();
   });
-  destroyRef.onDestroy(abortAll);
 
+  // The capability is read at the moment of use: a thread switch replaces the
+  // session, and with it the capability object. A result for a call the agent
+  // no longer lists has nowhere to go, and the session would reject it.
   const settleToolCall =
-    options.settleToolCall ?? ((toolCall, result) => cap.resolve(toolCall.id, result));
+    options.settleToolCall ??
+    ((toolCall, result) => {
+      if (!untracked(() => isPendingClientTool(agent, toolCall.id))) return;
+      agent.clientTools?.resolve(toolCall.id, toSessionResult(result));
+    });
 
-  // `resolve()` contractually means "record AND continue" — both adapters
-  // submit a new run from it. A cancelled call must therefore NEVER go through
+  // `resolve()` contractually means "record AND continue": the session starts
+  // a new run from it. A cancelled call must therefore NEVER go through
   // it, or clicking Stop would immediately start another run and the model
   // could re-call the very tool it was stopped on. settle() + flush() is the
   // durable, run-free equivalent. If the capability has no settle(), we leave
@@ -98,25 +82,25 @@ export function startClientToolExecutor(
   const settleWithoutContinuing =
     options.settleWithoutContinuing ??
     ((toolCall: ToolCall, result: ClientToolResult) => {
+      const cap = agent.clientTools;
+      if (!cap || !untracked(() => isPendingClientTool(agent, toolCall.id))) return;
       if (!cap.settle) {
         console.warn(
           `Client tool "${toolCall.name}" was cancelled but the agent capability does not implement settle(); the result cannot be recorded without starting a run.`,
         );
         return;
       }
-      cap.settle(toolCall.id, result);
+      cap.settle(toolCall.id, toSessionResult(result));
       void Promise.resolve(cap.flush?.()).catch(() => undefined);
     });
 
   effect(() => {
-    for (const tc of cap.pending()) {
+    for (const tc of agent.pendingClientTools() ?? []) {
       const def = registry[tc.name];
       if (!def || def.kind !== 'function') continue; // non-function handled elsewhere
-      // NB: do NOT skip on `tc.status === 'complete'`. A client tool call is
-      // marked 'complete' once its args finish streaming, yet it still has no
-      // result and needs the browser to execute it. `pending` already excludes
-      // calls that have a result or were resolved; `inFlight` prevents a
-      // double-dispatch within a render cycle.
+      // `pendingClientTools` lists exactly the calls that wait for a result,
+      // whatever their status; `inFlight` prevents a double-dispatch within a
+      // render cycle.
       if (inFlight.has(tc.id)) continue;
       if (options.shouldExecuteToolCall && !options.shouldExecuteToolCall(tc)) continue;
       const controller = new AbortController();
@@ -151,7 +135,7 @@ interface FunctionToolOutcome {
  * the handler would leave a stopped call unsettled — dangling on the server
  * thread and pinned in `inFlight` — until it happens to finish, or forever. The
  * handler's late real result is then discarded: the id is already settled and
- * in the adapter's `resolvedIds`, so it can neither double-settle nor
+ * has left `pendingClientTools`, so it can neither double-settle nor
  * re-dispatch. `executeFunctionTool` normalizes throws, so the losing promise
  * never rejects.
  */
@@ -197,8 +181,8 @@ async function runFunctionTool(input: {
   } = input;
   const signal = controller.signal;
 
-  // An aborted call MUST still settle: leaving it unsettled keeps it out of
-  // `resolvedIds`, so it stays pending and is re-dispatched after the next run
+  // An aborted call MUST still settle: leaving it unsettled keeps it in
+  // `pendingClientTools`, so it is re-dispatched after the next run
   // (re-running a side-effecting handler the user explicitly stopped) and
   // leaves the server thread holding a tool call with no tool result. It must
   // settle through the NON-continuing channel — see `settleWithoutContinuing`.

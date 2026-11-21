@@ -1,5 +1,5 @@
 ---
-description: Install @threadplane/ag-ui and its peers, register provideAgent() in an Angular app config, and read the agent in a component.
+description: Install @threadplane/ag-ui with the Angular binding and its peers, register provideAgent() with a createSession factory, and read the agent in a component.
 ---
 
 # Installation
@@ -16,24 +16,23 @@ Use a Node.js version supported by the selected Angular major. Angular 22 suppor
 ## Install packages
 
 ```bash
-npm install @threadplane/chat @threadplane/ag-ui @ag-ui/client @ag-ui/core marked
+npm install @threadplane/chat @threadplane/angular @threadplane/core @threadplane/ag-ui @ag-ui/client marked
 ```
 
-`@threadplane/chat` provides the chat UI primitives. `@threadplane/ag-ui` provides the adapter that wires an AG-UI backend into the `Agent` contract those primitives consume.
+`@threadplane/chat` provides the chat UI primitives. `@threadplane/ag-ui` provides `createSession()`, which runs an AG-UI backend behind the framework-neutral session contract from `@threadplane/core`. `@threadplane/angular` provides `provideAgent()` and `injectAgent()`, which turn that session into the `Agent` the primitives consume.
 `marked` is the required markdown parser peer used by `@threadplane/chat` when assistant messages render through `<chat>`.
 
 ## Peer Dependencies
 
-`@threadplane/ag-ui` declares the following peer dependencies:
+`@threadplane/ag-ui` contains no UI framework code and declares the following peer dependencies:
 
-| Package             | Version                             |
-| ------------------- | ----------------------------------- |
-| `@threadplane/chat` | `0.3.7`                            |
-| `@threadplane/telemetry` | `^0.3.7`                      |
-| `@angular/core`     | `^20.0.0 \|\| ^21.0.0 \|\| ^22.0.0` |
-| `@ag-ui/client`     | `^1.0.1`                            |
-| `@ag-ui/core`       | `^1.0.1`                            |
-| `rxjs`              | `~7.8.0`                            |
+| Package             | Version   |
+| ------------------- | --------- |
+| `@threadplane/core` | `0.3.7`   |
+| `@ag-ui/client`     | `^1.0.1`  |
+| `rxjs`              | `~7.8.0`  |
+
+`@threadplane/angular` declares `@angular/core` at `^20.0.0 || ^21.0.0 || ^22.0.0` and `@threadplane/core` and `@threadplane/content` at `0.3.7`. RxJS is the stream type of the AG-UI client itself; `@threadplane/ag-ui` uses it only for `FakeAgent`.
 
 ## Configure the provider
 
@@ -41,33 +40,44 @@ In your app config:
 
 ```ts
 import { ApplicationConfig } from '@angular/core';
-import { provideAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      url: 'http://localhost:3000/agent', // your AG-UI backend
+      createSession: (context) =>
+        createSession({
+          ...context,
+          url: 'http://localhost:3000/agent', // your AG-UI backend
+        }),
     }),
   ],
 };
 ```
 
-`provideAgent` accepts:
+`provideAgent` takes the session factory. The agent calls it once when it is built and again each time it moves to another thread, always in an injection context, so the factory may call `inject()`. `context.threadId` is the thread the new session belongs to, or `null` when there is none yet.
 
-| Option      | Type                                 | Description                                                                                                                                               |
-| ----------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `url`       | `string`                             | **Required.** AG-UI backend HTTP/SSE endpoint.                                                                                                            |
-| `agentId`   | `string`                             | Optional. Identifies a specific agent on the backend.                                                                                                     |
-| `threadId`  | `string`                             | Optional. Resume an existing conversation thread.                                                                                                         |
-| `headers`   | `Record<string, string>`             | Optional. Custom request headers (auth, tracing).                                                                                                         |
-| `telemetry` | `AgentRuntimeTelemetrySink \| false` | Optional. App-owned sink for runtime lifecycle events. |
+`createSession` accepts:
+
+| Option               | Type                              | Description                                                                                                                  |
+| -------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `url`                | `string`                          | AG-UI backend HTTP/SSE endpoint. Required unless `agent` is given.                                                           |
+| `agent`              | `AbstractAgent`                   | An AG-UI client agent you built, in place of `url`. Passing both throws.                                                     |
+| `agentId`            | `string`                          | Optional. Names the agent when an endpoint serves more than one.                                                             |
+| `threadId`           | `string`                          | Optional. The thread this session owns. Absent, the session generates one. An empty string throws.                           |
+| `headers`            | `Record<string, string>`          | Optional. Custom request headers (auth, tracing). Belongs to the `url` form.                                                 |
+| `interruptTransport` | `InterruptTransport`              | Optional. How a pause is answered. Defaults to `'protocol'`. See [Interrupts](/docs/angular/ag-ui/guides/interrupts).        |
+| `replay`             | `ReplaySource`                    | Optional. Loads the thread's events from your server when the session is created.                                            |
+| `persistence`        | `SessionPersistence`              | Optional. Application-owned storage for the thread. Needs a `threadId` the application chose.                                |
+| `telemetry`          | `SessionTelemetrySink \| false`   | Optional. App-owned sink for session lifecycle events.                                                                       |
 
 ## Use in a component
 
 ```ts
 import { Component } from '@angular/core';
 import { ChatComponent } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
 
 @Component({
   selector: 'app-streaming',
@@ -82,10 +92,11 @@ export class StreamingComponent {
 
 ## No backend yet?
 
-Use the `FakeAgent` for offline demos:
+Use `provideFakeAgent()` for offline demos:
 
 ```ts
-import { provideFakeAgent } from '@threadplane/ag-ui';
+import { ApplicationConfig } from '@angular/core';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -98,19 +109,21 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-`FakeAgent` extends `AbstractAgent` and emits a canned `RUN_STARTED -> TEXT_MESSAGE_START -> TEXT_MESSAGE_CONTENT x N -> TEXT_MESSAGE_END -> RUN_FINISHED` sequence. It is a drop-in replacement for the ref-less `provideAgent({ url })` while you are prototyping.
+`provideFakeAgent()` provides the same `Agent` that `provideAgent()` builds, over an in-memory session that streams a canned reply to each submit. No AG-UI event is involved. It is a drop-in replacement for `provideAgent()` while you are prototyping.
 
 `provideFakeAgent` accepts:
 
-| Option            | Type       | Description                                                                   |
-| ----------------- | ---------- | ----------------------------------------------------------------------------- |
-| `tokens`          | `string[]` | Optional. Tokens streamed back as the assistant reply.                        |
-| `reasoningTokens` | `string[]` | Optional. Reasoning chunks emitted before the text reply (defaults to `[]`).  |
-| `delayMs`         | `number`   | Optional. Milliseconds between successive token emissions (defaults to `60`). |
+| Option            | Type       | Description                                                                         |
+| ----------------- | ---------- | ----------------------------------------------------------------------------------- |
+| `tokens`          | `string[]` | Optional. Tokens streamed back as the assistant reply.                              |
+| `reasoningTokens` | `string[]` | Optional. Reasoning text streamed before the reply.                                 |
+| `delayMs`         | `number`   | Optional. Milliseconds between entries (defaults to `60`; `0` streams without timers). |
+
+To run the real AG-UI session without a backend, hand it the `FakeAgent` from `@threadplane/ag-ui` instead. See [Fake Agent](/docs/angular/ag-ui/guides/fake-agent).
 
 ## Custom transport
 
-If you have a backend that speaks AG-UI but not over HTTP, subclass `AbstractAgent` directly and feed it to `toAgent`:
+If you have a backend that speaks AG-UI but not over HTTP, subclass `AbstractAgent` directly and pass it to `createSession` as `agent`:
 
 ```ts
 import {
@@ -119,7 +132,8 @@ import {
   type BaseEvent,
 } from '@ag-ui/client';
 import { Observable } from 'rxjs';
-import { toAgent } from '@threadplane/ag-ui';
+import { provideAgent } from '@threadplane/angular';
+import { createSession } from '@threadplane/ag-ui';
 
 class MyCustomAgent extends AbstractAgent {
   run(input: RunAgentInput): Observable<BaseEvent> {
@@ -131,5 +145,13 @@ class MyCustomAgent extends AbstractAgent {
   }
 }
 
-const agent = toAgent(new MyCustomAgent());
+provideAgent({
+  createSession: (context) =>
+    createSession({
+      ...context,
+      agent: new MyCustomAgent(),
+    }),
+});
 ```
+
+The session calls the agent's `run(input)` with each request's full input. It does not call `runAgent`, and it neither reads nor changes the agent's own `messages` and `state`.

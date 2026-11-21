@@ -113,6 +113,145 @@ describe('core interrupts and child agents on the AG-UI snapshot', () => {
     }
   });
 
+  it('keeps a finished child transcript when the closing snapshot leaves it out', async () => {
+    // A backend's MESSAGES_SNAPSHOT describes the root conversation. One that
+    // routes a child's turns through SUBAGENT events lists none of them, and
+    // applying it drops their records from the transcript.
+    const fixture = bindingFixture();
+    try {
+      const run = fixture.session.submit('Research it');
+      const exchange = await fixture.started();
+      const finished = fixture.changed(
+        (snapshot) => snapshot.subagents[0]?.status === 'complete'
+      );
+      exchange.emit({
+        type: 'TEXT_MESSAGE_START',
+        messageId: 'root',
+        role: 'assistant',
+      });
+      exchange.emit({
+        type: 'TOOL_CALL_START',
+        toolCallId: 'delegate',
+        toolCallName: 'task',
+        parentMessageId: 'root',
+      });
+      exchange.emit({ type: 'TOOL_CALL_END', toolCallId: 'delegate' });
+      exchange.emit({ type: 'TEXT_MESSAGE_END', messageId: 'root' });
+      exchange.emit({
+        type: 'SUBAGENT_STARTED',
+        subagentRunId: 'child',
+        name: 'researcher',
+        parentToolCallId: 'delegate',
+      });
+      exchange.emit({
+        type: 'TEXT_MESSAGE_START',
+        messageId: 'asks',
+        role: 'assistant',
+        subagentRunId: 'child',
+      });
+      exchange.emit({
+        type: 'TOOL_CALL_START',
+        toolCallId: 'lookup',
+        toolCallName: 'lookup',
+        parentMessageId: 'asks',
+        subagentRunId: 'child',
+      });
+      exchange.emit({
+        type: 'TOOL_CALL_END',
+        toolCallId: 'lookup',
+        subagentRunId: 'child',
+      });
+      exchange.emit({
+        type: 'TEXT_MESSAGE_END',
+        messageId: 'asks',
+        subagentRunId: 'child',
+      });
+      exchange.emit({
+        type: 'TOOL_CALL_RESULT',
+        messageId: 'lookup-result',
+        toolCallId: 'lookup',
+        content: 'Found it',
+        subagentRunId: 'child',
+      });
+      exchange.emit({
+        type: 'TEXT_MESSAGE_START',
+        messageId: 'answers',
+        role: 'assistant',
+        subagentRunId: 'child',
+      });
+      exchange.emit({
+        type: 'TEXT_MESSAGE_CONTENT',
+        messageId: 'answers',
+        delta: 'Two sources',
+        subagentRunId: 'child',
+      });
+      exchange.emit({
+        type: 'TEXT_MESSAGE_END',
+        messageId: 'answers',
+        subagentRunId: 'child',
+      });
+      exchange.emit({
+        type: 'SUBAGENT_FINISHED',
+        subagentRunId: 'child',
+        outcome: { type: 'success' },
+      });
+      await finished;
+      const before = fixture.session.getSnapshot().subagents[0];
+      expect(before.messages.map((message) => message.id)).toEqual([
+        'asks',
+        'lookup-result',
+        'answers',
+      ]);
+      expect(before.toolCalls.map((call) => call.id)).toEqual(['lookup']);
+
+      const replaced = fixture.changed((snapshot) =>
+        snapshot.messages.some((message) => message.id === 'summary')
+      );
+      exchange.emit({
+        type: 'MESSAGES_SNAPSHOT',
+        messages: [
+          {
+            id: exchange.body.messages[0].id,
+            role: 'user',
+            content: 'Research it',
+          },
+          {
+            id: 'root',
+            role: 'assistant',
+            content: '',
+            toolCalls: [
+              {
+                id: 'delegate',
+                type: 'function',
+                function: { name: 'task', arguments: '{}' },
+              },
+            ],
+          },
+          {
+            id: 'delegated',
+            role: 'tool',
+            toolCallId: 'delegate',
+            content: 'Two sources',
+          },
+          { id: 'summary', role: 'assistant', content: 'Here is the summary' },
+        ],
+      });
+      await replaced;
+      exchange.emit({
+        type: 'RUN_FINISHED',
+        threadId: exchange.body.threadId,
+        runId: exchange.body.runId,
+      });
+      await expect(run).resolves.toBe('success');
+      const after = fixture.session.getSnapshot().subagents[0];
+      expect(after.status).toBe('complete');
+      expect(after.messages).toBe(before.messages);
+      expect(after.toolCalls).toBe(before.toolCalls);
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
   it('reports a child with no ending as unknown once the run settles', async () => {
     const fixture = bindingFixture();
     try {

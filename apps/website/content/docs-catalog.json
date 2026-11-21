@@ -47,7 +47,9 @@
         "source": "angular/langgraph/getting-started/introduction.mdx",
         "description": "The end-to-end LangGraph workflow — build a Python graph, run it locally, connect an Angular app with injectAgent(), and deploy to LangGraph Cloud.",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -68,7 +70,9 @@
         "source": "angular/langgraph/getting-started/quickstart.mdx",
         "description": "Build a streaming Angular chat component against a LangGraph Platform assistant with provideAgent() and injectAgent() in about five minutes.",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -87,9 +91,11 @@
     "variants": {
       "angular": {
         "source": "angular/langgraph/getting-started/installation.mdx",
-        "description": "Install @threadplane/langgraph, satisfy its peer dependencies, register provideAgent(), and verify the setup against a running LangGraph server.",
+        "description": "Install @threadplane/langgraph and @threadplane/angular, register provideAgent(), and verify the setup against a running LangGraph server.",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -108,10 +114,12 @@
     "variants": {
       "angular": {
         "source": "angular/langgraph/guides/streaming.mdx",
-        "description": "How the streaming example wires a LangGraph graph to Angular signals, plus stream modes, status, error handling, and throttling",
+        "description": "How the streaming example wires a LangGraph session to Angular signals, plus stream modes, status, error handling, and throttling",
         "lessonId": "langgraph-streaming-python",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -134,7 +142,9 @@
         "description": "How the persistence example lists, switches, and starts threads with onThreadId and switchThread, plus checkpointer choices and thread lifecycle",
         "lessonId": "langgraph-persistence-python",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -154,10 +164,12 @@
     "variants": {
       "angular": {
         "source": "angular/langgraph/guides/durable-execution.mdx",
-        "description": "Resume a LangGraph run after a crash, restart, or redeploy from its last checkpoint, and offer retry from the Angular UI.",
+        "description": "Resume a LangGraph run after a crash, restart, or redeploy from its last checkpoint, and offer check, retry, or reconnect from the Angular UI.",
         "lessonId": "langgraph-durable-execution-python",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -177,10 +189,12 @@
     "variants": {
       "angular": {
         "source": "angular/langgraph/guides/interrupts.mdx",
-        "description": "Pause and resume a LangGraph refund workflow, with typed payloads, captured-command retry, server checkpoint restoration, and timeout strategies",
+        "description": "Pause and resume a LangGraph refund workflow with interrupts() and resume(), plus typed payloads, retry rules, checkpoint restoration, and timeouts",
         "lessonId": "langgraph-interrupts-python",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -200,10 +214,12 @@
     "variants": {
       "angular": {
         "source": "angular/langgraph/guides/memory.mdx",
-        "description": "How the memory example keeps learned facts in graph state, extracts them after every reply, and renders them in a live sidebar with value()",
+        "description": "How the memory example keeps learned facts in graph state, extracts them after every reply, and renders them in a live sidebar with state()",
         "lessonId": "langgraph-memory-python",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -226,7 +242,9 @@
         "description": "How the time travel example checkpoints every turn, lists them in a timeline sidebar, and forks from one, plus the history signals and the branch tree.",
         "lessonId": "langgraph-time-travel-python",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -249,7 +267,9 @@
         "description": "How the subgraphs example routes a turn into a compiled child graph, keeps the child's state and tokens out of the transcript, and streams the child.",
         "lessonId": "langgraph-subgraphs-python",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -269,9 +289,11 @@
     "variants": {
       "angular": {
         "source": "angular/langgraph/guides/testing.mdx",
-        "description": "Testing LangGraph agents in Angular with provideFakeAgent, mockLangGraphAgent, and hand-scripted MockAgentTransport specs, plus pytest coverage for the graph",
+        "description": "Testing LangGraph agents in Angular with provideFakeAgent, mockAgent, and hand-scripted MockAgentTransport specs, plus pytest coverage for the graph",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -289,7 +311,9 @@
         "description": "How the deployment example packages a graph and points an Angular app at it, plus authentication, CORS, error handling, CI, and monitoring",
         "lessonId": "langgraph-deployment-runtime-python",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -309,9 +333,11 @@
     "variants": {
       "angular": {
         "source": "angular/langgraph/guides/lifecycle.mdx",
-        "description": "Eight per-agent lifecycle signals on every LangGraphAgent — first chunk, errors, interrupts, thread creation, and tool-call timings, plus their reset semantics.",
+        "description": "Eight lifecycle signals on every injected agent, covering the first stream event, errors, interrupts, thread creation, tool-call timings, and resets.",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -328,7 +354,9 @@
         "source": "angular/langgraph/concepts/conversation-turns.mdx",
         "description": "Follow a trip-planning conversation from a user message through requests, streaming, tools, UI state, and a saved thread in Angular or React.",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -347,9 +375,11 @@
     "variants": {
       "angular": {
         "source": "angular/langgraph/concepts/agent-contract.mdx",
-        "description": "The runtime-neutral Agent contract from @threadplane/chat — its state signals, actions, optional capabilities, and how the adapters satisfy it.",
+        "description": "The runtime-neutral session contract and the injected Angular Agent, with its state signals, commands, optional capabilities, and backends.",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -370,7 +400,9 @@
         "source": "angular/langgraph/concepts/angular-signals.mdx",
         "description": "How injectAgent() exposes agent state as Angular Signals, and how to derive, combine, and react to them with computed() and effect()",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -387,7 +419,9 @@
         "source": "angular/langgraph/concepts/langgraph-basics.mdx",
         "description": "What a LangGraph graph is made of — state, nodes, edges, checkpoints — and how each piece reaches an Angular app through injectAgent()",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -404,7 +438,9 @@
         "source": "angular/langgraph/concepts/agent-architecture.mdx",
         "description": "How planning, tool execution, subagents, and checkpoints work in a LangGraph agent, and which injectAgent() signal surfaces each one in Angular",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -419,9 +455,11 @@
     "variants": {
       "angular": {
         "source": "angular/langgraph/concepts/state-management.mdx",
-        "description": "How LangGraph thread state reaches Angular Signals — designing the Python state, pinning its TypeScript shape, and keeping UI state separate",
+        "description": "How LangGraph thread state reaches Angular Signals: designing the Python state, declaring its TypeScript shape, and keeping UI state separate",
         "apiEntrypointIds": [
-          "langgraph"
+          "langgraph",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -714,7 +752,7 @@
     "variants": {
       "angular": {
         "source": "angular/chat/getting-started/introduction.mdx",
-        "description": "How @threadplane/chat is organized — headless primitives, styled compositions, and where the library sits between your Angular app and a runtime adapter.",
+        "description": "How @threadplane/chat is organized — headless primitives, styled compositions, and where the library sits between your Angular app and a backend session.",
         "apiEntrypointIds": [
           "angular/chat",
           "angular/markdown",
@@ -739,7 +777,7 @@
     "variants": {
       "angular": {
         "source": "angular/chat/getting-started/quickstart.mdx",
-        "description": "Install @threadplane/chat, register a LangGraph agent provider, and render a streaming chat surface — with a no-backend variant using mockAgent().",
+        "description": "Install @threadplane/chat, provide an agent over a LangGraph session, and render a streaming chat surface — with a no-backend variant using mockAgent().",
         "apiEntrypointIds": [
           "angular/chat",
           "angular/markdown",
@@ -764,7 +802,7 @@
     "variants": {
       "angular": {
         "source": "angular/chat/getting-started/try-without-a-backend.mdx",
-        "description": "Render a real Threadplane chat with provideFakeAgent() — no server, no LLM, no account — then swap in a real adapter.",
+        "description": "Render a real Threadplane chat with provideFakeAgent() — no server, no LLM, no account — then swap in a real backend session.",
         "apiEntrypointIds": [
           "angular/chat",
           "angular/markdown",
@@ -806,7 +844,7 @@
     "variants": {
       "angular": {
         "source": "angular/chat/getting-started/installation.mdx",
-        "description": "Install @threadplane/chat with a LangGraph or AG-UI adapter, confirm the Angular and peer-dependency requirements, and render a first chat surface.",
+        "description": "Install @threadplane/chat with the LangGraph or AG-UI backend package, confirm the Angular and peer-dependency requirements, and render a first chat surface.",
         "apiEntrypointIds": [
           "angular/chat",
           "angular/markdown",
@@ -1065,7 +1103,7 @@
     "variants": {
       "angular": {
         "source": "angular/chat/guides/writing-an-adapter.mdx",
-        "description": "Implement the runtime-neutral Agent contract for a custom backend — the required fields, a working in-process example, and the conformance suite.",
+        "description": "Implement the framework-neutral AgentSession contract for a custom backend — the required members, a working in-process example, and the conformance suites.",
         "apiEntrypointIds": [
           "angular/chat",
           "angular/markdown",
@@ -1164,7 +1202,7 @@
     "variants": {
       "angular": {
         "source": "angular/chat/concepts/message-model.mdx",
-        "description": "How the messages example renders one template per role, plus the runtime-neutral message shape, delivery lifecycle, content, tool calls and citations.",
+        "description": "How the messages example renders one template per role, plus the backend-neutral message shape, delivery lifecycle, content, tool calls and citations.",
         "lessonId": "chat-messages-python",
         "apiEntrypointIds": [
           "angular/chat",
@@ -1296,7 +1334,7 @@
     "variants": {
       "angular": {
         "source": "angular/chat/components/chat-message-list.mdx",
-        "description": "The ChatMessageListComponent inputs, the chatMessageTemplate directive contexts, and how to read a runtime-neutral message's content in a custom template.",
+        "description": "The ChatMessageListComponent inputs, the chatMessageTemplate directive contexts, and how to read a message's content in a custom template.",
         "apiEntrypointIds": [
           "angular/chat",
           "angular/markdown",
@@ -1639,7 +1677,7 @@
     "variants": {
       "angular": {
         "source": "angular/chat/components/chat-subagent-card.mdx",
-        "description": "How the subagents example dispatches task calls to real subgraphs, and the Subagent contract the card reads to render each dispatch inline",
+        "description": "How the subagents example dispatches task calls to real subgraphs, and the AgentSubagent data the card reads to render each dispatch inline",
         "lessonId": "chat-subagents-python",
         "apiEntrypointIds": [
           "angular/chat",
@@ -1834,7 +1872,7 @@
     "variants": {
       "angular": {
         "source": "angular/chat/migrations/upgrading.mdx",
-        "description": "Upgrade Angular integrations deliberately, distinguish private React source builds, and review AG-UI, A2UI, and persisted client-tool changes.",
+        "description": "Upgrade Angular integrations deliberately, move to provideAgent({ createSession }), and review AG-UI, A2UI, and persisted client-tool changes.",
         "apiEntrypointIds": [
           "angular/chat",
           "angular/markdown",
@@ -1857,7 +1895,9 @@
         "source": "angular/ag-ui/getting-started/introduction.mdx",
         "description": "What @threadplane/ag-ui does, which parts of the AG-UI protocol it covers, and how it fits between an AG-UI backend and the chat UI primitives.",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -1876,9 +1916,11 @@
     "variants": {
       "angular": {
         "source": "angular/ag-ui/getting-started/quickstart.mdx",
-        "description": "Bind the chat composition to an AG-UI backend in three steps: install the packages, register provideAgent(), and read the agent with injectAgent().",
+        "description": "Bind the chat composition to an AG-UI backend in three steps. Install the packages, give provideAgent() a createSession factory, and inject the agent.",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -1897,9 +1939,11 @@
     "variants": {
       "angular": {
         "source": "angular/ag-ui/getting-started/installation.mdx",
-        "description": "Install @threadplane/ag-ui and its peers, register provideAgent() in an Angular app config, and read the agent in a component.",
+        "description": "Install @threadplane/ag-ui with the Angular binding and its peers, register provideAgent() with a createSession factory, and read the agent in a component.",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -1914,9 +1958,11 @@
     "variants": {
       "angular": {
         "source": "angular/ag-ui/concepts/architecture.mdx",
-        "description": "How the AG-UI adapter reduces protocol events into Angular signals, which providers register an agent, and what the adapter deliberately leaves out.",
+        "description": "How the AG-UI session turns protocol events into Angular signals, how provideAgent() registers an agent, and what the session deliberately leaves out.",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -1935,9 +1981,11 @@
     "variants": {
       "angular": {
         "source": "angular/ag-ui/guides/fake-agent.mdx",
-        "description": "Run the chat UI with no backend using provideFakeAgent(), what the canned stream contains, and how to script exact AG-UI events instead.",
+        "description": "Run the chat UI with no backend using provideFakeAgent() or the FakeAgent class, what the canned stream contains, and how to script exact AG-UI events instead.",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -1952,9 +2000,11 @@
     "variants": {
       "angular": {
         "source": "angular/ag-ui/guides/citations.mdx",
-        "description": "Attach sources to AG-UI assistant messages through state.citations, which field names the bridge normalizes, and when the merge runs.",
+        "description": "Attach sources to AG-UI assistant messages through state.citations, which field names the session normalizes, and when the sources appear.",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -1969,9 +2019,11 @@
     "variants": {
       "angular": {
         "source": "angular/ag-ui/guides/custom-events.mdx",
-        "description": "How an AG-UI backend produces CUSTOM events, which delivery paths reach the adapter under ag-ui-langgraph, and how Angular reads the customEvents signal.",
+        "description": "How an AG-UI backend produces CUSTOM events, which delivery paths reach the session under ag-ui-langgraph, and how Angular reads the customEvents signal.",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -1986,10 +2038,12 @@
     "variants": {
       "angular": {
         "source": "angular/ag-ui/guides/interrupts.mdx",
-        "description": "Approve and cancel AG-UI interrupts with generation-aware controls, native batches, and application-owned persistence and recovery",
+        "description": "Approve and cancel AG-UI interrupts with pause-aware controls, native batches, and application-owned persistence and recovery",
         "lessonId": "ag-ui-interrupts-python",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -2012,7 +2066,9 @@
         "description": "Declare a tool in the Angular app, let an AG-UI agent call it, and submit the result back to continue the run with no server-side implementation.",
         "lessonId": "ag-ui-client-tools-python",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -2035,7 +2091,9 @@
         "description": "Render an AG-UI tool call's plain data through a component the frontend owns, keyed by tool name, with no UI spec crossing the wire.",
         "lessonId": "ag-ui-tool-views-python",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -2058,7 +2116,9 @@
         "description": "Stream a json-render UI spec with AG-UI shared state and let @threadplane/render resolve $state bindings into a live Angular component tree.",
         "lessonId": "ag-ui-json-render-python",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -2081,7 +2141,9 @@
         "description": "Show an AG-UI agent's delegated child runs as attributed subagent cards with their own tool calls and messages.",
         "lessonId": "ag-ui-subagents-python",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -2101,9 +2163,11 @@
     "variants": {
       "angular": {
         "source": "angular/ag-ui/guides/testing.mdx",
-        "description": "Test AG-UI components with provideFakeAgent() and its event script, the neutral mockAgent(), or a hand-written AbstractAgent, and which double fits where.",
+        "description": "Test AG-UI components with provideFakeAgent(), a scripted FakeAgent behind the real session, mockAgent(), or a hand-written AbstractAgent.",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -2118,9 +2182,11 @@
     "variants": {
       "angular": {
         "source": "angular/ag-ui/guides/deployment.mdx",
-        "description": "Point provideAgent() at a deployed AG-UI server through an endpoint you own, pass user identity through it, configure CORS, handle errors, and ship with CI",
+        "description": "Point an AG-UI session at a deployed server through an endpoint you own, pass user identity through it, configure CORS, handle errors, and ship with CI",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -2137,7 +2203,9 @@
         "source": "angular/ag-ui/guides/troubleshooting.mdx",
         "description": "Diagnose AG-UI integration failures — nothing renders, loading never stops, errors stay hidden, state or citations do not arrive, retry does nothing.",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       }
     }
@@ -2152,10 +2220,12 @@
     "variants": {
       "angular": {
         "source": "angular/ag-ui/reference/event-mapping.mdx",
-        "description": "How the adapter turns AG-UI protocol events into Angular Signals, walked through the streaming example and then listed event by event.",
+        "description": "How the session turns AG-UI protocol events into Angular Signals, walked through the streaming example and then listed event by event.",
         "lessonId": "ag-ui-streaming-python",
         "apiEntrypointIds": [
-          "ag-ui"
+          "ag-ui",
+          "angular",
+          "angular/testing"
         ]
       },
       "react": {
@@ -2359,7 +2429,7 @@
     "variants": {
       "angular": {
         "source": "angular/runtimes/getting-started/introduction.mdx",
-        "description": "Measured AG-UI runtime support for AWS Strands, Microsoft Agent Framework, and Mastra behind one Angular adapter."
+        "description": "Measured AG-UI runtime support for AWS Strands, Microsoft Agent Framework, and Mastra behind one AG-UI session."
       }
     }
   },

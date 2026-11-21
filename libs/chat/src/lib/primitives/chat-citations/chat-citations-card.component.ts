@@ -1,7 +1,7 @@
 // libs/chat/src/lib/primitives/chat-citations/chat-citations-card.component.ts
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import type { Citation } from '../../agent/citation';
+import type { Citation } from '../../agent';
 import { citationSourceVisual, citationTypeMeta, deriveDomain } from '../../agent/citation-display';
 import type { CitationTypeIcon } from '../../agent/citation-display';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';

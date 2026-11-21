@@ -1,7 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { ChatComponent, ChatInterruptPanelComponent, type Agent } from '@threadplane/chat';
-import { provideFakeAgent, injectAgent } from '@threadplane/langgraph';
+import { injectAgent } from '@threadplane/angular';
+import { provideFakeAgent } from '@threadplane/angular/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   acceptButtonOf,
@@ -12,9 +13,9 @@ import {
   typeIntoTextarea,
 } from './hero-dom-host';
 
-/** Minimal Agent stand-in: the panel only reads `interrupt()`. */
+/** Minimal Agent stand-in: the panel only reads `interrupts()`. */
 const interruptedAgent = {
-  interrupt: signal({ value: { reason: 'delete 12 backups' } }),
+  interrupts: signal([{ id: 'pause-1', value: { reason: 'delete 12 backups' } }]),
 } as unknown as Agent;
 
 @Component({
@@ -29,7 +30,7 @@ const interruptedAgent = {
   `,
 })
 class DomHostFixture {
-  readonly agent = injectAgent() as unknown as Agent;
+  readonly agent = injectAgent();
   readonly stub = interruptedAgent;
 }
 

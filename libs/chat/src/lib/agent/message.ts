@@ -1,52 +1,6 @@
-import type { ContentBlock } from './content-block';
-import type { Citation } from './citation';
-import type { MessageDelivery } from './message-delivery';
+import type { Message } from '@threadplane/core';
 
-/** The author category of a provider-independent agent message. */
-export type Role = 'user' | 'assistant' | 'system' | 'tool';
-
-/** A provider-independent chat message with delivery state, content, and optional reasoning, tools, and citations. */
-export interface Message {
-  id: string;
-  /** Adapter-owned authoritative delivery lifecycle state for this message. */
-  delivery: MessageDelivery;
-  role: Role;
-  /** Plain text, or a list of structured content blocks. */
-  content: string | ContentBlock[];
-  /** Present when role === 'tool'. */
-  toolCallId?: string;
-  /** Optional display/author name. */
-  name?: string;
-  /**
-   * Reasoning text emitted by the model before/alongside the visible
-   * response. Populated by adapters from `{type:'reasoning'}` or
-   * `{type:'thinking'}` content blocks (LangGraph) or `REASONING_MESSAGE_*`
-   * events (AG-UI). Always a plain string — provider-specific shape
-   * (encrypted blocks, multi-step summaries) is absorbed by the adapter
-   * and not surfaced here.
-   */
-  reasoning?: string;
-  /**
-   * Wall-clock duration of the reasoning phase in milliseconds.
-   * Populated by the adapter when both start (first reasoning chunk) and
-   * end (first response-text chunk, or final canonical message) are
-   * known. Undefined when reasoning timing isn't available.
-   */
-  reasoningDurationMs?: number;
-  /** Runtime-specific extras; do not rely on shape in portable code. */
-  extra?: Record<string, unknown>;
-  /** Provider-agnostic citation list. Populated by adapters. */
-  citations?: Citation[];
-  /**
-   * IDs of tool calls emitted BY this assistant message. Populated by
-   * adapters from provider-native fields (LangGraph: `tool_calls[].id`;
-   * Anthropic: `tool_use` content blocks). Used by `<chat-tool-calls>` to
-   * scope its rendering to a single message — otherwise it falls back to
-   * the agent's global toolCalls list, which renders duplicates across
-   * every AI message in a thread.
-   */
-  toolCallIds?: string[];
-}
+export type { Message, Role } from '@threadplane/core';
 
 /**
  * Type guard narrowing a {@link Message} to `role: 'user'`.

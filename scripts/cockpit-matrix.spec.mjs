@@ -184,7 +184,7 @@ describe('Debug proof files through actual Nx attribution and classification', (
     'scripts/react-cockpit/configuration.mjs',
     'scripts/react-cockpit/serve.mjs',
     'scripts/react-cockpit/chat-debug-native-session-probe.mjs',
-    'fixtures/react-parity/langgraph-candidate/chat-debug-native-session.mjs',
+    'fixtures/react-parity/langgraph-package/chat-debug-native-session.mjs',
     'cockpit/chat/debug/python/src/graph.py',
     'cockpit/chat/debug/python/tests/providers.py',
     'cockpit/chat/debug/python/tests/test_streaming.py',

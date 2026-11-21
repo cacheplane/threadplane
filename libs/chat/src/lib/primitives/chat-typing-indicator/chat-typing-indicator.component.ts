@@ -1,11 +1,11 @@
 // libs/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
-import type { Agent } from '../../agent';
+import { isAgentRunning, type Agent } from '../../agent';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_TYPING_INDICATOR_STYLES } from '../../styles/chat-typing-indicator.styles';
 
 /**
- * Whether the agent should show a "typing" indicator — it is loading and has
+ * Whether the agent should show a "typing" indicator — it is running and has
  * not yet started streaming the assistant's reply.
  *
  * @param agent - The agent to inspect.
@@ -17,17 +17,14 @@ import { CHAT_TYPING_INDICATOR_STYLES } from '../../styles/chat-typing-indicator
  * ```
  */
 export function isTyping(agent: Agent): boolean {
-  if (!agent.isLoading()) return false;
+  if (!isAgentRunning(agent)) return false;
   const msgs = agent.messages();
   if (msgs.length === 0) return true;
   const last = msgs[msgs.length - 1];
   if (last.role === 'user') return true;
-  if (last.role === 'assistant') {
-    return typeof last.content === 'string'
-      ? !last.content
-      : last.content.length === 0;
-  }
-  return false;
+  // An assistant message that holds structured blocks has started, even
+  // when none of them is text yet.
+  return last.role === 'assistant' && !last.content && !last.blocks?.length;
 }
 
 /** Displays animated typing dots while a loading agent has not produced assistant content. */

@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, computed } from '@angular/core';
 import { ChatComponent, ChatApprovalCardComponent, ChatInterruptTemplateDirective, ChatWelcomeSuggestionComponent, type ChatApprovalAction } from '@threadplane/chat';
-import { injectAgent } from '@threadplane/ag-ui';
+import { injectAgent } from '@threadplane/angular';
+import type { Session } from '@threadplane/ag-ui';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 
 const WELCOME_SUGGESTIONS = [
@@ -33,13 +34,14 @@ interface Booking {
  *
  * The whole point of this example: this component is byte-for-byte the same
  * kind of UI code every LangGraph-backed AG-UI example uses — `provideAgent`
- * + `injectAgent()` from `@threadplane/ag-ui`, the `@threadplane/chat`
+ * + `injectAgent()` from `@threadplane/angular` over `createSession` from
+ * `@threadplane/ag-ui`, the `@threadplane/chat`
  * primitives — while the backend is a genuinely non-LangGraph runtime
  * (a Strands agent behind the ag-ui-strands bridge).
  *
  * Interrupts arrive as the protocol-standard
  * `RUN_FINISHED.outcome = { type: 'interrupt', interrupts: [...] }` (not the
- * LangGraph bridge's CUSTOM `on_interrupt`), and `submit({ resume })` goes
+ * LangGraph bridge's CUSTOM `on_interrupt`), and `agent.resume(responses)` goes
  * out as the protocol-standard top-level `resume` entry array keyed by
  * `interruptId`.
  *
@@ -66,7 +68,7 @@ interface Booking {
     >
       <div main class="strands-shell">
       <chat placeholder="Ask about a fictional meeting…" [welcomeDisabled]="true" [agent]="agent" class="strands-chat">
-        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
+        <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
           <div chatWelcomeSuggestions>
             @for (s of suggestions; track s.value) {
               <chat-welcome-suggestion
@@ -242,12 +244,12 @@ interface Booking {
 export class AwsStrandsComponent {
   protected readonly suggestions = WELCOME_SUGGESTIONS;
 
-  protected readonly agent = injectAgent();
+  protected readonly agent = injectAgent<Session>();
 
   // region shared-state
   /** Shared state snapshotted from the backend (STATE_SNAPSHOT only). */
   private readonly sharedState = computed(() => {
-    // Example apps compile lib source with strict:false — cast at the read site.
+    // The session declares no state type, so the document is cast at the read site.
     return this.agent.state() as { availability?: Availability; booking?: Booking } | undefined;
   });
 
@@ -265,13 +267,12 @@ export class AwsStrandsComponent {
   // region approval-wiring
   /**
    * The pending approval request from the protocol-standard interrupt
-   * outcome. The reducer stores it as `{ interrupts: [...], runId }`; each
-   * Strands entry carries the tool name under `reason` and the tool's
-   * interrupt payload under `metadata.reason`.
+   * outcome. `agent.interrupts()` lists the outcome's entries; each Strands
+   * entry carries the tool name under `reason` and the tool's interrupt
+   * payload under `metadata.reason`.
    */
   private readonly approvalEntry = computed(() => {
-    const value = this.agent.interrupt?.()?.value as { interrupts?: unknown[] } | undefined;
-    return value?.interrupts?.[0] as
+    return this.agent.interrupts()?.[0] as
       | { reason?: string; metadata?: { reason?: { topic?: string; slot?: string } } }
       | undefined;
   });
@@ -289,10 +290,17 @@ export class AwsStrandsComponent {
 
   protected onAction(action: ChatApprovalAction): void {
     if (action === 'approve') {
-      void this.agent.submit({ resume: { approved: true } });
+      this.answer({ approved: true });
     } else if (action === 'cancel') {
-      void this.agent.submit({ resume: { approved: false } });
+      this.answer({ approved: false });
     }
+  }
+
+  /** Answers the pending interrupt with `value`. */
+  private answer(value: { approved: boolean }): void {
+    const interrupt = this.agent.interrupts()?.[0];
+    if (!interrupt) return;
+    void this.agent.resume([{ interruptId: interrupt.id, status: 'resolved', value }]);
   }
   // endregion
 }

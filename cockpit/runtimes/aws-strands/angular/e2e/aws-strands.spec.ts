@@ -42,7 +42,7 @@ test.describe('cockpit runtimes/aws-strands: meeting booking approval', () => {
 // `research_availability` async-generator tool re-yields the specialist's
 // stream, and the per-tool ToolBehavior handler (src/subagent_emitter.py)
 // translates it into SUBAGENT_STARTED / attributed TEXT_MESSAGE_* /
-// SUBAGENT_FINISHED wire events. The @threadplane/ag-ui reducer keys the
+// SUBAGENT_FINISHED wire events. The @threadplane/ag-ui session keys the
 // subagent to its spawning toolCallId, so <chat-tool-calls> renders the
 // delegation inline as a <chat-subagent-card> instead of a tool-call chip.
 test.describe('cockpit runtimes/aws-strands: subagent delegation', () => {
