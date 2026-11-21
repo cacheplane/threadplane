@@ -38,12 +38,12 @@ import {
   stripOrder,
   type ProjectedThread,
   type ThreadPatchFields,
-} from './thread-entries';
+} from '../../runtime/thread-metadata';
 import {
-  createThreadProjectStore,
+  createLangGraphProjectStore,
   requireProjectName,
-  type ThreadProjectStore,
-} from './thread-projects';
+  type ProjectStore as ThreadProjectStore,
+} from '../../runtime/project-store';
 
 /**
  * Configuration consumed by {@link LangGraphThreadsAdapter}. Provide
@@ -143,7 +143,9 @@ export class LangGraphThreadsAdapter {
   private readonly projectStore: ThreadProjectStore | undefined =
     this.config.projects === false
       ? undefined
-      : createThreadProjectStore(this.client, this.config.projects?.namespace);
+      : createLangGraphProjectStore(this.client, {
+          namespace: this.config.projects?.namespace,
+        });
 
   private readonly _threads: WritableSignal<Thread[]> = signal<Thread[]>([]);
   private readonly _archived: WritableSignal<Thread[]> = signal<Thread[]>([]);
@@ -328,8 +330,8 @@ export class LangGraphThreadsAdapter {
     }
   }
 
-  // Phase 2: the runtime directory URL-encodes thread ids in request paths;
-  // this adapter keeps the legacy raw-id paths until it is rebuilt on it.
+  // The runtime directory URL-encodes thread ids in request paths; this
+  // adapter keeps the raw-id paths existing apps already rely on.
   async delete(threadId: string): Promise<void> {
     await this.mutate([{ id: threadId, fields: { removed: true } }], () =>
       this.client.threads.delete(threadId),

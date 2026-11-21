@@ -1,7 +1,19 @@
-import type { ThreadEntry } from '@threadplane/core';
+import type { ProjectEntry, ThreadEntry } from '@threadplane/core';
+
+// The one copy of the thread metadata rules. `createLangGraphThreadDirectory`
+// and the Angular `LangGraphThreadsAdapter` both read and write threads
+// through these helpers.
 
 /** A projected thread plus the pin rank it was stored with. */
 export type ProjectedThread = ThreadEntry & { readonly pinnedOrder?: number };
+
+/** Fields an optimistic patch may change. */
+export type ThreadPatchFields = Partial<
+  Pick<ProjectedThread, 'title' | 'archived' | 'pinned' | 'projectId'> & {
+    pinnedOrder: number;
+    removed: true;
+  }
+>;
 
 /**
  * Projects a LangGraph thread onto a directory entry. Reads the metadata keys
@@ -59,4 +71,56 @@ export function orderThreads<T extends ProjectedThread>(
       return left === right ? 0 : left < right ? -1 : 1;
     });
   return { threads, archived: entries.filter((entry) => entry.archived) };
+}
+
+/** Applies a patch; a removal drops the entry. */
+export function applyPatch(
+  entry: ProjectedThread,
+  fields: ThreadPatchFields
+): ProjectedThread | undefined {
+  if (fields.removed) return undefined;
+  return Object.freeze({ ...entry, ...fields });
+}
+
+/** The published entry: no `pinnedOrder`. */
+export function stripOrder(entry: ProjectedThread): ThreadEntry {
+  return Object.freeze({
+    id: entry.id,
+    title: entry.title,
+    ...(entry.updatedAt === undefined ? {} : { updatedAt: entry.updatedAt }),
+    pinned: entry.pinned,
+    archived: entry.archived,
+    projectId: entry.projectId,
+  });
+}
+
+/** Field-by-field equality, including the pin rank. */
+export function sameEntry(a: ProjectedThread, b: ProjectedThread): boolean {
+  return (
+    a.id === b.id &&
+    a.title === b.title &&
+    a.updatedAt === b.updatedAt &&
+    a.pinned === b.pinned &&
+    a.archived === b.archived &&
+    a.projectId === b.projectId &&
+    a.pinnedOrder === b.pinnedOrder
+  );
+}
+
+/** Same length and same element references. */
+export function sameList<T>(a: readonly T[], b: readonly T[]): boolean {
+  return a.length === b.length && a.every((item, index) => item === b[index]);
+}
+
+/** Same ids and names in the same order. */
+export function sameProjects(
+  a: readonly ProjectEntry[],
+  b: readonly ProjectEntry[]
+): boolean {
+  return (
+    a.length === b.length &&
+    a.every(
+      (project, i) => project.id === b[i]?.id && project.name === b[i]?.name
+    )
+  );
 }
