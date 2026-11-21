@@ -16,6 +16,8 @@ import type {
 } from '@threadplane/core';
 import type {
   CheckedTools,
+  ClientToolContinuationLimitEvent,
+  ClientToolContinuationPolicy,
   FunctionToolDefinition,
   ToolContracts,
 } from '@threadplane/core/tools';
@@ -81,6 +83,12 @@ export interface SessionOptions
   /** Child evidence saved with this thread, published as `earlierSubagents`. Their attributed messages belong in `messages`. */
   readonly subagents?: Subagents;
   readonly interruptMode?: InterruptMode;
+  /**
+   * How many consecutive client-tool groups one submit runs automatically
+   * (default 10; 0 removes the limit). A blocked group raises the `limit`
+   * blocker and the submit ends `interrupted`. Used only with tools.
+   */
+  readonly continuationPolicy?: ClientToolContinuationPolicy;
 }
 /**
  * A new root invocation observes no children yet; settled ones become history.
@@ -231,8 +239,10 @@ export function createSession(
     stateType,
     subagents,
     interruptMode = 'native',
+    continuationPolicy,
   } = options;
   if (!threadId) throw new TypeError('A nonempty threadId is required');
+  const continuation = captureContinuationPolicy(continuationPolicy);
   const catalog = tools === undefined ? undefined : captureClientTools(tools);
   if (catalog !== undefined)
     return createToolsOwner(
@@ -247,7 +257,8 @@ export function createSession(
         subagents,
         interruptMode,
       },
-      catalog
+      catalog,
+      continuation
     );
   const factory = createRun({ url, headers, fetch, interruptMode });
   const reasoningClock = createReasoningClock();
@@ -751,7 +762,8 @@ export function createSession(
  * to a superseding submit. The legacy no-catalog owner above remains separate. */
 function createToolsOwner(
   options: SessionOptions,
-  catalog: ReturnType<typeof captureClientTools>
+  catalog: ReturnType<typeof captureClientTools>,
+  continuation: ReturnType<typeof captureContinuationPolicy>
 ): Session {
   const { threadId, interruptMode = 'native' } = options;
   const factory = createRun(options);
@@ -1091,9 +1103,27 @@ function createToolsOwner(
         return;
       }
       // The ledger consumes the whole group before observers can issue commands.
-      const group = ledger.admitSuccess(physical.token, command.groups < 10);
+      const attemptedTurn = command.groups + 1;
+      let limited:
+        | readonly { readonly id: string; readonly name: string }[]
+        | undefined;
+      const group = ledger.admitSuccess(
+        physical.token,
+        !continuation.blocks(command.groups),
+        (calls) => {
+          limited = calls;
+        }
+      );
       if (ledger.snapshot().blocker) {
         finish(command, 'interrupted');
+        // App code runs only after the submit has settled.
+        if (limited)
+          continuation.report({
+            maxTurns: continuation.maxTurns,
+            attemptedTurn,
+            toolCallIds: limited.map((call) => call.id),
+            toolNames: limited.map((call) => call.name),
+          });
         return;
       }
       if (!group.length) {
@@ -1546,5 +1576,37 @@ function createToolsOwner(
           }
         });
       }),
+  };
+}
+
+/** Reads a continuation policy once; maxTurns 0 removes the limit. */
+function captureContinuationPolicy(
+  policy: ClientToolContinuationPolicy | undefined
+) {
+  const maxTurns = policy?.maxTurns ?? 10;
+  if (!Number.isInteger(maxTurns) || maxTurns < 0)
+    throw new TypeError(
+      'continuationPolicy.maxTurns must be a non-negative integer.'
+    );
+  const onLimit = policy?.onLimit;
+  if (onLimit !== undefined && typeof onLimit !== 'function')
+    throw new TypeError('continuationPolicy.onLimit must be a function.');
+  return {
+    maxTurns,
+    /** Whether the group after `groups` completed ones is blocked. */
+    blocks: (groups: number) => maxTurns !== 0 && groups >= maxTurns,
+    report(event: ClientToolContinuationLimitEvent) {
+      try {
+        onLimit?.(
+          Object.freeze({
+            ...event,
+            toolCallIds: Object.freeze([...event.toolCallIds]),
+            toolNames: Object.freeze([...event.toolNames]),
+          })
+        );
+      } catch {
+        // An app callback cannot change how the submit ends.
+      }
+    },
   };
 }
