@@ -3,7 +3,15 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/ag-ui/interrupts/react/src",
   "projectType": "application",
-  "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
+  "implicitDependencies": [
+    "cockpit-ag-ui-interrupts-angular",
+    "cockpit-ag-ui-interrupts-python"
+  ],
+  "tags": [
+    "scope:cockpit-examples",
+    "scope:cockpit-e2e",
+    "framework:react"
+  ],
   "targets": {
     "test": {
       "executor": "@nx/vitest:test",
@@ -17,11 +25,22 @@
       "dependsOn": [
         {
           "target": "build",
-          "projects": ["core", "content", "react"]
+          "projects": [
+            "core",
+            "content",
+            "react"
+          ]
         },
-        { "target": "react-ag-ui", "projects": ["website-runtime-preparation"] }
+        {
+          "target": "react-ag-ui",
+          "projects": [
+            "website-runtime-preparation"
+          ]
+        }
       ],
-      "outputs": ["{workspaceRoot}/dist/cockpit/ag-ui/interrupts/react"],
+      "outputs": [
+        "{workspaceRoot}/dist/cockpit/ag-ui/interrupts/react"
+      ],
       "options": {
         "command": "node scripts/react-cockpit/build.mjs ag-ui-interrupts"
       }
@@ -32,11 +51,17 @@
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "options": {
         "config": "cockpit/ag-ui/interrupts/react/e2e/playwright.config.ts",
         "skipInstall": true
-      }
+      },
+      "inputs": [
+        "default",
+        "reactAimockBackend"
+      ]
     }
   }
 }

@@ -1,4 +1,10 @@
 import { test, expect } from '@playwright/test';
+// Backend: aimock replays cockpit/langgraph/streaming/angular/e2e/fixtures
+// (shared with the Angular example) into a real `langgraph dev`; the React
+// static server proxies /api to it, recording requests and injecting holds and
+// failures (scripts/react-cockpit/langgraph-proxy.mjs). "First" streams
+// "Live partial" + " complete" in two chunks; holds stop after "Live partial".
+const holdAfterPartial = { data: { afterText: 'Live partial' } };
 
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
@@ -8,14 +14,15 @@ test('page exit releases the owned held stream without replay or late rendering'
   page,
   request,
 }) => {
+  await request.post('/__hold/stream', holdAfterPartial);
   await page.goto('/langgraph/streaming/react/');
   await page.getByLabel('Message', { exact: true }).fill('First');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(
     page.getByRole('region', { name: 'Conversation' })
   ).toContainText('Live partial');
-  expect(await (await request.get('/__lifetime')).json()).toEqual({
-    active: true,
+  expect(await (await request.get('/__lifetime')).json()).toMatchObject({
+    activeStream: true,
   });
   await page.evaluate(() =>
     window.dispatchEvent(new PageTransitionEvent('pagehide'))
@@ -24,7 +31,7 @@ test('page exit releases the owned held stream without replay or late rendering'
     0
   );
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
     .toBe(false);
   await request.post('/__release');
   await expect(page.getByRole('region', { name: 'Conversation' })).toHaveCount(
@@ -69,6 +76,7 @@ test('streams actual SDK requests, settles content, and keeps one conversation',
   page,
   request,
 }) => {
+  await request.post('/__hold/stream', holdAfterPartial);
   await page.goto('/langgraph/streaming/react/');
   await page.getByLabel('Message', { exact: true }).fill('First');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
@@ -102,6 +110,7 @@ test('Stop ends execution without replay and New conversation permits explicit f
   page,
   request,
 }) => {
+  await request.post('/__hold/stream', holdAfterPartial);
   await page.goto('/langgraph/streaming/react/');
   await page.getByLabel('Message', { exact: true }).fill('First');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
@@ -145,6 +154,7 @@ test('protects server diagnostics and renders backend markup literally', async (
   await expect(page.getByRole('alert')).toHaveText(
     'The LangGraph request failed.'
   );
+  // aimock answers the model call for "Error" with a 500; the real graph run fails.
   await expect(page.locator('body')).not.toContainText('PRIVATE response');
 });
 

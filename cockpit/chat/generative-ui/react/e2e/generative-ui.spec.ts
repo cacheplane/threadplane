@@ -4,19 +4,31 @@ import {
   type Page,
   type APIRequestContext,
 } from '@playwright/test';
-import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { writeFileSync } from 'node:fs';
+// Backend: aimock replays cockpit/chat/generative-ui/angular/e2e/fixtures (the
+// decision, interpretation and title models, keyed on their system prompts)
+// into a real `langgraph dev`, so admission, the real dashboard tools,
+// assessment and publication all run in the graph. The recording proxy
+// (scripts/react-cockpit/langgraph-proxy.mjs) holds, fails or rewrites reads.
+//
+// Faults inside the graph that no model output can reach are covered by the
+// Python tests in cockpit/chat/generative-ui/python/tests/test_streaming.py,
+// not here: a throwing tool or malformed tool data rolling back the whole
+// batch (test_malformed_failed_missing_or_uncorrelated_results_roll_back_entire_batch,
+// test_mixed_genuine_success_and_runtime_error_is_atomic), and prose already
+// on the action parent (test_genuine_nonempty_parent_fallback_no_wrapper_or_data).
+// Admission validates every query argument and binding before execution, and
+// the parent it creates is always empty.
 const base = '/chat/generative-ui/react/';
 const box = (page: Page) =>
   page.getByRole('textbox', { name: 'Message', exact: true });
 const boards = (page: Page) => page.locator('[data-dashboard-spec-owner]');
 const requests = async (request: APIRequestContext) =>
   (await request.get('/__requests')).json();
-const configure = async (
-  request: APIRequestContext,
-  data: Record<string, unknown>
-) => expect((await request.post('/__configure', { data })).status()).toBe(200);
+const control = async (request: APIRequestContext, path: string) =>
+  expect((await request.post(path)).status()).toBe(200);
+const lifetime = async (request: APIRequestContext) =>
+  (await request.get('/__lifetime')).json();
 async function send(page: Page, text: string) {
   await box(page).fill(text);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
@@ -27,8 +39,6 @@ async function send(page: Page, text: string) {
 const errors = new WeakMap<Page, string[]>();
 test.beforeEach(async ({ page, request }) => {
   expect((await request.post('/__reset')).status()).toBe(200);
-  // Prepare the real graph before UI assertions, without creating a conversation.
-  expect((await request.post('/__configure', { data: { failAgent: false } })).status()).toBe(200);
   const list: string[] = [];
   errors.set(page, list);
   page.on('pageerror', (e) => list.push(e.message));
@@ -38,39 +48,8 @@ test.beforeEach(async ({ page, request }) => {
 });
 test.afterEach(async ({ page, request }) => {
   expect(errors.get(page)).toEqual([]);
-  const proofs = await (await request.get('/__graph-proof')).json();
-  for (const proof of proofs)
-    expect(proof).toMatchObject({
-      actualCompiledGraph: true,
-      networkConnectAttempts: 0,
-      titleMessageCallbacks: 0,
-      decisionMessageCallbacks: 0,
-      interpretationMessageCallbacks: 0,
-      productionSourceSha256: Object.fromEntries(
-        [
-          'src/graph.py',
-          'src/dashboard_tools.py',
-          'src/operations.py',
-          'src/dashboard_contract.py',
-          'prompts/generative-ui.md',
-        ].map((path) => [
-          path,
-          createHash('sha256')
-            .update(readFileSync(resolve(__dirname, '../../python/' + path)))
-            .digest('hex'),
-        ])
-      ),
-      sourceSha256: createHash('sha256')
-        .update(readFileSync(resolve(__dirname, '../../python/src/graph.py')))
-        .digest('hex'),
-      lockSha256: createHash('sha256')
-        .update(readFileSync(resolve(__dirname, '../../python/uv.lock')))
-        .digest('hex'),
-    });
   await page.goto('about:blank');
-  await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).held)
-    .toBe(0);
+  await expect.poll(async () => (await lifetime(request)).openResponses).toBe(0);
 });
 test('mount is inert; four confirmed turns retain ownership and share refreshed data', async ({
   page,
@@ -155,12 +134,9 @@ test('mount is inert; four confirmed turns retain ownership and share refreshed 
     captured.filter((r: { path: string }) => r.path === '/api/threads')
   ).toHaveLength(1);
   writeFileSync(
-    testInfo.outputPath('graph-proof.json'),
+    testInfo.outputPath('wire.json'),
     JSON.stringify(
-      {
-        requests: captured,
-        proofs: await (await request.get('/__graph-proof')).json(),
-      },
+      { requests: captured, captures: await (await request.get('/__captures')).json() },
       null,
       2
     )
@@ -176,35 +152,6 @@ test('mount is inert; four confirmed turns retain ownership and share refreshed 
     fullPage: true,
   });
 });
-test('nonempty parent preserves prose with inspectable raw result and notice', async ({
-  page,
-  request,
-}) => {
-  await page.goto(base);
-  await send(page, 'prose render');
-  await expect(boards(page)).toHaveCount(0);
-  await expect(page.getByText('Here is the layout.')).toBeVisible();
-  await expect(
-    page.getByText(
-      'This layout was not applied because the assistant already supplied prose. The tool result is available for inspection.'
-    )
-  ).toBeVisible();
-  await page.locator('details').filter({ has: page.getByText('Server tool result', { exact: true }) }).locator('summary').first().click();
-  await expect(
-    page
-      .locator('details[open] > pre')
-      .filter({ hasText: 'dashboard_grid' })
-      .first()
-  ).toBeVisible();
-  expect(await requests(request)).toHaveLength(5);
-  const proofs = await (await request.get('/__graph-proof')).json();
-  expect(
-    proofs.some(
-      (p: { op: string; fixtureControls: { prose_parent: boolean } }) =>
-        p.op === 'submit' && p.fixtureControls.prose_parent
-    )
-  ).toBe(true);
-});
 for (const decisionFault of ['missing', 'invalid'])
   test(`saved ${decisionFault} decision honestly leaves the prior board unchanged`, async ({
     page,
@@ -214,8 +161,8 @@ for (const decisionFault of ['missing', 'invalid'])
     await send(page, 'Show dashboard');
     const old = await boards(page).innerText();
     const owner = await boards(page).getAttribute('data-dashboard-spec-owner');
-    await configure(request, { decisionFault });
-    await send(page, 'Filter to cancelled flights');
+    // Real model output that admission rejects: no decision, or an invented filter.
+    await send(page, `Filter to cancelled flights (${decisionFault === 'missing' ? 'no' : 'invalid'} decision)`);
     await expect(boards(page)).toHaveCount(1);
     expect(await boards(page).innerText()).toBe(old);
     expect(await boards(page).getAttribute('data-dashboard-spec-owner')).toBe(
@@ -233,49 +180,6 @@ for (const decisionFault of ['missing', 'invalid'])
       )
     ).toHaveLength(2);
   });
-for (const toolFault of ['failKpis', 'malformedTrend'])
-  test(`real ${toolFault} batch keeps successful peers inspectable but cannot replace the confirmed board`, async ({
-    page,
-    request,
-  }) => {
-    await configure(request, { partialDashboard: true });
-    await page.goto(base);
-    await send(page, 'Show dashboard');
-    const old = await boards(page).innerText();
-    const owner = await boards(page).getAttribute('data-dashboard-spec-owner');
-    await configure(request, { partialDashboard: false, [toolFault]: true });
-    await box(page).fill('Show another dashboard');
-    await box(page).press('Enter');
-    // The failed tool call shows its own error alert in the transcript; this
-    // is the app's alert about the board.
-    await expect(
-      page.getByRole('alert').filter({ hasText: 'could not be confirmed' })
-    ).toBeVisible();
-    await expect(boards(page)).toHaveCount(1);
-    expect(await boards(page).innerText()).toBe(old);
-    expect(await boards(page).getAttribute('data-dashboard-spec-owner')).toBe(
-      owner
-    );
-    await expect(box(page)).toBeDisabled();
-    await expect(
-      page.getByText('Start a new conversation to continue.', { exact: true })
-    ).toBeVisible();
-    await page.locator('details').filter({ has: page.getByText('Server tool result', { exact: true }) }).locator('summary').last().click();
-    await expect(
-      page
-        .locator('details[open] > pre')
-        .filter({ hasText: 'on_time_pct' })
-        .last()
-    ).toBeVisible();
-    expect(
-      (await requests(request)).filter((r: { path: string }) =>
-        r.path.endsWith('/runs/stream')
-      )
-    ).toHaveLength(2);
-    await page.getByRole('button', { name: 'New conversation' }).click();
-    await expect(boards(page)).toHaveCount(0);
-    await expect(box(page)).toBeEnabled();
-  });
 test('failed read-only interpretation retains the confirmed board and requires New', async ({
   page,
   request,
@@ -283,8 +187,8 @@ test('failed read-only interpretation retains the confirmed board and requires N
   await page.goto(base);
   await send(page, 'Show dashboard');
   const old = await boards(page).innerText();
-  await configure(request, { failInterpretation: true });
-  await box(page).fill('Why is on-time low?');
+  // The interpretation model fails for this prompt (fixture).
+  await box(page).fill('Why is on-time low? (interpreter down)');
   await box(page).press('Enter');
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(boards(page)).toHaveCount(1);
@@ -303,14 +207,16 @@ test('pending update keeps the old board; double submit, Stop and New cannot pub
   await page.goto(base);
   await send(page, 'Show dashboard');
   const old = await boards(page).innerText();
-  await configure(request, { holdStream: true });
+  // The decision is not streamed and a data update writes no model text:
+  // hold the run right after its first event.
+  expect((await request.post('/__hold/stream', { data: { immediate: true } })).status()).toBe(200);
   await box(page).fill('Filter to only the cancelled flights.');
   await box(page).press('Enter');
   await box(page).press('Enter');
   await expect(box(page)).toHaveValue('');
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).held)
-    .toBe(1);
+    .poll(async () => (await lifetime(request)).activeStream)
+    .toBe(true);
   expect(await boards(page).innerText()).toBe(old);
   expect(
     (await requests(request)).filter((r: { path: string }) =>
@@ -325,17 +231,17 @@ test('pending update keeps the old board; double submit, Stop and New cannot pub
   await request.post('/__release');
   await page.getByRole('button', { name: 'New conversation' }).click();
   await expect(boards(page)).toHaveCount(0);
-  await configure(request, { holdStream: false, holdState: true });
+  // The confirmation reads the exact checkpoint.
+  await control(request, '/__hold/state');
   await box(page).fill('New dashboard');
   await box(page).press('Enter');
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).held)
-    .toBe(1);
+    .poll(async () => (await lifetime(request)).activeState)
+    .toBe(true);
   await page.getByRole('button', { name: 'New conversation' }).click();
-  await request.post('/__release');
+  await request.post('/__release-state');
   await expect(boards(page)).toHaveCount(0);
   await expect(box(page)).toBeEnabled();
-  await configure(request, { holdState: false });
   await send(page, 'Fresh dashboard');
   await expect(boards(page)).toHaveCount(1);
   expect(
@@ -357,7 +263,8 @@ for (const fault of [
     await page.goto(base);
     await send(page, 'Show dashboard');
     const old = await boards(page).innerText();
-    await configure(request, { stateFault: fault });
+    // The confirmation's checkpoint read is rewritten (injected data).
+    await control(request, '/__state/' + (fault === 'pending-tasks' ? 'unsafe' : fault));
     await box(page).fill('Show another dashboard');
     await box(page).press('Enter');
     await expect(page.getByRole('alert')).toContainText(
@@ -372,13 +279,12 @@ for (const fault of [
       )
     ).toHaveLength(2);
   });
-for (const options of [{ runStatus: 'error' }, { failAgent: true }])
-  test(`run failure ${JSON.stringify(
-    options
-  )} leaves no provisional layout`, async ({ page, request }) => {
+for (const failure of ['run status error', 'decision provider down'])
+  test(`run failure (${failure}) leaves no provisional layout`, async ({ page, request }) => {
     await page.goto(base);
-    await configure(request, options);
-    await box(page).fill('Show dashboard');
+    // The run reports status error; or the decision model fails (fixture).
+    if (failure === 'run status error') await control(request, '/__run-status/error');
+    await box(page).fill(failure === 'run status error' ? 'Show dashboard' : 'Show dashboard (provider down)');
     await box(page).press('Enter');
     await expect(page.getByRole('alert')).toBeVisible();
     await expect(boards(page)).toHaveCount(0);

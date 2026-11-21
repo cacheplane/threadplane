@@ -1,4 +1,9 @@
 import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
+// Backend: aimock replays cockpit/langgraph/client-tools/angular/e2e/fixtures
+// (shared with the Angular example) into a real `langgraph dev`, which binds the
+// browser's client_tools and ends each turn on a browser tool call. The React
+// static server proxies /api to it, recording requests and injecting holds and
+// failures (scripts/react-cockpit/langgraph-proxy.mjs).
 test.beforeEach(async ({ request }) => { await request.post('/__reset'); });
 async function send(page: Page, text: string, navigate = true) {
   if (navigate) await page.goto('/langgraph/client-tools/react/');
@@ -39,7 +44,7 @@ test('publishes a finalized literal weather card and its normal shown acknowledg
   expect(runs[1].body.input!.messages[0]).toMatchObject({ tool_call_id: 'card-1', content: '{"shown":true}' });
 });
 test('persists a standalone snapshot result without another model run and waits for acknowledgement', async ({ page, request }) => {
-  await request.post('/__hold-state');
+  await request.post('/__hold/state-write');
   await send(page, 'Snapshot');
   await expect(page.getByRole('region', { name: 'Weather panels' })).toContainText('Portland');
   await expect.poll(async () => (await proof(request)).filter((entry) => entry.path.endsWith('/state')).length).toBe(1);
@@ -52,7 +57,8 @@ test('persists a standalone snapshot result without another model run and waits 
   const write = entries.find((entry) => entry.path.endsWith('/state'))!;
   expect(write.path.replace(/\/state$/, '/runs/stream')).toBe(streams(entries)[0].path);
   expect(write.body.values!.messages[0]).toMatchObject({ tool_call_id: 'snapshot-1', content: '{"shown":true}' });
-  expect((await (await request.get('/__threads')).json())[0].messages.at(-1)).toMatchObject({ tool_call_id: 'snapshot-1', content: '{"shown":true}' });
+  const threadId = write.path.split('/')[3];
+  expect((await (await request.get('/__thread/' + threadId)).json()).values.messages.at(-1)).toMatchObject({ tool_call_id: 'snapshot-1', content: '{"shown":true}' });
 });
 test('mixed snapshot and normal tools follow up as one batch with exact result identities', async ({ page, request }) => {
   await send(page, 'Mixed');
@@ -109,13 +115,16 @@ test('invalid authored arguments produce a terminal error result explained by mo
   await expect(page.getByRole('region', { name: 'Weather panels' })).toContainText('No weather panels yet.');
 });
 for (const text of ['Unknown', 'Pause']) test(`${text} requires reset without effects or follow-up`, async ({ page, request }) => {
+  // A real graph never pauses here: the unexpected pause is injected state.
+  if (text === 'Pause')
+    await request.post('/__values', { data: { set: { __interrupt__: [{ id: 'unexpected', value: null }] } } });
   await send(page, text);
   await expect(status(page)).toContainText('new conversation');
   await expect(page.getByLabel('Message', { exact: true })).toBeDisabled();
   expect(streams(await proof(request))).toHaveLength(1);
 });
 test('an uncertain snapshot write is not replayed and requires reset', async ({ page, request }) => {
-  await request.post('/__fail-state');
+  await request.post('/__fail/state-write');
   await send(page, 'Snapshot');
   await expect(status(page)).toContainText('new conversation');
   expect((await proof(request)).filter((entry) => entry.path.endsWith('/state'))).toHaveLength(1);
@@ -123,9 +132,9 @@ test('an uncertain snapshot write is not replayed and requires reset', async ({ 
 });
 
 test('partial streamed arguments cannot publish a panel or acknowledge a tool before finalization', async ({ page, request }) => {
-  await request.post('/__hold-calls');
+  await request.post('/__hold/stream');
   await send(page, 'Card');
-  await expect.poll(async () => (await (await request.get('/__lifetime')).json()).active).toBe(true);
+  await expect.poll(async () => (await (await request.get('/__lifetime')).json()).activeStream).toBe(true);
   await expect(page.getByRole('region', { name: 'Weather panels' })).toContainText('No weather panels yet.');
   expect(streams(await proof(request))).toHaveLength(1);
   await request.post('/__release');
@@ -145,7 +154,8 @@ test('page exit aborts pending browser decisions without a model continuation', 
 
 test('a slow status handler completes normally and follows up once', async ({ page, request }) => {
   await send(page, 'Slow');
-  await expect(status(page)).toHaveText('Response complete.');
+  // The browser handler takes ~3s on purpose, then a real follow-up run.
+  await expect(status(page)).toHaveText('Response complete.', { timeout: 15000 });
   const runs = streams(await proof(request));
   expect(runs).toHaveLength(2);
   expect(runs[1].body.input!.messages[0]).toMatchObject({ tool_call_id: 'slow-1', content: '{"label":"status check","status":"complete"}' });
@@ -173,14 +183,14 @@ test('ambiguous thread creation never dispatches or retries and protects diagnos
 test('successful weather turns reuse the thread with distinct server tool invocation identities', async ({ page, request }) => {
   await send(page, 'Weather');
   await expect(status(page)).toHaveText('Response complete.');
-  await send(page, 'Weather', false);
+  await send(page, 'Weather again', false);
   await expect(status(page)).toHaveText('Response complete.');
   const entries = await proof(request), runs = streams(entries);
   expect(runs).toHaveLength(4);
   expect(new Set(runs.map((entry) => entry.path)).size).toBe(1);
   expect(entries.filter((entry) => entry.path === '/api/threads')).toHaveLength(1);
   expect(runs[1].body.input!.messages[0].tool_call_id).toBe('weather-1');
-  expect(runs[3].body.input!.messages[0].tool_call_id).toBe('weather-1-3');
+  expect(runs[3].body.input!.messages[0].tool_call_id).toBe('weather-2');
 });
 
 test('an embedded developer target sends credentials only in SDK headers', async ({ page, request }) => {

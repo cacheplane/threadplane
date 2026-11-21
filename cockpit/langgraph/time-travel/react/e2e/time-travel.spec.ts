@@ -1,4 +1,59 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
+// Backend: aimock replays cockpit/langgraph/time-travel/angular/e2e/fixtures
+// (shared with the Angular example) into a real `langgraph dev`, so history,
+// checkpoints and forks are the real server's. Each turn saves three root
+// checkpoints (input, start, done); only completed ones are fork sources. The
+// React static server proxies /api to it, recording requests and injecting
+// holds, failures and the history/result faults below
+// (scripts/react-cockpit/langgraph-proxy.mjs).
+type HistoryEntry = {
+  checkpoint: { checkpoint_id: string };
+  next: string[];
+  values: { messages: { content: string }[] };
+};
+// Final state of a fork carries the completion markers; the session confirms
+// the fork with a state read, so the same edits apply there (`state: true`).
+const FINAL = { event: '^(values|checkpoints)$', ifKey: 'completed_turn_id' };
+const resultFaults: Record<string, object[]> = {
+  'Truncated history': [{ ...FINAL, op: 'truncate', path: 'completed_message_ids', keep: 2 }],
+  'Missing marker': [{ ...FINAL, op: 'omit', keys: ['completed_turn_id'] }],
+  'Stale marker': [{ ...FINAL, op: 'copy', from: 'messages.0.id', to: 'completed_turn_id' }],
+  'Equal marker': [{ ...FINAL, op: 'patch', set: { completed_answer_id: '$humanId' } }],
+  'Unknown tool': [{ ...FINAL, op: 'patch', path: 'messages.-1', set: { tool_calls: [{ id: 'unknown-tool', name: 'unknown', args: {} }] } }],
+};
+const threadOf = async (request: APIRequestContext) =>
+  ((await (await request.get('/__requests')).json()) as Wire[])
+    .find((row) => row.path.endsWith('/runs/stream'))!
+    .path.split('/')[3];
+const tipOf = async (request: APIRequestContext, threadId: string) =>
+  (await (await request.get('/__thread/' + threadId)).json()).checkpoint
+    .checkpoint_id as string;
+/** Someone else commits a newer root tip; it must not redirect this fork. */
+const advanceTip = async (request: APIRequestContext, threadId: string) =>
+  expect(
+    (
+      await request.post('/__thread/' + threadId + '/state', {
+        data: {
+          values: {
+            messages: [
+              { type: 'human', id: 'competing-human', content: 'Competing tip' },
+              { type: 'ai', id: 'competing-answer', content: 'Competing tip answer' },
+            ],
+          },
+        },
+      })
+    ).ok()
+  ).toBe(true);
+/** Refresh, returning the history page and the Select button for turn A. */
+async function refresh(page: Page) {
+  const response = page.waitForResponse((r) => r.url().endsWith('/history'));
+  await page.getByRole('button', { name: 'Refresh saved checkpoints' }).click();
+  const history: HistoryEntry[] = await (await response).json();
+  const a = history.findIndex(
+    (entry) => entry.next.length === 0 && entry.values.messages.length === 2
+  );
+  return { history, a, selectA: `Select checkpoint ${a + 1}` };
+}
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
 });
@@ -13,7 +68,7 @@ type Wire = {
   path: string;
   method: string;
   body: {
-    checkpoint?: { checkpoint_id: string };
+    checkpoint?: { checkpoint_id: string; checkpoint_ns?: string; checkpoint_map?: Record<string, string> };
     stream_mode?: string[];
     input?: { messages: { id: string; content: string }[] };
   };
@@ -27,12 +82,11 @@ test('fork adopts A rather than B and retained continuation ignores a competing 
   await page.goto('/langgraph/time-travel/react/');
   await send(page, 'A');
   await send(page, 'B');
-  await page.getByRole('button', { name: 'Refresh saved checkpoints' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Select checkpoint 3' })
-  ).toBeVisible();
+  const { history, a, selectA } = await refresh(page);
+  await expect(page.getByRole('button', { name: selectA })).toBeVisible();
+  const source = history[a].checkpoint.checkpoint_id;
   const before: Wire[] = await (await request.get('/__requests')).json();
-  await page.getByRole('button', { name: 'Select checkpoint 3' }).click();
+  await page.getByRole('button', { name: selectA }).click();
   expect(await (await request.get('/__requests')).json()).toEqual(before);
   await expect(transcript(page)).toContainText('Answer to B');
   await page.getByLabel('Message', { exact: true }).fill('C');
@@ -42,8 +96,9 @@ test('fork adopts A rather than B and retained continuation ignores a competing 
   await expect(transcript(page)).toContainText('Answer to A');
   await expect(transcript(page)).toContainText('Answer to C');
   await expect(transcript(page)).not.toContainText('Answer to B');
-  await expect(transcript(page)).not.toContainText('Transient chunk');
-  await request.post('/__advance-tip');
+  const threadId = await threadOf(request);
+  const forkTip = await tipOf(request, threadId);
+  await advanceTip(request, threadId);
   await send(page, 'D');
   await expect(transcript(page).getByRole('article')).toHaveCount(6);
   await expect(transcript(page)).toContainText('Answer to C');
@@ -52,37 +107,42 @@ test('fork adopts A rather than B and retained continuation ignores a competing 
   const wire: Wire[] = await (await request.get('/__requests')).json();
   const runs = wire.filter((row) => row.path.endsWith('/runs/stream'));
   expect(runs).toHaveLength(4);
-  expect(runs[2].body.checkpoint?.checkpoint_id).toBe('checkpoint-1');
-  expect(runs[3].body.checkpoint?.checkpoint_id).toBe('checkpoint-3');
+  expect(runs[2].body.checkpoint?.checkpoint_id).toBe(source);
+  expect(runs[3].body.checkpoint?.checkpoint_id).toBe(forkTip);
   expect(runs[2].body.stream_mode).toContain('checkpoints');
   expect(new Set(runs.map((row) => row.path)).size).toBe(1);
   expect(wire.filter((row) => row.path.endsWith('/threads'))).toHaveLength(1);
   expect(wire.filter((row) => row.path.endsWith('/history'))).toHaveLength(1);
   const reads = wire.filter((row) => row.path.endsWith('/state/checkpoint'));
   expect(reads.map((row) => row.body.checkpoint?.checkpoint_id)).toEqual([
-    'checkpoint-1',
-    'checkpoint-3',
-    'checkpoint-4',
+    source,
+    forkTip,
+    await tipOf(request, threadId),
   ]);
-  const states = await (await request.get('/__states')).json();
-  expect(
-    states
-      .find(
-        (state: { checkpoint: { checkpoint_id: string } }) =>
-          state.checkpoint.checkpoint_id === 'checkpoint-2'
-      )
-      .values.messages.map((message: { content: string }) => message.content)
-  ).toEqual(['A', 'Answer to A', 'B', 'Answer to B']);
+  // The saved B turn is untouched by the fork.
+  const b = history.find(
+    (entry) => entry.next.length === 0 && entry.values.messages.length === 4
+  )!;
+  expect(b.values.messages.map((message) => message.content)).toEqual([
+    'A',
+    'Answer to A',
+    'B',
+    'Answer to B',
+  ]);
 });
 
 async function prepareFork(page: Page) {
   await page.goto('/langgraph/time-travel/react/');
   await send(page, 'A');
   await send(page, 'B');
-  await page.getByRole('button', { name: 'Refresh saved checkpoints' }).click();
-  await page.getByRole('button', { name: 'Select checkpoint 3' }).click();
+  const { selectA } = await refresh(page);
+  await page.getByRole('button', { name: selectA }).click();
 }
 async function fork(page: Page, text = 'C') {
+  // A real fork never finalizes like this: the proxy edits its stream and the
+  // confirmation state read (injected data, like the authored variants).
+  if (text in resultFaults)
+    await page.request.post('/__stream/edit', { data: { ops: resultFaults[text], state: true } });
   await page.getByLabel('Message', { exact: true }).fill(text);
   await page.getByRole('button', { name: 'Fork selected checkpoint' }).click();
 }
@@ -94,7 +154,9 @@ test('explicit secondary history refresh after a fork cannot redirect primary ex
   await prepareFork(page);
   await fork(page);
   await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
-  await request.post('/__advance-tip');
+  const threadId = await threadOf(request);
+  const forkTip = await tipOf(request, threadId);
+  await advanceTip(request, threadId);
   await page.getByRole('button', { name: 'Refresh saved checkpoints' }).click();
   await expect(
     page.getByRole('button', { name: 'Refresh saved checkpoints' })
@@ -103,7 +165,7 @@ test('explicit secondary history refresh after a fork cannot redirect primary ex
   await send(page, 'D');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   const runs = wire.filter((row) => row.path.endsWith('/runs/stream'));
-  expect(runs.at(-1)?.body.checkpoint?.checkpoint_id).toBe('checkpoint-3');
+  expect(runs.at(-1)?.body.checkpoint?.checkpoint_id).toBe(forkTip);
   expect(wire.filter((row) => row.path.endsWith('/history'))).toHaveLength(2);
   await expect(transcript(page)).not.toContainText('Answer to B');
   await expect(transcript(page).getByRole('article')).toHaveCount(6);
@@ -115,7 +177,16 @@ test('duplicate, child, pending and malformed history references never receive S
 }) => {
   await page.goto('/langgraph/time-travel/react/');
   await send(page, 'A');
-  await request.post('/__bad-history');
+  // Duplicate, child-namespace and malformed-map copies of the newest entry.
+  await request.post('/__history-copies', {
+    data: {
+      copies: [
+        { index: 0 },
+        { index: 0, set: { 'checkpoint.checkpoint_id': 'child-root', 'checkpoint.checkpoint_ns': 'child:literal' } },
+        { index: 0, set: { 'checkpoint.checkpoint_id': 'invalid-map', 'checkpoint.checkpoint_map': null } },
+      ],
+    },
+  });
   await page.getByRole('button', { name: 'Refresh saved checkpoints' }).click();
   await expect(
     page.getByRole('region', { name: 'Last loaded checkpoint page' })
@@ -143,7 +214,7 @@ test('metadata eligibility does not replace mandatory completed-source preflight
   request,
 }) => {
   await prepareFork(page);
-  await request.post('/__unsafe-source');
+  await request.post('/__state/unsafe');
   await fork(page);
   await expect(page.locator('footer').getByRole('status')).toHaveText(
     'Start a new conversation to continue.'
@@ -163,14 +234,14 @@ test('Stop during exact source preparation issues no fork POST and New creates o
   request,
 }) => {
   await prepareFork(page);
-  await request.post('/__hold-state');
+  await request.post('/__hold/state');
   await fork(page);
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeState)
     .toBe(true);
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeState)
     .toBe(false);
   await request.post('/__release');
   let wire: Wire[] = await (await request.get('/__requests')).json();
@@ -195,12 +266,14 @@ test('page exit revokes a held fork stream without replaying it', async ({
   request,
 }) => {
   await prepareFork(page);
-  await request.post('/__hold-stream');
+  await request.post('/__hold/stream');
   await fork(page);
-  await expect(transcript(page)).toContainText('Transient chunk');
+  await expect
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
+    .toBe(true);
   await page.goto('about:blank');
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
     .toBe(false);
   await request.post('/__release');
   const wire: Wire[] = await (await request.get('/__requests')).json();
@@ -215,7 +288,7 @@ test('failed readonly history is protected and safe primary can continue', async
 }) => {
   await page.goto('/langgraph/time-travel/react/');
   await send(page, 'A');
-  await request.post('/__fail-history');
+  await request.post('/__history/failed');
   await page.getByRole('button', { name: 'Refresh saved checkpoints' }).click();
   await expect(page.getByRole('alert')).toHaveText(
     'The checkpoint page was not refreshed.'
@@ -235,14 +308,14 @@ test('Stop of a held history read releases the secondary session and blocks late
 }) => {
   await page.goto('/langgraph/time-travel/react/');
   await send(page, 'A');
-  await request.post('/__hold-history');
+  await request.post('/__hold/history');
   await page.getByRole('button', { name: 'Refresh saved checkpoints' }).click();
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeHistory)
     .toBe(true);
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeHistory)
     .toBe(false);
   await request.post('/__release');
   await expect(
@@ -380,22 +453,25 @@ test('full checkpoint maps survive exact source reads, fork POST and retained co
   page,
   request,
 }) => {
-  await request.post('/__mapped-checkpoints');
+  await request.post('/__mapped-checkpoints', {
+    data: { extra: { child: 'literal-map-value' } },
+  });
   await prepareFork(page);
   await fork(page);
   await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
+  const forkTip = await tipOf(request, await threadOf(request));
   await send(page, 'D');
   const entries: Wire[] = await (await request.get('/__requests')).json();
   const runs = entries.filter((row) => row.path.endsWith('/runs/stream'));
+  const source = runs[2].body.checkpoint!.checkpoint_id;
   expect(runs[2].body.checkpoint).toMatchObject({
     checkpoint_ns: '',
-    checkpoint_id: 'checkpoint-1',
-    checkpoint_map: { '': 'checkpoint-1', child: 'literal-map-value' },
+    checkpoint_map: { '': source, child: 'literal-map-value' },
   });
   expect(runs[3].body.checkpoint).toMatchObject({
     checkpoint_ns: '',
-    checkpoint_id: 'checkpoint-3',
-    checkpoint_map: { '': 'checkpoint-3', child: 'literal-map-value' },
+    checkpoint_id: forkTip,
+    checkpoint_map: { '': forkTip, child: 'literal-map-value' },
   });
   const reads = entries.filter((row) => row.path.endsWith('/state/checkpoint'));
   expect(reads[0].body.checkpoint).toEqual(runs[2].body.checkpoint);

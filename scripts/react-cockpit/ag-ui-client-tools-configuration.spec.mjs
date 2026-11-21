@@ -10,6 +10,14 @@ test('strict authored native client-tools entry is separate from LangGraph with 
     base: '/ag-ui/client-tools/react/',
     port: 4640,
     project: 'cockpit-ag-ui-client-tools-react',
+    backend: {
+      kind: 'aimock-ag-ui',
+      python: 'cockpit/ag-ui/client-tools/python',
+      fixtures: 'cockpit/ag-ui/client-tools/angular/e2e/fixtures',
+      backendPort: 5640,
+      aimockPort: 6640,
+      agentPath: '/agent',
+    },
   });
   assert.equal(
     reactCockpitConfiguration('client-tools').appPath,

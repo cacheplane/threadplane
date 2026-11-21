@@ -1,3 +1,6 @@
+// The preview server (`serve.mjs <example> --backend`) runs the real graph under
+// `langgraph dev` on aimock fixtures shared with the Angular example; controls
+// come from scripts/react-cockpit/langgraph-proxy.mjs.
 import { documentationModes } from './fixtures/workspace-controls';
 import { frameworkControl, selectFramework } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
@@ -83,6 +86,9 @@ test('the installed React frame streams and releases work when the public select
     'Local fixture stream lifetime is verified before deployment'
   );
   await request.post('http://127.0.0.1:4600/__reset');
+  await request.post('http://127.0.0.1:4600/__ready', { timeout: 180000 });
+  // "First" streams "Live partial" + " complete"; hold after the first chunk.
+  await request.post('http://127.0.0.1:4600/__hold/stream', { data: { afterText: 'Live partial' } });
   await page.goto('/docs/react/langgraph/guides/streaming?mode=run');
   const frame = page.frameLocator('iframe');
   await frame.getByLabel('Message', { exact: true }).fill('First');
@@ -99,7 +105,7 @@ test('the installed React frame streams and releases work when the public select
       async () =>
         (
           await (await request.get('http://127.0.0.1:4600/__lifetime')).json()
-        ).active
+        ).activeStream
     )
     .toBe(false);
   await selectFramework(page, 'react');

@@ -1,10 +1,46 @@
 import { test, expect, type Page } from '@playwright/test';
+// Backend: aimock replays cockpit/langgraph/deployment-runtime/angular/e2e/
+// fixtures (shared with the Angular example) into a real `langgraph dev`, whose
+// generate node writes the completion markers. The React static server proxies
+// /api to it, recording requests and injecting holds, failures and the
+// finalization faults below (scripts/react-cockpit/langgraph-proxy.mjs).
+// Root state arrives in both `values` and `checkpoints`; final state carries
+// the completion markers.
+const FINAL = { event: '^(values|checkpoints)$', ifKey: 'completed_turn_id' };
+const MARKERS = ['completed_turn_id', 'completed_answer_id', 'completed_message_ids'];
+const finalizationFaults: Record<string, object[]> = {
+  Interrupt: [{ ...FINAL, op: 'patch', set: { __interrupt__: [{ id: 'pause', value: { kind: 'unsupported' } }] } }],
+  Tool: [{ ...FINAL, op: 'append', path: 'messages', value: { type: 'tool', id: 'unsupported-tool', tool_call_id: '', content: 'Unsupported tool result' } }],
+  'Missing markers': [{ ...FINAL, op: 'omit', keys: MARKERS }],
+  'Wrong pair': [{ ...FINAL, op: 'patch', set: { completed_turn_id: 'wrong-human' } }],
+  'Truncated prefix': [
+    { ...FINAL, op: 'truncate', path: 'messages', keep: 2 },
+    { ...FINAL, op: 'truncate', path: 'completed_message_ids', keep: 2 },
+  ],
+  'Duplicate identity': [{ ...FINAL, op: 'duplicateLast', path: 'completed_message_ids' }],
+  // The previous turn's pair: the markers never advance to this turn.
+  'Old pair': [
+    { ...FINAL, op: 'copy', from: 'messages.-4.id', to: 'completed_turn_id' },
+    { ...FINAL, op: 'copy', from: 'messages.-3.id', to: 'completed_answer_id' },
+  ],
+  'No final values': [{ ...FINAL, op: 'drop' }, { event: '^updates$', op: 'drop' }],
+};
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
 });
 const conversation = (page: Page) =>
   page.getByRole('region', { name: 'Conversation', exact: true });
 async function send(page: Page, text: string) {
+  // Shapes a real graph never finalizes with: the proxy edits the stream the
+  // browser receives (injected data, like the authored fixture's variants).
+  if (text in finalizationFaults)
+    await page.request.post('/__stream/edit', { data: { ops: finalizationFaults[text] } });
+  // Without final values the session reads history: the saved turn is
+  // unfinalized there too.
+  if (text === 'No final values')
+    await page.request.post('/__history-values', { data: { omit: MARKERS } });
+  if (text === 'Hold')
+    await page.request.post('/__hold/stream', { data: { afterText: 'Reply to' } });
   await page.getByLabel('Message', { exact: true }).fill(text);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
 }
@@ -59,7 +95,8 @@ test('held incremental content settles to one canonical answer without duplicate
 }) => {
   await page.goto('/langgraph/deployment-runtime/react/');
   await send(page, 'Hold');
-  await expect(conversation(page)).toContainText('Live partial');
+  await expect(conversation(page)).toContainText('Reply to');
+  await expect(conversation(page)).not.toContainText('Reply to Hold');
   await expect(
     page.getByRole('button', { name: 'Stop', exact: true })
   ).toBeVisible();
@@ -69,8 +106,8 @@ test('held incremental content settles to one canonical answer without duplicate
   await request.post('/__release');
   await expect(page.locator('footer').getByRole('status')).toHaveText('Response complete.');
   await expect(conversation(page).locator('article')).toHaveCount(2);
+  // The streamed chunks and the saved answer are one message, not two.
   await expect(conversation(page)).toContainText('Reply to Hold');
-  await expect(conversation(page)).not.toContainText('Live partial');
 });
 for (const text of [
   'Error',
@@ -175,8 +212,8 @@ for (const exit of ['Stop', 'pagehide']) {
   }) => {
     await page.goto('/langgraph/deployment-runtime/react/');
     await send(page, 'Hold');
-    await expect(conversation(page)).toContainText('Live partial');
-    expect((await (await request.get('/__lifetime')).json()).active).toBe(true);
+    await expect(conversation(page)).toContainText('Reply to');
+    expect((await (await request.get('/__lifetime')).json()).activeStream).toBe(true);
     if (exit === 'Stop') {
       await page.getByRole('button', { name: 'Stop', exact: true }).click();
       await expect(page.locator('footer').getByRole('status')).toHaveText(
@@ -190,7 +227,7 @@ for (const exit of ['Stop', 'pagehide']) {
     }
     await expect
       .poll(
-        async () => (await (await request.get('/__lifetime')).json()).active
+        async () => (await (await request.get('/__lifetime')).json()).activeStream
       )
       .toBe(false);
     await request.post('/__release');

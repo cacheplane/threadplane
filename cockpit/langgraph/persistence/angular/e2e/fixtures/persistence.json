@@ -7,6 +7,42 @@
       "response": {
         "content": "Hi \u2014 how can I help you today?"
       }
+    },
+    {
+      "match": {
+        "userMessage": "Recall in a new conversation"
+      },
+      "response": {
+        "content": "No facts remembered."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Recall"
+      },
+      "response": {
+        "content": "You are Avery and prefer tea."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Error"
+      },
+      "response": {
+        "error": {
+          "message": "PRIVATE response",
+          "type": "server_error"
+        },
+        "status": 500
+      }
+    },
+    {
+      "match": {
+        "userMessage": ""
+      },
+      "response": {
+        "content": "Conversation saved."
+      }
     }
   ]
 }

@@ -7,6 +7,41 @@
       "response": {
         "content": "Angular signals are a reactive primitive (signal, computed, effect) that track dependencies to provide fine-grained reactivity and more efficient change detection. They let you update state synchronously via set()/update() and ensure only consumers that read an affected signal are re\u2011evaluated."
       }
+    },
+    {
+      "match": { "userMessage": "Alpha" },
+      "response": { "content": "Reply to Alpha" }
+    },
+    {
+      "match": { "userMessage": "Beta" },
+      "response": { "content": "Reply to Beta" }
+    },
+    {
+      "match": { "userMessage": "Gamma" },
+      "response": { "content": "Reply to Gamma" }
+    },
+    {
+      "match": { "userMessage": "Recovered" },
+      "response": { "content": "Reply to Recovered" }
+    },
+    {
+      "match": { "userMessage": "Hold" },
+      "response": { "content": "Reply to Hold, settled." },
+      "chunkSize": 9
+    },
+    {
+      "match": { "userMessage": "Model failure" },
+      "response": {
+        "error": {
+          "message": "PRIVATE model failure",
+          "type": "server_error"
+        },
+        "status": 500
+      }
+    },
+    {
+      "match": { "userMessage": "" },
+      "response": { "content": "Reply recorded." }
     }
   ]
 }

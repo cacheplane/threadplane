@@ -1,6 +1,6 @@
 /** Reproducible private packed-consumer proof; build core before running. */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   constants,
@@ -18,7 +18,6 @@ import {
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   emitCandidate,
@@ -80,90 +79,7 @@ export function readNativeReceipt(consumer, path) {
   }
 }
 
-export function readAcquisitionJournal(consumer, path, sourceHash) {
-  assert.equal(
-    path,
-    join(realpathSync(consumer), 'debug-native-acquisitions.jsonl')
-  );
-  const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
-  try {
-    const stat = fstatSync(fd);
-    assert.ok(stat.isFile() && stat.size <= 4096, 'Acquisition journal bound');
-    const buffer = Buffer.alloc(4097);
-    let length = 0,
-      n;
-    while (
-      length < buffer.length &&
-      (n = readSync(fd, buffer, length, buffer.length - length, null))
-    )
-      length += n;
-    assert.equal(length, stat.size);
-    assert.ok(length <= 4096);
-    const text = new TextDecoder('utf-8', { fatal: true }).decode(
-      buffer.subarray(0, length)
-    );
-    if (!text) return [];
-    assert.ok(text.endsWith('\n'));
-    const rows = text
-      .slice(0, -1)
-      .split('\n')
-      .map((line) => {
-        const row = JSON.parse(line);
-        assert.equal(line, JSON.stringify(row));
-        assert.equal(Object.keys(row).sort().join(), 'pgid,pid,sourceHash');
-        assert.equal(row.sourceHash, sourceHash);
-        assert.ok(
-          Number.isSafeInteger(row.pid) &&
-            row.pid > 1 &&
-            row.pid < 2147483648 &&
-            row.pgid === row.pid
-        );
-        return row;
-      });
-    assert.ok(
-      rows.length <= 4 && new Set(rows.map((r) => r.pid)).size === rows.length
-    );
-    return rows;
-  } finally {
-    closeSync(fd);
-  }
-}
-
-async function drainAcquiredWorkers(acquisitions) {
-  const receipts = [];
-  const absent = (id) => {
-    try {
-      process.kill(id, 0);
-      return false;
-    } catch (error) {
-      if (error.code === 'ESRCH') return true;
-      throw error;
-    }
-  };
-  for (const row of acquisitions) {
-    const receipt = { ...row, signals: [], absent: false };
-    receipts.push(receipt);
-    const gone = () => absent(row.pid) && absent(-row.pgid);
-    if (!gone()) {
-      for (const signal of ['SIGTERM', 'SIGKILL']) {
-        try {
-          process.kill(-row.pgid, signal);
-          receipt.signals.push(signal);
-        } catch (error) {
-          if (error.code !== 'ESRCH') throw error;
-        }
-        const deadline = Date.now() + (signal === 'SIGTERM' ? 250 : 2000);
-        while (!gone() && Date.now() < deadline) await delay(5);
-        if (gone()) break;
-      }
-    }
-    assert.ok(gone(), 'Owned detached worker PID/group must be absent');
-    receipt.absent = true;
-  }
-  return receipts;
-}
-
-export async function runNativeProbe({ failureLifetimeProof = false } = {}) {
+export async function runNativeProbe() {
   const root = realpathSync(fileURLToPath(new URL('../../', import.meta.url)));
   const node = realpathSync(process.execPath);
   assert.equal(
@@ -171,8 +87,10 @@ export async function runNativeProbe({ failureLifetimeProof = false } = {}) {
     '22',
     'Run the locked Node22 toolchain'
   );
+  // The consumer starts aimock + `langgraph dev` through `uv`.
+  const uv = execFileSync('which', ['uv'], { encoding: 'utf8' }).trim();
   const environment = {
-    PATH: `${dirname(node)}:/usr/bin:/bin`,
+    PATH: `${dirname(node)}:${dirname(realpathSync(uv))}:/usr/bin:/bin`,
     LANG: 'en_US.UTF-8',
     HOME: process.env.HOME,
     COREPACK_ENABLE_AUTO_PIN: '0',
@@ -203,16 +121,11 @@ export async function runNativeProbe({ failureLifetimeProof = false } = {}) {
   const report = { temporary, candidate, consumer, node, root, evidence };
 
   async function run() {
-    const fixture = realpathSync(
-      join(root, 'scripts/react-cockpit/chat-debug-fixture.mjs')
-    );
     const source = join(
       root,
       'fixtures/react-parity/langgraph-package/chat-debug-native-session.mjs'
     );
     copyFileSync(source, join(consumer, 'chat-debug-native-session.mjs'));
-    const journal = join(consumer, 'debug-native-acquisitions.jsonl');
-    writeFileSync(journal, '', { flag: 'wx', mode: 0o600 });
     const child = spawn(
       node,
       ['--test', '--test-concurrency=1', 'chat-debug-native-session.mjs'],
@@ -222,15 +135,11 @@ export async function runNativeProbe({ failureLifetimeProof = false } = {}) {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: {
           ...environment,
-          DEBUG_FIXTURE_MODULE_URL: pathToFileURL(fixture).href,
+          DEBUG_REPO_ROOT_URL: pathToFileURL(root + '/').href,
           DEBUG_NATIVE_RECEIPT_PATH: join(
             consumer,
             'debug-native-receipt.json'
           ),
-          DEBUG_NATIVE_ACQUISITIONS_PATH: journal,
-          ...(failureLifetimeProof
-            ? { DEBUG_NATIVE_PROBE_FAULT: 'exit-after-worker-acquired' }
-            : {}),
         },
       }
     );
@@ -285,9 +194,10 @@ export async function runNativeProbe({ failureLifetimeProof = false } = {}) {
           terminate(Error('Native stderr bound'));
         else stderr += bytes;
       });
+      // Includes the cold `langgraph dev` start.
       const timer = setTimeout(
-        () => terminate(Error('Native consumer 60s deadline')),
-        60000
+        () => terminate(Error('Native consumer 240s deadline')),
+        240000
       );
       child.once('close', (code, signal) => {
         clearTimeout(timer);
@@ -298,37 +208,9 @@ export async function runNativeProbe({ failureLifetimeProof = false } = {}) {
     });
     writeFileSync(privatePrefix + '.stdout.log', stdout);
     writeFileSync(privatePrefix + '.stderr.log', stderr);
-    report.acquisitions = readAcquisitionJournal(
-      consumer,
-      journal,
-      sha(fixture)
-    );
-    writeFileSync(
-      privatePrefix + '.acquisitions.jsonl',
-      readFileSync(journal),
-      { flag: 'wx', mode: 0o600 }
-    );
-    report.knownWorkerCleanup = await drainAcquiredWorkers(report.acquisitions);
     if (childReceipt.pid)
       for (const pid of [childReceipt.pid, -childReceipt.pgid])
         assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
-    if (failureLifetimeProof) {
-      assert.equal(
-        childReceipt.exitCode,
-        1,
-        'Node test runner reports the intentionally failed test worker'
-      );
-      assert.match(
-        stdout,
-        /exitCode: 7/,
-        'Actual native test worker exits after owned Python acquisition'
-      );
-      assert.equal(report.acquisitions.length, 1);
-      assert.ok(report.knownWorkerCleanup[0].signals.length > 0);
-      report.failureLifetimeProven = true;
-      safelyClosed = true;
-      return;
-    }
     try {
       const receipt = readNativeReceipt(
         consumer,
@@ -343,27 +225,18 @@ export async function runNativeProbe({ failureLifetimeProof = false } = {}) {
     } catch (error) {
       failure ??= error;
     }
+    // The consumer stopped the `langgraph dev` it started and saw no held
+    // proxy read or stream outlive the test.
     const cleanup = report.native?.cleanup;
-    const cleanups = [
-      cleanup,
-      report.native?.unicodeCleanup,
-      report.native?.projectionCleanup,
-    ];
     const complete =
       childReceipt.reaped &&
       childReceipt.exitCode === 0 &&
-      cleanups.every(
-        (c) =>
-          c &&
-          Object.values(c.active).every((n) => n === 0) &&
-          c.children.every((child) => child.reaped)
-      );
-    for (const cleanup of cleanups)
-      for (const child of cleanup?.children ?? []) {
-        if (child.pid)
-          for (const pid of [child.pid, -child.pgid])
-            assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
-      }
+      cleanup?.langgraph?.pid > 1 &&
+      cleanup.langgraph.absent === true;
+    if (cleanup?.langgraph?.pid)
+      assert.throws(() => process.kill(cleanup.langgraph.pid, 0), {
+        code: 'ESRCH',
+      });
     if (childReceipt.pid)
       for (const pid of [childReceipt.pid, -childReceipt.pgid])
         assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
@@ -372,11 +245,6 @@ export async function runNativeProbe({ failureLifetimeProof = false } = {}) {
     assert.ok(
       complete,
       'Native consumer must provide complete teardown receipt'
-    );
-    assert.deepEqual(
-      report.acquisitions.map((c) => c.pid).sort(),
-      cleanups.flatMap((c) => c.children.map((child) => child.pid)).sort(),
-      'Journal and cleanup must name exactly the same acquired worker owners'
     );
     assert.equal(report.native.turns.length, 2);
     safelyClosed = true;
@@ -401,10 +269,7 @@ export async function runNativeProbe({ failureLifetimeProof = false } = {}) {
     );
     await run();
     console.log(
-      (failureLifetimeProof
-        ? 'Installed consumer failure lifetime proof'
-        : 'Installed native Debug gate: two submits, two loads, exact checkpoints and cleanup verified') +
-        '. Evidence: ' +
+      'Installed native Debug gate: two submits, two loads, exact checkpoints and cleanup verified. Evidence: ' +
         evidence
     );
   } finally {
@@ -413,12 +278,10 @@ export async function runNativeProbe({ failureLifetimeProof = false } = {}) {
     report.sourceManifest = Object.fromEntries(
       [
         'cockpit/chat/debug/python/src/graph.py',
-        'cockpit/chat/debug/python/tests/providers.py',
-        'cockpit/chat/debug/python/tests/test_streaming.py',
         'cockpit/chat/debug/python/uv.lock',
-        'scripts/react-cockpit/chat-debug-wire.py',
-        'scripts/react-cockpit/chat-debug-fixture.mjs',
-        'scripts/react-cockpit/chat-debug-fixture.spec.mjs',
+        'cockpit/chat/debug/angular/e2e/fixtures/c-debug.json',
+        'scripts/react-cockpit/aimock-backend.mjs',
+        'scripts/react-cockpit/langgraph-proxy.mjs',
         'scripts/react-cockpit/chat-debug-native-session-probe.mjs',
         'fixtures/react-parity/langgraph-package/chat-debug-native-session.mjs',
       ].map((path) => [path, sha(join(root, path))])
@@ -439,12 +302,6 @@ if (
   process.argv[1] &&
   realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
-  assert.ok(
-    process.argv.slice(2).length === 0 ||
-      process.argv.slice(2).join() === '--failure-lifetime-proof',
-    'Unknown probe option'
-  );
-  await runNativeProbe({
-    failureLifetimeProof: process.argv[2] === '--failure-lifetime-proof',
-  });
+  assert.equal(process.argv.length, 2, 'Unknown probe option');
+  await runNativeProbe();
 }

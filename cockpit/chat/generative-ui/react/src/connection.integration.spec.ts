@@ -1,25 +1,40 @@
-import { createServer } from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
-import { expect, it, vi, onTestFinished } from 'vitest';
+import { resolve } from 'node:path';
+import { afterAll, beforeAll, expect, it, vi, onTestFinished } from 'vitest';
 import { createConnectedApplication } from './connection';
+
+/* eslint-disable @nx/enforce-module-boundaries -- Local test backend tooling is never bundled. */
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { createAimockBackend } from '../../../../../scripts/react-cockpit/aimock-backend.mjs';
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { createLanggraphProxy } from '../../../../../scripts/react-cockpit/langgraph-proxy.mjs';
+// @ts-expect-error Local test-only JavaScript has no published declaration.
+import { reactCockpitConfiguration } from '../../../../../scripts/react-cockpit/configuration.mjs';
+/* eslint-enable @nx/enforce-module-boundaries */
+
+// The real graph runs under `langgraph dev` on aimock fixtures shared with the
+// Angular example (cockpit/chat/generative-ui/angular/e2e/fixtures); the
+// in-process proxy records requests and holds or fails the next call
+// (scripts/react-cockpit/langgraph-proxy.mjs). Faults no model output can
+// reach (a throwing tool, malformed tool data, prose on the action parent)
+// are covered by cockpit/chat/generative-ui/python/tests/test_streaming.py:
+// test_malformed_failed_missing_or_uncorrelated_results_roll_back_entire_batch,
+// test_mixed_genuine_success_and_runtime_error_is_atomic and
+// test_genuine_nonempty_parent_fallback_no_wrapper_or_data.
+const { backend: config } = reactCockpitConfiguration('chat-generative-ui');
+const backend = createAimockBackend({ root: resolve(__dirname, '../../../../..'), backend: config });
+beforeAll(() => backend.ensure(), 180000);
+afterAll(() => backend.close());
+type Handler = (request: unknown, response: unknown, pathname: string) => Promise<boolean>;
 async function fixture() {
-  const location = new URL(
-    '../../../../../scripts/react-cockpit/chat-generative-ui-fixture.mjs',
-    import.meta.url
-  ).href;
-  const { createChatGenerativeUiFixture } = await import(
-    /* @vite-ignore */ location
-  );
-  const handle = createChatGenerativeUiFixture();
-  const server = createServer(async (req, res) => {
-    if (
-      !(await handle(
-        req,
-        res,
-        new URL(req.url ?? '', 'http://localhost').pathname
-      ))
-    ) {
+  const handle: Handler = createLanggraphProxy({
+    upstream: `http://127.0.0.1:${config.langgraphPort}`,
+    ready: () => backend.ensure(),
+  });
+  const server: Server = createServer(async (req, res) => {
+    if (!(await handle(req, res, new URL(req.url ?? '', 'http://localhost').pathname))) {
       res.writeHead(404);
       res.end();
     }
@@ -33,18 +48,12 @@ async function fixture() {
   });
   onTestFinished(async () => {
     await app.dispose();
-    await handle.close();
     server.closeAllConnections();
     await new Promise<void>((r) => server.close(() => r()));
   });
-  const control = async (body: object) => {
+  const control = async (path: string, body?: object) => {
     expect(
-      (
-        await fetch(base + '/__configure', {
-          method: 'POST',
-          body: JSON.stringify(body),
-        })
-      ).status
+      (await fetch(base + path, { method: 'POST', ...(body ? { body: JSON.stringify(body) } : {}) })).status
     ).toBe(200);
   };
   const requests = async () =>
@@ -93,24 +102,16 @@ it('actual default session confirms initial, cancelled filter, structural and pr
     requests.filter((r) => r.path.endsWith('/state/checkpoint'))
   ).toHaveLength(4);
 }, 60000);
-it('actual nonempty-parent render keeps prose and raw result without mounting a new layout', async () => {
-  const f = await fixture();
-  expect(await f.app.submit('Show dashboard')).toBe(true);
-  const prior = f.app.getSnapshot();
-  expect(await f.app.submit('prose render')).toBe(true);
-  expect(f.app.getSnapshot().surfaces).toEqual(prior.surfaces);
-  expect(f.app.getSnapshot().notices).toHaveLength(1);
-  const last = f.app.getSnapshot().toolCalls.at(-1);
-  expect(last?.status === 'complete' && last.result).not.toBe('rendered');
-}, 60000);
 it.each(['missing', 'invalid'])(
   'actual %s decision confirms an honest saved no-op with the prior dashboard',
   async (decisionFault) => {
     const f = await fixture();
     expect(await f.app.submit('Show dashboard')).toBe(true);
     const prior = f.app.getSnapshot();
-    await f.control({ decisionFault });
-    expect(await f.app.submit('Filter to cancelled flights')).toBe(true);
+    // Real model output that admission rejects (fixtures).
+    expect(
+      await f.app.submit(`Filter to cancelled flights (${decisionFault === 'missing' ? 'no' : 'invalid'} decision)`)
+    ).toBe(true);
     const saved = f.app.getSnapshot();
     expect(saved.dashboard).toEqual(prior.dashboard);
     expect(saved.surfaces).toEqual(prior.surfaces);
@@ -125,47 +126,12 @@ it.each(['missing', 'invalid'])(
   },
   60000
 );
-it.each(['failKpis', 'malformedTrend'])(
-  'actual %s structural rollback stays unconfirmed with real successful peers',
-  async (toolFault) => {
-    const f = await fixture();
-    await f.control({ partialDashboard: true });
-    expect(await f.app.submit('Show dashboard')).toBe(true);
-    const prior = f.app.getSnapshot();
-    expect(Object.keys(prior.dashboard).sort()).toEqual([
-      'flights_by_airline',
-      'recent_disruptions',
-    ]);
-    await f.control({ partialDashboard: false, [toolFault]: true });
-    expect(await f.app.submit('Show another dashboard')).toBe(false);
-    const failed = f.app.getSnapshot();
-    expect(failed.dashboard).toBe(prior.dashboard);
-    expect(failed.surfaces).toBe(prior.surfaces);
-    expect(failed.canSubmit).toBe(false);
-    const render = failed.toolCalls
-      .filter((c) => c.name === 'render_spec')
-      .at(-1);
-    expect(render?.status === 'complete' && render.result).not.toBe('rendered');
-    const peer = failed.toolCalls.find((c) => c.name === 'query_on_time_trend');
-    expect(peer?.status).toBe('complete');
-    const count = (await f.requests()).length;
-    expect(await f.app.submit('Try again')).toBe(false);
-    expect(await f.requests()).toHaveLength(count);
-    await f.app.newConversation();
-    expect(f.app.getSnapshot()).toMatchObject({
-      canSubmit: true,
-      surfaces: [],
-      dashboard: {},
-    });
-  },
-  60000
-);
 it('actual failed read-only interpretation retains the confirmed dashboard and requires New', async () => {
   const f = await fixture();
   expect(await f.app.submit('Show dashboard')).toBe(true);
   const prior = f.app.getSnapshot();
-  await f.control({ failInterpretation: true });
-  expect(await f.app.submit('Why is on-time low?')).toBe(false);
+  // The interpretation model fails for this prompt (fixture).
+  expect(await f.app.submit('Why is on-time low? (interpreter down)')).toBe(false);
   expect(f.app.getSnapshot().dashboard).toBe(prior.dashboard);
   expect(f.app.getSnapshot().surfaces).toBe(prior.surfaces);
   expect(f.app.getSnapshot().canSubmit).toBe(false);
@@ -177,13 +143,14 @@ it('actual pending task rejects confirmation and Stop preserves the confirmed bo
   const f = await fixture();
   expect(await f.app.submit('Show dashboard')).toBe(true);
   const prior = f.app.getSnapshot();
-  await f.control({ stateFault: 'pending-tasks' });
+  await f.control('/__state/unsafe');
   expect(await f.app.submit('Filter to cancelled flights')).toBe(false);
   expect(f.app.getSnapshot().surfaces).toBe(prior.surfaces);
   expect(f.app.getSnapshot().dashboard).toBe(prior.dashboard);
   expect(f.app.getSnapshot().canSubmit).toBe(false);
   await f.app.newConversation();
-  await f.control({ stateFault: null, holdStream: true });
+  await f.control('/__state/safe');
+  await f.control('/__hold/stream', { immediate: true });
   const pending = f.app.submit('Show dashboard');
   await vi.waitFor(async () =>
     expect(
@@ -214,7 +181,8 @@ it.each([
     const f = await fixture();
     expect(await f.app.submit('Show dashboard')).toBe(true);
     const prior = f.app.getSnapshot();
-    await f.control({ stateFault: fault });
+    // The confirmation's checkpoint read is rewritten (injected data).
+    await f.control('/__state/' + fault);
     expect(
       await f.app.submit(
         fault === 'malformed-layout'
@@ -235,7 +203,7 @@ it.each(['running', 'error'])(
   'actual independent exact run status %s cannot grant confirmation',
   async (runStatus) => {
     const f = await fixture();
-    await f.control({ runStatus });
+    await f.control('/__run-status/' + runStatus);
     expect(await f.app.submit('Show dashboard')).toBe(false);
     expect(f.app.getSnapshot()).toMatchObject({
       canSubmit: false,

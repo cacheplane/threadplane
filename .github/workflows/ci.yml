@@ -176,7 +176,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/configure-ci-apt.spec.mjs scripts/install-playwright-browser.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-queue-evidence.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-dependencies.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/ag-ui-client-tools-preparation.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/prepare-native-maf-fixture.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/prepare-native-strands-fixture.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
+        run: node --test scripts/configure-ci-apt.spec.mjs scripts/install-playwright-browser.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-queue-evidence.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-dependencies.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
       - name: Test Debug static configuration without Python workers
         run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Validate CI workflow guards
@@ -328,7 +328,7 @@ jobs:
       - name: Verify production builds strip the devtools hook
         if: matrix.lane == 'packages'
         run: npx nx run chat:test-devtools-bundle
-      - name: Verify canonical A2UI native fixtures
+      - name: Verify canonical A2UI native graph
         if: matrix.lane == 'packages'
         timeout-minutes: 15
         env:
@@ -351,10 +351,9 @@ jobs:
             PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
             "$A2UI_FIXTURE_ENV/bin/python" -E -B -m unittest discover -s cockpit/chat/a2ui/python/tests -p test_booking_form.py
           env -i HOME="$fixture_home" PATH="$fixture_path" LANG=C.UTF-8 \
-            A2UI_FIXTURE_UV="$uv_path" A2UI_FIXTURE_PYTHON="$python_path" \
-            A2UI_FIXTURE_ENV="$A2UI_FIXTURE_ENV" A2UI_FIXTURE_CACHE="$A2UI_FIXTURE_CACHE" \
+            UV_CACHE_DIR="$A2UI_FIXTURE_CACHE" UV_PYTHON="$python_path" \
             PYTHONDONTWRITEBYTECODE=1 LANGSMITH_TRACING=false LANGCHAIN_TRACING_V2=false \
-            "$node_path" --test --test-concurrency=1 scripts/react-cockpit/chat-a2ui-fixture.spec.mjs scripts/react-cockpit/chat-a2ui-configuration.spec.mjs scripts/react-cockpit/chat-a2ui-host.spec.mjs scripts/react-cockpit/chat-a2ui-readiness.spec.mjs
+            "$node_path" --test --test-concurrency=1 --test-force-exit scripts/react-cockpit/chat-a2ui-configuration.spec.mjs scripts/react-cockpit/chat-a2ui-native-probe.spec.mjs
       - name: Configure bounded Ubuntu package downloads
         if: matrix.lane == 'packages'
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
@@ -1112,11 +1111,6 @@ jobs:
         run: |
           npx nx test "${{ matrix.cap.angular }}" --reporters=default --skip-nx-cache
           npx nx lint "${{ matrix.cap.angular }}" --skip-nx-cache
-      - name: Verify canonical client tools fixture ownership
-        if: matrix.cap.angular == 'cockpit-ag-ui-client-tools-react'
-        run: |
-          npx nx run cockpit-ag-ui-client-tools-react:prepare-fixture --skip-nx-cache
-          node --test scripts/react-cockpit/ag-ui-client-tools-fixture.spec.mjs
       - name: Prepare native A2UI proof ownership
         if: matrix.cap.angular == 'cockpit-ag-ui-a2ui-react'
         run: |
@@ -1136,29 +1130,12 @@ jobs:
           mkdirSync(retain, { recursive: true });
           writeFileSync(join(retain, 'provenance.json'), JSON.stringify(provenance, null, 2) + '\n', { flag: 'wx' });
           NODE
-          timeout 1200s node --test --test-concurrency=1 --test-timeout=120000 scripts/react-cockpit/ag-ui-a2ui-configuration.spec.mjs scripts/react-cockpit/ag-ui-a2ui-preparation.spec.mjs scripts/react-cockpit/ag-ui-a2ui-fixture.spec.mjs scripts/react-cockpit/ag-ui-a2ui-native-probe.spec.mjs
-      - name: Verify native MAF fixture ownership
-        if: matrix.cap.angular == 'cockpit-runtimes-microsoft-agent-framework-react'
-        run: |
-          npx nx run cockpit-runtimes-microsoft-agent-framework-react:prepare-fixture --skip-nx-cache
-          node --test --test-concurrency=1 scripts/react-cockpit/native-maf-fixture.spec.mjs fixtures/react-parity/native-maf-react/server.spec.mjs
-          python -m unittest discover -s fixtures/react-parity/native-maf-react -p test_model.py
-      - name: Verify native Strands fixture ownership
-        if: matrix.cap.angular == 'cockpit-runtimes-aws-strands-react'
-        run: |
-          npx nx run cockpit-runtimes-aws-strands-react:prepare-fixture --skip-nx-cache
-          node --test --test-concurrency=1 scripts/react-cockpit/native-strands-fixture.spec.mjs fixtures/react-parity/native-strands-react/server.spec.mjs
-          python -m unittest discover -s fixtures/react-parity/native-strands-react -p test_model.py
-      - name: Verify native Theming fixture ownership
-        if: matrix.cap.angular == 'cockpit-chat-theming-react'
-        run: |
-          npx nx run cockpit-chat-theming-python:test --skip-nx-cache
-          node --test --test-concurrency=1 scripts/react-cockpit/chat-theming-fixture.spec.mjs
+          timeout 1200s node --test --test-concurrency=1 --test-timeout=120000 scripts/react-cockpit/ag-ui-a2ui-configuration.spec.mjs scripts/react-cockpit/ag-ui-a2ui-preparation.spec.mjs scripts/react-cockpit/ag-ui-a2ui-native-probe.spec.mjs
       - name: Verify native Debug fixture and installed session ownership
         if: matrix.cap.angular == 'cockpit-chat-debug-react'
         run: |
           npx nx run cockpit-chat-debug-python:test --skip-nx-cache
-          node --test --test-concurrency=1 scripts/react-cockpit/chat-debug-configuration.spec.mjs scripts/react-cockpit/chat-debug-fixture.spec.mjs
+          node --test --test-concurrency=1 scripts/react-cockpit/chat-debug-configuration.spec.mjs
           npx nx build core --skip-nx-cache
           node scripts/react-cockpit/chat-debug-native-session-probe.mjs
       - name: nx e2e ${{ matrix.cap.angular }}
@@ -1232,12 +1209,6 @@ jobs:
         uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57
         with:
           python-version: '3.12'
-      - name: Prepare frozen canonical client tools browser producer
-        if: matrix.suite == 'ag-ui'
-        run: node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs
-      - name: Prepare frozen canonical A2UI browser producer
-        if: matrix.suite == 'ag-ui'
-        run: node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs
       - name: Configure bounded Ubuntu package downloads
         run: sudo "$(command -v node)" scripts/configure-ci-apt.mjs
       - name: Install Chromium

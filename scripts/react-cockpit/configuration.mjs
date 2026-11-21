@@ -1,28 +1,79 @@
 /** Closed authored frontend selection; callers cannot supply filesystem paths. */
+
+/**
+ * aimock-backed example: the real graph runs under `langgraph dev` against the
+ * Angular example's aimock fixtures (see docs/superpowers/specs/
+ * 2026-11-18-react-cockpit-aimock-design.md). Convention: langgraph = port + 1000.
+ */
+const aimockLanggraph = (example, port) => Object.freeze({
+  kind: 'aimock-langgraph',
+  python: `cockpit/${example}/python`,
+  fixtures: `cockpit/${example}/angular/e2e/fixtures`,
+  langgraphPort: port + 1000,
+});
+/**
+ * aimock-backed AG-UI example: the example's uvicorn `src/server.py`
+ * (ag-ui-langgraph) against the Angular example's aimock fixtures.
+ * Convention: backend = port + 1000, aimock = port + 2000.
+ */
+const aimockAgUi = (example, port, agentPath = '/agent') => Object.freeze({
+  kind: 'aimock-ag-ui',
+  python: `cockpit/${example}/python`,
+  fixtures: `cockpit/${example}/angular/e2e/fixtures`,
+  backendPort: port + 1000,
+  // Fixed, so the proxy can read aimock's request journal (/__model-requests).
+  aimockPort: port + 2000,
+  // The server route the React example talks to (src/server.py).
+  agentPath,
+});
+/**
+ * aimock-backed Mastra example: the deployments/ag-ui-mastra Node service
+ * (the Angular example's backend) against the Angular example's aimock
+ * fixtures. The service serves /agent/<topic> and requires X-Internal-Token
+ * on every route but /ok; the proxy adds the local token. Convention as for
+ * aimockAgUi.
+ */
+const aimockMastra = (example, port) => Object.freeze({
+  kind: 'aimock-mastra',
+  service: 'deployments/ag-ui-mastra',
+  fixtures: `cockpit/${example}/angular/e2e/fixtures`,
+  backendPort: port + 1000,
+  aimockPort: port + 2000,
+  agentPath: '/agent/mastra',
+  // The route the React example posts to, under its base path.
+  publicAgentPath: '/agent',
+  headers: Object.freeze({ 'x-internal-token': 'dev-local-token' }),
+});
+/** LangGraph examples whose React e2e run on aimock + `langgraph dev`. */
+const AIMOCK_LANGGRAPH_TOPICS = new Set(['streaming', 'interrupts', 'memory', 'persistence', 'subgraphs', 'client-tools', 'deployment-runtime', 'time-travel', 'durable-execution']);
 export function reactCockpitConfiguration(topic = 'streaming') {
   if (topic === 'ag-ui-a2ui')
     return Object.freeze({
       topic: 'a2ui', library: 'ag-ui', adapter: 'ag-ui',
       appPath: 'cockpit/ag-ui/a2ui/react', base: '/ag-ui/a2ui/react/',
       port: 4647, project: 'cockpit-ag-ui-a2ui-react',
+      backend: aimockAgUi('ag-ui/a2ui', 4647),
     });
   if (topic === 'chat-a2ui')
     return Object.freeze({
       topic: 'a2ui', library: 'chat', adapter: 'langgraph',
       appPath: 'cockpit/chat/a2ui/react', base: '/chat/a2ui/react/',
       port: 4646, project: 'cockpit-chat-a2ui-react',
+      backend: aimockLanggraph('chat/a2ui', 4646),
     });
   if (topic === 'chat-debug')
     return Object.freeze({
       topic: 'debug', library: 'chat', adapter: 'langgraph',
       appPath: 'cockpit/chat/debug/react', base: '/chat/debug/react/',
       port: 4645, project: 'cockpit-chat-debug-react',
+      backend: aimockLanggraph('chat/debug', 4645),
     });
   if (topic === 'chat-theming')
     return Object.freeze({
       topic: 'theming', library: 'chat', adapter: 'langgraph',
       appPath: 'cockpit/chat/theming/react', base: '/chat/theming/react/',
       port: 4644, project: 'cockpit-chat-theming-react',
+      backend: aimockLanggraph('chat/theming', 4644),
     });
   if (topic === 'runtimes-aws-strands')
     return Object.freeze({
@@ -30,6 +81,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       appPath: 'cockpit/runtimes/aws-strands/react',
       base: '/runtimes/aws-strands/react/', port: 4643,
       project: 'cockpit-runtimes-aws-strands-react',
+      backend: aimockAgUi('runtimes/aws-strands', 4643),
     });
   if (topic === 'runtimes-microsoft-agent-framework')
     return Object.freeze({
@@ -37,18 +89,21 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       appPath: 'cockpit/runtimes/microsoft-agent-framework/react',
       base: '/runtimes/microsoft-agent-framework/react/', port: 4642,
       project: 'cockpit-runtimes-microsoft-agent-framework-react',
+      backend: aimockAgUi('runtimes/microsoft-agent-framework', 4642),
     });
   if (topic === 'runtimes-mastra')
     return Object.freeze({
       topic: 'mastra', library: 'runtimes', adapter: 'ag-ui',
       appPath: 'cockpit/runtimes/mastra/react', base: '/runtimes/mastra/react/',
       port: 4641, project: 'cockpit-runtimes-mastra-react',
+      backend: aimockMastra('runtimes/mastra', 4641),
     });
   if (topic === 'deep-agents-memory')
     return Object.freeze({
       topic: 'memory', library: 'deep-agents', adapter: 'langgraph',
       appPath: 'cockpit/deep-agents/memory/react', base: '/deep-agents/memory/react/',
       port: 4632, project: 'cockpit-deep-agents-memory-react',
+      backend: aimockLanggraph('deep-agents/memory', 4632),
     });
   if (topic === 'deep-agents-skills')
     return Object.freeze({
@@ -56,50 +111,59 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       appPath: 'cockpit/deep-agents/skills/react',
       base: '/deep-agents/skills/react/', port: 4631,
       project: 'cockpit-deep-agents-skills-react',
+      backend: aimockLanggraph('deep-agents/skills', 4631),
     });
   if (topic === 'deep-agents-subagents')
-    return Object.freeze({topic:'subagents',library:'deep-agents',adapter:'langgraph',appPath:'cockpit/deep-agents/subagents/react',base:'/deep-agents/subagents/react/',port:4630,project:'cockpit-deep-agents-subagents-react'});
+    return Object.freeze({topic:'subagents',library:'deep-agents',adapter:'langgraph',appPath:'cockpit/deep-agents/subagents/react',base:'/deep-agents/subagents/react/',port:4630,project:'cockpit-deep-agents-subagents-react',backend:aimockLanggraph('deep-agents/subagents', 4630)});
   if (topic === 'deep-agents-filesystem')
-    return Object.freeze({topic:'filesystem',library:'deep-agents',adapter:'langgraph',appPath:'cockpit/deep-agents/filesystem/react',base:'/deep-agents/filesystem/react/',port:4629,project:'cockpit-deep-agents-filesystem-react'});
+    return Object.freeze({topic:'filesystem',library:'deep-agents',adapter:'langgraph',appPath:'cockpit/deep-agents/filesystem/react',base:'/deep-agents/filesystem/react/',port:4629,project:'cockpit-deep-agents-filesystem-react',backend:aimockLanggraph('deep-agents/filesystem', 4629)});
   if (topic === 'deep-agents-planning')
     return Object.freeze({
       topic: 'planning', library: 'deep-agents', adapter: 'langgraph', appPath: 'cockpit/deep-agents/planning/react',
       base: '/deep-agents/planning/react/', port: 4628, project: 'cockpit-deep-agents-planning-react',
+      backend: aimockLanggraph('deep-agents/planning', 4628),
     });
   if (topic === 'chat-generative-ui')
     return Object.freeze({
       topic: 'generative-ui', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/generative-ui/react',
       base: '/chat/generative-ui/react/', port: 4627, project: 'cockpit-chat-generative-ui-react',
+      backend: aimockLanggraph('chat/generative-ui', 4627),
     });
   if (topic === 'chat-timeline')
     return Object.freeze({
       topic: 'timeline', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/timeline/react',
       base: '/chat/timeline/react/', port: 4626, project: 'cockpit-chat-timeline-react',
+      backend: aimockLanggraph('chat/timeline', 4626),
     });
   if (topic === 'chat-threads')
     return Object.freeze({
       topic: 'threads', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/threads/react',
       base: '/chat/threads/react/', port: 4625, project: 'cockpit-chat-threads-react',
+      backend: aimockLanggraph('chat/threads', 4625),
     });
   if (topic === 'chat-subagents')
     return Object.freeze({
       topic: 'subagents', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/subagents/react',
       base: '/chat/subagents/react/', port: 4624, project: 'cockpit-chat-subagents-react',
+      backend: aimockLanggraph('chat/subagents', 4624),
     });
   if (topic === 'chat-tool-calls')
     return Object.freeze({
       topic: 'tool-calls', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/tool-calls/react',
       base: '/chat/tool-calls/react/', port: 4623, project: 'cockpit-chat-tool-calls-react',
+      backend: aimockLanggraph('chat/tool-calls', 4623),
     });
   if (topic === 'chat-interrupts')
     return Object.freeze({
       topic: 'interrupts', library: 'chat', adapter: 'langgraph', appPath: 'cockpit/chat/interrupts/react',
       base: '/chat/interrupts/react/', port: 4622, project: 'cockpit-chat-interrupts-react',
+      backend: aimockLanggraph('chat/interrupts', 4622),
     });
   if (topic === 'chat-input')
     return Object.freeze({
       topic: 'input', adapter: 'langgraph', appPath: 'cockpit/chat/input/react',
       base: '/chat/input/react/', port: 4621, project: 'cockpit-chat-input-react',
+      backend: aimockLanggraph('chat/input', 4621),
     });
   if (topic === 'chat-messages')
     return Object.freeze({
@@ -109,13 +173,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/chat/messages/react/',
       port: 4620,
       project: 'cockpit-chat-messages-react',
-      // Same aimock fixtures and `langgraph dev` path as the Angular example.
-      backend: Object.freeze({
-        kind: 'aimock-langgraph',
-        python: 'cockpit/chat/messages/python',
-        fixtures: 'cockpit/chat/messages/angular/e2e/fixtures',
-        langgraphPort: 5620,
-      }),
+      backend: aimockLanggraph('chat/messages', 4620),
     });
   if (topic === 'render-computed-functions')
     return Object.freeze({
@@ -169,6 +227,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/ag-ui/subagents/react/',
       port: 4613,
       project: 'cockpit-ag-ui-subagents-react',
+      backend: aimockAgUi('ag-ui/subagents', 4613),
     });
   if (topic === 'ag-ui-json-render')
     return Object.freeze({
@@ -178,6 +237,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/ag-ui/json-render/react/',
       port: 4612,
       project: 'cockpit-ag-ui-json-render-react',
+      backend: aimockAgUi('ag-ui/json-render', 4612),
     });
   if (topic === 'ag-ui-client-tools')
     return Object.freeze({
@@ -185,6 +245,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       appPath: 'cockpit/ag-ui/client-tools/react',
       base: '/ag-ui/client-tools/react/', port: 4640,
       project: 'cockpit-ag-ui-client-tools-react',
+      backend: aimockAgUi('ag-ui/client-tools', 4640),
     });
   if (topic === 'ag-ui-tool-views')
     return Object.freeze({
@@ -194,6 +255,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/ag-ui/tool-views/react/',
       port: 4611,
       project: 'cockpit-ag-ui-tool-views-react',
+      backend: aimockAgUi('ag-ui/tool-views', 4611),
     });
   if (topic === 'ag-ui-interrupts')
     return Object.freeze({
@@ -203,6 +265,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/ag-ui/interrupts/react/',
       port: 4610,
       project: 'cockpit-ag-ui-interrupts-react',
+      backend: aimockAgUi('ag-ui/interrupts', 4610, '/agent/native'),
     });
   if (topic === 'ag-ui-streaming')
     return Object.freeze({
@@ -212,6 +275,7 @@ export function reactCockpitConfiguration(topic = 'streaming') {
       base: '/ag-ui/streaming/react/',
       port: 4609,
       project: 'cockpit-ag-ui-streaming-react',
+      backend: aimockAgUi('ag-ui/streaming', 4609),
     });
   if (
     ![
@@ -227,21 +291,25 @@ export function reactCockpitConfiguration(topic = 'streaming') {
     ].includes(topic)
   )
     throw new Error(`Unsupported React cockpit topic: ${topic}`);
+  const port = {
+    streaming: 4600,
+    interrupts: 4601,
+    memory: 4602,
+    'client-tools': 4603,
+    persistence: 4604,
+    'durable-execution': 4605,
+    subgraphs: 4606,
+    'time-travel': 4607,
+    'deployment-runtime': 4608,
+  }[topic];
   return Object.freeze({
     topic,
     appPath: `cockpit/langgraph/${topic}/react`,
     base: `/langgraph/${topic}/react/`,
-    port: {
-      streaming: 4600,
-      interrupts: 4601,
-      memory: 4602,
-      'client-tools': 4603,
-      persistence: 4604,
-      'durable-execution': 4605,
-      subgraphs: 4606,
-      'time-travel': 4607,
-      'deployment-runtime': 4608,
-    }[topic],
+    port,
     project: `cockpit-langgraph-${topic}-react`,
+    ...(AIMOCK_LANGGRAPH_TOPICS.has(topic)
+      ? { backend: aimockLanggraph(`langgraph/${topic}`, port) }
+      : {}),
   });
 }

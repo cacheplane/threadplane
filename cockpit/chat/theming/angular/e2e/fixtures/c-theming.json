@@ -1,10 +1,18 @@
 {
   "fixtures": [
     {
+      "match": { "systemMessage": "In 3-5 words, summarize" },
+      "response": { "content": "Aviation snippet title" }
+    },
+    {
       "match": { "userMessage": "Hello" },
       "response": {
         "content": "Hi! I'm the chat-theming demo. Try the theme picker buttons in the sidebar to switch between dark, light, ocean, and forest schemes."
       }
+    },
+    {
+      "match": { "userMessage": "" },
+      "response": { "content": "Lift is the upward force on a wing.\n\n```typescript\nconst lift = 'up';\n```" }
     }
   ]
 }

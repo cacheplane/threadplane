@@ -137,7 +137,10 @@ test('switching away disposes a held child stream and returning stays lazy', asy
   await page.goto('/docs/react/ag-ui/guides/subagents?mode=run');
   const frame = page.frameLocator('iframe');
   await expect(frame.getByRole('status')).toHaveText('Ready.');
-  await request.post(origin + '/__hold/child-text');
+  // Hold the real stream after the first specialist text (scripts/react-cockpit/ag-ui-proxy.mjs).
+  await request.post(origin + '/__hold/stream', {
+    data: { afterPattern: '"type": ?"TEXT_MESSAGE_CONTENT".*"subagentRunId"|"subagentRunId".*"type": ?"TEXT_MESSAGE_CONTENT"' },
+  });
   await frame.getByLabel('Message', { exact: true }).fill('sequential');
   const response = page.waitForResponse(
     (candidate) =>

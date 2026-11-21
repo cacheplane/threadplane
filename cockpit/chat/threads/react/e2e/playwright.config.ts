@@ -5,6 +5,9 @@ export default defineConfig({
   fullyParallel: false,
   use: { baseURL: 'http://127.0.0.1:4625', trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // aimock + real `langgraph dev`, shared with cockpit/chat/threads/angular.
+  globalSetup: './global-setup-impl.ts',
+  globalTeardown: require.resolve('../../../../../libs/e2e-harness/src/global-teardown'),
   webServer: {
     command: 'node scripts/react-cockpit/serve.mjs chat-threads',
     cwd: '../../../../..',

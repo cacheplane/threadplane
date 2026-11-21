@@ -1,3 +1,6 @@
+// The preview server (`serve.mjs <example> --backend`) runs the real graph under
+// `langgraph dev` on aimock fixtures shared with the Angular example; controls
+// come from scripts/react-cockpit/langgraph-proxy.mjs.
 import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
@@ -65,7 +68,8 @@ test('switching away releases a held child and returning starts empty', async ({
   );
   const origin = 'http://127.0.0.1:4606';
   await request.post(origin + '/__reset');
-  await request.post(origin + '/__hold-child');
+  await request.post(origin + '/__ready', { timeout: 180000 });
+  await request.post(origin + '/__hold/stream', { data: { afterChildMessage: true } });
   await page.goto('/docs/react/langgraph/guides/subgraphs?mode=run');
   const frame = page.frameLocator('iframe');
   await frame.getByLabel('Message', { exact: true }).fill('Research first');
@@ -84,7 +88,7 @@ test('switching away releases a held child and returning starts empty', async ({
       async () =>
         (
           await (await request.get(origin + '/__lifetime')).json()
-        ).active
+        ).activeStream
     )
     .toBe(false);
   await request.post(origin + '/__release');

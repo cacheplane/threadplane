@@ -1,3 +1,6 @@
+// The preview server (`serve.mjs <example> --backend`) runs the real graph under
+// `langgraph dev` on aimock fixtures shared with the Angular example; controls
+// come from scripts/react-cockpit/langgraph-proxy.mjs.
 import { test, expect, type Page, type FrameLocator } from '@playwright/test';
 import { selectFramework } from './fixtures/framework-controls';
 
@@ -208,8 +211,12 @@ for (const framework of ['react', 'angular'] as const) {
       if (request.method() === 'POST' && path.endsWith('/runs/stream'))
         submittedRuns.push(path);
     });
-    if (framework === 'react')
+    if (framework === 'react') {
       await request.post('http://127.0.0.1:4600/__reset');
+      await request.post('http://127.0.0.1:4600/__ready', { timeout: 180000 });
+      // "First" streams "Live partial" + " complete"; hold after the first chunk.
+      await request.post('http://127.0.0.1:4600/__hold/stream', { data: { afterText: 'Live partial' } });
+    }
     const caseId = `learning-${framework}-${testInfo.retry}`;
     await request.delete(`http://127.0.0.1:4399/__requests/${caseId}`);
     const host = await openWorkbench(page, framework);
@@ -417,6 +424,8 @@ test('React stop and failure remain distinct from application call settlement', 
   request,
 }) => {
   await request.post('http://127.0.0.1:4600/__reset');
+  await request.post('http://127.0.0.1:4600/__ready', { timeout: 180000 });
+  await request.post('http://127.0.0.1:4600/__hold/stream', { data: { afterText: 'Live partial' } });
   const host = await openWorkbench(page, 'react');
   await host
     .getByRole('button', { name: 'Live conversation', exact: true })
@@ -458,6 +467,8 @@ test('framework changes dispose an active React stream and restore opt-in replay
   request,
 }) => {
   await request.post('http://127.0.0.1:4600/__reset');
+  await request.post('http://127.0.0.1:4600/__ready', { timeout: 180000 });
+  await request.post('http://127.0.0.1:4600/__hold/stream', { data: { afterText: 'Live partial' } });
   const host = await openWorkbench(page, 'react');
   await host
     .getByRole('button', { name: 'Live conversation', exact: true })
@@ -471,7 +482,7 @@ test('framework changes dispose an active React stream and restore opt-in replay
       async () =>
         (
           await (await request.get('http://127.0.0.1:4600/__lifetime')).json()
-        ).active
+        ).activeStream
     )
     .toBe(true);
   await selectFramework(page, 'angular');
@@ -481,7 +492,7 @@ test('framework changes dispose an active React stream and restore opt-in replay
       async () =>
         (
           await (await request.get('http://127.0.0.1:4600/__lifetime')).json()
-        ).active
+        ).activeStream
     )
     .toBe(false);
 });

@@ -6,61 +6,27 @@ import {
 } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 
-interface CanonicalPost {
-  kind: 'actual-canonical-post';
-  threadId: string;
-  runId: string;
-  body: { messages: { content: string }[] };
-  rawBody: string;
-  response: { rawWire: string };
-}
-interface OwnerReceipt {
-  stats: {
-    ready: { pid: number };
-    closure: {
-      worker: boolean;
-      listener: boolean;
-      sockets: boolean;
-      responses: boolean;
-    };
-    requests: {
-      body: { protocolVersion: string };
-      rawBody: string;
-      sentWire: string[];
-      worker: {
-        events: unknown[];
-        observations: {
-          requestCount: number;
-          deniedNetwork: unknown[];
-          state: { values: { messages: unknown[] } };
-        };
-      };
-    }[];
-  };
-}
-interface GenerationReceipt {
-  holds: number;
+// Backend: aimock replays cockpit/ag-ui/a2ui/angular/e2e/fixtures (the
+// react-parity A2UI model's outputs for this flow) into the example's real
+// AG-UI server, whose real tools search flights and look one up. The
+// recording proxy (scripts/react-cockpit/ag-ui-proxy.mjs) records each agent
+// POST with the real events, and holds or fails the next run.
+interface AgentPost {
+  path: string;
+  body: { threadId: string; runId: string; protocolVersion: string; messages: { content: string }[] };
+  events: { type: string; threadId?: string; runId?: string }[];
+  held: boolean;
   closed: boolean;
-  proxyResponsesClosed: boolean;
-  owners: OwnerReceipt[];
-  requests: (CanonicalPost | { kind: 'fake-negative-transport' })[];
 }
-interface ManagerReceipt {
-  current: GenerationReceipt;
-  archived: GenerationReceipt[];
-}
-
 const base = '/ag-ui/a2ui/react/';
 const current = (page: Page) =>
   page.getByRole('region', { name: 'Current flight preview', exact: true });
 const earlier = (page: Page) =>
   page.getByRole('region', { name: 'Earlier flight preview', exact: true });
-const lifetime = async (request: APIRequestContext): Promise<ManagerReceipt> =>
+const lifetime = async (request: APIRequestContext): Promise<{ active: boolean; openResponses: number }> =>
   (await request.get('/__lifetime')).json();
-const posts = (receipt: ManagerReceipt) =>
-  receipt.current.requests.filter(
-    (record): record is CanonicalPost => record.kind === 'actual-canonical-post'
-  );
+const posts = async (request: APIRequestContext): Promise<AgentPost[]> =>
+  (await request.get('/__requests')).json();
 async function form(page: Page) {
   await page.getByRole('button', { name: 'Try a flight request' }).click();
   await page
@@ -93,37 +59,22 @@ test.beforeEach(async ({ page, request }) => {
   ).toBeVisible();
   await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText('Ready.');
 });
-test.afterEach(async ({ request }, info) => {
-  const receipt = await lifetime(request),
-    path = info.outputPath('canonical-manager-receipt.json');
-  await writeFile(path, JSON.stringify(receipt, null, 2));
-  await info.attach('canonical-manager-receipt', {
-    path,
-    contentType: 'application/json',
-  });
-  // Archive and verify all canonical children before another browser case starts.
-  expect((await request.post('/__reset')).ok()).toBe(true);
-  const closed = await lifetime(request);
-  for (const generation of closed.archived) {
-    expect(generation.closed).toBe(true);
-    expect(generation.proxyResponsesClosed).toBe(true);
-    for (const owner of generation.owners)
-      expect(owner.stats.closure).toEqual({
-        worker: true,
-        listener: true,
-        sockets: true,
-        responses: true,
-      });
-  }
+test.afterEach(async ({ page, request }, info) => {
+  const path = info.outputPath('agent-requests.json');
+  await writeFile(path, JSON.stringify(await posts(request), null, 2));
+  await info.attach('agent-requests', { path, contentType: 'application/json' });
+  // No proxied agent stream outlives the case.
+  await page.goto('about:blank');
+  await expect.poll(async () => (await lifetime(request)).openResponses).toBe(0);
 });
 
 test('four actual native turns preserve edited Search, Select and server-restored Modify', async ({
   page,
   request,
 }, info) => {
-  expect(posts(await lifetime(request))).toHaveLength(0);
+  expect(await posts(request)).toHaveLength(0);
   await page.getByRole('button', { name: 'Try a flight request' }).click();
-  expect(posts(await lifetime(request))).toHaveLength(0);
+  expect(await posts(request)).toHaveLength(0);
   await page
     .getByRole('textbox', { name: 'Message', exact: true })
     .press('Enter');
@@ -169,13 +120,10 @@ test('four actual native turns preserve edited Search, Select and server-restore
       value
     );
   await expect(earlier(page)).toHaveCount(3);
-  const receipt = await lifetime(request),
-    requests = posts(receipt);
+  const requests = await posts(request);
   expect(requests).toHaveLength(4);
-  expect(receipt.current.owners).toHaveLength(1);
-  const owner = receipt.current.owners[0];
-  expect(new Set(requests.map((record) => record.threadId)).size).toBe(1);
-  expect(new Set(requests.map((record) => record.runId)).size).toBe(4);
+  expect(new Set(requests.map((record) => record.body.threadId)).size).toBe(1);
+  expect(new Set(requests.map((record) => record.body.runId)).size).toBe(4);
   const action = (turn: number) => {
     const message = requests[turn].body.messages.at(-1);
     expect(message).toBeDefined();
@@ -199,19 +147,12 @@ test('four actual native turns preserve edited Search, Select and server-restore
     context: { flightId: 'UA204' },
   });
   expect(action(3).name).toBe('modifySearch');
-  for (const [index, record] of owner.stats.requests.entries()) {
-    const observation = record.worker.observations;
-    expect(observation.requestCount).toBe(index + 1);
-    expect(observation.state.values.messages).toHaveLength((index + 1) * 2);
-    expect(observation.deniedNetwork).toEqual([]);
+  // Each turn is one real run that the server finished for that thread and run.
+  for (const record of requests) {
     expect(record.body.protocolVersion).toBe('1.0');
-    expect(record.rawBody).toBe(requests[index].rawBody);
-    expect(record.sentWire.join('')).toBe(requests[index].response.rawWire);
-    expect(record.worker.events).toContainEqual({
-      type: 'RUN_FINISHED',
-      threadId: requests[index].threadId,
-      runId: requests[index].runId,
-    });
+    expect(record.events).toContainEqual(
+      expect.objectContaining({ type: 'RUN_FINISHED', threadId: record.body.threadId, runId: record.body.runId })
+    );
   }
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
@@ -240,10 +181,11 @@ test('invalid drafts focus the field and repeated busy Search sends exactly one 
     await expect(passengers).toHaveValue(value);
     await expect(passengers).toBeFocused();
     await expect(passengers).toHaveAttribute('aria-invalid', 'true');
-    expect(posts(await lifetime(request))).toHaveLength(1);
+    expect(await posts(request)).toHaveLength(1);
   }
   await edit(page);
-  await request.post('/__hold/stream');
+  // A2UI runs stream structured tool calls, no text: hold right after the start.
+  await request.post('/__hold/stream', { data: { afterType: 'RUN_STARTED' } });
   await current(page)
     .getByRole('button', { name: 'Search flights', exact: true })
     .evaluate((button: HTMLButtonElement) => {
@@ -251,9 +193,9 @@ test('invalid drafts focus the field and repeated busy Search sends exactly one 
       button.click();
     });
   await expect
-    .poll(async () => (await lifetime(request)).current.holds)
-    .toBe(1);
-  expect(posts(await lifetime(request))).toHaveLength(2);
+    .poll(async () => (await lifetime(request)).active)
+    .toBe(true);
+  expect(await posts(request)).toHaveLength(2);
   await expect(
     page.getByRole('button', { name: 'Send', exact: true })
   ).toBeDisabled();
@@ -264,26 +206,31 @@ test('invalid drafts focus the field and repeated busy Search sends exactly one 
   await expect(
     current(page).getByRole('button', { name: 'Select', exact: true })
   ).toBeVisible();
-  expect(posts(await lifetime(request))).toHaveLength(2);
+  expect(await posts(request)).toHaveLength(2);
 });
 
-test('Stop, fake transport error, New and held old completion cannot regain authority', async ({
+test('Stop, failed transport, New and a held old run cannot regain authority', async ({
   page,
   request,
 }) => {
   await form(page);
   await edit(page);
-  await request.post('/__hold/stream');
+  // Hold every run right after it starts until /__hold/off.
+  await request.post('/__hold/stream', { data: { afterType: 'RUN_STARTED', persist: true } });
   await current(page)
     .getByRole('button', { name: 'Search flights', exact: true })
     .click();
   await expect
-    .poll(async () => (await lifetime(request)).current.holds)
-    .toBe(1);
+    .poll(async () => (await lifetime(request)).active)
+    .toBe(true);
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
     'Start a new conversation to continue.'
   );
+  // Stop closes the held stream itself: nothing late can reach the page.
+  await expect
+    .poll(async () => (await lifetime(request)).active)
+    .toBe(false);
   await expect(
     earlier(page).getByLabel('Passengers', { exact: true })
   ).toHaveValue('003');
@@ -295,21 +242,16 @@ test('Stop, fake transport error, New and held old completion cannot regain auth
     .click();
   await request.post('/__hold/off');
   await form(page);
-  // The new owner completes while the old encoded response is still held.
-  await expect
-    .poll(async () => (await lifetime(request)).current.holds)
-    .toBe(1);
   await request.post('/__release');
-  const first = await lifetime(request);
-  expect(first.current.owners).toHaveLength(2);
-  expect(
-    new Set(first.current.owners.map((owner) => owner.stats.ready.pid)).size
-  ).toBe(2);
   await expect(earlier(page)).toHaveCount(0);
+  const threads = new Set((await posts(request)).map((record) => record.body.threadId));
+  expect(threads.size).toBe(2);
   await page
     .getByRole('button', { name: 'New conversation', exact: true })
     .click();
-  await request.post('/__fail-transport');
+  // The next agent POST answers 500 without reaching the server.
+  await request.post('/__fail-stream');
+  const beforeFailure = (await posts(request)).length;
   await page.getByRole('button', { name: 'Try a flight request' }).click();
   await page
     .getByRole('textbox', { name: 'Message', exact: true })
@@ -317,34 +259,33 @@ test('Stop, fake transport error, New and held old completion cannot regain auth
   await expect(page.getByRole('status', { name: 'Conversation status' })).toHaveText(
     'Start a new conversation to continue.'
   );
-  expect(
-    (await lifetime(request)).current.requests.filter(
-      (record) => record.kind === 'fake-negative-transport'
-    )
-  ).toHaveLength(1);
+  expect(await posts(request)).toHaveLength(beforeFailure + 1);
   await page
     .getByRole('button', { name: 'New conversation', exact: true })
     .click();
   await form(page);
-  await request.post('/__hold/stream');
+  await request.post('/__hold/stream', { data: { afterType: 'RUN_STARTED', persist: true } });
   await edit(page);
   await current(page)
     .getByRole('button', { name: 'Search flights', exact: true })
     .click();
   await expect
-    .poll(async () => (await lifetime(request)).current.holds)
-    .toBe(1);
+    .poll(async () => (await lifetime(request)).active)
+    .toBe(true);
   await page
     .getByRole('button', { name: 'New conversation', exact: true })
     .click();
+  await expect
+    .poll(async () => (await lifetime(request)).active)
+    .toBe(false);
   await request.post('/__hold/off');
   await form(page);
   await request.post('/__release');
-  const before = posts(await lifetime(request)).length;
+  const before = (await posts(request)).length;
   await page.evaluate(() =>
     window.dispatchEvent(new PageTransitionEvent('pagehide'))
   );
   await request.post('/__release');
-  expect(posts(await lifetime(request))).toHaveLength(before);
+  expect(await posts(request)).toHaveLength(before);
   await expect(page.locator('main')).toHaveCount(0);
 });

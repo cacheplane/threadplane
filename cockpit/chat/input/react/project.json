@@ -3,6 +3,7 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/chat/input/react/src",
   "projectType": "application",
+  "implicitDependencies": ["cockpit-chat-input-angular", "cockpit-chat-input-python"],
   "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
   "targets": {
     "build": {
@@ -32,6 +33,7 @@
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
+      "inputs": ["default", "reactAimockBackend"],
       "dependsOn": [
         "build",
         {

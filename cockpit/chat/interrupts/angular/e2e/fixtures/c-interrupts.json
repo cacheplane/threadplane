@@ -2,6 +2,27 @@
   "fixtures": [
     {
       "match": {
+        "systemMessage": "In 3-5 words, summarize",
+        "userMessage": "(title fails)"
+      },
+      "response": {
+        "error": {
+          "message": "PRIVATE title model failure",
+          "type": "server_error"
+        },
+        "status": 500
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "In 3-5 words, summarize"
+      },
+      "response": {
+        "content": "Aviation snippet title"
+      }
+    },
+    {
+      "match": {
         "userMessage": "Book me on UA123.",
         "model": "gpt-5-mini",
         "turnIndex": 0,
@@ -71,6 +92,172 @@
         "systemHash": "18e3aede",
         "toolsHash": "3644d4ff"
       }
+    },
+    {
+      "match": {
+        "toolCallId": "ic-padded-0"
+      },
+      "response": {
+        "content": "Your booking request is complete."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "ic-aa404-0"
+      },
+      "response": {
+        "content": "Your booking request is complete."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "ic-ua123-0"
+      },
+      "response": {
+        "content": "Your booking request is complete."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "ic-read-0"
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "book_flight",
+            "arguments": "{\"flight_number\": \"UA123\"}",
+            "id": "ic-read-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "ic-read-1"
+      },
+      "response": {
+        "content": "Your booking request is complete."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "ic-unknown-0"
+      },
+      "response": {
+        "content": "I could not find that flight, so nothing was booked."
+      }
+    },
+    {
+      "match": {
+        "toolCallId": "ic-multi-1"
+      },
+      "response": {
+        "content": "Your booking request is complete."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Book padded flight.",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "book_flight",
+            "arguments": "{\"flight_number\": \"  ua123  \"}",
+            "id": "ic-padded-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Book AA404.",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "book_flight",
+            "arguments": "{\"flight_number\": \"AA404\"}",
+            "id": "ic-aa404-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Book UA123.",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "book_flight",
+            "arguments": "{\"flight_number\": \"UA123\"}",
+            "id": "ic-ua123-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Read then book UA123.",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "lookup_flight",
+            "arguments": "{\"flight_number\": \"UA123\"}",
+            "id": "ic-read-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Book unknown flight.",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "book_flight",
+            "arguments": "{\"flight_number\": \"ZZ999\"}",
+            "id": "ic-unknown-0"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Book multiple flights.",
+        "hasToolResult": false
+      },
+      "response": {
+        "toolCalls": [
+          {
+            "name": "book_flight",
+            "arguments": "{\"flight_number\": \"UA123\"}",
+            "id": "ic-multi-0"
+          },
+          {
+            "name": "book_flight",
+            "arguments": "{\"flight_number\": \"AA404\"}",
+            "id": "ic-multi-1"
+          }
+        ]
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Explain aviation"
+      },
+      "response": {
+        "content": "An aviation answer.\n\n```typescript\nconst approved = true;\n```"
+      },
+      "chunkSize": 3
     }
   ]
 }

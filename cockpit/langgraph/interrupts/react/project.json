@@ -3,6 +3,7 @@
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "cockpit/langgraph/interrupts/react/src",
   "projectType": "application",
+  "implicitDependencies": ["cockpit-langgraph-interrupts-angular", "cockpit-langgraph-interrupts-python"],
   "tags": ["scope:cockpit-examples", "scope:cockpit-e2e", "framework:react"],
   "targets": {
     "build": {
@@ -27,6 +28,7 @@
     "e2e": {
       "executor": "@nx/playwright:playwright",
       "cache": false,
+      "inputs": ["default", "reactAimockBackend"],
       "dependsOn": ["build"],
       "options": {
         "config": "cockpit/langgraph/interrupts/react/e2e/playwright.config.ts",

@@ -1,4 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
+// Backend: aimock replays cockpit/langgraph/interrupts/angular/e2e/fixtures
+// (shared with the Angular example) into a real `langgraph dev`, which drafts
+// the refund, raises the real approval interrupt and issues or cancels it on
+// resume. The React static server proxies /api to it, recording requests and
+// injecting holds, failures and unsupported interrupt batches
+// (scripts/react-cockpit/langgraph-proxy.mjs).
 
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
@@ -7,7 +13,7 @@ test('shows incremental draft text before publishing the complete approval batch
   page,
   request,
 }) => {
-  await request.post('/__hold-draft');
+  await request.post('/__hold/stream', { data: { afterText: 'Refund draft' } });
   await pause(page);
   await expect(
     page.getByRole('region', { name: 'Conversation' })
@@ -16,7 +22,7 @@ test('shows incremental draft text before publishing the complete approval batch
     page.getByRole('region', { name: 'Refund approval required' })
   ).toHaveCount(0);
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
     .toBe(true);
   await request.post('/__release');
   await expect(
@@ -60,7 +66,7 @@ test('uncertain thread creation is protected and never replayed', async ({
   ).toHaveLength(0);
 });
 for (const [label, response, final, record] of [
-  ['Issue refund', { approved: true }, 'Simulated refund of $47.50', /Approved: Issue refund/],
+  ['Issue refund', { approved: true }, 'Refund of $47.50 issued', /Approved: Issue refund/],
   ["Don't refund", { approved: false }, 'Refund cancelled', /Declined: Issue refund/],
 ] as const) {
   test(`real SDK ${label} resumes the same confirmed thread without text`, async ({
@@ -131,7 +137,7 @@ test('edits an amount explicitly and rejects blank or negative values', async ({
   await page.getByRole('button', { name: 'Approve edited amount' }).click();
   await expect(
     page.getByRole('region', { name: 'Conversation' })
-  ).toContainText('Simulated refund of $12.25');
+  ).toContainText('Refund of $12.25 issued');
   const proof = await (await request.get('/__requests')).json();
   expect(
     proof.filter((entry: { path: string }) =>
@@ -143,8 +149,12 @@ test('held decision blocks duplicate clicks and Stop requires explicit fresh wor
   page,
   request,
 }) => {
-  await request.post('/__hold-resume');
   await pause(page);
+  await expect(
+    page.getByRole('region', { name: 'Refund approval required' })
+  ).toBeVisible();
+  // The next stream is the resume; its graph emits no tokens before the result.
+  await request.post('/__hold/stream', { data: { immediate: true } });
   const button = page.getByRole('button', { name: 'Issue refund' });
   await button.evaluate((element: HTMLButtonElement) => {
     element.click();
@@ -158,7 +168,7 @@ test('held decision blocks duplicate clicks and Stop requires explicit fresh wor
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await expect(page.locator('footer').getByRole('status')).toContainText('Stopped');
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
     .toBe(false);
   const proof = await (await request.get('/__requests')).json();
   expect(
@@ -184,6 +194,11 @@ for (const text of ['Unknown', 'Malformed', 'Multiple']) {
     page,
     request,
   }) => {
+    // Malformed: the extracted amount is -1, so the real interrupt carries it.
+    // Unknown/Multiple: a real graph raises one supported interrupt per pause,
+    // so the proxy rewrites the batch the browser receives (injected data).
+    if (text !== 'Malformed')
+      await request.post('/__interrupt/' + text.toLowerCase());
     await pause(page, text);
     await expect(page.locator('footer').getByRole('status')).toHaveText(
       'Start a new conversation to continue.'
@@ -204,8 +219,11 @@ test('uncertain resume fails without replay or leaked diagnostics', async ({
   page,
   request,
 }) => {
-  await request.post('/__fail-resume');
   await pause(page);
+  await expect(
+    page.getByRole('region', { name: 'Refund approval required' })
+  ).toBeVisible();
+  await request.post('/__fail-stream');
   await page.getByRole('button', { name: 'Issue refund' }).click();
   await expect(page.getByRole('alert')).toHaveText(
     'The LangGraph request failed.'
@@ -222,11 +240,14 @@ test('pagehide disposes a held resume and fences late publication', async ({
   page,
   request,
 }) => {
-  await request.post('/__hold-resume');
   await pause(page);
+  await expect(
+    page.getByRole('region', { name: 'Refund approval required' })
+  ).toBeVisible();
+  await request.post('/__hold/stream', { data: { immediate: true } });
   await page.getByRole('button', { name: 'Issue refund' }).click();
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
     .toBe(true);
   await page.evaluate(() =>
     window.dispatchEvent(new PageTransitionEvent('pagehide'))
@@ -235,7 +256,7 @@ test('pagehide disposes a held resume and fences late publication', async ({
     0
   );
   await expect
-    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .poll(async () => (await (await request.get('/__lifetime')).json()).activeStream)
     .toBe(false);
   await request.post('/__release');
   await expect(page.getByRole('region', { name: 'Conversation' })).toHaveCount(

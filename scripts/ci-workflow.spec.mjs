@@ -59,7 +59,7 @@ it('reuses only same-run dependencies while preserving every isolated Cockpit pr
   const originalSteps = consumer.steps.filter(step => ![download, restore].includes(step))
     .map(step => step === nodeSetup ? { ...step, with: { ...step.with, 'node-version': 22 } } : step);
   assert.equal(createHash('sha256').update(JSON.stringify(originalSteps)).digest('hex'),
-    '47b703c5eebce05e9b71f4e06acf7865a59a03587296b28752e88ab463389323',
+    '3651222de6f8c30595d37f54c28a98c0e84e16ab92d243d5c1245273189646b6',
     'all original setup, Python, source, fixture, browser and artifact steps remain identical except the verified Node patch pin');
 });
 
@@ -608,36 +608,18 @@ it('requires every preview build shard before scoped PR success and preserves fo
   assert.match(step, /RESULT_WEBSITE_PREVIEW_BUILD: \$\{\{ needs.website-preview-build.result \}\}/);
 });
 
-it('runs native MAF Node configuration, preparation, actual fixture and model checks in scoped CI', async () => {
+it('runs the MAF React e2e on aimock + the real server, with no fixture preparation step', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const scope = readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier');
-  for (const file of ['runtimes-microsoft-agent-framework-configuration.spec.mjs', 'prepare-native-maf-fixture.spec.mjs']) assert.ok(scope.includes(`scripts/react-cockpit/${file}`));
-  const fleet = readJobBlock(workflow, 'cockpit-e2e');
-  const step = readNamedStep(fleet, 'Verify native MAF fixture ownership');
-  assert.match(step, /if: matrix\.cap\.angular == 'cockpit-runtimes-microsoft-agent-framework-react'/);
-  const preparation = step.indexOf('npx nx run cockpit-runtimes-microsoft-agent-framework-react:prepare-fixture --skip-nx-cache');
-  const fixture = step.indexOf('node --test --test-concurrency=1 scripts/react-cockpit/native-maf-fixture.spec.mjs');
-  assert.ok(preparation >= 0 && fixture > preparation);
-  assert.match(step, /python -m unittest discover -s fixtures\/react-parity\/native-maf-react -p test_model\.py/);
-  assert.match(step, /fixtures\/react-parity\/native-maf-react\/server\.spec\.mjs/);
-  assert.ok(fleet.includes('python-version: \'3.12\''));
-  assert.ok(!step.includes('THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT'));
+  assert.ok(scope.includes('scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs'));
+  assert.doesNotMatch(workflow, /native-maf|cockpit-runtimes-microsoft-agent-framework-react:prepare-fixture/);
 });
 
-it('runs native Strands Node configuration, preparation, actual fixture and model checks in scoped CI', async () => {
+it('runs the Strands React e2e on aimock + the real server, with no fixture preparation step', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const scope = readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier');
-  for (const file of ['runtimes-aws-strands-configuration.spec.mjs', 'prepare-native-strands-fixture.spec.mjs']) assert.ok(scope.includes(`scripts/react-cockpit/${file}`));
-  const fleet = readJobBlock(workflow, 'cockpit-e2e');
-  const step = readNamedStep(fleet, 'Verify native Strands fixture ownership');
-  assert.match(step, /if: matrix\.cap\.angular == 'cockpit-runtimes-aws-strands-react'/);
-  const preparation = step.indexOf('npx nx run cockpit-runtimes-aws-strands-react:prepare-fixture --skip-nx-cache');
-  const fixture = step.indexOf('node --test --test-concurrency=1 scripts/react-cockpit/native-strands-fixture.spec.mjs');
-  assert.ok(preparation >= 0 && fixture > preparation);
-  assert.match(step, /python -m unittest discover -s fixtures\/react-parity\/native-strands-react -p test_model\.py/);
-  assert.match(step, /fixtures\/react-parity\/native-strands-react\/server\.spec\.mjs/);
-  assert.ok(fleet.includes('python-version: \'3.12\''));
-  assert.ok(!step.includes('THREADPLANE_AG_UI_FIXTURE_ENVIRONMENT'));
+  assert.ok(scope.includes('scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs'));
+  assert.doesNotMatch(workflow, /native-strands|cockpit-runtimes-aws-strands-react:prepare-fixture/);
 });
 
 it('bounds the Website promotion budget without changing other deploy budgets', async () => {
@@ -647,7 +629,7 @@ it('bounds the Website promotion budget without changing other deploy budgets', 
 
 it('installs pinned Python before local fixture preparation and preview assembly', async () => {
   const website = JSON.parse(await readFile('apps/website/project.json', 'utf8'));
-  for (const name of ['cockpit-runtimes-microsoft-agent-framework-react', 'cockpit-runtimes-aws-strands-react']) {
+  for (const name of ['cockpit-ag-ui-a2ui-react']) {
     assert.ok(website.targets.e2e.dependsOn.some((dependency) =>
       dependency.target === 'prepare-fixture' && dependency.projects.includes(name)
     ), `the legacy full local suite retains its native fixture proof for ${name}`);
@@ -667,7 +649,7 @@ it('installs pinned Python before local fixture preparation and preview assembly
 
   for (const [jobName, setupName, command] of [
     ...websiteCallers,
-    ['cockpit-e2e', 'Install uv', 'npx nx run cockpit-runtimes-microsoft-agent-framework-react:prepare-fixture'],
+    ['cockpit-e2e', 'Install uv', 'npx nx run cockpit-chat-debug-python:test'],
   ]) {
     const job = readJobBlock(workflow, jobName);
     assert.ok(job.includes(`- name: ${setupName}`), `${jobName} must install pinned Python with step ${setupName}`);
@@ -2621,14 +2603,15 @@ it('representative smoke includes the canonical tagged Theming graph', async () 
   assert.match(ci, /--projects=[^\n]*cockpit-chat-theming-python/);
 });
 
-it('runs bounded Theming fixture tests in its actual React fleet lane', async () => {
+it('runs Theming configuration and network-free graph tests for its aimock React lane', async () => {
   const workflow = await readFile('.github/workflows/ci.yml', 'utf8');
   const scope = readNamedStep(readJobBlock(workflow, 'ci-guards'), 'Test CI scope classifier');
   assert.ok(scope.includes('scripts/react-cockpit/chat-theming-configuration.spec.mjs'));
-  const step = readNamedStep(readJobBlock(workflow, 'cockpit-e2e'), 'Verify native Theming fixture ownership');
-  assert.match(step, /if: matrix\.cap\.angular == 'cockpit-chat-theming-react'/);
-  assert.match(step, /npx nx run cockpit-chat-theming-python:test --skip-nx-cache/);
-  assert.match(step, /node --test --test-concurrency=1 scripts\/react-cockpit\/chat-theming-fixture.spec.mjs/);
+  // The authored fixture server is gone: e2e runs the real graph on aimock, and
+  // the network-free compiled-graph proof is the Python test e2e depends on.
+  assert.doesNotMatch(workflow, /chat-theming-fixture\.spec\.mjs/);
+  const project = JSON.parse(await readFile('cockpit/chat/theming/react/project.json', 'utf8'));
+  assert.deepEqual(project.targets.e2e.dependsOn.at(-1), { target: 'test', projects: ['cockpit-chat-theming-python'] });
   assert.match(readJobBlock(workflow, 'cockpit-e2e'), /output\/playwright\/chat-theming-react\//);
 });
 

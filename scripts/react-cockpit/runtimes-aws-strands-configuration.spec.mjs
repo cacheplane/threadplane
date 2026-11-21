@@ -12,6 +12,14 @@ test('selects only the explicit native AWS Strands React entry', () => {
     base: '/runtimes/aws-strands/react/',
     port: 4643,
     project: 'cockpit-runtimes-aws-strands-react',
+    backend: {
+      kind: 'aimock-ag-ui',
+      python: 'cockpit/runtimes/aws-strands/python',
+      fixtures: 'cockpit/runtimes/aws-strands/angular/e2e/fixtures',
+      backendPort: 5643,
+      aimockPort: 6643,
+      agentPath: '/agent',
+    },
   });
   assert.ok(Object.isFrozen(entry));
   assert.equal(
@@ -28,7 +36,7 @@ test('selects only the explicit native AWS Strands React entry', () => {
   ])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported/);
 });
-test('uses the installed native build with explicit uncached preparation and browser targets', () => {
+test('uses the installed native build and the aimock-backed browser target', () => {
   const project = JSON.parse(
     readFileSync(
       new URL(
@@ -49,14 +57,11 @@ test('uses the installed native build with explicit uncached preparation and bro
   ]);
   assert.equal(project.targets.e2e.executor, '@nx/playwright:playwright');
   assert.equal(project.targets.e2e.cache, false);
-  assert.deepEqual(project.targets.e2e.dependsOn, ['prepare-fixture', 'build']);
+  assert.deepEqual(project.targets.e2e.dependsOn, ['build']);
+  assert.deepEqual(project.targets.e2e.inputs, ['default', 'reactAimockBackend']);
+  assert.equal(project.targets['prepare-fixture'], undefined);
   assert.equal(
     project.targets.e2e.options.config,
     'cockpit/runtimes/aws-strands/react/e2e/playwright.config.ts'
-  );
-  assert.equal(project.targets['prepare-fixture'].cache, false);
-  assert.equal(
-    project.targets['prepare-fixture'].options.command,
-    'node scripts/react-cockpit/prepare-native-strands-fixture.mjs'
   );
 });

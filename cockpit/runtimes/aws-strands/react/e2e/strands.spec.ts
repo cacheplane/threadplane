@@ -19,6 +19,7 @@ interface Wire {
   subagentRunId?: string;
   toolCallId?: string;
   content?: string;
+  snapshot?: unknown;
   outcome?: {
     type: string;
     interrupts?: { id: string; reason: string; metadata: unknown }[];
@@ -32,31 +33,55 @@ interface Wire {
     toolCalls?: { id: string; function: { name: string; arguments: string } }[];
   }[];
 }
-function events(base64: string): Wire[] {
-  return [
-    ...Buffer.from(base64, 'base64')
-      .toString()
-      .matchAll(/^data: (.+)$/gm),
-  ].map((m) => JSON.parse(m[1]));
+// Backend: aimock replays cockpit/runtimes/aws-strands/angular/e2e/fixtures
+// (the meeting model's answers, keyed on the React preset prompt) into the
+// example's real Strands AG-UI server, behind the recording proxy
+// (scripts/react-cockpit/ag-ui-proxy.mjs). Scenarios are tags the spec
+// appends to the preset (`[scenario:batch]`, `[scenario:cancel]`).
+/** Every agent POST: { body, events (real), sent (to the browser), closed }. */
+interface Run {
+  body: {
+    threadId: string;
+    runId: string;
+    resume?: unknown;
+    messages: { role: string }[];
+  };
+  events: Wire[];
+  sent: Wire[];
+  closed: boolean;
 }
-async function stats(request: APIRequestContext) {
-  return (await request.get('/__stats')).json();
+async function runs(request: APIRequestContext): Promise<Run[]> {
+  return (await request.get('/__requests')).json();
 }
-async function start(
-  page: Page,
-  request: APIRequestContext,
-  scenario = 'approval'
-) {
-  expect((await request.post('/__reset', { data: { scenario } })).ok()).toBe(
-    true
-  );
+/** What the model received (aimock's request journal). */
+interface ModelCall {
+  headers: Record<string, string>;
+  body: {
+    messages: { role: string; tool_call_id?: string; content?: string }[];
+  };
+  response: { status: number; interrupted?: boolean };
+}
+async function model(request: APIRequestContext): Promise<ModelCall[]> {
+  return (await request.get('/__model-requests')).json();
+}
+async function start(page: Page, request: APIRequestContext) {
+  expect((await request.post('/__reset')).ok()).toBe(true);
   await page.goto(path);
   await expect(page.getByRole('status')).toHaveText('Ready.');
 }
-async function send(page: Page) {
+async function send(page: Page, scenario = 'approval') {
   await page
     .getByRole('button', { name: 'Q3 roadmap review', exact: true })
     .click();
+  if (scenario !== 'approval')
+    await page
+      .getByRole('textbox', { name: 'Message', exact: true })
+      .press('End')
+      .then(() =>
+        page
+          .getByRole('textbox', { name: 'Message', exact: true })
+          .pressSequentially(` [scenario:${scenario}]`)
+      );
   await page.getByRole('button', { name: 'Send', exact: true }).click();
 }
 async function withinViewport(locator: Locator) {
@@ -78,16 +103,13 @@ async function withinViewport(locator: Locator) {
 test.afterEach(async ({ page, request }) => {
   await writeFile(
     test.info().outputPath('actual-service-evidence.json'),
-    JSON.stringify(await stats(request), null, 2)
+    JSON.stringify(
+      { runs: await runs(request), model: await model(request) },
+      null,
+      2
+    )
   );
   await writeFile(test.info().outputPath('dom.html'), await page.content());
-  const receipt = await (await request.post('/__finish')).json();
-  await writeFile(
-    test.info().outputPath('owned-cleanup.json'),
-    JSON.stringify(receipt, null, 2)
-  );
-  for (const owner of receipt.closed)
-    expect(Object.values(owner.closure).every(Boolean)).toBe(true);
 });
 test('mount, editable preset and New remain lazy until explicit Send', async ({
   page,
@@ -106,13 +128,13 @@ test('mount, editable preset and New remain lazy until explicit Send', async ({
   await expect(
     page.getByRole('textbox', { name: 'Message', exact: true })
   ).toHaveValue('');
-  expect((await stats(request)).current.requests).toHaveLength(0);
-  expect((await stats(request)).current.observed.model.httpSeen).toBe(0);
+  expect(await runs(request)).toHaveLength(0);
+  expect(await model(request)).toHaveLength(0);
   await send(page);
   await expect(
     page.getByRole('button', { name: 'Approve', exact: true })
   ).toBeEnabled();
-  expect((await stats(request)).current.requests).toHaveLength(1);
+  expect(await runs(request)).toHaveLength(1);
 });
 for (const scenario of ['approval', 'batch'])
   for (const width of [1280, 390])
@@ -125,8 +147,8 @@ for (const scenario of ['approval', 'batch'])
           width,
           height: width === 390 ? 844 : 900,
         });
-        await start(page, request, scenario);
-        await send(page);
+        await start(page, request);
+        await send(page, scenario);
         await expect(page.getByRole('status')).toHaveText(
           'Awaiting your decision.'
         );
@@ -145,10 +167,22 @@ for (const scenario of ['approval', 'batch'])
         await expect(observed).toContainText(
           'Observed booking status: pending'
         );
+        // The panel shows the last snapshot the server sent. Approval looked
+        // availability up in this run; a batch pauses before its lookup
+        // result, so its snapshot carries whatever availability the server's
+        // per-process demo state already held (src/agent.py keeps one state
+        // for the whole process).
+        const snapshot = (await runs(request))[0].events
+          .filter((e) => e.type === 'STATE_SNAPSHOT')
+          .at(-1)?.snapshot as
+          | { availability: { slots: string[] } | null }
+          | undefined;
+        if (scenario === 'approval')
+          expect(snapshot?.availability?.slots).toEqual(['10:00', '15:00']);
         await expect(observed).toContainText(
-          scenario === 'batch'
-            ? 'No availability observed yet.'
-            : '10:00, 15:00'
+          snapshot?.availability
+            ? snapshot.availability.slots.join(', ')
+            : 'No availability observed yet.'
         );
         await expect(
           page.getByRole('textbox', { name: 'Message', exact: true })
@@ -173,19 +207,18 @@ for (const scenario of ['approval', 'batch'])
         await card.screenshot({
           path: test.info().outputPath('canonical-approval-card.png'),
         });
-        const before = await stats(request),
-          initial = before.current.requests[0],
-          terminal = events(initial.upstreamBase64).find(
-            (e) => e.type === 'RUN_FINISHED'
-          );
-        expect(before.current.requests).toHaveLength(1);
-        expect(initial.upstreamBase64).toBe(initial.sentBase64);
+        const before = await runs(request),
+          initial = before[0],
+          terminal = initial.events.find((e) => e.type === 'RUN_FINISHED');
+        expect(before).toHaveLength(1);
+        // The browser got exactly what the real server streamed.
+        expect(initial.sent).toEqual(initial.events);
         expect(terminal?.threadId).toBe(initial.body.threadId);
         expect(terminal?.runId).toBe(initial.body.runId);
         expect(terminal?.outcome?.type).toBe('interrupt');
         expect(terminal?.outcome?.interrupts).toHaveLength(1);
         expect(terminal?.outcome?.interrupts?.[0].reason).toBe('book_meeting');
-        const pauseRows = events(initial.upstreamBase64)
+        const pauseRows = initial.events
           .filter((e) => e.type === 'MESSAGES_SNAPSHOT')
           .at(-1)?.messages;
         expect(pauseRows).toBeDefined();
@@ -200,8 +233,12 @@ for (const scenario of ['approval', 'batch'])
         expect(pauseRows!.filter((m) => m.role === 'tool')).toHaveLength(
           scenario === 'batch' ? 0 : 1
         );
-        expect(before.current.observed.completedReturns).toHaveLength(0);
-        expect(before.current.observed.interruptedUnwinds).toBe(1);
+        // Paused: the booking tool has not returned a result yet.
+        expect(
+          initial.events.some(
+            (e) => e.type === 'TOOL_CALL_RESULT' && e.toolCallId === book.id
+          )
+        ).toBe(false);
         // Two synchronous DOM clicks simulate competing choices before a rerender; only the native owner may claim once.
         await page
           .getByRole('button', { name: decision, exact: true })
@@ -258,10 +295,10 @@ for (const scenario of ['approval', 'batch'])
         await result.screenshot({
           path: test.info().outputPath('literal-result-region.png'),
         });
-        const after = await stats(request),
-          records = after.current.requests;
+        const records = await runs(request),
+          calls_ = await model(request);
         expect(records).toHaveLength(2);
-        expect(records[1].upstreamBase64).toBe(records[1].sentBase64);
+        expect(records[1].sent).toEqual(records[1].events);
         expect(records[1].body.threadId).toBe(initial.body.threadId);
         expect(records[1].body.runId).not.toBe(initial.body.runId);
         expect(records[1].body.resume).toEqual([
@@ -271,7 +308,7 @@ for (const scenario of ['approval', 'batch'])
             payload: { approved: decision === 'Approve' },
           },
         ]);
-        const final = events(records[1].upstreamBase64),
+        const final = records[1].events,
           end = final.find((e) => e.type === 'RUN_FINISHED');
         expect(end?.threadId).toBe(initial.body.threadId);
         expect(end?.runId).toBe(records[1].body.runId);
@@ -291,63 +328,73 @@ for (const scenario of ['approval', 'batch'])
             expect(found[0].content).toBe(
               JSON.stringify(literal(decision === 'Approve'))
             );
-          const provider = after.current.observed.model.records
-            .at(-1)
+          const provider = calls_
+            .at(-1)!
             .body.messages.filter(
-              (m: { role: string; tool_call_id?: string }) =>
-                m.role === 'tool' && m.tool_call_id === call.id
+              (m) => m.role === 'tool' && m.tool_call_id === call.id
             );
           expect(provider).toHaveLength(1);
           if (call === book) {
             expect(provider[0].content).toBe(literal(decision === 'Approve'));
           } else {
             // Provider JSON and AG-UI JSON have different whitespace serialization.
-            expect(JSON.parse(provider[0].content)).toEqual(
+            expect(JSON.parse(provider[0].content!)).toEqual(
               JSON.parse(found[0].content!)
             );
           }
         }
-        expect(after.current.observed.model.httpSeen).toBe(
-          scenario === 'batch' ? 2 : 3
-        );
+        expect(calls_).toHaveLength(scenario === 'batch' ? 2 : 3);
+        // The booking tool returned exactly once, with the decision's literal.
         expect(
-          after.current.observed.model.records.at(-1).canonicalContinuation
-        ).toBe(literal(decision === 'Approve'));
-        expect(after.current.observed.completedReturns).toHaveLength(1);
-        expect(after.current.observed.backendState.booking.status).toBe(
-          decision === 'Approve' ? 'booked' : 'declined'
-        );
-        expect(after.current.observed.observedState.booking.status).toBe(
-          scenario === 'approval'
-            ? 'pending'
-            : decision === 'Approve'
-            ? 'booked'
-            : 'declined'
-        );
+          final.filter(
+            (e) => e.type === 'TOOL_CALL_RESULT' && e.toolCallId === book.id
+          )
+        ).toHaveLength(1);
+        // No provider retries.
         expect(
-          after.current.observed.model.records.every(
-            (r: { requestHeaders: string[][] }) =>
-              r.requestHeaders.some(
-                ([k, v]) =>
-                  k.toLowerCase() === 'x-stainless-retry-count' && v === '0'
-              )
+          calls_.every(
+            (r) => r.headers['x-stainless-retry-count'] === '0'
           )
         ).toBe(true);
       });
-for (const scenario of [
-  'missing-terminal',
-  'wrong-terminal',
-  'child-only-terminal',
-])
+const corruptions: Record<string, unknown[]> = {
+  'missing-terminal': [{ type: 'RUN_FINISHED', op: 'drop' }],
+  'wrong-terminal': [
+    { type: 'RUN_FINISHED', op: 'patch', set: { runId: 'negative-wrong-run' } },
+  ],
+  'child-only-terminal': [
+    {
+      type: 'RUN_FINISHED',
+      op: 'patch',
+      set: {
+        type: 'SUBAGENT_FINISHED',
+        subagentRunId: 'negative-child',
+        outcome: { type: 'suspended' },
+      },
+    },
+    { type: 'RUN_FINISHED', op: 'omit', keys: ['runId', 'threadId'] },
+  ],
+};
+for (const scenario of Object.keys(corruptions))
   test(`negative ${scenario} cannot confirm genuine booking result`, async ({
     page,
     request,
   }) => {
-    await start(page, request, scenario);
+    await start(page, request);
     await send(page);
     await expect(
       page.getByRole('button', { name: 'Approve', exact: true })
     ).toBeEnabled();
+    // Injected data: the proxy corrupts the resumed run's real terminal on
+    // its way to the browser (dropped, another run's id, or a child-only
+    // terminal); the real server still finishes the run.
+    expect(
+      (
+        await request.post('/__stream/edit', {
+          data: { ops: corruptions[scenario] },
+        })
+      ).ok()
+    ).toBe(true);
     await page.getByRole('button', { name: 'Approve', exact: true }).click();
     await expect(page.getByRole('status')).toHaveText(
       'Meeting unconfirmed. Start a new conversation.'
@@ -361,49 +408,49 @@ for (const scenario of [
     await expect(
       page.getByRole('button', { name: 'Send', exact: true })
     ).toBeDisabled();
-    const evidence = await stats(request),
-      resumed = evidence.current.requests[1];
-    expect(evidence.current.requests).toHaveLength(2);
+    const evidence = await runs(request),
+      resumed = evidence[1];
+    expect(evidence).toHaveLength(2);
     expect(
-      events(resumed.upstreamBase64).some(
+      resumed.events.some(
         (e) => e.type === 'RUN_FINISHED' && e.runId === resumed.body.runId
       )
     ).toBe(true);
     expect(
-      events(resumed.sentBase64).some(
+      resumed.sent.some(
         (e) => e.type === 'RUN_FINISHED' && e.runId === resumed.body.runId
       )
     ).toBe(false);
-    expect(evidence.current.observed.completedReturns).toHaveLength(1);
+    // The real booking still completed upstream.
+    expect(
+      resumed.events.some(
+        (e) =>
+          e.type === 'TOOL_CALL_RESULT' &&
+          e.content === JSON.stringify(literal(true))
+      )
+    ).toBe(true);
   });
 for (const action of ['Stop', 'New conversation', 'unmount'])
-  test(`held genuine model ${action} closes actual peer before cleanup`, async ({
+  test(`held genuine model ${action} closes the run before cleanup`, async ({
     page,
     request,
   }) => {
-    await start(page, request, 'cancel');
-    await send(page);
-    await expect
-      .poll(
-        async () => (await stats(request)).current.observed.model.heldActive
-      )
-      .toBe(1);
+    // The cancel fixture answers only after 30 s, so the model call is in
+    // flight when the browser acts.
+    await start(page, request);
+    await send(page, 'cancel');
+    await expect.poll(async () => (await model(request)).length).toBe(1);
     if (action === 'unmount')
       await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     else await page.getByRole('button', { name: action, exact: true }).click();
-    await expect
-      .poll(
-        async () => (await stats(request)).current.observed.model.heldActive
-      )
-      .toBe(0);
-    const evidence = await stats(request);
-    expect(evidence.current.requests).toHaveLength(1);
-    expect(evidence.current.observed.model.httpSeen).toBe(1);
-    expect(evidence.current.observed.model.records[0].peerClosed).toBe(true);
-    expect(evidence.current.observed.model.records[0].cleanupReleased).toBe(
-      false
-    );
-    expect(evidence.current.observed.completedReturns).toHaveLength(0);
+    // The browser's run stream is closed; no second run starts.
+    await expect.poll(async () => (await runs(request))[0]?.closed).toBe(true);
+    const evidence = await runs(request);
+    expect(evidence).toHaveLength(1);
+    expect(await model(request)).toHaveLength(1);
+    expect(
+      evidence[0].sent.some((e) => e.type === 'TOOL_CALL_RESULT')
+    ).toBe(false);
   });
 test('paused New removes authority and only explicit Send allocates fresh thread', async ({
   page,
@@ -414,7 +461,7 @@ test('paused New removes authority and only explicit Send allocates fresh thread
   await expect(
     page.getByRole('button', { name: 'Approve', exact: true })
   ).toBeEnabled();
-  const before = await stats(request);
+  const before = await runs(request);
   await page
     .getByRole('button', { name: 'New conversation', exact: true })
     .click();
@@ -422,17 +469,18 @@ test('paused New removes authority and only explicit Send allocates fresh thread
   await expect(
     page.getByRole('button', { name: 'Approve', exact: true })
   ).toHaveCount(0);
-  expect((await stats(request)).current.requests).toHaveLength(1);
+  expect(await runs(request)).toHaveLength(1);
   await send(page);
   await expect(
     page.getByRole('button', { name: 'Approve', exact: true })
   ).toBeEnabled();
-  const after = await stats(request);
-  expect(after.current.requests).toHaveLength(2);
-  expect(after.current.requests[1].body.threadId).not.toBe(
-    before.current.requests[0].body.threadId
-  );
-  expect(after.current.observed.completedReturns).toHaveLength(0);
+  const after = await runs(request);
+  expect(after).toHaveLength(2);
+  expect(after[1].body.threadId).not.toBe(before[0].body.threadId);
+  // Neither paused booking ever returned.
+  expect(
+    after.flatMap((r) => r.events).some((e) => e.type === 'TOOL_CALL_RESULT' && /booked/i.test(e.content ?? ''))
+  ).toBe(false);
 });
 test('two completed explicit turns retain prior canonicals in the same Session', async ({
   page,
@@ -453,17 +501,19 @@ test('two completed explicit turns retain prior canonicals in the same Session',
   ).toBeEnabled();
   await page.getByRole('button', { name: 'Decline', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Meeting declined.');
-  const evidence = await stats(request),
-    requests = evidence.current.requests;
+  const requests = await runs(request);
   expect(requests).toHaveLength(4);
+  expect(new Set(requests.map((r) => r.body.threadId)).size).toBe(1);
+  // Each resumed run returned its booking result once.
+  for (const resumed of [requests[1], requests[3]])
+    expect(
+      resumed.events.filter(
+        (e) =>
+          e.type === 'TOOL_CALL_RESULT' && /booked/i.test(e.content ?? '')
+      )
+    ).toHaveLength(1);
+  expect(await model(request)).toHaveLength(6);
   expect(
-    new Set(
-      requests.map((r: { body: { threadId: string } }) => r.body.threadId)
-    ).size
-  ).toBe(1);
-  expect(evidence.current.observed.completedReturns).toHaveLength(2);
-  expect(evidence.current.observed.model.httpSeen).toBe(6);
-  expect(
-    requests[2].body.messages.filter((m: { role: string }) => m.role === 'tool')
+    requests[2].body.messages.filter((m) => m.role === 'tool')
   ).toHaveLength(2);
 });

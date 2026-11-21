@@ -101,24 +101,14 @@ test.afterEach(async ({ page, request }, info) => {
   await page.goto('about:blank');
   await control(request, '/__release');
   await control(request, '/__reset');
+  // No proxied browser connection, held read or held stream outlives the test.
   await expect
-    .poll(async () => (await read(request, '/__lifetime')).active)
-    .toEqual({ children: 0, streams: 0, reads: 0, handlers: 0, responses: 0 });
+    .poll(async () => (await read(request, '/__lifetime')).openResponses)
+    .toBe(0);
   const lifetime = await read(request, '/__lifetime');
-  for (const child of lifetime.children) {
-    expect(child.reaped).toBe(true);
-    for (const id of [child.pid, -child.pgid]) {
-      let code;
-      try {
-        process.kill(id, 0);
-      } catch (error) {
-        code = (error as NodeJS.ErrnoException).code;
-      }
-      expect(code).toBe('ESRCH');
-    }
-  }
+  expect(lifetime).toMatchObject({ activeStream: false, activeHistory: false, activeState: false });
   await writeFile(
-    info.outputPath('observed-child-absence.json'),
+    info.outputPath('observed-lifetime.json'),
     JSON.stringify(lifetime, null, 2)
   );
   await writeFile(
@@ -142,18 +132,14 @@ for (const width of [1280, 390])
     await confirmed(page);
     await expect(page.locator('article')).toHaveCount(4);
     const first = await page.locator('article').allTextContents();
+    // The real server's saved state for the run (scripts/react-cockpit/langgraph-proxy.mjs).
     const captures = await read(request, '/__captures');
-    const a = captures[0].state.values.messages[1].content;
-    expect(captures[0].state.values.analysis).toEqual({
+    const a = captures[0].values.messages[1].content;
+    // The graph's `process` node counts Python code points.
+    expect(captures[0].values.analysis).toEqual({
       characters: [...a].length,
       words: a.split(' ').length,
     });
-    expect(captures[0].proof).toMatchObject({
-      actualCompiledGraph: true,
-      networkAttempts: 0,
-      providerVariant: 'natural',
-    });
-    expect(captures[0].localCapturedReplay).toBe(true);
     await expect(
       page.getByLabel('Observed analysis', { exact: true })
     ).toContainText(`${[...a].length} characters`);
@@ -206,7 +192,7 @@ for (const width of [1280, 390])
       displayed
     );
     expect(JSON.parse(displayed ?? '{}')).toEqual({
-      analysis: captures[0].state.values.analysis,
+      analysis: captures[0].values.analysis,
     });
     const history = await refresh(page);
     const afterRefresh = await wire(request);
@@ -236,26 +222,26 @@ for (const width of [1280, 390])
       .getByText('Compare selected checkpoint with current state', { exact: true })
       .click();
     await expect.poll(async () => JSON.parse(await selected.getByLabel('Selected checkpoint to current state JSON', { exact: true }).textContent() ?? 'null')).toEqual([
-      { kind: 'added', path: '/analysis', after: captures[0].state.values.analysis },
+      { kind: 'added', path: '/analysis', after: captures[0].values.analysis },
     ]);
     const laterIndex = history.findIndex(
       (row) =>
         row.values.analysis !== undefined &&
         (row.values.messages?.length ?? 0) <
-          captures[0].state.values.messages.length &&
+          captures[0].values.messages.length &&
         row.checkpoint.checkpoint_id !==
-          captures[0].state.checkpoint.checkpoint_id
+          captures[0].checkpoint.checkpoint_id
     );
     expect(laterIndex).toBeGreaterThanOrEqual(0);
     const observedLater = await inspect(page, laterIndex);
     expect(observedLater.checkpoint).toEqual(history[laterIndex].checkpoint);
     expect(observedLater.checkpoint.checkpoint_id).not.toBe(
-      captures[0].state.checkpoint.checkpoint_id
+      captures[0].checkpoint.checkpoint_id
     );
     expect(observedLater.values.analysis).toEqual(
-      captures[0].state.values.analysis
+      captures[0].values.analysis
     );
-    expect(observedLater.values).not.toEqual(captures[0].state.values);
+    expect(observedLater.values).not.toEqual(captures[0].values);
     await selected
       .getByText('Displayed checkpoint values', { exact: true })
       .click();
@@ -417,8 +403,8 @@ for (const action of ['Stop', 'New conversation', 'unmount'])
     await control(request, '/__hold/history');
     await page.getByRole('button', { name: 'Refresh checkpoints' }).click();
     await expect
-      .poll(async () => (await read(request, '/__lifetime')).active.reads)
-      .toBe(1);
+      .poll(async () => (await read(request, '/__lifetime')).activeHistory)
+      .toBe(true);
     if (action === 'New conversation')
       await page
         .getByRole('button', { name: 'Close debug panel', exact: true })
@@ -426,7 +412,7 @@ for (const action of ['Stop', 'New conversation', 'unmount'])
     if (action === 'unmount') await page.goto('about:blank');
     else await page.getByRole('button', { name: action, exact: true }).click();
     await expect
-      .poll(async () => (await read(request, '/__lifetime')).active.reads)
+      .poll(async () => (await read(request, '/__lifetime')).openResponses)
       .toBe(0);
     await control(request, '/__release');
     const ledger = await wire(request);
@@ -595,14 +581,14 @@ for (const action of ['Stop', 'New conversation', 'unmount'])
     await ready(page);
     await send(page);
     await expect
-      .poll(async () => (await read(request, '/__lifetime')).active.streams)
-      .toBe(1);
+      .poll(async () => (await read(request, '/__lifetime')).activeStream)
+      .toBe(true);
     await expect(mainStatus(page)).toHaveText('Receiving response…');
     await expect(page.locator('article')).toHaveCount(2);
     if (action === 'unmount') await page.goto('about:blank');
     else await page.getByRole('button', { name: action, exact: true }).click();
     await expect
-      .poll(async () => (await read(request, '/__lifetime')).active.streams)
+      .poll(async () => (await read(request, '/__lifetime')).openResponses)
       .toBe(0);
     await control(request, '/__release');
     const ledger = await wire(request);
@@ -615,7 +601,7 @@ for (const action of ['Stop', 'New conversation', 'unmount'])
       JSON.stringify(
         {
           label:
-            'Captured actual graph SSE replay; compiled graph already completed before HTTP replay hold',
+            'Real langgraph dev stream held by the recording proxy after the first answer chunk',
           action,
           ledger,
         },

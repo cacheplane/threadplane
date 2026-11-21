@@ -12,6 +12,14 @@ test('selects only the explicit native Microsoft Agent Framework React entry', (
     base: '/runtimes/microsoft-agent-framework/react/',
     port: 4642,
     project: 'cockpit-runtimes-microsoft-agent-framework-react',
+    backend: {
+      kind: 'aimock-ag-ui',
+      python: 'cockpit/runtimes/microsoft-agent-framework/python',
+      fixtures: 'cockpit/runtimes/microsoft-agent-framework/angular/e2e/fixtures',
+      backendPort: 5642,
+      aimockPort: 6642,
+      agentPath: '/agent',
+    },
   });
   assert.ok(Object.isFrozen(entry));
   assert.equal(
@@ -28,7 +36,7 @@ test('selects only the explicit native Microsoft Agent Framework React entry', (
   ])
     assert.throws(() => reactCockpitConfiguration(key), /Unsupported/);
 });
-test('uses the installed native build with explicit uncached preparation and browser targets', () => {
+test('uses the installed native build and the aimock-backed browser target', () => {
   const project = JSON.parse(
     readFileSync(
       new URL(
@@ -49,8 +57,8 @@ test('uses the installed native build with explicit uncached preparation and bro
   ]);
   assert.equal(project.targets.e2e.executor, '@nx/playwright:playwright');
   assert.equal(project.targets.e2e.cache, false);
-  assert.deepEqual(project.targets.e2e.dependsOn, ['prepare-fixture', 'build']);
+  assert.deepEqual(project.targets.e2e.dependsOn, ['build']);
+  assert.deepEqual(project.targets.e2e.inputs, ['default', 'reactAimockBackend']);
   assert.equal(project.targets.e2e.options.config, 'cockpit/runtimes/microsoft-agent-framework/react/e2e/playwright.config.ts');
-  assert.equal(project.targets['prepare-fixture'].cache, false);
-  assert.equal(project.targets['prepare-fixture'].options.command, 'node scripts/react-cockpit/prepare-native-maf-fixture.mjs');
+  assert.equal(project.targets['prepare-fixture'], undefined);
 });

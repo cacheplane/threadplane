@@ -6,6 +6,9 @@ type WebsitePlaywrightEnvironment = Readonly<
   Record<string, string | undefined>
 >;
 
+const oneOrMore = (files: string[]) =>
+  files.length === 0 ? undefined : files.length === 1 ? files[0] : files;
+
 export const createWebsitePlaywrightConfig = (
   environment: WebsitePlaywrightEnvironment = process.env
 ) => {
@@ -74,9 +77,16 @@ export const createWebsitePlaywrightConfig = (
       ? '**/custom-runtime-bfcache.spec.ts'
       : undefined,
     testIgnore,
-    globalSetup: runtimeBypass
-      ? resolve(__dirname, 'e2e', 'runtime-bypass-setup.ts')
-      : undefined,
+    globalSetup: oneOrMore([
+      ...(runtimeBypass
+        ? [resolve(__dirname, 'e2e', 'runtime-bypass-setup.ts')]
+        : []),
+      // `next dev` compiles routes on first request; compile the shared docs
+      // route once before parallel workers race for it.
+      ...(shouldStartLocalServer && !productionMode && !bfcacheRuntimeTest
+        ? [resolve(__dirname, 'e2e', 'dev-warmup-setup.ts')]
+        : []),
+    ]),
     fullyParallel: true,
     // Match the cockpit configs: 2 retries on CI to absorb transient Next.js
     // dev-server startup flake; 0 locally for fast feedback.
@@ -166,9 +176,10 @@ export const createWebsitePlaywrightConfig = (
             reuseExistingServer,
           },
           ...(!productionMode && !bfcacheRuntimeTest ? [{
-            command: 'node scripts/react-cockpit/prepare-ag-ui-a2ui-fixture.mjs --serve',
+            // Render-only preview: its aimock + AG-UI server never boot.
+            command: 'node scripts/react-cockpit/serve.mjs ag-ui-a2ui --no-parent --backend',
             cwd: '../..', url: 'http://127.0.0.1:4647',
-            reuseExistingServer: false, timeout: 330_000,
+            reuseExistingServer: false, timeout: 180_000,
             gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 15000 },
           }] : []),
           ...(!bfcacheRuntimeTest
@@ -250,137 +261,140 @@ export const createWebsitePlaywrightConfig = (
                     // website:e2e builds every installed React example first,
                     // outside the server-readiness budget. Direct local
                     // Playwright runs require those build outputs too.
-                    'node scripts/react-cockpit/serve.mjs',
+                    'node scripts/react-cockpit/serve.mjs streaming --backend',
+                  // Previews whose specs drive the backend wait on /__ready:
+                  // its aimock + `langgraph dev` boot during startup, not
+                  // mid-run beside other workers' page renders. Previews only
+                  // rendered (no API traffic) never boot a backend.
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4600',
+                  url: 'http://127.0.0.1:4600/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs interrupts --no-parent',
+                    'node scripts/react-cockpit/serve.mjs interrupts --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4601',
+                  url: 'http://127.0.0.1:4601/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs memory --no-parent',
+                    'node scripts/react-cockpit/serve.mjs memory --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4602',
+                  url: 'http://127.0.0.1:4602/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs client-tools --no-parent',
+                    'node scripts/react-cockpit/serve.mjs client-tools --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4603',
+                  url: 'http://127.0.0.1:4603/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs persistence --no-parent',
+                    'node scripts/react-cockpit/serve.mjs persistence --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4604',
+                  url: 'http://127.0.0.1:4604/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs durable-execution --no-parent',
+                    'node scripts/react-cockpit/serve.mjs durable-execution --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4605',
+                  url: 'http://127.0.0.1:4605/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs subgraphs --no-parent',
+                    'node scripts/react-cockpit/serve.mjs subgraphs --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4606',
+                  url: 'http://127.0.0.1:4606/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs time-travel --no-parent',
+                    'node scripts/react-cockpit/serve.mjs time-travel --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4607',
+                  url: 'http://127.0.0.1:4607/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
                   command:
-                    'node scripts/react-cockpit/serve.mjs deployment-runtime --no-parent',
+                    'node scripts/react-cockpit/serve.mjs deployment-runtime --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4608',
+                  url: 'http://127.0.0.1:4608/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-streaming --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-streaming --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4609',
+                  url: 'http://127.0.0.1:4609/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-interrupts --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4610',
+                  url: 'http://127.0.0.1:4610/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-tool-views --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-tool-views --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4611',
+                  url: 'http://127.0.0.1:4611/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/prepare-ag-ui-client-tools-fixture.mjs --serve',
+                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-client-tools --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4640',
-                  // A reused listener cannot establish canonical worker ownership.
+                  url: 'http://127.0.0.1:4640/__ready',
                   reuseExistingServer: false,
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs runtimes-mastra --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4641',
+                  url: 'http://127.0.0.1:4641/__ready',
                   reuseExistingServer: false,
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs runtimes-microsoft-agent-framework --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4642',
+                  url: 'http://127.0.0.1:4642/__ready',
                   reuseExistingServer: false,
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs runtimes-aws-strands --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs runtimes-aws-strands --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4643',
+                  url: 'http://127.0.0.1:4643/__ready',
                   reuseExistingServer: false,
                   timeout: 180_000,
                 },
                 {
-                  command: 'npx nx run cockpit-ag-ui-json-render-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-json-render --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4612',
+                  url: 'http://127.0.0.1:4612/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
-                  command: 'npx nx run cockpit-ag-ui-subagents-python:smoke && node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs ag-ui-subagents --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4613',
+                  url: 'http://127.0.0.1:4613/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
@@ -434,23 +448,23 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs chat-theming --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs chat-theming --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4644',
+                  url: 'http://127.0.0.1:4644/__ready',
                   reuseExistingServer: false,
                   gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 },
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs chat-debug --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs chat-debug --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4645',
+                  url: 'http://127.0.0.1:4645/__ready',
                   reuseExistingServer: false,
                   gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 },
                   timeout: 180_000,
                 },
                 {
-                  command: 'node scripts/react-cockpit/serve.mjs chat-a2ui --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs chat-a2ui --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4646',
                   reuseExistingServer: false,
@@ -479,42 +493,42 @@ export const createWebsitePlaywrightConfig = (
                   timeout: 180_000,
                 },
                 {
-                  command: 'npx nx run cockpit-deep-agents-planning-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-planning --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs deep-agents-planning --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4628',
+                  url: 'http://127.0.0.1:4628/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
-                  command: 'npx nx run cockpit-deep-agents-filesystem-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-filesystem --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs deep-agents-filesystem --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4629',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
-                  command: 'npx nx run cockpit-deep-agents-subagents-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-subagents --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs deep-agents-subagents --no-parent --backend',
                   cwd: '../..',
-                  url: 'http://127.0.0.1:4630',
+                  url: 'http://127.0.0.1:4630/__ready',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
-                  command: 'npx nx run cockpit-deep-agents-skills-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-skills --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs deep-agents-skills --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4631',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
-                  command: 'npx nx run cockpit-deep-agents-memory-python:smoke && node scripts/react-cockpit/serve.mjs deep-agents-memory --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs deep-agents-memory --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4632',
                   reuseExistingServer,
                   timeout: 180_000,
                 },
                 {
-                  command: 'npx nx run cockpit-chat-generative-ui-python:smoke && node scripts/react-cockpit/serve.mjs chat-generative-ui --no-parent',
+                  command: 'node scripts/react-cockpit/serve.mjs chat-generative-ui --no-parent --backend',
                   cwd: '../..',
                   url: 'http://127.0.0.1:4627',
                   reuseExistingServer,
@@ -550,7 +564,7 @@ export const createWebsitePlaywrightConfig = (
     config.testMatch = '**/react-ag-ui-client-tools-preview.spec.ts';
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer.filter(server =>
-        [localURL, 'http://localhost:4325', 'http://127.0.0.1:4640'].includes(server.url ?? '')
+        [localURL, 'http://localhost:4325', 'http://127.0.0.1:4640/__ready'].includes(server.url ?? '')
       );
     }
   }
@@ -558,7 +572,7 @@ export const createWebsitePlaywrightConfig = (
     config.testMatch = '**/react-mastra-preview.spec.ts';
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer.filter(server =>
-        [localURL, 'http://127.0.0.1:4641'].includes(server.url ?? '')
+        [localURL, 'http://127.0.0.1:4641/__ready'].includes(server.url ?? '')
       );
     }
   }
@@ -570,7 +584,7 @@ export const createWebsitePlaywrightConfig = (
     config.outputDir = resolve(__dirname, '../../test-results/native-maf-website');
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer.filter(server =>
-        [localURL, 'http://127.0.0.1:4642'].includes(server.url ?? '')
+        [localURL, 'http://127.0.0.1:4642/__ready'].includes(server.url ?? '')
       );
     }
   }
@@ -582,7 +596,7 @@ export const createWebsitePlaywrightConfig = (
     config.outputDir = resolve(__dirname, '../../test-results/native-strands-website');
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer.filter(server =>
-        [localURL, 'http://127.0.0.1:4643'].includes(server.url ?? '')
+        [localURL, 'http://127.0.0.1:4643/__ready'].includes(server.url ?? '')
       );
     }
   }
@@ -593,7 +607,7 @@ export const createWebsitePlaywrightConfig = (
     config.retries = 0;
     config.outputDir = resolve(__dirname, '../../output/playwright/chat-theming-website');
     if (Array.isArray(config.webServer)) {
-      config.webServer = config.webServer.filter(server => [localURL, 'http://127.0.0.1:4644'].includes(server.url ?? '')).map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 } }));
+      config.webServer = config.webServer.filter(server => [localURL, 'http://127.0.0.1:4644/__ready'].includes(server.url ?? '')).map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 } }));
     }
   }
   if (environment['WEBSITE_E2E_REACT_TOPIC'] === 'chat-debug') {
@@ -604,7 +618,7 @@ export const createWebsitePlaywrightConfig = (
     config.outputDir = resolve(__dirname, '../../output/playwright/chat-debug-website');
     if (Array.isArray(config.webServer)) {
       config.webServer = config.webServer
-        .filter(server => [localURL, 'http://127.0.0.1:4645'].includes(server.url ?? ''))
+        .filter(server => [localURL, 'http://127.0.0.1:4645/__ready'].includes(server.url ?? ''))
         .map(server => ({ ...server, reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 5000 } }));
     }
   }

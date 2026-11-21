@@ -1,3 +1,6 @@
+// The preview server (`serve.mjs <example> --backend`) runs the real graph under
+// `langgraph dev` on aimock fixtures shared with the Angular example; controls
+// come from scripts/react-cockpit/langgraph-proxy.mjs.
 import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
@@ -65,6 +68,7 @@ test('switching away releases held React history and returning starts with an em
     'Local history lifetime is verified before deployment'
   );
   await request.post('http://127.0.0.1:4604/__reset');
+  await request.post('http://127.0.0.1:4604/__ready', { timeout: 180000 });
   await page.goto('/docs/react/langgraph/guides/persistence?mode=run');
   const frame = page.frameLocator('iframe');
   for (const text of [
@@ -79,7 +83,7 @@ test('switching away releases held React history and returning starts with an em
       await expect(frame.getByRole('status')).toHaveText('Ready.');
     }
   }
-  await request.post('http://127.0.0.1:4604/__hold-history');
+  await request.post('http://127.0.0.1:4604/__hold/history');
   await frame
     .getByRole('button', { name: 'Conversation 1', exact: true })
     .click();
@@ -94,7 +98,7 @@ test('switching away releases held React history and returning starts with an em
       async () =>
         (
           await (await request.get('http://127.0.0.1:4604/__lifetime')).json()
-        ).active
+        ).activeHistory
     )
     .toBe(false);
   await request.post('http://127.0.0.1:4604/__release');

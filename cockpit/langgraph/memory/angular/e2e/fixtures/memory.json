@@ -9,6 +9,69 @@
       }
     },
     {
+      "match": {
+        "systemMessage": "HUMAN: Correct"
+      },
+      "response": {
+        "content": "{\"favorite_drink\": \"coffee\"}"
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "HUMAN: Literal"
+      },
+      "response": {
+        "content": "{\"__proto__\": \"literal\", \"a.b\": \"<script>tea</script>\", \"long_key_abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\": \"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz\"}"
+      }
+    },
+    {
+      "match": {
+        "systemMessage": "HUMAN: Remember Mira"
+      },
+      "response": {
+        "content": "{\"user_name\": \"Mira\", \"favorite_drink\": \"tea\"}"
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Recall",
+        "systemMessage": "user_name: Mira"
+      },
+      "response": {
+        "content": "You are Mira and prefer tea."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Recall"
+      },
+      "response": {
+        "content": "No facts remembered."
+      }
+    },
+    {
+      "match": {
+        "userMessage": "Error"
+      },
+      "response": {
+        "error": {
+          "message": "PRIVATE response",
+          "type": "server_error"
+        },
+        "status": 500
+      }
+    },
+    {
+      "match": {
+        "userMessage": ""
+      },
+      "response": {
+        "content": "Memory reply complete."
+      },
+      "chunkSize": 12,
+      "latency": 25
+    },
+    {
       "match": {},
       "response": {
         "content": "{}"

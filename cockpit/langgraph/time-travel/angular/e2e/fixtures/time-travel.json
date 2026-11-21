@@ -15,6 +15,32 @@
     {
       "match": { "userMessage": "Try a different approach from here." },
       "response": { "content": "This reply belongs to the checkpoint fork." }
+    },
+    {
+      "match": { "userMessage": "A" },
+      "response": { "content": "Answer to A" }
+    },
+    {
+      "match": { "userMessage": "B" },
+      "response": { "content": "Answer to B" }
+    },
+    {
+      "match": { "userMessage": "C" },
+      "response": { "content": "Answer to C" },
+      "chunkSize": 4,
+      "latency": 25
+    },
+    {
+      "match": { "userMessage": "D" },
+      "response": { "content": "Answer to D" }
+    },
+    {
+      "match": { "userMessage": "Literal" },
+      "response": { "content": "<script>literal answer</script>" }
+    },
+    {
+      "match": { "userMessage": "" },
+      "response": { "content": "Answer." }
     }
   ]
 }

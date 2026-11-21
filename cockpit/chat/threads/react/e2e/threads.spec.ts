@@ -1,12 +1,15 @@
 import {
   test,
   expect,
+  type Locator,
   type Page,
   type APIRequestContext,
 } from '@playwright/test';
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+// Backend: aimock replays cockpit/chat/threads/angular/e2e/fixtures (shared
+// with the Angular example) into a real `langgraph dev`, whose generate_title
+// node writes the real thread title. The React static server proxies /api to
+// it, recording requests and injecting holds, title and history rewrites, and
+// failures (scripts/react-cockpit/langgraph-proxy.mjs).
 type Wire = {
   path: string;
   method: string;
@@ -21,11 +24,14 @@ type Wire = {
 const base = '/chat/threads/react/';
 const box = (page: Page) => page.getByLabel('Message', { exact: true });
 // Conversation rows of the connected sidebar (not New chat or row menus).
+// The server lists the most recently updated conversation first.
 const picker = (page: Page) =>
   page
     .getByRole('navigation', { name: 'Conversations' })
     .getByRole('list', { name: 'Recent' })
     .locator('.tp-thread-list__button');
+// A row's title without its updated-at <time>.
+const titleOf = (row: Locator) => row.locator('[id$="-title"]');
 const conversation = (page: Page) =>
   page.getByRole('region', { name: 'Conversation', exact: true });
 async function submit(page: Page, text: string) {
@@ -81,22 +87,8 @@ async function newConversation(page: Page) {
   await expect(page.getByRole('status')).toHaveText('Ready.');
 }
 test.beforeEach(async ({ request }) => {
-  expect((await request.post('/__reset')).status()).toBe(200);
-});
-test.afterEach(async ({ request }) => {
-  const proofs = await (await request.get('/__graph-proof')).json();
-  for (const proof of proofs)
-    expect(proof).toMatchObject({
-      actualCompiledGraph: true,
-      networkConnectAttempts: 0,
-      titleMessageCallbacks: 0,
-      sourceSha256: createHash('sha256')
-        .update(readFileSync(resolve(__dirname, '../../python/src/graph.py')))
-        .digest('hex'),
-      lockSha256: createHash('sha256')
-        .update(readFileSync(resolve(__dirname, '../../python/uv.lock')))
-        .digest('hex'),
-    });
+  // The real server keeps every thread; the sidebar lists them all.
+  expect((await request.post('/__purge')).status()).toBe(200);
 });
 test('installed SDK switches A/B/A and extends only the selected saved conversation', async ({
   page,
@@ -109,15 +101,15 @@ test('installed SDK switches A/B/A and extends only the selected saved conversat
   expect(await (await request.get('/__requests')).json()).toEqual([]);
   await submit(page, 'A first');
   await saved(page);
-  await expect(picker(page).first()).toHaveText('Authored conversation title');
+  await expect(titleOf(picker(page).first())).toHaveText('Aviation snippet title');
   await box(page).fill('A retained draft');
   await newConversation(page);
   await expect(box(page)).toHaveValue('');
   await submit(page, 'B first');
   await saved(page);
-  await expect(picker(page).nth(1)).toHaveText('Authored conversation title');
+  await expect(titleOf(picker(page).first())).toHaveText('Aviation snippet title');
   await box(page).fill('B retained draft');
-  await picker(page).nth(0).click();
+  await picker(page).last().click();
   await loaded(page);
   await expect(box(page)).toHaveValue('A retained draft');
   await expect(conversation(page).locator('article')).toHaveCount(2);
@@ -133,16 +125,17 @@ test('installed SDK switches A/B/A and extends only the selected saved conversat
     path: testInfo.outputPath('threads-desktop.png'),
     fullPage: true,
   });
-  await picker(page).nth(1).click();
+  // A's followup made it the most recently updated, so B is now last.
+  await picker(page).last().click();
   await loaded(page);
   await expect(box(page)).toHaveValue('B retained draft');
   await expect(conversation(page).locator('article')).toHaveCount(2);
   await expect(conversation(page)).toContainText('B first');
   await expect(conversation(page)).not.toContainText('A first');
   await expect(conversation(page)).not.toContainText(
-    'Authored conversation title'
+    'Aviation snippet title'
   );
-  await expect(picker(page).nth(1)).toHaveAttribute('aria-current', 'true');
+  await expect(picker(page).last()).toHaveAttribute('aria-current', 'true');
   // Titles come from the sidebar's directory, so the page never reads one.
   await titleReads(request, 0);
   const wire: Wire[] = await (await request.get('/__requests')).json();
@@ -247,11 +240,11 @@ for (const mode of ['missing', 'invalid']) {
     await page.goto(base);
     await submit(page, 'First');
     await saved(page);
-    await expect(picker(page).first()).toHaveText('Untitled conversation');
+    await expect(titleOf(picker(page).first())).toHaveText('Untitled conversation');
     await submit(page, 'Second');
     await saved(page);
     await expect(conversation(page).locator('article')).toHaveCount(4);
-    await expect(picker(page).first()).toHaveText('Untitled conversation');
+    await expect(titleOf(picker(page).first())).toHaveText('Untitled conversation');
     await titleReads(request, 0);
   });
 }
@@ -286,7 +279,7 @@ test('cancelled selection quarantines A while independently saved B remains usab
   await saved(page);
   await box(page).fill('B retained draft');
   await request.post('/__history/hold');
-  await picker(page).nth(0).click();
+  await picker(page).last().click();
   await expect(page.getByRole('status')).toHaveText(
     'Loading saved conversation…'
   );
@@ -294,9 +287,9 @@ test('cancelled selection quarantines A while independently saved B remains usab
   await blocked(page);
   await request.post('/__release-history');
   await request.post('/__history/safe');
-  await refused(page, request, picker(page).nth(0), UNAVAILABLE);
+  await refused(page, request, picker(page).last(), UNAVAILABLE);
   await blocked(page);
-  await picker(page).nth(1).click();
+  await picker(page).first().click();
   await loaded(page);
   await expect(box(page)).toHaveValue('B retained draft');
   await submit(page, 'B followup');
@@ -331,7 +324,10 @@ test('actual graph failure is generic and never confirms or replays', async ({
   await submit(page, 'fail-stream');
   await blocked(page);
   await expect(page.locator('body')).not.toContainText('PRIVATE');
-  await expect(page.locator('body')).not.toContainText('Authored stream failure');
+  // aimock cuts the answer stream mid-way (truncateAfterChunks), so the model
+  // client raises inside the real graph; its transport error stays private.
+  await expect(page.locator('body')).not.toContainText('peer closed');
+  await expect(page.locator('body')).not.toContainText('Connection error');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(
     wire.filter((item) => item.path.endsWith('/runs/stream'))
@@ -343,7 +339,7 @@ test('literal title markup remains button text', async ({ page, request }) => {
   await page.goto(base);
   await submit(page, 'First');
   await saved(page);
-  await expect(picker(page).first()).toContainText('<script>');
+  await expect(titleOf(picker(page).first())).toContainText('<script>');
   await expect(picker(page).first().locator('script')).toHaveCount(0);
   await expect(conversation(page)).not.toContainText('<script>');
 });
@@ -357,7 +353,7 @@ test('long optional title is bounded and wraps on mobile', async ({
   await submit(page, 'First');
   await saved(page);
   // The sidebar shows the full server title without widening the page.
-  await expect(picker(page).first()).toHaveText(/^Long authored title/);
+  await expect(titleOf(picker(page).first())).toHaveText(/^Long authored title/);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth
@@ -376,7 +372,7 @@ test('Stop fences held streaming and preserves other records', async ({
   await submit(page, 'A first');
   await saved(page);
   await newConversation(page);
-  await request.post('/__hold-stream');
+  await request.post('/__hold/stream');
   await submit(page, 'B interrupted');
   await expect
     .poll(
@@ -386,9 +382,9 @@ test('Stop fences held streaming and preserves other records', async ({
   await page.getByRole('button', { name: 'Stop', exact: true }).click();
   await blocked(page);
   await request.post('/__release');
-  await refused(page, request, picker(page).nth(1), UNAVAILABLE);
+  await refused(page, request, picker(page).first(), UNAVAILABLE);
   await blocked(page);
-  await picker(page).first().click();
+  await picker(page).last().click();
   await loaded(page);
   await expect(conversation(page)).toContainText('A first');
   await expect(conversation(page)).not.toContainText('B interrupted');
@@ -402,7 +398,9 @@ for (const kind of ['history', 'stream']) {
     page,
     request,
   }) => {
-    await request.post('/__hold-' + kind);
+    await request.post(
+      kind === 'history' ? '/__history/hold' : '/__hold/' + kind
+    );
     await page.goto(base);
     await submit(page, 'First');
     const field = 'active' + kind[0].toUpperCase() + kind.slice(1);
@@ -431,11 +429,11 @@ test('worker failure stays generic and is not retried', async ({
   page,
   request,
 }) => {
-  await request.post('/__worker-failure');
+  await request.post('/__fail-stream');
   await page.goto(base);
   await submit(page, 'First');
   await blocked(page);
-  await expect(page.locator('body')).not.toContainText('Graph worker');
+  await expect(page.locator('body')).not.toContainText('PRIVATE');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(
     wire.filter((item) => item.path.endsWith('/runs/stream'))
@@ -469,8 +467,8 @@ test('developer endpoint credentials stay in headers for creation, stream, histo
     frame
       .getByRole('navigation', { name: 'Conversations' })
       .getByRole('list', { name: 'Recent' })
-      .locator('.tp-thread-list__button')
-  ).toHaveText('Authored conversation title');
+      .locator('.tp-thread-list__button [id$="-title"]')
+  ).toHaveText('Aviation snippet title');
   const wire: Wire[] = await (await request.get('/__requests')).json();
   expect(wire).toHaveLength(4);
   expect(
@@ -535,14 +533,14 @@ test('sidebar rename persists on the server and survives reload', async ({
   await page.goto(base);
   await submit(page, 'A first');
   await saved(page);
-  await expect(sidebarRows(page)).toHaveText(['Authored conversation title']);
-  await rowCommand(page, 'Authored conversation title', 'Rename');
+  await expect(titleOf(sidebarRows(page))).toHaveText(['Aviation snippet title']);
+  await rowCommand(page, 'Aviation snippet title', 'Rename');
   const title = page.getByLabel('Conversation title', { exact: true });
   await title.fill('Renamed A');
   await title.press('Enter');
-  await expect(sidebarRows(page)).toHaveText(['Renamed A']);
+  await expect(titleOf(sidebarRows(page))).toHaveText(['Renamed A']);
   await page.reload();
-  await expect(sidebarRows(page)).toHaveText(['Renamed A']);
+  await expect(titleOf(sidebarRows(page))).toHaveText(['Renamed A']);
   // Listed after reload, but only conversations confirmed on this page open.
   await refused(page, request, sidebarRows(page).first(), EARLIER_VISIT);
   await expect(page.getByRole('status')).toHaveText('Ready.');
@@ -573,18 +571,20 @@ test('sidebar pins two conversations, reorders them by drag and keeps the order 
       ).status()
     ).toBe(200);
   await page.reload();
-  await expect(sidebarRows(page)).toHaveText(['Alpha', 'Beta']);
+  // Rows follow the server's most-recently-updated-first order; pinning
+  // writes metadata, so the last one pinned (Beta) leads until dragged.
+  await expect(titleOf(sidebarRows(page))).toHaveText(['Beta', 'Alpha']);
   await rowCommand(page, 'Alpha', 'Pin');
   await rowCommand(page, 'Beta', 'Pin');
-  await expect.poll(rowTitles(page)).toEqual(['Alpha', 'Beta']);
+  await expect.poll(rowTitles(page)).toEqual(['Beta', 'Alpha']);
   const rows = page
     .getByRole('navigation', { name: 'Conversations' })
     .getByRole('list', { name: 'Recent' })
     .locator('li');
   await rows.nth(1).dragTo(rows.nth(0), { targetPosition: { x: 20, y: 2 } });
-  await expect.poll(rowTitles(page)).toEqual(['Beta', 'Alpha']);
+  await expect.poll(rowTitles(page)).toEqual(['Alpha', 'Beta']);
   await page.reload();
-  await expect.poll(rowTitles(page)).toEqual(['Beta', 'Alpha']);
+  await expect.poll(rowTitles(page)).toEqual(['Alpha', 'Beta']);
   const pinned = await serverThreads(request);
   expect(
     pinned.every((thread) => thread.metadata['pinned'] === true)
@@ -605,14 +605,14 @@ test('sidebar creates a project, moves a conversation into it and keeps both aft
   await name.fill('Research');
   await name.press('Enter');
   await expect(projectButton(page, 'Research')).toBeVisible();
-  await rowCommand(page, 'Authored conversation title', 'Move to project');
+  await rowCommand(page, 'Aviation snippet title', 'Move to project');
   await page.getByRole('menuitem', { name: 'Research', exact: true }).click();
   await expect
     .poll(async () => (await serverThreads(request))[0]?.metadata['projectId'])
     .toEqual(expect.any(String));
   await page.reload();
   await expect(projectButton(page, 'Research')).toBeVisible();
-  await expect(sidebarRows(page)).toHaveText(['Authored conversation title']);
+  await expect(titleOf(sidebarRows(page))).toHaveText(['Aviation snippet title']);
   const store = (await (
     await request.post('/api/store/items/search', {
       data: { namespace_prefix: ['threadplane', 'projects'], limit: 100 },
@@ -672,7 +672,7 @@ test('selecting a project lists only its conversations until it is selected agai
     'aria-current',
     'true'
   );
-  await expect(sidebarRows(page)).toHaveText(['Alpha']);
+  await expect(titleOf(sidebarRows(page))).toHaveText(['Alpha']);
 
   await projectButton(page, 'Research').click();
   await expect(projectButton(page, 'Research')).not.toHaveAttribute(
@@ -693,7 +693,7 @@ test('sidebar delete of the active conversation returns to a new chat', async ({
     'aria-current',
     'true'
   );
-  await rowCommand(page, 'Authored conversation title', 'Delete');
+  await rowCommand(page, 'Aviation snippet title', 'Delete');
   await page
     .getByRole('alertdialog', { name: 'Delete conversation?' })
     .getByRole('button', { name: 'Delete', exact: true })

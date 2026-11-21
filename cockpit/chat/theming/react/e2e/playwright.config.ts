@@ -8,6 +8,9 @@ export default defineConfig({
   outputDir: '../../../../../output/playwright/chat-theming-react',
   use: { baseURL: 'http://127.0.0.1:4644', trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // aimock + real `langgraph dev`, shared with cockpit/chat/theming/angular.
+  globalSetup: './global-setup-impl.ts',
+  globalTeardown: require.resolve('../../../../../libs/e2e-harness/src/global-teardown'),
   webServer: {
     command: 'node scripts/react-cockpit/serve.mjs chat-theming --no-parent',
     cwd: '../../../../..',

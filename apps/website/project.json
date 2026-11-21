@@ -277,14 +277,6 @@
           "projects": ["website"]
         },
         {
-          "target": "prepare-fixture",
-          "projects": [
-            "cockpit-runtimes-mastra-react",
-            "cockpit-runtimes-microsoft-agent-framework-react",
-            "cockpit-runtimes-aws-strands-react"
-          ]
-        },
-        {
           "target": "build",
           "projects": [
             "cockpit-render-spec-rendering-react",
@@ -351,7 +343,7 @@
         },
         {
           "target": "prepare-fixture",
-          "projects": ["cockpit-runtimes-mastra-react", "cockpit-runtimes-microsoft-agent-framework-react", "cockpit-runtimes-aws-strands-react", "cockpit-ag-ui-a2ui-react"]
+          "projects": ["cockpit-ag-ui-a2ui-react"]
         },
         {
           "target": "build",

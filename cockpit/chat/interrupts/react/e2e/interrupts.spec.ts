@@ -1,4 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
+// Backend: aimock replays cockpit/chat/interrupts/angular/e2e/fixtures (shared
+// with the Angular example; React prompts key tool rounds on toolCallId) into a
+// real `langgraph dev`, which raises the real book_flight interrupt. The React
+// static server proxies /api to it, recording requests and injecting holds and
+// failures (scripts/react-cockpit/langgraph-proxy.mjs).
 type Wire = {
   path: string;
   method: string;
@@ -103,16 +108,8 @@ test('installed SDK confirms then cancels real saved pauses on one conversation'
   expect(wire.filter((item) => item.path.endsWith('/history'))).toHaveLength(4);
   expect(wire.filter((item) => item.method === 'GET')).toHaveLength(4);
   await expect(conversation(page)).not.toContainText(
-    'Authored aviation conversation'
+    'Aviation snippet title'
   );
-  const proofs = await (await request.get('/__graph-proof')).json();
-  expect(proofs).toHaveLength(4);
-  for (const proof of proofs)
-    expect(proof).toMatchObject({
-      actualCompiledGraph: true,
-      networkConnectAttempts: 0,
-      titleMessageCallbacks: 0,
-    });
 });
 test('direct answers and causally completed read tools precede a saved approval', async ({
   page,
@@ -203,7 +200,7 @@ test('held resume admits one decision and Stop fences late completion', async ({
 }) => {
   await page.goto(base);
   await pause(page);
-  await request.post('/__hold-resume');
+  await request.post('/__hold/stream');
   await page.getByRole('button', { name: 'Book flight', exact: true }).click();
   await expect(
     page.getByRole('button', { name: 'Book flight', exact: true })
@@ -224,7 +221,7 @@ test('failed resume is never retried and New only resets local state', async ({
 }) => {
   await page.goto(base);
   await pause(page);
-  await request.post('/__fail-resume');
+  await request.post('/__fail-stream');
   await page.getByRole('button', { name: "Don't book", exact: true }).click();
   await blocked(page);
   const wire: Wire[] = await (await request.get('/__requests')).json();
@@ -259,12 +256,13 @@ test('metadata failure cannot corrupt the real graph wire or expose a title resp
   page,
   request,
 }) => {
-  await request.post('/__metadata-failure');
+  // The title model call for this prompt fails (its own aimock error fixture);
+  // generate_title swallows it like any metadata failure.
   await page.goto(base);
-  await pause(page);
+  await pause(page, 'Book padded flight. (title fails)');
   await page.getByRole('button', { name: "Don't book", exact: true }).click();
   await saved(page);
-  await expect(conversation(page)).not.toContainText('Authored metadata');
+  await expect(conversation(page)).not.toContainText('PRIVATE');
 });
 test('authored developer connection routes only to its configured target', async ({
   page,
@@ -343,7 +341,7 @@ test('Stop during held initial streaming cannot expose a late approval', async (
   page,
   request,
 }) => {
-  await request.post('/__hold-stream');
+  await request.post('/__hold/stream');
   await page.goto(base);
   await submit(page, 'Book UA123.');
   await expect

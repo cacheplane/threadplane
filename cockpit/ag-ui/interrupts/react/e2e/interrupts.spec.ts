@@ -1,7 +1,73 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
+// Backend: aimock replays cockpit/ag-ui/interrupts/angular/e2e/fixtures into
+// the example's real AG-UI server, whose native endpoint (/agent/native)
+// pauses with an AG-UI 1.0 interrupt outcome and resumes from `resume`. The
+// recording proxy (scripts/react-cockpit/ag-ui-proxy.mjs) holds, fails or
+// edits the next run.
 test.beforeEach(async ({ request }) => {
   await request.post('/__reset');
 });
+const edit = (request: APIRequestContext, ops: object[]) =>
+  request.post('/__stream/edit', { data: { ops } });
+const runError = [
+  { type: '^(TEXT_MESSAGE_START|STEP_STARTED)$', op: 'insertBefore', event: { type: 'RUN_ERROR', message: 'PRIVATE model failure', code: 'TEST' } },
+  { type: '^(TEXT_MESSAGE_START|STEP_STARTED)$', op: 'end' },
+];
+/** The approval the real graph pauses with, as the legacy notice carries it. */
+const legacyNotice = {
+  type: 'CUSTOM',
+  name: 'on_interrupt',
+  value: JSON.stringify([{ kind: 'refund_approval', amount: 25, customer_id: 'cus_demo', reason: 'Fictional damaged item' }]),
+};
+/**
+ * Arms a draft-run fault. `Negative amount` is real (the extractor fixture
+ * returns -1); the rest are injected protocol shapes a correct server won't
+ * produce, for the client's fault handling.
+ */
+async function draftFault(request: APIRequestContext, mode: string) {
+  if (mode === 'HTTP error') await request.post('/__fail-stream');
+  if (mode === 'Run error') await edit(request, runError);
+  if (mode === 'Legacy')
+    await edit(request, [
+      { type: '^RUN_FINISHED$', op: 'insertBefore', event: legacyNotice },
+      { type: '^RUN_FINISHED$', op: 'omit', keys: ['outcome'] },
+    ]);
+  if (mode === 'Notice EOF')
+    await edit(request, [
+      { type: '^RUN_FINISHED$', op: 'insertBefore', event: legacyNotice },
+      { type: '^RUN_FINISHED$', op: 'end' },
+    ]);
+  const outcome = { Multiple: 'multiple', Expired: 'expired', Malformed: 'malformed', 'Child interrupt': 'child' }[mode];
+  if (outcome) await edit(request, [{ type: '^RUN_FINISHED$', op: 'outcome', mode: outcome }]);
+  if (mode === 'Child')
+    await edit(request, [
+      { type: '^RUN_STARTED$', op: 'insertAfter', event: { type: 'SUBAGENT_STARTED', subagentRunId: 'child', name: 'worker' } },
+    ]);
+  if (mode === 'Tool') await edit(request, [{ type: '^MESSAGES_SNAPSHOT$', op: 'snapshot', mode: 'tool-call' }]);
+  if (mode === 'Duplicate identity')
+    await edit(request, [{ type: '^MESSAGES_SNAPSHOT$', op: 'snapshot', mode: 'duplicate-identity' }]);
+  if (mode === 'Wrong terminal') await edit(request, [{ type: '^RUN_FINISHED$', op: 'patch', set: { runId: 'wrong-run' } }]);
+}
+/** Arms a resume-run fault (injected protocol shapes). */
+async function resumeFault(request: APIRequestContext, mode: string) {
+  if (mode === 'Resume error') await edit(request, runError);
+  if (mode === 'Resume interrupted')
+    await edit(request, [{ type: '^RUN_FINISHED$', op: 'patch', set: { outcome: { type: 'cancelled' } } }]);
+  if (mode === 'Resume wrong terminal')
+    await edit(request, [{ type: '^RUN_FINISHED$', op: 'patch', set: { runId: 'wrong-run' } }]);
+  const snapshot = {
+    'Resume truncated prefix': 'answer-only',
+    'Resume old state': 'sent',
+    'Resume duplicate identity': 'duplicate-identity',
+  }[mode];
+  if (snapshot) await edit(request, [{ type: '^MESSAGES_SNAPSHOT$', op: 'snapshot', mode: snapshot }]);
+  if (mode === 'Resume second pause') {
+    // The draft run's real pause, offered again after the decision.
+    const [draft] = await (await request.get('/__captures')).json();
+    const finished = draft.events.find((event: { type: string }) => event.type === 'RUN_FINISHED');
+    await edit(request, [{ type: '^RUN_FINISHED$', op: 'patch', set: { outcome: finished.outcome } }]);
+  }
+}
 const conversation = (page: Page) =>
   page.getByRole('region', { name: 'Conversation', exact: true });
 async function send(page: Page, text: string) {
@@ -28,6 +94,7 @@ for (const mode of [
     request,
   }) => {
     await page.goto('/ag-ui/interrupts/react/');
+    await draftFault(request, mode);
     await send(page, mode);
     await expect(page.getByRole('status')).toHaveText(
       'Start a new conversation to continue.'
@@ -69,6 +136,7 @@ for (const mode of [
     await expect(page.getByRole('status')).toHaveText(
       'Awaiting your decision.'
     );
+    await resumeFault(request, mode);
     await page
       .getByRole('button', { name: 'Issue refund', exact: true })
       .click();
@@ -93,19 +161,22 @@ for (const phase of ['draft', 'resume'])
       request,
     }) => {
       await page.goto('/ag-ui/interrupts/react/');
+      // The draft streams in 3-character chunks: hold after the first. The
+      // resume run streams no text: hold right after it starts.
+      if (phase === 'draft') await request.post('/__hold/stream');
       await send(page, phase === 'draft' ? 'Hold' : 'Resume hold');
       if (phase === 'resume') {
         await expect(page.getByRole('status')).toHaveText(
           'Awaiting your decision.'
         );
+        await request.post('/__hold/stream', { data: { afterType: 'RUN_STARTED' } });
         await page
           .getByRole('button', { name: 'Issue refund', exact: true })
           .click();
-      }
-      await expect(conversation(page)).toContainText('Live partial');
-      expect((await (await request.get('/__lifetime')).json()).active).toBe(
-        true
-      );
+      } else await expect(conversation(page)).toContainText('Dra');
+      await expect
+        .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+        .toBe(true);
       if (exit === 'Stop') {
         await page.getByRole('button', { name: 'Stop', exact: true }).click();
         await expect(page.getByRole('status')).toHaveText(
@@ -133,19 +204,24 @@ test('an incremental draft settles to the current pause and a held resume permit
   request,
 }) => {
   await page.goto('/ag-ui/interrupts/react/');
+  await request.post('/__hold/stream');
   await send(page, 'Hold');
-  await expect(conversation(page)).toContainText('Live partial');
+  await expect(conversation(page)).toContainText('Dra');
+  await expect(conversation(page)).not.toContainText('Draft ready.');
   await expect(
     page.getByRole('button', { name: 'Issue refund', exact: true })
   ).toHaveCount(0);
   await request.post('/__release');
   await expect(page.getByRole('status')).toHaveText('Awaiting your decision.');
-  await expect(conversation(page)).not.toContainText('Live partial');
+  await expect(conversation(page)).toContainText('Draft ready.');
   await page.getByRole('button', { name: 'New conversation' }).click();
   await send(page, 'Resume hold');
   await expect(page.getByRole('status')).toHaveText('Awaiting your decision.');
+  await request.post('/__hold/stream', { data: { afterType: 'RUN_STARTED' } });
   await page.getByRole('button', { name: 'Issue refund', exact: true }).click();
-  await expect(conversation(page)).toContainText('Live partial');
+  await expect
+    .poll(async () => (await (await request.get('/__lifetime')).json()).active)
+    .toBe(true);
   await expect(
     page.getByRole('button', { name: 'Issue refund', exact: true })
   ).toBeDisabled();
@@ -297,9 +373,12 @@ for (const action of ['Issue refund', 'Edit and approve', "Don't refund"]) {
       '  Fictional refund  ',
       'Draft ready.',
     ]);
+    // The real graph's interrupt id, as its draft run reported it.
+    const [draft] = await (await request.get('/__captures')).json();
+    const pause = draft.events.find((event: { type: string }) => event.type === 'RUN_FINISHED').outcome.interrupts[0];
     expect(before[1].body.resume).toEqual([
       {
-        interruptId: 'interrupt-1',
+        interruptId: pause.id,
         status: 'resolved',
         payload:
           action === "Don't refund"

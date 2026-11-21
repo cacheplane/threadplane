@@ -7,30 +7,40 @@ import {
 } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 const base = '/deep-agents/subagents/react/';
+// Backend: aimock replays cockpit/deep-agents/subagents/angular/e2e/fixtures
+// (shared with the Angular example; React scenarios are tagged prompts, listed
+// first so they win over the recorded prompts they contain) into a real
+// `langgraph dev`, whose real child graphs run each dispatched specialist. The
+// proxy records requests and holds or fails the next call
+// (scripts/react-cockpit/langgraph-proxy.mjs).
+let scenario = 'single';
 async function configure(
   request: APIRequestContext,
-  scenario = 'single',
+  next = 'single',
   extra: Record<string, boolean> = {}
 ) {
-  expect(
-    (
-      await request.post('/__configure', {
-        data: {
-          scenario,
-          holdStream: false,
-          holdState: false,
-          holdCheckpoint: false,
-          failCreation: false,
-          failStream: false,
-          failCheckpoint: false,
-          ...extra,
-        },
-      })
-    ).ok()
-  ).toBe(true);
+  const control = async (path: string, data: object = {}) =>
+    expect((await request.post(path, { data })).ok()).toBe(true);
+  scenario = next;
+  // The saved-conversation confirmation reads the exact checkpoint.
+  if (extra.holdCheckpoint) await control('/__hold/state');
+  if (extra.holdStream) await control('/__hold/stream', { immediate: true });
+  if (extra.failStream) await control('/__fail-stream');
+  await control(extra.failCheckpoint ? '/__state/failure' : '/__state/safe');
 }
+async function release(request: APIRequestContext) {
+  await request.post('/__release-state');
+  await request.post('/__release');
+}
+test.beforeEach(async ({ request }) => {
+  await request.post('/__reset');
+  scenario = 'single';
+});
 async function send(page: Page, text = 'What is the field data for KSFO?') {
-  await page.getByRole('textbox', { name: 'Message' }).fill(text);
+  // The scenario tag selects the scripted model turns (shared fixtures).
+  await page
+    .getByRole('textbox', { name: 'Message' })
+    .fill(`${text} [scenario:${scenario}]`);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
 }
 /** The application's own status under the composer; Chat's tool rows keep their own. */
@@ -47,7 +57,7 @@ async function proof(
   testInfo: TestInfo
 ) {
   mkdirSync(testInfo.outputDir, { recursive: true });
-  for (const endpoint of ['requests', 'graph-proof', 'raw-events'])
+  for (const endpoint of ['requests', 'captures'])
     writeFileSync(
       testInfo.outputPath(`${name}-${endpoint}.json`),
       JSON.stringify(
@@ -58,26 +68,18 @@ async function proof(
     );
 }
 async function canonicalCards(page: Page, request: APIRequestContext) {
-  const runs = (await (await request.get('/__raw-events')).json()) as {
-    events: [
-      string[],
-      string,
-      {
-        messages?: {
-          id: string;
-          type: string;
-          content: string;
-          tool_call_id?: string;
-          tool_calls?: { id: string; name: string; args: unknown }[];
-        }[];
-      }
-    ][];
+  // The root messages the real server saved for the latest run.
+  const runs = (await (await request.get('/__captures')).json()) as {
+    savedMessages: {
+      id: string;
+      type: string;
+      content: string;
+      tool_call_id?: string;
+      tool_calls?: { id: string; name: string; args: unknown }[];
+    }[];
   }[];
-  const messages = runs
-    .at(-1)
-    ?.events.filter((e) => e[0].length === 0 && e[1] === 'values')
-    .at(-1)?.[2].messages;
-  if (!messages) throw Error('Missing actual root events');
+  const messages = runs.at(-1)?.savedMessages;
+  if (!messages?.length) throw Error('Missing actual root messages');
   const calls = messages.flatMap((m) => m.tool_calls ?? []);
   // Chat's default rows: a subagent card in place of each task call, a tool row for any other.
   expect(
@@ -250,7 +252,7 @@ test('Stop and New invalidate held delivery without hidden replay', async ({
   await expect(status(page)).toContainText('stopped');
   await page.getByRole('button', { name: 'New conversation' }).click();
   await expect(page.getByRole('textbox')).toBeEnabled();
-  await request.post('/__release', { data: {} });
+  await release(request);
   await expect(page.locator('.tp-subagent-card')).toHaveCount(0);
   const requests = (await (await request.get('/__requests')).json()).slice(
     before
@@ -284,7 +286,7 @@ test('active New isolates a held saved checkpoint and cannot resurrect it', asyn
   );
   await page.getByRole('button', { name: 'New conversation' }).click();
   await expect(page.getByRole('textbox')).toBeEnabled();
-  await request.post('/__release', { data: {} });
+  await release(request);
   await expect(page.locator('.tp-subagent-card')).toHaveCount(0);
   await expect(status(page)).toHaveText('Ready.');
   await proof(request, 'new-pending-checkpoint', testInfo);
@@ -316,7 +318,9 @@ test('duplicate Send and transport failure cannot cause automatic replay', async
   await configure(request, 'single', { failStream: true });
   await page.goto(base);
   const before = (await (await request.get('/__requests')).json()).length;
-  await page.getByRole('textbox').fill('What is the field data for KSFO?');
+  await page
+    .getByRole('textbox')
+    .fill(`What is the field data for KSFO? [scenario:${scenario}]`);
   await page
     .getByRole('button', { name: 'Send', exact: true })
     .evaluate((element) => {

@@ -1,10 +1,41 @@
 {
   "fixtures": [
     {
+      "match": {
+        "systemMessage": "In 3-5 words, summarize",
+        "userMessage": "(title fails)"
+      },
+      "response": {
+        "error": {
+          "message": "PRIVATE title model failure",
+          "type": "server_error"
+        },
+        "status": 500
+      }
+    },
+    {
+      "match": { "systemMessage": "In 3-5 words, summarize" },
+      "response": { "content": "Aviation snippet title" }
+    },
+    {
       "match": { "userMessage": "Hello" },
       "response": {
         "content": "Hi! I'm the chat-timeline demo. Each message creates a checkpoint you can scrub with the timeline slider in the sidebar."
       }
+    },
+    {
+      "match": { "userMessage": "Title optional" },
+      "response": { "content": "Answer: Title optional" }
+    },
+    {
+      "match": { "userMessage": "fail-stream" },
+      "response": { "content": "A partial answer that never finishes streaming." },
+      "chunkSize": 3,
+      "truncateAfterChunks": 4
+    },
+    {
+      "match": { "userMessage": "" },
+      "response": { "content": "Answer: saved." }
     }
   ]
 }

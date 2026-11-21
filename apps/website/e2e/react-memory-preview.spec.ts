@@ -1,3 +1,6 @@
+// The preview server (`serve.mjs <example> --backend`) runs the real graph under
+// `langgraph dev` on aimock fixtures shared with the Angular example; controls
+// come from scripts/react-cockpit/langgraph-proxy.mjs.
 import { documentationModes } from './fixtures/workspace-controls';
 import { selectFramework, expectFrameworkControl } from './fixtures/framework-controls';
 import { test, expect } from '@playwright/test';
@@ -62,7 +65,9 @@ test('switching away releases held React extraction and returning starts empty',
     'Local extraction lifetime is verified before deployment'
   );
   await request.post('http://127.0.0.1:4602/__reset');
-  await request.post('http://127.0.0.1:4602/__hold-extraction');
+  await request.post('http://127.0.0.1:4602/__ready', { timeout: 180000 });
+  // Hold once the reply has streamed, before extraction saves facts.
+  await request.post('http://127.0.0.1:4602/__hold/stream', { data: { afterText: 'Memory reply complete.' } });
   await page.goto('/docs/react/langgraph/guides/memory?mode=run');
   const frame = page.frameLocator('iframe');
   await frame.getByLabel('Message', { exact: true }).fill('Remember Mira');
@@ -81,7 +86,7 @@ test('switching away releases held React extraction and returning starts empty',
       async () =>
         (
           await (await request.get('http://127.0.0.1:4602/__lifetime')).json()
-        ).active
+        ).activeStream
     )
     .toBe(false);
   await selectFramework(page, 'react');

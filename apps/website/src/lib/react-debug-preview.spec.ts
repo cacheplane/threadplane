@@ -12,9 +12,9 @@ it('isolates website Debug integration to two owned servers and records its Nx p
   expect(config.retries).toBe(0);
   expect(config.outputDir).toContain('output/playwright/chat-debug-website');
   const servers = config.webServer as { url: string; command: string; reuseExistingServer?: boolean; gracefulShutdown?: unknown }[];
-  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:3000', 'http://127.0.0.1:4645']);
+  expect(servers.map(server => server.url)).toEqual(['http://127.0.0.1:3000', 'http://127.0.0.1:4645/__ready']);
   for (const server of servers) expect(server).toMatchObject({ reuseExistingServer: false, gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 } });
-  expect(servers[1].command).toBe('node scripts/react-cockpit/serve.mjs chat-debug --no-parent');
+  expect(servers[1].command).toBe('node scripts/react-cockpit/serve.mjs chat-debug --no-parent --backend');
   const project = JSON.parse(readFileSync(resolve(import.meta.dirname, '../../project.json'), 'utf8'));
   expect(project.implicitDependencies).toContain('cockpit-chat-debug-react');
   expect(project.targets.e2e.dependsOn.find((dependency: { target: string }) => dependency.target === 'test').projects).toContain('cockpit-chat-debug-python');

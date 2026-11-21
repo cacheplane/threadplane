@@ -73,6 +73,6 @@ npx nx build cockpit-ag-ui-client-tools-react
 npx nx e2e cockpit-ag-ui-client-tools-react
 ~~~
 
-The e2e target depends on frozen canonical fixture preparation. For explicit preparation, run **npx nx run cockpit-ag-ui-client-tools-react:prepare-fixture**. The build installs the real private package artifacts with strict types. Deterministic offline browser checks use the actual canonical graph and locked AG-UI adapter with scripted model responses over HTTP/SSE. They verify local execution, physical continuations, and owned cleanup; they do not prove a live model-provider request. Docs, Code, and Run select this same source implementation.
+The build installs the real private package artifacts with strict types. Deterministic offline browser checks run the actual graph behind the locked AG-UI adapter, with scripted model responses replayed by aimock, over HTTP/SSE. They verify local execution and physical continuations, and that the model receives each exact local result; they do not prove a live model-provider request. Docs, Code, and Run select this same source implementation.
 
 <ExampleCode file="cockpit/ag-ui/client-tools/react/project.json" />

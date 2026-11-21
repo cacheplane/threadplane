@@ -6,14 +6,29 @@ import {
 } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 const path = '/runtimes/mastra/react/';
-async function stats(request: APIRequestContext) {
-  return (await request.get('/__stats')).json();
-}
+// Backend: aimock replays cockpit/runtimes/mastra/angular/e2e/fixtures (shared
+// with the Angular example, which sends the same reservation prompt) into the
+// real deployments/ag-ui-mastra service, behind the recording proxy
+// (scripts/react-cockpit/ag-ui-proxy.mjs).
+/** Every agent POST: what the service streamed (`events`) and the browser got (`sent`). */
 async function requests(request: APIRequestContext) {
-  return (await stats(request)).current.requests;
+  return (await request.get('/__requests')).json();
 }
-async function start(page: Page, request: APIRequestContext, mode = 'normal') {
-  await request.post('/__reset', { data: { mode } });
+/** What the model received and which fixture answered (aimock's journal). */
+async function model(request: APIRequestContext) {
+  return (await request.get('/__model-requests')).json();
+}
+async function start(
+  page: Page,
+  request: APIRequestContext,
+  ops?: { edit?: unknown[]; hold?: boolean }
+) {
+  await request.post('/__reset');
+  // Injected data, per test: proxy edits or a hold on the browser's stream.
+  if (ops?.edit)
+    await request.post('/__stream/edit', { data: { ops: ops.edit } });
+  if (ops?.hold)
+    await request.post('/__hold/stream', { data: { afterType: 'RUN_STARTED' } });
   await page.goto(path);
   await expect(page.getByRole('status')).toHaveText('Ready.');
   expect(await requests(request)).toHaveLength(0);
@@ -23,33 +38,27 @@ async function start(page: Page, request: APIRequestContext, mode = 'normal') {
   expect(await requests(request)).toHaveLength(0);
   await page.getByRole('button', { name: 'Send', exact: true }).click();
 }
-async function finish(request: APIRequestContext) {
-  const evidence = await stats(request);
-  const evidencePath = test
-    .info()
-    .outputPath('private-actual-service-evidence.json');
-  await writeFile(evidencePath, JSON.stringify(evidence, null, 2));
-  await test.info().attach('private-actual-service-evidence.json', {
-    path: evidencePath,
-    contentType: 'application/json',
-  });
-  const receipt = await (await request.get('/__finish')).json();
-  expect(receipt.closed.length).toBeGreaterThan(0);
-  for (const owner of receipt.closed)
-    expect(Object.values(owner.closure).every(Boolean)).toBe(true);
-  const cleanupPath = test.info().outputPath('private-owned-cleanup.json');
-  await writeFile(cleanupPath, JSON.stringify(receipt, null, 2));
-  await test.info().attach('private-owned-cleanup.json', {
-    path: cleanupPath,
-    contentType: 'application/json',
-  });
-}
 test.afterEach(async ({ page, request }) => {
   await writeFile(
     test.info().outputPath('private-dom.html'),
     await page.content()
   );
-  await finish(request);
+  const evidencePath = test
+    .info()
+    .outputPath('private-actual-service-evidence.json');
+  await writeFile(
+    evidencePath,
+    JSON.stringify(
+      { requests: await requests(request), model: await model(request) },
+      null,
+      2
+    )
+  );
+  await test.info().attach('private-actual-service-evidence.json', {
+    path: evidencePath,
+    contentType: 'application/json',
+  });
+  await request.post('/__release');
 });
 for (const decision of ['Approve', 'Decline'] as const) {
   test(`actual native ${decision.toLowerCase()} binds pause, resume, tool result and truthful model reply`, async ({
@@ -154,8 +163,8 @@ for (const decision of ['Approve', 'Decline'] as const) {
     await expect(
       page.getByText(
         decision === 'Approve'
-          ? 'The fictional North Pines reservation is approved for 2 nights.'
-          : 'The North Pines reservation was declined. Nothing was booked.',
+          ? 'North Pines is reserved for 2 nights — confirmation TP-0288.'
+          : 'The reservation for the North Pines campsite was not booked.',
         { exact: true }
       )
     ).toBeVisible();
@@ -213,24 +222,15 @@ for (const decision of ['Approve', 'Decline'] as const) {
       runId: resume.runId,
     });
     expect(terminal.outcome).toBeUndefined();
-    const current = await stats(request);
-    expect(current.current.modelRequests).toHaveLength(2);
-    expect(
-      current.current.modelRequests[1].body.input.filter(
-        (item: { type: string }) => item.type === 'function_call_output'
-      )
-    ).toHaveLength(1);
-    expect(current.current.modelRequests[1].match.toolCalls).toBeUndefined();
-    expect(current.current.modelRequests[1].match.content).toContain(
-      decision === 'Approve' ? 'approved' : 'Nothing was booked'
+    // The continuation answered the real tool result: the fixture keyed on
+    // the decision's literal answered with text, not another tool call.
+    const calls = await model(request);
+    expect(calls).toHaveLength(2);
+    expect(calls[1].response.fixture.match.toolResultContains).toBe(
+      decision === 'Approve' ? 'Reserved North Pines' : 'Nothing was booked.'
     );
-    expect(current.current.networkDenials).toEqual([]);
-    expect(
-      records.every(
-        (r: { closed: boolean; upstreamClosed: boolean }) =>
-          r.closed && r.upstreamClosed
-      )
-    ).toBe(true);
+    expect(calls[1].response.fixture.response.toolCalls).toBeUndefined();
+    expect(records.every((r: { closed: boolean }) => r.closed)).toBe(true);
     await page.screenshot({
       path: test.info().outputPath('desktop.png'),
       fullPage: true,
@@ -259,16 +259,29 @@ test('informational notice without native terminal grants no decision', async ({
   page,
   request,
 }) => {
-  await start(page, request, 'notice-only');
+  // Injected data: the proxy drops the pause's real interrupt terminal.
+  await start(page, request, {
+    edit: [{ type: 'RUN_FINISHED', op: 'drop' }],
+  });
   await expect(page.getByRole('status')).toContainText('unconfirmed');
   await expect(
     page.getByRole('button', { name: 'Approve', exact: true })
   ).toHaveCount(0);
-  expect(await requests(request)).toHaveLength(1);
-  const current = await stats(request);
-  expect(current.current.faults).toHaveLength(1);
+  const records = await requests(request);
+  expect(records).toHaveLength(1);
+  // The service streamed its interrupt terminal; the browser never got it.
   expect(
-    current.current.requests[0].events.some(
+    records[0].events.filter(
+      (event: { type: string }) => event.type === 'RUN_FINISHED'
+    )
+  ).toHaveLength(1);
+  expect(
+    records[0].sent.some(
+      (event: { type: string }) => event.type === 'RUN_FINISHED'
+    )
+  ).toBe(false);
+  expect(
+    records[0].sent.some(
       (event: { type: string; name?: string }) =>
         event.type === 'CUSTOM' && event.name === 'on_interrupt'
     )
@@ -278,10 +291,14 @@ test('accepted resume with actual result but lost root terminal cannot retry', a
   page,
   request,
 }) => {
-  await start(page, request, 'lost-terminal');
+  await start(page, request);
   await expect(
     page.getByRole('button', { name: 'Approve', exact: true })
   ).toBeEnabled();
+  // Injected data: the proxy drops the resumed run's real root terminal.
+  await request.post('/__stream/edit', {
+    data: { ops: [{ type: 'RUN_FINISHED', op: 'drop' }] },
+  });
   await page.getByRole('button', { name: 'Approve', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('unconfirmed');
   await expect(
@@ -290,15 +307,19 @@ test('accepted resume with actual result but lost root terminal cannot retry', a
   await expect(
     page.getByRole('button', { name: 'Approve', exact: true })
   ).toHaveCount(0);
-  const current = await stats(request);
-  expect(current.current.requests).toHaveLength(2);
-  expect(current.current.faults).toHaveLength(1);
+  const records = await requests(request);
+  expect(records).toHaveLength(2);
   expect(
-    current.current.requests[1].events.some(
+    records[1].events.some(
       (event: { type: string; name?: string }) =>
         event.type === 'TOOL_CALL_RESULT'
     )
   ).toBe(true);
+  expect(
+    records[1].sent.some(
+      (event: { type: string }) => event.type === 'RUN_FINISHED'
+    )
+  ).toBe(false);
   await page
     .getByRole('button', { name: 'New conversation', exact: true })
     .click();
@@ -310,24 +331,21 @@ for (const action of ['Stop', 'New conversation', 'unmount'])
     page,
     request,
   }) => {
-    await start(page, request, 'held');
+    // Injected data: the proxy holds the browser's stream after RUN_STARTED.
+    await start(page, request, { hold: true });
     await expect
       .poll(async () => (await requests(request))[0]?.held)
       .toBe(true);
     if (action === 'unmount') await page.goto('about:blank');
     else await page.getByRole('button', { name: action, exact: true }).click();
     await expect
-      .poll(async () => {
-        const record = (await requests(request))[0];
-        return record.closed && record.upstreamClosed && record.upstreamAborted;
-      })
+      .poll(async () => (await requests(request))[0].closed)
       .toBe(true);
     const records = await requests(request);
     expect(records).toHaveLength(1);
     expect(records[0].body.resume).toBeUndefined();
-    expect(records[0].upstreamEnded).toBeUndefined();
     expect(
-      records[0].events.some(
+      records[0].sent.some(
         (event: { type: string; name?: string }) =>
           event.type === 'RUN_FINISHED'
       )
