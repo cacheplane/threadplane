@@ -39,6 +39,7 @@ export default defineConfig({
             'chat/src/lib/**/*.spec.ts',
             'chat/src/packaging/**/*.spec.ts',
             'chat/math/src/**/*.spec.ts',
+            'a2ui/src/**/*.spec.ts',
           ],
         },
       },

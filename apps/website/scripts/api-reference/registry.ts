@@ -16,6 +16,7 @@ const definitions: [string, ApiFramework, string, string?][] = [
   ['ag-ui', 'shared', 'src/public-api.ts'],
   ['angular', 'angular', 'src/public-api.ts'],
   ['angular/chat', 'angular', 'chat/src/public-api.ts'],
+  ['angular/a2ui', 'angular', 'a2ui/public-api.ts'],
   ['angular/chat/debug', 'angular', 'chat/debug/public-api.ts'],
   ['angular/chat/math', 'angular', 'chat/math/public-api.ts'],
   ['angular/chat/testing', 'angular', 'chat/testing/public-api.ts'],
@@ -76,7 +77,7 @@ export const SDK_ENTRYPOINTS: SdkEntrypoint[] = definitions.map(
       ? 'chat'
       : id === 'react/render' || id === 'angular/render'
       ? 'render'
-      : id === 'react/a2ui'
+      : id === 'react/a2ui' || id === 'angular/a2ui'
       ? 'a2ui'
       : project;
     return {

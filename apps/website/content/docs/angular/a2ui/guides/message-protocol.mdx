@@ -6,7 +6,7 @@ description: Surfaces, flat components, dynamic values, the four v0.9 envelopes,
 
 A2UI is a declarative, streamed wire format: the agent describes a UI, sends it as newline-delimited JSON, and the client renders it and ships actions back.
 
-This page walks the shapes. Everything here is what `@threadplane/a2ui` types and parses; rendering belongs to `@threadplane/angular/chat`'s [`<a2ui-surface>`](/docs/angular/chat/a2ui/surface-component). Threadplane implements the **A2UI v0.9.1 stable release**: every envelope carries `"version": "v0.9"`, and the standardized MIME type is `application/a2ui+json` (exported as `A2UI_MIME_TYPE`).
+This page walks the shapes. Everything here is what `@threadplane/a2ui` types and parses; rendering belongs to `@threadplane/angular/a2ui`'s [`<a2ui-surface>`](/docs/angular/chat/a2ui/surface-component). Threadplane implements the **A2UI v0.9.1 stable release**: every envelope carries `"version": "v0.9"`, and the standardized MIME type is `application/a2ui+json` (exported as `A2UI_MIME_TYPE`).
 
 ## What is a surface?
 
@@ -134,4 +134,4 @@ Threadplane implements Google's open [A2UI protocol](https://a2ui.org) ([source]
 
 - [Working with the data model](/docs/angular/a2ui/guides/data-model) — pointers, immutability, and template scopes.
 - [Validating and adapting an A2UI stream](/docs/angular/a2ui/guides/adapters-and-validation) — guards and test payloads.
-- Rendering these surfaces in Angular: [`<a2ui-surface>`](/docs/angular/chat/a2ui/surface-component) in `@threadplane/angular/chat`.
+- Rendering these surfaces in Angular: [`<a2ui-surface>`](/docs/angular/chat/a2ui/surface-component) in `@threadplane/angular/a2ui`.

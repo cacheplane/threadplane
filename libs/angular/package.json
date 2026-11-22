@@ -69,6 +69,7 @@
     "types/**/*.d.ts",
     "LICENSE.md",
     "README.md",
+    "a2ui/package.json",
     "chat/debug/package.json",
     "chat/math/package.json",
     "chat/testing/package.json",

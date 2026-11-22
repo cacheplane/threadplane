@@ -5,41 +5,48 @@ description: Compose custom component catalogs for generative UI using ViewRegis
 
 # Custom Catalogs
 
-Both json-render specs and A2UI surfaces render through the same `ViewRegistry`. Compose catalogs using `views`, `withViews`, and `withoutViews` from `@threadplane/angular/render`.
+Both json-render specs and A2UI surfaces render through a `ViewRegistry`. Compose catalogs using `views`, `withViews`, and `withoutViews` from `@threadplane/angular/render`. Pass a json-render catalog to `<chat>` through `[views]`. Pass an A2UI catalog through `[a2ui]`, as `a2uiRenderer({ catalog })` from `@threadplane/angular/a2ui`.
 
 ## Using the Built-In A2UI Catalog
 
-```typescript
-import { a2uiBasicCatalog } from '@threadplane/angular/chat';
+`a2uiRenderer()` uses `a2uiBasicCatalog()` when you pass no catalog:
 
-protected readonly catalog = a2uiBasicCatalog();
+```typescript
+import { a2uiRenderer } from '@threadplane/angular/a2ui';
+
+protected readonly a2ui = a2uiRenderer();
 ```
 
 ```html
-<chat [agent]="agentRef" [views]="catalog" />
+<chat [agent]="agentRef" [a2ui]="a2ui" />
 ```
 
 ## Adding Custom Components
 
 ```typescript
 import { withViews } from '@threadplane/angular/render';
-import { a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { a2uiBasicCatalog, a2uiRenderer } from '@threadplane/angular/a2ui';
 
 const catalog = withViews(a2uiBasicCatalog(), {
   Chart: MyChartComponent,
   DataGrid: MyDataGridComponent,
 });
+
+// in the component class
+protected readonly a2ui = a2uiRenderer({ catalog });
 ```
 
 ```html
-<chat [agent]="agentRef" [views]="catalog" />
+<chat [agent]="agentRef" [a2ui]="a2ui" />
 ```
+
+If the page also renders json-render specs with the same components, bind the catalog to `[views]` as well: `<chat [agent]="agentRef" [views]="catalog" [a2ui]="a2ui" />`.
 
 ## Overriding Built-In Components
 
 ```typescript
 import { views } from '@threadplane/angular/render';
-import { a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { a2uiBasicCatalog } from '@threadplane/angular/a2ui';
 
 const catalog = views({
   ...a2uiBasicCatalog(),
@@ -51,7 +58,7 @@ const catalog = views({
 
 ```typescript
 import { withoutViews } from '@threadplane/angular/render';
-import { a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { a2uiBasicCatalog } from '@threadplane/angular/a2ui';
 
 const catalog = withoutViews(a2uiBasicCatalog(), 'Modal', 'Video');
 ```
@@ -73,7 +80,7 @@ const catalog = views({
 
 ## No Generative UI
 
-If you do not provide `views`, no generative UI renders. Specs and A2UI surfaces are silently skipped.
+If you do not provide `views`, json-render specs do not render. If you do not provide `a2ui`, A2UI content shows as its source text.
 
 ```html
 <chat [agent]="agentRef" />

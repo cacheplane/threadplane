@@ -12,6 +12,7 @@
   "include": [
     "src/**/*.ts",
     "chat/src/**/*.ts",
+    "a2ui/**/*.ts",
     "chat/debug/**/*.ts",
     "chat/math/**/*.ts",
     "chat/testing/**/*.ts",

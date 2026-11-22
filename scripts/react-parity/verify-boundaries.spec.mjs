@@ -63,7 +63,7 @@ for (const project of ['content', 'react', 'angular']) {
       if (project === 'content' && entry === 'chat') continue;
       for (const dependency of ['@threadplane/a2ui', '@threadplane/content/a2ui', '#feature']) {
         for (const indirect of [false, true]) {
-        test(`${project} ${extension} ${entry} ${project === 'angular' && entry === 'chat' ? 'does not guard' : 'rejects'} ${indirect ? 'indirect' : 'direct'} A2UI ${dependency}`, (t) => {
+        test(`${project} ${extension} ${entry} rejects ${indirect ? 'indirect' : 'direct'} A2UI ${dependency}`, (t) => {
           const own = entry === 'root'
             ? `src/${project === 'angular' && mode === 'source' ? 'public-api' : 'index'}.${extension}`
             : project === 'angular' && mode === 'source' ? `${entry}/src/public-api.${extension}` : `src/${entry}/index.${extension}`;
@@ -91,11 +91,7 @@ for (const project of ['content', 'react', 'angular']) {
             writeFileSync(path, JSON.stringify(manifest));
           }
           const errors = verifyBoundaries({ root, mode, projects: [project], ...finalOptions });
-          // Angular's chat UI renders A2UI inline, so its `/chat` entry is not
-          // guarded; verify-angular-package proves an app using only its
-          // plain-text views ships no A2UI. Its root and `/markdown` stay guarded.
-          const guarded = !(project === 'angular' && entry === 'chat');
-          assert.equal(errors.some(error => error.includes('A2UI dependency reachable from guarded entry')), guarded, errors.join('\n'));
+          assert.ok(errors.some(error => error.includes('A2UI dependency reachable from guarded entry')), errors.join('\n'));
           assert.ok(errors.every(error => !error.includes('unresolved dependency')), errors.join('\n'));
         });
         }
@@ -376,8 +372,8 @@ for (const [label, directory] of angularSources) {
   }
 }
 
-test('the Angular chat entry may import the binding, core, content, a2ui and telemetry, and nothing from React', (t) => {
-  const packages = ['core', 'content', 'a2ui', 'telemetry'];
+test('the Angular chat entry may import the binding, core, content and telemetry, and nothing from React', (t) => {
+  const packages = ['core', 'content', 'telemetry'];
   const root = fixture(t, {
     'tsconfig.base.json': JSON.stringify({ compilerOptions: { paths: { ...Object.fromEntries(packages.map((name) => [`@threadplane/${name}`, [`./libs/${name}/src/entry.ts`]])), '@threadplane/angular': ['./libs/angular/src/public-api.ts'] } } }),
     'libs/angular/src/public-api.ts': 'export interface X {}',
@@ -764,14 +760,14 @@ test('React root permits binding implementation and core contracts', (t) => {
 
 for (const extension of ['mjs', 'd.ts']) {
   test(`resolves legacy built main/module/types for Angular ${extension} dependencies`, (t) => {
-    // The chat entry point reaches A2UI, as the Angular chat UI does.
+    // The A2UI entry point reaches the protocol package.
     const files = {
-      'dist/libs/angular/package.json': JSON.stringify({ name: '@threadplane/angular', exports: { '.': { types: './index.d.ts', default: './index.mjs' }, './chat': { types: './chat.d.ts', default: './chat.mjs' } } }),
+      'dist/libs/angular/package.json': JSON.stringify({ name: '@threadplane/angular', exports: { '.': { types: './index.d.ts', default: './index.mjs' }, './a2ui': { types: './a2ui.d.ts', default: './a2ui.mjs' } } }),
       'dist/libs/angular/index.mjs': 'export {};',
       'dist/libs/angular/index.d.ts': 'export {};',
-      'dist/libs/angular/chat.mjs': 'export {};',
-      'dist/libs/angular/chat.d.ts': 'export {};',
-      [`dist/libs/angular/chat.${extension}`]: "export * from '@threadplane/a2ui';",
+      'dist/libs/angular/a2ui.mjs': 'export {};',
+      'dist/libs/angular/a2ui.d.ts': 'export {};',
+      [`dist/libs/angular/a2ui.${extension}`]: "export * from '@threadplane/a2ui';",
       'dist/libs/a2ui/package.json': JSON.stringify({ name: '@threadplane/a2ui', types: './src/index.d.ts', module: './src/index.js', main: './src/index.js' }),
       'dist/libs/a2ui/src/index.js': 'export {};',
       'dist/libs/a2ui/src/index.d.ts': 'export {};',

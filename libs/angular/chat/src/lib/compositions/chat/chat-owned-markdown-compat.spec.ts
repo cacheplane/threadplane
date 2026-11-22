@@ -12,8 +12,12 @@ import { ChatToolViewsComponent } from '../../primitives/chat-tool-views/chat-to
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
 import { ChatGenerativeUiComponent } from '../../primitives/chat-generative-ui/chat-generative-ui.component';
 import { CitationsResolverService } from '../../markdown/citations-resolver.service';
-import { A2uiSurfaceComponent } from '../../a2ui/surface.component';
-import { a2uiBasicCatalog } from '../../a2ui/catalog';
+import {
+  A2uiMessageSurfacesComponent,
+  A2uiSurfaceComponent,
+  a2uiBasicCatalog,
+  a2uiRenderer,
+} from '@threadplane/angular/a2ui';
 import { ChatStreamingMdComponent, STREAMING_MARKDOWN_CONTRACT_VIOLATION_POLICY, type StreamingMarkdownDocument } from '../../streaming/streaming-markdown.component';
 import { createContentClassifier, type ContentClassifier } from '../../streaming/content-classifier';
 import { rawMessagesAgent } from '../../../testing/raw-messages-agent';
@@ -365,16 +369,16 @@ describe('Chat owned markdown compatibility', () => {
         vi.spyOn(classifier, 'spec').mockImplementation(() => metadata.spec());
       } else {
         vi.spyOn(classifier, 'type').mockImplementation(() => metadata.type());
-        vi.spyOn(classifier, 'a2uiSurfaces').mockImplementation(() => metadata.a2uiSurfaces());
-        vi.spyOn(classifier, 'a2uiSurfaceStates').mockImplementation(() => metadata.a2uiSurfaceStates());
+        vi.spyOn(classifier, 'a2uiSource').mockImplementation(() => metadata.a2uiSource());
         // The root guard remains live even though markdown did not change.
         view.fixture.componentRef.setInput('placeholder', 'Metadata available');
         await view.settle();
         expect(body.querySelector('a2ui-surface')).toBeNull();
       }
       view.fixture.componentRef.setInput('views', a2uiBasicCatalog());
+      if (kind === 'a2ui') view.fixture.componentRef.setInput('a2ui', a2uiRenderer());
       await view.settle();
-      const richTag = kind === 'json-render' ? 'CHAT-GENERATIVE-UI' : 'A2UI-SURFACE';
+      const richTag = kind === 'json-render' ? 'CHAT-GENERATIVE-UI' : 'A2UI-MESSAGE-SURFACES';
       expect([...body.children].map(child => child.tagName)).toEqual([
         'CHAT-TOOL-CALLS', 'CHAT-TOOL-VIEWS', 'CHAT-STREAMING-MD', richTag, 'SPAN',
       ]);
@@ -390,7 +394,7 @@ describe('Chat owned markdown compatibility', () => {
       } else {
         const rich = view.row().query(By.directive(A2uiSurfaceComponent)).componentInstance as A2uiSurfaceComponent;
         expect(rich.handlers()).toBe(handlers);
-        view.fixture.componentRef.setInput('views', undefined);
+        view.fixture.componentRef.setInput('a2ui', undefined);
         await view.settle();
         expect(body.querySelector('a2ui-surface')).toBeNull();
       }
@@ -420,7 +424,7 @@ describe('Chat owned markdown compatibility', () => {
     }
   });
 
-  it('keeps A2UI guards and in-place surface Maps live in the root projection', async () => {
+  it('hands A2UI content to the [a2ui] renderer and shows it as text without one', async () => {
     const content = '---a2ui_JSON---' +
       JSON.stringify({ version: 'v0.9', createSurface: { surfaceId: 'first', catalogId: 'basic' } }) + '\n' +
       JSON.stringify({ version: 'v0.9', updateComponents: { surfaceId: 'first', components: [{ id: 'root', component: 'Text', text: 'A2UI answer' }] } }) + '\n';
@@ -429,29 +433,27 @@ describe('Chat owned markdown compatibility', () => {
     const classifier = view.observed.classifiers.get('surface')!.classifier;
     const update = vi.spyOn(classifier, 'update');
     const body = view.body('surface');
+    // No renderer: the A2UI source as text, and no surface.
     expect(body.querySelector('a2ui-surface')).toBeNull();
+    expect(body.querySelector('.chat-a2ui-source')?.textContent).toBe(content);
     const catalog = a2uiBasicCatalog();
-    view.fixture.componentRef.setInput('views', catalog); await view.settle();
+    view.fixture.componentRef.setInput('a2ui', a2uiRenderer({ catalog })); await view.settle();
+    expect(body.querySelector('.chat-a2ui-source')).toBeNull();
     expect(body.textContent).toContain('A2UI answer');
-    const first = view.row('surface').query(By.directive(A2uiSurfaceComponent)).componentInstance as A2uiSurfaceComponent;
-    expect(first.catalog()).toBe(catalog);
-    const surfaces = classifier.a2uiSurfaces();
-    const original = surfaces.get('first')!;
-    const added = { ...original, surfaceId: 'second' };
-    surfaces.set('second', added);
+    const renderer = view.row('surface').query(By.directive(A2uiMessageSurfacesComponent)).componentInstance as A2uiMessageSurfacesComponent;
+    expect(renderer.source()).toBe(content.slice('---a2ui_JSON---'.length));
+    expect(renderer.options()).toEqual({ catalog });
+    const surfaceComponent = view.row('surface').query(By.directive(A2uiSurfaceComponent)).componentInstance as A2uiSurfaceComponent;
+    expect(surfaceComponent.catalog()).toBe(catalog);
     const handlers = { selected: () => true };
     view.fixture.componentRef.setInput('handlers', handlers); await view.settle();
-    const rendered = view.row('surface').queryAll(By.directive(A2uiSurfaceComponent));
-    expect(rendered).toHaveLength(2);
-    expect(rendered.map(value => value.componentInstance.surface())).toEqual([original, added]);
-    expect(rendered.every(value => value.componentInstance.handlers() === handlers)).toBe(true);
-    expect(classifier.a2uiSurfaces()).toBe(surfaces);
+    expect(renderer.handlers()).toBe(handlers);
     expect(update).not.toHaveBeenCalled();
     expect(body.lastElementChild?.className).toBe('chat-message__caret');
-    expect([...body.children].map(child => child.tagName)).toEqual(['CHAT-TOOL-CALLS', 'CHAT-TOOL-VIEWS', 'A2UI-SURFACE', 'A2UI-SURFACE', 'SPAN']);
-    expect(body.textContent).not.toContain(content);
-    view.fixture.componentRef.setInput('views', undefined); await view.settle();
+    expect([...body.children].map(child => child.tagName)).toEqual(['CHAT-TOOL-CALLS', 'CHAT-TOOL-VIEWS', 'A2UI-MESSAGE-SURFACES', 'SPAN']);
+    view.fixture.componentRef.setInput('a2ui', undefined); await view.settle();
     expect(body.querySelector('a2ui-surface')).toBeNull();
+    expect(body.querySelector('.chat-a2ui-source')?.textContent).toBe(content);
     expect(view.md()).toBe(markdown); expect(view.md().document()).toBe(document);
   });
 

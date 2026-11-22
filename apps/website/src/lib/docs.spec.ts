@@ -460,6 +460,7 @@ describe('website docs bindings', () => {
       '@threadplane/ag-ui',
       '@threadplane/angular',
       '@threadplane/angular/testing',
+      '@threadplane/angular/a2ui',
       '@threadplane/angular/chat',
       '@threadplane/angular/chat/debug',
       '@threadplane/angular/chat/math',

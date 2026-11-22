@@ -1,4 +1,5 @@
-import { a2uiBasicCatalog, withViews, type ViewRegistry } from '@threadplane/angular/chat';
+import { withViews, type ViewRegistry } from '@threadplane/angular/chat';
+import { a2uiBasicCatalog } from '@threadplane/angular/a2ui';
 import { BackupTableComponent } from './backup-table.component';
 
 /**

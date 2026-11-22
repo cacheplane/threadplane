@@ -1,5 +1,6 @@
+import { a2uiBasicCatalog, a2uiRenderer } from '@threadplane/angular/a2ui';
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { ChatComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
 import { AgUiShell } from '../shell/ag-ui-shell.component';
 import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
 
@@ -12,7 +13,7 @@ import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
     <chat
       [agent]="agent"
       [clientTools]="shell.clientTools"
-      [views]="catalog"
+      [views]="catalog" [a2ui]="a2ui"
       [modelOptions]="shell.modelOptions()"
       [selectedModel]="shell.model()"
       (selectedModelChange)="shell.onModelChange($event)"
@@ -32,6 +33,7 @@ export class EmbedMode {
   // ---a2ui_JSON--- wire-format prefix. Without this, the surface is
   // parsed correctly but never mounted (the @if gate requires views()).
   protected readonly catalog = a2uiBasicCatalog();
+  protected readonly a2ui = a2uiRenderer({ catalog: this.catalog });
 
   protected send(text: string): void {
     void this.agent.submit({ message: text });

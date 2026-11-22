@@ -1,12 +1,17 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { CHAT_HOST_TOKENS } from '../styles/chat-tokens';
-import { injectChatRuntime } from '../styles/chat-runtime';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { ɵCHAT_RUNTIME } from '@threadplane/angular/chat';
 
 @Component({
   selector: 'a2ui-default-fallback',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styles: [CHAT_HOST_TOKENS, `
+  // The chat UI's host typography. The `--tplane-chat-*` token defaults are on
+  // `:root`, which the chat runtime below installs.
+  styles: [`
+    :host {
+      font-family: var(--tplane-chat-font-family);
+      color: var(--tplane-chat-text);
+    }
     :host { display: block; width: 100%; }
     .a2ui-default-fallback {
       border: 1px solid var(--tplane-chat-separator);
@@ -62,5 +67,5 @@ import { injectChatRuntime } from '../styles/chat-runtime';
   `,
 })
 export class A2uiDefaultFallbackComponent {
-  protected readonly chatRuntime = injectChatRuntime();
+  protected readonly chatRuntime = inject(ɵCHAT_RUNTIME);
 }

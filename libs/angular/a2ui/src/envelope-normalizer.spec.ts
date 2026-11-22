@@ -1,4 +1,4 @@
-// libs/angular/chat/src/lib/a2ui/envelope-normalizer.spec.ts
+// libs/angular/a2ui/src/envelope-normalizer.spec.ts
 import { describe, it, expect } from 'vitest';
 import { normalizeEnvelopeArgs } from './envelope-normalizer';
 

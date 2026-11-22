@@ -2,7 +2,8 @@ import { HighlightedCode } from '../HighlightedCode';
 
 const SNIPPET_1 = `import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
-import { ChatComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
+import { a2uiRenderer } from '@threadplane/angular/a2ui';
 
 @Component({
   imports: [ChatComponent],
@@ -20,13 +21,13 @@ import { ChatComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
   template: \`
     <chat
       [agent]="agent"
-      [views]="views"
+      [a2ui]="a2ui"
     />
   \`,
 })
 export class MyChatPage {
   protected readonly agent = injectAgent();
-  protected readonly views = a2uiBasicCatalog();
+  protected readonly a2ui = a2uiRenderer();
 }`;
 
 const SNIPPET_2 = `chat {
