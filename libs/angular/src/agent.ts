@@ -635,7 +635,9 @@ export function createAgent<TSession extends AgentSessionLike>(
       untracked(() => {
         if (destroyed) return;
         // Back to the shown thread before a pending switch resolved: drop it.
-        if (pending && next === threadId()) cancelPending();
+        // Only a shown session makes it a switch back; the first session's
+        // thread is the followed one, not a switch away from it.
+        if (pending && active && next === threadId()) cancelPending();
         else if (next !== (pending ? pending.threadId : threadId())) bind(next);
       });
     });

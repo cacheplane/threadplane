@@ -182,6 +182,24 @@ describe('createAgent with an async session factory', () => {
     );
   });
 
+  it('keeps its first session pending when a followed thread is read before it resolves', async () => {
+    // The followed signal's first read matches the thread the first session
+    // is being created for. That is not a switch back: nothing is shown yet.
+    const factory = deferredFactory();
+    const followed = signal<string | null>(null);
+    const agent = runInInjectionContext(context(), () =>
+      createAgent({ createSession: factory.createSession, threadId: followed })
+    );
+    TestBed.tick();
+    const outcome = agent.submit({ message: 'Hello' });
+    const submit = vi.spyOn(factory.calls[0].fake.session, 'submit');
+    factory.calls[0].resolve();
+    await expect(outcome).resolves.toBe('success');
+    expect(submit).toHaveBeenCalledWith({ message: 'Hello' });
+    expect(factory.calls).toHaveLength(1);
+    expect(agent.messages()).toBe(factory.calls[0].fake.session.getSnapshot().messages);
+  });
+
   it('drops a pending switch when the followed thread changes back to the shown one', async () => {
     const factory = deferredFactory();
     const followed = signal<string | null>('shown');
