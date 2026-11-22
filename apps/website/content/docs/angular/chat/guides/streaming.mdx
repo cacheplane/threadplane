@@ -78,6 +78,7 @@ classifier.dispose();
 | `markdown` | `Signal<string>` | Accumulated markdown prose (empty for pure JSON) |
 | `spec` | `Signal<Spec \| null>` | Materialized JSON-render spec with structural sharing |
 | `elementStates` | `Signal<Map<string, ElementAccumulationState>>` | Per-element tracking of which properties have been received |
+| `a2uiSource` | `Signal<string>` | The content after the `---a2ui_JSON---` marker; empty unless `type` is `'a2ui'` |
 | `streaming` | `Signal<boolean>` | `true` while content is still arriving |
 
 ### ContentType
@@ -125,9 +126,7 @@ interface ElementAccumulationState {
 
 A2UI content uses a different detection trigger than JSON-render specs. Instead of detecting the first non-whitespace `{` character, the classifier looks for the `---a2ui_JSON---` prefix at the start of the message.
 
-Once detected, the classifier switches to A2UI mode and parses the remaining content as JSONL — one JSON object per line — rather than a single JSON object. Each line represents an A2UI message that builds up surfaces with components and data models.
-
-The resulting surfaces are available via `classifier.a2uiSurfaces()`, which returns a `Map<string, A2uiSurface>` keyed by surface ID. See the [A2UI guide](/docs/angular/chat/a2ui/overview) for full details on the A2UI protocol and surface structure.
+Once detected, the classifier switches to A2UI mode. It does not parse the A2UI content itself: `classifier.a2uiSource()` holds the content after the marker, JSONL with one A2UI message per line. The A2UI renderer bound to `<chat [a2ui]>`, built with `a2uiRenderer()` from `@threadplane/angular/a2ui`, parses that source into surfaces with components and data models. See the [A2UI guide](/docs/angular/chat/a2ui/overview) for full details on the A2UI protocol and surface structure.
 
 ## Error Handling
 

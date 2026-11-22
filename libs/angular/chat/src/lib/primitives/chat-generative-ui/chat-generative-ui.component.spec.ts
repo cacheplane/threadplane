@@ -3,7 +3,7 @@ import { signal, computed } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import type { Spec, StateStore } from '@json-render/core';
 import { signalStateStore, toRenderRegistry } from '@threadplane/angular/render';
-import { a2uiBasicCatalog } from '../../a2ui/catalog/index';
+import { a2uiBasicCatalog } from '@threadplane/angular/a2ui';
 import { ChatGenerativeUiComponent } from './chat-generative-ui.component';
 import { normalizeJsonRenderSpec } from './normalize-json-render-spec';
 

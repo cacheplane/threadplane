@@ -5,6 +5,7 @@
   "extends": "../core/tsconfig.nonstrict.json",
   "files": [
     "chat/src/public-api.ts",
+    "a2ui/public-api.ts",
     "chat/debug/public-api.ts",
     "chat/math/public-api.ts",
     "chat/testing/public-api.ts",

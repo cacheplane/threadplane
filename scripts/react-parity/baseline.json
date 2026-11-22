@@ -35,6 +35,7 @@
     "entryPoints": [
       "libs/a2ui/src/index.ts",
       "libs/ag-ui/src/public-api.ts",
+      "libs/angular/a2ui/public-api.ts",
       "libs/angular/chat/debug/public-api.ts",
       "libs/angular/chat/math/public-api.ts",
       "libs/angular/chat/src/public-api.ts",

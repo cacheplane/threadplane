@@ -13,6 +13,7 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import type { Agent } from '../../agent';
 import type { ViewRegistry } from '@threadplane/angular/render';
+import type { ChatA2uiRenderer } from '../chat/chat-a2ui';
 import type { ClientToolRegistry } from '../../client-tools/tool-def';
 import { ChatComponent } from '../chat/chat.component';
 import { ChatInterruptTemplateDirective } from '../chat/chat-interrupt-template.directive';
@@ -129,6 +130,7 @@ import { injectChatRuntime } from '../../styles/chat-runtime';
       <chat
         [agent]="agent()"
         [views]="views()"
+        [a2ui]="a2ui()"
         [clientTools]="clientTools()"
         [modelOptions]="modelOptions()"
         [showModelPicker]="showModelPicker()"
@@ -154,10 +156,10 @@ export class ChatSidebarComponent {
   protected readonly chatRuntime = injectChatRuntime();
   protected readonly interruptTemplate = contentChild(ChatInterruptTemplateDirective);
   readonly agent = input.required<Agent>();
-  /** A2UI component catalog forwarded to the inner <chat>. Without it,
-   * messages classified as A2UI parse correctly but never mount a
-   * surface. Pass `a2uiBasicCatalog()` from `@threadplane/angular/chat`. */
+  /** The json-render view registry, forwarded to the inner `<chat [views]>`. */
   readonly views = input<ViewRegistry | undefined>(undefined);
+  /** Passed to the inner `<chat [a2ui]>`; see `ChatComponent.a2ui`. */
+  readonly a2ui = input<ChatA2uiRenderer | undefined>(undefined);
   /** Frontend-declared client tools forwarded to the inner `<chat>`. */
   readonly clientTools = input<ClientToolRegistry | undefined>(undefined);
   /** Forwarded to the inner <chat>. When non-empty, a model picker pill

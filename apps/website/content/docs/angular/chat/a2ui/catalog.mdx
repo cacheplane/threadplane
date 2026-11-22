@@ -4,12 +4,12 @@ description: Every component in the built-in A2UI catalog - its Angular class, s
 
 # Component Catalog
 
-The built-in A2UI catalog provides 18 Angular components implementing the A2UI v0.9 basic catalog — display, layout, interactive controls, media, and advanced inputs. Pass `a2uiBasicCatalog()` to the `ChatComponent` `views` input to enable A2UI rendering, or instantiate it directly for custom setups.
+The built-in A2UI catalog provides 18 Angular components implementing the A2UI v0.9 basic catalog — display, layout, interactive controls, media, and advanced inputs. `a2uiRenderer()` from `@threadplane/angular/a2ui` uses it by default when you pass the renderer to the `ChatComponent` `a2ui` input. Pass it as `a2uiRenderer({ catalog })` to start a custom catalog from it, or instantiate it directly for custom setups.
 
 **Import:**
 
 ```typescript
-import { a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { a2uiBasicCatalog } from '@threadplane/angular/a2ui';
 ```
 
 ## Signature

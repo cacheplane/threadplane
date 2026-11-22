@@ -8,7 +8,6 @@ import { By } from '@angular/platform-browser';
 import { ChatComponent } from './chat.component';
 import { ChatInterruptTemplateDirective } from './chat-interrupt-template.directive';
 import { mockAgent, type MockAgent } from '../../testing/mock-agent';
-import type { A2uiSurfaceStore } from '../../a2ui/surface-store';
 import type { AgentInterrupt } from '../../agent';
 
 const conversation = () => [
@@ -171,45 +170,19 @@ describe('ChatComponent on the Agent contract', () => {
   });
 
   describe('custom events', () => {
-    const partial = (toolCallId: string, surfaceId: string) => ({
-      tool_call_id: toolCallId,
-      args_so_far: JSON.stringify({
-        envelopes: [{
-          version: 'v0.9',
-          updateComponents: { surfaceId, components: [{ id: 'root', component: 'Text', text: 'hi' }] },
-        }],
-      }),
-    });
-    const surfaces = (fixture: ComponentFixture<ChatComponent>) =>
-      (fixture.componentInstance as unknown as { liveSurfaceStore: A2uiSurfaceStore }).liveSurfaceStore.surfaces();
-
-    it('feeds a2ui-partial events from agent.customEvents into the live surface store', () => {
+    // a2ui-partial events are streaming hints for an A2UI renderer; the chat
+    // UI renders A2UI only through its [a2ui] renderer, from the message.
+    it('leaves the transcript unchanged when a2ui-partial events arrive', () => {
       const agent = mockAgent({ messages: conversation() });
       const fixture = mount(agent);
-      expect(surfaces(fixture).size).toBe(0);
-
-      agent.emitCustomEvent('a2ui-partial', partial('tc-1', 'first'));
+      const before = (fixture.nativeElement as HTMLElement).innerHTML;
+      agent.emitCustomEvent('a2ui-partial', {
+        tool_call_id: 'tc-1',
+        args_so_far: JSON.stringify({ envelopes: [{ version: 'v0.9', createSurface: { surfaceId: 'first', catalogId: 'basic' } }] }),
+      });
       fixture.detectChanges();
-
-      expect(surfaces(fixture).get('first')?.components.has('root')).toBe(true);
-    });
-
-    it('reads the next run from its first event after the list empties', () => {
-      const agent = mockAgent({ messages: conversation() });
-      const fixture = mount(agent);
-      agent.emitCustomEvent('unrelated', null);
-      agent.emitCustomEvent('a2ui-partial', partial('tc-1', 'first'));
-      fixture.detectChanges();
-      expect(surfaces(fixture).has('first')).toBe(true);
-
-      // A new run starts with no retained events, and its events count from
-      // zero again. The reset and the first new event land in one pass here,
-      // so the shorter list is the only sign that the run changed.
-      agent.customEvents.set([]);
-      agent.emitCustomEvent('a2ui-partial', partial('tc-2', 'second'));
-      fixture.detectChanges();
-
-      expect(surfaces(fixture).has('second')).toBe(true);
+      expect((fixture.nativeElement as HTMLElement).innerHTML).toBe(before);
+      expect(fixture.nativeElement.querySelector('a2ui-surface')).toBeNull();
     });
   });
 });

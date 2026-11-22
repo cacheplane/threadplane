@@ -1,4 +1,4 @@
-// libs/angular/chat/src/lib/a2ui/partial-args-bridge.spec.ts
+// libs/angular/a2ui/src/partial-args-bridge.spec.ts
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import type { A2uiMessage } from '@threadplane/a2ui';

@@ -1,4 +1,4 @@
-// libs/angular/chat/src/lib/a2ui/partial-args-bridge.ts
+// libs/angular/a2ui/src/partial-args-bridge.ts
 import { createPartialJsonParser, materialize } from '@cacheplane/partial-json';
 import { A2UI_BASIC_CATALOG_ID, A2UI_WIRE_VERSION, type A2uiMessage } from '@threadplane/a2ui';
 import type { A2uiSurfaceStore } from './surface-store';

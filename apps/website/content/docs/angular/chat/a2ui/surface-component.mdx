@@ -9,7 +9,7 @@ Angular component that renders a single A2UI surface. It converts the surface's 
 **Import:**
 
 ```typescript
-import { A2uiSurfaceComponent } from '@threadplane/angular/chat';
+import { A2uiSurfaceComponent } from '@threadplane/angular/a2ui';
 ```
 
 **Selector:** `a2ui-surface`
@@ -70,11 +70,11 @@ The final `Spec` is passed to `RenderSpecComponent` along with the `ViewRegistry
 
 ## Usage Outside ChatComponent
 
-`A2uiSurfaceComponent` is used internally by `ChatComponent`, but you can also use it directly to embed a surface in any Angular template.
+`A2uiSurfaceComponent` is used internally by the A2UI renderer that `a2uiRenderer()` builds for the `ChatComponent` `[a2ui]` input, but you can also use it directly to embed a surface in any Angular template.
 
 ```typescript
 import { Component } from '@angular/core';
-import { A2uiSurfaceComponent, createA2uiSurfaceStore, a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { A2uiSurfaceComponent, createA2uiSurfaceStore, a2uiBasicCatalog } from '@threadplane/angular/a2ui';
 import { createA2uiMessageParser } from '@threadplane/a2ui';
 
 @Component({
@@ -111,9 +111,9 @@ The example above renders a surface but ignores interaction. To run client-owned
 ```typescript
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { A2uiSurfaceComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { A2uiSurfaceComponent, a2uiBasicCatalog } from '@threadplane/angular/a2ui';
 import { injectAgent } from '@threadplane/angular';
-import type { A2uiActionMessage, A2uiSurface } from '@threadplane/angular/chat';
+import type { A2uiActionMessage, A2uiSurface } from '@threadplane/angular/a2ui';
 import type { RenderEvent } from '@threadplane/angular/render';
 
 @Component({
@@ -159,7 +159,7 @@ export class InteractiveSurfaceComponent {
 
 `A2uiSurfaceComponent` handles surface-to-spec conversion internally when it receives a legacy `surface` input. That conversion returns no rendered output for an empty component map. Otherwise it produces a complete json-render `Spec`, preferring a `root` component when present and falling back to the first component ID.
 
-The conversion helper is not part of the public `@threadplane/angular/chat` API. Use `A2uiSurfaceComponent` or `createA2uiSurfaceStore()` for supported integration points.
+The conversion helper is not part of the public `@threadplane/angular/a2ui` API. Use `A2uiSurfaceComponent` or `createA2uiSurfaceStore()` for supported integration points.
 
 ## What's Next
 

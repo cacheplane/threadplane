@@ -743,6 +743,16 @@
       "status": "planned"
     },
     {
+      "id": "asset:libs/angular/a2ui/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "asset:libs/angular/chat/math/ng-package.json",
       "taskIds": [
         "T02",
@@ -1651,7 +1661,7 @@
       "reason": "Internal debug view. Internal keyboard timeline; replay/fork identity and previous-state selection."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/a2ui-default-fallback.component.ts#A2uiDefaultFallbackComponent",
+      "id": "component:libs/angular/a2ui/src/a2ui-default-fallback.component.ts#A2uiDefaultFallbackComponent",
       "taskIds": [
         "T27"
       ],
@@ -1661,7 +1671,7 @@
       "reason": "React keeps the children of a component the catalog lacks behind a display:contents marker instead of a loading skeleton, because this slice has no loading state."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/audio-player.component.ts#A2uiAudioPlayerComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/audio-player.component.ts#A2uiAudioPlayerComponent",
       "taskIds": [
         "T27"
       ],
@@ -1671,7 +1681,7 @@
       "reason": "Native read-only view. Native audio controls named by the literal description; relative, http(s), blob and audio data URLs only; never autoplays."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/button.component.ts#A2uiButtonComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/button.component.ts#A2uiButtonComponent",
       "taskIds": [
         "T27"
       ],
@@ -1681,7 +1691,7 @@
       "reason": "Native view. Native button in three variants handing its event action to the surface's onAction, with context and optional data model read from the application-created store at press time; disabled without a handler or event action; opens a Modal when used as its trigger. Check gating and functionCall actions remain open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/card.component.ts#A2uiCardComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/card.component.ts#A2uiCardComponent",
       "taskIds": [
         "T27"
       ],
@@ -1691,7 +1701,7 @@
       "reason": "Native read-only view. One child on the bordered raised surface; stylesheet tokens verified in an installed browser fixture in light and dark schemes."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/check-box.component.ts#A2uiCheckBoxComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/check-box.component.ts#A2uiCheckBoxComponent",
       "taskIds": [
         "T27"
       ],
@@ -1701,7 +1711,7 @@
       "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/choice-picker.component.ts#A2uiChoicePickerComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/choice-picker.component.ts#A2uiChoicePickerComponent",
       "taskIds": [
         "T27"
       ],
@@ -1711,7 +1721,7 @@
       "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/column.component.ts#A2uiColumnComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/column.component.ts#A2uiColumnComponent",
       "taskIds": [
         "T27"
       ],
@@ -1721,7 +1731,7 @@
       "reason": "Native read-only view. Same class, align/justify mapping, justify-stretch modifier and optional gap as Angular; verified in DOM and an installed browser fixture. Child templates remain open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/date-time-input.component.ts#A2uiDateTimeInputComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/date-time-input.component.ts#A2uiDateTimeInputComponent",
       "taskIds": [
         "T27"
       ],
@@ -1731,7 +1741,7 @@
       "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/divider.component.ts#A2uiDividerComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/divider.component.ts#A2uiDividerComponent",
       "taskIds": [
         "T27"
       ],
@@ -1741,7 +1751,7 @@
       "reason": "Native read-only view. Horizontal hr and decorative vertical rule with the Angular classes; geometry verified in an installed browser fixture."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/icon.component.ts#A2uiIconComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/icon.component.ts#A2uiIconComponent",
       "taskIds": [
         "T27"
       ],
@@ -1751,7 +1761,7 @@
       "reason": "Native read-only view. Material Symbols ligature labelled by its name, or a decorative inline path; no model HTML. Bundled font and unknown-name fallback remain open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/image.component.ts#A2uiImageComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/image.component.ts#A2uiImageComponent",
       "taskIds": [
         "T27"
       ],
@@ -1761,7 +1771,7 @@
       "reason": "Native read-only view. Description as alternative text, six sizing presets and object fit; relative, http(s), blob and image data URLs only. Failed-image presentation remains open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/list.component.ts#A2uiListComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/list.component.ts#A2uiListComponent",
       "taskIds": [
         "T27"
       ],
@@ -1771,7 +1781,7 @@
       "reason": "Native read-only view. Static children in a scrolling vertical or horizontal run with cross-axis alignment. Template/repeat scope and identity remain open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/modal.component.ts#A2uiModalComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/modal.component.ts#A2uiModalComponent",
       "taskIds": [
         "T27"
       ],
@@ -1781,7 +1791,7 @@
       "reason": "Native read-only view. Inline trigger opening a native modal dialog named by the trigger; Escape, Close and backdrop dismissal with native focus return. Localized Close label and controlled open state remain open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/row.component.ts#A2uiRowComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/row.component.ts#A2uiRowComponent",
       "taskIds": [
         "T27"
       ],
@@ -1791,7 +1801,7 @@
       "reason": "Native read-only view. Same class, align/justify mapping, justify-stretch modifier and optional gap as Angular; verified in DOM and an installed browser fixture including RTL. Child templates remain open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/slider.component.ts#A2uiSliderComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/slider.component.ts#A2uiSliderComponent",
       "taskIds": [
         "T27"
       ],
@@ -1801,7 +1811,7 @@
       "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/tabs.component.ts#A2uiTabsComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/tabs.component.ts#A2uiTabsComponent",
       "taskIds": [
         "T27"
       ],
@@ -1811,7 +1821,7 @@
       "reason": "Native read-only view. Tab list with one labelled panel, local selection, arrow/Home/End keys following reading direction, bound titles resolved to literal text. Only the selected tab is mounted; controlled selection remains open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/text-field.component.ts#A2uiTextFieldComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/text-field.component.ts#A2uiTextFieldComponent",
       "taskIds": [
         "T27"
       ],
@@ -1821,7 +1831,7 @@
       "reason": "Native view. Labelled text, number, obscured and multi-line fields; each edit is written to the application-created surfaces store at the bound path; read-only without a store or with a literal value. Validation pattern and error text remain open with checks."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/text.component.ts#A2uiTextComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/text.component.ts#A2uiTextComponent",
       "taskIds": [
         "T27"
       ],
@@ -1831,7 +1841,7 @@
       "reason": "Native read-only view. Literal text in the seven variants; heading variants are exposed as headings of that level. Function-call text shows its resolved value. Markdown/content policy remains open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/catalog/video.component.ts#A2uiVideoComponent",
+      "id": "component:libs/angular/a2ui/src/catalog/video.component.ts#A2uiVideoComponent",
       "taskIds": [
         "T27"
       ],
@@ -1841,7 +1851,7 @@
       "reason": "Native read-only view. Native video controls; relative, http(s), blob and video data URLs only; never autoplays. Poster, captions and sizing presets remain open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/a2ui/surface.component.ts#A2uiSurfaceComponent",
+      "id": "component:libs/angular/a2ui/src/surface.component.ts#A2uiSurfaceComponent",
       "taskIds": [
         "T27"
       ],
@@ -1849,6 +1859,16 @@
       "status": "in-progress",
       "target": "libs/react/src/a2ui/surface.tsx",
       "reason": "Bounded read-only first slice: A2uiSurface projects one content surface snapshot onto RenderSpec with literal and path props. Event and function-call actions, checks, edits through the surfaces store and function-call props have since landed; child templates are stamped per list item and the surface theme is applied."
+    },
+    {
+      "id": "component:libs/angular/a2ui/src/message-surfaces.component.ts#A2uiMessageSurfacesComponent",
+      "taskIds": [
+        "T27"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/a2ui/message-surfaces.tsx",
+      "reason": "Native component. The chat hands one message's A2UI source to it; it parses and renders its surfaces."
     },
     {
       "id": "component:libs/angular/chat/src/lib/compositions/chat-approval-card/chat-approval-card.component.ts#ChatApprovalCardComponent",
@@ -3891,6 +3911,16 @@
       "status": "planned"
     },
     {
+      "id": "entry:libs/angular/a2ui/public-api.ts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "entry:libs/angular/chat/math/public-api.ts",
       "taskIds": [
         "T02",
@@ -4541,7 +4571,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2UI_BASIC_CATALOG_ID",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2UI_BASIC_CATALOG_ID",
       "taskIds": [
         "T19"
       ],
@@ -4549,7 +4579,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2UI_MIME_TYPE",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2UI_MIME_TYPE",
       "taskIds": [
         "T19"
       ],
@@ -4557,7 +4587,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2UI_WIRE_VERSION",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2UI_WIRE_VERSION",
       "taskIds": [
         "T19"
       ],
@@ -4565,7 +4595,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiAction",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiAction",
       "taskIds": [
         "T19"
       ],
@@ -4573,7 +4603,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiActionMessage",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiActionMessage",
       "taskIds": [
         "T19"
       ],
@@ -4581,7 +4611,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiAudioPlayerComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiAudioPlayerComponent",
       "taskIds": [
         "T27"
       ],
@@ -4591,7 +4621,7 @@
       "reason": "Native read-only view. Native audio controls named by the literal description; relative, http(s), blob and audio data URLs only; never autoplays."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiButtonComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiButtonComponent",
       "taskIds": [
         "T27"
       ],
@@ -4601,7 +4631,7 @@
       "reason": "Native view. Native button in three variants handing its event action to the surface's onAction, with context and optional data model read from the application-created store at press time; disabled without a handler or event action; opens a Modal when used as its trigger. Check gating and functionCall actions remain open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiCardComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiCardComponent",
       "taskIds": [
         "T27"
       ],
@@ -4611,7 +4641,7 @@
       "reason": "Native component. Container semantics and child registry rendering."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiCatalogComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiCatalogComponent",
       "taskIds": [
         "T19"
       ],
@@ -4619,7 +4649,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiCheck",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiCheck",
       "taskIds": [
         "T19"
       ],
@@ -4627,7 +4657,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiCheckBoxComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiCheckBoxComponent",
       "taskIds": [
         "T27"
       ],
@@ -4637,7 +4667,7 @@
       "reason": "Native view. Labelled native checkbox writing a boolean to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiChildren",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiChildren",
       "taskIds": [
         "T19"
       ],
@@ -4645,7 +4675,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiChoicePickerComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiChoicePickerComponent",
       "taskIds": [
         "T27"
       ],
@@ -4655,7 +4685,7 @@
       "reason": "Native view. Radio rows, checkbox rows or chips with a local filter, writing the whole selection as a string list to the application-created surfaces store; option labels resolved by the projection; disabled without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiClientCapabilities",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiClientCapabilities",
       "taskIds": [
         "T19"
       ],
@@ -4663,7 +4693,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiClientDataModel",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiClientDataModel",
       "taskIds": [
         "T19"
       ],
@@ -4671,7 +4701,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiColumnComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiColumnComponent",
       "taskIds": [
         "T27"
       ],
@@ -4681,7 +4711,7 @@
       "reason": "Native component. Layout properties and nested child rendering; scoped CSS."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiComponent",
       "taskIds": [
         "T19"
       ],
@@ -4689,7 +4719,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiComponentBase",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiComponentBase",
       "taskIds": [
         "T19"
       ],
@@ -4697,7 +4727,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiComponentView",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiComponentView",
       "taskIds": [
         "T19",
         "T27"
@@ -4706,7 +4736,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiDateTimeInputComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiDateTimeInputComponent",
       "taskIds": [
         "T27"
       ],
@@ -4716,7 +4746,7 @@
       "reason": "Native view. Date, time or local date-time input chosen by enableDate/enableTime, ISO values and bounds converted to the native format, writing the native value to the application-created surfaces store; read-only without a store or with a literal value. Verified in DOM and an installed browser fixture. Shows its validation message after a blocked press."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiDividerComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiDividerComponent",
       "taskIds": [
         "T27"
       ],
@@ -4726,7 +4756,7 @@
       "reason": "Native component. Semantic separator and orientation styling."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiErrorMessage",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiErrorMessage",
       "taskIds": [
         "T19"
       ],
@@ -4734,7 +4764,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiEventAction",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiEventAction",
       "taskIds": [
         "T19"
       ],
@@ -4742,7 +4772,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiFunctionAction",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiFunctionAction",
       "taskIds": [
         "T19"
       ],
@@ -4750,7 +4780,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiFunctionCall",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiFunctionCall",
       "taskIds": [
         "T19"
       ],
@@ -4758,7 +4788,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiIconComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiIconComponent",
       "taskIds": [
         "T27"
       ],
@@ -4768,7 +4798,7 @@
       "reason": "Native read-only view. Material Symbols ligature labelled by its name, or a decorative inline path; no model HTML. Bundled font and unknown-name fallback remain open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiImageComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiImageComponent",
       "taskIds": [
         "T27"
       ],
@@ -4778,7 +4808,7 @@
       "reason": "Native read-only view. Description as alternative text, six sizing presets and object fit; relative, http(s), blob and image data URLs only. Failed-image presentation remains open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiListComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiListComponent",
       "taskIds": [
         "T27"
       ],
@@ -4788,7 +4818,7 @@
       "reason": "Native read-only view. Static children in a scrolling vertical or horizontal run with cross-axis alignment. Template/repeat scope and identity remain open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiModalComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiModalComponent",
       "taskIds": [
         "T27"
       ],
@@ -4798,7 +4828,7 @@
       "reason": "Native read-only view. Inline trigger opening a native modal dialog named by the trigger; Escape, Close and backdrop dismissal with native focus return. Localized Close label and controlled open state remain open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiPathRef",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiPathRef",
       "taskIds": [
         "T19"
       ],
@@ -4806,7 +4836,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiRowComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiRowComponent",
       "taskIds": [
         "T27"
       ],
@@ -4816,7 +4846,7 @@
       "reason": "Native component. Horizontal layout/wrap/alignment; nested children and responsive behavior."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiSliderComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiSliderComponent",
       "taskIds": [
         "T27"
       ],
@@ -4826,7 +4856,7 @@
       "reason": "Native view. Labelled native range input clamped to min and max, writing a number to the application-created surfaces store at the bound path; disabled without a store or with a literal value. Shows its validation message after a blocked press."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiSurface",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiSurface",
       "taskIds": [
         "T19"
       ],
@@ -4834,7 +4864,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiSurfaceComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiSurfaceComponent",
       "taskIds": [
         "T27"
       ],
@@ -4844,7 +4874,37 @@
       "reason": "Native component. Extract surface/form orchestration; preserve dirty edits, checks, theme identity and wire actions."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiSurfaceState",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiMessageSurfacesComponent",
+      "taskIds": [
+        "T27"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/a2ui/message-surfaces.tsx",
+      "reason": "Native component. The chat hands one message's A2UI source to it; it parses and renders its surfaces."
+    },
+    {
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiRendererOptions",
+      "taskIds": [
+        "T27"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/a2ui/message-surfaces.tsx",
+      "reason": "Native component. The chat hands one message's A2UI source to it; it parses and renders its surfaces."
+    },
+    {
+      "id": "export:libs/angular/a2ui/public-api.ts#a2uiRenderer",
+      "taskIds": [
+        "T27"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/a2ui/message-surfaces.tsx",
+      "reason": "Native component. The chat hands one message's A2UI source to it; it parses and renders its surfaces."
+    },
+    {
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiSurfaceState",
       "taskIds": [
         "T19",
         "T27"
@@ -4853,7 +4913,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiSurfaceStore",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiSurfaceStore",
       "taskIds": [
         "T19",
         "T27"
@@ -4862,7 +4922,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiTabsComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiTabsComponent",
       "taskIds": [
         "T27"
       ],
@@ -4872,7 +4932,7 @@
       "reason": "Native read-only view. Tab list with one labelled panel, local selection, arrow/Home/End keys following reading direction, bound titles resolved to literal text. Only the selected tab is mounted; controlled selection remains open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiTextComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiTextComponent",
       "taskIds": [
         "T27"
       ],
@@ -4882,7 +4942,7 @@
       "reason": "Native component. Text variants, Markdown/content policy and constrained typography."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiTextFieldComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiTextFieldComponent",
       "taskIds": [
         "T27"
       ],
@@ -4892,7 +4952,7 @@
       "reason": "Native view. Labelled text, number, obscured and multi-line fields; each edit is written to the application-created surfaces store at the bound path; read-only without a store or with a literal value. Validation pattern and error text remain open with checks."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiTheme",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiTheme",
       "taskIds": [
         "T19"
       ],
@@ -4900,7 +4960,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiVideoComponent",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiVideoComponent",
       "taskIds": [
         "T27"
       ],
@@ -4910,7 +4970,7 @@
       "reason": "Native read-only view. Native video controls; relative, http(s), blob and video data URLs only; never autoplays. Poster, captions and sizing presets remain open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiViewEntry",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiViewEntry",
       "taskIds": [
         "T19",
         "T27"
@@ -4919,7 +4979,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#A2uiViews",
+      "id": "export:libs/angular/a2ui/public-api.ts#A2uiViews",
       "taskIds": [
         "T19",
         "T27"
@@ -5160,6 +5220,28 @@
       "status": "planned",
       "target": "libs/react/src/chat/chat.tsx",
       "reason": "Native component. Thin native composition over content/execution services; slots, event correlation, scroll and message actions."
+    },
+    {
+      "id": "export:libs/angular/chat/src/public-api.ts#ChatA2uiInputs",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/chat/generative-ui.tsx",
+      "reason": "React takes the same renderer as the generativeUi.renderA2ui prop."
+    },
+    {
+      "id": "export:libs/angular/chat/src/public-api.ts#ChatA2uiRenderer",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/chat/generative-ui.tsx",
+      "reason": "React takes the same renderer as the generativeUi.renderA2ui prop."
     },
     {
       "id": "export:libs/angular/chat/src/public-api.ts#ChatConfirmDialogComponent",
@@ -5937,7 +6019,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#DynamicBoolean",
+      "id": "export:libs/angular/a2ui/public-api.ts#DynamicBoolean",
       "taskIds": [
         "T19"
       ],
@@ -5945,7 +6027,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#DynamicNumber",
+      "id": "export:libs/angular/a2ui/public-api.ts#DynamicNumber",
       "taskIds": [
         "T19"
       ],
@@ -5953,7 +6035,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#DynamicString",
+      "id": "export:libs/angular/a2ui/public-api.ts#DynamicString",
       "taskIds": [
         "T19"
       ],
@@ -5961,7 +6043,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#DynamicStringList",
+      "id": "export:libs/angular/a2ui/public-api.ts#DynamicStringList",
       "taskIds": [
         "T19"
       ],
@@ -5969,7 +6051,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#DynamicValue",
+      "id": "export:libs/angular/a2ui/public-api.ts#DynamicValue",
       "taskIds": [
         "T19"
       ],
@@ -6397,7 +6479,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#PartialArgsBridge",
+      "id": "export:libs/angular/a2ui/public-api.ts#PartialArgsBridge",
       "taskIds": [
         "T19",
         "T27"
@@ -6593,7 +6675,7 @@
       "reason": "Retain tool declaration/coordination capability without a schema DSL, automatic argument validation/transformation or JSON Schema derivation. Optional JSON Schema metadata is caller-supplied; current Angular behavior is unchanged and future view/ask presentation remains deferred."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#a2uiBasicCatalog",
+      "id": "export:libs/angular/a2ui/public-api.ts#a2uiBasicCatalog",
       "taskIds": [
         "T19",
         "T27"
@@ -6602,7 +6684,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#a2uiClientCapabilities",
+      "id": "export:libs/angular/a2ui/public-api.ts#a2uiClientCapabilities",
       "taskIds": [
         "T19",
         "T27"
@@ -6627,7 +6709,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#buildA2uiActionMessage",
+      "id": "export:libs/angular/a2ui/public-api.ts#buildA2uiActionMessage",
       "taskIds": [
         "T19",
         "T27"
@@ -6703,7 +6785,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#createA2uiSurfaceStore",
+      "id": "export:libs/angular/a2ui/public-api.ts#createA2uiSurfaceStore",
       "taskIds": [
         "T19",
         "T27"
@@ -6728,7 +6810,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#createPartialArgsBridge",
+      "id": "export:libs/angular/a2ui/public-api.ts#createPartialArgsBridge",
       "taskIds": [
         "T19",
         "T27"
@@ -6787,7 +6869,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#emitBinding",
+      "id": "export:libs/angular/a2ui/public-api.ts#emitBinding",
       "taskIds": [
         "T19",
         "T27"
@@ -6867,7 +6949,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#isFunctionCall",
+      "id": "export:libs/angular/a2ui/public-api.ts#isFunctionCall",
       "taskIds": [
         "T19"
       ],
@@ -6875,7 +6957,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#isPathRef",
+      "id": "export:libs/angular/a2ui/public-api.ts#isPathRef",
       "taskIds": [
         "T19"
       ],
@@ -6968,7 +7050,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#normalizeEnvelopeArgs",
+      "id": "export:libs/angular/a2ui/public-api.ts#normalizeEnvelopeArgs",
       "taskIds": [
         "T19",
         "T27"
@@ -6977,7 +7059,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#normalizeViewEntry",
+      "id": "export:libs/angular/a2ui/public-api.ts#normalizeViewEntry",
       "taskIds": [
         "T19",
         "T27"
@@ -8936,7 +9018,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/a2ui-default-fallback.component.ts",
+      "id": "source:libs/angular/a2ui/src/a2ui-default-fallback.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -8944,7 +9026,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/action-label.ts",
+      "id": "source:libs/angular/chat/src/lib/utils/a2ui-action-label.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -8953,7 +9035,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/build-action-message.ts",
+      "id": "source:libs/angular/a2ui/src/build-action-message.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -8962,7 +9044,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/capabilities.ts",
+      "id": "source:libs/angular/a2ui/src/capabilities.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -8971,7 +9053,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/audio-player.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/audio-player.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -8979,7 +9061,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/button.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/button.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -8987,7 +9069,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/card.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/card.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -8995,7 +9077,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/check-box.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/check-box.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9003,7 +9085,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/choice-picker.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/choice-picker.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9011,7 +9093,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/column.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/column.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9019,7 +9101,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/date-time-input.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/date-time-input.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9027,7 +9109,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/divider.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/divider.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9035,7 +9117,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/emit-binding.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/emit-binding.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -9044,7 +9126,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/icon.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/icon.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9052,7 +9134,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/image.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/image.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9060,7 +9142,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/index.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/index.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -9069,7 +9151,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/list.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/list.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9077,7 +9159,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/modal.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/modal.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9085,7 +9167,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/row.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/row.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9093,7 +9175,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/slider.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/slider.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9101,7 +9183,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/tabs.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/tabs.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9109,7 +9191,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/text-field.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/text-field.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9117,7 +9199,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/text.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/text.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9125,7 +9207,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/catalog/video.component.ts",
+      "id": "source:libs/angular/a2ui/src/catalog/video.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9133,7 +9215,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/component-view.ts",
+      "id": "source:libs/angular/a2ui/src/component-view.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -9142,7 +9224,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/envelope-normalizer.ts",
+      "id": "source:libs/angular/a2ui/src/envelope-normalizer.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -9151,7 +9233,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/extract-bindings.ts",
+      "id": "source:libs/angular/a2ui/src/extract-bindings.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -9160,7 +9242,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/partial-args-bridge.ts",
+      "id": "source:libs/angular/a2ui/src/partial-args-bridge.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -9169,7 +9251,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/surface-store.ts",
+      "id": "source:libs/angular/a2ui/src/surface-store.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -9178,7 +9260,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/surface-to-spec.ts",
+      "id": "source:libs/angular/a2ui/src/surface-to-spec.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -9187,7 +9269,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/surface.component.ts",
+      "id": "source:libs/angular/a2ui/src/surface.component.ts",
       "taskIds": [
         "T27"
       ],
@@ -9195,7 +9277,23 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/a2ui/views.ts",
+      "id": "source:libs/angular/a2ui/public-api.ts",
+      "taskIds": [
+        "T27"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/angular/a2ui/src/message-surfaces.component.ts",
+      "taskIds": [
+        "T27"
+      ],
+      "treatment": "react",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/angular/a2ui/src/views.ts",
       "taskIds": [
         "T19",
         "T27"
@@ -9413,6 +9511,15 @@
     },
     {
       "id": "source:libs/angular/chat/src/lib/compositions/chat/chat-render-event.ts",
+      "taskIds": [
+        "T22",
+        "T23"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/angular/chat/src/lib/compositions/chat/chat-a2ui.ts",
       "taskIds": [
         "T22",
         "T23"

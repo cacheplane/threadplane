@@ -86,7 +86,8 @@ Every input, output, and projection slot below is declared on `ChatComponent` it
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
 | `agent` | `Agent` | **Required** | The agent providing streaming state: the instance `injectAgent()` from `@threadplane/angular` returns, over any backend session. |
-| `views` | `ViewRegistry \| undefined` | `undefined` | View registry for generative UI and A2UI surfaces. Maps spec type names to Angular components. Created with `views()` from `@threadplane/angular/render`, or `a2uiBasicCatalog()` from `@threadplane/angular/chat`. |
+| `views` | `ViewRegistry \| undefined` | `undefined` | View registry for json-render generative UI. Maps spec type names to Angular components. Created with `views()` from `@threadplane/angular/render`. |
+| `a2ui` | `ChatA2uiRenderer \| undefined` | `undefined` | Renders A2UI content: a message that starts with `---a2ui_JSON---`. Created with `a2uiRenderer()` from `@threadplane/angular/a2ui`. Without it, that content shows as text, and the chat UI bundles none of the A2UI code. See [A2UI Rendering](#a2ui-rendering). |
 | `clientTools` | `ClientToolRegistry \| undefined` | `undefined` | Client-declared `view` / `ask` / `function` tools the model may call. When set, the composition ships their catalog to the agent, runs `function` tools in the browser, and renders `view` / `ask` tools through the tool-views pipeline. See [Client Tools](/docs/angular/chat/guides/client-tools). |
 | `clientToolExecutionGuard` | `ClientToolExecutionGuard \| undefined` | `undefined` | Opt-in claim-before-execute guard. Takes a `threadId` and a `ClientToolExecutionStore` so a non-idempotent tool is not executed twice across reloads. |
 | `clientToolContinuationPolicy` | `ClientToolContinuationPolicy \| undefined` | `undefined` | Caps automatic client-tool continuations per user turn (`maxTurns`, default 10; `0` for unlimited) and supplies an `onLimit` callback. |
@@ -121,7 +122,7 @@ Every input, output, and projection slot below is declared on `ChatComponent` it
 
 | Method | Description |
 |--------|-------------|
-| `clearThread()` | Clears local view state for a new thread: content classifiers, the A2UI surface store, and the `messageCount` / `inputSubmittedAt` lifecycle signals. `componentReady` and `firstMessageSent` stay set. |
+| `clearThread()` | Clears local view state for a new thread: content classifiers and the `messageCount` / `inputSubmittedAt` lifecycle signals. `componentReady` and `firstMessageSent` stay set. |
 | `clearDraft()` | Clears the unsent text in the composer. |
 | `scrollToBottom()` | Scrolls the transcript to the bottom and re-pins it. |
 
@@ -272,19 +273,22 @@ export class InteractiveChatComponent {
 
 ## A2UI Rendering
 
-When AI messages contain A2UI content (prefixed with `---a2ui_JSON---`), the component auto-detects A2UI mode. Pass `a2uiBasicCatalog()` to `[views]` to render the built-in catalog:
+When AI messages contain A2UI content (prefixed with `---a2ui_JSON---`), the component auto-detects A2UI mode. Pass a renderer from `a2uiRenderer()` to `[a2ui]` to render it. The renderer uses the built-in `a2uiBasicCatalog()` unless you pass `a2uiRenderer({ catalog })`:
 
 ```typescript
-import { ChatComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
+import { a2uiRenderer } from '@threadplane/angular/a2ui';
 
-views = a2uiBasicCatalog();
+a2ui = a2uiRenderer();
 ```
 
 ```html
-<chat [agent]="chatRef" [views]="views" />
+<chat [agent]="chatRef" [a2ui]="a2ui" />
 ```
 
-The catalog currently maps 18 component types: Text, Image, Icon, Divider, Row, Column, Card, List, Button, TextField, CheckBox, ChoicePicker, DateTimeInput, Slider, Tabs, Modal, Video, and AudioPlayer.
+Without `[a2ui]`, A2UI content shows as its source text, and the chat UI bundles none of the A2UI code. `[views]` does not enable A2UI; it is the json-render view registry.
+
+The basic catalog currently maps 18 component types: Text, Image, Icon, Divider, Row, Column, Card, List, Button, TextField, CheckBox, ChoicePicker, DateTimeInput, Slider, Tabs, Modal, Video, and AudioPlayer.
 
 A2UI surfaces support two-way data binding, button actions, template expansion over collections, and validation. See the [A2UI guide](/docs/angular/chat/a2ui/overview) for details.
 

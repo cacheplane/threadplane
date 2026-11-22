@@ -1,4 +1,4 @@
-// libs/angular/chat/src/lib/a2ui/envelope-normalizer.ts
+// libs/angular/a2ui/src/envelope-normalizer.ts
 
 const ENVELOPE_KEYS = ['createSurface', 'updateComponents', 'updateDataModel', 'deleteSurface'] as const;
 

@@ -5,14 +5,13 @@ import {
 } from '@angular/core';
 import { onAgentStateUpdate } from '@threadplane/core';
 import { DEVELOPMENT_COLLECTION_POLICY, isDevelopmentRuntimeEnabled } from '@threadplane/telemetry/browser/development';
-import { KeyValuePipe, NgTemplateOutlet } from '@angular/common';
+import { NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import {
   isAgentInputBlocked, isAgentRunning,
   type Agent, type AgentPlanStep, type AgentSubagent, type Message, type MessageDelivery,
 } from '../../agent';
 import { ChatReasoningComponent } from '../../primitives/chat-reasoning/chat-reasoning.component';
 import type { ViewRegistry, RenderEvent } from '@threadplane/angular/render';
-import type { A2uiActionMessage } from '@threadplane/a2ui';
 import type { StateStore } from '@json-render/core';
 import { toRenderRegistry, signalStateStore, withViews } from '@threadplane/angular/render';
 import type { ClientToolRegistry } from '../../client-tools/tool-def';
@@ -46,12 +45,10 @@ import { offersToolRetry, repeatsToolFailure } from '../../primitives/chat-tool-
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
 import { ChatWelcomeComponent } from '../../primitives/chat-welcome/chat-welcome.component';
 import { ChatSelectComponent, type ChatSelectOption } from '../../primitives/chat-select/chat-select.component';
-import { A2uiSurfaceComponent } from '../../a2ui/surface.component';
 import { ChatScrollBubbleComponent } from '../../primitives/chat-scroll-bubble/chat-scroll-bubble.component';
 import { createContentClassifier, type ContentClassifier } from '../../streaming/content-classifier';
-import { createPartialArgsBridge, type PartialArgsBridge } from '../../a2ui/partial-args-bridge';
-import { createA2uiSurfaceStore, type A2uiSurfaceStore } from '../../a2ui/surface-store';
-import { a2uiActionLabel } from '../../a2ui/action-label';
+import { a2uiActionLabel } from '../../utils/a2ui-action-label';
+import type { ChatA2uiRenderer } from './chat-a2ui';
 import { messageContent } from '../shared/message-utils';
 import { formatDuration } from '../../utils/format-duration';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
@@ -67,8 +64,7 @@ interface OwnedMarkdownPresentation {
   content: string;
   type: ReturnType<ContentClassifier['type']>;
   spec: ReturnType<ContentClassifier['spec']>;
-  surfaces: ReturnType<ContentClassifier['a2uiSurfaces']>;
-  surfaceStates: ReturnType<ContentClassifier['a2uiSurfaceStates']>;
+  a2uiSource: ReturnType<ContentClassifier['a2uiSource']>;
 }
 
 interface OwnedMarkdownRowContext extends OwnedMarkdownContext {
@@ -145,11 +141,11 @@ export function isPinned(
   selector: 'chat',
   standalone: true,
   imports: [
-    KeyValuePipe, NgTemplateOutlet,
+    NgComponentOutlet, NgTemplateOutlet,
     ChatWindowComponent, ChatMessageListComponent, MessageTemplateDirective, ChatMessageComponent,
     ChatInputComponent, ChatTypingIndicatorComponent, ChatErrorComponent,
     ChatThreadListComponent, ChatGenerativeUiComponent,
-    OwnedMarkdownContextDirective, ChatToolCallsComponent, ChatToolViewsComponent, A2uiSurfaceComponent,
+    OwnedMarkdownContextDirective, ChatToolCallsComponent, ChatToolViewsComponent,
     ChatMessageActionsComponent, ChatWelcomeComponent, ChatSelectComponent, ChatReasoningComponent,
     ChatScrollBubbleComponent,
   ],
@@ -183,6 +179,7 @@ export function isPinned(
       width: 100%;
     }
     .chat-shell { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+    .chat-a2ui-source { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--tplane-chat-font-mono, monospace); font-size: 13px; }
     .chat-shell__sidebar {
       width: 240px;
       flex-shrink: 0;
@@ -420,17 +417,21 @@ export function isPinned(
                       (events)="onSpecEvent($event, i)"
                     />
                   }
-                  @if (presentation.type === 'a2ui' && views(); as catalog) {
-                    @for (entry of presentation.surfaces | keyvalue; track entry.key) {
-                      <a2ui-surface
-                        [surface]="entry.value"
-                        [state]="presentation.surfaceStates.get(entry.key)"
-                        [catalog]="catalog"
-                        [handlers]="currentHandlers"
-                        (action)="onA2uiAction($event)"
-                        (events)="onA2uiEvent($event, i, entry.key)"
-                      />
-                    }
+                  @if (presentation.type === 'a2ui' && !a2ui()) {
+                    <!-- No [a2ui] renderer: the A2UI content as text. -->
+                    <div class="chat-a2ui-source">{{ presentation.content }}</div>
+                  }
+                  @if (presentation.type === 'a2ui' && a2ui(); as renderer) {
+                    <ng-container
+                      *ngComponentOutlet="renderer.component; inputs: {
+                        source: presentation.a2uiSource,
+                        options: renderer.options,
+                        handlers: currentHandlers,
+                        messageIndex: i,
+                        submitAction: submitA2uiAction,
+                        emitEvent: emitA2uiEvent,
+                      }"
+                    />
                   }
                   </ng-container>
                   <!-- Only show message actions when there is copyable assistant
@@ -560,6 +561,12 @@ export class ChatComponent {
   protected readonly chatRuntime = injectChatRuntime();
   readonly agent = input.required<Agent>();
   readonly views = input<ViewRegistry | undefined>(undefined);
+  /**
+   * Renders A2UI content: a message that starts with `---a2ui_JSON---`. Pass
+   * `a2uiRenderer()` from `@threadplane/angular/a2ui`. Without it, that content
+   * shows as text, and the chat UI bundles none of the A2UI code.
+   */
+  readonly a2ui = input<ChatA2uiRenderer | undefined>(undefined);
   /**
    * Client-declared tools (`view`/`ask`/`function`) the model may call. When
    * provided, a coordinator ships their catalog to the agent, runs `function`
@@ -1016,15 +1023,6 @@ export class ChatComponent {
   private readonly lifecycle = (inject(CHAT_LIFECYCLE, { optional: true }) ?? createChatLifecycle()) as ChatLifecycleInternal;
   private eventsSubscribed = false;
 
-  /**
-   * Shared A2UI surface store fed by the live partial-args bridge. The
-   * content-classifier path will share this store via tool_call_id
-   * short-circuit (skipping re-dispatch for live tool_call_ids).
-   */
-  protected readonly liveSurfaceStore: A2uiSurfaceStore = createA2uiSurfaceStore();
-  private readonly partialBridge: PartialArgsBridge = createPartialArgsBridge(this.liveSurfaceStore);
-  private partialEventsLastIndex = 0;
-
   private readonly scrollContainer = viewChild<ElementRef<HTMLElement>>('scrollContainer');
   private readonly composer = viewChild<ChatInputComponent>('composer');
   /** Clears the local composer after an application-owned conversation reset. */
@@ -1337,26 +1335,6 @@ export class ChatComponent {
       onCleanup(() => observer.disconnect());
     });
 
-    // Follow a2ui-partial custom events. Each event delivers a cumulative
-    // args string keyed by tool_call_id; bridge.push() re-parses and
-    // dispatches new envelopes incrementally. `customEvents` holds the current
-    // run's events and stays empty on a session that emits none, which then
-    // uses the wrapped final-message classifier path.
-    effect(() => {
-      let agent: ReturnType<typeof this.agent>;
-      try { agent = this.agent(); } catch { return; }
-      const events = agent.customEvents();
-      // The list empties when the next run starts and on a thread switch.
-      if (events.length < this.partialEventsLastIndex) this.partialEventsLastIndex = 0;
-      for (let i = this.partialEventsLastIndex; i < events.length; i++) {
-        const e = events[i];
-        if (e.name !== 'a2ui-partial') continue;
-        const d = e.data as { tool_call_id?: string; args_so_far?: string } | null;
-        if (!d || typeof d.tool_call_id !== 'string' || typeof d.args_so_far !== 'string') continue;
-        this.partialBridge.push(d.tool_call_id, d.args_so_far);
-      }
-      this.partialEventsLastIndex = events.length;
-    });
 
     // Connect the client-tools coordinator to the agent. connect() ships the
     // tool catalog, starts the function-tool executor, and installs the view
@@ -1742,7 +1720,7 @@ export class ChatComponent {
   private ownedMarkdownPresentation(content: string, classifier: ContentClassifier): OwnedMarkdownPresentation {
     return {
       content, type: classifier.type(), spec: classifier.spec(),
-      surfaces: classifier.a2uiSurfaces(), surfaceStates: classifier.a2uiSurfaceStates(),
+      a2uiSource: classifier.a2uiSource(),
     };
   }
 
@@ -1750,7 +1728,7 @@ export class ChatComponent {
     const next = this.ownedMarkdownPresentation(content, classifier);
     const prior = context.presentation;
     if (prior.content === next.content && prior.type === next.type && prior.spec === next.spec
-      && prior.surfaces === next.surfaces && prior.surfaceStates === next.surfaceStates) return false;
+      && prior.a2uiSource === next.a2uiSource) return false;
     Object.assign(prior, next);
     return true;
   }
@@ -1834,7 +1812,7 @@ export class ChatComponent {
     coord.handleRenderEvent(agentRef, event);
   }
 
-  onA2uiAction(message: A2uiActionMessage): void {
+  onA2uiAction(message: object): void {
     if (isAgentInputBlocked(this.agent())) return;
     this.agent().submit({ message: JSON.stringify(message) }).catch(() => undefined);
   }
@@ -1842,6 +1820,11 @@ export class ChatComponent {
   onA2uiEvent(event: RenderEvent, messageIndex: number, surfaceId: string): void {
     this.renderEvent.emit({ messageIndex, surfaceId, event });
   }
+
+  /** Stable callbacks for the A2UI renderer's inputs. */
+  protected readonly submitA2uiAction = (message: object): void => this.onA2uiAction(message);
+  protected readonly emitA2uiEvent = (event: RenderEvent, messageIndex: number, surfaceId: string): void =>
+    this.onA2uiEvent(event, messageIndex, surfaceId);
 
   /**
    * Regenerate the assistant response at the given message index, through

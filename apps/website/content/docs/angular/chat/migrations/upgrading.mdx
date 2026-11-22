@@ -235,6 +235,23 @@ provideAgent({
 - [ ] Search for `isLoading()`, `interrupt()`, `history()`, `events$`, `submit({` and `regenerate(` on an agent.
 - [ ] Run the journey under [Verify the user journey after upgrading](#verify-the-user-journey-after-upgrading), including a thread switch and a reload of a saved thread.
 
+## Move A2UI to its entry point
+
+A2UI now has its own entry point, `@threadplane/angular/a2ui`, so an application that renders no A2UI bundles none of it.
+
+1. Import every A2UI symbol from `@threadplane/angular/a2ui`: `a2uiBasicCatalog`, `A2uiSurfaceComponent`, `createA2uiSurfaceStore`, the catalog components and the A2UI types. Chat symbols stay on `@threadplane/angular/chat`.
+2. Give each `<chat>`, `<chat-popup>` or `<chat-sidebar>` that shows A2UI a renderer. `[views]` no longer turns A2UI on; it stays the json-render view registry.
+
+```ts
+import { a2uiBasicCatalog, a2uiRenderer } from '@threadplane/angular/a2ui';
+
+protected readonly catalog = a2uiBasicCatalog();
+protected readonly a2ui = a2uiRenderer({ catalog: this.catalog });
+// <chat [agent]="agent" [views]="catalog" [a2ui]="a2ui" />
+```
+
+3. If your code read `a2uiSurfaces()` or `a2uiSurfaceStates()` from a `ContentClassifier`, read `a2uiSource()` and parse it with `createA2uiMessageParser()` from `@threadplane/a2ui`, or render it with `A2uiMessageSurfacesComponent`.
+
 ## Keep package peers aligned
 
 Read the installed package manifests and the [changelog](/docs/angular/chat/getting-started/changelog) before updating. The current Angular packages declare support for Angular 20, 21, and 22; select a supported major and compatible Node version for your application.

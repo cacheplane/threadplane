@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { a2uiActionLabel } from './action-label';
+import { a2uiActionLabel } from './a2ui-action-label';
 
 describe('a2uiActionLabel', () => {
   it('returns the authored label when action.label is present', () => {

@@ -181,7 +181,7 @@ An element wires it as `"on": { "click": { "action": "submitForm", "params": {} 
 
 ## A2UI protocol
 
-For agents that emit A2UI payloads, the same classifier detects content prefixed with `---a2ui_JSON---` and renders it as A2UI surfaces instead. Pass `a2uiBasicCatalog()` from `@threadplane/angular/chat` as the registry when you want those surfaces drawn with the built-in components.
+For agents that emit A2UI payloads, the same classifier detects content prefixed with `---a2ui_JSON---` and hands it to the A2UI renderer instead. Pass `a2uiRenderer()` from `@threadplane/angular/a2ui` to `<chat [a2ui]>` to draw those surfaces with the built-in components, or `a2uiRenderer({ catalog })` for a custom catalog. Without `[a2ui]`, the content shows as its A2UI source text.
 
 
 ## Classifying streamed content
@@ -210,7 +210,7 @@ classifier.dispose();
 
 ### A2UI content
 
-When the snapshot starts with the `---a2ui_JSON---` prefix, the classifier switches to A2UI mode and parses the remaining lines as JSONL. Read `type()` (=> `'a2ui'`) and `a2uiSurfaces()` for the parsed surfaces:
+When the snapshot starts with the `---a2ui_JSON---` prefix, the classifier switches to A2UI mode. Read `type()` (=> `'a2ui'`) and `a2uiSource()` for the JSONL after the marker. The classifier does not parse it; the A2UI renderer from `@threadplane/angular/a2ui` does:
 
 ```typescript
 const a2uiClassifier = createContentClassifier();
@@ -221,8 +221,8 @@ a2uiClassifier.update(
   '{"version":"v0.9","updateComponents":{"surfaceId":"s1","components":[{"id":"root","component":"Text","text":"Hi"}]}}\n',
 );
 
-a2uiClassifier.type();          // 'a2ui'
-a2uiClassifier.a2uiSurfaces();  // Map<string, A2uiSurface> keyed by surface ID
+a2uiClassifier.type();        // 'a2ui'
+a2uiClassifier.a2uiSource();  // the JSONL lines after the marker
 
 a2uiClassifier.dispose();
 ```

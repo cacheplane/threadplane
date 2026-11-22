@@ -5,6 +5,7 @@ const descriptions: Record<string, string> = {
   a2ui: 'Parse and validate A2UI messages and surfaces.',
   'ag-ui': 'Connect Angular applications to agents using the AG-UI protocol.',
   angular: 'Angular bindings for agent state and runtime integration.',
+  'angular/a2ui': 'Render A2UI surfaces in Angular chat applications.',
   'angular/chat': 'Conversation components for Angular applications.',
   'angular/chat/debug': 'Inspect conversation state and runtime events.',
   'angular/chat/math': 'Render LaTeX math in chat with your application KaTeX.',

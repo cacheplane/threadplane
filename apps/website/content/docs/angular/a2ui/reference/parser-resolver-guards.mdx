@@ -175,12 +175,12 @@ An unknown function name resolves to `undefined` and logs a one-time console war
 
 ## Validation vs handler wiring
 
-This package does not gate action dispatch on check rules and does not map actions to Angular handlers. `@threadplane/angular/chat` does both: its surface component evaluates every check rule against the live data model before an event action dispatches and emits a `VALIDATION_FAILED` error message when one fails. This package does execute client-side function calls, including your own, through the registry you pass to `resolveDynamic()`.
+This package does not gate action dispatch on check rules and does not map actions to Angular handlers. `@threadplane/angular/a2ui` does both: its surface component evaluates every check rule against the live data model before an event action dispatches and emits a `VALIDATION_FAILED` error message when one fails. This package does execute client-side function calls, including your own, through the registry you pass to `resolveDynamic()`.
 
 A practical boundary is:
 
 - use `@threadplane/a2ui` to parse and inspect the protocol stream, and to resolve values against a model;
 - use app or server validation to decide whether a message is trusted;
-- use `@threadplane/angular/chat` and `@threadplane/angular/render` to display surfaces and wire interactions.
+- use `@threadplane/angular/a2ui` and `@threadplane/angular/render` to display surfaces and wire interactions.
 
 That split keeps protocol parsing deterministic and keeps privileged behavior in the host application.

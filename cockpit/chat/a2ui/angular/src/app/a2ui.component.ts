@@ -1,6 +1,7 @@
+import { a2uiBasicCatalog, a2uiRenderer } from '@threadplane/angular/a2ui';
 import { exampleToolLabel } from '../../../../../shared/tool-presentation';
 import { Component, computed } from '@angular/core';
-import { ChatComponent, ChatWelcomeSuggestionComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { ChatComponent, ChatWelcomeSuggestionComponent } from '@threadplane/angular/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { injectAgent } from '@threadplane/angular';
 import type { LangGraphSession } from '@threadplane/langgraph';
@@ -29,7 +30,7 @@ const WELCOME_SUGGESTIONS = [
     >
       <button headerActions type="button" [disabled]="isLoading()"
         (click)="newConversation(conversation)">New conversation</button>
-      <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask for a flight form…" #conversation [welcomeDisabled]="true" main [agent]="agent" [views]="catalog" class="flex-1 min-w-0">
+      <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask for a flight form…" #conversation [welcomeDisabled]="true" main [agent]="agent" [views]="catalog" [a2ui]="a2ui" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
         <p chatFooterStatus role="status" class="example-submission-status">{{ isLoading() ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
@@ -58,6 +59,7 @@ export class A2uiComponent {
   /** True while a run streams: the agent has no separate loading flag. */
   protected readonly isLoading = computed(() => this.agent.status() === 'running');
   protected readonly catalog = a2uiBasicCatalog();
+  protected readonly a2ui = a2uiRenderer({ catalog: this.catalog });
   protected readonly suggestions = WELCOME_SUGGESTIONS;
 
   protected send(text: string): void {
