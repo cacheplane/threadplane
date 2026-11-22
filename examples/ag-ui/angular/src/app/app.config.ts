@@ -51,7 +51,7 @@ export const appConfig: ApplicationConfig = {
     provideAgent(ITINERARY_AGENT, () => {
       const runState = inject(ItineraryRunState);
       return {
-        createSession: (context) =>
+        createSession: async (context) =>
           withRunState(
             createSession({
               url: environment.agentUrl,

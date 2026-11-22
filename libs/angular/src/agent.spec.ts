@@ -29,6 +29,14 @@ import {
   type ScriptedSession,
 } from './testing/scripted-session';
 
+/**
+ * These specs test the agent apart from session timing: the agent adopts a
+ * session a factory returns as is, as the in-package testing provider binds.
+ * Applications pass an async factory; agent.async-session.spec covers that.
+ */
+const sync = <A extends unknown[], T>(factory: (...args: A) => T) =>
+  factory as unknown as (...args: A) => Promise<T>;
+
 const injectors: EnvironmentInjector[] = [];
 afterEach(() => {
   for (const injector of injectors.splice(0))
@@ -56,14 +64,14 @@ function scripted(
   const agent = runInInjectionContext(injector, () =>
     createAgent<ScriptedSession>({
       ...config,
-      createSession(sessionContext) {
+      createSession: sync(function (sessionContext) {
         const { session, control } = scriptedSession(
           sessionContext,
           typeof options === 'function' ? options(sessionContext) : options
         );
         sessions.push(control);
         return session;
-      },
+      }),
     })
   );
   return {
@@ -217,7 +225,7 @@ describe('Agent signal view', () => {
     };
     const agent = loose(
       runInInjectionContext(injector, () =>
-        createAgent({ createSession: () => session })
+        createAgent({ createSession: sync(() => session) })
       )
     );
     // Declared optional by the core contract or a first-party session type.
@@ -281,7 +289,7 @@ describe('Agent signal view', () => {
       reconnect: () => Promise.resolve('success' as const),
     };
     const agent = runInInjectionContext(injector, () =>
-      createAgent({ createSession: () => session })
+      createAgent({ createSession: sync(() => session) })
     );
     expect(isSignal(agent.reconnect)).toBe(false);
     expect(agent.reconnect()).toBeInstanceOf(Promise);
@@ -351,7 +359,7 @@ describe('Agent signal view', () => {
   it('views a core session, with optional core fields as signals', async () => {
     const fake = createFakeAgentSession();
     const agent = runInInjectionContext(context(), () =>
-      createAgent({ createSession: () => fake.session })
+      createAgent({ createSession: sync(() => fake.session) })
     );
     expect(agent.error()).toBeUndefined();
     expect(agent.plan()).toBeUndefined();
@@ -388,7 +396,7 @@ describe('Agent signal view', () => {
 
   it('requires an injection context', () => {
     expect(() =>
-      createAgent({ createSession: (c) => scriptedSession(c).session })
+      createAgent({ createSession: sync((c) => scriptedSession(c).session) })
     ).toThrow();
   });
 });
@@ -400,10 +408,10 @@ describe('Agent session options', () => {
     const injector = context([{ provide: TOKEN, useValue: 'injected' }]);
     const agent = runInInjectionContext(injector, () =>
       createAgent({
-        createSession(sessionContext) {
+        createSession: sync(function (sessionContext) {
           seen.push(inject(TOKEN));
           return scriptedSession(sessionContext).session;
-        },
+        }),
       })
     );
     agent.switchThread('a');
@@ -603,12 +611,12 @@ describe('Agent thread switching', () => {
     const controls: ScriptedControl[] = [];
     const agent = runInInjectionContext(injector, () =>
       createAgent({
-        createSession(sessionContext) {
+        createSession: sync(function (sessionContext) {
           if (sessionContext.threadId === 'broken') throw new Error('No session');
           const { session, control } = scriptedSession(sessionContext);
           controls.push(control);
           return session;
-        },
+        }),
       })
     );
     expect(() => agent.switchThread('broken')).toThrow('No session');
@@ -645,12 +653,12 @@ describe('Agent thread switching', () => {
     runInInjectionContext(context(), () =>
       createAgent({
         threadId: selected,
-        createSession(sessionContext) {
+        createSession: sync(function (sessionContext) {
           unrelated();
           const { session, control } = scriptedSession(sessionContext);
           sessions.push(control);
           return session;
-        },
+        }),
       })
     );
     selected.set('b');
@@ -688,10 +696,10 @@ describe('Agent thread switching', () => {
     const agent = runInInjectionContext(context(), () =>
       createAgent({
         onThreadId,
-        createSession(sessionContext) {
+        createSession: sync(function (sessionContext) {
           sessionContext.onThreadId('chosen');
           return scriptedSession(sessionContext).session;
-        },
+        }),
       })
     );
     expect(agent.threadId()).toBe('chosen');
@@ -847,7 +855,7 @@ describe('Agent lifecycle', () => {
     const lifecycleSnapshot = { threadCreatedAt: 7 };
     const agent = runInInjectionContext(injector, () =>
       createAgent({
-        createSession: () => ({
+        createSession: sync(() => ({
           getSnapshot: () => ({}),
           subscribe: () => () => undefined,
           dispose: async () => undefined,
@@ -855,7 +863,7 @@ describe('Agent lifecycle', () => {
             getSnapshot: () => lifecycleSnapshot,
             subscribe: () => () => undefined,
           },
-        }),
+        })),
       })
     );
     expect(agent.lifecycle.threadCreatedAt()).toBe(7);

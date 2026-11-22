@@ -32,22 +32,25 @@ Add `provideAgent()` to your application config. Its `createSession` function bu
 // app.config.ts
 import type { ApplicationConfig } from '@angular/core';
 import { provideAgent } from '@threadplane/angular';
-import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
       createSession: (context) =>
-        createSession({
-          ...context,
-          apiUrl: 'http://localhost:2024',
-          // 'chat' maps to the key in your langgraph.json "graphs" config
-          assistantId: 'chat',
-        }),
+        import('@threadplane/langgraph').then(({ createSession }) =>
+          createSession({
+            ...context,
+            apiUrl: 'http://localhost:2024',
+            // 'chat' maps to the key in your langgraph.json "graphs" config
+            assistantId: 'chat',
+          })
+        ),
     }),
   ],
 };
 ```
+
+The factory returns a Promise, so `@threadplane/langgraph` loads on demand, out of the initial bundle.
 
 <Callout type="info" title="Threads are optional here">
 Without a configured `threadId`, the session creates a thread on the first submit. Persisting that id so conversations survive a page refresh is opt-in — leave it out for the minimal path and add it later. See [Persistence](/docs/angular/langgraph/guides/persistence).
@@ -176,7 +179,7 @@ export const TRIP = createAgentRef<TripSession>('trip');
 
 // app.config.ts providers
 provideAgent(TRIP, {
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'http://localhost:2024',

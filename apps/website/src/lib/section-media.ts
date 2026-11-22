@@ -43,7 +43,7 @@ export const SECTION_MEDIA: Record<
   // your own records) and the conversation survives a reload, a new tab,
   // or a different device — the messages live in the checkpoint, not here.
   threadId: signal(threadIdFromUrl()),
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       apiUrl: 'https://your-deployment.langgraph.app',
       assistantId: 'demo',
@@ -106,7 +106,7 @@ import { createSession } from '@threadplane/langgraph';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           apiUrl: '/agent',
           assistantId: 'my-agent',
@@ -150,7 +150,7 @@ import { ChatComponent } from '@threadplane/angular/chat';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           url: 'https://your.agent.endpoint',
           threadId: context.threadId ?? undefined,

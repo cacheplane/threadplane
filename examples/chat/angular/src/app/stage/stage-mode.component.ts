@@ -107,7 +107,7 @@ function stageProviders(replay?: StageReplayTransport): Provider[] {
             threadId.set(id);
             recording.onThreadId(id);
           },
-          createSession: (context) =>
+          createSession: async (context) =>
             createDemoSession(context, {
               transport: recording,
               subagentToolNames: SUBAGENT_TOOL_NAMES,
@@ -117,7 +117,7 @@ function stageProviders(replay?: StageReplayTransport): Provider[] {
       const transport = inject(StageReplayTransport);
       return {
         threadId,
-        createSession: (context) =>
+        createSession: async (context) =>
           createDemoSession(context, {
             assistantId: 'stage-replay',
             transport,

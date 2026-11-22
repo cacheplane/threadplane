@@ -54,23 +54,24 @@ In Angular, hand the factory to the one provider and inject the agent. Its snaps
 ```ts
 // app.config.ts
 import { provideAgent } from '@threadplane/angular';
-import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
       createSession: (context) =>
-        createSession({
-          apiUrl: 'https://your-langgraph-platform.com',
-          assistantId: 'my-agent',
-          ...context,
-        }),
+        import('@threadplane/langgraph').then(({ createSession }) =>
+          createSession({
+            apiUrl: 'https://your-langgraph-platform.com',
+            assistantId: 'my-agent',
+            ...context,
+          })
+        ),
     }),
   ],
 };
 ```
 
-Spread the whole `context`. It carries `threadId`, `onThreadId`, the app-wide `clientOptions`, the host's `reportOperationFailure` and `developmentRuntime`, each under the name `createSession` reads, so nothing is dropped and no cast is needed. An unset field arrives as `undefined` or `null`, which `createSession` treats as omitted.
+The factory returns a Promise, so this package loads on demand, out of the initial bundle. Spread the whole `context`. It carries `threadId`, `onThreadId`, the app-wide `clientOptions`, the host's `reportOperationFailure` and `developmentRuntime`, each under the name `createSession` reads, so nothing is dropped and no cast is needed. An unset field arrives as `undefined` or `null`, which `createSession` treats as omitted.
 
 In React, create the session and pass it to `useAgent(session)` from `@threadplane/react`.
 

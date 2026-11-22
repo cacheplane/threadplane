@@ -167,7 +167,7 @@ export const appConfig: ApplicationConfig = {
     provideAgent({
       threadId: signal(localStorage.getItem('threadId')),
       onThreadId: (id) => localStorage.setItem('threadId', id),
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           apiUrl: 'http://localhost:2024',
@@ -316,7 +316,7 @@ export const environment = {
 
 // app.config.ts
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: environment.langgraphUrl,

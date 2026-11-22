@@ -155,12 +155,22 @@ export interface AgentSessionContext {
 /** Configuration for one injected agent. */
 export interface AgentConfig<TSession extends AgentSessionLike = AgentSession> {
   /**
-   * Creates the session for one thread. Called once when the agent is built
-   * and again for each thread switch, always in the agent's injection context,
-   * so it may call `inject()`. The agent owns every session it is given and
-   * disposes it.
+   * Creates the session for one thread, asynchronously, so the backend package
+   * can load on demand: `(context) => import('@threadplane/langgraph').then((m)
+   * => m.createSession({ ...options, ...context }))`. Called once when the agent
+   * is built and again for each thread switch, always in the agent's injection
+   * context, so it may call `inject()` before its first `await`. The agent owns
+   * every session it is given and disposes it.
+   *
+   * Until the first session resolves, the agent shows an empty idle
+   * conversation. During a thread switch it keeps the current thread, with
+   * `isThreadLoading()` true for a thread with an id, until the new session
+   * resolves; only the latest switch is adopted. Commands called meanwhile wait
+   * for the new session and then run on it, except `stop`, which goes to the
+   * current session at once. When the factory rejects, the agent keeps its
+   * current session and the waiting commands reject with the same error.
    */
-  readonly createSession: (context: AgentSessionContext) => TSession;
+  readonly createSession: (context: AgentSessionContext) => Promise<TSession>;
   /**
    * The thread to start on. Pass a signal to have the agent follow it: a
    * change to a different id switches threads.
@@ -244,6 +254,23 @@ const NEVER_FIELDS = new Set([
   'ngOnDestroy',
 ]);
 const FIELD_NAME = /^[a-z][A-Za-z0-9]*$/;
+/** The commands the core contract requires of every session. */
+const REQUIRED_COMMANDS = new Set(['submit', 'stop']);
+/**
+ * What the agent shows before its first session is adopted: the core
+ * contract's required fields, and the collections a first-party backend's
+ * snapshot always holds (LangGraph's `interrupts`, `subgraphs` and
+ * `subagents`; AG-UI's `subagents`), so a typed read of them is an empty list
+ * rather than `undefined` while the session loads.
+ */
+const EMPTY_SNAPSHOT: object = Object.freeze({
+  status: 'idle',
+  messages: Object.freeze([]),
+  toolCalls: Object.freeze([]),
+  interrupts: Object.freeze([]),
+  subgraphs: Object.freeze([]),
+  subagents: Object.freeze([]),
+});
 const PLUMBING = new Set<string>(['getSnapshot', 'subscribe', 'dispose']);
 
 const LIFECYCLE_KEYS = [
@@ -365,8 +392,15 @@ export function createAgent<TSession extends AgentSessionLike>(
     (isSignal(configured) ? untracked(configured) : configured) ?? null;
 
   let active: Binding | undefined;
+  /** The latest binding whose session has not resolved yet. */
+  let pending: Binding | undefined;
+  /** Commands called while a session is pending, run once it is adopted. */
+  const waiting: { run(): void; fail(error: unknown): void }[] = [];
+  /** Whether the active session is still reading its thread's history. */
+  let activeLoading = false;
   let destroyed = false;
-  let source!: WritableSignal<object>;
+  // An empty idle conversation until the first session is adopted.
+  const source: WritableSignal<object> = signal<object>(EMPTY_SNAPSHOT);
   const threadId = signal<string | null>(initialThreadId);
   const isThreadLoading = signal(false);
   const sessionEpoch = signal(0);
@@ -413,22 +447,62 @@ export function createAgent<TSession extends AgentSessionLike>(
 
   function bind(next: string | null) {
     const binding: Binding = { threadId: next, releases: [] };
-    // The factory runs before anything is torn down: if it throws, the agent
-    // stays on the session it has.
-    const session = runInInjectionContext(injector, () =>
-      untracked(() =>
-        config.createSession({
-          threadId: next,
-          onThreadId: (id) => {
-            if (!binding.session) binding.reported = id;
-            else if (active === binding) adoptThreadId(id);
-          },
-          clientOptions,
-          reportOperationFailure,
-          developmentRuntime: ɵrelayDevelopmentRuntime,
-        })
-      )
-    );
+    pending = binding;
+    if (next !== null) isThreadLoading.set(true);
+    // The factory runs before anything is torn down: if it throws or rejects,
+    // the agent stays on the session it has.
+    let created: unknown;
+    try {
+      created = runInInjectionContext(injector, () =>
+        untracked(() =>
+          config.createSession({
+            threadId: next,
+            onThreadId: (id) => {
+              if (!binding.session) binding.reported = id;
+              else if (active === binding) adoptThreadId(id);
+            },
+            clientOptions,
+            reportOperationFailure,
+            developmentRuntime: ɵrelayDevelopmentRuntime,
+          })
+        )
+      );
+    } catch (error) {
+      failed(binding, error);
+      throw error;
+    }
+    if (created && typeof (created as PromiseLike<unknown>).then === 'function')
+      (created as PromiseLike<AgentSessionLike>).then(
+        (session) => untracked(() => adopt(binding, session)),
+        (error: unknown) => failed(binding, error)
+      );
+    // A session returned as is, as the in-package testing provider does.
+    else adopt(binding, created as AgentSessionLike);
+  }
+
+  /** The pending session failed: keep the current one, fail the waiting commands. */
+  function failed(binding: Binding, error: unknown) {
+    if (pending !== binding) return;
+    pending = undefined;
+    isThreadLoading.set(activeLoading);
+    for (const entry of waiting.splice(0)) entry.fail(error);
+  }
+
+  /** Drops a pending switch, as when the followed thread changes back. */
+  function cancelPending() {
+    if (!pending) return;
+    pending = undefined;
+    isThreadLoading.set(activeLoading);
+    for (const entry of waiting.splice(0)) entry.run();
+  }
+
+  function adopt(binding: Binding, session: AgentSessionLike) {
+    // A session the agent has moved on from, or outlived, is never shown.
+    if (destroyed || pending !== binding) {
+      settle(() => session.dispose());
+      return;
+    }
+    pending = undefined;
     binding.session = session;
 
     const previous = active;
@@ -444,9 +518,8 @@ export function createAgent<TSession extends AgentSessionLike>(
     active = binding;
 
     let snapshot = session.getSnapshot();
-    if (source) source.set(snapshot);
-    else source = signal(snapshot);
-    threadId.set(next);
+    source.set(snapshot);
+    threadId.set(binding.threadId);
     if (previous) sessionEpoch.update((epoch) => epoch + 1);
     customEvents.set([]);
     createdAt = null;
@@ -500,14 +573,23 @@ export function createAgent<TSession extends AgentSessionLike>(
     if (binding.reported !== undefined) adoptThreadId(binding.reported);
 
     const load = (session as AgentSessionLike & Members)['load'];
-    if (next === null || typeof load !== 'function') {
+    // Commands that waited for this session run on it now.
+    const flush = () => {
+      for (const entry of waiting.splice(0)) entry.run();
+    };
+    if (binding.threadId === null || typeof load !== 'function') {
+      activeLoading = false;
       isThreadLoading.set(false);
+      flush();
       return;
     }
+    activeLoading = true;
     isThreadLoading.set(true);
     const finished = () => {
       // A read the agent has moved on from says nothing about this thread.
-      if (active === binding) isThreadLoading.set(false);
+      if (active !== binding) return;
+      activeLoading = false;
+      if (!pending) isThreadLoading.set(false);
     };
     try {
       Promise.resolve((load as () => unknown).call(session)).then(
@@ -517,6 +599,7 @@ export function createAgent<TSession extends AgentSessionLike>(
     } catch {
       finished();
     }
+    flush();
   }
 
   function switchThread(next: string | null) {
@@ -533,6 +616,10 @@ export function createAgent<TSession extends AgentSessionLike>(
     registry.unregister(lifecycle);
     const last = active;
     active = undefined;
+    // A session still pending is disposed when it resolves.
+    pending = undefined;
+    const destroyedError = new Error('The agent was destroyed.');
+    for (const entry of waiting.splice(0)) entry.fail(destroyedError);
     customListeners.clear();
     stopListeners.clear();
     if (!last) return;
@@ -546,7 +633,12 @@ export function createAgent<TSession extends AgentSessionLike>(
       // An id the session itself reported is already current: adopting it is
       // not a switch, so the run that created the thread keeps going.
       untracked(() => {
-        if (!destroyed && next !== threadId()) bind(next);
+        if (destroyed) return;
+        // Back to the shown thread before a pending switch resolved: drop it.
+        // Only a shown session makes it a switch back; the first session's
+        // thread is the followed one, not a switch away from it.
+        if (pending && active && next === threadId()) cancelPending();
+        else if (next !== (pending ? pending.threadId : threadId())) bind(next);
       });
     });
 
@@ -597,11 +689,33 @@ export function createAgent<TSession extends AgentSessionLike>(
               /* A listener that throws cannot keep the session running. */
             }
           }
-        const current = session();
-        return (current[key] as (...args: unknown[]) => unknown).apply(
-          current,
-          args
-        );
+        const call = () => {
+          const current = session();
+          return (current[key] as (...args: unknown[]) => unknown).apply(
+            current,
+            args
+          );
+        };
+        if (key === 'stop') return active ? call() : Promise.resolve();
+        // A session is on its way: run on it once it is adopted.
+        if (pending || !active)
+          return new Promise((resolve, reject) => {
+            if (!pending) {
+              reject(new Error('The agent has no session.'));
+              return;
+            }
+            waiting.push({
+              run: () => {
+                try {
+                  resolve(call());
+                } catch (error) {
+                  reject(error);
+                }
+              },
+              fail: reject,
+            });
+          });
+        return call();
       };
       commands.set(key, wrapper);
     }
@@ -621,12 +735,15 @@ export function createAgent<TSession extends AgentSessionLike>(
   function isMember(key: string) {
     if (Object.hasOwn(controls, key)) return true;
     if (PLUMBING.has(key)) return false;
+    if (!active && REQUIRED_COMMANDS.has(key)) return true;
     return holds(session(), key) || holds(untracked(source), key);
   }
 
   function read(key: string): unknown {
     if (Object.hasOwn(controls, key)) return controls[key];
     if (PLUMBING.has(key)) return undefined;
+    // The commands every session has exist before the first one is adopted.
+    if (!active && REQUIRED_COMMANDS.has(key)) return command(key);
     const current = session();
     if (holds(current, key)) {
       const member = current[key];
@@ -651,6 +768,7 @@ export function createAgent<TSession extends AgentSessionLike>(
       [
         ...new Set([
           ...Object.keys(controls),
+          ...(active ? [] : [...REQUIRED_COMMANDS]),
           ...Object.keys(session()),
           ...Object.keys(untracked(source)),
         ]),

@@ -219,7 +219,7 @@ const fixtureSessionOptions: Record<CompatibleRuntimeAdapter, string> = {
 const fixtureSessionMember = (
   adapter: CompatibleRuntimeAdapter,
   options = fixtureSessionOptions[adapter]
-): string => `createSession: (context) => createSession({ ${options} })`;
+): string => `createSession: async (context) => createSession({ ${options} })`;
 const fixtureFactory = (
   adapter: CompatibleRuntimeAdapter,
   body = `return { ${fixtureSessionMember(adapter)} };`

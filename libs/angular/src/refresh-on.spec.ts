@@ -19,6 +19,14 @@ import {
   type ScriptedSession,
 } from './testing/scripted-session';
 
+/**
+ * These specs test the agent apart from session timing: the agent adopts a
+ * session a factory returns as is, as the in-package testing provider binds.
+ * Applications pass an async factory; agent.async-session.spec covers that.
+ */
+const sync = <A extends unknown[], T>(factory: (...args: A) => T) =>
+  factory as unknown as (...args: A) => Promise<T>;
+
 const injectors: EnvironmentInjector[] = [];
 afterEach(() => {
   for (const injector of injectors.splice(0))
@@ -40,11 +48,11 @@ function scripted() {
   const injector = context();
   const agent = runInInjectionContext(injector, () =>
     createAgent<ScriptedSession>({
-      createSession(sessionContext) {
+      createSession: sync(function (sessionContext) {
         const { session, control } = scriptedSession(sessionContext);
         sessions.push(control);
         return session;
-      },
+      }),
     })
   );
   return {

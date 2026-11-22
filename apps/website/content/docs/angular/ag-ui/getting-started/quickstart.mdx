@@ -38,22 +38,23 @@ Add `provideAgent()` from `@threadplane/angular` to your application config, and
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
 import { provideAgent } from '@threadplane/angular';
-import { createSession } from '@threadplane/ag-ui';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
       createSession: (context) =>
-        createSession({
-          ...context,
-          url: 'http://localhost:3000/agent',
-        }),
+        import('@threadplane/ag-ui').then(({ createSession }) =>
+          createSession({
+            ...context,
+            url: 'http://localhost:3000/agent',
+          })
+        ),
     }),
   ],
 };
 ```
 
-The agent calls the factory once when it is built and again each time it moves to another thread, and `context.threadId` is the thread the new session belongs to, or `null` for a new conversation.
+The agent calls the factory once when it is built and again each time it moves to another thread, and `context.threadId` is the thread the new session belongs to, or `null` for a new conversation. The factory returns a Promise, so `@threadplane/ag-ui` loads on demand, out of the initial bundle.
 
 No backend yet? Swap to `provideFakeAgent()` from `@threadplane/angular/testing` - it serves canned streaming responses so you can build UI offline.
 

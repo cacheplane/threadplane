@@ -190,7 +190,7 @@ import { createEchoSession } from './echo-session';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: () => createEchoSession({ delayMs: 250 }),
+      createSession: async () => createEchoSession({ delayMs: 250 }),
     }),
   ],
 };

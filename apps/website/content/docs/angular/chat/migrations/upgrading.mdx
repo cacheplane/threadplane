@@ -66,7 +66,7 @@ provideAgent({
   threadId: activeThreadId,
   onThreadId: (id) => activeThreadId.set(id),
   // Session options: everything about the backend.
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'http://localhost:2024',
@@ -90,7 +90,7 @@ import { provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/ag-ui';
 
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       url: 'http://localhost:8000/agent',
@@ -100,7 +100,7 @@ provideAgent({
 
 - [ ] Change every `injectAgent` import to `@threadplane/angular`.
 - [ ] Spread the provider context into the session options: `createSession({ ...context, ... })`. It carries the thread to open, the callback that reports a thread the session created, the app-wide client options, the operation-failure reporter and the development telemetry relay, each under the option name both backends accept. A factory that names fields instead drops the ones it leaves out; without the thread, a thread switch opens the wrong conversation.
-- [ ] A config that needs injected values becomes a factory: `provideAgent(() => ({ createSession: ... }))`. It runs once, in an injection context, and `createSession` itself may call `inject()` too.
+- [ ] A config that needs injected values becomes a factory: `provideAgent(() => ({ createSession: ... }))`. It runs once, in an injection context, and `createSession` itself may call `inject()` too, before its first `await`.
 - [ ] Replace `toAgent(source)` with `createSession({ agent: source })` inside the factory.
 - [ ] Replace `LANGGRAPH_CLIENT_OPTIONS` with `provideAgentClientOptions(options)` from `@threadplane/angular`, and read it in the factory as `context.clientOptions`.
 - [ ] Replace the `LangGraphAgent` and `AgUiAgent` types with `Agent<LangGraphSession>` and `Agent<Session>` (`Agent` from `@threadplane/angular`, the session types from the backend packages). For typed injection, use `createAgentRef<LangGraphSession>('name')`, `provideAgent(ref, config)` and `injectAgent(ref)`, or name the type at the call site: `injectAgent<LangGraphSession>()`.
@@ -220,7 +220,7 @@ A LangGraph session makes no request and keeps no large data until asked. Add th
 
 ```ts
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       url: 'http://localhost:8000/agent',
@@ -251,6 +251,37 @@ protected readonly a2ui = a2uiRenderer({ catalog: this.catalog });
 ```
 
 3. If your code read `a2uiSurfaces()` or `a2uiSurfaceStates()` from a `ContentClassifier`, read `a2uiSource()` and parse it with `createA2uiMessageParser()` from `@threadplane/a2ui`, or render it with `A2uiMessageSurfacesComponent`.
+
+## Make the session factory async
+
+The `createSession` factory given to `provideAgent()` or `createAgent()` from `@threadplane/angular` returns a Promise of the session. A factory that returns the session directly no longer type-checks.
+
+Before:
+
+```ts
+import { createSession } from '@threadplane/langgraph';
+
+provideAgent({
+  createSession: (context) =>
+    createSession({ ...context, apiUrl: 'http://localhost:2024', assistantId: 'chat' }),
+});
+```
+
+After, loading the backend package on demand:
+
+```ts
+provideAgent({
+  createSession: (context) =>
+    import('@threadplane/langgraph').then(({ createSession }) =>
+      createSession({ ...context, apiUrl: 'http://localhost:2024', assistantId: 'chat' })
+    ),
+});
+```
+
+- [ ] Return a Promise from every `createSession` factory. The dynamic `import()` form keeps the backend package out of the initial bundle. Adding `async` to the arrow function, with the static import kept, is the smallest change, but it does not shrink the bundle.
+- [ ] Call `inject()` before the first `await` in the factory. Only that part runs in the injection context.
+- [ ] Do not read session state before the first session resolves. Until then the agent shows an empty idle conversation, and commands such as `submit` wait for the session and then run on it.
+- [ ] Handle a rejected factory. The agent keeps its current session, and the commands that were waiting reject with the same error.
 
 ## Keep package peers aligned
 

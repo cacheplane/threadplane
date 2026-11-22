@@ -224,7 +224,6 @@ function angularApplication(directory) {
 import { bootstrapApplication } from '@angular/platform-browser';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { ChatComponent } from '@threadplane/angular/chat';
-import { createSession } from '@threadplane/langgraph';
 
 @Component({
   selector: 'app-root',
@@ -239,8 +238,11 @@ bootstrapApplication(App, {
   providers: [
     provideZonelessChangeDetection(),
     provideAgent({
+      // The backend loads on demand, as the docs recommend.
       createSession: (context) =>
-        createSession({ apiUrl: '/api', assistantId: 'agent', ...context }),
+        import('@threadplane/langgraph').then(({ createSession }) =>
+          createSession({ apiUrl: '/api', assistantId: 'agent', ...context })
+        ),
     }),
   ],
 }).catch((error: unknown) => console.error(error));

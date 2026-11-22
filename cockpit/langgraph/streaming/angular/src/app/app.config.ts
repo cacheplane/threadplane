@@ -13,7 +13,7 @@ export const appConfig: ApplicationConfig = {
       }
       return {
         // Runs once at start and again for each thread switch.
-        createSession: (context) =>
+        createSession: async (context) =>
           createSession({
             apiUrl: connection.apiUrl,
             assistantId: connection.assistantId,

@@ -29,7 +29,7 @@ import { createSession } from '@threadplane/langgraph';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           apiUrl: 'https://your-langgraph-deployment',
           assistantId: 'your-graph-name',
@@ -58,7 +58,7 @@ import { ChatComponent } from '@threadplane/angular/chat';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           url: 'https://your.agent.endpoint',
           threadId: context.threadId ?? undefined,

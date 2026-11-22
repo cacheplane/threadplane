@@ -34,7 +34,7 @@ import { ChatPopupComponent } from '@threadplane/angular/chat';
   imports: [ChatPopupComponent],
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           apiUrl: 'http://localhost:2024',
@@ -110,7 +110,7 @@ Control the open state from your component:
   `,
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           apiUrl: 'http://localhost:2024',
