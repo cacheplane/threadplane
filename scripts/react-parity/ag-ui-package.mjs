@@ -69,6 +69,7 @@ export const reviewedSources = [
     'text-transcript',
     'thread-store',
     'tool-messages',
+    'tool-provenance',
     'transcript',
   ].map((name) => 'libs/ag-ui/src/runtime/' + name),
 ]

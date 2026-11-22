@@ -27,6 +27,8 @@ import type {
   ClientToolContinuationPolicy,
   FunctionToolDefinition,
   ToolContracts,
+  ToolExecutionResult,
+  ToolExecutionStore,
 } from '@threadplane/core/tools';
 import {
   captureClientTools,
@@ -34,7 +36,16 @@ import {
   type ClientToolBlocker,
   type ClientToolSessionSnapshot,
 } from './client-tools.js';
-import { createClientToolLedger } from './client-tool-ledger.js';
+import {
+  captureClientToolResult,
+  createClientToolLedger,
+} from './client-tool-ledger.js';
+import {
+  canonicalInvocation,
+  captureAcquisition,
+  captureSettlement,
+  encodeResult,
+} from './tool-provenance.js';
 import {
   ownTranscript,
   requestMessages,
@@ -160,6 +171,16 @@ export interface SessionCommonOptions
    */
   readonly interruptMode?: InterruptMode;
   /**
+   * Claims each client tool call before its handler runs and records the
+   * result before it is published or sent, keyed by thread and tool call id.
+   * A reload, a second tab or a retry then never runs the same call twice: a
+   * stored result is reused, and a call the store cannot vouch for blocks the
+   * session instead of running. Tools marked `idempotent` skip it. The same
+   * contract, invocation and result encoding as the LangGraph runtime, so one
+   * store can serve both.
+   */
+  readonly executionStore?: ToolExecutionStore;
+  /**
    * How a pause is answered. Absent, a session answers the protocol's own
    * interrupt outcome only, as with `'protocol'`. `'auto'`,
    * `'legacy-command'` and `'mastra-command'` also answer a
@@ -172,6 +193,21 @@ export interface SessionCommonOptions
    * blocker and the submit ends `interrupted`. Used only with tools.
    */
   readonly continuationPolicy?: ClientToolContinuationPolicy;
+}
+type CapturedStore = Pick<ToolExecutionStore, 'acquire' | 'settle'>;
+/** Read the store's methods once; replacing them later grants nothing. */
+function captureStore(
+  store: ToolExecutionStore | undefined
+): CapturedStore | undefined {
+  if (store === undefined) return undefined;
+  const acquire = store?.acquire;
+  const settle = store?.settle;
+  if (typeof acquire !== 'function' || typeof settle !== 'function')
+    throw new TypeError('executionStore requires acquire and settle methods.');
+  return Object.freeze({
+    acquire: acquire.bind(store),
+    settle: settle.bind(store),
+  });
 }
 /** A session that posts each run to an HTTP endpoint. */
 export interface HttpSessionSource
@@ -211,7 +247,7 @@ export type SessionOptions = SessionCommonOptions &
 interface CapturedOptions
   extends Omit<
       SessionCommonOptions,
-      'threadId' | 'onThreadId' | 'clientOptions'
+      'threadId' | 'onThreadId' | 'clientOptions' | 'executionStore'
     >,
     RequestSource {
   readonly threadId: string;
@@ -748,6 +784,7 @@ export function createSession(
   const agentId = options.agentId ?? agent?.agentId;
   // A new conversation has nothing to replay.
   const replay = stable === undefined ? undefined : options.replay;
+  const store = captureStore(options.executionStore);
   const continuation = captureContinuationPolicy(continuationPolicy);
   const catalog = tools === undefined ? undefined : captureClientTools(tools);
   /** Reports a thread the caller did not name, once the session exists. */
@@ -784,6 +821,7 @@ export function createSession(
         devtools: options.devtools,
       },
       catalog,
+      store,
       continuation
     );
     return created(owner);
@@ -1579,6 +1617,7 @@ export function createSession(
 function createToolsOwner(
   options: CapturedOptions,
   catalog: ReturnType<typeof captureClientTools>,
+  store: CapturedStore | undefined,
   continuation: ReturnType<typeof captureContinuationPolicy>
 ): Session {
   const { threadId, interruptMode = 'native', interruptTransport } = options;
@@ -1848,6 +1887,40 @@ function createToolsOwner(
       signal.removeEventListener('abort', abort);
     }
   };
+  /** Waits for a store answer, but never past this command's cancellation. */
+  const untilCancelled = async <T>(
+    command: Command,
+    promise: Promise<T>
+  ): Promise<T | typeof cancelledResult> => {
+    const signal = command.controller.signal;
+    if (signal.aborted) return cancelledResult;
+    let abort!: () => void;
+    const cancelled = new Promise<typeof cancelledResult>((resolve) => {
+      abort = () => resolve(cancelledResult);
+      signal.addEventListener('abort', abort, { once: true });
+    });
+    try {
+      return await Promise.race([promise, cancelled]);
+    } finally {
+      signal.removeEventListener('abort', abort);
+    }
+  };
+  /** The command owns no more continuation, so its block is the last word. */
+  const failClosed = (
+    command: Command,
+    physical: Physical,
+    reason: 'conflict' | 'uncertain',
+    id: string
+  ) =>
+    publication.command(() => {
+      if (!eligible(command, physical)) return;
+      ledger.installBlocker({
+        reason,
+        sourceRunId: physical.id,
+        callIds: [id],
+      });
+      finish(command, 'interrupted');
+    });
   const execute = async (
     command: Command,
     physical: Physical,
@@ -1858,7 +1931,68 @@ function createToolsOwner(
       const { call, definition } = admittedDefinition(id);
       let value: unknown;
       let error = call.error;
-      if (error === undefined) {
+      // Calls whose arguments failed to decode never reach a handler, so
+      // there is no effect to guard.
+      const guard =
+        error === undefined && !definition.idempotent ? store : undefined;
+      const key = { threadId, toolCallId: id };
+      let invocation = '';
+      let token: string | undefined;
+      let reused = false;
+      // A late or abandoned owner records cancellation, so the store never
+      // keeps an executing claim the handler did not finish under.
+      const settleCancelled = (owner: string) =>
+        void Promise.resolve()
+          .then(() =>
+            guard?.settle(key, {
+              invocation,
+              token: owner,
+              result: encodeResult({
+                ok: false,
+                error: `Client tool execution cancelled before completion: ${id}`,
+              }),
+            })
+          )
+          .catch(() => undefined);
+      if (guard) {
+        const acquisition = Promise.resolve()
+          .then(() => {
+            invocation = canonicalInvocation(
+              call.name,
+              ledger.argumentsFor(id) as PlainValue
+            );
+            return guard.acquire(key, invocation);
+          })
+          .then(captureAcquisition, () => ({ status: 'unavailable' as const }));
+        const observed = await untilCancelled(command, acquisition);
+        if (observed === cancelledResult || !eligible(command, physical)) {
+          // Stop settled the command already. A late complete fact is kept.
+          void acquisition.then((late) => {
+            if (late.status === 'acquired') settleCancelled(late.token);
+          });
+          return;
+        }
+        if (
+          observed.status === 'conflict' ||
+          observed.status === 'unavailable'
+        ) {
+          failClosed(
+            command,
+            physical,
+            observed.status === 'conflict' ? 'conflict' : 'uncertain',
+            id
+          );
+          return;
+        }
+        if (observed.status === 'complete') {
+          reused = true;
+          // `in` narrows the result without strictNullChecks too.
+          const stored = observed.result;
+          if ('error' in stored) error = stored.error;
+          else value = stored.value;
+        } else token = observed.token;
+      }
+      if (error === undefined && !reused) {
         publication.command(() => {
           if (eligible(command, physical)) {
             ledger.markRunning(id);
@@ -1866,7 +2000,10 @@ function createToolsOwner(
           }
         });
         // Publications have drained all queued stop/dispose/submit commands.
-        if (!eligible(command, physical)) return;
+        if (!eligible(command, physical)) {
+          if (token !== undefined) settleCancelled(token);
+          return;
+        }
         try {
           value = await invoke(command, () =>
             definition.handler(ledger.argumentsFor(id) as never, {
@@ -1886,7 +2023,39 @@ function createToolsOwner(
           }
         }
       }
-      if (value === cancelledResult || !eligible(command, physical)) return;
+      if (value === cancelledResult || !eligible(command, physical)) {
+        if (token !== undefined) settleCancelled(token);
+        return;
+      }
+      if (guard && token !== undefined) {
+        // Record before publishing: the stored result is the one sent.
+        const recorded: ToolExecutionResult =
+          error !== undefined
+            ? { ok: false, error }
+            : (captureClientToolResult(value) as ToolExecutionResult);
+        const owner = token;
+        const accepted = await untilCancelled(
+          command,
+          Promise.resolve()
+            .then(() =>
+              guard.settle(key, {
+                invocation,
+                token: owner,
+                result: encodeResult(recorded),
+              })
+            )
+            .then(captureSettlement, () => false)
+        );
+        // Stop while settle is pending keeps whatever the store records.
+        if (accepted === cancelledResult || !eligible(command, physical))
+          return;
+        if (!accepted) {
+          failClosed(command, physical, 'uncertain', id);
+          return;
+        }
+        if ('error' in recorded) error = recorded.error;
+        else value = recorded.value;
+      }
       publication.command(() => {
         if (!eligible(command, physical)) return;
         // Result getters run while this command queue is draining. Stop,

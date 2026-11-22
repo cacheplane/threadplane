@@ -64,7 +64,8 @@ describe('private client tool catalog', () => {
         return handler;
       },
       get idempotent() {
-        throw new Error('unselected idempotent');
+        reads.push('idempotent');
+        return true;
       },
       get unrelated() {
         throw new Error('unselected property');
@@ -84,11 +85,13 @@ describe('private client tool catalog', () => {
       'description',
       'parameters',
       'followUp',
+      'idempotent',
       'handler',
     ]);
     expect(captured.size).toBe(1);
     expect(captured.get('weather')?.handler).toBe(handler);
     expect(captured.get('weather')?.followUp).toBe(true);
+    expect(captured.get('weather')?.idempotent).toBe(true);
     metadata.unusual.push('caller mutation');
     const first = requestClientTools(captured);
     expect(first).toEqual([
@@ -105,7 +108,7 @@ describe('private client tool catalog', () => {
       description: 'weather',
       parameters: { unusual: ['opaque'], type: 'invented-schema' },
     });
-    expect(reads).toHaveLength(5);
+    expect(reads).toHaveLength(6);
     expect(handler).not.toHaveBeenCalled();
   });
   it('sends the constructor catalog on every actual submitted request without executing handlers', async () => {
