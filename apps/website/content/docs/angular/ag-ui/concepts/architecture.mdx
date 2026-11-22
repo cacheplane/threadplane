@@ -38,7 +38,7 @@ import { createSession } from '@threadplane/ag-ui';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           url: '/api/agent',
@@ -118,7 +118,7 @@ Use `provideAgent()` with `createSession({ url })` when you have a real AG-UI HT
 
 ```ts
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       url: '/api/agent',
@@ -157,7 +157,7 @@ providers: [
   provideAgent(() => {
     const session = inject(SessionService);
     return {
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           url: '/api/agent',
@@ -168,7 +168,14 @@ providers: [
 ];
 ```
 
-`createSession` itself also runs in the agent's injection context, each time the agent needs a session.
+`createSession` itself also runs in the agent's injection context, each time the agent needs a session, so it may call `inject()` before its first `await`.
+
+`createSession` returns a Promise, so `import('@threadplane/ag-ui').then(({ createSession }) => createSession({ ...context, url }))` keeps the backend package out of the initial bundle. While a session loads:
+
+- Until the first session resolves, the agent shows an empty idle conversation: `status()` is `'idle'` and `messages()` is `[]`.
+- During a thread switch, the agent keeps the current thread until the new session resolves, and `isThreadLoading()` is true meanwhile for a thread with an id. Only the latest switch is adopted.
+- Commands called meanwhile, such as `submit`, wait for the new session and then run on it. `stop` goes to the current session at once.
+- When the factory rejects, the agent keeps its current session and the waiting commands reject with the same error.
 
 A session belongs to one thread. The `threadId` in the provider config is where the agent starts: a string, `null`, or a signal the agent follows. `agent.switchThread(id)`, or a change of that signal to a different id, asks the factory for a new session with `context.threadId` set, stops and disposes the old one, and keeps every signal and command on the agent the same reference. `agent.threadId()` is the thread the agent is on, and `agent.isThreadLoading()` is true while the selected thread's history is read.
 
@@ -193,7 +200,7 @@ export const SUPPORT = createAgentRef<Session<SupportState>>('support');
 
 providers: [
   provideAgent(TRIP, {
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({
         ...context,
         url: '/api/trip',
@@ -201,7 +208,7 @@ providers: [
       }),
   }),
   provideAgent(SUPPORT, {
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({
         ...context,
         url: '/api/support',

@@ -45,7 +45,7 @@ Your own application does not need the factory. Pass the values directly:
 
 ```typescript
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'https://your-deployment.langgraph.app',

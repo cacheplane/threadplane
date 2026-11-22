@@ -76,7 +76,7 @@ import { type } from '@threadplane/core';
 import { createSession } from '@threadplane/langgraph';
 
 provideAgent(SUBGRAPHS_AGENT, {
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
@@ -124,7 +124,7 @@ Tool-dispatched children are related through one session option. Its default is 
 ```typescript
 // app.config.ts
 provideAgent(ORCHESTRATOR, {
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'https://your-deployment.langgraph.app',

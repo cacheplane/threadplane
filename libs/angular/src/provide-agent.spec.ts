@@ -24,6 +24,14 @@ import {
   type ScriptedSession,
 } from './testing/scripted-session';
 
+/**
+ * These specs test the agent apart from session timing: the agent adopts a
+ * session a factory returns as is, as the in-package testing provider binds.
+ * Applications pass an async factory; agent.async-session.spec covers that.
+ */
+const sync = <A extends unknown[], T>(factory: (...args: A) => T) =>
+  factory as unknown as (...args: A) => Promise<T>;
+
 afterEach(() => {
   vi.restoreAllMocks();
   TestBed.resetTestingModule();
@@ -35,11 +43,11 @@ function scriptedConfig(
 ): AgentConfig<ScriptedSession> {
   return {
     ...extra,
-    createSession(context) {
+    createSession: sync(function (context) {
       const { session, control } = scriptedSession(context);
       sessions.push(control);
       return session;
-    },
+    }),
   };
 }
 const inContext = <T>(run: () => T) => TestBed.runInInjectionContext(run);

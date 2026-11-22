@@ -76,7 +76,7 @@ function refDebugName(ref: AgentRef<never>): string {
  * providers: [
  *   provideAgent({
  *     threadId: currentThreadId,
- *     createSession: (context) =>
+ *     createSession: async (context) =>
  *       createSession({ assistantId: 'chat', apiUrl, ...context }),
  *   }),
  * ];

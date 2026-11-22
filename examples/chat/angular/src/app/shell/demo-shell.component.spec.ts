@@ -794,7 +794,7 @@ describe('extractItinerary — value → stops', () => {
 /** The demo agent over a transport a spec can read, in place of the backend. */
 function capturingAgent(transport: AgentTransport) {
   return provideAgent(DEMO_AGENT_REF, {
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({
         assistantId: 'fake',
         transport,

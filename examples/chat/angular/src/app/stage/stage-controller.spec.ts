@@ -101,7 +101,7 @@ describe('StageController — a recorded fork', () => {
     const stream = vi.spyOn(transport, 'stream');
     const injector = createEnvironmentInjector(
       provideAgent(REF, {
-        createSession: (context) => createDemoSession(context, { assistantId: 'stage', transport }),
+        createSession: async (context) => createDemoSession(context, { assistantId: 'stage', transport }),
       }),
       TestBed.inject(EnvironmentInjector),
     );
@@ -139,7 +139,7 @@ describe('StageController against the real LangGraph agent', () => {
       provideAgent(REF, {
         threadId: signal<string | null>(null),
         // The stage's own session options, over the replay transport.
-        createSession: (context) => createDemoSession(context, { assistantId: 'stage', transport }),
+        createSession: async (context) => createDemoSession(context, { assistantId: 'stage', transport }),
       }),
       TestBed.inject(EnvironmentInjector),
     );

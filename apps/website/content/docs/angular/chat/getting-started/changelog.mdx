@@ -24,6 +24,11 @@ This changelog tracks selected highlight releases, not every release. The publis
 - Breaking change for applications that render math: chat no longer imports `katex` itself, and `katex` is no longer a peer dependency. Add `provideChatMath(() => import('katex'))` from the new `@threadplane/angular/chat/math` entry point to turn math on. That entry point is small, so an application can provide math from its root configuration without loading the chat UI up front. Without it, math shows as its raw source. An application without KaTeX no longer fails under `ng serve`, where the development server had to resolve the import.
 - The chat and render entry points use `@threadplane/telemetry/browser/development`, which holds the development runtime without the opt-in PostHog service, so `posthog-js` no longer needs to resolve in applications that do not use it.
 
+### Session factories are async
+
+- Breaking change, action required for every Angular application: the `createSession` factory given to `provideAgent()` and `createAgent()` from `@threadplane/angular` must return a Promise of the session. Write `createSession: (context) => import('@threadplane/langgraph').then(({ createSession }) => createSession({ ...context, apiUrl, assistantId }))` and the backend package loads on demand, out of the application's initial bundle. An `async` arrow around a static import also works, without the bundle saving. See [Make the session factory async](/docs/angular/chat/migrations/upgrading#make-the-session-factory-async).
+- Until the first session resolves, the agent shows an empty idle conversation. During a thread switch it keeps the current thread until the new session resolves. Commands called meanwhile wait for the new session and then run on it; `stop` goes to the current session at once. When the factory rejects, the agent keeps its current session and the waiting commands reject with the same error.
+
 ## 0.3.7
 
 - Chat adds a configurable composer `placeholder`, public `clearDraft()` methods on `ChatComponent` and `ChatInputComponent`, and projected composer footer/status content.

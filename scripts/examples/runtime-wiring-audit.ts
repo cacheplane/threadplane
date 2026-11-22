@@ -10,7 +10,7 @@ import * as ts from 'typescript';
  *   provideAgent(() => {
  *     const connection = injectCockpitRuntimeConnection();
  *     if (connection.adapter !== 'langgraph') throw new Error('incompatible runtime');
- *     return { createSession: (context) => createSession({
+ *     return { createSession: async (context) => createSession({
  *       apiUrl: connection.apiUrl, assistantId: connection.assistantId,
  *       clientOptions: connection.clientOptions,
  *       threadId: context.threadId, onThreadId: context.onThreadId,
@@ -1084,7 +1084,7 @@ const memoryFactoryGrammar = `const factory = () => {
   const scope = inject(MemoryScope);
   const clientOptions = { ...connection.clientOptions, maxRetries: 0 };
   return {
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({
         assistantId: connection.assistantId,
         threadId: context.threadId,

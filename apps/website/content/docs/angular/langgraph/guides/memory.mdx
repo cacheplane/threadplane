@@ -71,7 +71,7 @@ import { provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
 
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
@@ -155,7 +155,7 @@ const threadId = signal<string | null>(localStorage.getItem('memory-thread'));
 provideAgent({
   threadId,
   onThreadId: (id) => localStorage.setItem('memory-thread', id),
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'https://your-deployment.langgraph.app',

@@ -191,9 +191,11 @@ providers: [
   provideAgent({
     threadId: currentThreadId, // a string, null, or a signal the agent follows
     onThreadId: (id) => router.navigate(['chat', id]),
-    // createSession from @threadplane/langgraph. Spread the context last.
+    // The factory returns a Promise. Spread the context last.
     createSession: (context) =>
-      createSession({ assistantId: 'chat', apiUrl, ...context }),
+      import('@threadplane/langgraph').then(({ createSession }) =>
+        createSession({ assistantId: 'chat', apiUrl, ...context })
+      ),
   }),
 ];
 
@@ -246,8 +248,23 @@ automatically. A session that creates its own thread reports the id through the
 factory's `onThreadId`; the agent adopts it without switching, so the run that
 created the thread continues.
 
+`createSession` returns a Promise, so the backend package can load on demand
+with `import()`, out of the application's initial bundle. An `async` wrapper
+around a static import also satisfies the type, but does not shrink the bundle.
+While a session loads:
+
+- Until the first session resolves, the agent shows an empty idle conversation:
+  `status()` is `'idle'` and `messages()` is `[]`.
+- During a thread switch, the agent keeps the current thread until the new
+  session resolves, and `isThreadLoading()` is true meanwhile for a thread with
+  an id. Only the latest switch is adopted.
+- Commands called meanwhile, such as `submit`, wait for the new session and then
+  run on it. `stop` goes to the current session at once.
+- When the factory rejects, the agent keeps its current session and the waiting
+  commands reject with the same error.
+
 `createSession` runs in the agent's injection context each time, so it may call
-`inject()`. Its context has five fields: `threadId` (a string, or `null` for a
+`inject()` before its first `await`. Its context has five fields: `threadId` (a string, or `null` for a
 new thread), `onThreadId`, `clientOptions` from `AGENT_CLIENT_OPTIONS` (set with
 `provideAgentClientOptions`, otherwise `undefined`), `reportOperationFailure`
 (the host's operation failure reporter, otherwise `undefined`) and

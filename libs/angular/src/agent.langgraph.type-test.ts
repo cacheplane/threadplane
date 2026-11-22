@@ -26,7 +26,7 @@ export function readmeProvider(createSession: typeof createLangGraphSession) {
   const appConfig: ApplicationConfig = {
     providers: [
       provideAgent({
-        createSession: (context) =>
+        createSession: async (context) =>
           createSession({
             apiUrl: 'https://your-langgraph-platform.com',
             assistantId: 'my-agent',
@@ -41,7 +41,7 @@ export function readmeProvider(createSession: typeof createLangGraphSession) {
 /** The chat README's order: the context last, the same result. */
 export function contextLast(createSession: typeof createLangGraphSession) {
   return provideAgent({
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({
         apiUrl: '/api/langgraph',
         assistantId: 'agent',

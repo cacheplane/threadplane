@@ -56,19 +56,20 @@ In Angular, hand the factory to the one provider and inject the agent. Its snaps
 // app.config.ts
 import type { ApplicationConfig } from '@angular/core';
 import { provideAgent } from '@threadplane/angular';
-import { createSession } from '@threadplane/ag-ui';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
       createSession: (context) =>
-        createSession({ url: 'https://your-backend.example/agent', ...context }),
+        import('@threadplane/ag-ui').then(({ createSession }) =>
+          createSession({ url: 'https://your-backend.example/agent', ...context })
+        ),
     }),
   ],
 };
 ```
 
-Spreading `context` is all the wiring there is. It carries the selected thread (`threadId`, or `null` for a new conversation) and the agent's `onThreadId`. An AG-UI thread is named on the client: for a new conversation the session generates the id and reports it, so `agent.threadId()` is filled automatically as soon as the session exists, and `agent.switchThread(id)` or `agent.switchThread(null)` creates the next session the same way. No application code calls `context.onThreadId`.
+The factory returns a Promise, so this package loads on demand, out of the initial bundle. Spreading `context` is all the wiring there is. It carries the selected thread (`threadId`, or `null` for a new conversation) and the agent's `onThreadId`. An AG-UI thread is named on the client: for a new conversation the session generates the id and reports it, so `agent.threadId()` is filled automatically as soon as the session exists, and `agent.switchThread(id)` or `agent.switchThread(null)` creates the next session the same way. No application code calls `context.onThreadId`.
 
 In React, create the session and pass it to `useAgent(session)` from `@threadplane/react`.
 

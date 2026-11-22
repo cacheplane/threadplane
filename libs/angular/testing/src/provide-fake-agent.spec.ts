@@ -8,6 +8,14 @@ import { injectFakeAgentSession, provideFakeAgent } from './public-api';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Type-only proof against the actual LangGraph session; no production dependency.
 import type { LangGraphSession } from '../../../langgraph/src/runtime/create-session';
 
+/**
+ * These specs test the agent apart from session timing: the agent adopts a
+ * session a factory returns as is, as the in-package testing provider binds.
+ * Applications pass an async factory; agent.async-session.spec covers that.
+ */
+const sync = <A extends unknown[], T>(factory: (...args: A) => T) =>
+  factory as unknown as (...args: A) => Promise<T>;
+
 afterEach(() => {
   vi.useRealTimers();
   TestBed.resetTestingModule();
@@ -213,7 +221,7 @@ describe('provideFakeAgent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideAgent({
-          createSession: (context) => scriptedSession(context).session,
+          createSession: sync((context) => scriptedSession(context).session),
         }),
       ],
     });

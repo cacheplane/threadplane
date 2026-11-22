@@ -237,7 +237,7 @@ describe('basic transport', () => {
       providers: [
         provideAgent({
           threadId: 'thread-1',
-          createSession: (context) =>
+          createSession: async (context) =>
             createSession({
               ...context,
               assistantId: 'test_agent',
@@ -286,7 +286,7 @@ describe('streaming lifecycle', () => {
       providers: [
         provideAgent({
           threadId: 'thread-1',
-          createSession: (context) =>
+          createSession: async (context) =>
             createSession({
               ...context,
               assistantId: 'test_agent',
@@ -331,7 +331,7 @@ describe('interrupt handling', () => {
       providers: [
         provideAgent({
           threadId: 'thread-1',
-          createSession: (context) =>
+          createSession: async (context) =>
             createSession({
               ...context,
               assistantId: 'approval_agent',
@@ -384,7 +384,7 @@ function setup() {
     providers: [
       provideAgent({
         threadId: 'thread-1',
-        createSession: (context) =>
+        createSession: async (context) =>
           createSession({
             ...context,
             assistantId: 'test_agent',
@@ -474,7 +474,7 @@ describe('thread switching', () => {
       providers: [
         provideAgent({
           threadId: 'thread-1',
-          createSession: (context) =>
+          createSession: async (context) =>
             createSession({
               ...context,
               assistantId: 'test_agent',
@@ -585,7 +585,7 @@ export const appConfig: ApplicationConfig = {
         threadId.set(id);
         localStorage.setItem('threadId', id);
       },
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           assistantId: 'support-agent',
@@ -627,7 +627,7 @@ describe('ChatComponent', () => {
       providers: [
         provideAgent({
           threadId: 'thread-1',
-          createSession: (context) =>
+          createSession: async (context) =>
             createSession({
               ...context,
               assistantId: 'test-agent',

@@ -60,22 +60,25 @@ Add `provideAgent()` to your application configuration and give it a `createSess
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
 import { provideAgent } from '@threadplane/angular';
-import { createSession } from '@threadplane/langgraph';
 import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
       createSession: (context) =>
-        createSession({
-          ...context,
-          apiUrl: environment.langgraphUrl,
-          assistantId: 'chat',
-        }),
+        import('@threadplane/langgraph').then(({ createSession }) =>
+          createSession({
+            ...context,
+            apiUrl: environment.langgraphUrl,
+            assistantId: 'chat',
+          })
+        ),
     }),
   ],
 };
 ```
+
+The factory returns a Promise, so `@threadplane/langgraph` loads on demand, out of the initial bundle.
 
 <Callout type="tip" title="Multiple agents in one app">
 Need more than one agent instance (e.g. a sidebar chat with a different assistant)? Use hierarchical DI: declare a component-scoped `providers: [provideAgent({...})]` array in the child component, and `injectAgent()` inside that subtree resolves to that override. To keep several agents at one injector level, give each a ref from `createAgentRef()` and inject by ref.

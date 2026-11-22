@@ -119,7 +119,7 @@ import { createSession } from '@threadplane/langgraph';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           apiUrl: 'http://localhost:2024',
           assistantId: 'agent',
@@ -144,7 +144,7 @@ import { createSession } from '@threadplane/ag-ui';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           url: 'http://localhost:8000/agent',
           threadId: context.threadId ?? undefined,

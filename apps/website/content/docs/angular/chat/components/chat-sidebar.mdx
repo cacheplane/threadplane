@@ -35,7 +35,7 @@ import { ChatSidebarComponent } from '@threadplane/angular/chat';
   imports: [ChatSidebarComponent, RouterOutlet],
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           apiUrl: 'http://localhost:2024',
@@ -140,7 +140,7 @@ import { ChatSidebarComponent } from '@threadplane/angular/chat';
   `,
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           apiUrl: 'http://localhost:2024',

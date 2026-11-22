@@ -27,6 +27,14 @@ import type {
   StreamEvent,
 } from '../../langgraph/src/runtime/transport.types';
 
+/**
+ * These specs test the agent apart from session timing: the agent adopts a
+ * session a factory returns as is, as the in-package testing provider binds.
+ * Applications pass an async factory; agent.async-session.spec covers that.
+ */
+const sync = <A extends unknown[], T>(factory: (...args: A) => T) =>
+  factory as unknown as (...args: A) => Promise<T>;
+
 /** Saved checkpoints, as the transport's history read returns them. */
 type ThreadState = Awaited<
   ReturnType<NonNullable<AgentTransport['getHistory']>>
@@ -153,7 +161,7 @@ function mount(
     providers: [
       provideAgent(CHAT, {
         ...options,
-        createSession: ({ threadId, onThreadId }) => {
+        createSession: sync(({ threadId, onThreadId }) => {
           const session = createSession({
             assistantId: 'agent',
             threadId,
@@ -162,7 +170,7 @@ function mount(
           });
           sessions.push(session);
           return session;
-        },
+        }),
       }),
     ],
   });
@@ -416,13 +424,13 @@ describe('Agent over a LangGraph session and the development collector', () => {
         provideAgent(CHAT, {
           threadId: 'thread-a',
           // The whole context is handed on, as an app writes it.
-          createSession: (context) =>
+          createSession: sync((context) =>
             createSession({
               assistantId: 'agent',
               ...context,
               ...extra,
               transport: { stream: server.transport.stream },
-            }),
+            })),
         }),
       ],
     });
@@ -479,12 +487,12 @@ describe('Agent over a LangGraph session and the host failure reporter', () => {
           : []),
         provideAgentClientOptions({ defaultHeaders: { 'x-session': 'abc' } }),
         provideAgent(CHAT, {
-          createSession: (context) =>
+          createSession: sync((context) =>
             createSession({
               apiUrl: 'http://127.0.0.1:1',
               assistantId: 'agent',
               ...context,
-            }),
+            })),
         }),
       ],
     });

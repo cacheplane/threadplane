@@ -112,7 +112,7 @@ Replace `provideFakeAgent(...)` with `provideAgent({ createSession })` from `@th
 
   ```ts
   provideAgent({
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({
         ...context,
         apiUrl: 'http://localhost:2024',
@@ -125,7 +125,7 @@ Replace `provideFakeAgent(...)` with `provideAgent({ createSession })` from `@th
 
   ```ts
   provideAgent({
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({
         ...context,
         url: 'http://localhost:8000/agent',

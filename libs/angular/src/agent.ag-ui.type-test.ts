@@ -16,7 +16,7 @@ export function readmeProvider(createSession: typeof createAgUiSession) {
   const appConfig: ApplicationConfig = {
     providers: [
       provideAgent({
-        createSession: (context) =>
+        createSession: async (context) =>
           createSession({ url: 'https://your-backend.example/agent', ...context }),
       }),
     ],
@@ -30,7 +30,7 @@ export function contextFirst(
   fetch: typeof globalThis.fetch
 ) {
   return provideAgent({
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({ ...context, url: '/api/agent', fetch }),
   });
 }

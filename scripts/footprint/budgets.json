@@ -1,4 +1,8 @@
 {
-  "angular": { "initialBytes": 1625226 },
-  "react": { "initialBytes": 838456 }
+  "angular": {
+    "initialBytes": 1053995
+  },
+  "react": {
+    "initialBytes": 838456
+  }
 }

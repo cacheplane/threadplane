@@ -83,28 +83,30 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideAgent } from '@threadplane/angular';
-import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
     provideAgent({
       createSession: (context) =>
-        createSession({
-          ...context,
-          apiUrl: 'http://localhost:2024',
-          assistantId: 'chat',
-        }),
+        import('@threadplane/langgraph').then(({ createSession }) =>
+          createSession({
+            ...context,
+            apiUrl: 'http://localhost:2024',
+            assistantId: 'chat',
+          })
+        ),
     }),
   ],
 };
 ```
 
 `provideAgent()` calls `createSession` once when the agent is built and again
-each time the agent moves to another thread. The `context` carries the thread to
-open and the callback that reports a thread the session created. For an AG-UI
-backend, import `createSession` from `@threadplane/ag-ui` and pass
-`{ ...context, url }` in place of the LangGraph options.
+each time the agent moves to another thread. The factory returns a Promise, so
+the backend package loads on demand, out of the initial bundle. The `context`
+carries the thread to open and the callback that reports a thread the session
+created. For an AG-UI backend, import `createSession` from `@threadplane/ag-ui`
+and pass `{ ...context, url }` in place of the LangGraph options.
 
 That is the only provider `<chat>` needs. There is no separate chat provider:
 everything the built-in components render is driven by their inputs, and their

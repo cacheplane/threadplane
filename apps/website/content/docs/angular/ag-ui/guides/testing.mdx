@@ -151,7 +151,7 @@ describe('scripted FakeAgent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideAgent({
-          createSession: () =>
+          createSession: async () =>
             createSession({
               agent: new FakeAgent({
                 delayMs: 0,

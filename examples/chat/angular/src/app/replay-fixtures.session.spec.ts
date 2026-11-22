@@ -26,7 +26,7 @@ const REF = createAgentRef<DemoSession>('replay-fixture');
 
 function agentOver(options: Parameters<typeof createDemoSession>[1]): DemoAgent {
   const injector = createEnvironmentInjector(
-    provideAgent(REF, { createSession: (context) => createDemoSession(context, options) }),
+    provideAgent(REF, { createSession: async (context) => createDemoSession(context, options) }),
     TestBed.inject(EnvironmentInjector),
   );
   return injector.get(REF.token);

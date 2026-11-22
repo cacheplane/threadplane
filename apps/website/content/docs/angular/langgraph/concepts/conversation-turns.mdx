@@ -46,7 +46,7 @@ import { createSession } from '@threadplane/langgraph';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           apiUrl: 'http://localhost:2024',

@@ -15,7 +15,7 @@ describe('ItineraryPanelComponent — agent-edit pulse', () => {
       providers: [
         ItineraryStore,
         provideAgent(ITINERARY_AGENT, {
-          createSession: () =>
+          createSession: async () =>
             createSession({ url: '/__test__', stateType: type<ItineraryState>() }),
         }),
       ],
@@ -41,7 +41,7 @@ describe('ItineraryPanelComponent — agent-edit pulse', () => {
       providers: [
         ItineraryStore,
         provideAgent(ITINERARY_AGENT, {
-          createSession: () =>
+          createSession: async () =>
             createSession({ url: '/__test__', stateType: type<ItineraryState>() }),
         }),
       ],
@@ -70,7 +70,7 @@ describe('ItineraryPanelComponent — agent-edit pulse', () => {
       providers: [
         ItineraryStore,
         provideAgent(ITINERARY_AGENT, {
-          createSession: () =>
+          createSession: async () =>
             createSession({ url: '/__test__', stateType: type<ItineraryState>() }),
         }),
       ],

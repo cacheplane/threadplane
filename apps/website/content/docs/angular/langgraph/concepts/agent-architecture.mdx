@@ -567,7 +567,7 @@ with PostgresSaver.from_conn_string(DATABASE_URL) as checkpointer:
 // app.config.ts
 provideAgent({
   threadId: 'thread_abc123',
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: '...',
