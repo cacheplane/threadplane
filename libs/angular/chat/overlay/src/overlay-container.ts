@@ -1,4 +1,4 @@
-// libs/angular/chat/src/lib/primitives/overlay/overlay-container.ts
+// libs/angular/chat/overlay/src/overlay-container.ts
 
 const CONTAINER_CLASS = 'chat-overlay-container';
 const STYLE_ID = 'chat-overlay-structure';

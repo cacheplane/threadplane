@@ -3,7 +3,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import type { Agent } from '../../agent';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_ERROR_STYLES } from '../../styles/chat-error.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /**
  * Coerce an unknown error value into a human-readable message string — reads

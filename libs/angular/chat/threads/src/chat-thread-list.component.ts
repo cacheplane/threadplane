@@ -20,7 +20,7 @@ import {
 } from './chat-overflow-menu.component';
 import { ChatConfirmDialogComponent } from './chat-confirm-dialog.component';
 import type { Project } from './chat-project-list.component';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRootStyles as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** A conversation list entry with optional title, timestamp, lifecycle, pin, and project metadata. */
 export type Thread = {

@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_CONFIRM_DIALOG_STYLES } from './chat-confirm-dialog.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRootStyles as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 let confirmDialogInstanceCounter = 0;
 

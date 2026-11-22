@@ -2,7 +2,7 @@
 import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_SCROLL_BUBBLE_STYLES } from '../../styles/chat-scroll-bubble.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /** Selects streaming activity dots or an idle scroll arrow for the latest-activity button. */
 export type ChatScrollBubbleMode = 'streaming' | 'idle';

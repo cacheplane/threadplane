@@ -131,6 +131,18 @@ for (const name of ['chat', 'render']) {
   }
 }
 
+// The entry points chat loads on demand share @threadplane/angular/chat/shared
+// with chat. A deferred import keeps every export of its target, so whatever the
+// shared entry reaches loads with every chat app, through a chunk the startup
+// code imports. It must not reach telemetry: chat registers the development
+// collector itself.
+{
+  const source = readFileSync(dist('angular/fesm2022/threadplane-angular-chat-shared.mjs'), 'utf8');
+  const { code } = await transform(source, { loader: 'js', format: 'esm', minifyWhitespace: true, legalComments: 'none' });
+  assert.match(code, /export\{/, 'chat/shared positive control: no exports');
+  assert.doesNotMatch(code, /@threadplane\/telemetry/, 'chat/shared imports telemetry, which then loads with every chat app');
+}
+
 // Chat defers its renderer through @threadplane/angular/render/deferred. A
 // deferred import keeps every export of its target, so that entry point must
 // name the telemetry-free renderer alone: one more export, such as

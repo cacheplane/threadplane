@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_WELCOME_STYLES } from '../../styles/chat-welcome.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /**
  * Empty-state owner. Renders a centered greeting + slot-projected input +

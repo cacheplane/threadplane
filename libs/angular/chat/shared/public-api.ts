@@ -1,8 +1,8 @@
 // Internal: what the chat UI and its on-demand entry points share, so each is
-// one instance: the once-per-application setup, its style tokens and the
+// one instance: the root style tokens and the
 // per-message citations resolver. Not a public API; `@threadplane/angular/chat`
 // re-exports what is public.
-export { ɵCHAT_RUNTIME, injectChatRuntime as ɵinjectChatRuntime } from './src/chat-runtime';
+export { ɵCHAT_ROOT_STYLES, injectChatRootStyles as ɵinjectChatRootStyles } from './src/chat-runtime';
 export {
   CHAT_HOST_TOKENS as ɵCHAT_HOST_TOKENS,
   REDUCED_MOTION_LOOP_SELECTORS as ɵREDUCED_MOTION_LOOP_SELECTORS,

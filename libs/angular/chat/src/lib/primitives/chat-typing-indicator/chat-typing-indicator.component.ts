@@ -3,7 +3,7 @@ import { Component, ChangeDetectionStrategy, input, computed } from '@angular/co
 import { isAgentRunning, type Agent } from '../../agent';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_TYPING_INDICATOR_STYLES } from '../../styles/chat-typing-indicator.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /**
  * Whether the agent should show a "typing" indicator — it is running and has

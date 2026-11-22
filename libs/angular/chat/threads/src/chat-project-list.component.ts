@@ -17,7 +17,7 @@ import {
   type OverflowMenuItem,
 } from './chat-overflow-menu.component';
 import { ChatConfirmDialogComponent } from './chat-confirm-dialog.component';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRootStyles as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** A selectable project identified by its id and display name, with optional consumer metadata. */
 export type Project = {

@@ -19,7 +19,7 @@ import type { Agent, AgentInterrupt } from '../../agent';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { ChatStatusPanelComponent } from '../../primitives/chat-status-panel/chat-status-panel.component';
 import { CHAT_APPROVAL_RECORDS } from './approval-records';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /** Actions emitted by the approval dialog for the host to handle. */
 export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';

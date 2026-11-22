@@ -1,4 +1,4 @@
-// libs/angular/chat/src/lib/primitives/overlay/connected-overlay.directive.ts
+// libs/angular/chat/overlay/src/connected-overlay.directive.ts
 /* eslint-disable @angular-eslint/no-input-rename, @angular-eslint/no-output-rename --
  * The `chatOverlay*` binding aliases ARE the intended public API: they namespace
  * the directive's inputs/outputs under the `chatOverlay` prefix (mirroring Angular

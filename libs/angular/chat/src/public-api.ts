@@ -254,7 +254,7 @@ export type { MockAgent, MockAgentField, MockAgentLifecycle, MockAgentOptions } 
 
 // The once-per-application chat setup every chat component injects. Private
 // (ɵ): a seam for tooling that proves the setup without rendering a component.
-export { ɵCHAT_RUNTIME } from '@threadplane/angular/chat/shared';
+export { ɵCHAT_RUNTIME } from './lib/styles/chat-runtime';
 
 // Development-only devtools hook: the adapters report which signals each event
 // wrote (names and timing, never values). Private (ɵ) — an adapter seam, not API.

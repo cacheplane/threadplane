@@ -7,7 +7,7 @@ import { CitationsResolverService } from '@threadplane/angular/chat/shared';
 import type { Message } from '../../agent/message';
 import { OwnedMarkdownContextDirective } from './owned-markdown-context';
 import { OwnedMarkdownBodyComponent } from './owned-markdown-body.component';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /** Message roles used to select the chat message layout. */
 export type ChatMessageRole = 'user' | 'assistant' | 'system' | 'tool';

@@ -6,7 +6,7 @@ import { citationSourceVisual, citationTypeMeta, deriveDomain } from './citation
 import type { CitationTypeIcon } from './citation-display';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_CITATION_SOURCE_VISUAL_STYLES, CHAT_CITATIONS_PANEL_STYLES } from './chat-citations.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRootStyles as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /**
  * Sources-panel detail card: index badge, favicon/monogram + domain + type,

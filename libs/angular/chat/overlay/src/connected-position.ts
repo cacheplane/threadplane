@@ -1,4 +1,4 @@
-// libs/angular/chat/src/lib/primitives/overlay/connected-position.ts
+// libs/angular/chat/overlay/src/connected-position.ts
 //
 // Minimal port of CDK's FlexibleConnectedPositionStrategy fit logic
 // (~/repos/components/src/cdk/overlay/position/flexible-connected-position-strategy.ts):

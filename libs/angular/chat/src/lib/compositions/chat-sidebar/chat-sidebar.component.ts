@@ -22,7 +22,7 @@ import type { ChatSelectOption } from '@threadplane/angular/chat/select';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { installFixedChatViewport } from '../shared/fixed-viewport';
 import { installChatSurfaceFocus } from '../shared/surface-focus';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /** Hosts an agent chat in a toggleable side panel alongside projected application content. */
 @Component({

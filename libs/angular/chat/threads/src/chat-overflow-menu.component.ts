@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_OVERFLOW_MENU_STYLES } from './chat-overflow-menu.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRootStyles as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** An action menu item with an identifier, label, optional tone, and disabled state. */
 export interface OverflowMenuItem {

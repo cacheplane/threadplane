@@ -12,7 +12,7 @@ import { toolCallResult, type AgentSubagent, type AgentSubagentStatus, type Mess
 import type { ToolActivityInfo } from '../../primitives/chat-tool-activity/chat-tool-activity.component';
 import { outcomeSources, type ToolActivityOutcome, type ToolActivitySource } from '../../primitives/chat-tool-activity/tool-outcome';
 import { CitationsResolverService } from '@threadplane/angular/chat/shared';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /**
  * Returns a CSS style string for a subagent's status badge.

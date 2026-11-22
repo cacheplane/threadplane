@@ -2,7 +2,7 @@
 import { Component, ChangeDetectionStrategy, input, signal, effect, computed } from '@angular/core';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_TRACE_STYLES } from '../../styles/chat-trace.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /** The visual execution state used by a collapsible chat trace. */
 export type TraceState = 'pending' | 'running' | 'done' | 'error';

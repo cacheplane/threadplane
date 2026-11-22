@@ -1,4 +1,4 @@
-// libs/angular/chat/src/lib/primitives/chat-select/chat-select.component.ts
+// libs/angular/chat/select/src/chat-select.component.ts
 import {
   ChangeDetectionStrategy,
   Component,
@@ -13,7 +13,7 @@ import {
 import { ChatConnectedOverlayDirective, ChatOverlayOriginDirective, type ConnectedPosition } from '@threadplane/angular/chat/overlay';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_SELECT_STYLES } from './chat-select.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRootStyles as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** A selectable dropdown value and label with an optional description and disabled state. */
 export interface ChatSelectOption {

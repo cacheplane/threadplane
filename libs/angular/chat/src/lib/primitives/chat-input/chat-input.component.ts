@@ -16,7 +16,7 @@ import { isAgentInputBlocked, isAgentRunning, type Agent } from '../../agent';
 import { stopAgent } from '../../client-tools/stop-agent';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_INPUT_STYLES } from '../../styles/chat-input.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /**
  * Submits a trimmed message to the agent.

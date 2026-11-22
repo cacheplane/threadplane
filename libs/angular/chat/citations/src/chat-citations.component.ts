@@ -13,7 +13,7 @@ import { ɵtoolSourceCitations as toolSourceCitations } from '@threadplane/angul
 import type { CitationTypeIcon } from './citation-display';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_CITATION_SOURCE_VISUAL_STYLES, CHAT_CITATIONS_PANEL_STYLES } from './chat-citations.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRootStyles as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /**
  * ContentChild template directive for custom citation card rendering.

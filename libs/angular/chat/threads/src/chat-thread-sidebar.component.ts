@@ -36,7 +36,7 @@ import type {
   ThreadDirectorySnapshot,
   ThreadEntry,
 } from '@threadplane/core';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRootStyles as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /**
  * Built-in sidebar features. Each defaults to on when the directory supports

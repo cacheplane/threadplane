@@ -58,7 +58,7 @@ import { ChatRunActivityTemplateDirective, type ChatRunActivityTemplateContext }
 import { ChatInterruptTemplateDirective, type ChatInterruptTemplateContext } from './chat-interrupt-template.directive';
 import { CHAT_LIFECYCLE, type ChatLifecycle } from '../../lifecycle';
 import { CHAT_APPROVAL_RECORDS, ChatApprovalRecords, approvalRecordText, type ChatApprovalRecord } from '../chat-approval-card/approval-records';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 interface OwnedMarkdownPresentation {
   content: string;

@@ -3,7 +3,7 @@ import { Component, ChangeDetectionStrategy, input, computed } from '@angular/co
 import { ChatTraceComponent, type TraceState } from '../../primitives/chat-trace/chat-trace.component';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import type { ToolCallStatus } from '../../agent';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /** Tool invocation details consumed by the default tool call card. */
 export interface ToolCallInfo {

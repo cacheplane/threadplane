@@ -12,7 +12,7 @@ import { deriveDomain } from './citation-display';
 import type { Citation } from '@threadplane/core';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_CITATION_MARKER_STYLES } from './chat-citations.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRootStyles as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 const OPEN_DELAY_MS = 120;
 const CLOSE_DELAY_MS = 200;

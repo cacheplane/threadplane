@@ -2,7 +2,7 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_WINDOW_STYLES } from '../../styles/chat-window.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /** Provides header, body, and footer slots for a chat window. */
 @Component({

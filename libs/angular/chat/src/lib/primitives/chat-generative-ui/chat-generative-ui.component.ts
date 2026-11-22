@@ -18,7 +18,7 @@ import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/cha
 import { CHAT_GENERATIVE_UI_STYLES } from '../../styles/chat-generative-ui.styles';
 import { normalizeJsonRenderSpec } from './normalize-json-render-spec';
 import { ɵprovideRenderDevtools } from '../../devtools/devtools-render-report';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /** Renders a normalized json-render specification with optional registry, state store, and event handlers. */
 @Component({

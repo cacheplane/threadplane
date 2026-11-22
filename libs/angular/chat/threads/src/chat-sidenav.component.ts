@@ -31,7 +31,7 @@ import {
 } from './chat-project-list.component';
 import type { Agent } from '@threadplane/angular';
 import { CHAT_DEBUG_INCLUDED } from './chat-debug-gate';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRootStyles as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** Display modes for the conversation sidebar, including a dismissible drawer. */
 export type ChatSidenavMode = 'expanded' | 'collapsed' | 'drawer';

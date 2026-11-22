@@ -26,7 +26,7 @@ import {
 } from './tool-outcome';
 import { activitySummary, formatElapsed, toolActivityHeading, workingLabel } from './activity-summary';
 import { ACTIVITY_SUMMARY_STYLES } from './activity-summary-styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 export type {
   ToolActivityOutcome,
   ToolActivityRetry,

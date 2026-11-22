@@ -1,4 +1,4 @@
-// libs/angular/chat/src/lib/styles/chat-tokens.ts
+// libs/angular/chat/shared/src/chat-tokens.ts
 
 const LIGHT_TOKENS = `
   --tplane-chat-bg: rgb(255, 255, 255);

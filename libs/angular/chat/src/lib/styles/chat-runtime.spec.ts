@@ -1,9 +1,9 @@
 import { Component, DOCUMENT } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ɵwhenAgentDevelopmentHost } from '../../../src/development-host';
+import { ɵwhenAgentDevelopmentHost } from '../../../../src/development-host';
 // Importing the whole entry point must not touch the page or the agent layer.
-import { ChatWelcomeComponent, ɵCHAT_RUNTIME } from '@threadplane/angular/chat';
+import { ChatWelcomeComponent, ɵCHAT_RUNTIME } from '../../public-api';
 
 const ROOT_TOKENS = 'tplane-chat-root-tokens';
 

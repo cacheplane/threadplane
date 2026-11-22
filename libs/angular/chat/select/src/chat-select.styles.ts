@@ -1,4 +1,4 @@
-// libs/angular/chat/src/lib/styles/chat-select.styles.ts
+// libs/angular/chat/select/src/chat-select.styles.ts
 export const CHAT_SELECT_STYLES = `
   :host {
     display: inline-block;

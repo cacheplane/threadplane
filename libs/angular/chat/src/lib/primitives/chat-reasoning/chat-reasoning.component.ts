@@ -8,7 +8,7 @@ import { CHAT_REASONING_STYLES } from '../../styles/chat-reasoning.styles';
 import type { MessageDelivery } from '../../agent';
 import { ChatStreamingMdComponent, markdownDocument } from '../../streaming/streaming-markdown.component';
 import { formatDuration } from '../../utils/format-duration';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /**
  * Renders an assistant's reasoning content as a compact pill that

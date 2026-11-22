@@ -8529,7 +8529,7 @@
       "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
     },
     {
-      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275injectChatRuntime",
+      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275injectChatRootStyles",
       "taskIds": [
         "T17"
       ],
@@ -8565,7 +8565,7 @@
       "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
     },
     {
-      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275CHAT_RUNTIME",
+      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275CHAT_ROOT_STYLES",
       "taskIds": [
         "T17"
       ],
@@ -12023,7 +12023,7 @@
       "note": "Seam between the injected Agent and the development-install collector, which depends on Angular's development mode. The chat package registers the collector; a session is handed a relay through the provider context. React sessions are given no collector, as before. Verified with source specs."
     },
     {
-      "id": "source:libs/angular/chat/shared/src/development-host.ts",
+      "id": "source:libs/angular/chat/src/lib/agent/development-host.ts",
       "taskIds": [
         "T03",
         "T04"
@@ -21459,6 +21459,11 @@
     },
     {
       "id": "source:libs/angular/chat/shared/src/chat-runtime.ts",
+      "taskIds": ["T17", "T22"], "treatment": "internal", "status": "planned",
+      "reason": "Once-per-application chat setup (root style tokens and development collector registration) that chat components inject; it replaces load-time side effects so the chat entry point tree-shakes."
+    },
+    {
+      "id": "source:libs/angular/chat/src/lib/styles/chat-runtime.ts",
       "taskIds": ["T17", "T22"], "treatment": "internal", "status": "planned",
       "reason": "Once-per-application chat setup (root style tokens and development collector registration) that chat components inject; it replaces load-time side effects so the chat entry point tree-shakes."
     },

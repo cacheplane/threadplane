@@ -2,7 +2,7 @@
 import { Component, ChangeDetectionStrategy, input, output, signal, inject, DOCUMENT } from '@angular/core';
 import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_MESSAGE_ACTIONS_STYLES } from '../../styles/chat-message-actions.styles';
-import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
+import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /**
  * Default action buttons that appear under each assistant message:
