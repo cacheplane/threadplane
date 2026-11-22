@@ -19,7 +19,7 @@ import { MarkdownAutolinkComponent } from './views/markdown-autolink.component';
 import { MarkdownImageComponent } from './views/markdown-image.component';
 import { MarkdownSoftBreakComponent } from './views/markdown-soft-break.component';
 import { MarkdownHardBreakComponent } from './views/markdown-hard-break.component';
-import { MarkdownCitationReferenceComponent } from './views/markdown-citation-reference.component';
+import { MarkdownCitationReferenceHostComponent } from './views/markdown-citation-reference-host.component';
 import { MarkdownTableComponent } from './views/markdown-table.component';
 import { MarkdownTableRowComponent } from './views/markdown-table-row.component';
 import { MarkdownTableCellComponent } from './views/markdown-table-cell.component';
@@ -54,7 +54,7 @@ export const cacheplaneMarkdownViews: ViewRegistry = /* @__PURE__ */ views({
   'image':          MarkdownImageComponent,
   'soft-break':     MarkdownSoftBreakComponent,
   'hard-break':     MarkdownHardBreakComponent,
-  'citation-reference': MarkdownCitationReferenceComponent,
+  'citation-reference': MarkdownCitationReferenceHostComponent,
   'table':          MarkdownTableComponent,
   'table-row':      MarkdownTableRowComponent,
   'table-cell':     MarkdownTableCellComponent,

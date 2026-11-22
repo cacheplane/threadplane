@@ -189,8 +189,9 @@ is silently dropped. Render the chat as a sibling and lay the two out yourself.
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { injectAgent, provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
-import { ChatComponent, ChatSidenavComponent } from '@threadplane/angular/chat';
-import type { Thread } from '@threadplane/angular/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
+import { ChatSidenavComponent } from '@threadplane/angular/chat/threads';
+import type { Thread } from '@threadplane/angular/chat/threads';
 
 const ACTIVE_THREAD = signal<string | null>(null);
 

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_WELCOME_SUGGESTION_STYLES } from '../../styles/chat-welcome.styles';
-import { injectChatRuntime } from '../../styles/chat-runtime';
+import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** Renders a labeled welcome suggestion and emits its associated value when selected. */
 @Component({

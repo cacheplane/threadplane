@@ -6,7 +6,7 @@ import type { AgentSubagent } from '../../agent';
 import { ChatStreamingMdComponent } from '../../streaming/streaming-markdown.component';
 import { completeDelivery, staticDelivery, streamingDelivery, type ToolCall } from '../../agent';
 import type { ToolActivityInfo } from '../../primitives/chat-tool-activity/chat-tool-activity.component';
-import { CitationsResolverService } from '../../markdown/citations-resolver.service';
+import { CitationsResolverService } from '@threadplane/angular/chat/shared';
 
 describe('ChatSubagentCardComponent', () => {
   it('is defined', () => {

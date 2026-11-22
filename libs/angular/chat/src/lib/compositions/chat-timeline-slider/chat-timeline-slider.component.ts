@@ -4,8 +4,8 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import type { Agent, AgentCheckpoint } from '../../agent';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
-import { injectChatRuntime } from '../../styles/chat-runtime';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** Lists agent checkpoints, newest first, and emits replay or fork requests for their identifiers. */
 @Component({

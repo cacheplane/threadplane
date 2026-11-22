@@ -7,12 +7,12 @@ import {
   markdownDocument,
   type StreamingMarkdownDocument,
 } from '../../streaming/streaming-markdown.component';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { toolCallResult, type AgentSubagent, type AgentSubagentStatus, type Message, type ToolCall } from '../../agent';
 import type { ToolActivityInfo } from '../../primitives/chat-tool-activity/chat-tool-activity.component';
 import { outcomeSources, type ToolActivityOutcome, type ToolActivitySource } from '../../primitives/chat-tool-activity/tool-outcome';
-import { CitationsResolverService } from '../../markdown/citations-resolver.service';
-import { injectChatRuntime } from '../../styles/chat-runtime';
+import { CitationsResolverService } from '@threadplane/angular/chat/shared';
+import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /**
  * Returns a CSS style string for a subagent's status badge.

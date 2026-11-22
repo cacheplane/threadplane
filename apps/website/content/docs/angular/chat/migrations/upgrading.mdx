@@ -252,6 +252,25 @@ protected readonly a2ui = a2uiRenderer({ catalog: this.catalog });
 
 3. If your code read `a2uiSurfaces()` or `a2uiSurfaceStates()` from a `ContentClassifier`, read `a2uiSource()` and parse it with `createA2uiMessageParser()` from `@threadplane/a2ui`, or render it with `A2uiMessageSurfacesComponent`.
 
+## Move thread, citation and select imports
+
+The thread list, citations and the select menu now load on demand, from their own entry points. `<chat>` needs no change. Update an import only where your application uses one of these components or helpers directly.
+
+| Import | From |
+| --- | --- |
+| `ChatThreadListComponent`, `ChatProjectListComponent`, `ChatOverflowMenuComponent`, `ChatConfirmDialogComponent`, `ChatSidenavComponent`, `ChatSidenavScrimComponent`, `ChatThreadSidebarComponent`, `ChatThreadRowTemplateDirective` and their types | `@threadplane/angular/chat/threads` |
+| `ChatCitationsComponent`, `ChatCitationCardTemplateDirective`, `ChatCitationsCardComponent`, `ChatCitationPreviewComponent`, `MarkdownCitationReferenceComponent`, `deriveDomain()`, `citationSourceVisual()` and the other citation display helpers and types | `@threadplane/angular/chat/citations` |
+| `ChatSelectComponent`, `ChatSelectOption` | `@threadplane/angular/chat/select` |
+| `ChatOverlayOriginDirective`, `ChatConnectedOverlayDirective`, `ConnectedPosition`, `OverlayPositionResult` | `@threadplane/angular/chat/overlay` |
+
+```ts
+import { ChatComponent } from '@threadplane/angular/chat';
+import { ChatThreadSidebarComponent } from '@threadplane/angular/chat/threads';
+```
+
+- [ ] Search the application for each name in the table and import it from its new entry point. The TypeScript compiler reports each one that is still imported from `@threadplane/angular/chat`.
+- [ ] Keep `CitationsResolverService` on `@threadplane/angular/chat`.
+
 ## Keep package peers aligned
 
 Read the installed package manifests and the [changelog](/docs/angular/chat/getting-started/changelog) before updating. The current Angular packages declare support for Angular 20, 21, and 22; select a supported major and compatible Node version for your application.

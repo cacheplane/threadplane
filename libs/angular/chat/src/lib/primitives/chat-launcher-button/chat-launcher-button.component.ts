@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, output } from '@angular/core';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_LAUNCHER_BUTTON_STYLES } from '../../styles/chat-launcher-button.styles';
-import { injectChatRuntime } from '../../styles/chat-runtime';
+import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** Renders an open-chat button and emits its clicks. */
 @Component({

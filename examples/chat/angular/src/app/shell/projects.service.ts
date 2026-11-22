@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import type { Project } from '@threadplane/angular/chat';
+import type { Project } from '@threadplane/angular/chat/threads';
 
 const STORAGE_KEY = 'threadplane-example-projects-v1';
 

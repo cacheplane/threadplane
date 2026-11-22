@@ -35,18 +35,22 @@ import { ItineraryStore, type ItineraryStop } from '../itinerary-store';
 import { itineraryClientTools } from '../client-tools';
 import { ThreadplaneTelemetryService } from '@threadplane/telemetry/browser';
 import {
-  ChatSidenavComponent,
-  ChatSidenavScrimComponent,
   ChatHistorySearchPaletteComponent,
-  ChatSelectComponent,
   injectThreadRouting,
-  type ChatSidenavMode,
   type InterruptAction,
   type ThreadMatch,
+} from '@threadplane/angular/chat';
+import {
+  ChatSidenavComponent,
+  ChatSidenavScrimComponent,
+  type ChatSidenavMode,
   type ThreadActionAdapter,
   type Thread,
   type ProjectActionAdapter,
-} from '@threadplane/angular/chat';
+} from '@threadplane/angular/chat/threads';
+import {
+  ChatSelectComponent,
+} from '@threadplane/angular/chat/select';
 import { PalettePersistence } from './palette-persistence.service';
 import { ProjectsService } from './projects.service';
 import { MapCanvasComponent } from '../map-canvas.component';

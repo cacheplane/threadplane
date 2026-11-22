@@ -1,9 +1,9 @@
 // libs/angular/chat/src/lib/compositions/chat-tool-call-card/chat-tool-call-card.component.ts
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
 import { ChatTraceComponent, type TraceState } from '../../primitives/chat-trace/chat-trace.component';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import type { ToolCallStatus } from '../../agent';
-import { injectChatRuntime } from '../../styles/chat-runtime';
+import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** Tool invocation details consumed by the default tool call card. */
 export interface ToolCallInfo {

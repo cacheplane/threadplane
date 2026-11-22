@@ -9,9 +9,9 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { pendingInterrupt, type Agent, type AgentInterrupt } from '../../agent';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_INTERRUPT_STYLES } from '../../styles/chat-interrupt.styles';
-import { injectChatRuntime } from '../../styles/chat-runtime';
+import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /**
  * Read the interrupt a paused agent shows first, if any. A run may pause on

@@ -10,12 +10,12 @@ import {
   signal,
 } from '@angular/core';
 import type { AgentPlanStep } from '../../agent';
-import { CitationsResolverService } from '../../markdown/citations-resolver.service';
+import { CitationsResolverService } from '@threadplane/angular/chat/shared';
 import {
   ChatStatusPanelComponent,
   STATUS_PANEL_CONTENT_STYLES,
 } from '../chat-status-panel/chat-status-panel.component';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import {
   activityFailures,
   activityProgress,
@@ -23,11 +23,10 @@ import {
   outcomeSources,
   receiptOutcomes,
   resolveToolOutcome,
-  type ToolActivityOutcome,
 } from './tool-outcome';
 import { activitySummary, formatElapsed, toolActivityHeading, workingLabel } from './activity-summary';
 import { ACTIVITY_SUMMARY_STYLES } from './activity-summary-styles';
-import { injectChatRuntime } from '../../styles/chat-runtime';
+import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
 export type {
   ToolActivityOutcome,
   ToolActivityRetry,
@@ -36,15 +35,10 @@ export type {
   ToolOutcomeDecoder,
 } from './tool-outcome';
 
-/** Explicit readonly presentation state, separate from execution/session ownership. */
-export type ToolActivityPhase =
-  | 'pending'
-  | 'running'
-  | 'complete'
-  | 'error'
-  | 'stopped'
-  | 'waiting'
-  | 'unknown';
+// Defined beside the outcome helpers, so code that needs only the types never
+// loads this component.
+export type { ToolActivityInfo, ToolActivityPhase } from './tool-outcome';
+import type { ToolActivityInfo, ToolActivityPhase } from './tool-outcome';
 /** Observed response delivery facts; a pause does not establish approval. */
 export type ToolActivityDelivery =
   | { readonly phase: 'streaming' }
@@ -77,20 +71,6 @@ export function toolActivityPhase(
     : delivery.outcome === 'success' && phase === 'pending'
     ? 'pending'
     : 'unknown';
-}
-/** Literal evidence and optional app-authored labels for a tool activity. */
-export interface ToolActivityInfo {
-  readonly id: string;
-  readonly name: string;
-  readonly label?: string;
-  readonly phase?: ToolActivityPhase;
-  readonly argumentsText?: string;
-  readonly resultText?: string;
-  readonly errorText?: string;
-  readonly errorSummary?: string;
-  readonly durationMs?: number;
-  /** App-authored preview shown after explicit completion, outside technical Details. */
-  readonly outcome?: ToolActivityOutcome;
 }
 const labels: Record<ToolActivityPhase, string> = {
   pending: 'Pending',

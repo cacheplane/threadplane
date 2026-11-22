@@ -16,10 +16,10 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import type { Agent, AgentInterrupt } from '../../agent';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { ChatStatusPanelComponent } from '../../primitives/chat-status-panel/chat-status-panel.component';
 import { CHAT_APPROVAL_RECORDS } from './approval-records';
-import { injectChatRuntime } from '../../styles/chat-runtime';
+import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** Actions emitted by the approval dialog for the host to handle. */
 export type ChatApprovalAction = 'approve' | 'edit' | 'cancel';

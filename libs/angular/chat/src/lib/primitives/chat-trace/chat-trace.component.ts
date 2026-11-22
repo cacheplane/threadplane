@@ -1,8 +1,8 @@
 // libs/angular/chat/src/lib/primitives/chat-trace/chat-trace.component.ts
 import { Component, ChangeDetectionStrategy, input, signal, effect, computed } from '@angular/core';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_TRACE_STYLES } from '../../styles/chat-trace.styles';
-import { injectChatRuntime } from '../../styles/chat-runtime';
+import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** The visual execution state used by a collapsible chat trace. */
 export type TraceState = 'pending' | 'running' | 'done' | 'error';

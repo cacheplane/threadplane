@@ -1,6 +1,6 @@
 // libs/angular/chat/src/lib/markdown/citations-resolver.service.spec.ts
 import { TestBed } from '@angular/core/testing';
-import { CitationsResolverService } from './citations-resolver.service';
+import { CitationsResolverService } from '@threadplane/angular/chat/shared';
 import { staticDelivery, type Message } from '../agent';
 import type { CitationDefinition } from '@cacheplane/partial-markdown';
 

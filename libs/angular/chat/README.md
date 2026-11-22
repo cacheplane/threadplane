@@ -116,6 +116,13 @@ Ready-to-use full-feature layouts:
 
 Custom content templates for message bubbles, tool call rows, and citation cards use structural directives: `MessageTemplateDirective`, `ChatToolCallTemplateDirective`, and `ChatCitationCardTemplateDirective`.
 
+Parts that `<chat>` loads only when it shows them come from their own entry points, so an application that never shows them does not load them:
+
+- `@threadplane/angular/chat/threads`: `<chat-thread-list>`, `<chat-project-list>`, `<chat-sidenav>`, `<chat-thread-sidebar>`, `<chat-sidenav-scrim>`, `<chat-overflow-menu>` and `<chat-confirm-dialog>`.
+- `@threadplane/angular/chat/citations`: `<chat-citations>`, the citation cards and previews, the inline citation marker and the citation display helpers.
+- `@threadplane/angular/chat/select`: `<chat-select>`.
+- `@threadplane/angular/chat/overlay`: the connected overlay directives.
+
 ### Human-in-the-loop (interrupts)
 
 `<chat-interrupt-panel>` surfaces the first pending `AgentInterrupt` (`agent.interrupts()` lists them all) and emits `accept`, `edit`, `respond`, or `ignore` through its `action` output. `<chat-approval-card>` emits `approve`, `cancel`, or `edit` (when enabled) for explicit approval workflows. The caller maps these actions to the answer the backend expects and sends it with `agent.resume(responses)`, one response per pending interrupt.

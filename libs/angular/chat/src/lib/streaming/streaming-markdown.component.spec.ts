@@ -9,7 +9,7 @@ import {
   type PartialMarkdownParser,
 } from '@cacheplane/partial-markdown';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CitationsResolverService } from '../markdown/citations-resolver.service';
+import { CitationsResolverService } from '@threadplane/angular/chat/shared';
 import {
   ChatStreamingMdComponent,
   STREAMING_MARKDOWN_CONTRACT_VIOLATION_POLICY,

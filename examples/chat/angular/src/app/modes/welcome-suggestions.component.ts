@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import {
   ChatWelcomeSuggestionComponent,
+} from '@threadplane/angular/chat';
+import {
   ChatSelectComponent,
   type ChatSelectOption,
-} from '@threadplane/angular/chat';
+} from '@threadplane/angular/chat/select';
 import { suggestionsForAppMode } from './welcome-suggestions';
 
 /**

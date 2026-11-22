@@ -10,9 +10,9 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_HISTORY_SEARCH_PALETTE_STYLES } from '../../styles/chat-history-search-palette.styles';
-import { injectChatRuntime } from '../../styles/chat-runtime';
+import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 /** A conversation search result with an identifier, title, and optional secondary text. */
 export interface ThreadMatch {

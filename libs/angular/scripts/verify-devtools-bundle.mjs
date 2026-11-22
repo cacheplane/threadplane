@@ -119,6 +119,15 @@ for (const name of ['chat', 'render']) {
     assert.match(code, /import\("@threadplane\/angular\/render\/deferred"\)/, 'chat positive control: no deferred renderer import');
     assert.doesNotMatch(code, /from"@threadplane\/angular\/render(?:\/deferred)?"/, 'chat imports the renderer eagerly, which brings json-render into every chat app');
     assert.doesNotMatch(code, /@json-render\/core/, 'chat imports @json-render/core');
+    // The thread list, the model picker and citations load on demand too: chat
+    // imports their entry points only in @defer blocks. An eager import of any
+    // of them, a re-export included, would put that entry point back in every
+    // chat app's initial load.
+    for (const entry of ['threads', 'citations', 'select', 'overlay']) {
+      assert.doesNotMatch(code, new RegExp(`from"@threadplane/angular/chat/${entry}"`), `chat imports @threadplane/angular/chat/${entry} eagerly`);
+      if (entry !== 'overlay')
+        assert.match(code, new RegExp(`import\\("@threadplane/angular/chat/${entry}"\\)`), `chat positive control: no deferred import of @threadplane/angular/chat/${entry}`);
+    }
   }
 }
 

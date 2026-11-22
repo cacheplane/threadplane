@@ -8,8 +8,13 @@ const LIB_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DEBUG_ROOT = join(LIB_ROOT, '..', '..', 'debug', 'src');
 // The A2UI components read the chat tokens from their own entry point.
 const A2UI_ROOT = join(LIB_ROOT, '..', '..', '..', 'a2ui', 'src');
+// The chat UI's own entry points: the shared setup and the parts `<chat>`
+// loads on demand.
+export const CHAT_ENTRY_ROOTS = ['shared', 'overlay', 'select', 'citations', 'threads'].map((name) =>
+  join(LIB_ROOT, '..', '..', name, 'src')
+);
 
-/** Every non-spec source file in the chat lib, its debug entry point and the A2UI entry point, minus the token file. */
+/** Every non-spec source file in the chat lib and its entry points, and in the A2UI entry point, minus the token file. */
 export function componentStyleSources(): { file: string; source: string }[] {
   const out: { file: string; source: string }[] = [];
   const walk = (dir: string): void => {
@@ -28,6 +33,7 @@ export function componentStyleSources(): { file: string; source: string }[] {
   walk(LIB_ROOT);
   walk(DEBUG_ROOT);
   walk(A2UI_ROOT);
+  for (const root of CHAT_ENTRY_ROOTS) walk(root);
   return out;
 }
 

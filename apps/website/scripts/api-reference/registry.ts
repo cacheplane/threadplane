@@ -19,6 +19,10 @@ const definitions: [string, ApiFramework, string, string?][] = [
   ['angular/a2ui', 'angular', 'a2ui/public-api.ts'],
   ['angular/chat/debug', 'angular', 'chat/debug/public-api.ts'],
   ['angular/chat/math', 'angular', 'chat/math/public-api.ts'],
+  ['angular/chat/citations', 'angular', 'chat/citations/public-api.ts'],
+  ['angular/chat/threads', 'angular', 'chat/threads/public-api.ts'],
+  ['angular/chat/overlay', 'angular', 'chat/overlay/public-api.ts'],
+  ['angular/chat/select', 'angular', 'chat/select/public-api.ts'],
   ['angular/chat/testing', 'angular', 'chat/testing/public-api.ts'],
   ['angular/markdown', 'angular', 'markdown/src/public-api.ts'],
   ['angular/render', 'angular', 'render/src/public-api.ts'],
@@ -68,6 +72,10 @@ export const SDK_ENTRYPOINTS: SdkEntrypoint[] = definitions.map(
       'angular/chat',
       'angular/chat/debug',
       'angular/chat/math',
+      'angular/chat/citations',
+      'angular/chat/threads',
+      'angular/chat/overlay',
+      'angular/chat/select',
       'angular/chat/testing',
       'angular/markdown',
       'react/chat',
@@ -106,6 +114,8 @@ const REEXPORTED_ENTRIES: Readonly<Record<string, string>> = {
     'libs/angular/render/registry/public-api.ts',
   '@threadplane/angular/render/deferred':
     'libs/angular/render/deferred/public-api.ts',
+  '@threadplane/angular/chat/shared':
+    'libs/angular/chat/shared/public-api.ts',
 };
 const EXCLUDED_ENTRY_SOURCES = new Set(Object.values(REEXPORTED_ENTRIES));
 /** The re-exported entry points, which the API generator resolves to source. */
@@ -122,6 +132,9 @@ export const EXCLUDED_EXPORTS = new Set([
   'angular/render/registry',
   // An internal entry point: chat loads the renderer on demand through it.
   'angular/render/deferred',
+  // Internal: what chat shares with the entry points it loads on demand;
+  // `angular/chat` re-exports and documents what is public.
+  'angular/chat/shared',
   'ag-ui/development-install',
   'angular/development-install',
   'langgraph/development-install',

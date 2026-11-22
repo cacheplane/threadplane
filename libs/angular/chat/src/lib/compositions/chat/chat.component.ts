@@ -29,7 +29,7 @@ import { OwnedMarkdownContextDirective, type OwnedMarkdownContext } from '../../
 import { ChatInputComponent } from '../../primitives/chat-input/chat-input.component';
 import { ChatTypingIndicatorComponent } from '../../primitives/chat-typing-indicator/chat-typing-indicator.component';
 import { ChatErrorComponent } from '../../primitives/chat-error/chat-error.component';
-import { ChatThreadListComponent, type Thread } from '../../primitives/chat-thread-list/chat-thread-list.component';
+import { ChatThreadListComponent, type Thread } from '@threadplane/angular/chat/threads';
 import { ChatGenerativeUiComponent } from '../../primitives/chat-generative-ui/chat-generative-ui.component';
 import { ChatToolViewsComponent } from '../../primitives/chat-tool-views/chat-tool-views.component';
 import {
@@ -44,21 +44,21 @@ import { resolveMessageToolCalls } from '../../primitives/chat-tool-calls/resolv
 import { offersToolRetry, repeatsToolFailure } from '../../primitives/chat-tool-calls/tool-retry-offer';
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
 import { ChatWelcomeComponent } from '../../primitives/chat-welcome/chat-welcome.component';
-import { ChatSelectComponent, type ChatSelectOption } from '../../primitives/chat-select/chat-select.component';
+import { ChatSelectComponent, type ChatSelectOption } from '@threadplane/angular/chat/select';
 import { ChatScrollBubbleComponent } from '../../primitives/chat-scroll-bubble/chat-scroll-bubble.component';
 import { createContentClassifier, type ContentClassifier } from '../../streaming/content-classifier';
 import { a2uiActionLabel } from '../../utils/a2ui-action-label';
 import type { ChatA2uiRenderer } from './chat-a2ui';
 import { messageContent } from '../shared/message-utils';
 import { formatDuration } from '../../utils/format-duration';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import type { ChatRenderEvent } from './chat-render-event';
 import { ChatActivityTemplateDirective, type ChatActivityTemplateContext } from './chat-activity-template.directive';
 import { ChatRunActivityTemplateDirective, type ChatRunActivityTemplateContext } from './chat-run-activity-template.directive';
 import { ChatInterruptTemplateDirective, type ChatInterruptTemplateContext } from './chat-interrupt-template.directive';
 import { CHAT_LIFECYCLE, type ChatLifecycle } from '../../lifecycle';
 import { CHAT_APPROVAL_RECORDS, ChatApprovalRecords, approvalRecordText, type ChatApprovalRecord } from '../chat-approval-card/approval-records';
-import { injectChatRuntime } from '../../styles/chat-runtime';
+import { ɵinjectChatRuntime as injectChatRuntime } from '@threadplane/angular/chat/shared';
 
 interface OwnedMarkdownPresentation {
   content: string;
@@ -279,12 +279,16 @@ export function isPinned(
       <chat-welcome (focusin)="welcomeHadFocus = isKeyboardFocus($event)" (focusout)="onWelcomeFocusOut($event)">
         <chat-input #composer chatWelcomeInput [agent]="agent()" [submitOnEnter]="true" [placeholder]="placeholder()">
           @if (showModelPicker() && modelOptions().length > 0) {
-            <chat-select
-              chatInputModelSelect
-              [options]="modelOptions()"
-              [(value)]="selectedModel"
-              [placeholder]="modelPickerPlaceholder()"
-            />
+            <ng-container ngProjectAs="[chatInputModelSelect]">
+              @defer (on immediate) {
+                <chat-select
+                  chatInputModelSelect
+                  [options]="modelOptions()"
+                  [(value)]="selectedModel"
+                  [placeholder]="modelPickerPlaceholder()"
+                />
+              }
+            </ng-container>
           }
           <ng-container ngProjectAs="[chatInputFooter]">
             <ng-container [ngTemplateOutlet]="inputFooter" />
@@ -298,11 +302,14 @@ export function isPinned(
     <div class="chat-shell">
       @if (threads().length > 0) {
         <aside class="chat-shell__sidebar">
-          <chat-thread-list
-            [threads]="threads()"
-            [activeThreadId]="activeThreadId()"
-            (threadSelected)="threadSelected.emit($event)"
-          />
+          <!-- The thread list loads on demand, with @threadplane/angular/chat/threads. -->
+          @defer (on immediate) {
+            <chat-thread-list
+              [threads]="threads()"
+              [activeThreadId]="activeThreadId()"
+              (threadSelected)="threadSelected.emit($event)"
+            />
+          }
         </aside>
       }
       <div class="chat-shell__main">
@@ -531,12 +538,16 @@ export function isPinned(
             }
             <chat-input #composer [agent]="agent()" [submitOnEnter]="true" [placeholder]="composerPlaceholder()" (submitted)="onUserSubmitted()" (stopped)="onUserStopped()">
               @if (showModelPicker() && modelOptions().length > 0) {
-                <chat-select
-                  chatInputModelSelect
-                  [options]="modelOptions()"
-                  [(value)]="selectedModel"
-                  [placeholder]="modelPickerPlaceholder()"
-                />
+                <ng-container ngProjectAs="[chatInputModelSelect]">
+                  @defer (on immediate) {
+                    <chat-select
+                      chatInputModelSelect
+                      [options]="modelOptions()"
+                      [(value)]="selectedModel"
+                      [placeholder]="modelPickerPlaceholder()"
+                    />
+                  }
+                </ng-container>
               } @else {
                 <ng-container ngProjectAs="[chatInputModelSelect]">
                   <ng-content select="[chatInputModelSelect]" />
