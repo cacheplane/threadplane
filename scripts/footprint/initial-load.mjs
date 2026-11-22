@@ -259,12 +259,22 @@ function reactApplication(directory) {
   write(
     join(directory, 'src/main.tsx'),
     `import { createRoot } from 'react-dom/client';
+import { AgentProvider } from '@threadplane/react';
 import { Chat } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
-import { createSession } from '@threadplane/langgraph';
 
-const session = createSession({ apiUrl: '/api', assistantId: 'agent' });
-createRoot(document.getElementById('root')!).render(<Chat session={session} />);
+// The backend loads on demand, as the docs recommend.
+createRoot(document.getElementById('root')!).render(
+  <AgentProvider
+    createSession={(context) =>
+      import('@threadplane/langgraph').then(({ createSession }) =>
+        createSession({ apiUrl: '/api', assistantId: 'agent', ...context })
+      )
+    }
+  >
+    <Chat />
+  </AgentProvider>
+);
 `
   );
   return {

@@ -85,6 +85,36 @@ and `session.dispose()` and owns the session's lifetime. Replacing the session
 prop transfers the subscription without disposing the previous session.
 Snapshot reads and subscription calls preserve the session method receiver.
 
+`AgentProvider` can own the session instead. Give it an async factory, so the
+backend loads on demand, and read the session below it with
+`useAgentSession()`, `useAgent()` with no argument, or `<Chat />` with no
+`session` prop:
+
+```tsx
+import { AgentProvider, useAgent } from '@threadplane/react';
+import { Chat } from '@threadplane/react/chat';
+
+<AgentProvider
+  threadId={threadId}
+  onThreadId={setThreadId}
+  createSession={(context) =>
+    import('@threadplane/langgraph').then(({ createSession }) =>
+      createSession({ apiUrl: '/api', assistantId: 'chat', ...context })
+    )
+  }
+>
+  <Chat />
+</AgentProvider>;
+```
+
+Until the first session resolves, the provider shows an empty idle conversation
+and commands wait for the session. A `threadId` change keeps the current
+session until the new one resolves; only the latest change is adopted and a
+superseded session is disposed. `stop` goes to the current session at once. A
+rejected factory keeps the current session and rejects the waiting commands.
+Unmounting disposes every session the provider created. The provider's session
+is one stable facade; its `dispose()` does nothing.
+
 The owner must return a stable snapshot between changes, publish a changed
 aggregate reference when data changes, and notify its subscribers. React compares
 snapshots with `Object.is`. Subscribing must register notifications without

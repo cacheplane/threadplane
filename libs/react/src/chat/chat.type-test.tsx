@@ -14,8 +14,8 @@ declare const session: AgentSession;
   submitOnEnter={false}
   className="mine"
 />;
-// @ts-expect-error session is required.
-const missing: ChatProps = {};
+// Inside an AgentProvider, Chat takes the provider's session.
+const provided: ChatProps = {};
 // @ts-expect-error session must be an AgentSession.
 <Chat session={{}} />;
 // @ts-expect-error Chat dispatches itself; onSubmit is not a Chat prop.
@@ -85,7 +85,7 @@ ok.className = 'x';
 <Chat session={session} a2uiActionLabels={false} />;
 // @ts-expect-error Action labels are a switch, not a renderer.
 <Chat session={session} a2uiActionLabels={() => 'Go'} />;
-void missing;
+void provided;
 
 import type { ReactNode } from 'react';
 import type { ChatSidenavProps } from './index';

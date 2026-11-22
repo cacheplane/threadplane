@@ -31,7 +31,7 @@ export function Conversation({ session }: { readonly session: AgentSession }) {
 
 | Prop                                            | Purpose                                                |
 | ----------------------------------------------- | ------------------------------------------------------ |
-| `session`                                       | Required app-owned core session.                       |
+| `session`                                       | App-owned core session. Optional inside an `AgentProvider`, which supplies its own. |
 | `content`                                       | Optional app-owned `MessageContent` projection.        |
 | `renderMessage`                                 | Stable callback replacing default row presentation.    |
 | `label`, `placeholder`, `hint`, `submitOnEnter` | Composer presentation and input behavior.              |
@@ -39,6 +39,32 @@ export function Conversation({ session }: { readonly session: AgentSession }) {
 | `className`                                     | Additional root styling.                               |
 | `onRetry`                                       | Optional application-owned zero-argument retry intent. |
 | `typingIndicator`                               | The waiting indicator in the transcript: `false` hides it, `{ label, announce }` changes its words or silences its announcement. |
+
+### Let a provider own the session
+
+Inside an `AgentProvider` from `@threadplane/react`, `Chat` needs no `session` prop. The provider creates the session with an async factory, so the backend package loads on demand and stays out of the initial bundle:
+
+~~~tsx
+import { AgentProvider } from '@threadplane/react';
+import { Chat } from '@threadplane/react/chat';
+import '@threadplane/react/chat/styles.css';
+
+export function Conversation() {
+  return (
+    <AgentProvider
+      createSession={(context) =>
+        import('@threadplane/langgraph').then(({ createSession }) =>
+          createSession({ apiUrl: '/api', assistantId: 'chat', ...context })
+        )
+      }
+    >
+      <Chat label="Trip message" />
+    </AgentProvider>
+  );
+}
+~~~
+
+Until the session resolves, `Chat` shows an empty conversation and the composer accepts a message; the message is sent once the session is ready. An explicit `session` prop always takes precedence over the provider. See [Lifecycle](/docs/react/chat/guides/lifecycle) for thread switches and disposal.
 
 Import `@threadplane/react/chat/styles.css` explicitly. The component observes the session, shows its current error message, treats `status === 'running'` as busy, submits trimmed text, and forwards Stop.
 
