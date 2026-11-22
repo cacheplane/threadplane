@@ -273,6 +273,13 @@
         "quality"
       ],
       "sha256": "490300e42d60867bda0a0561750d4612d6853ac9189def8d29c415f692e50901"
+    },
+    {
+      "step": "- name: Verify initial-load size budgets",
+      "lanes": [
+        "packages"
+      ],
+      "sha256": "fda060534a472021e91b8d9b39ae93c87eb6931b044cc6b6fd85588276e724df"
     }
   ]
 }
