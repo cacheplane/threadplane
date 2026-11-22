@@ -320,6 +320,16 @@ const EXAMPLES_CHAT_TAGS = [
 const POSTHOG_TAGS = ['scope:posthog'];
 const GROWTH_LIFECYCLE_TAGS = ['scope:growth-lifecycle'];
 
+describe('initial-load size gate', () => {
+  for (const file of ['scripts/footprint/initial-load.mjs', 'scripts/footprint/budgets.json'])
+    it(`requires library for ${file}`, () => {
+      assert.deepEqual(classifyFromAffected([file], []), {
+        ...emptyScope(),
+        library: true,
+      });
+    });
+});
+
 describe('native canonical provider inputs', () => {
   const inputs = [
     'examples/chat/python/src/graph.py',

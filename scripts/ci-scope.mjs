@@ -242,6 +242,9 @@ export function classifyFromAffected(changedFiles, affectedProjects) {
   if (changedFiles.some(isParityChange)) {
     scope.library = true;
   }
+  // The initial-load size gate runs in the Library packages lane.
+  if (changedFiles.some((file) => normalizePath(file).startsWith('scripts/footprint/')))
+    scope.library = true;
   if (changedFiles.some((file) => {
     const normalized = normalizePath(file);
     return A2UI_NATIVE_FIXTURE_FILES.has(normalized) ||
