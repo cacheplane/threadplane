@@ -64,7 +64,8 @@ export class AppComponent {
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
 | `agent` | `Agent` | **Required** | The agent providing streaming state |
-| `views` | `ViewRegistry \| undefined` | `undefined` | A2UI/json-render component registry forwarded to the inner `<chat>` |
+| `views` | `ViewRegistry \| undefined` | `undefined` | json-render component registry forwarded to the inner `<chat>` |
+| `a2ui` | `ChatA2uiRenderer \| undefined` | `undefined` | A2UI renderer from `a2uiRenderer()` in `@threadplane/angular/a2ui`, forwarded to the inner `<chat>` |
 | `clientTools` | `ClientToolRegistry \| undefined` | `undefined` | Frontend-declared client tools forwarded to the inner `<chat>` |
 | `modelOptions` | `readonly ChatSelectOption[]` | `[]` | Options for the chat input model picker |
 | `showModelPicker` | `boolean` | `true` | Hides the model picker when `false`, even when `modelOptions` is non-empty |
@@ -136,12 +137,12 @@ Project content into the window header with the `[chatHeader]` slot:
 
 ## A2UI and Client Tools
 
-`ChatPopupComponent` forwards `views` and `clientTools` to the inner `<chat>` composition. Pass the same registries you would pass to `<chat>` when the popup needs generative UI surfaces or browser-executed tools:
+`ChatPopupComponent` forwards `views`, `a2ui`, and `clientTools` to the inner `<chat>` composition. Pass the same values you would pass to `<chat>` when the popup needs generative UI surfaces, A2UI surfaces, or browser-executed tools. Build the A2UI renderer with `a2ui = a2uiRenderer()` from `@threadplane/angular/a2ui`:
 
 ```html
 <chat-popup
   [agent]="chatAgent"
-  [views]="a2uiViews"
+  [a2ui]="a2ui"
   [clientTools]="clientTools"
 />
 ```

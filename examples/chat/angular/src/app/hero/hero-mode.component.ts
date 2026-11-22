@@ -1,3 +1,4 @@
+import { a2uiRenderer } from '@threadplane/angular/a2ui';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -168,7 +169,7 @@ function heroProviders(replay?: HeroReplayTransport): Provider[] {
             <chat-interrupt-panel [agent]="activeAgent()" (action)="onInterruptAction($event)" />
           </div>
         }
-        <chat [agent]="activeAgent()" [views]="catalog">
+        <chat [agent]="activeAgent()" [views]="catalog" [a2ui]="a2ui">
           @if (mode() === 'live') {
             <welcome-suggestions chatWelcomeSuggestions (selected)="sendLive($event)" />
           }
@@ -244,6 +245,7 @@ export class HeroMode implements HeroScriptHost {
     this.mode() === 'live' ? this.liveAgent : this.replayAgent,
   );
   protected readonly catalog = demoViews();
+  protected readonly a2ui = a2uiRenderer({ catalog: this.catalog });
   readonly cursorX = signal(0);
   readonly cursorY = signal(0);
   readonly cursorVisible = signal(false);

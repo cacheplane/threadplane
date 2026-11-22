@@ -99,12 +99,12 @@ The user message therefore appears immediately while the backend starts the run.
 The injected agent exposes a `customEvents` signal, accumulating every
 non-`on_interrupt` `CUSTOM` AG-UI event for the current run (empty again when
 the next run starts and when the agent switches threads). The chat
-composition reads this signal to drive **progressive** a2ui surface
-rendering — token-by-token, as the backend streams `a2ui-partial` events —
-matching the LangGraph session. Without those events, a2ui still renders from
-the final tool-call surface; with them, surfaces build up live.
+composition does not read this signal for A2UI: it renders a2ui surfaces from
+the assistant message content, through the renderer bound to `<chat [a2ui]>`.
+An application that wants progressive rendering from `a2ui-partial` events
+reads `customEvents` itself.
 
-The consuming side — how the chat composition turns these events into rendered surfaces — lives in chat's [A2UI overview](/docs/angular/chat/a2ui/overview).
+How the chat composition renders A2UI content lives in chat's [A2UI overview](/docs/angular/chat/a2ui/overview).
 
 ## Browser client tools
 

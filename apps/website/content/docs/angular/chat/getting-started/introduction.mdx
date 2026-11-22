@@ -65,7 +65,7 @@ Compositions are opinionated, styled components that combine primitives into rea
 
 - **`@threadplane/langgraph`** and **`@threadplane/ag-ui`** each export `createSession()`, which runs a backend behind the framework-neutral `AgentSession` contract from `@threadplane/core`. You hand that factory to `provideAgent({ createSession })`. A backend can publish more than the core contract: a LangGraph session adds `history()`, `fork()` and branch data for checkpoint time-travel.
 
-- **`@threadplane/angular/render`** provides `RenderSpecComponent` and view registries for rendering JSON UI specs as Angular components. The `ChatComponent` auto-detects JSON specs in AI messages and renders them through `@threadplane/angular/render` - pass a view registry via the `[views]` input. The same `[views]` input enables A2UI rendering with `a2uiBasicCatalog()`, which currently maps 18 component types.
+- **`@threadplane/angular/render`** provides `RenderSpecComponent` and view registries for rendering JSON UI specs as Angular components. The `ChatComponent` auto-detects JSON specs in AI messages and renders them through `@threadplane/angular/render` - pass a view registry via the `[views]` input. A2UI rendering takes a separate `[a2ui]` input: pass `a2uiRenderer()` from `@threadplane/angular/a2ui`, whose default `a2uiBasicCatalog()` currently maps 18 component types.
 
 ## When to Use `ChatComponent` vs. Custom Assembly
 

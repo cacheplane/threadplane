@@ -1,3 +1,4 @@
+import { a2uiRenderer } from '@threadplane/angular/a2ui';
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { ChatPopupComponent, ChatInterruptTemplateDirective, ChatInterruptPanelComponent } from '@threadplane/angular/chat';
 import { DemoShell } from '../shell/demo-shell.component';
@@ -27,7 +28,7 @@ import { AppModePromoComponent } from './app-mode-promo.component';
     <chat-popup
       [agent]="agent"
       [clientTools]="shell.clientTools"
-      [views]="catalog"
+      [views]="catalog" [a2ui]="a2ui"
       [modelOptions]="shell.modelOptions()"
       [selectedModel]="shell.model()"
       [showModelPicker]="false"
@@ -59,6 +60,7 @@ export class PopupMode {
   protected readonly shell = inject(DemoShell);
   // A2UI catalog + registered tool views — see demo-views.ts.
   protected readonly catalog = demoViews();
+  protected readonly a2ui = a2uiRenderer({ catalog: this.catalog });
 
   protected send(text: string): void {
     void this.agent.submit({ message: text });

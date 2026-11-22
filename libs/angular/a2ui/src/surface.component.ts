@@ -13,7 +13,7 @@ import { buildA2uiActionMessage } from './build-action-message';
 import { A2uiDefaultFallbackComponent } from './a2ui-default-fallback.component';
 import type { A2uiSurfaceState } from './surface-store';
 import type { A2uiViews } from './views';
-import { ɵprovideRenderDevtools } from '../devtools/devtools-render-report';
+import { ɵprovideRenderDevtools } from '@threadplane/angular/chat';
 
 /**
  * Renders an A2UI surface. Supports two input shapes:

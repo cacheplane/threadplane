@@ -1,5 +1,6 @@
+import { a2uiBasicCatalog, a2uiRenderer } from '@threadplane/angular/a2ui';
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
-import { ChatSidebarComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { ChatSidebarComponent } from '@threadplane/angular/chat';
 import { AgUiShell } from '../shell/ag-ui-shell.component';
 import { MapCanvasComponent } from '../map-canvas.component';
 import { AppModePromoComponent } from './app-mode-promo.component';
@@ -14,7 +15,7 @@ import { WelcomeSuggestionsComponent } from './welcome-suggestions.component';
     <chat-sidebar
       [agent]="agent"
       [clientTools]="shell.clientTools"
-      [views]="catalog"
+      [views]="catalog" [a2ui]="a2ui"
       [modelOptions]="shell.modelOptions()"
       [selectedModel]="shell.model()"
       [showModelPicker]="false"
@@ -56,6 +57,7 @@ export class SidebarMode {
   protected readonly shell = inject(AgUiShell);
   // Phase 4: A2UI component catalog forwarded to <chat-sidebar>.
   protected readonly catalog = a2uiBasicCatalog();
+  protected readonly a2ui = a2uiRenderer({ catalog: this.catalog });
 
   protected send(text: string): void {
     void this.agent.submit({ message: text });

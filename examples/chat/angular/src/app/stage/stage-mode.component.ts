@@ -1,3 +1,4 @@
+import { a2uiRenderer } from '@threadplane/angular/a2ui';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -159,7 +160,7 @@ function stageProviders(replay?: StageReplayTransport): Provider[] {
               <chat-interrupt-panel [agent]="agent" (action)="onInterruptAction($event)" />
             }
           </div>
-          <chat [agent]="presentationAgent" [views]="catalog"></chat>
+          <chat [agent]="presentationAgent" [views]="catalog" [a2ui]="a2ui"></chat>
         </div>
         <!-- The dock input is read once (the panel restores it after the first
              render), so the two docks are two ELEMENTS under distinct storage
@@ -256,6 +257,7 @@ export class StageMode {
    */
   protected readonly debugAgent = this.agent;
   protected readonly catalog = demoViews();
+  protected readonly a2ui = a2uiRenderer({ catalog: this.catalog });
 
   /**
    * Per-load key. The panel persists `open` under its storage key and closes

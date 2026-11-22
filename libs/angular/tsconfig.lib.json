@@ -14,6 +14,7 @@
   "include": [
     "src/**/*.ts",
     "chat/src/**/*.ts",
+    "a2ui/**/*.ts",
     "chat/debug/**/*.ts",
     "chat/math/**/*.ts",
     "chat/testing/**/*.ts",
@@ -34,6 +35,10 @@
     "chat/debug/**/*.test.ts",
     "chat/debug/**/*.type-test.ts",
     "chat/debug/**/*.type-spec.ts",
+    "a2ui/**/*.spec.ts",
+    "a2ui/**/*.test.ts",
+    "a2ui/**/*.type-test.ts",
+    "a2ui/**/*.type-spec.ts",
     "chat/math/**/*.spec.ts",
     "chat/math/**/*.test.ts",
     "chat/math/**/*.type-test.ts",

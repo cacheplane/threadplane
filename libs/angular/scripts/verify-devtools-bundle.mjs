@@ -18,6 +18,7 @@ const dist = (path) => resolve('dist/libs', path);
 const local = {
   '@threadplane/angular/render': dist('angular/fesm2022/threadplane-angular-render.mjs'),
   '@threadplane/angular/chat': dist('angular/fesm2022/threadplane-angular-chat.mjs'),
+  '@threadplane/angular/a2ui': dist('angular/fesm2022/threadplane-angular-a2ui.mjs'),
   '@threadplane/angular': dist('angular/fesm2022/threadplane-angular.mjs'),
   // The backend packages are framework-neutral ES modules, not APF bundles.
   '@threadplane/langgraph': dist('langgraph/src/public-api.js'),
@@ -36,9 +37,9 @@ const entry = `
     ɵdevtoolsScriptedRuns,
     ɵcreateRenderDevtoolsReporter,
     ɵprovideRenderDevtools,
-    A2uiSurfaceComponent,
     ChatGenerativeUiComponent,
   } from '@threadplane/angular/chat';
+  export { A2uiSurfaceComponent } from '@threadplane/angular/a2ui';
   export { RenderSpecComponent, RenderElementComponent } from '@threadplane/angular/render';
 `;
 

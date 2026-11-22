@@ -224,54 +224,9 @@ export type { ContentClassifier, ContentType } from './lib/streaming/content-cla
 export { createParseTreeStore } from './lib/streaming/parse-tree-store';
 export type { ParseTreeStore, ElementAccumulationState } from './lib/streaming/parse-tree-store';
 
-// A2UI
-export { createA2uiSurfaceStore } from './lib/a2ui/surface-store';
-export type { A2uiSurfaceStore, A2uiSurfaceState } from './lib/a2ui/surface-store';
-export { normalizeViewEntry } from './lib/a2ui/views';
-export type { A2uiViewEntry, A2uiViews } from './lib/a2ui/views';
-export type { A2uiComponentView } from './lib/a2ui/component-view';
-export { createPartialArgsBridge } from './lib/a2ui/partial-args-bridge';
-export type { PartialArgsBridge } from './lib/a2ui/partial-args-bridge';
-export { normalizeEnvelopeArgs } from './lib/a2ui/envelope-normalizer';
-export { A2uiSurfaceComponent } from './lib/a2ui/surface.component';
-// surfaceToSpec: internal A2UI plumbing — consumed via relative imports, not public.
-export { buildA2uiActionMessage } from './lib/a2ui/build-action-message';
-export { a2uiBasicCatalog } from './lib/a2ui/catalog/index';
-export { emitBinding } from './lib/a2ui/catalog/emit-binding';
-export { a2uiClientCapabilities } from './lib/a2ui/capabilities';
-
-// A2UI catalog components (for custom catalog composition via withViews)
-export { A2uiTextFieldComponent } from './lib/a2ui/catalog/text-field.component';
-export { A2uiCheckBoxComponent } from './lib/a2ui/catalog/check-box.component';
-export { A2uiButtonComponent } from './lib/a2ui/catalog/button.component';
-export { A2uiChoicePickerComponent } from './lib/a2ui/catalog/choice-picker.component';
-export { A2uiSliderComponent } from './lib/a2ui/catalog/slider.component';
-export { A2uiDateTimeInputComponent } from './lib/a2ui/catalog/date-time-input.component';
-export { A2uiTextComponent } from './lib/a2ui/catalog/text.component';
-export { A2uiIconComponent } from './lib/a2ui/catalog/icon.component';
-export { A2uiImageComponent } from './lib/a2ui/catalog/image.component';
-export { A2uiColumnComponent } from './lib/a2ui/catalog/column.component';
-export { A2uiRowComponent } from './lib/a2ui/catalog/row.component';
-export { A2uiCardComponent } from './lib/a2ui/catalog/card.component';
-export { A2uiDividerComponent } from './lib/a2ui/catalog/divider.component';
-export { A2uiListComponent } from './lib/a2ui/catalog/list.component';
-export { A2uiModalComponent } from './lib/a2ui/catalog/modal.component';
-export { A2uiTabsComponent } from './lib/a2ui/catalog/tabs.component';
-export { A2uiAudioPlayerComponent } from './lib/a2ui/catalog/audio-player.component';
-export { A2uiVideoComponent } from './lib/a2ui/catalog/video.component';
-
-// A2UI types (re-exported from @threadplane/a2ui for convenience)
-export type {
-  A2uiActionMessage, A2uiErrorMessage, A2uiClientDataModel, A2uiClientCapabilities,
-  A2uiSurface, A2uiComponent, A2uiComponentBase, A2uiCatalogComponent, A2uiTheme,
-  DynamicString, DynamicNumber, DynamicBoolean, DynamicStringList, DynamicValue,
-  A2uiChildren, A2uiAction, A2uiEventAction, A2uiFunctionAction, A2uiCheck,
-  A2uiPathRef, A2uiFunctionCall,
-} from '@threadplane/a2ui';
-export {
-  isPathRef, isFunctionCall,
-  A2UI_WIRE_VERSION, A2UI_MIME_TYPE, A2UI_BASIC_CATALOG_ID,
-} from '@threadplane/a2ui';
+// A2UI: `<chat [a2ui]>` takes a renderer; `@threadplane/angular/a2ui` has it,
+// with the surface, the catalog and the A2UI helpers.
+export type { ChatA2uiRenderer, ChatA2uiInputs } from './lib/compositions/chat/chat-a2ui';
 
 // Client tools (declaration API — tools/action/view/ask + JSON-schema derivation)
 export { tools, action, view, ask } from './lib/client-tools/tools';

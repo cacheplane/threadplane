@@ -1,6 +1,7 @@
+import { a2uiBasicCatalog, a2uiRenderer } from '@threadplane/angular/a2ui';
 import { exampleToolLabel } from '../../../../../shared/tool-presentation';
 import { Component } from '@angular/core';
-import { ChatComponent, ChatWelcomeSuggestionComponent, a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { ChatComponent, ChatWelcomeSuggestionComponent } from '@threadplane/angular/chat';
 import { ExampleChatLayoutComponent } from '@threadplane/example-layouts';
 import { injectAgent } from '@threadplane/angular';
 
@@ -26,7 +27,7 @@ const WELCOME_SUGGESTIONS = [
       title="Plan a flight"
       description="Flight preview: request a flight form, edit your details, and select a demonstration flight. This preview makes no booking or payment."
     >
-      <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask for a flight form…" [welcomeDisabled]="true" main [agent]="agent" [views]="catalog" class="flex-1 min-w-0">
+      <chat [groupRelatedTools]="true" [toolLabel]="toolLabel" placeholder="Ask for a flight form…" [welcomeDisabled]="true" main [agent]="agent" [views]="catalog" [a2ui]="a2ui" class="flex-1 min-w-0">
         <p chatInputFooter class="example-composer-help">Enter to send. Shift+Enter adds a new line.</p>
         <p chatFooterStatus role="status" class="example-submission-status">{{ agent.status() === 'running' ? 'Receiving response…' : agent.error() ? 'Response failed. Try again.' : 'Ready.' }}</p>
         <div chatWelcomeSuggestions>
@@ -42,6 +43,7 @@ export class A2uiComponent {
   protected readonly toolLabel = exampleToolLabel;
   protected readonly agent = injectAgent();
   protected readonly catalog = a2uiBasicCatalog();
+  protected readonly a2ui = a2uiRenderer({ catalog: this.catalog });
   protected readonly suggestions = WELCOME_SUGGESTIONS;
   protected send(text: string): void { void this.agent.submit({ message: text }); }
 }

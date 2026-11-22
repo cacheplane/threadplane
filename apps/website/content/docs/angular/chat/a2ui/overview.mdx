@@ -6,7 +6,7 @@ description: How the flight-booking demo streams A2UI surfaces into the chat com
 
 A2UI is the structured UI path for agent-built surfaces in chat.
 
-The boundary is simple: the agent streams declarative messages, the client owns rendering, and Angular handlers stay inside your application. The model does not ship code. It emits a constrained surface description that `@threadplane/angular/chat`, `@threadplane/a2ui`, and `@threadplane/angular/render` turn into Angular UI. Threadplane implements the **A2UI v0.9.1 stable release** — every envelope carries `"version": "v0.9"`.
+The boundary is simple: the agent streams declarative messages, the client owns rendering, and Angular handlers stay inside your application. The model does not ship code. It emits a constrained surface description that `@threadplane/angular/chat`, `@threadplane/angular/a2ui`, `@threadplane/a2ui`, and `@threadplane/angular/render` turn into Angular UI. Threadplane implements the **A2UI v0.9.1 stable release** — every envelope carries `"version": "v0.9"`.
 
 The running example is a flight booking flow served by LangGraph. The agent authors each screen as an A2UI surface, and this page walks the files that produce it.
 
@@ -47,7 +47,7 @@ The model authors the components; the code writes the wire format. `_wrap_envelo
 The demo emits `createSurface`, then `updateComponents`, then `updateDataModel`.
 
 <Callout type="info" title="The sentinel is what switches the client into A2UI mode">
-`A2UI_PREFIX` is `---a2ui_JSON---`. The content classifier in `@threadplane/angular/chat` looks for exactly that string at the start of assistant content and routes the rest of the message into the A2UI pipeline instead of the markdown renderer.
+`A2UI_PREFIX` is `---a2ui_JSON---`. The content classifier in `@threadplane/angular/chat` looks for exactly that string at the start of assistant content and routes the rest of the message to the A2UI renderer bound to `[a2ui]` instead of the markdown renderer.
 </Callout>
 
 ### The node that authors the form
@@ -89,7 +89,23 @@ The graph is served by the LangGraph API server, which supplies persistence, so 
 
 ### Giving the chat composition a catalog
 
-The client side is one input. `a2uiBasicCatalog()` from `@threadplane/angular/chat` returns a view registry covering all eighteen components of the A2UI basic catalog, and passing it as `[views]` is what lets `<chat>` mount a surface — the composition renders `<a2ui-surface>` only when a catalog is bound.
+The client side is one input. `a2uiRenderer()` from `@threadplane/angular/a2ui` builds the A2UI renderer, and passing it as `[a2ui]` is what lets `<chat>` mount a surface. Its `catalog` option defaults to `a2uiBasicCatalog()`, a view registry covering all eighteen components of the A2UI basic catalog. Without `[a2ui]`, a message that starts with `---a2ui_JSON---` shows its A2UI source as text, and the chat UI bundles none of the A2UI code.
+
+```ts
+import { ChatComponent } from '@threadplane/angular/chat';
+import { a2uiRenderer } from '@threadplane/angular/a2ui';
+
+// in the component class
+protected readonly a2ui = a2uiRenderer();
+```
+
+```html
+<chat [agent]="agent" [a2ui]="a2ui" />
+```
+
+<Callout type="warning" title="Breaking change: A2UI needs the [a2ui] input">
+A2UI moved out of `@threadplane/angular/chat` into the `@threadplane/angular/a2ui` entry point. Binding `a2uiBasicCatalog()` to `[views]` no longer renders A2UI surfaces. Pass `[a2ui]="a2ui"` with `a2ui = a2uiRenderer()` from `@threadplane/angular/a2ui` instead. `[views]` stays the json-render view registry, so the demo binds its catalog to both inputs.
+</Callout>
 
 <ExampleCode file="a2ui.component.ts" title="a2ui.component.ts" />
 
@@ -154,10 +170,10 @@ There is no type-keyed wrapper and no literal wrapper objects — `"Search fligh
 
 A2UI component props can point at the surface data model, and the surface-to-spec conversion turns those path references into json-render state bindings. It also collects them into a `_bindings` map that it passes to the component, so an input knows where to write back; an agent never authors `_bindings` itself.
 
-Catalog input components use `emitBinding()` for that write-back. It is exported from `@threadplane/angular/chat`, and it takes the render host, the component's `_bindings` map, the prop name, and the new value:
+Catalog input components use `emitBinding()` for that write-back. It is exported from `@threadplane/angular/a2ui`, and it takes the render host, the component's `_bindings` map, the prop name, and the new value:
 
 ```ts
-import { emitBinding } from '@threadplane/angular/chat';
+import { emitBinding } from '@threadplane/angular/a2ui';
 
 onInput(event: Event): void {
   const value = (event.target as HTMLInputElement).value;

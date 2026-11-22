@@ -9,7 +9,7 @@ Factory function that creates an `A2uiSurfaceStore` — a reactive store that ac
 **Import:**
 
 ```typescript
-import { createA2uiSurfaceStore } from '@threadplane/angular/chat';
+import { createA2uiSurfaceStore } from '@threadplane/angular/a2ui';
 ```
 
 ## Signature
@@ -123,7 +123,7 @@ The `updateDataModel` envelope carries an optional JSON-pointer `path` and an op
 The surface store is designed to work with `createA2uiMessageParser`, which parses raw JSONL chunks into typed `A2uiMessage` objects.
 
 ```typescript
-import { createA2uiSurfaceStore } from '@threadplane/angular/chat';
+import { createA2uiSurfaceStore } from '@threadplane/angular/a2ui';
 import { createA2uiMessageParser } from '@threadplane/a2ui';
 import { effect } from '@angular/core';
 

@@ -139,7 +139,8 @@ describe('ContentClassifier', () => {
       }) + '\n');
 
       expect(c.type()).toBe('a2ui');
-      expect(c.a2uiSurfaces().has('cleanup')).toBe(true);
+      expect(c.a2uiSource()).toContain('"surfaceId":"cleanup"');
+      expect(c.a2uiSource().startsWith('\n')).toBe(true);
       expect(c.markdown()).toBe('');
     });
 
@@ -202,34 +203,38 @@ describe('ContentClassifier', () => {
     });
   });
 
-  describe('a2ui JSONL parsing (v0.9)', () => {
-    it('parses A2UI v0.9 messages and exposes surfaces once createSurface + root arrive', () => {
+  // The classifier recognizes A2UI and hands its source on; the renderer in
+  // @threadplane/angular/a2ui parses it (see message-surfaces.component.spec).
+  describe('a2ui source', () => {
+    const create = JSON.stringify({ version: 'v0.9', createSurface: { surfaceId: 's1', catalogId: 'basic' } }) + '\n';
+    const update = JSON.stringify({ version: 'v0.9', updateComponents: { surfaceId: 's1', components: [
+      { id: 'root', component: 'Text', text: 'Hi' },
+    ] } }) + '\n';
+
+    it('exposes the content after the marker without parsing it', () => {
       const c = setup();
-      c.update(
-        '---a2ui_JSON---' +
-        JSON.stringify({ version: 'v0.9', createSurface: { surfaceId: 's1', catalogId: 'basic' } }) + '\n' +
-        JSON.stringify({ version: 'v0.9', updateComponents: { surfaceId: 's1', components: [
-          { id: 'root', component: 'Text', text: 'Hi' },
-        ] } }) + '\n'
-      );
+      c.update('---a2ui_JSON---' + create);
       expect(c.type()).toBe('a2ui');
-      expect(c.a2uiSurfaces().size).toBe(1);
-      const comp = c.a2uiSurfaces().get('s1')!.components.get('root')!;
-      expect(comp.component).toBe('Text');
+      expect(c.a2uiSource()).toBe(create);
+      expect(c.errors()).toEqual([]);
     });
 
-    it('accumulates A2UI v0.9 messages across updates', () => {
+    it('grows with the streamed content, and a non-A2UI message has none', () => {
       const c = setup();
-      c.update(
-        '---a2ui_JSON---' +
-        JSON.stringify({ version: 'v0.9', createSurface: { surfaceId: 's1', catalogId: 'basic' } }) + '\n' +
-        JSON.stringify({ version: 'v0.9', updateComponents: { surfaceId: 's1', components: [
-          { id: 'root', component: 'Text', text: { path: '/name' } },
-        ] } }) + '\n' +
-        JSON.stringify({ version: 'v0.9', updateDataModel: { surfaceId: 's1', path: '/name', value: 'Alice' } }) + '\n'
-      );
-      expect(c.a2uiSurfaces().size).toBe(1);
-      expect((c.a2uiSurfaces().get('s1')!.dataModel as Record<string, unknown>)['name']).toBe('Alice');
+      c.update('---a2ui_JSON---' + create);
+      c.update('---a2ui_JSON---' + create + update);
+      expect(c.a2uiSource()).toBe(create + update);
+      const markdown = setup();
+      markdown.update('Plain text');
+      expect(markdown.a2uiSource()).toBe('');
+    });
+
+    it('resets the source when a replacement does not extend it', () => {
+      const c = setup();
+      c.update('---a2ui_JSON---' + create + update);
+      c.update('Replaced with prose.');
+      expect(c.type()).toBe('markdown');
+      expect(c.a2uiSource()).toBe('');
     });
   });
 

@@ -3,9 +3,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { Spec } from '@json-render/core';
 import { defineAngularRegistry, RenderSpecComponent, type ɵRenderResolution } from '@threadplane/angular/render';
-import { A2uiSurfaceComponent } from '../a2ui/surface.component';
-import { createA2uiSurfaceStore } from '../a2ui/surface-store';
-import { a2uiBasicCatalog } from '../a2ui/catalog';
+import { A2uiSurfaceComponent } from '@threadplane/angular/a2ui';
+import { createA2uiSurfaceStore } from '@threadplane/angular/a2ui';
+import { a2uiBasicCatalog } from '@threadplane/angular/a2ui';
 import { ChatGenerativeUiComponent } from '../primitives/chat-generative-ui/chat-generative-ui.component';
 import {
   MAX_RENDER_ELEMENTS,

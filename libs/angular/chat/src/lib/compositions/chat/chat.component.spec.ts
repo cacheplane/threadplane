@@ -9,10 +9,8 @@ import { DEVELOPMENT_COLLECTION_POLICY, registerDevelopmentRuntimePolicy } from 
 import { messageContent } from '../shared/message-utils';
 import { createContentClassifier, type ContentClassifier } from '../../streaming/content-classifier';
 import { mockAgent } from '../../testing/mock-agent';
-import { createPartialArgsBridge } from '../../a2ui/partial-args-bridge';
-import { createA2uiSurfaceStore } from '../../a2ui/surface-store';
 import { toRenderRegistry, views } from '@threadplane/angular/render';
-import { a2uiBasicCatalog } from '../../a2ui/catalog/index';
+import { a2uiBasicCatalog } from '@threadplane/angular/a2ui';
 import { ChatGenerativeUiComponent } from '../../primitives/chat-generative-ui/chat-generative-ui.component';
 import { ChatMessageComponent } from '../../primitives/chat-message/chat-message.component';
 import { ChatStreamingMdComponent, markdownDocument } from '../../streaming/streaming-markdown.component';
@@ -683,58 +681,6 @@ describe('ChatComponent — isGenuiTurn', () => {
 
   it('returns false when called with null message', () => {
     expect(isGenuiTurn(null, undefined)).toBe(false);
-  });
-});
-
-describe('ChatComponent — partial-args bridge wiring', () => {
-  it('feeds the bridge when a2ui-partial custom events arrive on the agent', () => {
-    TestBed.configureTestingModule({});
-    TestBed.runInInjectionContext(() => {
-      // Mirror the constructor effect's logic: pull customEvents off the
-      // agent, iterate from last-seen index, forward a2ui-partial events
-      // through the bridge into the surface store.
-      const store = createA2uiSurfaceStore();
-      const bridge = createPartialArgsBridge(store);
-      const events = signal<{ name: string; data: unknown }[]>([]);
-      let lastIndex = 0;
-      effect(() => {
-        const evs = events();
-        for (let i = lastIndex; i < evs.length; i++) {
-          const e = evs[i];
-          if (e.name !== 'a2ui-partial') continue;
-          const d = e.data as { tool_call_id?: string; args_so_far?: string } | null;
-          if (!d || typeof d.tool_call_id !== 'string' || typeof d.args_so_far !== 'string') continue;
-          bridge.push(d.tool_call_id, d.args_so_far);
-        }
-        lastIndex = evs.length;
-      });
-      // Initially no surfaces.
-      expect(store.surfaces().size).toBe(0);
-
-      events.set([{
-        name: 'a2ui-partial',
-        data: {
-          tool_call_id: 'tc-1',
-          args_so_far: '{"envelopes":[{"version":"v0.9","updateComponents":{"surfaceId":"s","components":[{"id":"root","component":"Text","text":"hi"}]}}]}',
-        },
-      }]);
-      TestBed.tick();
-
-      // After effect flushes, surface is materialised via the synthesised createSurface.
-      const surface = store.surfaces().get('s');
-      expect(surface).toBeTruthy();
-      expect(surface!.components.has('root')).toBe(true);
-    });
-  });
-
-  it('chat.component.ts wires partial-args bridge into the constructor', async () => {
-    const fs = await import('node:fs');
-    const path = await import('node:path');
-    const url = await import('node:url');
-    const here = path.dirname(url.fileURLToPath(import.meta.url));
-    const src = fs.readFileSync(path.join(here, 'chat.component.ts'), 'utf8');
-    expect(src.includes('createPartialArgsBridge')).toBe(true);
-    expect(src.includes('a2ui-partial')).toBe(true);
   });
 });
 

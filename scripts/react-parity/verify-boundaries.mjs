@@ -170,11 +170,9 @@ export function verifyBoundaries({ root = process.cwd(), mode = 'source', projec
     }
     for (const path of allFiles) visit(path, false, [], browserPath(path), false, angularSource && runtimeSourceKind(path) === undefined);
     if (['content', 'react', 'angular'].includes(project)) {
-      // Angular's chat UI still renders A2UI inline, so its `/chat` entry is not
-      // guarded here; an app that uses only its plain-text views is proven
-      // A2UI-free at the bundle by verify-angular-package. Splitting A2UI out
-      // to `@threadplane/angular/a2ui`, as React has, restores this guard.
-      const guardedFeatures = project === 'angular' ? ['markdown'] : ['chat', 'markdown'];
+      // A2UI lives in each framework's own `/a2ui` entry point; chat and
+      // markdown reach none of it.
+      const guardedFeatures = ['chat', 'markdown'];
       const features = mode === 'built'
         ? guardedFeatures.flatMap(entry => emittedEntries(manifest, `./${entry}`).map(value => join(directory, value)))
         : guardedFeatures.map(entry => join(directory, project === 'angular' ? `${entry}/src/public-api.ts` : `src/${entry}/index.ts`));

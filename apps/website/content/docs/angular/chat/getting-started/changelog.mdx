@@ -24,6 +24,12 @@ This changelog tracks selected highlight releases, not every release. The publis
 - Breaking change for applications that render math: chat no longer imports `katex` itself, and `katex` is no longer a peer dependency. Add `provideChatMath(() => import('katex'))` from the new `@threadplane/angular/chat/math` entry point to turn math on. That entry point is small, so an application can provide math from its root configuration without loading the chat UI up front. Without it, math shows as its raw source. An application without KaTeX no longer fails under `ng serve`, where the development server had to resolve the import.
 - The chat and render entry points use `@threadplane/telemetry/browser/development`, which holds the development runtime without the opt-in PostHog service, so `posthog-js` no longer needs to resolve in applications that do not use it.
 
+### A2UI moves to its own entry point
+
+- Breaking change for applications that render A2UI: every A2UI export moves from `@threadplane/angular/chat` to the new `@threadplane/angular/a2ui` entry point, which mirrors `@threadplane/react/a2ui`. `<chat>` renders A2UI through a new `[a2ui]` input, `a2uiRenderer()` from that entry point, instead of through the `[views]` catalog, which remains the json-render view registry. Without `[a2ui]`, A2UI content shows as text, and the chat UI bundles none of the A2UI code. See [Upgrade an integration](/docs/angular/chat/migrations/upgrading#move-a2ui-to-its-entry-point).
+- `ContentClassifier` exposes `a2uiSource()`, the content after the `---a2ui_JSON---` marker, instead of `a2uiSurfaces()` and `a2uiSurfaceStates()`; the renderer parses it.
+- The chat UI no longer feeds `a2ui-partial` custom events into a surface store, because nothing rendered that store. A2UI surfaces render from the message content.
+
 ### Session factories are async
 
 - Breaking change, action required for every Angular application: the `createSession` factory given to `provideAgent()` and `createAgent()` from `@threadplane/angular` must return a Promise of the session. Write `createSession: (context) => import('@threadplane/langgraph').then(({ createSession }) => createSession({ ...context, apiUrl, assistantId }))` and the backend package loads on demand, out of the application's initial bundle. An `async` arrow around a static import also works, without the bundle saving. See [Make the session factory async](/docs/angular/chat/migrations/upgrading#make-the-session-factory-async).

@@ -8,7 +8,7 @@ description: json-render renders a fixed spec. A2UI is an agent-to-UI protocol f
 
 `@threadplane/angular/render` renders a fixed json-render spec into Angular components.
 
-`@threadplane/a2ui` defines an agent-to-UI protocol: surfaces, components, dynamic values, data model updates, and actions. In `@threadplane/angular/chat`, A2UI surfaces are rendered through the same render infrastructure where possible.
+`@threadplane/a2ui` defines an agent-to-UI protocol: surfaces, components, dynamic values, data model updates, and actions. In the Angular chat UI, A2UI surfaces are rendered by `@threadplane/angular/a2ui` through the same render infrastructure where possible.
 
 This matters because the tradeoff is not "which renderer is better." The tradeoff is contract shape. A fixed spec is easier to validate and reason about. A2UI is better when the agent needs to update a UI over time or receive structured user actions back.
 
@@ -18,7 +18,7 @@ This matters because the tradeoff is not "which renderer is better." The tradeof
 
 Use `@threadplane/angular/render` directly when your application already has a spec.
 
-Use A2UI through `@threadplane/angular/chat` when the agent is producing UI as part of a conversation.
+Use A2UI through `@threadplane/angular/chat` and `@threadplane/angular/a2ui` when the agent is producing UI as part of a conversation.
 
 ## json-render
 
@@ -110,18 +110,18 @@ The practical cost is protocol discipline. The agent must emit valid envelopes i
 
 For json-render, chat parses the JSON into a spec and renders it with the `views` registry. The [chat generative-UI guide](/docs/angular/chat/guides/generative-ui) covers how to wire the agent and catalog for this path end to end.
 
-For A2UI, chat parses newline-delimited A2UI messages, applies them to an `A2uiSurfaceStore`, and renders each surface with `<a2ui-surface>`. The [chat A2UI overview](/docs/angular/chat/a2ui/overview) covers the `---a2ui_JSON---` detection path and the surface-store wiring.
+For A2UI, the renderer bound to `[a2ui]` parses newline-delimited A2UI messages, applies them to an `A2uiSurfaceStore`, and renders each surface with `<a2ui-surface>`. The [chat A2UI overview](/docs/angular/chat/a2ui/overview) covers the `---a2ui_JSON---` detection path and the surface-store wiring.
 
 ```html
-<chat [agent]="agent" [views]="catalog" [handlers]="handlers" />
+<chat [agent]="agent" [views]="catalog" [a2ui]="a2ui" [handlers]="handlers" />
 ```
 
-The same `views` input is used by both paths. For A2UI, `a2uiBasicCatalog()` provides the built-in catalog:
+The `views` input drives the json-render path. The `a2ui` input drives the A2UI path, and without it A2UI content shows as its source text. `a2uiRenderer()` uses `a2uiBasicCatalog()`, the built-in catalog, unless you pass one:
 
 ```ts
-import { a2uiBasicCatalog } from '@threadplane/angular/chat';
+import { a2uiRenderer } from '@threadplane/angular/a2ui';
 
-catalog = a2uiBasicCatalog();
+a2ui = a2uiRenderer();
 ```
 
 ## Registries And Catalogs
@@ -140,7 +140,7 @@ const registry = views({
 
 A2UI catalogs use the same underlying registry shape in chat. Component names such as `Text`, `Button`, `Card`, `Column`, `Row`, `TextField`, `CheckBox`, `ChoicePicker`, and `Slider` resolve to Angular components.
 
-You can compose registries with `withViews()` and pass the result to chat.
+You can compose registries with `withViews()` and pass the result to chat: to `[views]` for json-render, or to `a2uiRenderer({ catalog })` for A2UI.
 
 This matters because the registry is the allowlist. If the agent emits a component name that is not registered, the renderer should fall back instead of executing unknown UI.
 

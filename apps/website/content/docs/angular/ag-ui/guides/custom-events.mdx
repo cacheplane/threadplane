@@ -155,7 +155,7 @@ const release = this.agent.onCustomEvent?.((event) => {
 The agent keeps the listener registered across thread switches. A listener added later does not receive earlier events, and a throwing listener affects neither the run nor other listeners.
 
 <Callout type="info" title="Live a2ui rendering">
-`customEvents` is the mechanism the chat composition uses for progressive a2ui surface updates — partial argument events accumulate here during a tool call and drive live rendering before the call completes. The consuming side is documented in chat's [A2UI overview](/docs/angular/chat/a2ui/overview). If you are building a custom a2ui integration over AG-UI, read `agent.customEvents()` the same way.
+The chat composition renders a2ui surfaces from the assistant message content, not from `customEvents`; see chat's [A2UI overview](/docs/angular/chat/a2ui/overview). Partial argument events still accumulate here during a tool call, so a custom a2ui integration over AG-UI that wants live rendering before the call completes can read `agent.customEvents()`.
 </Callout>
 
 ## Relation to Interrupts

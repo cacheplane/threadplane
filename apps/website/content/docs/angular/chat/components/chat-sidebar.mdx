@@ -81,7 +81,8 @@ When `pushContent` is `true`, the sidebar shifts the projected `<ng-content>` to
 | Input | Type | Default | Description |
 |-------|------|---------|-------------|
 | `agent` | `Agent` | **Required** | The agent providing streaming state |
-| `views` | `ViewRegistry \| undefined` | `undefined` | A2UI/json-render component registry forwarded to the inner `<chat>` |
+| `views` | `ViewRegistry \| undefined` | `undefined` | json-render component registry forwarded to the inner `<chat>` |
+| `a2ui` | `ChatA2uiRenderer \| undefined` | `undefined` | A2UI renderer from `a2uiRenderer()` in `@threadplane/angular/a2ui`, forwarded to the inner `<chat>` |
 | `clientTools` | `ClientToolRegistry \| undefined` | `undefined` | Frontend-declared client tools forwarded to the inner `<chat>` |
 | `modelOptions` | `readonly ChatSelectOption[]` | `[]` | Options for the chat input model picker |
 | `showModelPicker` | `boolean` | `true` | Hides the model picker when `false`, even when `modelOptions` is non-empty |
@@ -157,12 +158,12 @@ export class AppShellComponent {
 
 ## A2UI and Client Tools
 
-`ChatSidebarComponent` forwards `views` and `clientTools` to the inner `<chat>`. Use these inputs when the sidebar should render A2UI surfaces or expose browser-declared tools to the agent:
+`ChatSidebarComponent` forwards `views`, `a2ui`, and `clientTools` to the inner `<chat>`. Use these inputs when the sidebar should render A2UI surfaces or expose browser-declared tools to the agent. Build the A2UI renderer with `a2ui = a2uiRenderer()` from `@threadplane/angular/a2ui`:
 
 ```html
 <chat-sidebar
   [agent]="chatAgent"
-  [views]="a2uiViews"
+  [a2ui]="a2ui"
   [clientTools]="clientTools"
 >
   <main><router-outlet /></main>
