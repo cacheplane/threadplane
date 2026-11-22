@@ -176,7 +176,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Test CI scope classifier
-        run: node --test scripts/configure-ci-apt.spec.mjs scripts/install-playwright-browser.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-queue-evidence.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-dependencies.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs
+        run: node --test scripts/configure-ci-apt.spec.mjs scripts/install-playwright-browser.spec.mjs scripts/commit-staged-via-api.spec.mjs scripts/ci-queue-evidence.spec.mjs scripts/ci-scope.spec.mjs scripts/cockpit-dependencies.spec.mjs scripts/cockpit-matrix.spec.mjs scripts/cockpit-frontend-matrix.spec.mjs scripts/cockpit-ports.spec.mjs scripts/cockpit-runtime-bridge-coverage.spec.mjs scripts/react-cockpit/ag-ui-client-tools-configuration.spec.mjs scripts/react-cockpit/runtimes-microsoft-agent-framework-configuration.spec.mjs scripts/react-cockpit/runtimes-aws-strands-configuration.spec.mjs scripts/react-cockpit/chat-theming-configuration.spec.mjs scripts/react-cockpit/consumer-preparation.spec.mjs scripts/website-angular-startup.spec.mjs scripts/website-agents-startup.spec.mjs scripts/footprint/initial-load.spec.mjs
       - name: Test Debug static configuration without Python workers
         run: node --test --test-name-pattern='^debug ' scripts/react-cockpit/chat-debug-configuration.spec.mjs
       - name: Validate CI workflow guards
@@ -446,6 +446,11 @@ jobs:
           node scripts/react-parity/verify-angular-package.mjs
           node scripts/react-parity/verify-middleware-package.mjs
           node scripts/react-parity/verify-middleware-conformance.mjs
+      - name: Verify initial-load size budgets
+        if: matrix.lane == 'packages'
+        # Minimal Angular and React chat apps built from the packed packages;
+        # budgets live in scripts/footprint/budgets.json.
+        run: node scripts/footprint/initial-load.mjs
       - run: node scripts/verify-release-versions.mjs
         if: matrix.lane == 'quality'
       - name: DX-coverage — public dev-facing functions must have a JSDoc summary
