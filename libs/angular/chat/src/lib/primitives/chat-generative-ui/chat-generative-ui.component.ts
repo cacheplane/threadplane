@@ -28,14 +28,16 @@ import { injectChatRuntime } from '../../styles/chat-runtime';
   viewProviders: [ɵprovideRenderDevtools()],
   template: `
     @if (normalizedSpec()) {
-      <render-spec
-        [spec]="normalizedSpec()"
-        [registry]="registry()"
-        [store]="store()"
-        [handlers]="handlers()"
-        [loading]="loading()"
-        (events)="events.emit($event)"
-      />
+      @defer (on immediate) {
+        <render-spec
+          [spec]="normalizedSpec()"
+          [registry]="registry()"
+          [store]="store()"
+          [handlers]="handlers()"
+          [loading]="loading()"
+          (events)="events.emit($event)"
+        />
+      }
     }
   `,
 })

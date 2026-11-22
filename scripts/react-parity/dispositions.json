@@ -743,6 +743,16 @@
       "status": "planned"
     },
     {
+      "id": "asset:libs/angular/render/registry/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "asset:libs/angular/a2ui/ng-package.json",
       "taskIds": [
         "T02",
@@ -2646,7 +2656,7 @@
       "reason": "Private example layout. Private split-pane demo shell; responsive layout and projected areas."
     },
     {
-      "id": "component:libs/angular/render/src/lib/default-fallback.component.ts#DefaultFallbackComponent",
+      "id": "component:libs/angular/render/registry/src/default-fallback.component.ts#DefaultFallbackComponent",
       "taskIds": [
         "T24"
       ],
@@ -3968,6 +3978,16 @@
     },
     {
       "id": "entry:libs/angular/render/src/public-api.ts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "entry:libs/angular/render/registry/public-api.ts",
       "taskIds": [
         "T02",
         "T36",
@@ -7699,7 +7719,25 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#AngularComponentInputs",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#AngularComponentRenderer",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#AngularComponentRenderer",
       "taskIds": [
         "T07",
         "T20"
@@ -7717,7 +7755,35 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#NormalizedEntry",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#AngularRegistry",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#DefaultFallbackComponent",
+      "taskIds": [
+        "T24"
+      ],
+      "treatment": "react",
+      "status": "planned",
+      "target": "libs/react/src/render/components/default-fallback.tsx",
+      "reason": "Native component. Unknown/unready render fallback with safe metadata display. Future React package ownership; not implemented by the empty scaffold."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#DefaultFallbackComponent",
       "taskIds": [
         "T24"
       ],
@@ -7771,6 +7837,15 @@
     },
     {
       "id": "export:libs/angular/render/src/public-api.ts#RenderConfig",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#RenderConfig",
       "taskIds": [
         "T07",
         "T20"
@@ -7873,6 +7948,15 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#RenderViewEntry",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#RepeatScope",
       "taskIds": [
         "T07",
@@ -7891,7 +7975,26 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#SignalStateStore",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#StandardSchemaInferInput",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#StandardSchemaInferInput",
       "taskIds": [
         "T07",
         "T20"
@@ -7911,6 +8014,16 @@
       "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#StandardSchemaInferOutput",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#StandardSchemaV1",
       "taskIds": [
         "T07",
@@ -7921,7 +8034,26 @@
       "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#StandardSchemaV1",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "excluded",
+      "status": "planned",
+      "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#StateChangeRecord",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#StateChangeRecord",
       "taskIds": [
         "T07",
         "T20"
@@ -7947,7 +8079,23 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#ViewRegistry",
+      "taskIds": [
+        "T24"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#defineAngularRegistry",
+      "taskIds": [
+        "T24"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#defineAngularRegistry",
       "taskIds": [
         "T24"
       ],
@@ -7964,6 +8112,14 @@
     },
     {
       "id": "export:libs/angular/render/src/public-api.ts#overrideViews",
+      "taskIds": [
+        "T24"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#overrideViews",
       "taskIds": [
         "T24"
       ],
@@ -7998,7 +8154,24 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#signalStateStore",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#toRenderRegistry",
+      "taskIds": [
+        "T24"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#toRenderRegistry",
       "taskIds": [
         "T24"
       ],
@@ -8014,7 +8187,23 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#views",
+      "taskIds": [
+        "T24"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#withViews",
+      "taskIds": [
+        "T24"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#withViews",
       "taskIds": [
         "T24"
       ],
@@ -8030,7 +8219,96 @@
       "status": "planned"
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#withoutViews",
+      "taskIds": [
+        "T24"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#\u0275RENDER_DEVTOOLS",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275resolveRenderTree",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275elementDevtoolsState",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275createRenderDevtoolsTracker",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275connectRenderDevtools",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RenderElementView",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RenderElementRegistration",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RenderDevtoolsTracker",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RENDER_DEVTOOLS_TRACKER",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RENDER_DEVTOOLS",
       "taskIds": [
         "T17"
       ],
@@ -8048,7 +8326,25 @@
       "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RenderDevtoolsHook",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#\u0275RenderElementState",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RenderElementState",
       "taskIds": [
         "T17"
       ],
@@ -8066,7 +8362,25 @@
       "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
     },
     {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RenderResolution",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
       "id": "export:libs/angular/render/src/public-api.ts#\u0275RenderResolvedElement",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RenderResolvedElement",
       "taskIds": [
         "T17"
       ],
@@ -12105,7 +12419,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/render/src/lib/default-fallback.component.ts",
+      "id": "source:libs/angular/render/registry/src/default-fallback.component.ts",
       "taskIds": [
         "T24"
       ],
@@ -12113,7 +12427,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/render/src/lib/define-angular-registry.ts",
+      "id": "source:libs/angular/render/registry/src/define-angular-registry.ts",
       "taskIds": [
         "T24"
       ],
@@ -12121,7 +12435,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/render/src/lib/devtools/render-devtools.ts",
+      "id": "source:libs/angular/render/registry/src/devtools/render-devtools.ts",
       "taskIds": [
         "T17"
       ],
@@ -12225,7 +12539,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/render/src/lib/render.types.ts",
+      "id": "source:libs/angular/render/registry/src/render.types.ts",
       "taskIds": [
         "T07",
         "T20"
@@ -12234,7 +12548,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/render/src/lib/signal-state-store.ts",
+      "id": "source:libs/angular/render/registry/src/signal-state-store.ts",
       "taskIds": [
         "T07",
         "T20"
@@ -12243,7 +12557,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/render/src/lib/standard-schema.ts",
+      "id": "source:libs/angular/render/registry/src/standard-schema.ts",
       "taskIds": [
         "T07",
         "T20"
@@ -12253,7 +12567,7 @@
       "reason": "Do not migrate validator/inference contracts into a shared tool/schema layer. Argument validation belongs to callers; optional JSON Schema metadata is supplied directly. Current Angular behavior, protocol schema assets, form validation and transport decoding are unaffected."
     },
     {
-      "id": "source:libs/angular/render/src/lib/views.ts",
+      "id": "source:libs/angular/render/registry/src/views.ts",
       "taskIds": [
         "T24"
       ],
@@ -12262,6 +12576,15 @@
     },
     {
       "id": "source:libs/angular/render/src/public-api.ts",
+      "taskIds": [
+        "T07",
+        "T20"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/angular/render/registry/public-api.ts",
       "taskIds": [
         "T07",
         "T20"

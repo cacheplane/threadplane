@@ -1,5 +1,5 @@
 import { effect, untracked } from '@angular/core';
-import { views, type ViewRegistry } from '@threadplane/angular/render';
+import { views, type ViewRegistry } from '@threadplane/angular/render/registry';
 import type { RenderEvent, RenderViewEntry } from '@threadplane/angular/render';
 import type { Agent, ToolCall } from '../agent';
 import type {

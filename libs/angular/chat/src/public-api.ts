@@ -215,7 +215,7 @@ export { messageContent } from './lib/compositions/shared/message-utils';
 export { formatDuration } from './lib/utils/format-duration';
 
 // Views (re-exported from @threadplane/angular/render for convenience)
-export { views, withViews, withoutViews, toRenderRegistry } from '@threadplane/angular/render';
+export { views, withViews, withoutViews, toRenderRegistry } from '@threadplane/angular/render/registry';
 export type { ViewRegistry } from '@threadplane/angular/render';
 
 // Streaming / Generative UI

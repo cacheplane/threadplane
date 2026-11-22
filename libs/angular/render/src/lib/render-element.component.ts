@@ -42,8 +42,8 @@ import { REPEAT_SCOPE } from './contexts/repeat-scope';
 import type { RepeatScope } from './contexts/repeat-scope';
 import { buildPropResolutionContext } from './internals/prop-signal';
 import { isElementReady } from './internals/element-readiness';
-import type { AngularComponentRenderer, NormalizedEntry } from './render.types';
-import { elementDevtoolsState, RENDER_DEVTOOLS_TRACKER } from './devtools/render-devtools';
+import type { AngularComponentRenderer, NormalizedEntry } from '@threadplane/angular/render/registry';
+import { ɵelementDevtoolsState as elementDevtoolsState, ɵRENDER_DEVTOOLS_TRACKER as RENDER_DEVTOOLS_TRACKER } from '@threadplane/angular/render/registry';
 
 /** Cache of declared input names per component class. NgComponentOutlet
  * passes every key in its `inputs` prop to the target; Angular dev mode

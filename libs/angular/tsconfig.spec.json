@@ -14,6 +14,7 @@
     "chat/src/**/*.ts",
     "a2ui/**/*.ts",
     "chat/debug/**/*.ts",
+    "render/registry/**/*.ts",
     "chat/math/**/*.ts",
     "chat/testing/**/*.ts",
     "markdown/src/**/*.ts",

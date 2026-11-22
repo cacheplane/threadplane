@@ -4,14 +4,13 @@ import { TestBed } from '@angular/core/testing';
 import type { Spec } from '@json-render/core';
 import { RenderSpecComponent } from '../render-spec.component';
 import { RenderElementComponent } from '../render-element.component';
-import { defineAngularRegistry } from '../define-angular-registry';
-import { signalStateStore } from '../signal-state-store';
+import { defineAngularRegistry, signalStateStore } from '@threadplane/angular/render/registry';
 import {
-  resolveRenderTree,
+  ɵresolveRenderTree as resolveRenderTree,
   ɵRENDER_DEVTOOLS,
-  type RenderDevtoolsHook,
-  type RenderResolution,
-} from './render-devtools';
+  type ɵRenderDevtoolsHook as RenderDevtoolsHook,
+  type ɵRenderResolution as RenderResolution,
+} from '@threadplane/angular/render/registry';
 
 @Component({
   selector: 'render-test-box',

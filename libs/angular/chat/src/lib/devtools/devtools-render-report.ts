@@ -4,7 +4,7 @@ import {
   type ɵRenderDevtoolsHook,
   type ɵRenderElementState,
   type ɵRenderResolution,
-} from '@threadplane/angular/render';
+} from '@threadplane/angular/render/registry';
 declare const ngDevMode: boolean;
 
 /**

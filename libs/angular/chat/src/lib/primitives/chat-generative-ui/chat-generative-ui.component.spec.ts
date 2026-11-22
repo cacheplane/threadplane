@@ -97,36 +97,39 @@ describe('ChatGenerativeUiComponent — statePath resolution (F4)', () => {
     fixture.componentRef.setInput('spec', statePathSpec);
   });
 
-  function render(): string {
+  async function render(): Promise<string> {
     fixture.detectChanges();
     TestBed.flushEffects();
+    fixture.detectChanges();
+    // Generative UI renders in a @defer block: let it load.
+    await fixture.whenStable();
     fixture.detectChanges();
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }
 
-  it('never renders "[object Object]" for statePath-bound props', () => {
-    const text = render();
+  it('never renders "[object Object]" for statePath-bound props', async () => {
+    const text = await render();
     expect(text).not.toContain('[object Object]');
   });
 
-  it('resolves Text.text bound via statePath against spec.state', () => {
-    const text = render();
+  it('resolves Text.text bound via statePath against spec.state', async () => {
+    const text = await render();
     expect(text).toContain('$1.2M');
   });
 
-  it('resolves Slider value bound via statePath (label shows the number)', () => {
-    const text = render();
+  it('resolves Slider value bound via statePath (label shows the number)', async () => {
+    const text = await render();
     expect(text).toContain('Min revenue (USD): 25000');
   });
 
-  it('seeds spec.state into the provided store', () => {
-    render();
+  it('seeds spec.state into the provided store', async () => {
+    await render();
     expect(store.get('/totalRevenue')).toBe('$1.2M');
     expect(store.get('/minRevenue')).toBe(25000);
   });
 
-  it('writes slider input back to the bound state path', () => {
-    render();
+  it('writes slider input back to the bound state path', async () => {
+    await render();
     const slider = (fixture.nativeElement as HTMLElement).querySelector(
       'input[type="range"]',
     ) as HTMLInputElement;
@@ -136,28 +139,28 @@ describe('ChatGenerativeUiComponent — statePath resolution (F4)', () => {
     expect(store.get('/minRevenue')).toBe(30000);
   });
 
-  it('does not clobber user-modified state when the spec re-emits', () => {
-    render();
+  it('does not clobber user-modified state when the spec re-emits', async () => {
+    await render();
     store.set('/minRevenue', 42000);
     // Re-emit the same spec object graph (streaming re-materializes specs).
     fixture.componentRef.setInput('spec', { ...statePathSpec } as Spec);
-    render();
+    await render();
     expect(store.get('/minRevenue')).toBe(42000);
   });
 
-  it('overwrites component-seeded partial chunk values when fuller state streams in', () => {
+  it('overwrites component-seeded partial chunk values when fuller state streams in', async () => {
     // First emission carries a partial streaming chunk of the value.
     fixture.componentRef.setInput('spec', {
       ...statePathSpec,
       state: { totalRevenue: '$1.', minRevenue: 25000 },
     } as unknown as Spec);
-    render();
+    await render();
     expect(store.get('/totalRevenue')).toBe('$1.');
 
     // Re-emit with the fuller value — the component wrote '$1.' itself, so
     // it is safe to overwrite (only USER edits are preserved).
     fixture.componentRef.setInput('spec', { ...statePathSpec } as Spec);
-    const text = render();
+    const text = await render();
     expect(store.get('/totalRevenue')).toBe('$1.2M');
     expect(text).toContain('$1.2M');
   });
@@ -194,18 +197,21 @@ describe('ChatGenerativeUiComponent — store isolation across instances', () =>
     return fixture;
   }
 
-  function render(fixture: ComponentFixture<ChatGenerativeUiComponent>): string {
+  async function render(fixture: ComponentFixture<ChatGenerativeUiComponent>): Promise<string> {
     fixture.detectChanges();
     TestBed.flushEffects();
+    fixture.detectChanges();
+    // Generative UI renders in a @defer block: let it load.
+    await fixture.whenStable();
     fixture.detectChanges();
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }
 
-  it('isolates instances WITHOUT a consumer store — overlapping paths never collide', () => {
+  it('isolates instances WITHOUT a consumer store — overlapping paths never collide', async () => {
     const a = createInstance(statePathSpec);
     const b = createInstance(otherStatePathSpec);
-    const textA = render(a);
-    const textB = render(b);
+    const textA = await render(a);
+    const textB = await render(b);
 
     // Each instance renders ITS OWN spec.state values for the same paths.
     expect(textA).toContain('$1.2M');
@@ -219,21 +225,21 @@ describe('ChatGenerativeUiComponent — store isolation across instances', () =>
     ) as HTMLInputElement;
     sliderA.value = '30000';
     sliderA.dispatchEvent(new Event('input'));
-    render(a);
-    expect(render(b)).toContain('Min revenue (USD): 75000');
+    await render(a);
+    expect(await render(b)).toContain('Min revenue (USD): 75000');
   });
 
-  it('shares one EXPLICIT consumer store across instances — first seeder wins, values are live', () => {
+  it('shares one EXPLICIT consumer store across instances — first seeder wins, values are live', async () => {
     const shared = signalStateStore({});
     const a = createInstance(statePathSpec, shared);
-    const textA = render(a);
+    const textA = await render(a);
     expect(textA).toContain('$1.2M');
 
     // Second instance binds the SAME store with different spec.state for the
     // same paths. The paths are already populated (and not by THIS instance),
     // so it must not clobber them: both surfaces show the shared values.
     const b = createInstance(otherStatePathSpec, shared);
-    const textB = render(b);
+    const textB = await render(b);
     expect(shared.get('/totalRevenue')).toBe('$1.2M');
     expect(shared.get('/minRevenue')).toBe(25000);
     expect(textB).toContain('$1.2M');
@@ -241,8 +247,8 @@ describe('ChatGenerativeUiComponent — store isolation across instances', () =>
 
     // Live semantics: a write to the shared store is reflected in BOTH.
     shared.set('/totalRevenue', '$3.0M');
-    expect(render(a)).toContain('$3.0M');
-    expect(render(b)).toContain('$3.0M');
+    expect(await render(a)).toContain('$3.0M');
+    expect(await render(b)).toContain('$3.0M');
   });
 });
 

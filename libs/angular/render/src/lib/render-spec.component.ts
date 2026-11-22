@@ -15,21 +15,15 @@ import { DEVELOPMENT_COLLECTION_POLICY } from '@threadplane/telemetry/browser/de
 import { RenderElementComponent } from './render-element.component';
 import { RENDER_CONFIG } from './provide-render';
 import { VIEW_REGISTRY } from './provide-views';
-import { toRenderRegistry } from './views';
+import { toRenderRegistry } from '@threadplane/angular/render/registry';
 import { RENDER_CONTEXT } from './contexts/render-context';
 import type { RenderContext } from './contexts/render-context';
-import type { AngularRegistry } from './render.types';
-import { signalStateStore, type SignalStateStore } from './signal-state-store';
+import type { AngularRegistry } from '@threadplane/angular/render/registry';
+import { signalStateStore, type SignalStateStore } from '@threadplane/angular/render/registry';
 import type { RenderEvent } from './render-event';
 import { RenderLifecycleService } from './render-lifecycle.service';
 import { makeGuardedEmit } from './internals/guarded-emit';
-import {
-  connectRenderDevtools,
-  createRenderDevtoolsTracker,
-  RENDER_DEVTOOLS_TRACKER,
-  ɵRENDER_DEVTOOLS,
-  type RenderDevtoolsTracker,
-} from './devtools/render-devtools';
+import { ɵconnectRenderDevtools as connectRenderDevtools, ɵcreateRenderDevtoolsTracker as createRenderDevtoolsTracker, ɵRENDER_DEVTOOLS_TRACKER as RENDER_DEVTOOLS_TRACKER, ɵRENDER_DEVTOOLS, type ɵRenderDevtoolsTracker as RenderDevtoolsTracker } from '@threadplane/angular/render/registry';
 declare const ngDevMode: boolean;
 
 /**

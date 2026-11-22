@@ -17,6 +17,7 @@ import { build, transform } from 'esbuild';
 const dist = (path) => resolve('dist/libs', path);
 const local = {
   '@threadplane/angular/render': dist('angular/fesm2022/threadplane-angular-render.mjs'),
+  '@threadplane/angular/render/registry': dist('angular/fesm2022/threadplane-angular-render-registry.mjs'),
   '@threadplane/angular/chat': dist('angular/fesm2022/threadplane-angular-chat.mjs'),
   '@threadplane/angular/a2ui': dist('angular/fesm2022/threadplane-angular-a2ui.mjs'),
   '@threadplane/angular': dist('angular/fesm2022/threadplane-angular.mjs'),
@@ -110,6 +111,14 @@ for (const name of ['chat', 'render']) {
   assert.doesNotMatch(code, /from"@threadplane\/telemetry\/browser"/, `${name} imports @threadplane/telemetry/browser, which brings posthog-js`);
   assert.doesNotMatch(code, /posthog/i, `${name} references posthog`);
   assert.doesNotMatch(code, /(?:import\(|from)\s*"katex/, `${name} imports katex itself`);
+  if (name === 'chat') {
+    // Chat renders json-render specs in @defer blocks: the renderer, and
+    // json-render with it, load only when a spec first renders. Its eager
+    // imports come from the json-render-free registry entry point.
+    assert.match(code, /import\("@threadplane\/angular\/render"\)/, 'chat positive control: no deferred renderer import');
+    assert.doesNotMatch(code, /from"@threadplane\/angular\/render"/, 'chat imports @threadplane/angular/render eagerly, which brings json-render into every chat app');
+    assert.doesNotMatch(code, /@json-render\/core/, 'chat imports @json-render/core');
+  }
 }
 
 console.log(

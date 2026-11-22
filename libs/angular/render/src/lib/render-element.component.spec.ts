@@ -3,7 +3,7 @@ import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { z } from 'zod/v4';
 import { isElementReady } from './internals/element-readiness';
-import { DefaultFallbackComponent } from './default-fallback.component';
+import { DefaultFallbackComponent } from '@threadplane/angular/render/registry';
 import type { Spec } from '@json-render/core';
 import {
   evaluateVisibility,
@@ -11,8 +11,8 @@ import {
   resolveElementProps,
 } from '@json-render/core';
 
-import { defineAngularRegistry } from './define-angular-registry';
-import { signalStateStore } from './signal-state-store';
+import { defineAngularRegistry } from '@threadplane/angular/render/registry';
+import { signalStateStore } from '@threadplane/angular/render/registry';
 import { buildPropResolutionContext } from './internals/prop-signal';
 
 // --- Test components ---
@@ -567,7 +567,7 @@ describe('RenderElementComponent — RenderHost', () => {
 import { RenderSpecComponent } from './render-spec.component';
 import { provideRender } from './provide-render';
 import { provideViews, VIEW_REGISTRY } from './provide-views';
-import { views } from './views';
+import { views } from '@threadplane/angular/render/registry';
 
 @Cmp2({ standalone: true, template: '<span data-test="token-comp">TOKEN</span>' })
 class TokenComp {}

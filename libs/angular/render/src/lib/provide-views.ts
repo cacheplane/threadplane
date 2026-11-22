@@ -1,5 +1,5 @@
 import { InjectionToken, makeEnvironmentProviders } from '@angular/core';
-import type { ViewRegistry } from './views';
+import type { ViewRegistry } from '@threadplane/angular/render/registry';
 
 /** Injection token for the component view registry installed by provideViews. */
 export const VIEW_REGISTRY = new InjectionToken<ViewRegistry>('VIEW_REGISTRY');

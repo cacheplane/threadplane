@@ -1,4 +1,4 @@
-import type { NormalizedEntry } from '../render.types';
+import type { NormalizedEntry } from '@threadplane/angular/render/registry';
 
 function isPromise(v: unknown): v is Promise<unknown> {
   return typeof (v as { then?: unknown } | null)?.then === 'function';

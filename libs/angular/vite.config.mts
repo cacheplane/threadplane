@@ -49,7 +49,7 @@ export default defineConfig({
           name: 'render',
           globals: true,
           setupFiles: ['render/src/test-setup.ts'],
-          include: ['render/src/**/*.spec.ts'],
+          include: ['render/src/**/*.spec.ts', 'render/registry/src/**/*.spec.ts'],
         },
       },
     ],

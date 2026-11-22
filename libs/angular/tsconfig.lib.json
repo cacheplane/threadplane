@@ -20,6 +20,7 @@
     "chat/testing/**/*.ts",
     "markdown/src/**/*.ts",
     "render/src/**/*.ts",
+    "render/registry/**/*.ts",
     "testing/src/**/*.ts"
   ],
   "exclude": [
@@ -55,6 +56,10 @@
     "render/src/**/*.test.ts",
     "render/src/**/*.type-test.ts",
     "render/src/**/*.type-spec.ts",
+    "render/registry/**/*.spec.ts",
+    "render/registry/**/*.test.ts",
+    "render/registry/**/*.type-test.ts",
+    "render/registry/**/*.type-spec.ts",
     "testing/src/**/*.spec.ts",
     "testing/src/**/*.test.ts",
     "testing/src/**/*.type-test.ts",

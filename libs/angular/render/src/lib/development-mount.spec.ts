@@ -4,8 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import type { Spec } from '@json-render/core';
 import * as telemetry from '@threadplane/telemetry/browser/development';
 import { RenderSpecComponent } from './render-spec.component';
-import { defineAngularRegistry } from './define-angular-registry';
-import { signalStateStore } from './signal-state-store';
+import { defineAngularRegistry } from '@threadplane/angular/render/registry';
+import { signalStateStore } from '@threadplane/angular/render/registry';
 import { provideRender } from './provide-render';
 
 @Component({
