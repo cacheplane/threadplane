@@ -1,5 +1,5 @@
 import { InjectionToken, makeEnvironmentProviders } from '@angular/core';
-import type { RenderConfig } from './render.types';
+import type { RenderConfig } from '@threadplane/angular/render/registry';
 import { RENDER_LIFECYCLE } from './lifecycle';
 import { RenderLifecycleService } from './render-lifecycle.service';
 

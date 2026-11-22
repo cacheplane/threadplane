@@ -5,12 +5,15 @@ import {
   effect,
   input,
   output,
+  inject,
   untracked,
   ChangeDetectionStrategy,
 } from '@angular/core';
 import type { Spec, StateStore } from '@json-render/core';
 import type { AngularRegistry, RenderEvent } from '@threadplane/angular/render';
-import { RenderSpecComponent } from '@threadplane/angular/render';
+import { ɵRenderSpecCore as RenderSpecCore } from '@threadplane/angular/render/deferred';
+import { ɵRENDER_TELEMETRY as RENDER_TELEMETRY } from '@threadplane/angular/render/registry';
+import { createDevelopmentRuntime, DEVELOPMENT_COLLECTION_POLICY } from '@threadplane/telemetry/browser/development';
 import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
 import { CHAT_GENERATIVE_UI_STYLES } from '../../styles/chat-generative-ui.styles';
 import { normalizeJsonRenderSpec } from './normalize-json-render-spec';
@@ -21,21 +24,34 @@ import { injectChatRuntime } from '../../styles/chat-runtime';
 @Component({
   selector: 'chat-generative-ui',
   standalone: true,
-  imports: [RenderSpecComponent],
+  imports: [RenderSpecCore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: [CHAT_HOST_TOKENS, CHAT_GENERATIVE_UI_STYLES],
+  // The renderer loads on demand without its telemetry bridge; this supplies
+  // it, so the runtime ships only with an application that renders specs.
+  providers: [
+    {
+      provide: RENDER_TELEMETRY,
+      useFactory: () => ({
+        policy: inject(DEVELOPMENT_COLLECTION_POLICY, { optional: true }),
+        createRuntime: (options: Parameters<typeof createDevelopmentRuntime>[0]) => createDevelopmentRuntime(options),
+      }),
+    },
+  ],
   // Development only: the AG-UI DevTools render report, as 'spec:' + root key.
   viewProviders: [ɵprovideRenderDevtools()],
   template: `
     @if (normalizedSpec()) {
-      <render-spec
-        [spec]="normalizedSpec()"
-        [registry]="registry()"
-        [store]="store()"
-        [handlers]="handlers()"
-        [loading]="loading()"
-        (events)="events.emit($event)"
-      />
+      @defer (on immediate) {
+        <render-spec
+          [spec]="normalizedSpec()"
+          [registry]="registry()"
+          [store]="store()"
+          [handlers]="handlers()"
+          [loading]="loading()"
+          (events)="events.emit($event)"
+        />
+      }
     }
   `,
 })

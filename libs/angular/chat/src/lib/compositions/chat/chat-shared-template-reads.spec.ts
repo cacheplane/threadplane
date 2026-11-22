@@ -132,6 +132,8 @@ describe('Chat shared transcript reads', () => {
     fixture.componentRef.setInput('views', registry);
     // Deliberately use the scheduled Angular cycle: no manual detectChanges
     // and no publication of the messages signal after changing configuration.
+    // The view renders in a @defer block, which loads in a later scheduled cycle.
+    await fixture.whenStable();
     await fixture.whenStable();
     expect(view.componentInstance.views()).toBe(registry);
     const fallbackStore = view.componentInstance.store();

@@ -8,79 +8,79 @@ import {
   input,
   OnInit,
   output,
+  type Provider,
+  type Type,
 } from '@angular/core';
 import type { ComputedFunction, Spec, StateStore } from '@json-render/core';
-import { DEVELOPMENT_COLLECTION_POLICY } from '@threadplane/telemetry/browser/development';
+import { createDevelopmentRuntime, DEVELOPMENT_COLLECTION_POLICY } from '@threadplane/telemetry/browser/development';
+import { ɵRENDER_COLLECTION_POLICY as RENDER_COLLECTION_POLICY, ɵRENDER_TELEMETRY as RENDER_TELEMETRY } from '@threadplane/angular/render/registry';
 
 import { RenderElementComponent } from './render-element.component';
 import { RENDER_CONFIG } from './provide-render';
 import { VIEW_REGISTRY } from './provide-views';
-import { toRenderRegistry } from './views';
+import { toRenderRegistry } from '@threadplane/angular/render/registry';
 import { RENDER_CONTEXT } from './contexts/render-context';
 import type { RenderContext } from './contexts/render-context';
-import type { AngularRegistry } from './render.types';
-import { signalStateStore, type SignalStateStore } from './signal-state-store';
+import type { AngularRegistry } from '@threadplane/angular/render/registry';
+import { signalStateStore, type SignalStateStore } from '@threadplane/angular/render/registry';
 import type { RenderEvent } from './render-event';
 import { RenderLifecycleService } from './render-lifecycle.service';
 import { makeGuardedEmit } from './internals/guarded-emit';
-import {
-  connectRenderDevtools,
-  createRenderDevtoolsTracker,
-  RENDER_DEVTOOLS_TRACKER,
-  ɵRENDER_DEVTOOLS,
-  type RenderDevtoolsTracker,
-} from './devtools/render-devtools';
+import { ɵconnectRenderDevtools as connectRenderDevtools, ɵcreateRenderDevtoolsTracker as createRenderDevtoolsTracker, ɵRENDER_DEVTOOLS_TRACKER as RENDER_DEVTOOLS_TRACKER, ɵRENDER_DEVTOOLS, type ɵRenderDevtoolsTracker as RenderDevtoolsTracker } from '@threadplane/angular/render/registry';
 declare const ngDevMode: boolean;
 
+const RENDER_SPEC_TEMPLATE = `
+    @if (spec()?.root; as rootKey) {
+      <render-element [elementKey]="rootKey" [spec]="spec()!" />
+    }
+  `;
+
+/** What a spec gives the elements it renders. */
+function specViewProviders(host: Type<RenderSpecCore>): Provider[] {
+  return [
+    {
+      provide: RENDER_COLLECTION_POLICY,
+      useFactory: () => {
+        const spec = inject(host);
+        const parent =
+          inject(RENDER_COLLECTION_POLICY, { optional: true, skipSelf: true }) ??
+          inject(RENDER_TELEMETRY, { optional: true })?.policy ??
+          null;
+        const config = inject(RENDER_CONFIG, { optional: true });
+        return () => (parent?.() ?? true) && spec.telemetry() !== false && config?.telemetry !== false;
+      },
+    },
+    {
+      provide: RENDER_CONTEXT,
+      useFactory: () => inject(host)._context(),
+    },
+    {
+      provide: RENDER_DEVTOOLS_TRACKER,
+      useFactory: () => inject(host)._devtoolsTracker,
+    },
+    // A spec nested inside one of this spec's views reports only through a
+    // hook provided closer to it, never through this spec's.
+    { provide: ɵRENDER_DEVTOOLS, useValue: null },
+  ];
+}
+
 /**
- * Top-level entry point for rendering a json-render spec.
+ * The renderer behind `RenderSpecComponent`, without its telemetry bridge.
+ * `@threadplane/angular/chat` loads it on demand and provides the bridge
+ * itself, so an application that never renders a spec ships no telemetry
+ * runtime. Use `RenderSpecComponent`.
  *
- * Accepts the spec, registry, store, functions, handlers, and loading
- * as inputs. Provides `RENDER_CONTEXT` to child `RenderElementComponent`
- * instances via `viewProviders`.
- *
- * Falls back to `RENDER_CONFIG` (from `provideRender()`) for registry
- * and store defaults when inputs are not provided.
- *
- * @example
- * ```html
- * <render-spec [spec]="spec()" [registry]="registry" [store]="store" />
- * ```
+ * @internal
  */
 @Component({
   selector: 'render-spec',
   standalone: true,
   imports: [RenderElementComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  viewProviders: [
-    {
-      provide: DEVELOPMENT_COLLECTION_POLICY,
-      useFactory: () => {
-        const host = inject(RenderSpecComponent);
-        const parent = inject(DEVELOPMENT_COLLECTION_POLICY, { optional: true, skipSelf: true });
-        const config = inject(RENDER_CONFIG, { optional: true });
-        return () => (parent?.() ?? true) && host.telemetry() !== false && config?.telemetry !== false;
-      },
-    },
-    {
-      provide: RENDER_CONTEXT,
-      useFactory: () => inject(RenderSpecComponent)._context(),
-    },
-    {
-      provide: RENDER_DEVTOOLS_TRACKER,
-      useFactory: () => inject(RenderSpecComponent)._devtoolsTracker,
-    },
-    // A spec nested inside one of this spec's views reports only through a
-    // hook provided closer to it, never through this spec's.
-    { provide: ɵRENDER_DEVTOOLS, useValue: null },
-  ],
-  template: `
-    @if (spec()?.root; as rootKey) {
-      <render-element [elementKey]="rootKey" [spec]="spec()!" />
-    }
-  `,
+  viewProviders: specViewProviders(RenderSpecCore),
+  template: RENDER_SPEC_TEMPLATE,
 })
-export class RenderSpecComponent implements OnInit {
+export class RenderSpecCore implements OnInit {
   readonly spec = input<Spec | null>(null);
   readonly registry = input<AngularRegistry | undefined>(undefined);
   readonly store = input<StateStore | undefined>(undefined);
@@ -264,3 +264,42 @@ export class RenderSpecComponent implements OnInit {
     this.emitTapped({ type: 'lifecycle', event: 'mounted', scope: 'spec' });
   }
 }
+
+/**
+ * Top-level entry point for rendering a json-render spec.
+ *
+ * Accepts the spec, registry, store, functions, handlers, and loading
+ * as inputs. Provides `RENDER_CONTEXT` to child `RenderElementComponent`
+ * instances via `viewProviders`.
+ *
+ * Falls back to `RENDER_CONFIG` (from `provideRender()`) for registry
+ * and store defaults when inputs are not provided.
+ *
+ * @example
+ * ```html
+ * <render-spec [spec]="spec()" [registry]="registry" [store]="store" />
+ * ```
+ */
+@Component({
+  selector: 'render-spec',
+  standalone: true,
+  imports: [RenderElementComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [
+    {
+      provide: RENDER_TELEMETRY,
+      useFactory: () => ({
+        policy: inject(DEVELOPMENT_COLLECTION_POLICY, { optional: true, skipSelf: true }),
+        createRuntime: (options: Parameters<typeof createDevelopmentRuntime>[0]) => createDevelopmentRuntime(options),
+      }),
+    },
+  ],
+  viewProviders: [
+    ...specViewProviders(RenderSpecComponent),
+    // The tree's combined policy, for code inside the spec that reads
+    // telemetry's own token.
+    { provide: DEVELOPMENT_COLLECTION_POLICY, useFactory: () => inject(RENDER_COLLECTION_POLICY) },
+  ],
+  template: RENDER_SPEC_TEMPLATE,
+})
+export class RenderSpecComponent extends RenderSpecCore {}

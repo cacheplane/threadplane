@@ -7,6 +7,8 @@
     "chat/src/public-api.ts",
     "a2ui/public-api.ts",
     "chat/debug/public-api.ts",
+    "render/registry/public-api.ts",
+    "render/deferred/public-api.ts",
     "chat/math/public-api.ts",
     "chat/testing/public-api.ts",
     "render/src/public-api.ts"

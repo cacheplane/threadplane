@@ -30,6 +30,11 @@ This changelog tracks selected highlight releases, not every release. The publis
 - `ContentClassifier` exposes `a2uiSource()`, the content after the `---a2ui_JSON---` marker, instead of `a2uiSurfaces()` and `a2uiSurfaceStates()`; the renderer parses it.
 - The chat UI no longer feeds `a2ui-partial` custom events into a surface store, because nothing rendered that store. A2UI surfaces render from the message content.
 
+### Generative UI loads on demand
+
+- `<chat>` renders json-render specs, both generative UI in messages and client tool views, inside `@defer` blocks, so the renderer and `@json-render/core` load the first time a spec renders instead of with the chat UI. A minimal chat application loads about 30 percent less JavaScript before first paint. A spec shows a moment after its message while the renderer loads.
+- The render engine's view registries, state store, fallback component and devtools hook also live in `@threadplane/angular/render/registry`, which holds no json-render runtime. `@threadplane/angular/render` re-exports all of them, so existing imports keep working.
+
 ### Session factories are async
 
 - Breaking change, action required for every Angular application: the `createSession` factory given to `provideAgent()` and `createAgent()` from `@threadplane/angular` must return a Promise of the session. Write `createSession: (context) => import('@threadplane/langgraph').then(({ createSession }) => createSession({ ...context, apiUrl, assistantId }))` and the backend package loads on demand, out of the application's initial bundle. An `async` arrow around a static import also works, without the bundle saving. See [Make the session factory async](/docs/angular/chat/migrations/upgrading#make-the-session-factory-async).

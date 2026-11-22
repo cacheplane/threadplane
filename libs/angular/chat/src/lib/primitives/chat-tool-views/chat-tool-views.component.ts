@@ -2,7 +2,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import type { Spec, StateStore } from '@json-render/core';
 import type { RenderEvent, ViewRegistry } from '@threadplane/angular/render';
-import { toRenderRegistry } from '@threadplane/angular/render';
+import { toRenderRegistry } from '@threadplane/angular/render/registry';
 import { toolCallError, toolCallResult, type Agent, type Message, type ToolCall } from '../../agent';
 import type { ClientToolLifecycle } from '../../client-tools/tool-def';
 import { resolveMessageToolCalls } from '../chat-tool-calls/resolve-message-tool-calls';

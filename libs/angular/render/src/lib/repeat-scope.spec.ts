@@ -6,10 +6,10 @@ import type { Spec } from '@json-render/core';
 
 import { RenderElementComponent } from './render-element.component';
 import { RENDER_CONTEXT } from './contexts/render-context';
-import { defineAngularRegistry } from './define-angular-registry';
-import { signalStateStore } from './signal-state-store';
+import { defineAngularRegistry } from '@threadplane/angular/render/registry';
+import { signalStateStore } from '@threadplane/angular/render/registry';
 import { injectRenderHost } from './contexts/render-host';
-import type { AngularRegistry } from './render.types';
+import type { AngularRegistry } from '@threadplane/angular/render/registry';
 
 /** Renders a plain `content` prop, so a repeated element only shows text when
  * its `$item`-bound props resolved in that item's own repeat scope. */
