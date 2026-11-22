@@ -13,7 +13,7 @@ import {
 import { ChatReasoningComponent } from '../../primitives/chat-reasoning/chat-reasoning.component';
 import type { ViewRegistry, RenderEvent } from '@threadplane/angular/render';
 import type { StateStore } from '@json-render/core';
-import { toRenderRegistry, signalStateStore, withViews } from '@threadplane/angular/render';
+import { toRenderRegistry, signalStateStore, withViews } from '@threadplane/angular/render/registry';
 import type { ClientToolRegistry } from '../../client-tools/tool-def';
 import type {
   ClientToolContinuationLimitEvent,

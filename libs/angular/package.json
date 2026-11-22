@@ -71,6 +71,8 @@
     "README.md",
     "a2ui/package.json",
     "chat/debug/package.json",
+    "render/registry/package.json",
+    "render/deferred/package.json",
     "chat/math/package.json",
     "chat/testing/package.json",
     "render/package.json",

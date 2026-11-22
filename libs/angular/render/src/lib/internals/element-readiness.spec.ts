@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { z } from 'zod/v4';
 import { isElementReady } from './element-readiness';
-import type { NormalizedEntry } from '../render.types';
+import type { NormalizedEntry } from '@threadplane/angular/render/registry';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 const C = (() => {}) as never;

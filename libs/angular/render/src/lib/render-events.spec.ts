@@ -5,8 +5,8 @@ import type { Spec, StateStore } from '@json-render/core';
 
 import { RenderElementComponent } from './render-element.component';
 import { RenderSpecComponent } from './render-spec.component';
-import { defineAngularRegistry } from './define-angular-registry';
-import { signalStateStore } from './signal-state-store';
+import { defineAngularRegistry } from '@threadplane/angular/render/registry';
+import { signalStateStore } from '@threadplane/angular/render/registry';
 import { provideRender } from './provide-render';
 import { RENDER_CONTEXT } from './contexts/render-context';
 import { RENDER_LIFECYCLE } from './lifecycle';

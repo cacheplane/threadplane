@@ -4,11 +4,11 @@ import { TestBed } from '@angular/core/testing';
 import type { Spec } from '@json-render/core';
 import type { RenderEvent, RenderLifecycleEvent } from './render-event';
 
-import { defineAngularRegistry } from './define-angular-registry';
-import { signalStateStore } from './signal-state-store';
+import { defineAngularRegistry } from '@threadplane/angular/render/registry';
+import { signalStateStore } from '@threadplane/angular/render/registry';
 import { provideRender, RENDER_CONFIG } from './provide-render';
 import { provideViews, VIEW_REGISTRY } from './provide-views';
-import { views } from './views';
+import { views } from '@threadplane/angular/render/registry';
 import { RenderSpecComponent } from './render-spec.component';
 
 // --- Test component ---

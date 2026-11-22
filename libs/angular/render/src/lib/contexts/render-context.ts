@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
 import type { StateStore, ComputedFunction } from '@json-render/core';
-import type { AngularRegistry } from '../render.types';
+import type { AngularRegistry } from '@threadplane/angular/render/registry';
 import type { RenderEvent } from '../render-event';
 
 /** Shared render-tree dependencies supplied to elements: registry, state store, computed functions, action handlers, and event callback. */

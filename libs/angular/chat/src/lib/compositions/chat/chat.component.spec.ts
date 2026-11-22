@@ -785,7 +785,7 @@ describe('ChatComponent — json-render surface store binding (composition isola
       surfaceStore = (comp as unknown as Record<string, () => StateStore | undefined>)[bindingFn]();
     });
 
-    function mountSurface(spec: Spec): string {
+    async function mountSurface(spec: Spec): Promise<string> {
       const fixture = TestBed.createComponent(ChatGenerativeUiComponent);
       fixture.componentRef.setInput('registry', toRenderRegistry(a2uiBasicCatalog()));
       fixture.componentRef.setInput('store', surfaceStore);
@@ -793,11 +793,14 @@ describe('ChatComponent — json-render surface store binding (composition isola
       fixture.detectChanges();
       TestBed.flushEffects();
       fixture.detectChanges();
+      // Generative UI renders in a @defer block: let it load.
+      await fixture.whenStable();
+      fixture.detectChanges();
       return (fixture.nativeElement as HTMLElement).textContent ?? '';
     }
 
-    const textA = mountSurface(specA);
-    const textB = mountSurface(specB);
+    const textA = await mountSurface(specA);
+    const textB = await mountSurface(specB);
 
     expect(textA).toContain('$1.2M');
     expect(textA).not.toContain('$9.9M');

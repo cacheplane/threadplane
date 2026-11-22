@@ -1,5 +1,5 @@
 // libs/angular/chat/src/lib/markdown/cacheplane-markdown-views.ts
-import { views, type ViewRegistry } from '@threadplane/angular/render';
+import { views, type ViewRegistry } from '@threadplane/angular/render/registry';
 import { MarkdownDocumentComponent } from './views/markdown-document.component';
 import { MarkdownParagraphComponent } from './views/markdown-paragraph.component';
 import { MarkdownHeadingComponent } from './views/markdown-heading.component';

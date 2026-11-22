@@ -114,6 +114,9 @@ describe('Chat owned presentation reactive dependency bounds', () => {
     await fixture.whenStable();
     const rich = fixture.debugElement.query(By.directive(ChatGenerativeUiComponent));
     expect(rich).not.toBeNull(); expect(rich.componentInstance.spec()).toBe(current.spec());
+    // The spec renders in a @defer block; let it finish loading before
+    // watching for reads, so only stale-generation reads can register.
+    await fixture.whenStable();
     const displayed = current.spec();
     const currentSpecRead = vi.spyOn(current, 'spec');
     old.update(spec('Stale generation metadata'));

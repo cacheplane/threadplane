@@ -1,15 +1,18 @@
+// The registry, state store, fallback and devtools hook live in
+// `@threadplane/angular/render/registry`, which holds no json-render runtime;
+// this entry point re-exports them by package name so both share one instance.
 // Types
 export type {
   AngularComponentInputs,
   AngularComponentRenderer,
   AngularRegistry,
   RenderConfig,
-} from './lib/render.types';
+} from '@threadplane/angular/render/registry';
 export type {
   StandardSchemaV1,
   StandardSchemaInferInput,
   StandardSchemaInferOutput,
-} from './lib/standard-schema';
+} from '@threadplane/angular/render/registry';
 
 // Contexts
 export { RENDER_CONTEXT } from './lib/contexts/render-context';
@@ -20,11 +23,11 @@ export { RENDER_HOST, injectRenderHost } from './lib/contexts/render-host';
 export type { RenderHost } from './lib/contexts/render-host';
 
 // Registry
-export { defineAngularRegistry } from './lib/define-angular-registry';
+export { defineAngularRegistry } from '@threadplane/angular/render/registry';
 
 // State
-export { signalStateStore } from './lib/signal-state-store';
-export type { SignalStateStore, StateChangeRecord } from './lib/signal-state-store';
+export { signalStateStore } from '@threadplane/angular/render/registry';
+export type { SignalStateStore, StateChangeRecord } from '@threadplane/angular/render/registry';
 
 // Provider
 export { provideRender, RENDER_CONFIG } from './lib/provide-render';
@@ -32,10 +35,12 @@ export { provideRender, RENDER_CONFIG } from './lib/provide-render';
 // Components
 export { RenderElementComponent } from './lib/render-element.component';
 export { RenderSpecComponent } from './lib/render-spec.component';
+// Internal: the renderer without its telemetry bridge, which chat loads on demand.
+export { RenderSpecCore as ɵRenderSpecCore } from './lib/render-spec.component';
 
 // Views
-export { views, withViews, overrideViews, withoutViews, toRenderRegistry } from './lib/views';
-export type { ViewRegistry } from './lib/views';
+export { views, withViews, overrideViews, withoutViews, toRenderRegistry } from '@threadplane/angular/render/registry';
+export type { ViewRegistry } from '@threadplane/angular/render/registry';
 export { provideViews, VIEW_REGISTRY } from './lib/provide-views';
 
 // Events
@@ -52,15 +57,15 @@ export { RENDER_LIFECYCLE } from './lib/lifecycle';
 export type { RenderLifecycle } from './lib/lifecycle';
 
 // Fallback
-export { DefaultFallbackComponent } from './lib/default-fallback.component';
-export type { RenderViewEntry } from './lib/render.types';
+export { DefaultFallbackComponent } from '@threadplane/angular/render/registry';
+export type { RenderViewEntry } from '@threadplane/angular/render/registry';
 
 // Development-only devtools hook: `@threadplane/angular/chat` provides it to report
 // which spec elements mounted, fell back, did not resolve, or did not render.
-export { ɵRENDER_DEVTOOLS } from './lib/devtools/render-devtools';
+export { ɵRENDER_DEVTOOLS } from '@threadplane/angular/render/registry';
 export type {
-  RenderDevtoolsHook as ɵRenderDevtoolsHook,
-  RenderResolution as ɵRenderResolution,
-  RenderResolvedElement as ɵRenderResolvedElement,
-  RenderElementState as ɵRenderElementState,
-} from './lib/devtools/render-devtools';
+  ɵRenderDevtoolsHook,
+  ɵRenderResolution,
+  ɵRenderResolvedElement,
+  ɵRenderElementState,
+} from '@threadplane/angular/render/registry';
