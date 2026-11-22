@@ -94,13 +94,18 @@ export async function initialScripts(distDirectory) {
   await init;
   const html = readFileSync(join(distDirectory, 'index.html'), 'utf8');
   const start = new Set();
-  for (const [, attributes] of html.matchAll(/<script\b([^>]*)>/g)) {
-    const src = /\bsrc="([^"]+)"/.exec(attributes)?.[1];
-    if (src && /\btype="module"/.test(attributes)) start.add(src);
+  // HTML tag and attribute names are case-insensitive, and values may use
+  // either quote.
+  const attribute = (attributes, name) =>
+    new RegExp(`\\b${name}\\s*=\\s*(["'])(.*?)\\1`, 'i').exec(attributes)?.[2];
+  for (const [, attributes] of html.matchAll(/<script\b([^>]*)>/gi)) {
+    const src = attribute(attributes, 'src');
+    if (src && attribute(attributes, 'type')?.toLowerCase() === 'module')
+      start.add(src);
   }
-  for (const [, attributes] of html.matchAll(/<link\b([^>]*)>/g))
-    if (/\brel="modulepreload"/.test(attributes)) {
-      const href = /\bhref="([^"]+)"/.exec(attributes)?.[1];
+  for (const [, attributes] of html.matchAll(/<link\b([^>]*)>/gi))
+    if (attribute(attributes, 'rel')?.toLowerCase() === 'modulepreload') {
+      const href = attribute(attributes, 'href');
       if (href) start.add(href);
     }
   assert.ok(start.size, 'index.html loads no module script');

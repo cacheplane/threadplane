@@ -73,6 +73,20 @@ test('Vite root-relative entry paths resolve inside the output directory', async
   ]);
 });
 
+test('tag and attribute names are case-insensitive and values take either quote', async (t) => {
+  const directory = dist(t, {
+    'index.html':
+      "<HTML><LINK REL='ModulePreload' HREF='pre.js'><SCRIPT TYPE='Module' SRC='main.js'></SCRIPT></HTML>",
+    'main.js': 'export {};',
+    'pre.js': 'export {};',
+  });
+  const result = await initialScripts(directory);
+  assert.deepEqual(result.files.map((file) => file.path).sort(), [
+    'main.js',
+    'pre.js',
+  ]);
+});
+
 test('a missing initial file or an output with no module script fails instead of measuring less', async (t) => {
   await assert.rejects(
     initialScripts(
