@@ -19,7 +19,7 @@ export const appConfig: ApplicationConfig = {
         // gets its own scoped transport: the session creates its thread
         // through `transport.createThread` and reports the id through
         // `context.onThreadId`, so the transport needs no thread callback.
-        createSession: (context) =>
+        createSession: async (context) =>
           createSession({
             assistantId: connection.assistantId,
             threadId: context.threadId,

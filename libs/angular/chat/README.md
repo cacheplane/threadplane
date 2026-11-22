@@ -58,17 +58,20 @@ zod                        ^3.25.0 || ^4.0.0
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
 import { provideAgent } from '@threadplane/angular';
-import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
       createSession: (context) =>
-        createSession({ apiUrl: '/api/langgraph', assistantId: 'agent', ...context }),
+        import('@threadplane/langgraph').then(({ createSession }) =>
+          createSession({ apiUrl: '/api/langgraph', assistantId: 'agent', ...context })
+        ),
     }),
   ],
 };
 ```
+
+The session factory returns a Promise, so the backend package loads on demand, out of the initial bundle.
 
 ```typescript
 // my.component.ts

@@ -83,7 +83,7 @@ import { provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
 
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
@@ -220,7 +220,7 @@ export const REFUND_AGENT = createAgentRef<RefundSession>('interrupts');
 
 // app.config.ts
 provideAgent(REFUND_AGENT, {
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'https://your-deployment.langgraph.app',

@@ -6,7 +6,7 @@ import { createSession } from '@threadplane/langgraph';
 
 providers: [
   provideAgent({
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({
         assistantId: 'my-agent',
         apiUrl: 'https://my-langgraph.cloud',
@@ -33,7 +33,7 @@ providers: [
   provideAgent({
     threadId: savedThreadId,
     onThreadId: (id) => localStorage.setItem('threadId', id),
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({
         apiUrl: environment.langgraphUrl,
         assistantId: 'my-agent',

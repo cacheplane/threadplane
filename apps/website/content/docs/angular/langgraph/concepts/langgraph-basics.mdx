@@ -120,7 +120,7 @@ import { provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
 
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'http://localhost:2024',
@@ -256,7 +256,7 @@ builder.add_conditional_edges("supervisor", lambda s: s["next_agent"])
 **Angular connection:** Track delegated work through `subagents()`. Subgraph nodes like the ones above need no configuration. When delegation is exposed as tool calls, the session relates each child to the call that started it; the default tool name is `task`, and `subagentToolNames` sets others. Configure once in `app.config.ts`:
 ```typescript
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: '...',
@@ -301,7 +301,7 @@ provideAgent({
   threadId: localStorage.getItem('threadId'),
   // Called with the id of a thread a session created
   onThreadId: (id) => localStorage.setItem('threadId', id),
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: '...',

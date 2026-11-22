@@ -25,6 +25,14 @@ import {
   type ScriptedSession,
 } from './testing/scripted-session';
 
+/**
+ * These specs test the agent apart from session timing: the agent adopts a
+ * session a factory returns as is, as the in-package testing provider binds.
+ * Applications pass an async factory; agent.async-session.spec covers that.
+ */
+const sync = <A extends unknown[], T>(factory: (...args: A) => T) =>
+  factory as unknown as (...args: A) => Promise<T>;
+
 const injectors: EnvironmentInjector[] = [];
 afterEach(() => {
   for (const injector of injectors.splice(0))
@@ -51,11 +59,11 @@ function scripted(
 ) {
   const sessions: ScriptedControl[] = [];
   const config: AgentConfig<ScriptedSession> = {
-    createSession(sessionContext) {
+    createSession: sync(function (sessionContext) {
       const { session, control } = scriptedSession(sessionContext, options);
       sessions.push(control);
       return session;
-    },
+    }),
   };
   const agent = runInInjectionContext(context(providers), () =>
     createAgent<ScriptedSession>(config)
@@ -78,7 +86,7 @@ describe('withAgentOverrides', () => {
   it('serves a field that is published after the agent was derived', () => {
     const fake = createFakeAgentSession();
     const agent = runInInjectionContext(context(), () =>
-      createAgent({ createSession: () => fake.session })
+      createAgent({ createSession: sync(() => fake.session) })
     );
     // The premise: the snapshot holds no error when the copy is made.
     expect('error' in fake.session.getSnapshot()).toBe(false);

@@ -17,6 +17,7 @@ import {
   ɵisAgentRef,
   type AgentConfig,
   type AgentRef,
+  type AgentSessionContext,
 } from '@threadplane/angular';
 
 /** Configuration for {@link provideFakeAgent}. */
@@ -94,10 +95,13 @@ function fakeConfig(config: FakeAgentConfig): AgentConfig<AgentSession> {
   const threads = new Map<string, FakeAgentSession>();
   const current = signal<FakeAgentSession | undefined>(undefined);
   let created = 0;
-  const agentConfig: AgentConfig<AgentSession> = {
+  // The fake binds synchronously, unlike an application's async factory, so a
+  // test sees its session as soon as the agent exists. The agent adopts a
+  // session returned as is; the public type asks for a Promise.
+  const agentConfig = {
     ...(config.threadId !== undefined && { threadId: config.threadId }),
     ...(config.onThreadId && { onThreadId: config.onThreadId }),
-    createSession({ threadId, onThreadId }) {
+    createSession({ threadId, onThreadId }: AgentSessionContext) {
       const init = (config.session ?? {}) as FakeAgentSessionInit;
       const seen = threadId === null ? undefined : threads.get(threadId);
       let id = threadId;
@@ -120,7 +124,7 @@ function fakeConfig(config: FakeAgentConfig): AgentConfig<AgentSession> {
       current.set(fake);
       return fake.session;
     },
-  };
+  } as unknown as AgentConfig<AgentSession>;
   holders.set(agentConfig, current as Signal<FakeAgentSession>);
   return agentConfig;
 }

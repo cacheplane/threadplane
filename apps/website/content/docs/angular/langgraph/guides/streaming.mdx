@@ -61,7 +61,7 @@ Your own application does not need the outer factory. Pass the two connection va
 
 ```typescript
 provideAgent(STREAMING_AGENT, {
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
@@ -258,7 +258,7 @@ By default the session delivers every change as it arrives, and the agent's sign
 ```typescript
 // app.config.ts
 provideAgent(STREAMING_AGENT, {
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: '...',

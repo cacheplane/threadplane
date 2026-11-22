@@ -156,7 +156,7 @@ import { provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
 
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'http://localhost:2024',
@@ -166,6 +166,13 @@ provideAgent({
 ```
 
 Configure it at bootstrap, or in a component's `providers` array for hierarchical DI. `injectAgent()` returns the `Agent` typed by the core contract. LangGraph also publishes its own fields and commands, such as raw LangGraph messages, checkpoint metadata, queued runs, the branch tree, and `fork`. Reach them by naming the session type, `injectAgent<LangGraphSession>()`, or through a typed ref from `createAgentRef<LangGraphSession>('chat')`.
+
+`createSession` returns a Promise. An `async` arrow around a static import, as above, satisfies the type; returning `import('@threadplane/langgraph').then(({ createSession }) => createSession({ ...context, apiUrl, assistantId }))` also loads the backend package on demand, out of the initial bundle. The factory runs in the agent's injection context, so it may call `inject()` before its first `await`. While a session loads:
+
+- Until the first session resolves, the agent shows an empty idle conversation: `status()` is `'idle'` and `messages()` is `[]`.
+- During a thread switch, the agent keeps the current thread until the new session resolves, and `isThreadLoading()` is true meanwhile for a thread with an id. Only the latest switch is adopted.
+- Commands called meanwhile, such as `submit`, wait for the new session and then run on it. `stop` goes to the current session at once.
+- When the factory rejects, the agent keeps its current session and the waiting commands reject with the same error.
 
 `@threadplane/langgraph` exports `createSession()`, `FetchStreamTransport`, `MockAgentTransport`, `FakeStreamTransport`, and the `AgentTransport` type. `AgentTransport` is lower level. Pass one as `createSession({ transport })` when the backend is LangGraph-compatible but the transport needs to change: custom fetch behavior, tests, local fixtures, or a nonstandard gateway.
 

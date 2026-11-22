@@ -82,7 +82,7 @@ import { provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/ag-ui';
 
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       url: 'https://your-backend.example.com/agent',

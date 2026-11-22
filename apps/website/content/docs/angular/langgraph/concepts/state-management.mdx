@@ -197,7 +197,7 @@ export const PROJECT_AGENT = createAgentRef<ProjectSession>('project_agent');
 
 // Configure in app.config.ts. `type` comes from @threadplane/core:
 // provideAgent(PROJECT_AGENT, {
-//   createSession: (context) =>
+//   createSession: async (context) =>
 //     createSession({
 //       ...context,
 //       apiUrl: '...',
@@ -402,7 +402,7 @@ provideAgent(CHAT_AGENT, () => {
     // Called with the id of a thread a session created for a new conversation
     onThreadId: (id: string) => void router.navigate(['/chat', id]),
 
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({
         ...context,
         apiUrl: '...',
@@ -511,7 +511,7 @@ export const RESEARCH_AGENT = createAgentRef<ResearchSession>('research_agent');
 
 // Configured globally in app.config.ts:
 // provideAgent(RESEARCH_AGENT, {
-//   createSession: (context) =>
+//   createSession: async (context) =>
 //     createSession({
 //       ...context,
 //       apiUrl: '...',

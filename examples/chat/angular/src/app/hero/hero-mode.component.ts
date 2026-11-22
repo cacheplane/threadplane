@@ -103,7 +103,7 @@ function heroProviders(replay?: HeroReplayTransport): Provider[] {
     provideAgent(HERO_REPLAY_REF, () => {
       const transport = inject(HeroReplayTransport);
       return {
-        createSession: (context) =>
+        createSession: async (context) =>
           createDemoSession(context, { assistantId: 'hero-replay', transport }),
       };
     }),
@@ -115,7 +115,7 @@ function heroProviders(replay?: HeroReplayTransport): Provider[] {
       return {
         threadId: liveThreadId,
         onThreadId: (id: string) => liveThreadId.set(id),
-        createSession: (context) => {
+        createSession: async (context) => {
           if (isRecordMode()) {
             recorder ??= new HeroRecordingTransport(
               new FetchStreamTransport(

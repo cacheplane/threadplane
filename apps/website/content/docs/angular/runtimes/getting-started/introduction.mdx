@@ -58,7 +58,7 @@ import { createSession } from '@threadplane/ag-ui';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({ ...context, url: '/agent' }),
     }),
   ],

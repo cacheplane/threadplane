@@ -41,7 +41,7 @@ import { provideAgent } from '@threadplane/angular';
 import { createSession } from '@threadplane/langgraph';
 
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       apiUrl: 'https://your-deployment.langgraph.app',
@@ -164,7 +164,7 @@ import { environment } from '../environments/environment';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           apiUrl: environment.langgraphUrl,
@@ -202,7 +202,7 @@ provideAgent(() => {
   // The config factory runs once, in an injection context.
   const auth = inject(AuthService);
   return {
-    createSession: (context) =>
+    createSession: async (context) =>
       createSession({
         ...context,
         apiUrl: environment.langgraphUrl,

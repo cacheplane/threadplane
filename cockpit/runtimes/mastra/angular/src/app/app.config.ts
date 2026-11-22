@@ -11,7 +11,7 @@ export const appConfig: ApplicationConfig = {
         throw new Error('incompatible runtime');
       }
       return {
-        createSession: (context) =>
+        createSession: async (context) =>
           createSession({
             url: connection.url,
             threadId: context.threadId,

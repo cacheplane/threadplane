@@ -41,22 +41,23 @@ In your app config:
 ```ts
 import { ApplicationConfig } from '@angular/core';
 import { provideAgent } from '@threadplane/angular';
-import { createSession } from '@threadplane/ag-ui';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
       createSession: (context) =>
-        createSession({
-          ...context,
-          url: 'http://localhost:3000/agent', // your AG-UI backend
-        }),
+        import('@threadplane/ag-ui').then(({ createSession }) =>
+          createSession({
+            ...context,
+            url: 'http://localhost:3000/agent', // your AG-UI backend
+          })
+        ),
     }),
   ],
 };
 ```
 
-`provideAgent` takes the session factory. The agent calls it once when it is built and again each time it moves to another thread, always in an injection context, so the factory may call `inject()`. `context.threadId` is the thread the new session belongs to, or `null` when there is none yet.
+`provideAgent` takes the session factory. The agent calls it once when it is built and again each time it moves to another thread, always in an injection context, so the factory may call `inject()` before its first `await`. The factory returns a Promise, so `@threadplane/ag-ui` loads on demand, out of the initial bundle. `context.threadId` is the thread the new session belongs to, or `null` when there is none yet.
 
 `createSession` accepts:
 
@@ -146,7 +147,7 @@ class MyCustomAgent extends AbstractAgent {
 }
 
 provideAgent({
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       agent: new MyCustomAgent(),

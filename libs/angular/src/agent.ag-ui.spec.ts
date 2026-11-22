@@ -16,6 +16,14 @@ import {
   type Session,
 } from '../../ag-ui/src/runtime/create-session';
 
+/**
+ * These specs test the agent apart from session timing: the agent adopts a
+ * session a factory returns as is, as the in-package testing provider binds.
+ * Applications pass an async factory; agent.async-session.spec covers that.
+ */
+const sync = <A extends unknown[], T>(factory: (...args: A) => T) =>
+  factory as unknown as (...args: A) => Promise<T>;
+
 interface Exchange {
   readonly threadId: string;
   readonly runId: string;
@@ -119,7 +127,7 @@ function mount(threadId: string | null = 'thread-a') {
       provideAgent(CHAT, {
         threadId,
         onThreadId,
-        createSession: (context) => {
+        createSession: sync((context) => {
           // AG-UI names its thread on the client: with none selected, the
           // factory chooses one and tells the agent.
           const id = context.threadId ?? `minted-${++minted}`;
@@ -131,7 +139,7 @@ function mount(threadId: string | null = 'thread-a') {
           });
           sessions.push(session);
           return session;
-        },
+        }),
       }),
     ],
   });
@@ -262,7 +270,7 @@ describe('Agent over an AG-UI session given the whole context', () => {
         provideAgent(CHAT, {
           threadId,
           onThreadId,
-          createSession: (context) => {
+          createSession: sync((context) => {
             const session = createSession({
               url: 'https://agent.invalid/run',
               fetch: server.fetch,
@@ -270,7 +278,7 @@ describe('Agent over an AG-UI session given the whole context', () => {
             });
             sessions.push(session);
             return session;
-          },
+          }),
         }),
       ],
     });
@@ -364,13 +372,13 @@ describe('Agent over an AG-UI session and the development collector', () => {
       providers: [
         provideAgent(CHAT, {
           threadId: 'thread-a',
-          createSession: ({ threadId, ...context }) =>
+          createSession: sync(({ threadId, ...context }) =>
             createSession({
               url: 'https://agent.invalid/run',
               ...context,
               threadId: threadId ?? 'minted',
               fetch: server.fetch,
-            }),
+            })),
         }),
       ],
     });

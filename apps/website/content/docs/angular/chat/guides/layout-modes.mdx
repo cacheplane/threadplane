@@ -35,7 +35,7 @@ import { ChatComponent } from '@threadplane/angular/chat';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           apiUrl: 'http://localhost:2024',
@@ -81,7 +81,7 @@ import { RouterOutlet } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           apiUrl: 'http://localhost:2024',
@@ -136,7 +136,7 @@ import { RouterOutlet } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           apiUrl: 'http://localhost:2024',
@@ -203,7 +203,7 @@ const ACTIVE_THREAD = signal<string | null>(null);
     provideAgent({
       threadId: ACTIVE_THREAD,
       onThreadId: (id) => ACTIVE_THREAD.set(id),
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           apiUrl: 'http://localhost:2024',

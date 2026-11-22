@@ -41,7 +41,7 @@ const threadsClient = {
       if (connection.adapter !== 'langgraph')
         throw new Error('incompatible runtime');
       return {
-        createSession: (context) =>
+        createSession: async (context) =>
           createSession({
             apiUrl: connection.apiUrl,
             assistantId: connection.assistantId,
@@ -93,7 +93,7 @@ class ScopedLangGraphComponent {
       if (connection.adapter !== 'ag-ui')
         throw new Error('incompatible runtime');
       return {
-        createSession: (context) =>
+        createSession: async (context) =>
           createAgUiSession({
             url: connection.url,
             threadId: context.threadId ?? undefined,

@@ -58,7 +58,7 @@ Switching to a real backend is a provider change:
 ```diff
 - provideFakeAgent({ tokens: ['Offline', ' response.'] })
 + provideAgent({
-+   createSession: (context) =>
++   createSession: async (context) =>
 +     createSession({ ...context, url: '/api/agent' }),
 + })
 ```
@@ -86,7 +86,7 @@ import { provideAgent } from '@threadplane/angular';
 import { createSession, FakeAgent } from '@threadplane/ag-ui';
 
 provideAgent({
-  createSession: () =>
+  createSession: async () =>
     createSession({
       agent: new FakeAgent({
         tokens: ['One', ' two', ' three.'],
@@ -138,7 +138,7 @@ import { createSession, FakeAgent } from '@threadplane/ag-ui';
 
 providers: [
   provideAgent({
-    createSession: () =>
+    createSession: async () =>
       createSession({
         interruptTransport: 'auto',
         agent: new FakeAgent({

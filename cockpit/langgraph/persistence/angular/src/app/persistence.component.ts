@@ -57,7 +57,7 @@ let threadCounter = 0;
         // Runs once at start and again for each thread switch. A session
         // belongs to one thread: `switchThread(id)` asks for a new one and the
         // agent loads that thread's saved history.
-        createSession: (context) =>
+        createSession: async (context) =>
           createSession({
             apiUrl: connection.apiUrl,
             assistantId: connection.assistantId,

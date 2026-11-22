@@ -34,23 +34,24 @@ npm install @threadplane/angular @threadplane/core @threadplane/langgraph @langc
 // app.config.ts
 import { ApplicationConfig } from '@angular/core';
 import { provideAgent } from '@threadplane/angular';
-import { createSession } from '@threadplane/langgraph';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
       createSession: (context) =>
-        createSession({
-          ...context,
-          assistantId: 'chat',
-          apiUrl: 'http://localhost:2024',
-        }),
+        import('@threadplane/langgraph').then(({ createSession }) =>
+          createSession({
+            ...context,
+            assistantId: 'chat',
+            apiUrl: 'http://localhost:2024',
+          })
+        ),
     }),
   ],
 };
 ```
 
-`provideAgent()` asks `createSession` for one session per thread: once when the agent is built, and again whenever the agent switches threads. `context.threadId` is the thread to open (`null` for a new conversation) and `context.onThreadId` reports the thread the session creates on its first submit.
+`provideAgent()` asks `createSession` for one session per thread: once when the agent is built, and again whenever the agent switches threads. The factory returns a Promise, so `@threadplane/langgraph` loads on demand, out of the initial bundle. `context.threadId` is the thread to open (`null` for a new conversation) and `context.onThreadId` reports the thread the session creates on its first submit.
 
 `provideAgent()` is the only provider `<chat>` requires. There is no separate chat provider: everything `<chat>` renders is driven by its inputs.
 

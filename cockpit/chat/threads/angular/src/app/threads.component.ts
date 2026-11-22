@@ -48,7 +48,7 @@ export const activeThreadIdState = signal<string | null>(null);
       return {
         // One session per thread: the agent asks for a new one on each
         // thread switch and hands it the thread to open.
-        createSession: (context) =>
+        createSession: async (context) =>
           createSession({
             apiUrl: connection.apiUrl,
             assistantId: connection.assistantId,

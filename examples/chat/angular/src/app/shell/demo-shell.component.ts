@@ -194,7 +194,7 @@ export function isConflict(err: unknown): boolean {
         // the source of truth.
         threadIdState.set(id);
       },
-      createSession: (context) =>
+      createSession: async (context) =>
         createDemoSession(context, {
           // Relates `research` tool calls to the child graphs they start, so
           // agent.subagents() carries each child's tool call and task.

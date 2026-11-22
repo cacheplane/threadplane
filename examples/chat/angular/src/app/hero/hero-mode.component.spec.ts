@@ -140,7 +140,7 @@ describe('HeroMode', () => {
         providers: [
           ...HeroMode.providersForTest(transport),
           ...provideAgent(HERO_REPLAY_REF, {
-            createSession: (context) =>
+            createSession: async (context) =>
               Object.assign(createDemoSession(context, { assistantId: 'hero-replay', transport }), { stop }),
           }),
         ],

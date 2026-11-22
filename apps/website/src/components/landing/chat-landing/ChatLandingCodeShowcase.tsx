@@ -9,7 +9,7 @@ import { a2uiRenderer } from '@threadplane/angular/a2ui';
   imports: [ChatComponent],
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           apiUrl: 'http://localhost:2024',
           assistantId: 'chat_agent',

@@ -389,11 +389,11 @@ export function typedRefs() {
   const named = injectAgent<AgUiSession<Board>>();
   type Named = Expect<Same<typeof named, Agent<AgUiSession<Board>>>>;
   const built = createAgent({
-    createSession: () => ({}) as AgUiSession<Board>,
+    createSession: async () => ({}) as AgUiSession<Board>,
   });
   type Built = Expect<Same<typeof built, Agent<AgUiSession<Board>>>>;
   provideAgent(TRIP, {
-    createSession: ({ threadId, onThreadId }) => {
+    createSession: async ({ threadId, onThreadId }) => {
       const id: string | null = threadId;
       const report: (threadId: string) => void = onThreadId;
       void [id, report];
@@ -401,15 +401,15 @@ export function typedRefs() {
     },
   });
   provideAgent(TRIP, () => ({
-    createSession: () => ({}) as LangGraphSession<Tools, Board>,
+    createSession: async () => ({}) as LangGraphSession<Tools, Board>,
   }));
-  provideAgent({ createSession: () => ({}) as AgUiSession });
+  provideAgent({ createSession: async () => ({}) as AgUiSession });
   // @ts-expect-error A ref accepts only a factory for its own session type.
-  provideAgent(TRIP, { createSession: () => ({}) as AgUiSession<Board> });
+  provideAgent(TRIP, { createSession: async () => ({}) as AgUiSession<Board> });
   // @ts-expect-error A session factory is required.
   provideAgent({});
   // @ts-expect-error A session must be disposable to be owned.
-  provideAgent({ createSession: () => ({ getSnapshot: () => ({}), subscribe: () => () => undefined }) });
+  provideAgent({ createSession: async () => ({ getSnapshot: () => ({}), subscribe: () => () => undefined }) });
   void [byRef, plain, named, built];
   return {} as [Ref, ByRef, Plain, Named, Built];
 }

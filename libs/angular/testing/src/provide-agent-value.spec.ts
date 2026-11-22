@@ -18,6 +18,14 @@ import {
   provideFakeAgent,
 } from './public-api';
 
+/**
+ * These specs test the agent apart from session timing: the agent adopts a
+ * session a factory returns as is, as the in-package testing provider binds.
+ * Applications pass an async factory; agent.async-session.spec covers that.
+ */
+const sync = <A extends unknown[], T>(factory: (...args: A) => T) =>
+  factory as unknown as (...args: A) => Promise<T>;
+
 afterEach(() => TestBed.resetTestingModule());
 
 const inContext = <T>(run: () => T) => TestBed.runInInjectionContext(run);
@@ -75,7 +83,7 @@ describe('provideAgentValue', () => {
     const createSession = vi.fn(() => createFakeAgentSession().session);
     TestBed.configureTestingModule({
       providers: [
-        provideAgent(DEMO, { createSession }),
+        provideAgent(DEMO, { createSession: sync(createSession) }),
         provideAgentValue(DEMO, agent),
       ],
     });
@@ -147,7 +155,7 @@ describe('provideAgentValue', () => {
     const fake = createFakeAgentSession();
     // Built once by the test, in its own injection context.
     const built = inContext(() =>
-      createAgent({ createSession: () => fake.session })
+      createAgent({ createSession: sync(() => fake.session) })
     );
     @Component({
       selector: 'test-child',

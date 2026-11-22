@@ -73,7 +73,7 @@ import { environment } from '../environments/environment';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAgent({
-      createSession: (context) =>
+      createSession: async (context) =>
         createSession({
           ...context,
           url: environment.agentUrl,
@@ -178,7 +178,7 @@ import { createSession } from '@threadplane/ag-ui';
 import { SessionService } from './session.service';
 
 provideAgent({
-  createSession: (context) => {
+  createSession: async (context) => {
     const session = inject(SessionService);
     return createSession({
       ...context,
@@ -398,7 +398,7 @@ import { createSession, httpReplay } from '@threadplane/ag-ui';
 
 provideAgent({
   threadId: currentThreadId, // a string, null, or a signal the agent follows
-  createSession: (context) =>
+  createSession: async (context) =>
     createSession({
       ...context,
       url: '/api/agent',

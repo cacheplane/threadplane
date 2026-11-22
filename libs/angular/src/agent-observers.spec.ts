@@ -17,6 +17,14 @@ import {
   type ScriptedSession,
 } from './testing/scripted-session';
 
+/**
+ * These specs test the agent apart from session timing: the agent adopts a
+ * session a factory returns as is, as the in-package testing provider binds.
+ * Applications pass an async factory; agent.async-session.spec covers that.
+ */
+const sync = <A extends unknown[], T>(factory: (...args: A) => T) =>
+  factory as unknown as (...args: A) => Promise<T>;
+
 const injectors: EnvironmentInjector[] = [];
 afterEach(() => {
   for (const injector of injectors.splice(0))
@@ -39,11 +47,11 @@ function scripted(
   injectors.push(injector);
   const agent = runInInjectionContext(injector, () =>
     createAgent<ScriptedSession>({
-      createSession(context) {
+      createSession: sync(function (context) {
         const { session, control } = scriptedSession(context);
         sessions.push(control);
         return Object.assign(session, extra(context));
-      },
+      }),
     })
   );
   return {
@@ -195,12 +203,12 @@ describe('Agent session epoch', () => {
     injectors.push(injector);
     const agent = runInInjectionContext(injector, () =>
       createAgent<ScriptedSession>({
-        createSession(context) {
+        createSession: sync(function (context) {
           if (context.threadId === 'broken') throw new Error('no session');
           const { session, control } = scriptedSession(context);
           sessions.push(control);
           return session;
-        },
+        }),
       })
     );
     expect(() => agent.switchThread('broken')).toThrow('no session');
