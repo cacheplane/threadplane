@@ -21,6 +21,7 @@
     "markdown/src/**/*.ts",
     "render/src/**/*.ts",
     "render/registry/**/*.ts",
+    "render/deferred/**/*.ts",
     "testing/src/**/*.ts"
   ],
   "exclude": [

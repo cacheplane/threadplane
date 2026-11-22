@@ -104,6 +104,8 @@ const REEXPORTED_ENTRIES: Readonly<Record<string, string>> = {
     'libs/telemetry/src/browser/development/public-api.ts',
   '@threadplane/angular/render/registry':
     'libs/angular/render/registry/public-api.ts',
+  '@threadplane/angular/render/deferred':
+    'libs/angular/render/deferred/public-api.ts',
 };
 const EXCLUDED_ENTRY_SOURCES = new Set(Object.values(REEXPORTED_ENTRIES));
 /** The re-exported entry points, which the API generator resolves to source. */
@@ -118,6 +120,8 @@ export const EXCLUDED_EXPORTS = new Set([
   // The render engine's registries and state store; `angular/render` re-exports
   // and documents every symbol it has.
   'angular/render/registry',
+  // An internal entry point: chat loads the renderer on demand through it.
+  'angular/render/deferred',
   'ag-ui/development-install',
   'angular/development-install',
   'langgraph/development-install',

@@ -3,7 +3,7 @@ import { Component, input } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { Spec } from '@json-render/core';
 import * as telemetry from '@threadplane/telemetry/browser/development';
-import { RenderSpecComponent } from './render-spec.component';
+import { RenderSpecComponent, RenderSpecCore } from './render-spec.component';
 import { defineAngularRegistry } from '@threadplane/angular/render/registry';
 import { signalStateStore } from '@threadplane/angular/render/registry';
 import { provideRender } from './provide-render';
@@ -123,5 +123,20 @@ describe('development generative UI mount evidence', () => {
     const fx = fixture(spec(), false);
     fx.detectChanges();
     expect(touched).not.toHaveBeenCalled();
+  });
+
+  it('collects nothing without a telemetry bridge, and still renders', () => {
+    vi.mocked(telemetry.createDevelopmentRuntime).mockClear();
+    TestBed.configureTestingModule({ imports: [RenderSpecCore] });
+    const fx = TestBed.createComponent(RenderSpecCore);
+    fx.componentRef.setInput('spec', spec());
+    fx.componentRef.setInput(
+      'registry',
+      defineAngularRegistry({ Text: { component: MountedComponent, fallback: FallbackComponent } })
+    );
+    fx.detectChanges();
+    expect(fx.nativeElement.querySelector('[data-mounted]')).toBeTruthy();
+    expect(telemetry.createDevelopmentRuntime).not.toHaveBeenCalled();
+    expect(mounted).not.toHaveBeenCalled();
   });
 });

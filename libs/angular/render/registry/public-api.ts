@@ -56,3 +56,9 @@ export type {
   RenderDevtoolsTracker as ɵRenderDevtoolsTracker,
   RenderElementView as ɵRenderElementView,
 } from './src/devtools/render-devtools';
+// Internal: how the renderer reaches telemetry without importing it.
+export {
+  RENDER_TELEMETRY as ɵRENDER_TELEMETRY,
+  RENDER_COLLECTION_POLICY as ɵRENDER_COLLECTION_POLICY,
+} from './src/render-telemetry';
+export type { RenderTelemetry as ɵRenderTelemetry } from './src/render-telemetry';

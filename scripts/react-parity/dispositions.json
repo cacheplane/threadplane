@@ -753,6 +753,16 @@
       "status": "planned"
     },
     {
+      "id": "asset:libs/angular/render/deferred/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "asset:libs/angular/a2ui/ng-package.json",
       "taskIds": [
         "T02",
@@ -2686,6 +2696,16 @@
       "reason": "Native component. Root spec/state lifecycle, registry/context composition, events and cleanup. Future React package ownership; not implemented by the empty scaffold."
     },
     {
+      "id": "component:libs/angular/render/src/lib/render-spec.component.ts#RenderSpecCore",
+      "taskIds": [
+        "T24"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "target": "libs/react/src/render/components/render-spec.tsx",
+      "reason": "Internal \u0275 seam: lets @threadplane/angular/chat load the renderer on demand without its telemetry bridge, so an app that renders no spec ships no telemetry runtime; not a public API and no React surface is promised."
+    },
+    {
       "id": "config:.github/workflows/ci.yml",
       "taskIds": [
         "T02",
@@ -3988,6 +4008,16 @@
     },
     {
       "id": "entry:libs/angular/render/registry/public-api.ts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "entry:libs/angular/render/deferred/public-api.ts",
       "taskIds": [
         "T02",
         "T36",
@@ -8236,6 +8266,15 @@
       "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
     },
     {
+      "id": "export:libs/angular/render/src/public-api.ts#\u0275RenderSpecCore",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam: lets @threadplane/angular/chat load the renderer on demand without its telemetry bridge, so an app that renders no spec ships no telemetry runtime; not a public API and no React surface is promised."
+    },
+    {
       "id": "export:libs/angular/render/registry/public-api.ts#\u0275resolveRenderTree",
       "taskIds": [
         "T17"
@@ -8315,6 +8354,42 @@
       "treatment": "internal",
       "status": "planned",
       "reason": "Development-only \u0275 devtools seam between @threadplane/render and the AG-UI DevTools render report; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RenderTelemetry",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam: lets @threadplane/angular/chat load the renderer on demand without its telemetry bridge, so an app that renders no spec ships no telemetry runtime; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RENDER_TELEMETRY",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam: lets @threadplane/angular/chat load the renderer on demand without its telemetry bridge, so an app that renders no spec ships no telemetry runtime; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/registry/public-api.ts#\u0275RENDER_COLLECTION_POLICY",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam: lets @threadplane/angular/chat load the renderer on demand without its telemetry bridge, so an app that renders no spec ships no telemetry runtime; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/render/deferred/public-api.ts#\u0275RenderSpecCore",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam: lets @threadplane/angular/chat load the renderer on demand without its telemetry bridge, so an app that renders no spec ships no telemetry runtime; not a public API and no React surface is promised."
     },
     {
       "id": "export:libs/angular/render/src/public-api.ts#\u0275RenderDevtoolsHook",
@@ -12442,6 +12517,24 @@
       "treatment": "internal",
       "status": "planned",
       "reason": "Development-only element-state tracker behind the render report (names and states; never props); stripped from production builds."
+    },
+    {
+      "id": "source:libs/angular/render/registry/src/render-telemetry.ts",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam: lets @threadplane/angular/chat load the renderer on demand without its telemetry bridge, so an app that renders no spec ships no telemetry runtime; not a public API and no React surface is promised."
+    },
+    {
+      "id": "source:libs/angular/render/deferred/public-api.ts",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam: lets @threadplane/angular/chat load the renderer on demand without its telemetry bridge, so an app that renders no spec ships no telemetry runtime; not a public API and no React surface is promised."
     },
     {
       "id": "source:libs/angular/render/src/lib/internals/element-readiness.ts",

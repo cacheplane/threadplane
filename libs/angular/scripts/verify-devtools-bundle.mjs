@@ -18,6 +18,7 @@ const dist = (path) => resolve('dist/libs', path);
 const local = {
   '@threadplane/angular/render': dist('angular/fesm2022/threadplane-angular-render.mjs'),
   '@threadplane/angular/render/registry': dist('angular/fesm2022/threadplane-angular-render-registry.mjs'),
+  '@threadplane/angular/render/deferred': dist('angular/fesm2022/threadplane-angular-render-deferred.mjs'),
   '@threadplane/angular/chat': dist('angular/fesm2022/threadplane-angular-chat.mjs'),
   '@threadplane/angular/a2ui': dist('angular/fesm2022/threadplane-angular-a2ui.mjs'),
   '@threadplane/angular': dist('angular/fesm2022/threadplane-angular.mjs'),
@@ -115,10 +116,39 @@ for (const name of ['chat', 'render']) {
     // Chat renders json-render specs in @defer blocks: the renderer, and
     // json-render with it, load only when a spec first renders. Its eager
     // imports come from the json-render-free registry entry point.
-    assert.match(code, /import\("@threadplane\/angular\/render"\)/, 'chat positive control: no deferred renderer import');
-    assert.doesNotMatch(code, /from"@threadplane\/angular\/render"/, 'chat imports @threadplane/angular/render eagerly, which brings json-render into every chat app');
+    assert.match(code, /import\("@threadplane\/angular\/render\/deferred"\)/, 'chat positive control: no deferred renderer import');
+    assert.doesNotMatch(code, /from"@threadplane\/angular\/render(?:\/deferred)?"/, 'chat imports the renderer eagerly, which brings json-render into every chat app');
     assert.doesNotMatch(code, /@json-render\/core/, 'chat imports @json-render/core');
   }
+}
+
+// Chat defers its renderer through @threadplane/angular/render/deferred. A
+// deferred import keeps every export of its target, so that entry point must
+// name the telemetry-free renderer alone: one more export, such as
+// RenderSpecComponent with its telemetry bridge, would put telemetry's runtime
+// in the startup chunk of every application that uses chat, spec or no spec.
+{
+  const { metafile } = await build({
+    entryPoints: [local['@threadplane/angular/render/deferred']],
+    bundle: true,
+    write: false,
+    outdir: 'deferred',
+    format: 'esm',
+    metafile: true,
+    external: ['*'],
+    logLevel: 'silent',
+  });
+  const [output] = Object.values(metafile.outputs);
+  assert.deepEqual(
+    output.exports,
+    ['\u0275RenderSpecCore'],
+    'render/deferred exports more than the telemetry-free renderer',
+  );
+  assert.deepEqual(
+    output.imports.map((entry) => entry.path),
+    ['@threadplane/angular/render'],
+    'render/deferred imports more than the renderer',
+  );
 }
 
 console.log(

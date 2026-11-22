@@ -41,6 +41,7 @@
       "libs/angular/chat/src/public-api.ts",
       "libs/angular/chat/testing/public-api.ts",
       "libs/angular/markdown/src/public-api.ts",
+      "libs/angular/render/deferred/public-api.ts",
       "libs/angular/render/registry/public-api.ts",
       "libs/angular/render/src/public-api.ts",
       "libs/angular/src/public-api.ts",

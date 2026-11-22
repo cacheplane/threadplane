@@ -35,6 +35,7 @@
       "@threadplane/angular/markdown": ["libs/angular/markdown/src/public-api.ts"],
       "@threadplane/angular/render": ["libs/angular/render/src/public-api.ts"],
       "@threadplane/angular/render/registry": ["libs/angular/render/registry/public-api.ts"],
+      "@threadplane/angular/render/deferred": ["libs/angular/render/deferred/public-api.ts"],
       "@threadplane/angular/testing": ["libs/angular/testing/src/public-api.ts"],
       "@threadplane/core": ["libs/core/src/index.ts"],
       "@threadplane/core/tools": ["libs/core/src/tools/index.ts"],

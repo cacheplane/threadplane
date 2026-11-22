@@ -35,6 +35,8 @@ export { provideRender, RENDER_CONFIG } from './lib/provide-render';
 // Components
 export { RenderElementComponent } from './lib/render-element.component';
 export { RenderSpecComponent } from './lib/render-spec.component';
+// Internal: the renderer without its telemetry bridge, which chat loads on demand.
+export { RenderSpecCore as ɵRenderSpecCore } from './lib/render-spec.component';
 
 // Views
 export { views, withViews, overrideViews, withoutViews, toRenderRegistry } from '@threadplane/angular/render/registry';

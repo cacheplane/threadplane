@@ -21,7 +21,7 @@ import { DOCUMENT, NgComponentOutlet } from '@angular/common';
 // eslint-disable-next-line @nx/enforce-module-boundaries -- Keep the postinstall module external through ng-packagr.
 import { installationToken } from '#development-install';
 declare const ngDevMode: boolean;
-import { createDevelopmentRuntime, DEVELOPMENT_COLLECTION_POLICY } from '@threadplane/telemetry/browser/development';
+import { ɵRENDER_COLLECTION_POLICY as RENDER_COLLECTION_POLICY, ɵRENDER_TELEMETRY as RENDER_TELEMETRY } from '@threadplane/angular/render/registry';
 import { THREADPLANE_PACKAGE_VERSION as packageVersion } from './package-version';
 import {
   evaluateVisibility,
@@ -99,6 +99,10 @@ function preventDefaultOn(payload: unknown): void {
   if (isEventLike(nested)) nested.preventDefault();
 }
 
+/** What an element without a telemetry bridge collects: nothing. */
+const nothing = (): void => undefined;
+const NO_DEVELOPMENT_RUNTIME = { touch: nothing, milestone: nothing, dispose: nothing };
+
 /**
  * Recursive element renderer.
  *
@@ -151,15 +155,17 @@ export class RenderElementComponent implements OnInit {
   readonly parentInjector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
-  private readonly collectionPolicy = inject(DEVELOPMENT_COLLECTION_POLICY, { optional: true });
+  private readonly collectionPolicy = inject(RENDER_COLLECTION_POLICY, { optional: true });
   private readonly outlets = viewChildren(NgComponentOutlet);
   private readonly observedInstances = new WeakSet<object>();
   private readonly devtoolsTracker = inject(RENDER_DEVTOOLS_TRACKER, { optional: true });
-  private readonly development = createDevelopmentRuntime({
+  // The spec host's bridge to telemetry; without one the element collects
+  // nothing. The renderer never imports telemetry itself (see RENDER_TELEMETRY).
+  private readonly development = inject(RENDER_TELEMETRY, { optional: true })?.createRuntime({
     integration: 'render', packageName: '@threadplane/angular', packageVersion,
     installationToken: (typeof ngDevMode === 'undefined' || ngDevMode) && isDevMode() ? installationToken : null,
     enabled: () => this.collectionPolicy?.() ?? true,
-  });
+  }) ?? NO_DEVELOPMENT_RUNTIME;
 
   private destroyed = false;
 
