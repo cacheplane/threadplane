@@ -986,9 +986,10 @@ for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']
 test('installed native contracts reject the former empty scaffold exports', () => {
   assert.equal(typeof packageVerifier.assertSupportedExports, 'function');
   assert.throws(() => packageVerifier.assertSupportedExports('core', {}), /completeDelivery/);
-  assert.throws(() => packageVerifier.assertSupportedExports('react', {}), /useAgent/);
-  const react = { useAgent: () => undefined, useAgentState: () => undefined };
-  assert.throws(() => packageVerifier.assertSupportedExports('react', { useAgent: () => undefined }), /useAgentState/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react', {}), /AgentProvider/);
+  const react = { AgentProvider: () => undefined, useAgent: () => undefined, useAgentSession: () => undefined, useAgentState: () => undefined };
+  assert.throws(() => packageVerifier.assertSupportedExports('react', { ...react, useAgentState: undefined }), /useAgentState/);
+  assert.throws(() => packageVerifier.assertSupportedExports('react', { ...react, AgentProvider: undefined }), /AgentProvider/);
   assert.doesNotThrow(() => packageVerifier.assertSupportedExports('react', react));
   assert.throws(() => packageVerifier.assertSupportedExports('react', { ...react, OverflowMenu: () => undefined }), /unexpected/);
 });

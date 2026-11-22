@@ -94,13 +94,18 @@ export async function initialScripts(distDirectory) {
   await init;
   const html = readFileSync(join(distDirectory, 'index.html'), 'utf8');
   const start = new Set();
-  for (const [, attributes] of html.matchAll(/<script\b([^>]*)>/g)) {
-    const src = /\bsrc="([^"]+)"/.exec(attributes)?.[1];
-    if (src && /\btype="module"/.test(attributes)) start.add(src);
+  // HTML tag and attribute names are case-insensitive, and values may use
+  // either quote.
+  const attribute = (attributes, name) =>
+    new RegExp(`\\b${name}\\s*=\\s*(["'])(.*?)\\1`, 'i').exec(attributes)?.[2];
+  for (const [, attributes] of html.matchAll(/<script\b([^>]*)>/gi)) {
+    const src = attribute(attributes, 'src');
+    if (src && attribute(attributes, 'type')?.toLowerCase() === 'module')
+      start.add(src);
   }
-  for (const [, attributes] of html.matchAll(/<link\b([^>]*)>/g))
-    if (/\brel="modulepreload"/.test(attributes)) {
-      const href = /\bhref="([^"]+)"/.exec(attributes)?.[1];
+  for (const [, attributes] of html.matchAll(/<link\b([^>]*)>/gi))
+    if (attribute(attributes, 'rel')?.toLowerCase() === 'modulepreload') {
+      const href = attribute(attributes, 'href');
       if (href) start.add(href);
     }
   assert.ok(start.size, 'index.html loads no module script');
@@ -259,12 +264,22 @@ function reactApplication(directory) {
   write(
     join(directory, 'src/main.tsx'),
     `import { createRoot } from 'react-dom/client';
+import { AgentProvider } from '@threadplane/react';
 import { Chat } from '@threadplane/react/chat';
 import '@threadplane/react/chat/styles.css';
-import { createSession } from '@threadplane/langgraph';
 
-const session = createSession({ apiUrl: '/api', assistantId: 'agent' });
-createRoot(document.getElementById('root')!).render(<Chat session={session} />);
+// The backend loads on demand, as the docs recommend.
+createRoot(document.getElementById('root')!).render(
+  <AgentProvider
+    createSession={(context) =>
+      import('@threadplane/langgraph').then(({ createSession }) =>
+        createSession({ apiUrl: '/api', assistantId: 'agent', ...context })
+      )
+    }
+  >
+    <Chat />
+  </AgentProvider>
+);
 `
   );
   return {
