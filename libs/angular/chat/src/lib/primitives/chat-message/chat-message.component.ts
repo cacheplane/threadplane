@@ -1,9 +1,9 @@
 // libs/angular/chat/src/lib/primitives/chat-message/chat-message.component.ts
 import { Component, ChangeDetectionStrategy, input, computed, effect, inject, untracked } from '@angular/core';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_MESSAGE_STYLES } from '../../styles/chat-message.styles';
-import { ChatCitationsComponent } from '../chat-citations/chat-citations.component';
-import { CitationsResolverService } from '../../markdown/citations-resolver.service';
+import { ChatCitationsComponent } from '@threadplane/angular/chat/citations';
+import { CitationsResolverService } from '@threadplane/angular/chat/shared';
 import type { Message } from '../../agent/message';
 import { OwnedMarkdownContextDirective } from './owned-markdown-context';
 import { OwnedMarkdownBodyComponent } from './owned-markdown-body.component';
@@ -47,7 +47,10 @@ const DEFAULT_SPEAKERS: Partial<Record<ChatMessageRole, string>> = { user: 'You'
       </ng-container>
     </div>
     @if (message()?.role === 'assistant' && message(); as msg) {
-      <chat-citations [message]="msg" />
+      <!-- Citations load on demand, with @threadplane/angular/chat/citations. -->
+      @defer (on immediate) {
+        <chat-citations [message]="msg" />
+      }
     }
     <div class="chat-message__controls">
       <ng-content select="[chatMessageControls]" />

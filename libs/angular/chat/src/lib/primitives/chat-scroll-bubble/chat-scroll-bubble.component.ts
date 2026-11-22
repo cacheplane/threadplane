@@ -1,6 +1,6 @@
 // libs/angular/chat/src/lib/primitives/chat-scroll-bubble/chat-scroll-bubble.component.ts
 import { Component, ChangeDetectionStrategy, input, output, computed } from '@angular/core';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_SCROLL_BUBBLE_STYLES } from '../../styles/chat-scroll-bubble.styles';
 import { injectChatRuntime } from '../../styles/chat-runtime';
 

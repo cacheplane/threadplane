@@ -333,8 +333,8 @@ describe('real API Extractor declaration generation', () => {
     expect(() => readFileSync(path.join(output, 'obsolete.json'))).toThrow();
   }, 120000);
 });
-it('reconciles all 9 SDK projects and 33 typed import entrypoints', () => {
-  expect(SDK_ENTRYPOINTS).toHaveLength(33);
+it('reconciles all 9 SDK projects and 37 typed import entrypoints', () => {
+  expect(SDK_ENTRYPOINTS).toHaveLength(37);
   expect(new Set(SDK_ENTRYPOINTS.map((entry) => entry.project)).size).toBe(9);
   expect(() => validateRegistry(root, SDK_ENTRYPOINTS)).not.toThrow();
   expect(() =>

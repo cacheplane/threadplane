@@ -264,6 +264,12 @@
       "reason": "Equivalent pure outcome, safe source and concise lifecycle-count selection; no runtime ownership."
     },
     {
+      "id": "source:libs/angular/chat/shared/src/tool-sources.ts",
+      "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
+      "target": "libs/react/src/chat/tool-outcome.ts",
+      "reason": "Equivalent pure outcome, safe source and concise lifecycle-count selection; no runtime ownership."
+    },
+    {
       "id": "source:libs/react/src/chat/tool-outcome.ts",
       "taskIds": ["T28"], "treatment": "react", "status": "in-progress",
       "target": "libs/react/src/chat/tool-outcome.ts",
@@ -774,6 +780,56 @@
     },
     {
       "id": "asset:libs/angular/chat/math/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "asset:libs/angular/chat/threads/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "asset:libs/angular/chat/shared/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "asset:libs/angular/chat/select/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "asset:libs/angular/chat/overlay/ng-package.json",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "asset:libs/angular/chat/citations/ng-package.json",
       "taskIds": [
         "T02",
         "T36",
@@ -1931,7 +1987,7 @@
       "reason": "Private controlled non-modal full-height sidebar reuses ChatPopup visibility, focus and retained children, with optional persistent page content and desktop content pushing in installed native dogfood. Peer edge claims and full legacy parity remain open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts#ChatSidenavComponent",
+      "id": "component:libs/angular/chat/threads/src/chat-sidenav.component.ts#ChatSidenavComponent",
       "taskIds": [
         "T30"
       ],
@@ -2041,7 +2097,7 @@
       "reason": "Native component. Native semantic Markdown node and recursive children through the typed registry; preserve streaming identity and custom overrides."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/markdown/views/markdown-citation-reference.component.ts#MarkdownCitationReferenceComponent",
+      "id": "component:libs/angular/chat/citations/src/markdown-citation-reference.component.ts#MarkdownCitationReferenceComponent",
       "taskIds": [
         "T26"
       ],
@@ -2049,6 +2105,15 @@
       "status": "in-progress",
       "target": "libs/react/src/markdown/inline-citation.tsx",
       "reason": "Private Markdown preserves exact per-message source resolution, unresolved/nested-marker fallbacks and default safe links. Opt-in citationPreview adds identity-scoped connected cards, delayed hover, keyboard/touch activation and nonmodal focus navigation; native assistant rows dogfood the installed runtime. Full T26 registry/custom display parity remains open. Both explicit and inline previews now share a private local source summary with normalized type, derived hostname and formatted date above preserved literal fields. Intrinsic compact markers and wrapping preserve the no-stylesheet Markdown contract; same-ID corrections retain open panels and focus. Provider images remain unfetched."
+    },
+    {
+      "id": "component:libs/angular/chat/src/lib/markdown/views/markdown-citation-reference-host.component.ts#MarkdownCitationReferenceHostComponent",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Internal default view for inline citation markers: defers the marker, its preview and the overlay to @threadplane/angular/chat/citations; not a public API and no React surface is promised."
     },
     {
       "id": "component:libs/angular/chat/src/lib/markdown/views/markdown-code-block.component.ts#MarkdownCodeBlockComponent",
@@ -2261,7 +2326,7 @@
       "reason": "Native component. Native semantic Markdown node and recursive children through the typed registry; preserve streaming identity and custom overrides."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/chat-citations/chat-citation-preview.component.ts#ChatCitationPreviewComponent",
+      "id": "component:libs/angular/chat/citations/src/chat-citation-preview.component.ts#ChatCitationPreviewComponent",
       "taskIds": [
         "T26"
       ],
@@ -2271,7 +2336,7 @@
       "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open. Both explicit and inline previews now share a private local source summary with normalized type, derived hostname and formatted date above preserved literal fields. Intrinsic compact markers and wrapping preserve the no-stylesheet Markdown contract; same-ID corrections retain open panels and focus. Provider images remain unfetched."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/chat-citations/chat-citations-card.component.ts#ChatCitationsCardComponent",
+      "id": "component:libs/angular/chat/citations/src/chat-citations-card.component.ts#ChatCitationsCardComponent",
       "taskIds": [
         "T26"
       ],
@@ -2281,7 +2346,7 @@
       "reason": "Private CitationCard renders shared local category icons/web monograms, normalized badges, hostname and formatted publication with literal title/snippet and existing safe-link policy. Default Citations rows and native custom-card composition dogfood it without fetching provider icons or changing preview/custom-render ownership. Collapsible headers share the private local marker for their first three resolved sources and decorative chevron; provider images remain deferred."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/chat-citations/chat-citations.component.ts#ChatCitationCardTemplateDirective",
+      "id": "component:libs/angular/chat/citations/src/chat-citations.component.ts#ChatCitationCardTemplateDirective",
       "taskIds": [
         "T26"
       ],
@@ -2291,7 +2356,7 @@
       "reason": "Private readonly renderCard callback replaces each exact-ID keyed list item's contents, with no directive export. Native assistant Sources compose public CitationPreview and literal source-type text through the slot; default citation-display parity remains open T26 work."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/chat-citations/chat-citations.component.ts#ChatCitationsComponent",
+      "id": "component:libs/angular/chat/citations/src/chat-citations.component.ts#ChatCitationsComponent",
       "taskIds": [
         "T26"
       ],
@@ -2301,7 +2366,7 @@
       "reason": "Private Citations preserves supplied order by default, literal metadata, safe links and opt-in source modals/disclosure. Optional borrowed snapshot merges unseen Markdown definitions, prefers whole provider records by exact ID and stably orders combined sources by index; the shared private converter also supplies inline snippets. Optional readonly renderCard receives the latest borrowed Citation and replaces keyed list-item contents, retaining compatible custom descendants through reorder and metadata corrections. Native assistant rows compose CitationPreview and literal source-type text for Markdown-only and mixed Sources, with local expansion and retired removed previews. Default rows compose passive CitationCard local icons/monograms, normalized type badges, hostname and formatted publication; native custom cards compose it beside the retained explicit preview. Provider icons are never fetched. The collapsible header visual gap is closed with the first three sources in exact resolved displayed order, private shared local markers and a decorative expansion chevron. Provider images remain deferred T26 work."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts#ChatConfirmDialogComponent",
+      "id": "component:libs/angular/chat/threads/src/chat-confirm-dialog.component.ts#ChatConfirmDialogComponent",
       "taskIds": [
         "T22"
       ],
@@ -2435,7 +2500,7 @@
       "reason": "Private Angular composition-to-body signal bridge for stable markdown ownership; raw message inputs and rich projections remain independent. This does not mark public Chat or markdown parity complete."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/chat-overflow-menu/chat-overflow-menu.component.ts#ChatOverflowMenuComponent",
+      "id": "component:libs/angular/chat/threads/src/chat-overflow-menu.component.ts#ChatOverflowMenuComponent",
       "taskIds": [
         "T22"
       ],
@@ -2445,7 +2510,7 @@
       "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Label typeahead comes from the shared menu engine. Broader composition and full migration remain open; legacy Angular source and API stay unchanged. Opening snapshots ancestor scroll offsets and ignores only unchanged queued notifications; actual later movement, document/unrelated scroll, outside input and resize still dismiss. Native full project rows now dogfood Rename/Delete overflow menus through existing app-owned action slots, retaining persistent invokers, exact-target confirmation and explicit storage/backend recovery; no public API change or full-parity claim."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/chat-project-list/chat-project-list.component.ts#ChatProjectListComponent",
+      "id": "component:libs/angular/chat/threads/src/chat-project-list.component.ts#ChatProjectListComponent",
       "taskIds": [
         "T29"
       ],
@@ -2476,7 +2541,7 @@
       "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/chat-select/chat-select.component.ts#ChatSelectComponent",
+      "id": "component:libs/angular/chat/select/src/chat-select.component.ts#ChatSelectComponent",
       "taskIds": [
         "T22"
       ],
@@ -2486,7 +2551,7 @@
       "reason": "Bounded private React controlled Select presents literal labelled options with descriptions, strict disabled state, owner-accepted value and open transitions, an owner-document listbox portal, wrapping keyboard navigation, Escape, and focus return. Angular two-way binding becomes explicit value/onValueChange; panelClass becomes menuClassName. Label typeahead comes from the shared menu engine. Chat composition model slots and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts#ChatSidenavScrimComponent",
+      "id": "component:libs/angular/chat/threads/src/chat-sidenav-scrim.component.ts#ChatSidenavScrimComponent",
       "taskIds": [
         "T30"
       ],
@@ -2516,7 +2581,7 @@
       "reason": "Private controlled Suggestions renders app-authored literal choices with exact raw values and unique IDs. Native T23 admits local successful text follow-ups with runtime, draft and submission-occurrence ownership; selection only prefills and focuses, never sends. AI-generated suggestions and full T22/T23 parity remain open."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/chat-thread-list/chat-thread-list.component.ts#ChatThreadListComponent",
+      "id": "component:libs/angular/chat/threads/src/chat-thread-list.component.ts#ChatThreadListComponent",
       "taskIds": [
         "T29"
       ],
@@ -2616,7 +2681,7 @@
       "reason": "ChatWindow: header, body and footer regions as props with a decorative footer fade, usable outside a Chat root. The Chat composition keeps its own layout."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/overlay/connected-overlay.directive.ts#ChatConnectedOverlayDirective",
+      "id": "component:libs/angular/chat/overlay/src/connected-overlay.directive.ts#ChatConnectedOverlayDirective",
       "taskIds": [
         "T22"
       ],
@@ -2626,7 +2691,7 @@
       "reason": "Ref/portal primitive, no Angular directive. Portal/ref overlay API; positioning, outside click, Escape, resize and cleanup."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/primitives/overlay/connected-overlay.directive.ts#ChatOverlayOriginDirective",
+      "id": "component:libs/angular/chat/overlay/src/connected-overlay.directive.ts#ChatOverlayOriginDirective",
       "taskIds": [
         "T22"
       ],
@@ -3961,6 +4026,57 @@
       "status": "planned"
     },
     {
+      "id": "entry:libs/angular/chat/threads/public-api.ts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "entry:libs/angular/chat/shared/public-api.ts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
+    },
+    {
+      "id": "entry:libs/angular/chat/select/public-api.ts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "entry:libs/angular/chat/overlay/public-api.ts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
+      "id": "entry:libs/angular/chat/citations/public-api.ts",
+      "taskIds": [
+        "T02",
+        "T36",
+        "T37"
+      ],
+      "treatment": "infrastructure",
+      "status": "planned"
+    },
+    {
       "id": "entry:libs/angular/chat/src/public-api.ts",
       "taskIds": ["T02", "T06", "T22", "T23", "T36", "T37"],
       "treatment": "infrastructure",
@@ -5222,7 +5338,7 @@
       "reason": "Native component. Decision UI tied to attempt/run identity; submitting/uncertain/recovery states."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatCitationCardTemplateDirective",
+      "id": "export:libs/angular/chat/citations/public-api.ts#ChatCitationCardTemplateDirective",
       "taskIds": [
         "T26"
       ],
@@ -5232,7 +5348,7 @@
       "reason": "Private readonly renderCard callback replaces each exact-ID keyed list item's contents, with no directive export. Native assistant Sources compose public CitationPreview and literal source-type text through the slot; default citation-display parity remains open T26 work."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatCitationPreviewComponent",
+      "id": "export:libs/angular/chat/citations/public-api.ts#ChatCitationPreviewComponent",
       "taskIds": [
         "T26"
       ],
@@ -5242,7 +5358,7 @@
       "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open. Both explicit and inline previews now share a private local source summary with normalized type, derived hostname and formatted date above preserved literal fields. Intrinsic compact markers and wrapping preserve the no-stylesheet Markdown contract; same-ID corrections retain open panels and focus. Provider images remain unfetched."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatCitationsCardComponent",
+      "id": "export:libs/angular/chat/citations/public-api.ts#ChatCitationsCardComponent",
       "taskIds": [
         "T26"
       ],
@@ -5252,7 +5368,7 @@
       "reason": "Native component. Source metadata, image/monogram fallback, safe links and display utilities."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatCitationsComponent",
+      "id": "export:libs/angular/chat/citations/public-api.ts#ChatCitationsComponent",
       "taskIds": [
         "T26"
       ],
@@ -5294,7 +5410,7 @@
       "reason": "React takes the same renderer as the generativeUi.renderA2ui prop."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatConfirmDialogComponent",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ChatConfirmDialogComponent",
       "taskIds": [
         "T22"
       ],
@@ -5304,7 +5420,7 @@
       "reason": "Private controlled native modal with Cancel-first focus, background inertness, pending/destructive intent, Escape/backdrop cancellation, local theme and bounded focus restoration. Native Delete closes before dispatch and owns remote recovery; full overlay-stack parity remains open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatConnectedOverlayDirective",
+      "id": "export:libs/angular/chat/overlay/public-api.ts#ChatConnectedOverlayDirective",
       "taskIds": [
         "T22"
       ],
@@ -5441,7 +5557,7 @@
       "status": "in-progress"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatOverflowMenuComponent",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ChatOverflowMenuComponent",
       "taskIds": [
         "T22"
       ],
@@ -5451,7 +5567,7 @@
       "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Label typeahead comes from the shared menu engine. Broader composition and full migration remain open; legacy Angular source and API stay unchanged. Opening snapshots ancestor scroll offsets and ignores only unchanged queued notifications; actual later movement, document/unrelated scroll, outside input and resize still dismiss. Native full project rows now dogfood Rename/Delete overflow menus through existing app-owned action slots, retaining persistent invokers, exact-target confirmation and explicit storage/backend recovery; no public API change or full-parity claim."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatOverlayOriginDirective",
+      "id": "export:libs/angular/chat/overlay/public-api.ts#ChatOverlayOriginDirective",
       "taskIds": [
         "T22"
       ],
@@ -5471,7 +5587,7 @@
       "reason": "Private /chat export for the bounded controlled non-modal ChatPopup. Full legacy popup parity and public release remain open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatProjectListComponent",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ChatProjectListComponent",
       "taskIds": [
         "T29"
       ],
@@ -5575,7 +5691,7 @@
       "reason": "Passive readonly latest-action button and explicit view controls preserve the existing MessageList pin policy. Chat and native composition borrow current status with no new execution owner. This bounded T23 slice does not add unread counters, history loading, or complete scroll-system parity."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatSelectComponent",
+      "id": "export:libs/angular/chat/select/public-api.ts#ChatSelectComponent",
       "taskIds": [
         "T22"
       ],
@@ -5585,7 +5701,7 @@
       "reason": "Native component. Controlled selected value, keyboard options, disabled state and label association."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatSelectOption",
+      "id": "export:libs/angular/chat/select/public-api.ts#ChatSelectOption",
       "taskIds": [
         "T22"
       ],
@@ -5603,7 +5719,7 @@
       "reason": "Private controlled non-modal full-height sidebar export with optional page content and desktop content pushing; application owns execution and visibility. Peer edge claims and full legacy parity remain open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatSidenavComponent",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ChatSidenavComponent",
       "taskIds": [
         "T30"
       ],
@@ -5613,7 +5729,7 @@
       "reason": "Private controlled children-based navigation export with expanded/collapsed/drawer presentation, retained hidden/inert children and accepted-transition focus. Native application owns breakpoints, commands and selected content; full T30 parity remains open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatSidenavMode",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ChatSidenavMode",
       "taskIds": [
         "T30"
       ],
@@ -5623,7 +5739,7 @@
       "reason": "Private React expanded/collapsed/drawer union; the application owns responsive mode selection and receives only expanded/collapsed toggle requests."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatSidenavScrimComponent",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ChatSidenavScrimComponent",
       "taskIds": [
         "T30"
       ],
@@ -5673,7 +5789,7 @@
       "reason": "Private controlled Suggestions renders app-authored literal choices with exact raw values and unique IDs. Native T23 admits local successful text follow-ups with runtime, draft and submission-occurrence ownership; selection only prefills and focuses, never sends. AI-generated suggestions and full T22/T23 parity remain open."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatThreadListComponent",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ChatThreadListComponent",
       "taskIds": [
         "T29"
       ],
@@ -5810,7 +5926,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#CitationImageVisual",
+      "id": "export:libs/angular/chat/citations/public-api.ts#CitationImageVisual",
       "taskIds": [
         "T18",
         "T26"
@@ -5821,7 +5937,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#CitationMonogramVisual",
+      "id": "export:libs/angular/chat/citations/public-api.ts#CitationMonogramVisual",
       "taskIds": [
         "T18",
         "T26"
@@ -5832,7 +5948,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#CitationSourceVisual",
+      "id": "export:libs/angular/chat/citations/public-api.ts#CitationSourceVisual",
       "taskIds": [
         "T18",
         "T26"
@@ -5843,7 +5959,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#CitationTypeIcon",
+      "id": "export:libs/angular/chat/citations/public-api.ts#CitationTypeIcon",
       "taskIds": [
         "T18",
         "T26"
@@ -5854,7 +5970,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#CitationTypeIconVisual",
+      "id": "export:libs/angular/chat/citations/public-api.ts#CitationTypeIconVisual",
       "taskIds": [
         "T18",
         "T26"
@@ -5865,7 +5981,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#CitationTypeMeta",
+      "id": "export:libs/angular/chat/citations/public-api.ts#CitationTypeMeta",
       "taskIds": [
         "T18",
         "T26"
@@ -5877,6 +5993,18 @@
     },
     {
       "id": "export:libs/angular/chat/src/public-api.ts#CitationsResolverService",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "in-progress",
+      "target": "libs/react/src/markdown/markdown.tsx",
+      "reason": "Private React per-message exact-ID inline citation resolution with safe external links and readable fallback markers.",
+      "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood opts into inline previews and retains Sources modals. Full citation display parity and public distribution remain open."
+    },
+    {
+      "id": "export:libs/angular/chat/shared/public-api.ts#CitationsResolverService",
       "taskIds": [
         "T18",
         "T26"
@@ -6035,7 +6163,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ConnectedPosition",
+      "id": "export:libs/angular/chat/overlay/public-api.ts#ConnectedPosition",
       "taskIds": [
         "T22",
         "T23"
@@ -6190,7 +6318,7 @@
       "reason": "Native component. Registry dispatch, stable node identity and scoped citation/table context."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#MarkdownCitationReferenceComponent",
+      "id": "export:libs/angular/chat/citations/public-api.ts#MarkdownCitationReferenceComponent",
       "taskIds": [
         "T26"
       ],
@@ -6502,7 +6630,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#OverflowMenuItem",
+      "id": "export:libs/angular/chat/threads/public-api.ts#OverflowMenuItem",
       "taskIds": [
         "T22"
       ],
@@ -6512,7 +6640,7 @@
       "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Label typeahead comes from the shared menu engine. Broader composition and full migration remain open; legacy Angular source and API stay unchanged. Opening snapshots ancestor scroll offsets and ignores only unchanged queued notifications; actual later movement, document/unrelated scroll, outside input and resize still dismiss."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#OverlayPositionResult",
+      "id": "export:libs/angular/chat/overlay/public-api.ts#OverlayPositionResult",
       "taskIds": [
         "T22",
         "T23"
@@ -6538,7 +6666,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#Project",
+      "id": "export:libs/angular/chat/threads/public-api.ts#Project",
       "taskIds": [
         "T29"
       ],
@@ -6546,7 +6674,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ProjectActionAdapter",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ProjectActionAdapter",
       "taskIds": [
         "T29"
       ],
@@ -6555,6 +6683,15 @@
     },
     {
       "id": "export:libs/angular/chat/src/public-api.ts#ResolvedCitation",
+      "taskIds": [
+        "T18",
+        "T26"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "export:libs/angular/chat/shared/public-api.ts#ResolvedCitation",
       "taskIds": [
         "T18",
         "T26"
@@ -6626,7 +6763,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#Thread",
+      "id": "export:libs/angular/chat/threads/public-api.ts#Thread",
       "taskIds": [
         "T29"
       ],
@@ -6634,7 +6771,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ThreadActionAdapter",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ThreadActionAdapter",
       "taskIds": [
         "T29"
       ],
@@ -6785,7 +6922,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#citationSourceVisual",
+      "id": "export:libs/angular/chat/citations/public-api.ts#citationSourceVisual",
       "taskIds": [
         "T18",
         "T26"
@@ -6796,7 +6933,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#citationTypeLabel",
+      "id": "export:libs/angular/chat/citations/public-api.ts#citationTypeLabel",
       "taskIds": [
         "T18",
         "T26"
@@ -6807,7 +6944,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#citationTypeMeta",
+      "id": "export:libs/angular/chat/citations/public-api.ts#citationTypeMeta",
       "taskIds": [
         "T18",
         "T26"
@@ -6877,7 +7014,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#deriveDomain",
+      "id": "export:libs/angular/chat/citations/public-api.ts#deriveDomain",
       "taskIds": [
         "T18",
         "T26"
@@ -6897,7 +7034,7 @@
       "reason": "Omitted from the new tool contract: no validator-to-JSON-Schema conversion or schema DSL. Callers may supply optional JSON Schema metadata; current Angular conversion remains unchanged."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#deriveMonogram",
+      "id": "export:libs/angular/chat/citations/public-api.ts#deriveMonogram",
       "taskIds": [
         "T18",
         "T26"
@@ -6908,7 +7045,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#deriveSourceType",
+      "id": "export:libs/angular/chat/citations/public-api.ts#deriveSourceType",
       "taskIds": [
         "T18",
         "T26"
@@ -6954,7 +7091,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#formatPublished",
+      "id": "export:libs/angular/chat/citations/public-api.ts#formatPublished",
       "taskIds": [
         "T18",
         "T26"
@@ -7078,7 +7215,7 @@
       "status": "planned"
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#monogramColor",
+      "id": "export:libs/angular/chat/citations/public-api.ts#monogramColor",
       "taskIds": [
         "T18",
         "T26"
@@ -7089,7 +7226,7 @@
       "reason": "Private content/messages exports pure citation display helpers and readonly descriptors matching legacy behavior. Native React cards opt into host/date display while safe navigation stays with CitationPreview. Published Angular retains its existing implementation until package migration."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#monogramHue",
+      "id": "export:libs/angular/chat/citations/public-api.ts#monogramHue",
       "taskIds": [
         "T18",
         "T26"
@@ -8374,6 +8511,78 @@
       "reason": "Internal \u0275 seam: lets @threadplane/angular/chat load the renderer on demand without its telemetry bridge, so an app that renders no spec ships no telemetry runtime; not a public API and no React surface is promised."
     },
     {
+      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275toolSourceCitations",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275mdDefToCitation",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275injectChatRootStyles",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275ToolActivitySource",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275ROOT_TOKEN_STYLES",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275REDUCED_MOTION_LOOP_SELECTORS",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275CHAT_ROOT_STYLES",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
+    },
+    {
+      "id": "export:libs/angular/chat/shared/public-api.ts#\u0275CHAT_HOST_TOKENS",
+      "taskIds": [
+        "T17"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
+    },
+    {
       "id": "export:libs/angular/render/registry/public-api.ts#\u0275RENDER_COLLECTION_POLICY",
       "taskIds": [
         "T17"
@@ -9263,6 +9472,47 @@
       "status": "planned"
     },
     {
+      "id": "source:libs/angular/chat/threads/public-api.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/angular/chat/shared/public-api.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "internal",
+      "status": "planned",
+      "reason": "Internal \u0275 seam shared by @threadplane/angular/chat and the entry points it loads on demand, so each is one instance; not a public API and no React surface is promised."
+    },
+    {
+      "id": "source:libs/angular/chat/select/public-api.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/angular/chat/overlay/public-api.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
+      "id": "source:libs/angular/chat/citations/public-api.ts",
+      "taskIds": [
+        "T29"
+      ],
+      "treatment": "shared",
+      "status": "planned"
+    },
+    {
       "id": "source:libs/angular/chat/debug/src/lib/compositions/chat-debug/chat-debug-root-styles.ts",
       "taskIds": [
         "T29"
@@ -9691,7 +9941,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/agent/citation-display.ts",
+      "id": "source:libs/angular/chat/citations/src/citation-display.ts",
       "taskIds": [
         "T18",
         "T26"
@@ -9857,7 +10107,7 @@
       "reason": "Bounded private React sidebar includes optional persistent page content and desktop content pushing; peer edge claims and full composition parity remain open. Existing Angular implementation and release path remain unchanged."
     },
     {
-      "id": "source:libs/angular/chat/src/lib/compositions/chat-sidenav/chat-debug-gate.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-debug-gate.ts",
       "taskIds": [
         "T30"
       ],
@@ -9865,7 +10115,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/compositions/chat-sidenav/chat-sidenav.component.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-sidenav.component.ts",
       "taskIds": [
         "T30"
       ],
@@ -10012,7 +10262,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/markdown/citations-resolver.service.ts",
+      "id": "source:libs/angular/chat/shared/src/citations-resolver.service.ts",
       "taskIds": [
         "T18",
         "T26"
@@ -10066,7 +10316,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/markdown/views/markdown-citation-reference.component.ts",
+      "id": "source:libs/angular/chat/citations/src/markdown-citation-reference.component.ts",
       "taskIds": [
         "T26"
       ],
@@ -10074,6 +10324,16 @@
       "status": "in-progress",
       "target": "libs/react/src/markdown/inline-citation.tsx",
       "reason": "Private Markdown preserves exact per-message source resolution, unresolved/nested-marker fallbacks and default safe links. Opt-in citationPreview adds identity-scoped connected cards, delayed hover, keyboard/touch activation and nonmodal focus navigation; native assistant rows dogfood the installed runtime. Full T26 registry/custom display parity remains open. Both explicit and inline previews now share a private local source summary with normalized type, derived hostname and formatted date above preserved literal fields. Intrinsic compact markers and wrapping preserve the no-stylesheet Markdown contract; same-ID corrections retain open panels and focus. Provider images remain unfetched.",
+      "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open."
+    },
+    {
+      "id": "source:libs/angular/chat/src/lib/markdown/views/markdown-citation-reference-host.component.ts",
+      "taskIds": [
+        "T26"
+      ],
+      "treatment": "internal",
+      "status": "in-progress",
+      "reason": "Internal default view for inline citation markers: defers the marker, its preview and the overlay to @threadplane/angular/chat/citations; not a public API and no React surface is promised.",
       "note": "Optional readonly supplied sources override Markdown definitions; fresh per-render maps, literal labels and anchor containment. Native assistant dogfood retains Sources. Preview overlays, full citation parity and public distribution remain open."
     },
     {
@@ -10255,7 +10515,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/chat-citations/chat-citation-preview.component.ts",
+      "id": "source:libs/angular/chat/citations/src/chat-citation-preview.component.ts",
       "taskIds": [
         "T26"
       ],
@@ -10264,7 +10524,7 @@
       "reason": "Private opt-in source previews borrow literal Citation metadata and shared safe-link policy without fetching. Native assistant Sources dogfoods explicit modals; Markdown.citationPreview dogfoods inline nonmodal cards with 120/200ms fine-pointer timing, keyboard/touch activation and viewport-clamped connected positioning. Full T26 display utilities, custom rendering and citation grouping remain open."
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/chat-citations/chat-citations-card.component.ts",
+      "id": "source:libs/angular/chat/citations/src/chat-citations-card.component.ts",
       "taskIds": [
         "T26"
       ],
@@ -10274,7 +10534,7 @@
       "reason": "Private CitationCard renders shared local category icons/web monograms, normalized badges, hostname and formatted publication with literal title/snippet and existing safe-link policy. Default Citations rows and native custom-card composition dogfood it without fetching provider icons or changing preview/custom-render ownership. Collapsible headers share the private local marker for their first three resolved sources and decorative chevron; provider images remain deferred."
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/chat-citations/chat-citations.component.ts",
+      "id": "source:libs/angular/chat/citations/src/chat-citations.component.ts",
       "taskIds": [
         "T26"
       ],
@@ -10284,16 +10544,7 @@
       "target": "libs/react/src/chat/citations.tsx"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/chat-citations/index.ts",
-      "taskIds": [
-        "T18",
-        "T26"
-      ],
-      "treatment": "shared",
-      "status": "planned"
-    },
-    {
-      "id": "source:libs/angular/chat/src/lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-confirm-dialog.component.ts",
       "taskIds": [
         "T22"
       ],
@@ -10415,7 +10666,7 @@
       "reason": "Private Angular composition-to-body signal bridge for stable markdown ownership; raw message inputs and rich projections remain independent. This does not mark public Chat or markdown parity complete."
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/chat-overflow-menu/chat-overflow-menu.component.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-overflow-menu.component.ts",
       "taskIds": [
         "T22"
       ],
@@ -10425,7 +10676,7 @@
       "reason": "Bounded private React controlled menu presents disabled/destructive commands, pointer placement, explicit keyboard requests, focus return and dismissal. Label typeahead comes from the shared menu engine. Broader composition and full migration remain open; legacy Angular source and API stay unchanged. Opening snapshots ancestor scroll offsets and ignores only unchanged queued notifications; actual later movement, document/unrelated scroll, outside input and resize still dismiss."
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/chat-project-list/chat-project-list.component.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-project-list.component.ts",
       "taskIds": [
         "T29"
       ],
@@ -10452,7 +10703,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/chat-select/chat-select.component.ts",
+      "id": "source:libs/angular/chat/select/src/chat-select.component.ts",
       "taskIds": [
         "T22"
       ],
@@ -10462,7 +10713,7 @@
       "reason": "Bounded private React controlled Select presents literal labelled options with descriptions, strict disabled state, owner-accepted value and open transitions, an owner-document listbox portal, wrapping keyboard navigation, Escape, and focus return. Angular two-way binding becomes explicit value/onValueChange; panelClass becomes menuClassName. Label typeahead comes from the shared menu engine. Chat composition model slots and full migration remain open; legacy Angular source and API stay unchanged."
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-sidenav-scrim.component.ts",
       "taskIds": [
         "T30"
       ],
@@ -10490,7 +10741,7 @@
       "reason": "Private controlled literal Suggestions and app-authored local text-success follow-ups are implemented. Draft and exact submission occurrence remain app-owned. AI suggestions and full T22/T23 parity remain open."
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/chat-thread-list/chat-thread-list.component.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-thread-list.component.ts",
       "taskIds": [
         "T29"
       ],
@@ -10594,7 +10845,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/overlay/connected-overlay.directive.ts",
+      "id": "source:libs/angular/chat/overlay/src/connected-overlay.directive.ts",
       "taskIds": [
         "T22"
       ],
@@ -10602,7 +10853,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/overlay/connected-position.ts",
+      "id": "source:libs/angular/chat/overlay/src/connected-position.ts",
       "taskIds": [
         "T22",
         "T23"
@@ -10611,7 +10862,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/primitives/overlay/overlay-container.ts",
+      "id": "source:libs/angular/chat/overlay/src/overlay-container.ts",
       "taskIds": [
         "T22",
         "T23"
@@ -10669,7 +10920,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/styles/chat-citations.styles.ts",
+      "id": "source:libs/angular/chat/citations/src/chat-citations.styles.ts",
       "taskIds": [
         "T18",
         "T26"
@@ -10678,7 +10929,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/styles/chat-confirm-dialog.styles.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-confirm-dialog.styles.ts",
       "taskIds": [
         "T22"
       ],
@@ -10778,7 +11029,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/styles/chat-overflow-menu.styles.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-overflow-menu.styles.ts",
       "taskIds": [
         "T22"
       ],
@@ -10786,7 +11037,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/styles/chat-project-list.styles.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-project-list.styles.ts",
       "taskIds": [
         "T29"
       ],
@@ -10811,7 +11062,7 @@
       "status": "planned"
     },
     {
-      "id": "source:libs/angular/chat/src/lib/styles/chat-select.styles.ts",
+      "id": "source:libs/angular/chat/select/src/chat-select.styles.ts",
       "taskIds": [
         "T22"
       ],
@@ -10820,7 +11071,7 @@
       "reason": "React Select presentation lives in the opt-in chat stylesheet with 40px targets, logical alignment, system-color fallbacks and reduced-motion handling; the Angular style constant stays unchanged."
     },
     {
-      "id": "source:libs/angular/chat/src/lib/styles/chat-sidenav.styles.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-sidenav.styles.ts",
       "taskIds": [
         "T30"
       ],
@@ -10838,7 +11089,7 @@
       "reason": "Scoped wrapping Suggestions styles use existing theme tokens and visible keyboard focus. Full T22 style parity remains open."
     },
     {
-      "id": "source:libs/angular/chat/src/lib/styles/chat-thread-list.styles.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-thread-list.styles.ts",
       "taskIds": [
         "T29"
       ],
@@ -10848,7 +11099,7 @@
       "reason": "Scoped React selection-list styling with token fallbacks, wrapping, logical alignment and keyboard focus; full Angular lifecycle-action styling parity remains open. Existing Angular styles are unchanged."
     },
     {
-      "id": "source:libs/angular/chat/src/lib/styles/chat-tokens.ts",
+      "id": "source:libs/angular/chat/shared/src/chat-tokens.ts",
       "taskIds": [
         "T22"
       ],
@@ -19173,7 +19424,7 @@
       "reason": "Readonly optional switches for projects, archive, pin, reorder, rename and remove; each defaults to on when the directory supports it."
     },
     {
-      "id": "source:libs/angular/chat/src/lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component.ts",
+      "id": "source:libs/angular/chat/threads/src/chat-thread-sidebar.component.ts",
       "taskIds": [
         "T30"
       ],
@@ -19183,7 +19434,7 @@
       "reason": "Connected Angular conversation sidebar: reads a ThreadDirectory through a signal bumped by subscribe, refreshes on mount and when the agent leaves running, and composes chat-thread-list and chat-project-list with action adapters derived from the directory commands and feature switches. Never disposes the app-owned directory."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component.ts#ChatThreadSidebarComponent",
+      "id": "component:libs/angular/chat/threads/src/chat-thread-sidebar.component.ts#ChatThreadSidebarComponent",
       "taskIds": [
         "T30"
       ],
@@ -19193,7 +19444,7 @@
       "reason": "Angular counterpart of ThreadSidebar with New chat, Projects, Recent and Archived, load error with Retry, empty state, row template, extra actions and before and after content."
     },
     {
-      "id": "component:libs/angular/chat/src/lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component.ts#ChatThreadRowTemplateDirective",
+      "id": "component:libs/angular/chat/threads/src/chat-thread-sidebar.component.ts#ChatThreadRowTemplateDirective",
       "taskIds": [
         "T30"
       ],
@@ -19203,7 +19454,7 @@
       "reason": "Row override for chat-thread-sidebar; React passes renderThread. Rows drawn by the template get no row menu, as in React."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatThreadSidebarComponent",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ChatThreadSidebarComponent",
       "taskIds": [
         "T30"
       ],
@@ -19213,7 +19464,7 @@
       "reason": "Connected sidebar over a ThreadDirectory with New chat, Projects, Recent and Archived, load error with Retry, empty state, row slots and before and after sections."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatThreadRowTemplateDirective",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ChatThreadRowTemplateDirective",
       "taskIds": [
         "T30"
       ],
@@ -19223,7 +19474,7 @@
       "reason": "ng-template[chatThreadRow] row override; React passes renderThread."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ChatThreadRowTemplateContext",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ChatThreadRowTemplateContext",
       "taskIds": [
         "T30"
       ],
@@ -19233,7 +19484,7 @@
       "reason": "Row template context with the thread and isActive; mirrors the renderThread arguments."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ThreadSidebarFeatures",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ThreadSidebarFeatures",
       "taskIds": [
         "T30"
       ],
@@ -19243,7 +19494,7 @@
       "reason": "Readonly optional switches for projects, archive, pin, reorder, rename and remove; same shape as the React ThreadSidebarFeatures."
     },
     {
-      "id": "export:libs/angular/chat/src/public-api.ts#ThreadRowAction",
+      "id": "export:libs/angular/chat/threads/public-api.ts#ThreadRowAction",
       "taskIds": [
         "T30"
       ],
@@ -21205,6 +21456,11 @@
       "id": "export:libs/langgraph/src/public-api.ts#selectBranch",
       "taskIds": ["T08"], "treatment": "shared", "status": "complete",
       "note": "Public export of the framework-neutral @threadplane/langgraph root since the packaging cutover: the package root is the session runtime, with no Angular code."
+    },
+    {
+      "id": "source:libs/angular/chat/shared/src/chat-runtime.ts",
+      "taskIds": ["T17", "T22"], "treatment": "internal", "status": "planned",
+      "reason": "Once-per-application chat setup (root style tokens and development collector registration) that chat components inject; it replaces load-time side effects so the chat entry point tree-shakes."
     },
     {
       "id": "source:libs/angular/chat/src/lib/styles/chat-runtime.ts",

@@ -5,7 +5,7 @@ chat library should look and behave, and how status, progress, failure,
 approval and receipts are shown.
 
 - **Source of truth:** the Angular library, `@threadplane/angular/chat` (`libs/chat`).
-  Its tokens live in `libs/angular/chat/src/lib/styles/chat-tokens.ts`.
+  Its tokens live in `libs/angular/chat/shared/src/chat-tokens.ts`.
 - **Borrowed rules:** the design rules from the LiveLoveApp site (no shadows on
   content, no uppercase labels, hairline rules, one moving element, ink primary
   buttons, underlined links, plain voice). We borrow the rules, not the look:

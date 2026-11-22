@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /** Displays an animated loading placeholder while generative UI is being built. */

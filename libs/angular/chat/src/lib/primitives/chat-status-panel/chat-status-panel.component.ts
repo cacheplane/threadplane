@@ -1,6 +1,6 @@
 // libs/angular/chat/src/lib/primitives/chat-status-panel/chat-status-panel.component.ts
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /** Meaning of a status panel: a failure, something waiting on the person, a confirmed write, or plain information. */

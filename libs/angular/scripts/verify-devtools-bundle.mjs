@@ -119,7 +119,28 @@ for (const name of ['chat', 'render']) {
     assert.match(code, /import\("@threadplane\/angular\/render\/deferred"\)/, 'chat positive control: no deferred renderer import');
     assert.doesNotMatch(code, /from"@threadplane\/angular\/render(?:\/deferred)?"/, 'chat imports the renderer eagerly, which brings json-render into every chat app');
     assert.doesNotMatch(code, /@json-render\/core/, 'chat imports @json-render/core');
+    // The thread list, the model picker and citations load on demand too: chat
+    // imports their entry points only in @defer blocks. An eager import of any
+    // of them, a re-export included, would put that entry point back in every
+    // chat app's initial load.
+    for (const entry of ['threads', 'citations', 'select', 'overlay']) {
+      assert.doesNotMatch(code, new RegExp(`from"@threadplane/angular/chat/${entry}"`), `chat imports @threadplane/angular/chat/${entry} eagerly`);
+      if (entry !== 'overlay')
+        assert.match(code, new RegExp(`import\\("@threadplane/angular/chat/${entry}"\\)`), `chat positive control: no deferred import of @threadplane/angular/chat/${entry}`);
+    }
   }
+}
+
+// The entry points chat loads on demand share @threadplane/angular/chat/shared
+// with chat. A deferred import keeps every export of its target, so whatever the
+// shared entry reaches loads with every chat app, through a chunk the startup
+// code imports. It must not reach telemetry: chat registers the development
+// collector itself.
+{
+  const source = readFileSync(dist('angular/fesm2022/threadplane-angular-chat-shared.mjs'), 'utf8');
+  const { code } = await transform(source, { loader: 'js', format: 'esm', minifyWhitespace: true, legalComments: 'none' });
+  assert.match(code, /export\{/, 'chat/shared positive control: no exports');
+  assert.doesNotMatch(code, /@threadplane\/telemetry/, 'chat/shared imports telemetry, which then loads with every chat app');
 }
 
 // Chat defers its renderer through @threadplane/angular/render/deferred. A

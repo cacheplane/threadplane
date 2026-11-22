@@ -14,7 +14,7 @@ import type { AngularRegistry, RenderEvent } from '@threadplane/angular/render';
 import { ɵRenderSpecCore as RenderSpecCore } from '@threadplane/angular/render/deferred';
 import { ɵRENDER_TELEMETRY as RENDER_TELEMETRY } from '@threadplane/angular/render/registry';
 import { createDevelopmentRuntime, DEVELOPMENT_COLLECTION_POLICY } from '@threadplane/telemetry/browser/development';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_GENERATIVE_UI_STYLES } from '../../styles/chat-generative-ui.styles';
 import { normalizeJsonRenderSpec } from './normalize-json-render-spec';
 import { ɵprovideRenderDevtools } from '../../devtools/devtools-render-report';

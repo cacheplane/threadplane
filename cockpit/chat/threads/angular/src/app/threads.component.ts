@@ -1,6 +1,7 @@
 import { injectCockpitRuntimeConnection } from '@threadplane/cockpit-telemetry';
 import { Component, computed, signal } from '@angular/core';
-import { ChatComponent, ChatThreadSidebarComponent } from '@threadplane/angular/chat';
+import { ChatComponent } from '@threadplane/angular/chat';
+import { ChatThreadSidebarComponent } from '@threadplane/angular/chat/threads';
 import { injectAgent, injectThreadDirectory, provideAgent } from '@threadplane/angular';
 import {
   createSession,

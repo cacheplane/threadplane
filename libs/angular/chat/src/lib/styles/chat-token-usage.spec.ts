@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { CHAT_ENTRY_ROOTS } from './style-contract';
 
 const lib = join(dirname(fileURLToPath(import.meta.url)), '..');
 const sources = (dir: string): string[] =>
@@ -17,7 +18,7 @@ describe('chat style tokens', () => {
   it('defines every --tplane-chat-* token the library uses without a fallback', () => {
     const defined = new Set<string>();
     const used = new Map<string, string>();
-    for (const path of sources(lib)) {
+    for (const path of [lib, ...CHAT_ENTRY_ROOTS].flatMap(sources)) {
       const text = readFileSync(path, 'utf8');
       for (const match of text.matchAll(/(--tplane-chat-[a-z0-9-]+)\s*:/g)) defined.add(match[1]);
       for (const match of text.matchAll(/var\(\s*(--tplane-chat-[a-z0-9-]+)\s*\)/g)) used.set(match[1], path);

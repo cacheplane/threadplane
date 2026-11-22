@@ -6,7 +6,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { pendingInterrupt, type Agent, type AgentInterrupt } from '../../agent';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { injectChatRuntime } from '../../styles/chat-runtime';
 
 /** Review actions emitted by the interrupt panel for the host to handle. */

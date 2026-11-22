@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { ROOT_TOKEN_STYLES } from './chat-tokens';
+import { ɵROOT_TOKEN_STYLES as ROOT_TOKEN_STYLES } from '@threadplane/angular/chat/shared';
 import { componentStyleSources } from './style-contract';
 
 const names = ['default-light', 'default-dark', 'material-light', 'material-dark'] as const;

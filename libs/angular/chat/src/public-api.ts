@@ -68,9 +68,6 @@ export { ChatSuggestionsComponent } from './lib/primitives/chat-suggestions/chat
 export { ChatInputComponent, submitMessage } from './lib/primitives/chat-input/chat-input.component';
 export { ChatTypingIndicatorComponent, isTyping } from './lib/primitives/chat-typing-indicator/chat-typing-indicator.component';
 export { ChatHistorySearchPaletteComponent } from './lib/primitives/chat-history-search-palette/chat-history-search-palette.component';
-export { ChatOverflowMenuComponent } from './lib/primitives/chat-overflow-menu/chat-overflow-menu.component';
-export type { OverflowMenuItem } from './lib/primitives/chat-overflow-menu/chat-overflow-menu.component';
-export { ChatConfirmDialogComponent } from './lib/primitives/chat-confirm-dialog/chat-confirm-dialog.component';
 export type { ThreadMatch } from './lib/primitives/chat-history-search-palette/chat-history-search-palette.component';
 export { ChatScrollBubbleComponent } from './lib/primitives/chat-scroll-bubble/chat-scroll-bubble.component';
 export type { ChatScrollBubbleMode } from './lib/primitives/chat-scroll-bubble/chat-scroll-bubble.component';
@@ -85,8 +82,6 @@ export type { ChatToolResultTemplateContext } from './lib/primitives/chat-tool-c
 export { resolveToolOutcome, toolOutcomes } from './lib/primitives/chat-tool-activity/tool-outcome';
 export { ChatStatusPanelComponent, type ChatStatusPanelTone } from './lib/primitives/chat-status-panel/chat-status-panel.component';
 export { ChatSubagentsComponent } from './lib/primitives/chat-subagents/chat-subagents.component';
-export { ChatThreadListComponent } from './lib/primitives/chat-thread-list/chat-thread-list.component';
-export type { Thread, ThreadActionAdapter, ThreadRowAction } from './lib/primitives/chat-thread-list/chat-thread-list.component';
 export type {
   ProjectEntry,
   ThreadDirectory,
@@ -95,28 +90,11 @@ export type {
   ThreadDirectoryStatus,
   ThreadEntry,
 } from './lib/thread-directory/thread-directory';
-export { ChatProjectListComponent } from './lib/primitives/chat-project-list/chat-project-list.component';
-export type { Project, ProjectActionAdapter } from './lib/primitives/chat-project-list/chat-project-list.component';
 export { ChatGenuiSkeletonComponent } from './lib/primitives/chat-genui-skeleton/chat-genui-skeleton.component';
 export { ChatTimelineComponent } from './lib/primitives/chat-timeline/chat-timeline.component';
 export { ChatGenerativeUiComponent } from './lib/primitives/chat-generative-ui/chat-generative-ui.component';
 export { ChatWelcomeComponent } from './lib/primitives/chat-welcome/chat-welcome.component';
 export { ChatWelcomeSuggestionComponent } from './lib/primitives/chat-welcome/chat-welcome-suggestion.component';
-export { ChatSelectComponent } from './lib/primitives/chat-select/chat-select.component';
-export type { ChatSelectOption } from './lib/primitives/chat-select/chat-select.component';
-export { ChatOverlayOriginDirective, ChatConnectedOverlayDirective } from './lib/primitives/overlay/connected-overlay.directive';
-export type { ConnectedPosition, OverlayPositionResult } from './lib/primitives/overlay/connected-position';
-export { ChatCitationsComponent, ChatCitationCardTemplateDirective } from './lib/primitives/chat-citations/chat-citations.component';
-export { ChatCitationsCardComponent } from './lib/primitives/chat-citations/chat-citations-card.component';
-export { ChatCitationPreviewComponent } from './lib/primitives/chat-citations/chat-citation-preview.component';
-export {
-  deriveDomain, deriveSourceType, deriveMonogram, monogramHue, monogramColor, citationTypeLabel,
-  citationTypeMeta, citationSourceVisual, formatPublished,
-} from './lib/agent/citation-display';
-export type {
-  CitationTypeIcon, CitationTypeMeta, CitationSourceVisual,
-  CitationImageVisual, CitationTypeIconVisual, CitationMonogramVisual,
-} from './lib/agent/citation-display';
 
 // Routing utilities
 export { injectThreadRouting } from './lib/routing/thread-routing';
@@ -138,17 +116,6 @@ export type { ChatInterruptTemplateContext } from './lib/compositions/chat/chat-
 export { ChatPopupComponent } from './lib/compositions/chat-popup/chat-popup.component';
 export { ChatSidebarComponent } from './lib/compositions/chat-sidebar/chat-sidebar.component';
 export { ChatTimelineSliderComponent } from './lib/compositions/chat-timeline-slider/chat-timeline-slider.component';
-export { ChatSidenavComponent } from './lib/compositions/chat-sidenav/chat-sidenav.component';
-export {
-  ChatThreadSidebarComponent,
-  ChatThreadRowTemplateDirective,
-} from './lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component';
-export type {
-  ThreadSidebarFeatures,
-  ChatThreadRowTemplateContext,
-} from './lib/compositions/chat-thread-sidebar/chat-thread-sidebar.component';
-export { ChatSidenavScrimComponent } from './lib/primitives/chat-sidenav-scrim/chat-sidenav-scrim.component';
-export type { ChatSidenavMode } from './lib/compositions/chat-sidenav/chat-sidenav.component';
 export { ChatInterruptPanelComponent } from './lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component';
 export type { InterruptAction } from './lib/compositions/chat-interrupt-panel/chat-interrupt-panel.component';
 export { ChatApprovalCardComponent } from './lib/compositions/chat-approval-card/chat-approval-card.component';
@@ -158,8 +125,8 @@ export type { ToolCallInfo } from './lib/compositions/chat-tool-call-card/chat-t
 export { ChatSubagentCardComponent, statusColor } from './lib/compositions/chat-subagent-card/chat-subagent-card.component';
 
 // Citations resolver
-export { CitationsResolverService } from './lib/markdown/citations-resolver.service';
-export type { ResolvedCitation } from './lib/markdown/citations-resolver.service';
+export { CitationsResolverService } from '@threadplane/angular/chat/shared';
+export type { ResolvedCitation } from '@threadplane/angular/chat/shared';
 
 // Streaming
 export {
@@ -200,7 +167,6 @@ export { MarkdownAutolinkComponent }       from './lib/markdown/views/markdown-a
 export { MarkdownImageComponent }          from './lib/markdown/views/markdown-image.component';
 export { MarkdownSoftBreakComponent }      from './lib/markdown/views/markdown-soft-break.component';
 export { MarkdownHardBreakComponent }      from './lib/markdown/views/markdown-hard-break.component';
-export { MarkdownCitationReferenceComponent } from './lib/markdown/views/markdown-citation-reference.component';
 export { MarkdownTableComponent }             from './lib/markdown/views/markdown-table.component';
 export { MarkdownTableRowComponent }          from './lib/markdown/views/markdown-table-row.component';
 export { MarkdownTableCellComponent }         from './lib/markdown/views/markdown-table-cell.component';

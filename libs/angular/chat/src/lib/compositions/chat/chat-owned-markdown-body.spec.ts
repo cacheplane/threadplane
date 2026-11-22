@@ -7,8 +7,8 @@ import { ChatMessageComponent } from '../../primitives/chat-message/chat-message
 import { ChatToolCallsComponent } from '../../primitives/chat-tool-calls/chat-tool-calls.component';
 import { ChatToolViewsComponent } from '../../primitives/chat-tool-views/chat-tool-views.component';
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
-import { ChatCitationsComponent } from '../../primitives/chat-citations/chat-citations.component';
-import { CitationsResolverService } from '../../markdown/citations-resolver.service';
+import { ChatCitationsComponent } from '@threadplane/angular/chat/citations';
+import { CitationsResolverService } from '@threadplane/angular/chat/shared';
 import { ChatStreamingMdComponent, type StreamingMarkdownDocument } from '../../streaming/streaming-markdown.component';
 import type { ContentClassifier } from '../../streaming/content-classifier';
 import { rawMessagesAgent } from '../../../testing/raw-messages-agent';

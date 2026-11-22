@@ -8,7 +8,7 @@
 // horizontal offset or an override would leave it misaligned with the button.
 import { describe, expect, it } from 'vitest';
 import { ChatPopupComponent } from './chat-popup.component';
-import { ROOT_TOKEN_STYLES } from '../../styles/chat-tokens';
+import { ɵROOT_TOKEN_STYLES as ROOT_TOKEN_STYLES } from '@threadplane/angular/chat/shared';
 
 /** The component's compiled style strings. */
 function popupStyles(): string {

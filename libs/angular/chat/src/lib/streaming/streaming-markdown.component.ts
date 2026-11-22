@@ -18,7 +18,7 @@ import {
 } from '@cacheplane/partial-markdown';
 import type { ViewRegistry } from '@threadplane/angular/render';
 import type { MessageDelivery } from '../agent';
-import { CitationsResolverService } from '../markdown/citations-resolver.service';
+import { CitationsResolverService } from '@threadplane/angular/chat/shared';
 import { MarkdownChildrenComponent } from '../markdown/markdown-children.component';
 import { MARKDOWN_VIEW_REGISTRY } from '../markdown/markdown-view-registry';
 import { cacheplaneMarkdownViews } from '../markdown/cacheplane-markdown-views';

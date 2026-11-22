@@ -3,7 +3,7 @@ import {
   Component, ChangeDetectionStrategy,
   computed, effect, input, signal,
 } from '@angular/core';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_REASONING_STYLES } from '../../styles/chat-reasoning.styles';
 import type { MessageDelivery } from '../../agent';
 import { ChatStreamingMdComponent, markdownDocument } from '../../streaming/streaming-markdown.component';

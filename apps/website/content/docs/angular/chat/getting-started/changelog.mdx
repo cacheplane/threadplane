@@ -40,6 +40,16 @@ This changelog tracks selected highlight releases, not every release. The publis
 - Breaking change, action required for every Angular application: the `createSession` factory given to `provideAgent()` and `createAgent()` from `@threadplane/angular` must return a Promise of the session. Write `createSession: (context) => import('@threadplane/langgraph').then(({ createSession }) => createSession({ ...context, apiUrl, assistantId }))` and the backend package loads on demand, out of the application's initial bundle. An `async` arrow around a static import also works, without the bundle saving. See [Make the session factory async](/docs/angular/chat/migrations/upgrading#make-the-session-factory-async).
 - Until the first session resolves, the agent shows an empty idle conversation. During a thread switch it keeps the current thread until the new session resolves. Commands called meanwhile wait for the new session and then run on it; `stop` goes to the current session at once. When the factory rejects, the agent keeps its current session and the waiting commands reject with the same error.
 
+### Threads, citations and the select menu load on demand
+
+- Breaking change for applications that import these components directly: they move from `@threadplane/angular/chat` to new entry points. See [Move thread, citation and select imports](/docs/angular/chat/migrations/upgrading#move-thread-citation-and-select-imports).
+  - `@threadplane/angular/chat/threads`: `ChatThreadListComponent`, `ChatProjectListComponent`, `ChatOverflowMenuComponent`, `ChatConfirmDialogComponent`, `ChatSidenavComponent`, `ChatSidenavScrimComponent`, `ChatThreadSidebarComponent`, `ChatThreadRowTemplateDirective` and their types.
+  - `@threadplane/angular/chat/citations`: `ChatCitationsComponent`, `ChatCitationCardTemplateDirective`, `ChatCitationsCardComponent`, `ChatCitationPreviewComponent`, `MarkdownCitationReferenceComponent` and the citation display helpers, such as `deriveDomain()` and `citationSourceVisual()`.
+  - `@threadplane/angular/chat/select`: `ChatSelectComponent` and `ChatSelectOption`.
+  - `@threadplane/angular/chat/overlay`: `ChatOverlayOriginDirective`, `ChatConnectedOverlayDirective`, `ConnectedPosition` and `OverlayPositionResult`.
+- `<chat>` renders its thread list, its model picker and a message's citations inside `@defer` blocks, so their code loads the first time they show. A minimal chat application's initial JavaScript drops by about 73 kB. An inline citation marker shows its number as plain text until the citations code loads.
+- `CitationsResolverService` keeps its `@threadplane/angular/chat` import.
+
 ## 0.3.7
 
 - Chat adds a configurable composer `placeholder`, public `clearDraft()` methods on `ChatComponent` and `ChatInputComponent`, and projected composer footer/status content.

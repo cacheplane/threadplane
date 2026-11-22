@@ -1,6 +1,6 @@
 // libs/angular/chat/src/lib/styles/chat-tokens.spec.ts
 import { describe, expect, it } from 'vitest';
-import { REDUCED_MOTION_LOOP_SELECTORS, ROOT_TOKEN_STYLES } from './chat-tokens';
+import { ɵREDUCED_MOTION_LOOP_SELECTORS as REDUCED_MOTION_LOOP_SELECTORS, ɵROOT_TOKEN_STYLES as ROOT_TOKEN_STYLES } from '@threadplane/angular/chat/shared';
 import { componentStyleSources } from './style-contract';
 
 describe('ROOT_TOKEN_STYLES — prefers-reduced-motion', () => {

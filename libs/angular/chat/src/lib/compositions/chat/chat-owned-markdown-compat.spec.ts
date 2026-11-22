@@ -11,7 +11,7 @@ import { ChatToolCallsComponent } from '../../primitives/chat-tool-calls/chat-to
 import { ChatToolViewsComponent } from '../../primitives/chat-tool-views/chat-tool-views.component';
 import { ChatMessageActionsComponent } from '../../primitives/chat-message-actions/chat-message-actions.component';
 import { ChatGenerativeUiComponent } from '../../primitives/chat-generative-ui/chat-generative-ui.component';
-import { CitationsResolverService } from '../../markdown/citations-resolver.service';
+import { CitationsResolverService } from '@threadplane/angular/chat/shared';
 import {
   A2uiMessageSurfacesComponent,
   A2uiSurfaceComponent,

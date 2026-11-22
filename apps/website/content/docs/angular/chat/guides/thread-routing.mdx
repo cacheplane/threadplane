@@ -106,7 +106,7 @@ Each handler calls both `agent.switchThread(id)` and `activeThreadId.set(id)`. `
 
 ## Connected sidebar
 
-`<chat-thread-sidebar>` from `@threadplane/angular/chat` draws New chat, Projects, Recent and Archived for any `ThreadDirectory`. `injectThreadDirectory()` exposes the provided one as `directory`, so the minimal setup is the provider plus the component:
+`<chat-thread-sidebar>` from `@threadplane/angular/chat/threads` draws New chat, Projects, Recent and Archived for any `ThreadDirectory`. `injectThreadDirectory()` exposes the provided one as `directory`, so the minimal setup is the provider plus the component:
 
 ```typescript
 // app.config.ts
@@ -123,7 +123,7 @@ providers: [
 
 ```typescript
 import { Component, signal } from '@angular/core';
-import { ChatThreadSidebarComponent } from '@threadplane/angular/chat';
+import { ChatThreadSidebarComponent } from '@threadplane/angular/chat/threads';
 import { injectAgent, injectThreadDirectory } from '@threadplane/angular';
 
 @Component({

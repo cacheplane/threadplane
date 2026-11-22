@@ -1,7 +1,7 @@
 // libs/angular/chat/src/lib/primitives/chat-typing-indicator/chat-typing-indicator.component.ts
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
 import { isAgentRunning, type Agent } from '../../agent';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_TYPING_INDICATOR_STYLES } from '../../styles/chat-typing-indicator.styles';
 import { injectChatRuntime } from '../../styles/chat-runtime';
 

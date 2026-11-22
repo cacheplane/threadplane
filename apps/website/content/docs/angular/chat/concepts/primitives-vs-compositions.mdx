@@ -70,10 +70,12 @@ Three more compositions place chat inside a layout shell:
 
 ```ts
 import {
-  ChatSidenavComponent,
   ChatPopupComponent,
   ChatSidebarComponent,
 } from '@threadplane/angular/chat';
+import {
+  ChatSidenavComponent,
+} from '@threadplane/angular/chat/threads';
 ```
 
 See the [Layout Modes](/docs/angular/chat/guides/layout-modes) guide for when to reach for each. `<chat-sidenav>` renders the built-in footer launcher by default: `[debug]` is already `true`, so pass `[debug]="false"` to suppress it.

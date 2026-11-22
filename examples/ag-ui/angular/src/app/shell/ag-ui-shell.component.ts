@@ -11,9 +11,11 @@ import { Router, RouterOutlet } from '@angular/router';
 import { injectAgent } from '@threadplane/angular';
 import {
   ChatInterruptPanelComponent,
-  ChatSelectComponent,
   type InterruptAction,
 } from '@threadplane/angular/chat';
+import {
+  ChatSelectComponent,
+} from '@threadplane/angular/chat/select';
 import { PalettePersistence } from './palette-persistence.service';
 import { ItineraryPanelComponent } from '../itinerary-panel.component';
 import { MapCanvasComponent } from '../map-canvas.component';

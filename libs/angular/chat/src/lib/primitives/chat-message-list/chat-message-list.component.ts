@@ -9,7 +9,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import type { Agent, Message } from '../../agent';
 import { MessageTemplateDirective } from './message-template.directive';
 import type { MessageTemplateType } from '../../chat.types';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_MESSAGE_LIST_STYLES } from '../../styles/chat-message-list.styles';
 import { injectChatRuntime } from '../../styles/chat-runtime';
 

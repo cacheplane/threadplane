@@ -1,6 +1,6 @@
 // libs/angular/chat/src/lib/primitives/chat-message-actions/chat-message-actions.component.ts
 import { Component, ChangeDetectionStrategy, input, output, signal, inject, DOCUMENT } from '@angular/core';
-import { CHAT_HOST_TOKENS } from '../../styles/chat-tokens';
+import { ɵCHAT_HOST_TOKENS as CHAT_HOST_TOKENS } from '@threadplane/angular/chat/shared';
 import { CHAT_MESSAGE_ACTIONS_STYLES } from '../../styles/chat-message-actions.styles';
 import { injectChatRuntime } from '../../styles/chat-runtime';
 
