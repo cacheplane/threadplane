@@ -38,6 +38,7 @@ import {
   type RenderInterrupt,
 } from './session-interrupts.js';
 import { sessionSubagents } from './session-subagents.js';
+import { useOptionalAgentSession } from '../agent-provider.js';
 import { Select, type SelectOption } from './select.js';
 import { ThreadList, type ThreadListItem } from './thread-list.js';
 
@@ -52,8 +53,11 @@ export interface ChatProps
     | 'disabled'
     | 'runningHint'
   > {
-  /** App-owned session. Chat observes and dispatches; it never disposes it. */
-  readonly session: AgentSession;
+  /**
+   * App-owned session. Chat observes and dispatches; it never disposes it.
+   * Leave it out inside an `AgentProvider` to use the provider's session.
+   */
+  readonly session?: AgentSession;
   /** App-owned projection; reused across remounts and never disposed by Chat. */
   readonly content?: MessageContent;
   /** Must be referentially stable; see `MessageListProps.renderMessage`. */
@@ -244,9 +248,9 @@ function ModelPicker({
   );
 }
 
-/** Transcript, error and composer wired to an app-owned `AgentSession`. */
+/** Transcript, error and composer wired to an app-owned `AgentSession`, or to the nearest `AgentProvider`'s. */
 export function Chat({
-  session,
+  session: ownSession,
   content,
   renderMessage,
   className,
@@ -288,6 +292,13 @@ export function Chat({
   onLifecycleChange,
   ...input
 }: ChatProps) {
+  // Always read, so the hook order is the same with or without a session.
+  const provided = useOptionalAgentSession();
+  const session = ownSession ?? provided;
+  if (!session)
+    throw new Error(
+      'Chat needs a session prop, or an <AgentProvider> above it.'
+    );
   const snapshot = useAgent(session);
   const lifecycleChanged = useRef(onLifecycleChange);
   lifecycleChanged.current = onLifecycleChange;

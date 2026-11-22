@@ -17,6 +17,18 @@ An application owner can live for a page, a selected conversation, or a longer w
 
 The [streaming example](/docs/react/langgraph/guides/streaming) makes ownership explicit: `application.ts` owns session and content; `app.tsx` registers cleanup for that application; `main.tsx` owns the React root and runtime bridge.
 
+## Let AgentProvider own the session
+
+When the session should live exactly as long as a component subtree, `AgentProvider` can own it. It calls your async `createSession(context)` factory when it mounts, passes the result to `useAgentSession()`, `useAgent()` and `Chat` below it, and disposes every session it created when it unmounts.
+
+- Before the first session resolves, the provider shows an empty idle conversation. Commands such as `submit` wait for the session and then run on it.
+- Changing the `threadId` prop creates a session for that thread. The current session stays visible until the new one resolves. Only the latest change is adopted; a superseded session is disposed when it resolves.
+- `stop` always goes to the current session at once.
+- When the factory rejects, the provider keeps its current session, and the commands that were waiting reject with the same error.
+- Spread `context` into the backend options. It carries the `threadId` and an `onThreadId` callback, which reports a thread the session created to the provider's own `onThreadId` prop.
+
+The session that `useAgentSession()` returns is one stable object for the life of the provider. It forwards to whichever session is current, so it is safe to keep in a dependency list. Its `dispose()` does nothing: the provider owns disposal. Applications that need a longer or shared lifetime can keep creating sessions themselves and pass them as props.
+
 ## Retire work before replacing it
 
 On disposal, invalidate pending operations so obsolete callbacks cannot publish. Release session subscriptions, dispose content, clear application listeners, and await session disposal where the application requires it.

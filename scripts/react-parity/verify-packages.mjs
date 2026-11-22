@@ -486,7 +486,7 @@ const SUPPORTED_EXPORTS = {
     'assertReasoningFixtureMessages',
     'reasoningFixture',
   ],
-  react: ['useAgent', 'useAgentState'],
+  react: ['AgentProvider', 'useAgent', 'useAgentSession', 'useAgentState'],
   'react/chat': [
     'ApprovalCard',
     'ApprovalRecord',
